@@ -242,6 +242,14 @@ export default function OperationsHubPage() {
     setRoomRows(updated);
   };
 
+  const addRoomRow = () => {
+    setRoomRows(prev => [...prev, { roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" }]);
+  };
+
+  const removeRoomRow = (index: number) => {
+    setRoomRows(prev => prev.filter((_, idx) => idx !== index));
+  };
+
   const handleSaveRoomRow = async () => {
     const invalid = roomRows.some(r => !r.roomLabel || !r.capacity);
     if (invalid) { toast.error("Starting Room Label and Capacity are required for all rows"); return; }
