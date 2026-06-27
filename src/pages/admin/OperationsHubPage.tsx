@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import api from "@/services/api";
-import { opsService, type OpsDayItinerary, type OpsTripExpense, type OpsAccountingSummary, type OpsSeatConfig, type AutoAllocationResult } from "@/services/ops.service";
+import { opsService, type OpsDayItinerary, type OpsTripExpense, type OpsAccountingSummary, type OpsSeatConfig, type AutoAllocationResult, type OpsTransportFleet } from "@/services/ops.service";
 
 const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -25,6 +25,7 @@ export default function OperationsHubPage() {
   // Excel Grids Data
   const [itinerary, setItinerary] = useState<OpsDayItinerary[]>([]);
   const [expenses, setExpenses] = useState<OpsTripExpense[]>([]);
+  const [fleet, setFleet] = useState<OpsTransportFleet[]>([]);
   const [summary, setSummary] = useState<OpsAccountingSummary | null>(null);
   const [seatConfig, setSeatConfig] = useState<OpsSeatConfig | null>(null);
 
@@ -33,6 +34,8 @@ export default function OperationsHubPage() {
   const [itinForm, setItinForm] = useState({ dayTitle: "", paxCount: "19", hotelName: "", vehicleType: "", remarks: "", guideDriverDetails: "" });
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [expForm, setExpForm] = useState({ activity: "", totalAmount: "", amountPaid: "", remarks: "" });
+  const [showAddFleet, setShowAddFleet] = useState(false);
+  const [fleetForm, setFleetForm] = useState({ vehicleType: "", capacity: "13", driverName: "", driverPhone: "", totalAmount: "", advancePaid: "", notes: "" });
 
   // Auto-Allocation Modal
   const [allocModal, setAllocModal] = useState<{ open: boolean; data: AutoAllocationResult | null; confirming: boolean }>({ open: false, data: null, confirming: false });
@@ -74,16 +77,18 @@ export default function OperationsHubPage() {
     if (!tripId || !depDate) return;
     setLoading(true);
     try {
-      const [itinData, expData, sumData, seatData] = await Promise.all([
+      const [itinData, expData, sumData, seatData, fleetData] = await Promise.all([
         opsService.getDayItinerary(tripId, depDate),
         opsService.getTripExpenses(tripId, depDate),
         opsService.getAccountingSummary(tripId, depDate),
-        opsService.getSeatConfig(tripId, depDate)
+        opsService.getSeatConfig(tripId, depDate),
+        opsService.getTransportFleet(tripId, depDate)
       ]);
       setItinerary(itinData);
       setExpenses(expData);
       setSummary(sumData);
       setSeatConfig(seatData);
+      setFleet(fleetData);
     } catch {
       toast.error("Failed to load operational data");
     } finally {
@@ -142,7 +147,40 @@ export default function OperationsHubPage() {
       setExpForm({ activity: "", totalAmount: "", amountPaid: "", remarks: "" });
       loadTripOps(selectedTripId, selectedDepartureDate);
     } catch {
-      toast.error("Failed to add expense");
+      toast.error("Failed to add expense row");
+    }
+  };
+
+  const handleSaveFleetRow = async () => {
+    if (!fleetForm.vehicleType || !fleetForm.capacity) { toast.error("Vehicle type and capacity are required"); return; }
+    try {
+      await opsService.createTransportFleet(selectedTripId, {
+        vehicleType: fleetForm.vehicleType,
+        capacity: parseInt(fleetForm.capacity),
+        driverName: fleetForm.driverName || undefined,
+        driverPhone: fleetForm.driverPhone || undefined,
+        totalAmount: fleetForm.totalAmount ? parseFloat(fleetForm.totalAmount) : 0,
+        advancePaid: fleetForm.advancePaid ? parseFloat(fleetForm.advancePaid) : 0,
+        notes: fleetForm.notes || undefined
+      }, selectedDepartureDate);
+      toast.success("Vehicle / Tempo added to fleet");
+      setShowAddFleet(false);
+      setFleetForm({ vehicleType: "", capacity: "13", driverName: "", driverPhone: "", totalAmount: "", advancePaid: "", notes: "" });
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    } catch {
+      toast.error("Failed to add vehicle to fleet");
+    }
+  };
+
+  const handleDeleteFleetRow = async (id?: string) => {
+    if (!id) return;
+    if (!confirm("Are you sure you want to delete this vehicle from the fleet?")) return;
+    try {
+      await opsService.deleteTransportFleet(id);
+      toast.success("Vehicle deleted from fleet");
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    } catch {
+      toast.error("Failed to delete vehicle");
     }
   };
 
@@ -426,6 +464,60 @@ export default function OperationsHubPage() {
         </div>
       </div>
 
+      {/* ── EXCEL GRID 3: VEHICLE FLEET & SEAT CAPACITY GRID ── */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-blue-900 text-white px-4 py-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-wider">🚌 DEPARTURE TRANSPORT FLEET & VEHICLE CAPACITY</h2>
+            <p className="text-[10px] text-blue-200 font-medium">Add tempos and vehicle capacities assigned to this departure for Auto-Allocation engine rules.</p>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setShowAddFleet(true)} className="h-7 text-[10px] font-bold uppercase text-white hover:bg-blue-800">
+            <Plus className="w-3 h-3 mr-1" /> Add Vehicle / Tempo
+          </Button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-100 text-[10px] font-bold text-slate-700 uppercase border-b border-slate-200">
+                <th className="p-2.5 text-left border-r border-slate-200">Vehicle Name / Type</th>
+                <th className="p-2.5 text-center border-r border-slate-200">Seat Capacity</th>
+                <th className="p-2.5 text-left border-r border-slate-200">Driver Details</th>
+                <th className="p-2.5 text-right border-r border-slate-200">Total Cost (₹)</th>
+                <th className="p-2.5 text-right border-r border-slate-200">Advance Paid (₹)</th>
+                <th className="p-2.5 text-left border-r border-slate-200">Notes / Route</th>
+                <th className="p-2.5 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fleet.length === 0 ? (
+                <tr><td colSpan={7} className="p-8 text-center text-slate-400 font-medium">No transport fleet added yet for this departure. Click "Add Vehicle / Tempo" to configure capacity.</td></tr>
+              ) : (
+                fleet.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-200 hover:bg-slate-50 font-medium">
+                    <td className="p-2.5 border-r border-slate-200 font-bold text-blue-950 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-600"></span> {row.vehicleType}
+                    </td>
+                    <td className="p-2.5 border-r border-slate-200 text-center font-black text-slate-900 bg-blue-50/50">
+                      <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-900 font-mono">{row.capacity} Seats</span>
+                    </td>
+                    <td className="p-2.5 border-r border-slate-200 text-slate-700">{row.driverName ? `${row.driverName} (${row.driverPhone || "No Phone"})` : "—"}</td>
+                    <td className="p-2.5 border-r border-slate-200 text-right font-bold text-slate-900">₹{(row.totalAmount || 0).toLocaleString("en-IN")}</td>
+                    <td className="p-2.5 border-r border-slate-200 text-right text-emerald-700 font-semibold">₹{(row.advancePaid || 0).toLocaleString("en-IN")}</td>
+                    <td className="p-2.5 border-r border-slate-200 text-slate-500 text-[11px]">{row.notes || row.route || "—"}</td>
+                    <td className="p-2.5 text-center">
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteFleetRow(row.id)} className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg" title="Delete Vehicle">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* ── AUTO ALLOCATION PREVIEW / CONFIRMATION MODAL ── */}
       <Dialog open={allocModal.open} onOpenChange={o => setAllocModal({ open: o, data: allocModal.data, confirming: false })}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto p-6 sm:p-7 bg-white rounded-2xl shadow-2xl">
@@ -566,6 +658,50 @@ export default function OperationsHubPage() {
           <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
             <Button size="sm" variant="outline" onClick={() => setShowAddExpense(false)} className="text-xs font-semibold">Cancel</Button>
             <Button size="sm" onClick={handleSaveExpenseRow} className="text-xs bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 h-9">Save Expense</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Vehicle / Tempo Modal */}
+      <Dialog open={showAddFleet} onOpenChange={setShowAddFleet}>
+        <DialogContent className="sm:max-w-md p-6 bg-white rounded-2xl shadow-2xl">
+          <DialogHeader className="pb-3 border-b border-slate-100">
+            <DialogTitle className="text-base font-black text-slate-900 pr-8">Add Vehicle / Tempo to Fleet</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-0.5">Configure available vehicle capacity for auto-allocation rules on this departure.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3.5 py-3">
+            <div>
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Vehicle Name / Type *</label>
+              <Input value={fleetForm.vehicleType} onChange={e => setFleetForm(p => ({ ...p, vehicleType: e.target.value }))} placeholder="e.g. Tempo 1 (13 Seater) or Car 1 (6 Seater)" className="h-9 text-xs rounded-lg border-slate-200" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Seat Capacity *</label>
+                <Input type="number" value={fleetForm.capacity} onChange={e => setFleetForm(p => ({ ...p, capacity: e.target.value }))} placeholder="13, 17, 26, 6" className="h-9 text-xs rounded-lg border-slate-200 font-mono font-bold" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Total Vehicle Cost (₹)</label>
+                <Input type="number" value={fleetForm.totalAmount} onChange={e => setFleetForm(p => ({ ...p, totalAmount: e.target.value }))} placeholder="e.g. 45000" className="h-9 text-xs rounded-lg border-slate-200" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Driver Name</label>
+                <Input value={fleetForm.driverName} onChange={e => setFleetForm(p => ({ ...p, driverName: e.target.value }))} placeholder="e.g. Ramesh Kumar" className="h-9 text-xs rounded-lg border-slate-200" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Driver Phone</label>
+                <Input value={fleetForm.driverPhone} onChange={e => setFleetForm(p => ({ ...p, driverPhone: e.target.value }))} placeholder="e.g. 98160 12345" className="h-9 text-xs rounded-lg border-slate-200" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Notes / Pickup-Drop Route</label>
+              <Input value={fleetForm.notes} onChange={e => setFleetForm(p => ({ ...p, notes: e.target.value }))} placeholder="e.g. ABC Travels / Majnu Ka Tila Pickup" className="h-9 text-xs rounded-lg border-slate-200" />
+            </div>
+          </div>
+          <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowAddFleet(false)} className="text-xs font-semibold">Cancel</Button>
+            <Button size="sm" onClick={handleSaveFleetRow} className="text-xs bg-blue-900 hover:bg-blue-800 text-white font-bold px-4 h-9">Save Vehicle</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

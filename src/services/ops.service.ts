@@ -64,6 +64,24 @@ export interface AutoAllocationResult {
   whatsappRoomText: string;
 }
 
+export interface OpsTransportFleet {
+  id?: string;
+  departureDate?: string;
+  vehicleType: string;
+  capacity: number;
+  vendorId?: string;
+  vendor?: { id: string; name: string };
+  driverName?: string;
+  driverPhone?: string;
+  route?: string;
+  pickupPoints?: string;
+  dropPoints?: string;
+  totalAmount?: number;
+  advancePaid?: number;
+  balanceAmount?: number;
+  notes?: string;
+}
+
 export const opsService = {
   async getDayItinerary(tripId: string, departureDate?: string): Promise<OpsDayItinerary[]> {
     const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
@@ -91,6 +109,20 @@ export const opsService = {
   },
   async deleteTripExpense(id: string): Promise<void> {
     await api.delete(`/ops/expenses/${id}`);
+  },
+
+  async getTransportFleet(tripId: string, departureDate?: string): Promise<OpsTransportFleet[]> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.get(`/ops/transport/${tripId}${q}`);
+    return res.data?.data || [];
+  },
+  async createTransportFleet(tripId: string, data: Partial<OpsTransportFleet>, departureDate?: string): Promise<OpsTransportFleet> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.post(`/ops/transport/${tripId}${q}`, data);
+    return res.data?.data;
+  },
+  async deleteTransportFleet(id: string): Promise<void> {
+    await api.delete(`/ops/transport/${id}`);
   },
 
   async getAccountingSummary(tripId: string, departureDate?: string): Promise<OpsAccountingSummary> {
