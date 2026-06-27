@@ -23,6 +23,13 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("🔥 React Crash caught by ErrorBoundary:", error, errorInfo);
+    if (error && error.message && (error.message.includes("dynamically imported module") || error.message.includes("module script") || error.message.includes("Importing a module script failed"))) {
+      const isRetry = sessionStorage.getItem("chunk_retry_attempt");
+      if (!isRetry) {
+        sessionStorage.setItem("chunk_retry_attempt", "true");
+        window.location.reload();
+      }
+    }
   }
 
   public render() {
