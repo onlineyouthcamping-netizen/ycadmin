@@ -311,6 +311,23 @@ export default function OperationsHubPage() {
     }
   };
 
+  const handleConfirmAllocation = async () => {
+    if (!allocModal.data?.allocationRunId) {
+      toast.error("No allocation run ID found");
+      return;
+    }
+    setAllocModal(prev => ({ ...prev, confirming: true }));
+    try {
+      await opsService.confirmAllocation(allocModal.data.allocationRunId);
+      toast.success("Allocation locked and confirmed!");
+      setAllocModal({ open: false, data: null, confirming: false });
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to confirm allocation");
+      setAllocModal(prev => ({ ...prev, confirming: false }));
+    }
+  };
+
   // ── WHATSAPP TEXT REBUILD HELPERS ──
   const rebuildTempoText = (vehicleAllocs: AutoAllocationResult['vehicleAllocations']) => {
     let txt = `🚌 *TEMPO & VEHICLE ALLOCATION LIST*\n\n`;
