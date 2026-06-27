@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import api from "@/services/api";
-import { opsService, type OpsDayItinerary, type OpsTripExpense, type OpsAccountingSummary, type OpsSeatConfig, type AutoAllocationResult, type OpsTransportFleet } from "@/services/ops.service";
+import { opsService, type OpsDayItinerary, type OpsTripExpense, type OpsAccountingSummary, type OpsSeatConfig, type AutoAllocationResult, type OpsTransportFleet, type OpsRoomInventory } from "@/services/ops.service";
 
 const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -26,6 +26,7 @@ export default function OperationsHubPage() {
   const [itinerary, setItinerary] = useState<OpsDayItinerary[]>([]);
   const [expenses, setExpenses] = useState<OpsTripExpense[]>([]);
   const [fleet, setFleet] = useState<OpsTransportFleet[]>([]);
+  const [roomInventory, setRoomInventory] = useState<OpsRoomInventory[]>([]);
   const [summary, setSummary] = useState<OpsAccountingSummary | null>(null);
   const [seatConfig, setSeatConfig] = useState<OpsSeatConfig | null>(null);
 
@@ -36,6 +37,8 @@ export default function OperationsHubPage() {
   const [expForm, setExpForm] = useState({ activity: "", totalAmount: "", amountPaid: "", remarks: "" });
   const [showAddFleet, setShowAddFleet] = useState(false);
   const [fleetForm, setFleetForm] = useState({ vehicleType: "", capacity: "13", driverName: "", driverPhone: "", totalAmount: "", advancePaid: "", notes: "" });
+  const [showAddRoom, setShowAddRoom] = useState(false);
+  const [roomForm, setRoomForm] = useState({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "" });
 
   // Auto-Allocation Modal
   const [allocModal, setAllocModal] = useState<{ open: boolean; data: AutoAllocationResult | null; confirming: boolean }>({ open: false, data: null, confirming: false });
@@ -49,28 +52,22 @@ export default function OperationsHubPage() {
     }).catch(() => toast.error("Failed to load trips"));
   }, []);
 
-  // Sync available departure dates when trip changes
+  // 2. Fetch available departures for a selected trip
   useEffect(() => {
-    if (!selectedTripId || trips.length === 0) return;
-    const trip = trips.find(t => t.id === selectedTripId);
-    let extractedDates: string[] = [];
-    if (trip && trip.availableDates) {
-      try {
-        const parsed = typeof trip.availableDates === 'string' ? JSON.parse(trip.availableDates) : trip.availableDates;
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          extractedDates = parsed.map((d: any) => typeof d === 'string' ? d.split('T')[0] : (d.date || d.startDate || d.departureDate || '')).filter(Boolean);
-        }
-      } catch (e) {
-        // Fallback
+    if (!selectedTripId) return;
+    api.get(`/trips/${selectedTripId}/departures`).then(res => {
+      const dates = res.data?.data || [];
+      setAvailableDepartureDates(dates);
+      if (dates.length > 0) {
+        setSelectedDepartureDate(dates[0]);
+      } else {
+        setSelectedDepartureDate(getTodayString());
       }
-    }
-    setAvailableDepartureDates(extractedDates);
-    if (extractedDates.length > 0) {
-      setSelectedDepartureDate(extractedDates[0]);
-    } else {
+    }).catch(() => {
+      setAvailableDepartureDates([]);
       setSelectedDepartureDate(getTodayString());
-    }
-  }, [selectedTripId, trips]);
+    });
+  }, [selectedTripId]);
 
   // 2. Load trip operational data (Departure Isolated with resilient fetching)
   const loadTripOps = useCallback(async (tripId: string, depDate?: string) => {
@@ -82,7 +79,8 @@ export default function OperationsHubPage() {
         opsService.getTripExpenses(tripId, depDate),
         opsService.getAccountingSummary(tripId, depDate),
         opsService.getSeatConfig(tripId, depDate),
-        opsService.getTransportFleet(tripId, depDate)
+        opsService.getTransportFleet(tripId, depDate),
+        opsService.getRoomInventory(tripId, depDate)
       ]);
 
       if (results[0].status === "fulfilled") setItinerary(results[0].value);
@@ -90,6 +88,7 @@ export default function OperationsHubPage() {
       if (results[2].status === "fulfilled") setSummary(results[2].value);
       if (results[3].status === "fulfilled") setSeatConfig(results[3].value);
       if (results[4].status === "fulfilled") setFleet(results[4].value);
+      if (results[5].status === "fulfilled") setRoomInventory(results[5].value);
     } catch {
       // Graceful fallback
     } finally {
@@ -182,6 +181,38 @@ export default function OperationsHubPage() {
       loadTripOps(selectedTripId, selectedDepartureDate);
     } catch {
       toast.error("Failed to delete vehicle");
+    }
+  };
+
+  const handleSaveRoomRow = async () => {
+    if (!roomForm.roomLabel || !roomForm.capacity) { toast.error("Room label and capacity are required"); return; }
+    try {
+      await opsService.createRoomInventory(selectedTripId, {
+        roomLabel: roomForm.roomLabel,
+        roomType: roomForm.roomType,
+        genderGroup: roomForm.genderGroup,
+        capacity: parseInt(roomForm.capacity),
+        hotelName: roomForm.hotelName || undefined,
+        notes: roomForm.notes || undefined
+      }, selectedDepartureDate);
+      toast.success("Room added to inventory");
+      setShowAddRoom(false);
+      setRoomForm({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "" });
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    } catch {
+      toast.error("Failed to add room to inventory");
+    }
+  };
+
+  const handleDeleteRoomRow = async (id?: string) => {
+    if (!id) return;
+    if (!confirm("Are you sure you want to delete this room from inventory?")) return;
+    try {
+      await opsService.deleteRoomInventory(id);
+      toast.success("Room deleted from inventory");
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    } catch {
+      toast.error("Failed to delete room");
     }
   };
 
@@ -564,6 +595,71 @@ export default function OperationsHubPage() {
         </div>
       </div>
 
+      {/* ── EXCEL GRID 4: HOTEL ROOM INVENTORY GRID ── */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-emerald-950 text-white px-4 py-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-wider">🏨 DEPARTURE HOTEL ROOM INVENTORY</h2>
+            <p className="text-[10px] text-emerald-200 font-medium">Add room capacities and types assigned to this departure for Auto-Allocation room rules.</p>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setShowAddRoom(true)} className="h-7 text-[10px] font-bold uppercase text-white hover:bg-emerald-800">
+            <Plus className="w-3 h-3 mr-1" /> Add Room
+          </Button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-100 text-[10px] font-bold text-slate-700 uppercase border-b border-slate-200">
+                <th className="p-2.5 text-left border-r border-slate-200">Room Label / Number</th>
+                <th className="p-2.5 text-center border-r border-slate-200">Capacity</th>
+                <th className="p-2.5 text-center border-r border-slate-200">Room Type</th>
+                <th className="p-2.5 text-center border-r border-slate-200">Gender Allocation</th>
+                <th className="p-2.5 text-left border-r border-slate-200">Hotel Name</th>
+                <th className="p-2.5 text-left border-r border-slate-200">Notes / Remarks</th>
+                <th className="p-2.5 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roomInventory.length === 0 ? (
+                <tr><td colSpan={7} className="p-8 text-center text-slate-400 font-medium">No room inventory added yet for this departure. Click "Add Room" to configure room capacities.</td></tr>
+              ) : (
+                roomInventory.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-200 hover:bg-slate-50 font-medium">
+                    <td className="p-2.5 border-r border-slate-200 font-bold text-slate-900 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-600"></span> {row.roomLabel}
+                    </td>
+                    <td className="p-2.5 border-r border-slate-200 text-center font-black text-slate-900 bg-emerald-50/50">
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono">{row.capacity} Beds</span>
+                    </td>
+                    <td className="p-2.5 border-r border-slate-200 text-center text-slate-700">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-semibold">{row.roomType}</span>
+                    </td>
+                    <td className="p-2.5 border-r border-slate-200 text-center">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                        row.genderGroup === 'BOYS' ? 'bg-blue-100 text-blue-800' :
+                        row.genderGroup === 'GIRLS' ? 'bg-pink-100 text-pink-800' :
+                        row.genderGroup === 'COUPLE' ? 'bg-purple-100 text-purple-800' :
+                        'bg-amber-100 text-amber-800'
+                      }`}>
+                        {row.genderGroup}
+                      </span>
+                    </td>
+                    <td className="p-2.5 border-r border-slate-200 text-slate-800">{row.hotelName || "—"}</td>
+                    <td className="p-2.5 border-r border-slate-200 text-slate-500 text-[11px]">{row.notes || "—"}</td>
+                    <td className="p-2.5 text-center">
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteRoomRow(row.id)} className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg" title="Delete Room">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* ── AUTO ALLOCATION PREVIEW / CONFIRMATION MODAL ── */}
       <Dialog open={allocModal.open} onOpenChange={o => setAllocModal({ open: o, data: allocModal.data, confirming: false })}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto p-6 sm:p-7 bg-white rounded-2xl shadow-2xl">
@@ -830,6 +926,70 @@ export default function OperationsHubPage() {
           <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
             <Button size="sm" variant="outline" onClick={() => setShowAddFleet(false)} className="text-xs font-semibold">Cancel</Button>
             <Button size="sm" onClick={handleSaveFleetRow} className="text-xs bg-blue-900 hover:bg-blue-800 text-white font-bold px-4 h-9">Save Vehicle</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Room Modal */}
+      <Dialog open={showAddRoom} onOpenChange={setShowAddRoom}>
+        <DialogContent className="sm:max-w-md p-6 bg-white rounded-2xl shadow-2xl">
+          <DialogHeader className="pb-3 border-b border-slate-100">
+            <DialogTitle className="text-base font-black text-slate-900 pr-8">Add Room to Inventory</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-0.5">Configure hotel room capacity and type for this departure's room rules.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3.5 py-3">
+            <div>
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Room Label / Number *</label>
+              <Input value={roomForm.roomLabel} onChange={e => setRoomForm(p => ({ ...p, roomLabel: e.target.value }))} placeholder="e.g. Room 101 or Room 202-A" className="h-9 text-xs rounded-lg border-slate-200" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Bed Capacity *</label>
+                <Input type="number" value={roomForm.capacity} onChange={e => setRoomForm(p => ({ ...p, capacity: e.target.value }))} placeholder="2, 3, 4, 1" className="h-9 text-xs rounded-lg border-slate-200 font-mono font-bold" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Room Type *</label>
+                <select
+                  value={roomForm.roomType}
+                  onChange={e => setRoomForm(p => ({ ...p, roomType: e.target.value }))}
+                  className="w-full h-9 text-xs bg-white border border-slate-200 rounded-lg px-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/20 font-medium"
+                >
+                  <option value="TWIN">TWIN (2 sharing)</option>
+                  <option value="TRIPLE">TRIPLE (3 sharing)</option>
+                  <option value="QUAD">QUAD (4 sharing)</option>
+                  <option value="SINGLE">SINGLE</option>
+                  <option value="DORM">DORM</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Gender Group *</label>
+                <select
+                  value={roomForm.genderGroup}
+                  onChange={e => setRoomForm(p => ({ ...p, genderGroup: e.target.value }))}
+                  className="w-full h-9 text-xs bg-white border border-slate-200 rounded-lg px-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/20 font-medium"
+                >
+                  <option value="BOYS">BOYS</option>
+                  <option value="GIRLS">GIRLS</option>
+                  <option value="GROUP">GROUP (Co-ed Booking)</option>
+                  <option value="COUPLE">COUPLE</option>
+                  <option value="FAMILY">FAMILY</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Hotel Name</label>
+                <Input value={roomForm.hotelName} onChange={e => setRoomForm(p => ({ ...p, hotelName: e.target.value }))} placeholder="e.g. Barpa Cottage" className="h-9 text-xs rounded-lg border-slate-200" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Notes / Special Remarks</label>
+              <Input value={roomForm.notes} onChange={e => setRoomForm(p => ({ ...p, notes: e.target.value }))} placeholder="e.g. Balcony view / extra mattress" className="h-9 text-xs rounded-lg border-slate-200" />
+            </div>
+          </div>
+          <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowAddRoom(false)} className="text-xs font-semibold">Cancel</Button>
+            <Button size="sm" onClick={handleSaveRoomRow} className="text-xs bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-4 h-9">Save Room</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

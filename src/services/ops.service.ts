@@ -82,6 +82,17 @@ export interface OpsTransportFleet {
   notes?: string;
 }
 
+export interface OpsRoomInventory {
+  id?: string;
+  departureDate?: string;
+  roomLabel: string;
+  roomType: string;
+  genderGroup: string;
+  capacity: number;
+  hotelName?: string;
+  notes?: string;
+}
+
 export const opsService = {
   async getDayItinerary(tripId: string, departureDate?: string): Promise<OpsDayItinerary[]> {
     const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
@@ -123,6 +134,20 @@ export const opsService = {
   },
   async deleteTransportFleet(id: string): Promise<void> {
     await api.delete(`/ops/transport/${id}`);
+  },
+
+  async getRoomInventory(tripId: string, departureDate?: string): Promise<OpsRoomInventory[]> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.get(`/ops/rooms/${tripId}${q}`);
+    return res.data?.data || [];
+  },
+  async createRoomInventory(tripId: string, data: Partial<OpsRoomInventory>, departureDate?: string): Promise<OpsRoomInventory> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.post(`/ops/rooms/${tripId}${q}`, data);
+    return res.data?.data;
+  },
+  async deleteRoomInventory(id: string): Promise<void> {
+    await api.delete(`/ops/rooms/${id}`);
   },
 
   async getAccountingSummary(tripId: string, departureDate?: string): Promise<OpsAccountingSummary> {
