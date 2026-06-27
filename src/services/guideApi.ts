@@ -22,6 +22,7 @@ guideApi.interceptors.request.use((config) => {
 
 let isRefreshing = false;
 let failedQueue: any[] = [];
+let reloginCooldownUntil = 0; // Timestamp: block re-login attempts until this time
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -46,6 +47,11 @@ guideApi.interceptors.response.use(
 
       originalRequest._retry = true;
       localStorage.removeItem("guide_token");
+
+      // If a recent re-login attempt failed, skip retrying for 60 seconds
+      if (Date.now() < reloginCooldownUntil) {
+        return Promise.reject(err);
+      }
 
       // Only attempt auto-relogin if we have a main backend token
       const mainToken = localStorage.getItem("token");
@@ -74,9 +80,12 @@ guideApi.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           processQueue(null, newToken);
           isRefreshing = false;
+          reloginCooldownUntil = 0; // Reset cooldown on success
           return guideApi(originalRequest);
         } catch (reloginErr) {
           console.error("❌ Failed to re-authenticate to Guide API in background:", reloginErr);
+          // Block further re-login attempts for 60 seconds to prevent retry storms
+          reloginCooldownUntil = Date.now() + 60_000;
           processQueue(reloginErr, null);
           isRefreshing = false;
           return Promise.reject(err);
