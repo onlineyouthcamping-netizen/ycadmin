@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Compass, Calculator, CalendarCheck, CheckSquare, Sparkles, Plus, RefreshCw,
-  TrendingUp, Users, AlertTriangle, Check, X, Copy, Share2, ShieldAlert, CheckCircle2, Trash2
+  TrendingUp, Users, AlertTriangle, Check, X, Copy, Share2, ShieldAlert, CheckCircle2, Trash2, ArrowUpDown, GripVertical
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -210,6 +210,7 @@ export default function OperationsHubPage() {
   };
 
   const handleTriggerAutoAllocate = async () => {
+    if (!selectedTripId) { toast.error("Please select a trip first"); return; }
     try {
       const res = await opsService.executeAutoAllocation(selectedTripId, selectedDepartureDate);
       setAllocModal({ open: true, data: res, confirming: false });
@@ -218,34 +219,78 @@ export default function OperationsHubPage() {
     }
   };
 
-  const handleSeatNumberChange = (index: number, newSeatStr: string) => {
-    if (!allocModal.data) return;
-    const newSeat = parseInt(newSeatStr) || 0;
-    const updatedAllocations = [...allocModal.data.vehicleAllocations];
-    updatedAllocations[index] = { ...updatedAllocations[index], seatNumber: newSeat };
-
-    let newTempoText = `🚌 *TEMPO & VEHICLE ALLOCATION LIST*\n\n`;
-    const fleetMap: Record<string, typeof updatedAllocations> = {};
-    updatedAllocations.forEach(va => {
+  // ── WHATSAPP TEXT REBUILD HELPERS ──
+  const rebuildTempoText = (vehicleAllocs: AutoAllocationResult['vehicleAllocations']) => {
+    let txt = `🚌 *TEMPO & VEHICLE ALLOCATION LIST*\n\n`;
+    const fleetMap: Record<string, typeof vehicleAllocs> = {};
+    vehicleAllocs.forEach(va => {
       if (!fleetMap[va.fleetId]) fleetMap[va.fleetId] = [];
       fleetMap[va.fleetId].push(va);
     });
-
-    Object.entries(fleetMap).forEach(([fleetId, allocs], idx) => {
-      newTempoText += `*VEHICLE ${idx + 1}* — ${allocs.length} assigned\n`;
+    // Use fleet data for richer labels
+    const fleetLookup: Record<string, OpsTransportFleet> = {};
+    fleet.forEach(f => { if (f.id) fleetLookup[f.id] = f; });
+    Object.entries(fleetMap).forEach(([fId, allocs], idx) => {
+      const fInfo = fleetLookup[fId];
+      if (fInfo) {
+        txt += `*${(fInfo.vehicleType || 'VEHICLE').toUpperCase()} ${idx + 1} (${fInfo.capacity} Seater)* — ${allocs.length}/${fInfo.capacity} filled\n`;
+      } else {
+        txt += `*VEHICLE ${idx + 1}* — ${allocs.length} assigned\n`;
+      }
       allocs.forEach((t, i) => {
-        const sNum = t.seatNumber ? t.seatNumber : (i + 1);
-        newTempoText += `${i + 1}. ${t.travelerName} [Seat #${sNum}]\n`;
+        const sNum = t.seatNumber || (i + 1);
+        txt += `${i + 1}. ${t.travelerName} [Seat #${sNum}]\n`;
       });
-      newTempoText += `\n`;
+      txt += `\n`;
     });
+    return txt.trim();
+  };
 
+  const rebuildRoomText = (roomAllocs: AutoAllocationResult['roomAllocations']) => {
+    let txt = `🏨 *HOTEL ROOM ALLOCATION LIST*\n\n`;
+    const roomMap: Record<string, { type: string; gender: string; members: string[] }> = {};
+    roomAllocs.forEach(r => {
+      if (!roomMap[r.roomNumber]) roomMap[r.roomNumber] = { type: r.roomType, gender: r.genderGroup, members: [] };
+      roomMap[r.roomNumber].members.push(r.travelerName);
+    });
+    Object.entries(roomMap).forEach(([roomNum, details]) => {
+      txt += `*${roomNum} (${details.type} - ${details.gender})*\n`;
+      details.members.forEach(m => { txt += `• ${m}\n`; });
+      txt += `\n`;
+    });
+    return txt.trim();
+  };
+
+  // ── VEHICLE SHUFFLE HANDLER ──
+  const handleVehicleChange = (index: number, field: 'fleetId' | 'seatNumber', value: string) => {
+    if (!allocModal.data) return;
+    const updated = [...allocModal.data.vehicleAllocations];
+    if (field === 'seatNumber') {
+      updated[index] = { ...updated[index], seatNumber: parseInt(value) || 0 };
+    } else {
+      updated[index] = { ...updated[index], fleetId: value };
+    }
     setAllocModal(prev => ({
       ...prev,
       data: prev.data ? {
         ...prev.data,
-        vehicleAllocations: updatedAllocations,
-        whatsappTempoText: newTempoText.trim()
+        vehicleAllocations: updated,
+        whatsappTempoText: rebuildTempoText(updated)
+      } : null
+    }));
+  };
+
+  // ── ROOM SHUFFLE HANDLER ──
+  const handleRoomChange = (index: number, field: 'roomNumber' | 'roomType' | 'genderGroup', value: string) => {
+    if (!allocModal.data) return;
+    const updated = [...allocModal.data.roomAllocations];
+    updated[index] = { ...updated[index], [field]: value };
+    setAllocModal(prev => ({
+      ...prev,
+      data: prev.data ? {
+        ...prev.data,
+        roomAllocations: updated,
+        whatsappRoomText: rebuildRoomText(updated)
       } : null
     }));
   };
@@ -548,37 +593,51 @@ export default function OperationsHubPage() {
                 </div>
               )}
 
-              {/* 💺 Feed / Customize Vehicle Seat Numbers */}
+              {/* ── 🚌 VEHICLE SHUFFLE TABLE ── */}
               {allocModal.data.vehicleAllocations?.length > 0 && (
-                <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50 p-3.5 space-y-2">
+                <div className="border border-indigo-200 rounded-xl overflow-hidden bg-indigo-50/30 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      💺 Feed / Custom Seat Assignment ({allocModal.data.vehicleAllocations.length} Travelers)
+                      <ArrowUpDown className="w-3.5 h-3.5 text-indigo-600" /> Shuffle Vehicle Assignment ({allocModal.data.vehicleAllocations.length} Travelers)
                     </p>
-                    <span className="text-[10px] font-bold text-slate-500">Edit seat # below to customize</span>
+                    <span className="text-[10px] font-bold text-indigo-500">Change vehicle or seat # to shuffle</span>
                   </div>
-                  <div className="max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg">
+                  <div className="max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-lg">
                     <table className="w-full text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-100 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200">
-                          <th className="p-2 text-left">Traveler Name</th>
-                          <th className="p-2 text-left">Booking ID</th>
-                          <th className="p-2 text-center w-28">Feed Seat #</th>
+                        <tr className="bg-slate-100 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200 sticky top-0 z-10">
+                          <th className="p-2 text-left w-6"></th>
+                          <th className="p-2 text-left">Traveler</th>
+                          <th className="p-2 text-left">Assigned Vehicle</th>
+                          <th className="p-2 text-center w-20">Seat #</th>
                         </tr>
                       </thead>
                       <tbody>
                         {allocModal.data.vehicleAllocations.map((va, idx) => (
-                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                          <tr key={idx} className="border-b border-slate-100 hover:bg-indigo-50/40 transition-colors">
+                            <td className="p-2 text-center"><GripVertical className="w-3 h-3 text-slate-300" /></td>
                             <td className="p-2 font-semibold text-slate-800">{va.travelerName}</td>
-                            <td className="p-2 font-mono text-slate-500 text-[11px]">{va.bookingId}</td>
+                            <td className="p-2">
+                              <select
+                                value={va.fleetId}
+                                onChange={(e) => handleVehicleChange(idx, 'fleetId', e.target.value)}
+                                className="w-full h-7 text-xs font-semibold text-indigo-800 bg-white border border-indigo-200 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+                              >
+                                {fleet.map((f) => (
+                                  <option key={f.id} value={f.id}>
+                                    {f.vehicleType} ({f.capacity} Seater)
+                                  </option>
+                                ))}
+                                {/* Keep current fleetId as option if fleet is empty or not found */}
+                                {fleet.length === 0 && <option value={va.fleetId}>{va.fleetId}</option>}
+                              </select>
+                            </td>
                             <td className="p-2 text-center">
                               <input
-                                type="number"
-                                min={1}
-                                max={50}
+                                type="number" min={1} max={50}
                                 value={va.seatNumber || (idx + 1)}
-                                onChange={(e) => handleSeatNumberChange(idx, e.target.value)}
-                                className="w-16 h-7 text-center font-mono font-bold text-indigo-700 bg-indigo-50/50 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                                onChange={(e) => handleVehicleChange(idx, 'seatNumber', e.target.value)}
+                                className="w-14 h-7 text-center font-mono font-bold text-indigo-700 bg-indigo-50/50 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                               />
                             </td>
                           </tr>
@@ -601,16 +660,84 @@ export default function OperationsHubPage() {
                 <textarea readOnly value={allocModal.data.whatsappTempoText} className="w-full h-40 font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
               </div>
 
+              {/* ── 🏨 ROOM SHUFFLE TABLE ── */}
+              {allocModal.data.roomAllocations?.length > 0 && (
+                <div className="border border-emerald-200 rounded-xl overflow-hidden bg-emerald-50/30 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-emerald-600" /> Shuffle Room Assignment ({allocModal.data.roomAllocations.length} Travelers)
+                    </p>
+                    <span className="text-[10px] font-bold text-emerald-500">Edit room number to shuffle traveler</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-lg">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200 sticky top-0 z-10">
+                          <th className="p-2 text-left w-6"></th>
+                          <th className="p-2 text-left">Traveler</th>
+                          <th className="p-2 text-left w-32">Room Number</th>
+                          <th className="p-2 text-left w-28">Room Type</th>
+                          <th className="p-2 text-left w-24">Gender Grp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allocModal.data.roomAllocations.map((ra, idx) => (
+                          <tr key={idx} className="border-b border-slate-100 hover:bg-emerald-50/40 transition-colors">
+                            <td className="p-2 text-center"><GripVertical className="w-3 h-3 text-slate-300" /></td>
+                            <td className="p-2 font-semibold text-slate-800">{ra.travelerName}</td>
+                            <td className="p-2">
+                              <input
+                                type="text"
+                                value={ra.roomNumber}
+                                onChange={(e) => handleRoomChange(idx, 'roomNumber', e.target.value)}
+                                className="w-full h-7 text-xs font-bold text-emerald-800 bg-emerald-50/50 border border-emerald-200 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                                placeholder="Room 101"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <select
+                                value={ra.roomType}
+                                onChange={(e) => handleRoomChange(idx, 'roomType', e.target.value)}
+                                className="w-full h-7 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md px-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                              >
+                                <option value="TWIN">TWIN</option>
+                                <option value="TRIPLE">TRIPLE</option>
+                                <option value="QUAD">QUAD</option>
+                                <option value="SINGLE">SINGLE</option>
+                                <option value="DORM">DORM</option>
+                              </select>
+                            </td>
+                            <td className="p-2">
+                              <select
+                                value={ra.genderGroup}
+                                onChange={(e) => handleRoomChange(idx, 'genderGroup', e.target.value)}
+                                className="w-full h-7 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md px-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                              >
+                                <option value="BOYS">BOYS</option>
+                                <option value="GIRLS">GIRLS</option>
+                                <option value="GROUP">GROUP</option>
+                                <option value="COUPLE">COUPLE</option>
+                                <option value="FAMILY">FAMILY</option>
+                              </select>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Room List Box */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-bold text-slate-800">🏨 WhatsApp Room List</span>
-                  <Button size="sm" variant="ghost" className="h-7 text-[11px] text-indigo-600 font-bold hover:bg-indigo-50"
+                  <Button size="sm" variant="ghost" className="h-7 text-[11px] text-emerald-600 font-bold hover:bg-emerald-50"
                     onClick={() => { navigator.clipboard.writeText(allocModal.data!.whatsappRoomText); toast.success("Room list copied!"); }}>
                     <Copy className="w-3.5 h-3.5 mr-1" /> Copy Text
                   </Button>
                 </div>
-                <textarea readOnly value={allocModal.data.whatsappRoomText} className="w-full h-40 font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                <textarea readOnly value={allocModal.data.whatsappRoomText} className="w-full h-40 font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
               </div>
             </div>
           )}
