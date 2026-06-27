@@ -12,11 +12,14 @@ import { toast } from "sonner";
 import api from "@/services/api";
 import { opsService, type OpsDayItinerary, type OpsTripExpense, type OpsAccountingSummary, type OpsSeatConfig, type AutoAllocationResult } from "@/services/ops.service";
 
+const getTodayString = () => new Date().toISOString().split('T')[0];
+
 export default function OperationsHubPage() {
   const navigate = useNavigate();
   const [trips, setTrips] = useState<any[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
-  const [selectedDepartureDate, setSelectedDepartureDate] = useState<string>("");
+  const [selectedDepartureDate, setSelectedDepartureDate] = useState<string>(getTodayString());
+  const [availableDepartureDates, setAvailableDepartureDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Excel Grids Data
@@ -43,9 +46,32 @@ export default function OperationsHubPage() {
     }).catch(() => toast.error("Failed to load trips"));
   }, []);
 
+  // Sync available departure dates when trip changes
+  useEffect(() => {
+    if (!selectedTripId || trips.length === 0) return;
+    const trip = trips.find(t => t.id === selectedTripId);
+    let extractedDates: string[] = [];
+    if (trip && trip.availableDates) {
+      try {
+        const parsed = typeof trip.availableDates === 'string' ? JSON.parse(trip.availableDates) : trip.availableDates;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          extractedDates = parsed.map((d: any) => typeof d === 'string' ? d.split('T')[0] : (d.date || d.startDate || d.departureDate || '')).filter(Boolean);
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    setAvailableDepartureDates(extractedDates);
+    if (extractedDates.length > 0) {
+      setSelectedDepartureDate(extractedDates[0]);
+    } else {
+      setSelectedDepartureDate(getTodayString());
+    }
+  }, [selectedTripId, trips]);
+
   // 2. Load trip operational data (Departure Isolated)
   const loadTripOps = useCallback(async (tripId: string, depDate?: string) => {
-    if (!tripId) return;
+    if (!tripId || !depDate) return;
     setLoading(true);
     try {
       const [itinData, expData, sumData, seatData] = await Promise.all([
@@ -66,7 +92,9 @@ export default function OperationsHubPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedTripId) loadTripOps(selectedTripId, selectedDepartureDate);
+    if (selectedTripId && selectedDepartureDate) {
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    }
   }, [selectedTripId, selectedDepartureDate, loadTripOps]);
 
   // Handle Itinerary Checkbox Updates
