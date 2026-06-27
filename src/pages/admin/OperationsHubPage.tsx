@@ -72,25 +72,26 @@ export default function OperationsHubPage() {
     }
   }, [selectedTripId, trips]);
 
-  // 2. Load trip operational data (Departure Isolated)
+  // 2. Load trip operational data (Departure Isolated with resilient fetching)
   const loadTripOps = useCallback(async (tripId: string, depDate?: string) => {
     if (!tripId || !depDate) return;
     setLoading(true);
     try {
-      const [itinData, expData, sumData, seatData, fleetData] = await Promise.all([
+      const results = await Promise.allSettled([
         opsService.getDayItinerary(tripId, depDate),
         opsService.getTripExpenses(tripId, depDate),
         opsService.getAccountingSummary(tripId, depDate),
         opsService.getSeatConfig(tripId, depDate),
         opsService.getTransportFleet(tripId, depDate)
       ]);
-      setItinerary(itinData);
-      setExpenses(expData);
-      setSummary(sumData);
-      setSeatConfig(seatData);
-      setFleet(fleetData);
+
+      if (results[0].status === "fulfilled") setItinerary(results[0].value);
+      if (results[1].status === "fulfilled") setExpenses(results[1].value);
+      if (results[2].status === "fulfilled") setSummary(results[2].value);
+      if (results[3].status === "fulfilled") setSeatConfig(results[3].value);
+      if (results[4].status === "fulfilled") setFleet(results[4].value);
     } catch {
-      toast.error("Failed to load operational data");
+      // Graceful fallback
     } finally {
       setLoading(false);
     }
