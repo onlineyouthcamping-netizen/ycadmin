@@ -38,7 +38,15 @@ export default function OperationsHubPage() {
   const [showAddFleet, setShowAddFleet] = useState(false);
   const [fleetForm, setFleetForm] = useState({ vehicleType: "", capacity: "13", driverName: "", driverPhone: "", totalAmount: "", advancePaid: "", notes: "" });
   const [showAddRoom, setShowAddRoom] = useState(false);
-  const [roomForm, setRoomForm] = useState({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" });
+  const [roomRows, setRoomRows] = useState<Array<{
+    roomLabel: string;
+    roomType: string;
+    genderGroup: string;
+    capacity: string;
+    hotelName: string;
+    notes: string;
+    quantity: string;
+  }>>([{ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" }]);
 
   // Auto-Allocation Modal
   const [allocModal, setAllocModal] = useState<{ open: boolean; data: AutoAllocationResult | null; confirming: boolean }>({ open: false, data: null, confirming: false });
@@ -184,24 +192,32 @@ export default function OperationsHubPage() {
     }
   };
 
+  const handleRoomRowValueChange = (index: number, field: string, val: string) => {
+    const updated = [...roomRows];
+    updated[index] = { ...updated[index], [field]: val };
+    setRoomRows(updated);
+  };
+
   const handleSaveRoomRow = async () => {
-    if (!roomForm.roomLabel || !roomForm.capacity) { toast.error("Room label and capacity are required"); return; }
+    const invalid = roomRows.some(r => !r.roomLabel || !r.capacity);
+    if (invalid) { toast.error("Starting Room Label and Capacity are required for all rows"); return; }
     try {
-      await opsService.createRoomInventory(selectedTripId, {
-        roomLabel: roomForm.roomLabel,
-        roomType: roomForm.roomType,
-        genderGroup: roomForm.genderGroup,
-        capacity: parseInt(roomForm.capacity),
-        hotelName: roomForm.hotelName || undefined,
-        notes: roomForm.notes || undefined,
-        quantity: parseInt(roomForm.quantity) || 1
-      } as any, selectedDepartureDate);
-      toast.success("Room(s) added to inventory");
+      const payload = roomRows.map(r => ({
+        roomLabel: r.roomLabel,
+        roomType: r.roomType,
+        genderGroup: r.genderGroup,
+        capacity: parseInt(r.capacity) || 2,
+        hotelName: r.hotelName || undefined,
+        notes: r.notes || undefined,
+        quantity: parseInt(r.quantity) || 1
+      }));
+      await opsService.createRoomInventory(selectedTripId, { rooms: payload } as any, selectedDepartureDate);
+      toast.success("All room(s) added successfully!");
       setShowAddRoom(false);
-      setRoomForm({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" });
+      setRoomRows([{ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" }]);
       loadTripOps(selectedTripId, selectedDepartureDate);
     } catch {
-      toast.error("Failed to add room(s) to inventory");
+      toast.error("Failed to add room(s)");
     }
   };
 
@@ -933,70 +949,119 @@ export default function OperationsHubPage() {
 
       {/* Add Room Modal */}
       <Dialog open={showAddRoom} onOpenChange={setShowAddRoom}>
-        <DialogContent className="sm:max-w-md p-6 bg-white rounded-2xl shadow-2xl">
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto p-6 bg-white rounded-2xl shadow-2xl">
           <DialogHeader className="pb-3 border-b border-slate-100">
-            <DialogTitle className="text-base font-black text-slate-900 pr-8">Add Room to Inventory</DialogTitle>
-            <DialogDescription className="text-xs text-slate-500 mt-0.5">Configure hotel room capacity and type for this departure's room rules.</DialogDescription>
+            <DialogTitle className="text-base font-black text-slate-900 pr-8">Add Multiple Rooms to Inventory</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-0.5">Configure hotel room types, quantities, and properties to add in one batch.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3.5 py-3">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Starting Room Label *</label>
-                <Input value={roomForm.roomLabel} onChange={e => setRoomForm(p => ({ ...p, roomLabel: e.target.value }))} placeholder="e.g. Room 101" className="h-9 text-xs rounded-lg border-slate-200" />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Qty to Add *</label>
-                <Input type="number" min={1} max={50} value={roomForm.quantity} onChange={e => setRoomForm(p => ({ ...p, quantity: e.target.value }))} className="h-9 text-xs rounded-lg border-slate-200 font-mono font-bold text-center" />
-              </div>
+
+          <div className="py-4 space-y-4">
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200">
+                    <th className="p-2 text-left">Starting Label *</th>
+                    <th className="p-2 text-center w-20">Qty *</th>
+                    <th className="p-2 text-left w-36">Room Type</th>
+                    <th className="p-2 text-left w-36">Gender Group</th>
+                    <th className="p-2 text-center w-20">Capacity</th>
+                    <th className="p-2 text-left">Hotel Name</th>
+                    <th className="p-2 text-center w-12"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roomRows.map((row, idx) => (
+                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50">
+                      <td className="p-2">
+                        <Input
+                          value={row.roomLabel}
+                          onChange={e => handleRoomRowValueChange(idx, "roomLabel", e.target.value)}
+                          placeholder="e.g. Room 101"
+                          className="h-8 text-xs rounded border-slate-200"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={row.quantity}
+                          onChange={e => handleRoomRowValueChange(idx, "quantity", e.target.value)}
+                          className="h-8 text-xs text-center font-mono font-bold rounded border-slate-200"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <select
+                          value={row.roomType}
+                          onChange={e => handleRoomRowValueChange(idx, "roomType", e.target.value)}
+                          className="w-full h-8 text-xs bg-white border border-slate-200 rounded px-1.5 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+                        >
+                          <option value="TWIN">TWIN (2 share)</option>
+                          <option value="TRIPLE">TRIPLE (3 share)</option>
+                          <option value="QUAD">QUAD (4 share)</option>
+                          <option value="SINGLE">SINGLE</option>
+                          <option value="DORM">DORM</option>
+                        </select>
+                      </td>
+                      <td className="p-2">
+                        <select
+                          value={row.genderGroup}
+                          onChange={e => handleRoomRowValueChange(idx, "genderGroup", e.target.value)}
+                          className="w-full h-8 text-xs bg-white border border-slate-200 rounded px-1.5 focus:outline-none focus:ring-1 focus:ring-slate-400 font-medium"
+                        >
+                          <option value="BOYS">BOYS</option>
+                          <option value="GIRLS">GIRLS</option>
+                          <option value="GROUP">GROUP</option>
+                          <option value="COUPLE">COUPLE</option>
+                          <option value="FAMILY">FAMILY</option>
+                        </select>
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          type="number"
+                          value={row.capacity}
+                          onChange={e => handleRoomRowValueChange(idx, "capacity", e.target.value)}
+                          className="h-8 text-xs text-center font-mono font-bold rounded border-slate-200"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          value={row.hotelName}
+                          onChange={e => handleRoomRowValueChange(idx, "hotelName", e.target.value)}
+                          placeholder="e.g. Barpa Cottage"
+                          className="h-8 text-xs rounded border-slate-200"
+                        />
+                      </td>
+                      <td className="p-2 text-center">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={roomRows.length === 1}
+                          onClick={() => setRoomRows(roomRows.filter((_, i) => i !== idx))}
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Bed Capacity *</label>
-                <Input type="number" value={roomForm.capacity} onChange={e => setRoomForm(p => ({ ...p, capacity: e.target.value }))} placeholder="2, 3, 4, 1" className="h-9 text-xs rounded-lg border-slate-200 font-mono font-bold" />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Room Type *</label>
-                <select
-                  value={roomForm.roomType}
-                  onChange={e => setRoomForm(p => ({ ...p, roomType: e.target.value }))}
-                  className="w-full h-9 text-xs bg-white border border-slate-200 rounded-lg px-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/20 font-medium"
-                >
-                  <option value="TWIN">TWIN (2 sharing)</option>
-                  <option value="TRIPLE">TRIPLE (3 sharing)</option>
-                  <option value="QUAD">QUAD (4 sharing)</option>
-                  <option value="SINGLE">SINGLE</option>
-                  <option value="DORM">DORM</option>
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Gender Group *</label>
-                <select
-                  value={roomForm.genderGroup}
-                  onChange={e => setRoomForm(p => ({ ...p, genderGroup: e.target.value }))}
-                  className="w-full h-9 text-xs bg-white border border-slate-200 rounded-lg px-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900/20 font-medium"
-                >
-                  <option value="BOYS">BOYS</option>
-                  <option value="GIRLS">GIRLS</option>
-                  <option value="GROUP">GROUP (Co-ed Booking)</option>
-                  <option value="COUPLE">COUPLE</option>
-                  <option value="FAMILY">FAMILY</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Hotel Name</label>
-                <Input value={roomForm.hotelName} onChange={e => setRoomForm(p => ({ ...p, hotelName: e.target.value }))} placeholder="e.g. Barpa Cottage" className="h-9 text-xs rounded-lg border-slate-200" />
-              </div>
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Notes / Special Remarks</label>
-              <Input value={roomForm.notes} onChange={e => setRoomForm(p => ({ ...p, notes: e.target.value }))} placeholder="e.g. Balcony view / extra mattress" className="h-9 text-xs rounded-lg border-slate-200" />
-            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRoomRows([...roomRows, { roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" }])}
+              className="text-xs font-semibold h-8"
+            >
+              <Plus className="w-3 h-3 mr-1" /> Add Another Room Row
+            </Button>
           </div>
+
           <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
             <Button size="sm" variant="outline" onClick={() => setShowAddRoom(false)} className="text-xs font-semibold">Cancel</Button>
-            <Button size="sm" onClick={handleSaveRoomRow} className="text-xs bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-4 h-9">Save Room</Button>
+            <Button size="sm" onClick={handleSaveRoomRow} className="text-xs bg-emerald-950 hover:bg-emerald-900 text-white font-bold px-4 h-9">Save Rooms</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
