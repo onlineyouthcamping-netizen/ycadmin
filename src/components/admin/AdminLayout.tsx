@@ -19,6 +19,7 @@ import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
+  Compass,
   Map,
   CalendarCheck,
   MessageSquare,
@@ -72,6 +73,7 @@ const navGroups = [
       { title: "Verification Queue", url: "/admin/verification-queue", icon: ClipboardCheck, permission: "bookings.view" },
       { title: "Ticket Approvals", url: "/admin/ticket-approvals", icon: Train, permission: "tickets.approve" },
       { title: "Accounting", url: "/admin/accounting", icon: Banknote, permission: "accounting.view" },
+      { title: "Operations", url: "/admin/operations", icon: Compass, permission: "ops.view" },
       { title: "Quotations", url: "/admin/quotations", icon: FileText, badge: "NEW", permission: "quotations.view" },
       { title: "Inquiries", url: "/admin/inquiries", icon: MessageSquare, badge: "NEW", permission: "inquiries.view" },
     ]
