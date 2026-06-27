@@ -96,4 +96,34 @@ export const bookingVerificationService = {
       throw err;
     }
   },
+
+  async getTicketTemplates(): Promise<any> {
+    try {
+      const res = await api.get(`/booking-verifications/templates`);
+      return res.data.data;
+    } catch (err) {
+      console.error("🔥 Ticket templates fetch failed:", err);
+      throw err;
+    }
+  },
+
+  async bulkUpdateTickets(data: { bookingIds: string[]; action: string; notes?: string; pnr?: string; ticketDetails?: string }): Promise<any> {
+    try {
+      const res = await api.post(`/booking-verifications/bulk-update`, data);
+      return res.data.data;
+    } catch (err) {
+      console.error("🔥 Bulk ticket update failed:", err);
+      throw err;
+    }
+  },
+
+  async triggerTicketAlerts(data?: { bookingIds?: string[] }): Promise<any> {
+    try {
+      const res = await api.post(`/booking-verifications/alerts`, data || {});
+      return res.data.data;
+    } catch (err) {
+      console.error("🔥 Ticket alert trigger failed:", err);
+      throw err;
+    }
+  },
 };

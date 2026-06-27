@@ -73,6 +73,11 @@ export default function BookingLinksPage() {
     headerTitle: "Talk That Damn Point",
     headerSubtitle: "Join the wait list for Before Monday Begins",
     expiresAt: "",
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    travelerCount: 1,
+    internalNote: "",
   });
 
   const selectedTrip = useMemo(() => trips.find((t) => t.id === formData.tripId) || null, [trips, formData.tripId]);
@@ -155,6 +160,11 @@ export default function BookingLinksPage() {
         headerTitle: formData.headerTitle || undefined,
         headerSubtitle: formData.headerSubtitle || undefined,
         expiresAt: formData.expiresAt ? formData.expiresAt : null,
+        customerName: formData.customerName || undefined,
+        customerPhone: formData.customerPhone || undefined,
+        customerEmail: formData.customerEmail || undefined,
+        travelerCount: Number(formData.travelerCount) || 1,
+        internalNote: formData.internalNote || undefined,
       });
 
       toast.success("Booking link generated");
@@ -302,6 +312,14 @@ export default function BookingLinksPage() {
                   Completed: <span className="text-foreground">{link.completedCount}</span>
                 </span>
               </div>
+
+              {(link as any).customerName || (link as any).customerPhone || (link as any).customerEmail ? (
+                <div className="rounded-xl border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
+                  {(link as any).customerName ? <p><span className="font-bold text-foreground">Customer:</span> {(link as any).customerName}</p> : null}
+                  {(link as any).customerPhone ? <p><span className="font-bold text-foreground">Phone:</span> {(link as any).customerPhone}</p> : null}
+                  {(link as any).customerEmail ? <p><span className="font-bold text-foreground">Email:</span> {(link as any).customerEmail}</p> : null}
+                </div>
+              ) : null}
 
               <div className="flex gap-2">
                 {link.shareUrl && (
@@ -472,6 +490,73 @@ export default function BookingLinksPage() {
               />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  Customer Name
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Optional"
+                  value={formData.customerName}
+                  onChange={(e) => setFormData((p) => ({ ...p, customerName: e.target.value }))}
+                  className="h-12 rounded-xl font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  Customer Phone
+                </label>
+                <Input
+                  type="tel"
+                  placeholder="Optional"
+                  value={formData.customerPhone}
+                  onChange={(e) => setFormData((p) => ({ ...p, customerPhone: e.target.value }))}
+                  className="h-12 rounded-xl font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  Customer Email
+                </label>
+                <Input
+                  type="email"
+                  placeholder="Optional"
+                  value={formData.customerEmail}
+                  onChange={(e) => setFormData((p) => ({ ...p, customerEmail: e.target.value }))}
+                  className="h-12 rounded-xl font-bold"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  Traveler Count
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={formData.travelerCount}
+                  onChange={(e) => setFormData((p) => ({ ...p, travelerCount: Number(e.target.value) || 1 }))}
+                  className="h-12 rounded-xl font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Internal Note
+              </label>
+              <Input
+                type="text"
+                placeholder="Optional"
+                value={formData.internalNote}
+                onChange={(e) => setFormData((p) => ({ ...p, internalNote: e.target.value }))}
+                className="h-12 rounded-xl font-bold"
+              />
+            </div>
+
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Event Time (shown on booking page)
@@ -573,10 +658,15 @@ export default function BookingLinksPage() {
               <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
                 Share Message (WhatsApp / SMS)
               </label>
+              <label htmlFor="share-message" className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                Share Message (WhatsApp / SMS)
+              </label>
               <textarea
+                id="share-message"
                 value={shareMsg}
                 onChange={(e) => setShareMsg(e.target.value)}
                 rows={7}
+                placeholder="Share your booking link"
                 className="w-full rounded-xl border-2 border-border p-4 text-sm font-medium bg-muted/20 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>

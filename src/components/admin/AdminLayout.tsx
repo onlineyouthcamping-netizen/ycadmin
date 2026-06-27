@@ -45,7 +45,8 @@ import {
   FilePlus,
   HelpCircle,
   Shield,
-  ClipboardCheck
+  ClipboardCheck,
+  Train
 } from "lucide-react";
 import { AdminContainer } from "@/components/layout";
 import { hasPermission } from "@/lib/permissions";
@@ -69,6 +70,7 @@ const navGroups = [
       { title: "Dashboard", url: "/admin", icon: LayoutDashboard, permission: "dashboard.view" },
       { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck, permission: "bookings.view" },
       { title: "Verification Queue", url: "/admin/verification-queue", icon: ClipboardCheck, permission: "bookings.view" },
+      { title: "Ticket Approvals", url: "/admin/ticket-approvals", icon: Train, permission: "tickets.approve" },
       { title: "Quotations", url: "/admin/quotations", icon: FileText, badge: "NEW", permission: "quotations.view" },
       { title: "Inquiries", url: "/admin/inquiries", icon: MessageSquare, badge: "NEW", permission: "inquiries.view" },
     ]
@@ -113,6 +115,7 @@ const navGroups = [
     items: [
       { title: "User Management", url: "/admin/users", icon: Users, permission: "users.manage" },
       { title: "Access Control", url: "/admin/access-control", icon: Shield, permission: "roles.manage" },
+      { title: "Train Templates", url: "/admin/train-templates", icon: Train, permission: "tickets.templates.manage" },
       { title: "Audit Logs", url: "/admin/audit-logs", icon: FileText, permission: "audit.view" },
       { title: "System Settings", url: "/admin/settings", icon: Settings, permission: "settings.view" },
     ]

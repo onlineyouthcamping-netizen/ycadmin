@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { X, CheckCircle2, XCircle, AlertCircle, Clock, Send, Train, FileText, User, ChevronRight } from "lucide-react";
+import { X, CheckCircle2, XCircle, AlertCircle, Clock, Send, Train, FileText, User, ChevronRight, Plus, Eye, History, AlertTriangle, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
+import { trainTicketService, type TrainTicket, type TrainTemplate } from "@/services/trainTicket.service";
 import { useAuthStore } from "@/store/auth.store";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import TrainTicketsPanel from "./TrainTicketsPanel";
 
 // ── STATUS BADGE COLORS ──
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
@@ -17,6 +20,12 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   REJECTED:               { bg: "bg-red-50",     text: "text-red-600",    label: "Rejected" },
   ISSUED:                 { bg: "bg-blue-50",    text: "text-blue-700",   label: "Issued" },
   PENDING:                { bg: "bg-amber-50",   text: "text-amber-700",  label: "Pending" },
+  BOOKED:                 { bg: "bg-emerald-50", text: "text-emerald-700", label: "Booked" },
+  WAITLISTED:             { bg: "bg-indigo-50",  text: "text-indigo-700", label: "Waitlisted" },
+  CONFIRMED:              { bg: "bg-teal-50",    text: "text-teal-700",   label: "Confirmed" },
+  RAC:                    { bg: "bg-pink-50",    text: "text-pink-700",   label: "RAC" },
+  SELF_BOOKED:            { bg: "bg-purple-50",  text: "text-purple-700", label: "Self Booked" },
+  CANCELLED:              { bg: "bg-red-50",     text: "text-red-700",    label: "Cancelled" },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -78,15 +87,44 @@ export default function VerificationDetailsPanel({
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [verificationData, setVerificationData] = useState<any>(null);
-  const [trainTicket, setTrainTicket] = useState<any>(null);
+  const [trainTickets, setTrainTickets] = useState<TrainTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<TrainTicket | null>(null);
+  const [templates, setTemplates] = useState<TrainTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [pnrInput, setPnrInput] = useState("");
-  const [ticketDetailsInput, setTicketDetailsInput] = useState("");
   const [activeTab, setActiveTab] = useState<"verification" | "ticket">("verification");
 
-  const canPerformActions = admin?.role && ["superadmin", "admin", "BOOKING_VERIFIER"].includes(admin.role);
+  // Form states for adding/editing ticket
+  const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    travelerName: "",
+    passengerReference: "",
+    pnr: "",
+    trainName: "",
+    trainNumber: "",
+    journeyDate: "",
+    sourceStation: "",
+    destinationStation: "",
+    coach: "",
+    seatNumber: "",
+    berthType: "",
+    ticketAmount: "",
+    amountMode: "PAYMENT_LINK",
+    internalNote: "",
+    ticketBookingPerson: "",
+    ticketStatus: "PENDING" as any,
+  });
+
+  // Reopen and Cancel dialog states
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelRefund, setCancelRefund] = useState("0");
+
+  const canPerformActions = admin?.role && ["superadmin", "admin", "operations", "BOOKING_VERIFIER"].includes(admin.role);
+  const isSales = admin?.role === "sales";
 
   useEffect(() => {
     if (open && bookingId) {
@@ -97,12 +135,30 @@ export default function VerificationDetailsPanel({
   const loadData = async () => {
     setLoading(true);
     try {
-      const [vData, tData] = await Promise.allSettled([
+      const [vRes, ticketsRes, templatesRes] = await Promise.allSettled([
         bookingVerificationService.getVerificationStatus(bookingId),
-        bookingVerificationService.getTrainTicket(bookingId),
+        trainTicketService.getTicketsByBooking(bookingId),
+        trainTicketService.getTemplates(),
       ]);
-      if (vData.status === "fulfilled") setVerificationData(vData.value);
-      if (tData.status === "fulfilled") setTrainTicket(tData.value);
+
+      if (vRes.status === "fulfilled") {
+        setVerificationData(vRes.value);
+      }
+      if (ticketsRes.status === "fulfilled") {
+        const list = ticketsRes.value || [];
+        setTrainTickets(list);
+        if (list.length > 0) {
+          // Keep previous selection if still exists
+          const currentId = selectedTicket?.id;
+          const match = list.find((t) => t.id === currentId);
+          setSelectedTicket(match || list[0]);
+        } else {
+          setSelectedTicket(null);
+        }
+      }
+      if (templatesRes.status === "fulfilled") {
+        setTemplates(templatesRes.value || []);
+      }
     } catch (err) {
       console.error("Failed to load verification data:", err);
     }
@@ -115,10 +171,9 @@ export default function VerificationDetailsPanel({
     try {
       await bookingVerificationService.performVerificationAction(bookingId, {
         action,
-        notes: notes || undefined,
+        notes: formData.internalNote || undefined,
       });
-      toast.success(`Booking ${action.toLowerCase().replace(/_/g, " ")} successfully`);
-      setNotes("");
+      toast.success(`Booking verification: ${action.toLowerCase().replace(/_/g, " ")}`);
       await loadData();
       onRefresh?.();
     } catch (err: any) {
@@ -127,26 +182,205 @@ export default function VerificationDetailsPanel({
     setActionLoading(false);
   };
 
-  const handleTicketAction = async (action: string) => {
+  // ── TICKET OPERATION HANDLERS ──
+
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!bookingId) return;
     setActionLoading(true);
     try {
-      await bookingVerificationService.performTicketAction(bookingId, {
-        action,
-        notes: notes || undefined,
-        pnr: pnrInput || undefined,
-        ticketDetails: ticketDetailsInput || undefined,
+      await trainTicketService.createTicket(bookingId, {
+        ...formData,
+        ticketAmount: formData.ticketAmount ? parseFloat(formData.ticketAmount) : 0,
       });
-      toast.success(`Ticket ${action.toLowerCase().replace(/_/g, " ")} successfully`);
-      setNotes("");
-      setPnrInput("");
-      setTicketDetailsInput("");
+      toast.success("Traveler ticket created successfully");
+      setShowForm(false);
       await loadData();
       onRefresh?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || `Failed to ${action.toLowerCase()}`);
+      toast.error(err?.response?.data?.message || "Failed to create ticket");
     }
     setActionLoading(false);
+  };
+
+  const handleUpdateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket) return;
+    setActionLoading(true);
+    try {
+      await trainTicketService.updateTicket(selectedTicket.id, {
+        ...formData,
+        ticketAmount: formData.ticketAmount ? parseFloat(formData.ticketAmount) : 0,
+      });
+      toast.success("Traveler ticket updated successfully");
+      setShowForm(false);
+      setIsEditing(false);
+      await loadData();
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update ticket");
+    }
+    setActionLoading(false);
+  };
+
+  const handleTicketSubmit = async (ticketId: string) => {
+    setActionLoading(true);
+    try {
+      await trainTicketService.submitTicket(ticketId);
+      toast.success("Ticket submitted for approval");
+      await loadData();
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to submit ticket");
+    }
+    setActionLoading(false);
+  };
+
+  const handleTicketApprove = async (ticketId: string) => {
+    setActionLoading(true);
+    try {
+      await trainTicketService.approveTicket(ticketId);
+      toast.success("Ticket approved and locked");
+      await loadData();
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to approve ticket");
+    }
+    setActionLoading(false);
+  };
+
+  const handleTicketReject = async (ticketId: string) => {
+    const reason = prompt("Enter rejection reason:");
+    if (reason === null) return;
+    setActionLoading(true);
+    try {
+      await trainTicketService.rejectTicket(ticketId, reason);
+      toast.success("Ticket rejected");
+      await loadData();
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to reject ticket");
+    }
+    setActionLoading(false);
+  };
+
+  const handleTicketReopen = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket || !reopenReason.trim()) return;
+    setActionLoading(true);
+    try {
+      await trainTicketService.reopenTicket(selectedTicket.id, reopenReason);
+      toast.success("Ticket reopened and unlocked");
+      setReopenOpen(false);
+      setReopenReason("");
+      await loadData();
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to reopen ticket");
+    }
+    setActionLoading(false);
+  };
+
+  const handleTicketCancel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket || !cancelReason.trim()) return;
+    setActionLoading(true);
+    try {
+      await trainTicketService.cancelTicket(selectedTicket.id, {
+        reason: cancelReason,
+        refundAmount: parseFloat(cancelRefund) || 0,
+      });
+      toast.success("Ticket cancelled successfully");
+      setCancelOpen(false);
+      setCancelReason("");
+      setCancelRefund("0");
+      await loadData();
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to cancel ticket");
+    }
+    setActionLoading(false);
+  };
+
+  const handleTicketRebook = async (ticketId: string) => {
+    if (!confirm("Are you sure you want to rebook this ticket? It will create a new superseding ticket.")) return;
+    setActionLoading(true);
+    try {
+      await trainTicketService.rebookTicket(ticketId);
+      toast.success("Rebooking successful. New ticket created.");
+      await loadData();
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to rebook ticket");
+    }
+    setActionLoading(false);
+  };
+
+  const applyTemplate = (template: TrainTemplate) => {
+    setFormData((prev) => ({
+      ...prev,
+      trainName: template.trainName || prev.trainName,
+      trainNumber: template.trainNumber || prev.trainNumber,
+      sourceStation: template.source || prev.sourceStation,
+      destinationStation: template.destination || prev.destinationStation,
+      coach: template.defaultCoach || prev.coach,
+      berthType: template.defaultClass || prev.berthType,
+      journeyDate: template.journeyDate ? template.journeyDate.slice(0, 10) : prev.journeyDate,
+    }));
+    toast.success("Template parameters prefilled!");
+  };
+
+  const openEditForm = (t: TrainTicket) => {
+    setFormData({
+      travelerName: t.travelerName || "",
+      passengerReference: t.passengerReference || "",
+      pnr: t.pnr || "",
+      trainName: t.trainName || "",
+      trainNumber: t.trainNumber || "",
+      journeyDate: t.journeyDate ? t.journeyDate.slice(0, 10) : "",
+      sourceStation: t.sourceStation || "",
+      destinationStation: t.destinationStation || "",
+      coach: t.coach || "",
+      seatNumber: t.seatNumber || "",
+      berthType: t.berthType || "",
+      ticketAmount: t.ticketAmount ? String(t.ticketAmount) : "",
+      amountMode: t.amountMode || "PAYMENT_LINK",
+      internalNote: t.internalNote || "",
+      ticketBookingPerson: t.ticketBookingPerson || "",
+      ticketStatus: t.ticketStatus,
+    });
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
+  const openCreateForm = () => {
+    // Prefill name from booking passengers if possible
+    let defaultName = "";
+    if (booking?.passengers && Array.isArray(booking.passengers)) {
+      const existingNames = trainTickets.map(t => t.travelerName);
+      const remaining = booking.passengers.find((p: any) => p && p.name && !existingNames.includes(p.name));
+      if (remaining) defaultName = remaining.name;
+    }
+    setFormData({
+      travelerName: defaultName,
+      passengerReference: "",
+      pnr: "",
+      trainName: "",
+      trainNumber: "",
+      journeyDate: "",
+      sourceStation: "",
+      destinationStation: "",
+      coach: "",
+      seatNumber: "",
+      berthType: "",
+      ticketAmount: "",
+      amountMode: "PAYMENT_LINK",
+      internalNote: "",
+      ticketBookingPerson: "",
+      ticketStatus: "PENDING",
+    });
+    setIsEditing(false);
+    setShowForm(true);
   };
 
   if (!open) return null;
@@ -154,342 +388,126 @@ export default function VerificationDetailsPanel({
   return (
     <>
       {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black/40 z-40 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/40 z-40 transition-opacity" onClick={onClose} />
 
       {/* Panel */}
-      <div
-        ref={panelRef}
-        className="fixed right-0 top-0 h-full w-full max-w-[520px] bg-white z-50 shadow-2xl flex flex-col overflow-hidden"
-        style={{ animation: "slideInRight 0.25s ease-out" }}
-      >
+      <div ref={panelRef} className="fixed right-0 top-0 h-full w-full max-w-[540px] bg-white z-50 shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 tracking-tight">Verification Details</h2>
-            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-              {booking?.bookingId || bookingId}
-            </p>
+            <h2 className="text-sm font-bold text-slate-900 tracking-tight">Verification & Tickets</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">{booking?.bookingId || bookingId}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
-          >
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
             <X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto">
-            {/* Booking Summary Card */}
-            <div className="px-6 py-5 border-b border-slate-100">
-              <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-slate-400" />
-                    <span className="text-[12px] font-bold text-slate-800">
-                      {booking?.fullName || booking?.name || "—"}
-                    </span>
-                  </div>
-                  <StatusBadge status={verificationData?.verificationStatus || "DRAFT"} />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <InfoCell label="Trip" value={booking?.tripName || "—"} />
-                  <InfoCell label="Amount" value={`₹${(booking?.totalAmount || 0).toLocaleString()}`} />
-                  <InfoCell label="Travelers" value={booking?.numberOfTravelers || booking?.passengers?.persons?.length || booking?.passengers?.length || "—"} />
-                  <InfoCell label="Departure" value={booking?.departureDate ? new Date(booking.departureDate).toLocaleDateString() : "—"} />
-                  <InfoCell label="Train Class" value={booking?.trainClass || booking?.passengers?.details?.trainClass || "—"} />
-                  <InfoCell label="Payment" value={booking?.paymentStatus || "—"} />
-                </div>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Booking Summary */}
+            <div className="px-6 py-4 border-b border-slate-100 shrink-0 bg-slate-50/30">
+              <div className="flex items-center justify-between text-[11px] text-slate-600">
+                <span className="font-bold text-slate-800 flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-400" /> {booking?.fullName || booking?.name}</span>
+                <span>Trip: <span className="font-semibold text-slate-700">{booking?.tripName}</span></span>
               </div>
             </div>
 
             {/* Tab Switcher */}
-            <div className="px-6 pt-4 flex gap-1">
+            <div className="px-6 pt-3 flex gap-1 border-b border-slate-100 shrink-0">
               <button
-                onClick={() => setActiveTab("verification")}
+                onClick={() => { setActiveTab("verification"); setShowForm(false); }}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
-                  activeTab === "verification"
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  "px-4 py-2 border-b-2 text-[10px] font-bold uppercase tracking-wider transition-all",
+                  activeTab === "verification" ? "border-slate-900 text-slate-900" : "border-transparent text-slate-400"
                 )}
               >
-                Verification
+                Verification status
               </button>
               <button
-                onClick={() => setActiveTab("ticket")}
+                onClick={() => { setActiveTab("ticket"); setShowForm(false); }}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
-                  activeTab === "ticket"
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  "px-4 py-2 border-b-2 text-[10px] font-bold uppercase tracking-wider transition-all",
+                  activeTab === "ticket" ? "border-slate-900 text-slate-900" : "border-transparent text-slate-400"
                 )}
               >
-                <Train className="w-3 h-3 inline mr-1" />
-                Train Ticket
+                Traveler Tickets ({trainTickets.length})
               </button>
             </div>
 
-            {activeTab === "verification" && (
-              <div className="px-6 py-4 space-y-5">
-                {/* Checklist */}
-                {verificationData?.checklist && verificationData.checklist.length > 0 && (
-                  <div>
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-                      Verification Checklist
-                    </h3>
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto">
+              {activeTab === "verification" && (
+                <div className="p-6 space-y-6">
+                  {/* Checklist */}
+                  {verificationData?.checklist && (
                     <div className="space-y-2">
-                      {verificationData.checklist.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-50">
-                          <div className={cn(
-                            "w-5 h-5 rounded-md flex items-center justify-center shrink-0",
-                            item.checked ? "bg-emerald-100" : "bg-slate-200"
-                          )}>
-                            {item.checked ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <div className="w-2.5 h-2.5 rounded-sm bg-slate-300" />
-                            )}
+                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Verification Checklist</h3>
+                      <div className="bg-slate-50 rounded-xl p-3 space-y-2">
+                        {Object.entries(verificationData.checklist).map(([key, val]: any) => (
+                          <div key={key} className="flex items-center gap-2.5 text-[11px] text-slate-700">
+                            <CheckCircle2 className={cn("w-4 h-4", val ? "text-emerald-500" : "text-slate-200")} />
+                            <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                           </div>
-                          <span className={cn(
-                            "text-[11px] font-medium",
-                            item.checked ? "text-slate-700" : "text-slate-400"
-                          )}>
-                            {item.label || item.name}
-                          </span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Timeline / Logs */}
-                <div>
-                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-                    Activity Timeline
-                  </h3>
-                  {verificationData?.logs && verificationData.logs.length > 0 ? (
-                    <div>
-                      {verificationData.logs.map((log: any, idx: number) => (
-                        <TimelineItem
-                          key={idx}
-                          log={log}
-                          isLast={idx === verificationData.logs.length - 1}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 italic">No activity logs yet</p>
                   )}
+
+                  {/* Verification Actions */}
+                  {canPerformActions && (
+                    <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Perform Verification Action</h3>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleVerificationAction("VERIFY")} className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider">
+                          Verify & Approve
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleVerificationAction("REQUEST_CHANGES")} className="border-orange-200 text-orange-600 hover:bg-orange-50 text-[10px] font-bold uppercase tracking-wider">
+                          Request Changes
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Logs Timeline */}
+                  <div className="space-y-4">
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Verification Timeline</h3>
+                    {verificationData?.logs && verificationData.logs.length > 0 ? (
+                      <div className="space-y-3 pl-1">
+                        {verificationData.logs.map((log: any, idx: number) => (
+                          <TimelineItem key={idx} log={log} isLast={idx === verificationData.logs.length - 1} />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 italic">No verification history logs.</p>
+                    )}
+                  </div>
                 </div>
+              )}
 
-                {/* Notes Input */}
-                {canPerformActions && (
-                  <div>
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                      Notes
-                    </h3>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add notes for this action..."
-                      className="w-full h-20 rounded-lg border border-slate-200 p-3 text-[11px] text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                    />
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                {canPerformActions && verificationData?.verificationStatus !== "VERIFIED" && verificationData?.verificationStatus !== "REJECTED" && (
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      onClick={() => handleVerificationAction("VERIFY")}
-                      disabled={actionLoading}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider h-9 px-4 rounded-lg"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                      Verify
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleVerificationAction("REQUEST_CHANGES")}
-                      disabled={actionLoading}
-                      className="border-orange-300 text-orange-600 hover:bg-orange-50 text-[10px] font-bold uppercase tracking-wider h-9 px-4 rounded-lg"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5 mr-1.5" />
-                      Request Changes
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleVerificationAction("REJECT")}
-                      disabled={actionLoading}
-                      className="border-red-300 text-red-600 hover:bg-red-50 text-[10px] font-bold uppercase tracking-wider h-9 px-4 rounded-lg"
-                    >
-                      <XCircle className="w-3.5 h-3.5 mr-1.5" />
-                      Reject
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "ticket" && (
-              <div className="px-6 py-4 space-y-5">
-                {trainTicket ? (
-                  <>
-                    {/* Ticket Details */}
-                    <div>
-                      <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-                        Ticket Information
-                      </h3>
-                      <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-bold text-slate-700">
-                            <Train className="w-3.5 h-3.5 inline mr-1.5 text-blue-500" />
-                            {trainTicket.trainName || trainTicket.trainNo || "Train Ticket"}
-                          </span>
-                          <StatusBadge status={trainTicket.status || "PENDING"} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <InfoCell label="PNR" value={trainTicket.pnr || "—"} />
-                          <InfoCell label="Train No" value={trainTicket.trainNo || "—"} />
-                          <InfoCell label="From" value={trainTicket.from || "—"} />
-                          <InfoCell label="To" value={trainTicket.to || "—"} />
-                          <InfoCell label="Coach" value={trainTicket.coach || "—"} />
-                          <InfoCell label="Seat" value={trainTicket.seat || "—"} />
-                          <InfoCell label="Departure" value={trainTicket.departureDate ? new Date(trainTicket.departureDate).toLocaleDateString() : "—"} />
-                          <InfoCell label="Status" value={trainTicket.status || "—"} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Traveller List */}
-                    {trainTicket.travellers && trainTicket.travellers.length > 0 && (
-                      <div>
-                        <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-                          Travellers on Ticket
-                        </h3>
-                        <div className="space-y-1.5">
-                          {trainTicket.travellers.map((t: any, idx: number) => (
-                            <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 text-[11px]">
-                              <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500">
-                                {idx + 1}
-                              </div>
-                              <span className="font-medium text-slate-700">{t.name}</span>
-                              {t.age && <span className="text-slate-400">· {t.age}y</span>}
-                              {t.seat && <span className="text-slate-400 ml-auto">Seat: {t.seat}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Ticket Actions */}
-                    {canPerformActions && (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                            PNR Number
-                          </label>
-                          <Input
-                            value={pnrInput}
-                            onChange={(e) => setPnrInput(e.target.value)}
-                            placeholder="Enter PNR..."
-                            className="h-9 text-[11px] rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                            Notes
-                          </label>
-                          <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Ticket notes..."
-                            className="w-full h-16 rounded-lg border border-slate-200 p-3 text-[11px] text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                          />
-                        </div>
-                        <div className="flex gap-2 flex-wrap">
-                          <Button
-                            size="sm"
-                            onClick={() => handleTicketAction("APPROVE")}
-                            disabled={actionLoading}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider h-9 px-4 rounded-lg"
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleTicketAction("REQUEST_CHANGES")}
-                            disabled={actionLoading}
-                            className="border-orange-300 text-orange-600 hover:bg-orange-50 text-[10px] font-bold uppercase tracking-wider h-9 px-4 rounded-lg"
-                          >
-                            Request Changes
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleTicketAction("REJECT")}
-                            disabled={actionLoading}
-                            className="border-red-300 text-red-600 hover:bg-red-50 text-[10px] font-bold uppercase tracking-wider h-9 px-4 rounded-lg"
-                          >
-                            Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleTicketAction("MARK_ISSUED")}
-                            disabled={actionLoading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider h-9 px-4 rounded-lg"
-                          >
-                            <Train className="w-3.5 h-3.5 mr-1.5" />
-                            Mark Issued
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-                      <Train className="w-6 h-6 text-slate-300" />
-                    </div>
-                    <p className="text-[12px] font-semibold text-slate-500">No train ticket required</p>
-                    <p className="text-[10px] text-slate-400 mt-1">This booking does not have an associated train ticket</p>
-                  </div>
-                )}
-              </div>
-            )}
+              {activeTab === "ticket" && (
+                <div className="p-6">
+                  <TrainTicketsPanel bookingId={bookingId} booking={booking} />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
-
-      {/* Slide-in animation */}
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
     </>
   );
 }
 
-// ── HELPER COMPONENT ──
+// ── HELPER INFO CELL ──
 function InfoCell({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
       <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className="text-[11px] font-semibold text-slate-700 mt-0.5">{String(value)}</p>
+      <p className="text-[11px] font-semibold text-slate-700 mt-0.5 truncate">{String(value)}</p>
     </div>
   );
 }

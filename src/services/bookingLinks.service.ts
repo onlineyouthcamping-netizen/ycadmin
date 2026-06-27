@@ -32,6 +32,11 @@ export const bookingLinksService = {
     headerTitle?: string; // e.g. "Talk That Damn Point"
     headerSubtitle?: string; // e.g. "Join the wait list for Before Monday Begins"
     expiresAt?: string | null; // optional
+    customerName?: string;
+    customerPhone?: string;
+    customerEmail?: string;
+    travelerCount?: number;
+    internalNote?: string;
   }): Promise<BookingLinkRecord> {
     const res = await api.post("/booking-links", data);
     return res.data.data;

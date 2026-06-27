@@ -54,6 +54,8 @@ const BillingPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then
 
 const LiveTripOperationsPage = lazy(() => import("./pages/admin/LiveTripOperationsPage.tsx"));
 const VerificationQueuePage = lazy(() => import("./pages/admin/VerificationQueuePage.tsx"));
+const TrainTemplatesPage = lazy(() => import("./pages/admin/TrainTemplatesPage.tsx"));
+const TicketApprovalsPage = lazy(() => import("./pages/admin/TicketApprovalsPage.tsx"));
 
 import { AdminLayout } from "./components/admin/AdminLayout.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
@@ -94,6 +96,8 @@ const App = () => (
               <Route path="/admin/trips" element={<AdminRoute><TripsPage /></AdminRoute>} />
               <Route path="/admin/bookings" element={<AdminRoute><BookingsPage /></AdminRoute>} />
               <Route path="/admin/verification-queue" element={<AdminRoute><VerificationQueuePage /></AdminRoute>} />
+              <Route path="/admin/train-templates" element={<AdminRoute><TrainTemplatesPage /></AdminRoute>} />
+              <Route path="/admin/ticket-approvals" element={<AdminRoute><TicketApprovalsPage /></AdminRoute>} />
               <Route path="/admin/collections" element={<AdminRoute><CollectionsPage /></AdminRoute>} />
               <Route path="/admin/promotions" element={<AdminRoute><PromotionsPage /></AdminRoute>} />
               <Route path="/admin/blogs" element={<AdminRoute><BlogsPage /></AdminRoute>} />
