@@ -71,6 +71,7 @@ const navGroups = [
       { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck, permission: "bookings.view" },
       { title: "Verification Queue", url: "/admin/verification-queue", icon: ClipboardCheck, permission: "bookings.view" },
       { title: "Ticket Approvals", url: "/admin/ticket-approvals", icon: Train, permission: "tickets.approve" },
+      { title: "Accounting", url: "/admin/accounting", icon: Banknote, permission: "accounting.view" },
       { title: "Quotations", url: "/admin/quotations", icon: FileText, badge: "NEW", permission: "quotations.view" },
       { title: "Inquiries", url: "/admin/inquiries", icon: MessageSquare, badge: "NEW", permission: "inquiries.view" },
     ]

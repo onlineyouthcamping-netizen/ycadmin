@@ -56,6 +56,7 @@ const LiveTripOperationsPage = lazy(() => import("./pages/admin/LiveTripOperatio
 const VerificationQueuePage = lazy(() => import("./pages/admin/VerificationQueuePage.tsx"));
 const TrainTemplatesPage = lazy(() => import("./pages/admin/TrainTemplatesPage.tsx"));
 const TicketApprovalsPage = lazy(() => import("./pages/admin/TicketApprovalsPage.tsx"));
+const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
 
 import { AdminLayout } from "./components/admin/AdminLayout.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
@@ -138,6 +139,7 @@ const App = () => (
               <Route path="/admin/live-operations" element={<AdminRoute><LiveTripOperationsPage /></AdminRoute>} />
               <Route path="/admin/guide-portal" element={<AdminRoute><GuideDashboardPage /></AdminRoute>} />
               <Route path="/admin/guide-portal/trip/:assignmentId" element={<AdminRoute><GuideTripDetailPage /></AdminRoute>} />
+              <Route path="/admin/accounting" element={<AdminRoute><AccountingPage /></AdminRoute>} />
               <Route path="*" element={<Suspense fallback={<LoadingUI />}><NotFound /></Suspense>} />
             </Routes>
           </BrowserRouter>
