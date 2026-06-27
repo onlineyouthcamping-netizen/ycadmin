@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, CheckCircle2, XCircle, AlertCircle, Clock, Send, Train, FileText, User, ChevronRight, Plus, Eye, History, AlertTriangle, ArrowRightLeft } from "lucide-react";
+import { X, CheckCircle2, XCircle, AlertCircle, Clock, Send, Train, FileText, User, ChevronRight, Plus, Eye, History, AlertTriangle, ArrowRightLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
