@@ -915,7 +915,7 @@ export default function OperationsHubPage() {
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Auto-Allocation Engine Proposals</h3>
               <p className="text-[10px] text-slate-400 font-medium mt-0.5">Generate seat shuffle and room groups matching traveler genders.</p>
             </div>
-            <Button size="sm" onClick={handleExecuteAutoAllocation} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold h-9">
+            <Button size="sm" onClick={handleTriggerAutoAllocate} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold h-9">
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Run Auto-Allocation
             </Button>
           </div>
