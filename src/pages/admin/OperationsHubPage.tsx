@@ -179,6 +179,38 @@ export default function OperationsHubPage() {
     }
   };
 
+  const handleSeatNumberChange = (index: number, newSeatStr: string) => {
+    if (!allocModal.data) return;
+    const newSeat = parseInt(newSeatStr) || 0;
+    const updatedAllocations = [...allocModal.data.vehicleAllocations];
+    updatedAllocations[index] = { ...updatedAllocations[index], seatNumber: newSeat };
+
+    let newTempoText = `🚌 *TEMPO & VEHICLE ALLOCATION LIST*\n\n`;
+    const fleetMap: Record<string, typeof updatedAllocations> = {};
+    updatedAllocations.forEach(va => {
+      if (!fleetMap[va.fleetId]) fleetMap[va.fleetId] = [];
+      fleetMap[va.fleetId].push(va);
+    });
+
+    Object.entries(fleetMap).forEach(([fleetId, allocs], idx) => {
+      newTempoText += `*VEHICLE ${idx + 1}* — ${allocs.length} assigned\n`;
+      allocs.forEach((t, i) => {
+        const sNum = t.seatNumber ? t.seatNumber : (i + 1);
+        newTempoText += `${i + 1}. ${t.travelerName} [Seat #${sNum}]\n`;
+      });
+      newTempoText += `\n`;
+    });
+
+    setAllocModal(prev => ({
+      ...prev,
+      data: prev.data ? {
+        ...prev.data,
+        vehicleAllocations: updatedAllocations,
+        whatsappTempoText: newTempoText.trim()
+      } : null
+    }));
+  };
+
   const handleConfirmAllocation = async () => {
     if (!allocModal.data?.allocationRunId) return;
     setAllocModal(p => ({ ...p, confirming: true }));
@@ -420,6 +452,47 @@ export default function OperationsHubPage() {
                   {allocModal.data.flags.map((f, i) => (
                     <p key={i} className="text-[11px] text-amber-700 leading-relaxed">{f}</p>
                   ))}
+                </div>
+              )}
+
+              {/* 💺 Feed / Customize Vehicle Seat Numbers */}
+              {allocModal.data.vehicleAllocations?.length > 0 && (
+                <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      💺 Feed / Custom Seat Assignment ({allocModal.data.vehicleAllocations.length} Travelers)
+                    </p>
+                    <span className="text-[10px] font-bold text-slate-500">Edit seat # below to customize</span>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200">
+                          <th className="p-2 text-left">Traveler Name</th>
+                          <th className="p-2 text-left">Booking ID</th>
+                          <th className="p-2 text-center w-28">Feed Seat #</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allocModal.data.vehicleAllocations.map((va, idx) => (
+                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                            <td className="p-2 font-semibold text-slate-800">{va.travelerName}</td>
+                            <td className="p-2 font-mono text-slate-500 text-[11px]">{va.bookingId}</td>
+                            <td className="p-2 text-center">
+                              <input
+                                type="number"
+                                min={1}
+                                max={50}
+                                value={va.seatNumber || (idx + 1)}
+                                onChange={(e) => handleSeatNumberChange(idx, e.target.value)}
+                                className="w-16 h-7 text-center font-mono font-bold text-indigo-700 bg-indigo-50/50 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
