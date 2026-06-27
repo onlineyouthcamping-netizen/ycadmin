@@ -38,7 +38,7 @@ export default function OperationsHubPage() {
   const [showAddFleet, setShowAddFleet] = useState(false);
   const [fleetForm, setFleetForm] = useState({ vehicleType: "", capacity: "13", driverName: "", driverPhone: "", totalAmount: "", advancePaid: "", notes: "" });
   const [showAddRoom, setShowAddRoom] = useState(false);
-  const [roomForm, setRoomForm] = useState({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "" });
+  const [roomForm, setRoomForm] = useState({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" });
 
   // Auto-Allocation Modal
   const [allocModal, setAllocModal] = useState<{ open: boolean; data: AutoAllocationResult | null; confirming: boolean }>({ open: false, data: null, confirming: false });
@@ -193,14 +193,15 @@ export default function OperationsHubPage() {
         genderGroup: roomForm.genderGroup,
         capacity: parseInt(roomForm.capacity),
         hotelName: roomForm.hotelName || undefined,
-        notes: roomForm.notes || undefined
-      }, selectedDepartureDate);
-      toast.success("Room added to inventory");
+        notes: roomForm.notes || undefined,
+        quantity: parseInt(roomForm.quantity) || 1
+      } as any, selectedDepartureDate);
+      toast.success("Room(s) added to inventory");
       setShowAddRoom(false);
-      setRoomForm({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "" });
+      setRoomForm({ roomLabel: "", roomType: "TWIN", genderGroup: "BOYS", capacity: "2", hotelName: "", notes: "", quantity: "1" });
       loadTripOps(selectedTripId, selectedDepartureDate);
     } catch {
-      toast.error("Failed to add room to inventory");
+      toast.error("Failed to add room(s) to inventory");
     }
   };
 
@@ -938,9 +939,15 @@ export default function OperationsHubPage() {
             <DialogDescription className="text-xs text-slate-500 mt-0.5">Configure hotel room capacity and type for this departure's room rules.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3.5 py-3">
-            <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Room Label / Number *</label>
-              <Input value={roomForm.roomLabel} onChange={e => setRoomForm(p => ({ ...p, roomLabel: e.target.value }))} placeholder="e.g. Room 101 or Room 202-A" className="h-9 text-xs rounded-lg border-slate-200" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Starting Room Label *</label>
+                <Input value={roomForm.roomLabel} onChange={e => setRoomForm(p => ({ ...p, roomLabel: e.target.value }))} placeholder="e.g. Room 101" className="h-9 text-xs rounded-lg border-slate-200" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Qty to Add *</label>
+                <Input type="number" min={1} max={50} value={roomForm.quantity} onChange={e => setRoomForm(p => ({ ...p, quantity: e.target.value }))} className="h-9 text-xs rounded-lg border-slate-200 font-mono font-bold text-center" />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
