@@ -1830,7 +1830,7 @@ export default function OperationsHubPage() {
           </div>
           <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
             <Button size="sm" variant="outline" onClick={() => setShowAddIncident(false)} className="text-xs font-semibold">Cancel</Button>
-            <Button size="sm" onClick={handleSaveIncident} className="text-xs bg-rose-700 hover:bg-rose-800 text-white font-bold px-4 h-9">Log Incident</Button>
+            <Button size="sm" onClick={handleCreateIncident} className="text-xs bg-rose-700 hover:bg-rose-800 text-white font-bold px-4 h-9">Log Incident</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
