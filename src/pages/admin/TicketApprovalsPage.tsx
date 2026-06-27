@@ -54,7 +54,7 @@ export default function TicketApprovalsPage() {
 
   // Filters
   const [search, setSearch]       = useState("");
-  const [fStatus, setFStatus]     = useState("");
+  const [fStatus, setFStatus]     = useState("ALL");
   const [fApproval, setFApproval] = useState("SUBMITTED");
   const [urgentOnly, setUrgentOnly] = useState(false);
 
@@ -82,8 +82,8 @@ export default function TicketApprovalsPage() {
   const filtered = tickets.filter((t) => {
     const matchSearch = !search || [t.travelerName, t.booking?.tripName, t.booking?.bookingId, t.trainName, t.trainNumber]
       .some((v) => v?.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus   = !fStatus   || t.ticketStatus   === fStatus;
-    const matchApproval = !fApproval || t.approvalStatus === fApproval;
+    const matchStatus   = fStatus === "ALL"   || t.ticketStatus   === fStatus;
+    const matchApproval = fApproval === "ALL" || t.approvalStatus === fApproval;
     const matchUrgent   = !urgentOnly || isUrgent(t);
     return matchSearch && matchStatus && matchApproval && matchUrgent;
   });
@@ -154,7 +154,7 @@ export default function TicketApprovalsPage() {
         <Select value={fApproval} onValueChange={setFApproval}>
           <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Approval Status" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Approval</SelectItem>
+            <SelectItem value="ALL">All Approval</SelectItem>
             {["DRAFT","SUBMITTED","APPROVED","REJECTED","REOPENED"].map((s) => (
               <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
@@ -163,7 +163,7 @@ export default function TicketApprovalsPage() {
         <Select value={fStatus} onValueChange={setFStatus}>
           <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Ticket Status" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Status</SelectItem>
+            <SelectItem value="ALL">All Status</SelectItem>
             {["PENDING","BOOKED","WAITLISTED","CONFIRMED","RAC","SELF_BOOKED","CANCELLED"].map((s) => (
               <SelectItem key={s} value={s}>{s.replace(/_/g," ")}</SelectItem>
             ))}
