@@ -75,6 +75,9 @@ export const opsService = {
     const res = await api.post(`/ops/itinerary/${tripId}${q}`, data);
     return res.data?.data;
   },
+  async deleteDayItinerary(id: string): Promise<void> {
+    await api.delete(`/ops/itinerary/${id}`);
+  },
 
   async getTripExpenses(tripId: string, departureDate?: string): Promise<OpsTripExpense[]> {
     const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
@@ -85,6 +88,9 @@ export const opsService = {
     const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
     const res = await api.post(`/ops/expenses/${tripId}${q}`, data);
     return res.data?.data;
+  },
+  async deleteTripExpense(id: string): Promise<void> {
+    await api.delete(`/ops/expenses/${id}`);
   },
 
   async getAccountingSummary(tripId: string, departureDate?: string): Promise<OpsAccountingSummary> {

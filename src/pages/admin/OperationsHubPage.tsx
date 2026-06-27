@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Compass, Calculator, CalendarCheck, CheckSquare, Sparkles, Plus, RefreshCw,
-  TrendingUp, Users, AlertTriangle, Check, X, Copy, Share2, ShieldAlert, CheckCircle2
+  TrendingUp, Users, AlertTriangle, Check, X, Copy, Share2, ShieldAlert, CheckCircle2, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,6 +146,30 @@ export default function OperationsHubPage() {
     }
   };
 
+  const handleDeleteItineraryRow = async (id?: string) => {
+    if (!id) return;
+    if (!confirm("Are you sure you want to delete this itinerary verification row?")) return;
+    try {
+      await opsService.deleteDayItinerary(id);
+      toast.success("Itinerary row deleted");
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    } catch {
+      toast.error("Failed to delete itinerary row");
+    }
+  };
+
+  const handleDeleteExpenseRow = async (id?: string) => {
+    if (!id) return;
+    if (!confirm("Are you sure you want to delete this expense row?")) return;
+    try {
+      await opsService.deleteTripExpense(id);
+      toast.success("Expense row deleted");
+      loadTripOps(selectedTripId, selectedDepartureDate);
+    } catch {
+      toast.error("Failed to delete expense row");
+    }
+  };
+
   const handleTriggerAutoAllocate = async () => {
     try {
       const res = await opsService.executeAutoAllocation(selectedTripId, selectedDepartureDate);
@@ -265,40 +289,46 @@ export default function OperationsHubPage() {
                 <th className="p-2.5 text-left border-r border-slate-200">Date</th>
                 <th className="p-2.5 text-left border-r border-slate-200">Stay / Pickup</th>
                 <th className="p-2.5 text-center border-r border-slate-200">No. of Pax</th>
-                <th className="p-2.5 text-left border-r border-slate-200">Hotel Name</th>
-                <th className="p-2.5 text-center border-r border-slate-200">Hotel Verify</th>
-                <th className="p-2.5 text-left border-r border-slate-200">Tempo / Vehicle</th>
-                <th className="p-2.5 text-center border-r border-slate-200">Tempo Verify</th>
+                <th className="p-2.5 text-left border-r border-amber-200 bg-amber-50/70 text-amber-900">🏨 Hotel Name</th>
+                <th className="p-2.5 text-center border-r border-slate-200 bg-amber-50/70 text-amber-900">Hotel Verify</th>
+                <th className="p-2.5 text-left border-r border-blue-200 bg-blue-50/70 text-blue-900">🚌 Tempo / Vehicle</th>
+                <th className="p-2.5 text-center border-r border-slate-200 bg-blue-50/70 text-blue-900">Tempo Verify</th>
                 <th className="p-2.5 text-left border-r border-slate-200">Remark</th>
                 <th className="p-2.5 text-left border-r border-slate-200">Guide / Driver Details</th>
-                <th className="p-2.5 text-center">Check-In Update</th>
+                <th className="p-2.5 text-center border-r border-slate-200">Check-In</th>
+                <th className="p-2.5 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
               {itinerary.length === 0 ? (
-                <tr><td colSpan={10} className="p-8 text-center text-slate-400 font-medium">No day itinerary rows yet for this departure. Click "Add Day Row" to build grid.</td></tr>
+                <tr><td colSpan={11} className="p-8 text-center text-slate-400 font-medium">No day itinerary rows yet for this departure. Click "Add Day Row" to build grid.</td></tr>
               ) : (
                 itinerary.map((row) => (
                   <tr key={row.id} className="border-b border-slate-200 hover:bg-slate-50 font-medium">
                     <td className="p-2.5 border-r border-slate-200 font-mono text-slate-600">{row.date ? new Date(row.date).toLocaleDateString("en-IN") : "—"}</td>
                     <td className="p-2.5 border-r border-slate-200 font-bold text-slate-800">{row.dayTitle}</td>
                     <td className="p-2.5 border-r border-slate-200 text-center font-bold">{row.paxCount}</td>
-                    <td className="p-2.5 border-r border-slate-200 text-slate-700">{row.hotelName || "—"}</td>
-                    <td className="p-2.5 border-r border-slate-200 text-center">
+                    <td className="p-2.5 border-r border-amber-100 bg-amber-50/30 text-slate-800 font-semibold">{row.hotelName || "—"}</td>
+                    <td className="p-2.5 border-r border-slate-200 bg-amber-50/30 text-center">
                       <button onClick={() => handleItinCheckToggle(row, "hotelVerified")} className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${row.hotelVerified ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"}`}>
                         {row.hotelVerified ? "BOOKED ✓" : "PENDING"}
                       </button>
                     </td>
-                    <td className="p-2.5 border-r border-slate-200 text-slate-700">{row.vehicleType || "—"}</td>
-                    <td className="p-2.5 border-r border-slate-200 text-center">
+                    <td className="p-2.5 border-r border-blue-100 bg-blue-50/30 text-slate-800 font-semibold">{row.vehicleType || "—"}</td>
+                    <td className="p-2.5 border-r border-slate-200 bg-blue-50/30 text-center">
                       <button onClick={() => handleItinCheckToggle(row, "vehicleVerified")} className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${row.vehicleVerified ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"}`}>
                         {row.vehicleVerified ? "BOOKED ✓" : "PENDING"}
                       </button>
                     </td>
                     <td className="p-2.5 border-r border-slate-200 text-slate-500 text-[11px]">{row.remarks || "—"}</td>
                     <td className="p-2.5 border-r border-slate-200 text-slate-700 font-mono text-[11px]">{row.guideDriverDetails || "—"}</td>
-                    <td className="p-2.5 text-center">
+                    <td className="p-2.5 border-r border-slate-200 text-center">
                       <input type="checkbox" checked={row.checkInDone} onChange={() => handleItinCheckToggle(row, "checkInDone")} className="w-4 h-4 rounded border-slate-300 accent-emerald-600 cursor-pointer" />
+                    </td>
+                    <td className="p-2.5 text-center">
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteItineraryRow(row.id)} className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg" title="Delete Row">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -330,12 +360,13 @@ export default function OperationsHubPage() {
                 <th className="p-2.5 text-right border-r border-slate-200">Amount Paid (₹)</th>
                 <th className="p-2.5 text-right border-r border-slate-200">Due Amount (₹)</th>
                 <th className="p-2.5 text-center border-r border-slate-200">Status</th>
-                <th className="p-2.5 text-left">Remark / Formula Breakdown</th>
+                <th className="p-2.5 text-left border-r border-slate-200">Remark / Formula Breakdown</th>
+                <th className="p-2.5 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
               {expenses.length === 0 ? (
-                <tr><td colSpan={7} className="p-8 text-center text-slate-400 font-medium">No detailed expense records yet for this departure. Click "Add Expense Row" to enter costs.</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No detailed expense records yet for this departure. Click "Add Expense Row" to enter costs.</td></tr>
               ) : (
                 expenses.map((row) => (
                   <tr key={row.id} className="border-b border-slate-200 hover:bg-slate-50 font-medium">
@@ -349,7 +380,12 @@ export default function OperationsHubPage() {
                         {row.paymentStatus}
                       </span>
                     </td>
-                    <td className="p-2.5 text-slate-600 text-[11px] font-mono">{row.remarks || "—"}</td>
+                    <td className="p-2.5 border-r border-slate-200 text-slate-600 text-[11px] font-mono">{row.remarks || "—"}</td>
+                    <td className="p-2.5 text-center">
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteExpenseRow(row.id)} className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg" title="Delete Row">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </td>
                   </tr>
                 ))
               )}
