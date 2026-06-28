@@ -49,6 +49,8 @@ export default function BookingLinksPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [links, setLinks] = useState<BookingLinkRecord[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [analytics, setAnalytics] = useState<{
     linksGenerated: number;
@@ -90,11 +92,12 @@ export default function BookingLinksPage() {
     setLoading(true);
     try {
       const [linksData, tripsData, analyticsData] = await Promise.all([
-        bookingLinksService.getAll(),
+        bookingLinksService.getAll(page, 25),
         tripsService.getAll(),
         bookingLinksService.getAnalytics(),
       ]);
-      setLinks(Array.isArray(linksData) ? linksData : []);
+      setLinks(Array.isArray(linksData.data) ? linksData.data : []);
+      setTotalPages(linksData.pagination?.totalPages || 1);
       setTrips(Array.isArray(tripsData) ? tripsData : []);
       setAnalytics(analyticsData || null);
     } catch {
@@ -102,7 +105,7 @@ export default function BookingLinksPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     load();
@@ -376,6 +379,18 @@ export default function BookingLinksPage() {
       )}
 
       {/* ─── CREATE MODAL ─── */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>
+            Previous
+          </Button>
+          <span className="text-xs font-bold text-muted-foreground">Page {page} of {totalPages}</span>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>
+            Next
+          </Button>
+        </div>
+      )}
+
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-[520px] w-[95vw] max-h-[95dvh] overflow-y-auto custom-scrollbar p-4 md:p-6 rounded-[24px] md:rounded-[32px]">
           <DialogHeader>

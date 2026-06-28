@@ -305,6 +305,7 @@ export default function BookingsPage() {
   const [confirmTarget, setConfirmTarget] = useState<Booking | null>(null);
   const [editTarget, setEditTarget] = useState<Booking | null>(null);
   const [detailsTarget, setDetailsTarget] = useState<Booking | null>(null);
+  const [detailsLoadingId, setDetailsLoadingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   
   // Custom states added for redesign
@@ -451,15 +452,28 @@ export default function BookingsPage() {
     search,
   ]);
 
-  // Keep detailsTarget up-to-date with latest bookings list
-  useEffect(() => {
-    if (detailsTarget) {
-      const updated = bookings.find(b => b.id === detailsTarget.id);
-      if (updated) {
-        setDetailsTarget(updated);
-      }
+  const openBookingDetails = useCallback(async (booking: Booking) => {
+    if (detailsLoadingId) return;
+    setDetailsLoadingId(booking.id);
+    try {
+      setDetailsTarget(await bookingsService.getById(booking.id));
+    } catch {
+      toast.error("Failed to load booking details");
+    } finally {
+      setDetailsLoadingId(null);
     }
-  }, [bookings, detailsTarget?.id]);
+  }, [detailsLoadingId]);
+
+  const refreshBookingDetails = useCallback(async () => {
+    const id = detailsTarget?.id;
+    await fetchBookings();
+    if (!id) return;
+    try {
+      setDetailsTarget(await bookingsService.getById(id));
+    } catch {
+      toast.error("Failed to refresh booking details");
+    }
+  }, [detailsTarget?.id, fetchBookings]);
 
   const filtered = bookings;
 
@@ -633,7 +647,7 @@ export default function BookingsPage() {
       <BookingDetailsView
         booking={detailsTarget}
         onBack={() => setDetailsTarget(null)}
-        onRefresh={fetchAll}
+        onRefresh={refreshBookingDetails}
         trips={trips}
       />
     );
@@ -976,7 +990,7 @@ export default function BookingsPage() {
                         <tr 
                           key={b.id} 
                           className="hover-actions cursor-pointer hover:bg-slate-50/70 transition-colors"
-                          onClick={() => setDetailsTarget(b)}
+                          onClick={() => openBookingDetails(b)}
                         >
                           {/* 1. TOUR DETAILS */}
                           <td className="px-3.5 py-2.5 align-top">
@@ -1159,7 +1173,7 @@ export default function BookingsPage() {
                   return (
                     <div 
                       key={b.id} 
-                      onClick={() => setDetailsTarget(b)} 
+                      onClick={() => openBookingDetails(b)}
                       className="bg-white border border-slate-200 rounded p-2.5 space-y-2 hover:border-primary/40 cursor-pointer shadow-sm active:bg-slate-50"
                     >
                       <div className="flex items-start justify-between gap-2">

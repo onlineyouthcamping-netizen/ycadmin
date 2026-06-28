@@ -42,9 +42,9 @@ export const bookingLinksService = {
     return res.data.data;
   },
 
-  async getAll(): Promise<BookingLinkRecord[]> {
-    const res = await api.get("/booking-links");
-    return res.data.data;
+  async getAll(page = 1, limit = 25): Promise<{ data: BookingLinkRecord[]; pagination: { page: number; limit: number; totalCount: number; totalPages: number } }> {
+    const res = await api.get(`/booking-links?page=${page}&limit=${limit}`);
+    return { data: res.data.data || [], pagination: res.data.pagination };
   },
 
   async revoke(id: string): Promise<BookingLinkRecord> {
