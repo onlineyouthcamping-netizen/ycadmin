@@ -46,6 +46,14 @@ function Pill({ label, colorClass }: { label: string; colorClass: string }) {
   );
 }
 
+function isUrgent(t: TrainTicket): boolean {
+  return t.journeyDate
+    ? (new Date(t.journeyDate).getTime() - Date.now()) < 10 * 86400000 &&
+      new Date(t.journeyDate) > new Date() &&
+      ["PENDING", "WAITLISTED", "RAC"].includes(t.ticketStatus)
+    : false;
+}
+
 export default function TicketApprovalsPage() {
   const { admin } = useAuthStore();
   const [tickets, setTickets]     = useState<TrainTicket[]>([]);
