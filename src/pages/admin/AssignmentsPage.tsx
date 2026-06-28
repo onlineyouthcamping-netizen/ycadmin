@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ensureGuideToken } from "@/store/auth.store";
 import { guideService, Assignment, Guide, MainBackendTrip, TripStatusUpdate } from "@/services/guide.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +77,11 @@ export default function AssignmentsPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchData();
+    };
+    init();
   }, []);
 
   const fetchTimeline = async (assignmentId: number) => {

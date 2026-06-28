@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ensureGuideToken } from "@/store/auth.store";
 import { guideService, AttendanceLog } from "@/services/guide.service";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -38,7 +39,11 @@ export default function AttendanceLogsPage() {
   };
 
   useEffect(() => {
-    fetchLogs();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchLogs();
+    };
+    init();
   }, []);
 
   const handleVerify = async (logId: number, status: 'approved' | 'rejected') => {

@@ -3,6 +3,23 @@ import type { Admin } from "@/types";
 import { authService } from "@/services/auth.service";
 import { guideService } from "@/services/guide.service";
 
+let guideLoginAttemptedThisSession = false;
+
+export async function ensureGuideToken(phone: string, role: string): Promise<void> {
+  if (guideLoginAttemptedThisSession) return;
+  if (localStorage.getItem("guide_token")) return;
+
+  guideLoginAttemptedThisSession = true;
+  try {
+    console.log("🤖 Attempting to ensure Guide API token...");
+    const guideAuth = await guideService.login(phone, role);
+    localStorage.setItem("guide_token", guideAuth.id.toString());
+    console.log("✅ Guide API token acquired, stored:", guideAuth.id);
+  } catch (guideErr) {
+    console.warn("⚠️ Failed to acquire Guide API token:", guideErr);
+  }
+}
+
 interface AuthState {
   admin: Admin | null;
   isAuthenticated: boolean;
@@ -25,19 +42,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       const data = await authService.login(email, password);
       console.log("🔑 Login success, token received");
       localStorage.setItem("token", data.token);
-
-      // Auto-login to Guide API backend only if user's role requires guide access
-      const needsGuideAccess = data.admin && ["superadmin", "admin", "operations", "finance"].includes(data.admin.role);
-      if (needsGuideAccess) {
-        try {
-          console.log("🤖 Attempting auto-login to Guide API backend...");
-          const guideAuth = await guideService.login("9999999999", "admin");
-          localStorage.setItem("guide_token", guideAuth.id.toString());
-          console.log("✅ Guide API auto-login success, guide_token stored:", guideAuth.id);
-        } catch (guideErr) {
-          console.warn("⚠️ Failed to auto-login to Guide API backend during login:", guideErr);
-        }
-      }
 
       set({ 
         admin: data.admin, 
@@ -121,19 +125,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const admin = await authService.getMe();
       console.log("✅ Auth check success:", admin?.email || admin?.name || "Admin");
-
-      // Auto-login to Guide API backend if token is present but guide_token is missing, and user's role requires guide access
-      const needsGuideAccess = admin && ["superadmin", "admin", "operations", "finance"].includes(admin.role);
-      if (needsGuideAccess && !guideToken) {
-        try {
-          console.log("🤖 Guide token missing but authenticated, auto-logging into Guide API...");
-          const guideAuth = await guideService.login("9999999999", "admin");
-          localStorage.setItem("guide_token", guideAuth.id.toString());
-          console.log("✅ Guide API auto-login success, guide_token stored:", guideAuth.id);
-        } catch (guideErr) {
-          console.warn("⚠️ Failed to auto-login to Guide API backend during checkAuth:", guideErr);
-        }
-      }
 
       set({ admin, isAuthenticated: true, isLoading: false });
     } catch (err) {

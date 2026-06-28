@@ -1,4 +1,5 @@
 import { useEffect, useState, Fragment } from "react";
+import { ensureGuideToken } from "@/store/auth.store";
 import { guideService, PayrollItem } from "@/services/guide.service";
 import { Button } from "@/components/ui/button";
 import { KPICard } from "@/components/admin/KPICard";
@@ -37,7 +38,11 @@ export default function PayrollPage() {
   };
 
   useEffect(() => {
-    fetchPayroll();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchPayroll();
+    };
+    init();
   }, []);
 
   const totalPayrollAmount = payroll.reduce((sum, item) => sum + item.payableAmount, 0);

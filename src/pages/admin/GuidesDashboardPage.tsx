@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ensureGuideToken } from "@/store/auth.store";
 import { useNavigate } from "react-router-dom";
 import { KPICard } from "@/components/admin/KPICard";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,11 @@ export default function GuidesDashboardPage() {
   };
 
   useEffect(() => {
-    fetchStats();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchStats();
+    };
+    init();
   }, []);
 
   const formatRelativeTime = (isoString: string) => {

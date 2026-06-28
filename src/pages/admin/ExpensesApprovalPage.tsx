@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ensureGuideToken } from "@/store/auth.store";
 import { guideService, Expense, Guide } from "@/services/guide.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +58,11 @@ export default function ExpensesApprovalPage() {
   };
 
   useEffect(() => {
-    fetchExpensesAndGuides();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchExpensesAndGuides();
+    };
+    init();
   }, [guideFilter, statusFilter]);
 
   const handleApprove = async (expenseId: number) => {

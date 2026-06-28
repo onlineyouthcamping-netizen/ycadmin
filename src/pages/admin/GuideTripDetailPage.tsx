@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ensureGuideToken } from "@/store/auth.store";
 import { useParams, useNavigate } from "react-router-dom";
 import { guideService, Assignment, TravelerInfo, TravelerAttendance, Expense } from "@/services/guide.service";
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,11 @@ export default function GuideTripDetailPage() {
   };
 
   useEffect(() => {
-    fetchAllData();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchAllData();
+    };
+    init();
   }, [id]);
 
   // Merge traveler metadata with marked attendance status

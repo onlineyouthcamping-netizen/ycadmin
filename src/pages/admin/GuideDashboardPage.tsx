@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { guideService, Assignment } from "@/services/guide.service";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthStore, ensureGuideToken } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { 
@@ -34,7 +34,11 @@ export default function GuideDashboardPage() {
   };
 
   useEffect(() => {
-    fetchMyAssignments();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchMyAssignments();
+    };
+    init();
   }, []);
 
   const handleLogout = () => {

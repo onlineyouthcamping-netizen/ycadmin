@@ -25,6 +25,20 @@ export default function OperationsHubPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "hotels_transport" | "allocation" | "checklist" | "sop" | "leader" | "incidents" | "accounting">("overview");
   const loadedWorkspaceTabs = useRef(new Set<string>());
   const opsRequestId = useRef(0);
+  const departureAbortRef = useRef<AbortController | null>(null);
+  const opsAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const interceptor = api.interceptors.request.use((config) => {
+      if (config.url && config.url.includes("/ops/") && opsAbortRef.current) {
+        config.signal = opsAbortRef.current.signal;
+      }
+      return config;
+    });
+    return () => {
+      api.interceptors.request.eject(interceptor);
+    };
+  }, []);
 
   // Excel Grids Data
   const [itinerary, setItinerary] = useState<OpsDayItinerary[]>([]);
@@ -97,18 +111,34 @@ export default function OperationsHubPage() {
   // 2. Fetch available departures for a selected trip
   useEffect(() => {
     if (!selectedTripId) return;
-    api.get(`/trips/${selectedTripId}/departures`).then(res => {
-      const dates = res.data?.data || [];
-      setAvailableDepartureDates(dates);
-      if (dates.length > 0) {
-        setSelectedDepartureDate(dates[0]);
-      } else {
-        setSelectedDepartureDate(getTodayString());
-      }
-    }).catch(() => {
-      setAvailableDepartureDates([]);
-      setSelectedDepartureDate(getTodayString());
-    });
+
+    if (departureAbortRef.current) {
+      departureAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    departureAbortRef.current = controller;
+
+    api.get(`/trips/${selectedTripId}/departures`, { signal: controller.signal })
+      .then(res => {
+        const dates = res.data?.data || [];
+        setAvailableDepartureDates(dates);
+        if (dates.length > 0) {
+          setSelectedDepartureDate(dates[0]);
+        } else {
+          setSelectedDepartureDate('');
+        }
+      })
+      .catch((err) => {
+        if (err.name === 'CanceledError' || err.name === 'AbortError') {
+          return;
+        }
+        setAvailableDepartureDates([]);
+        setSelectedDepartureDate('');
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, [selectedTripId]);
 
   // Load only the active tab. Hidden operational modules remain idle.
@@ -119,6 +149,11 @@ export default function OperationsHubPage() {
     force = true,
   ) => {
     if (!tripId || !depDate) return;
+
+    if (opsAbortRef.current) {
+      opsAbortRef.current.abort();
+    }
+    opsAbortRef.current = new AbortController();
     const filterKey = tab === "sop" ? `${sopFilterDestination}|${includeArchivedSops}` : "";
     const cacheKey = `${tripId}|${depDate}|${tab}|${filterKey}`;
     if (!force && loadedWorkspaceTabs.current.has(cacheKey)) return;

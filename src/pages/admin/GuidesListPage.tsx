@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ensureGuideToken } from "@/store/auth.store";
 import { guideService, Guide } from "@/services/guide.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +59,11 @@ export default function GuidesListPage() {
   };
 
   useEffect(() => {
-    fetchGuides();
+    const init = async () => {
+      await ensureGuideToken("9999999999", "admin");
+      fetchGuides();
+    };
+    init();
   }, []);
 
   const handleOpenAdd = () => {
