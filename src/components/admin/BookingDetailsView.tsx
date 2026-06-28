@@ -2276,20 +2276,18 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                         <SelectValue placeholder="Select Pickup Location" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from(new Set(
-                          (fullTrip?.variants || [])
-                            .map((v: any) => v.location?.trim())
-                            .filter(Boolean)
-                        )).map((loc: any, idx) => (
+                        {Array.from(new Set([
+                          ...(fullTrip?.variants || []).map((v: any) => (v.location || v.cityName || v.name || v.variantName || v.city || '').trim()),
+                          ...(fullTrip?.pickupCities || []).map((c: any) => (c.cityName || c.location || c.name || '').trim())
+                        ].filter(Boolean))).map((loc: any, idx) => (
                           <SelectItem key={idx} value={loc} className="text-xs">{loc}</SelectItem>
                         ))}
-                        {pickupCityValue && !Array.from(new Set((fullTrip?.variants || []).map((v: any) => v.location?.trim()).filter(Boolean))).includes(pickupCityValue) && (
+                        {pickupCityValue && !Array.from(new Set([
+                          ...(fullTrip?.variants || []).map((v: any) => (v.location || v.cityName || v.name || v.variantName || v.city || '').trim()),
+                          ...(fullTrip?.pickupCities || []).map((c: any) => (c.cityName || c.location || c.name || '').trim())
+                        ].filter(Boolean))).includes(pickupCityValue) && (
                           <SelectItem value={pickupCityValue} className="text-xs">{pickupCityValue}</SelectItem>
                         )}
-                        <SelectItem value="AHMEDABAD" className="text-xs">AHMEDABAD</SelectItem>
-                        <SelectItem value="MUMBAI" className="text-xs">MUMBAI</SelectItem>
-                        <SelectItem value="VADODARA" className="text-xs">VADODARA</SelectItem>
-                        <SelectItem value="SURAT" className="text-xs">SURAT</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

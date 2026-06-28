@@ -103,40 +103,71 @@ export default function NewBookingModal({ open, onOpenChange, onSuccess }: NewBo
     }
   };
 
+  // Unified location options combining variants and pickup cities
+  const locationOptions = useMemo(() => {
+    if (!selectedTripDetails) return [];
+    const list: { name: string; price: number }[] = [];
+    const seen = new Set<string>();
+    const tripPrice = Number(selectedTripDetails.price || 0);
+
+    if (Array.isArray(selectedTripDetails.variants)) {
+      selectedTripDetails.variants.forEach((v: any) => {
+        const name = (v.location || v.cityName || v.name || v.variantName || v.city || '').trim();
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          const price = Number(v.discountedPrice) || Number(v.originalPrice) || tripPrice;
+          list.push({ name, price });
+        }
+      });
+    }
+
+    if (Array.isArray(selectedTripDetails.pickupCities)) {
+      selectedTripDetails.pickupCities.forEach((c: any) => {
+        const name = (c.cityName || c.location || c.name || '').trim();
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          const deduction = Number(c.deductionAmount || 0);
+          const price = Math.max(0, tripPrice - deduction);
+          list.push({ name, price });
+        }
+      });
+    }
+
+    return list;
+  }, [selectedTripDetails]);
+
   // Dynamic price calculation
   useEffect(() => {
     if (!form.tripId) return;
 
-    let basePrice = 0;
-    if (selectedTripDetails) {
-      if (form.pickupCity && selectedTripDetails.variants && Array.isArray(selectedTripDetails.variants)) {
-        const selectedVariant = selectedTripDetails.variants.find((v: any) => v.location === form.pickupCity);
-        basePrice = selectedVariant ? Number(selectedVariant.discountedPrice) : Number(selectedTripDetails.price || 0);
-      } else {
-        basePrice = Number(selectedTripDetails.price || 0);
+    let basePrice = Number(selectedTripDetails?.price || 0);
+    if (selectedTripDetails && form.pickupCity && locationOptions.length > 0) {
+      const selectedLoc = locationOptions.find(loc => loc.name.toLowerCase() === form.pickupCity.trim().toLowerCase());
+      if (selectedLoc) {
+        basePrice = selectedLoc.price;
       }
-
-      let roomDelta = 0;
-      if (form.roomType && selectedTripDetails.roomOptions && Array.isArray(selectedTripDetails.roomOptions)) {
-        const selectedRoom = selectedTripDetails.roomOptions.find((r: any) => r.label === form.roomType);
-        roomDelta = selectedRoom ? Number(selectedRoom.priceDelta || 0) : 0;
-      }
-
-      let travelDelta = 0;
-      if (form.trainClass && selectedTripDetails.travelOptions && Array.isArray(selectedTripDetails.travelOptions)) {
-        const selectedTravel = selectedTripDetails.travelOptions.find((t: any) => t.label === form.trainClass);
-        travelDelta = selectedTravel ? Number(selectedTravel.priceDelta || 0) : 0;
-      }
-
-      const singlePersonPrice = basePrice + roomDelta + travelDelta;
-      const totalAmount = singlePersonPrice * (form.numberOfTravelers || 1);
-
-      setForm(prev => ({
-        ...prev,
-        totalAmount
-      }));
     }
-  }, [form.tripId, form.pickupCity, form.roomType, form.trainClass, form.numberOfTravelers, selectedTripDetails]);
+
+    let roomDelta = 0;
+    if (form.roomType && selectedTripDetails?.roomOptions && Array.isArray(selectedTripDetails.roomOptions)) {
+      const selectedRoom = selectedTripDetails.roomOptions.find((r: any) => r.label === form.roomType);
+      roomDelta = selectedRoom ? Number(selectedRoom.priceDelta || 0) : 0;
+    }
+
+    let travelDelta = 0;
+    if (form.trainClass && selectedTripDetails?.travelOptions && Array.isArray(selectedTripDetails.travelOptions)) {
+      const selectedTravel = selectedTripDetails.travelOptions.find((t: any) => t.label === form.trainClass);
+      travelDelta = selectedTravel ? Number(selectedTravel.priceDelta || 0) : 0;
+    }
+
+    const singlePersonPrice = basePrice + roomDelta + travelDelta;
+    const totalAmount = singlePersonPrice * (form.numberOfTravelers || 1);
+
+    setForm(prev => ({
+      ...prev,
+      totalAmount
+    }));
+  }, [form.tripId, form.pickupCity, form.roomType, form.trainClass, form.numberOfTravelers, selectedTripDetails, locationOptions]);
 
   const handleSubmit = async () => {
     // Populate passengers list corresponding to the traveler count to inform the backend
@@ -355,15 +386,15 @@ export default function NewBookingModal({ open, onOpenChange, onSuccess }: NewBo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Location Variant / Starting Point</Label>
-              {selectedTripDetails?.variants && Array.isArray(selectedTripDetails.variants) && selectedTripDetails.variants.length > 0 ? (
+              {locationOptions.length > 0 ? (
                 <Select value={form.pickupCity} onValueChange={val => setForm({ ...form, pickupCity: val })}>
                   <SelectTrigger className="h-11 rounded-xl border-slate-200">
                     <SelectValue placeholder="Select location variant" />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedTripDetails.variants.map((v: any, index: number) => (
-                      <SelectItem key={index} value={v.location}>
-                        {v.location} (₹{v.discountedPrice})
+                    {locationOptions.map((loc: any, index: number) => (
+                      <SelectItem key={index} value={loc.name}>
+                        {loc.name} (₹{loc.price.toLocaleString()})
                       </SelectItem>
                     ))}
                   </SelectContent>
