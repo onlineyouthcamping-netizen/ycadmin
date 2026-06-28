@@ -37,60 +37,9 @@ const processQueue = (error: any, token: string | null = null) => {
 
 guideApi.interceptors.response.use(
   (res) => res,
-  async (err) => {
-    const originalRequest = err.config;
-
-    if (err.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url.includes('/auth/login')) {
-        return Promise.reject(err);
-      }
-
-      originalRequest._retry = true;
+  (err) => {
+    if (err.response?.status === 401) {
       localStorage.removeItem("guide_token");
-
-      // If a recent re-login attempt failed, skip retrying for 60 seconds
-      if (Date.now() < reloginCooldownUntil) {
-        return Promise.reject(err);
-      }
-
-      // Only attempt auto-relogin if we have a main backend token
-      const mainToken = localStorage.getItem("token");
-      if (mainToken) {
-        if (isRefreshing) {
-          return new Promise((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
-          })
-            .then((token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              return guideApi(originalRequest);
-            })
-            .catch((err) => Promise.reject(err));
-        }
-
-        isRefreshing = true;
-        try {
-          console.log("🔄 Stale Guide API session detected. Re-authenticating in background...");
-          // Dynamic import to prevent circular dependency
-          const { guideService } = await import('./guide.service');
-          const guideAuth = await guideService.login("9999999999", "admin");
-          const newToken = guideAuth.id.toString();
-          localStorage.setItem("guide_token", newToken);
-          console.log("✅ Background Guide API re-login successful. Retrying original request.");
-
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          processQueue(null, newToken);
-          isRefreshing = false;
-          reloginCooldownUntil = 0; // Reset cooldown on success
-          return guideApi(originalRequest);
-        } catch (reloginErr) {
-          console.error("❌ Failed to re-authenticate to Guide API in background:", reloginErr);
-          // Block further re-login attempts for 60 seconds to prevent retry storms
-          reloginCooldownUntil = Date.now() + 60_000;
-          processQueue(reloginErr, null);
-          isRefreshing = false;
-          return Promise.reject(err);
-        }
-      }
     }
     return Promise.reject(err);
   }
