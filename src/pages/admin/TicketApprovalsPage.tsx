@@ -5,10 +5,10 @@
  * Actions: Approve, Reject, Request Correction, Reopen (with mandatory notes).
  * One dedicated page; no duplication with VerificationQueuePage.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle2, XCircle, RotateCcw, MessageSquare,
-  AlertTriangle, Train, Filter, Loader2, Search
+  AlertTriangle, Train, Filter, Loader2, Search, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,36 +57,41 @@ export default function TicketApprovalsPage() {
   const [fStatus, setFStatus]     = useState("ALL");
   const [fApproval, setFApproval] = useState("SUBMITTED");
   const [urgentOnly, setUrgentOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Dialogs
   const [noteTarget, setNoteTarget] = useState<{ id: string; action: "reject" | "reopen" | "correction" } | null>(null);
   const [noteText, setNoteText]     = useState("");
 
-  useEffect(() => { load(); }, []);
-
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await trainTicketService.getApprovalsQueue();
-      setTickets(data ?? []);
+      const result = await trainTicketService.getApprovalsQueue({
+        page: String(page),
+        limit: String(pageSize),
+        ...(search.trim() ? { search: search.trim() } : {}),
+        ...(fStatus !== "ALL" ? { ticketStatus: fStatus } : {}),
+        approvalStatus: fApproval,
+        ...(urgentOnly ? { urgent: "true" } : {}),
+      });
+      setTickets(result.data);
+      setTotalCount(result.pagination.totalCount);
+      setTotalPages(result.pagination.totalPages);
     } catch { toast.error("Failed to load approvals"); }
     finally { setLoading(false); }
-  }
+  }, [fApproval, fStatus, page, pageSize, search, urgentOnly]);
 
-  function isUrgent(t: TrainTicket) {
-    if (!t.journeyDate) return false;
-    const diff = new Date(t.journeyDate).getTime() - Date.now();
-    return diff > 0 && diff < 10 * 86400000 && ["PENDING","WAITLISTED","RAC"].includes(t.ticketStatus);
-  }
+  useEffect(() => {
+    const timer = window.setTimeout(load, 250);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
-  const filtered = tickets.filter((t) => {
-    const matchSearch = !search || [t.travelerName, t.booking?.tripName, t.booking?.bookingId, t.trainName, t.trainNumber]
-      .some((v) => v?.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus   = fStatus === "ALL"   || t.ticketStatus   === fStatus;
-    const matchApproval = fApproval === "ALL" || t.approvalStatus === fApproval;
-    const matchUrgent   = !urgentOnly || isUrgent(t);
-    return matchSearch && matchStatus && matchApproval && matchUrgent;
-  });
+  useEffect(() => { setPage(1); }, [search, fStatus, fApproval, urgentOnly, pageSize]);
+
+  const filtered = tickets;
 
   async function doApprove(id: string, submittedById?: string) {
     if (submittedById === admin?.id) {
@@ -257,9 +262,15 @@ export default function TicketApprovalsPage() {
 
       {/* Count */}
       {!loading && (
-        <p className="text-[10px] text-slate-400 text-right">
-          Showing {filtered.length} of {tickets.length} tickets
-        </p>
+        <div className="flex items-center justify-end gap-2 text-[10px] text-slate-500">
+          <span>Showing {filtered.length} of {totalCount} tickets</span>
+          <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-7 rounded border border-slate-200 bg-white px-2">
+            <option value={25}>25</option><option value={50}>50</option><option value={100}>100</option>
+          </select>
+          <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+          <span>Page {page} of {totalPages}</span>
+          <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}><ChevronRight className="h-3.5 w-3.5" /></Button>
+        </div>
       )}
 
       {/* Note dialog (reject / reopen / correction) */}

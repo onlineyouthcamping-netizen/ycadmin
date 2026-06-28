@@ -130,9 +130,18 @@ export const trainTicketService = {
   },
 
   // Queues and Alerts
-  async getApprovalsQueue(): Promise<TrainTicket[]> {
-    const res = await api.get(`/train-tickets/approvals`);
-    return res.data.data;
+  async getApprovalsQueue(params?: Record<string, string>): Promise<{ data: TrainTicket[]; pagination: { page: number; limit: number; totalCount: number; totalPages: number } }> {
+    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+    const res = await api.get(`/train-tickets/approvals${query}`);
+    return {
+      data: res.data.data || [],
+      pagination: res.data.pagination || { page: 1, limit: 25, totalCount: 0, totalPages: 1 },
+    };
+  },
+
+  async getTicketHistory(ticketId: string): Promise<any[]> {
+    const res = await api.get(`/train-tickets/${ticketId}/history`);
+    return res.data.data || [];
   },
 
   async getAlerts(): Promise<any[]> {

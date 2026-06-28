@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   IndianRupee, Filter, Search, Loader2, CheckCircle2, XCircle, Clock,
-  Plus, RefreshCw, TrendingUp, Users, AlertTriangle, BarChart3, History
+  Plus, RefreshCw, TrendingUp, Users, AlertTriangle, BarChart3, History, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,11 @@ export default function AccountingPage() {
   const [search, setSearch] = useState("");
   const [fStatus, setFStatus] = useState("ALL");
   const [fMode, setFMode] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [ledgerTotals, setLedgerTotals] = useState({ APPROVED: 0, PENDING: 0, REJECTED: 0 });
 
   // Create dialog
   const [showCreate, setShowCreate] = useState(false);
@@ -63,14 +68,23 @@ export default function AccountingPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await accountingService.getEntries();
-      setEntries(data);
+      const result = await accountingService.getEntries({
+        page: String(page),
+        limit: String(pageSize),
+        ...(search.trim() ? { search: search.trim() } : {}),
+        ...(fStatus !== "ALL" ? { status: fStatus } : {}),
+        ...(fMode !== "ALL" ? { paymentMode: fMode } : {}),
+      });
+      setEntries(result.data);
+      setLedgerTotals(result.summary);
+      setTotalCount(result.pagination.totalCount);
+      setTotalPages(result.pagination.totalPages);
     } catch {
       toast.error("Failed to load accounting entries");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fMode, fStatus, page, pageSize, search]);
 
   const loadReports = useCallback(async () => {
     setReportsLoading(true);
@@ -84,23 +98,33 @@ export default function AccountingPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(load, 250);
+    return () => window.clearTimeout(timer);
+  }, [load]);
   useEffect(() => { if (tab === "reports") loadReports(); }, [tab, loadReports]);
 
+  useEffect(() => { setPage(1); }, [search, fStatus, fMode, pageSize]);
+
   // ── Filter ──
-  const filtered = entries.filter((e) => {
-    const matchSearch = !search ||
-      [e.booking?.name, e.booking?.fullName, e.booking?.bookingId, e.booking?.tripName, e.referenceNumber]
-        .some(v => v?.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus = fStatus === "ALL" || e.status === fStatus;
-    const matchMode = fMode === "ALL" || e.paymentMode === fMode;
-    return matchSearch && matchStatus && matchMode;
-  });
+  const filtered = entries;
 
   // ── Stats ──
-  const totalApproved = entries.filter(e => e.status === "APPROVED").reduce((s, e) => s + e.amount, 0);
-  const totalPending = entries.filter(e => e.status === "PENDING").reduce((s, e) => s + e.amount, 0);
-  const totalRejected = entries.filter(e => e.status === "REJECTED").reduce((s, e) => s + e.amount, 0);
+  const totalApproved = ledgerTotals.APPROVED;
+  const totalPending = ledgerTotals.PENDING;
+  const totalRejected = ledgerTotals.REJECTED;
+
+  const openHistory = async (entry: AccountingEntry) => {
+    setHistoryDialog({ open: true, entry: { ...entry, history: undefined } });
+    try {
+      const history = await accountingService.getEntryHistory(entry.id);
+      setHistoryDialog((current) => current.entry?.id === entry.id
+        ? { open: true, entry: { ...entry, history } }
+        : current);
+    } catch {
+      toast.error("Failed to load payment history");
+    }
+  };
 
   // ── Create ──
   const handleCreate = async () => {
@@ -297,7 +321,7 @@ export default function AccountingPage() {
                               </>
                             )}
                             <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-slate-500 hover:bg-slate-100"
-                              onClick={() => setHistoryDialog({ open: true, entry: e })}>
+                              onClick={() => openHistory(e)}>
                               <History className="w-3 h-3" />
                             </Button>
                           </div>
@@ -307,8 +331,16 @@ export default function AccountingPage() {
                   })}
                 </tbody>
               </table>
-              <div className="bg-slate-50 px-3 py-2 text-[10px] text-slate-400 font-medium border-t border-slate-100">
-                Showing {filtered.length} of {entries.length} entries
+              <div className="bg-slate-50 px-3 py-2 text-[10px] text-slate-500 font-medium border-t border-slate-100 flex items-center justify-between gap-3">
+                <span>Showing {filtered.length} of {totalCount} entries</span>
+                <div className="flex items-center gap-2">
+                  <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-7 rounded border border-slate-200 bg-white px-2">
+                    <option value={25}>25</option><option value={50}>50</option><option value={100}>100</option>
+                  </select>
+                  <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                  <span>Page {page} of {totalPages}</span>
+                  <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}><ChevronRight className="h-3.5 w-3.5" /></Button>
+                </div>
               </div>
             </div>
           )}

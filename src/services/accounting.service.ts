@@ -46,10 +46,25 @@ export interface AccountingReports {
   monthlyRevenue: { month: string; amount: number }[];
 }
 
+export interface AccountingEntriesResponse {
+  data: AccountingEntry[];
+  summary: Record<"APPROVED" | "PENDING" | "REJECTED", number>;
+  pagination: { page: number; limit: number; totalCount: number; totalPages: number };
+}
+
 export const accountingService = {
-  async getEntries(params?: Record<string, string>): Promise<AccountingEntry[]> {
+  async getEntries(params?: Record<string, string>): Promise<AccountingEntriesResponse> {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
     const res = await api.get(`/accounting/entries${query}`);
+    return {
+      data: res.data?.data || [],
+      summary: res.data?.summary || { APPROVED: 0, PENDING: 0, REJECTED: 0 },
+      pagination: res.data?.pagination || { page: 1, limit: 25, totalCount: 0, totalPages: 1 },
+    };
+  },
+
+  async getEntryHistory(id: string): Promise<AccountingEntryLog[]> {
+    const res = await api.get(`/accounting/entries/${id}/history`);
     return res.data?.data || [];
   },
 

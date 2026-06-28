@@ -59,10 +59,11 @@ const emptyForm = () => ({
 interface TrainTicketsPanelProps {
   bookingId: string;
   booking?: any;
+  onCountChange?: (count: number) => void;
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
-export default function TrainTicketsPanel({ bookingId, booking }: TrainTicketsPanelProps) {
+export default function TrainTicketsPanel({ bookingId, booking, onCountChange }: TrainTicketsPanelProps) {
   const { admin } = useAuthStore();
   const role = admin?.role ?? "";
 
@@ -82,6 +83,8 @@ export default function TrainTicketsPanel({ bookingId, booking }: TrainTicketsPa
 
   // Expanded history
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [historyByTicket, setHistoryByTicket] = useState<Record<string, any[]>>({});
+  const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null);
 
   // Bulk selection
   const [selected, setSelected]     = useState<Set<string>>(new Set());
@@ -111,10 +114,33 @@ export default function TrainTicketsPanel({ bookingId, booking }: TrainTicketsPa
         trainTicketService.getTicketsByBooking(bookingId),
         trainTicketService.getTemplates(),
       ]);
-      setTickets(t ?? []);
+      const nextTickets = t ?? [];
+      setTickets(nextTickets);
+      setExpandedId(null);
+      setHistoryByTicket({});
+      onCountChange?.(nextTickets.length);
       setTemplates((tmpl ?? []).filter((x) => x.isActive));
     } catch { toast.error("Failed to load tickets"); }
     finally { setLoading(false); }
+  }
+
+  async function toggleHistory(ticketId: string) {
+    if (expandedId === ticketId) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(ticketId);
+    if (historyByTicket[ticketId]) return;
+    setHistoryLoadingId(ticketId);
+    try {
+      const history = await trainTicketService.getTicketHistory(ticketId);
+      setHistoryByTicket((current) => ({ ...current, [ticketId]: history }));
+    } catch {
+      toast.error("Failed to load ticket history");
+      setExpandedId(null);
+    } finally {
+      setHistoryLoadingId(null);
+    }
   }
 
   function openCreate() {
@@ -541,13 +567,11 @@ export default function TrainTicketsPanel({ bookingId, booking }: TrainTicketsPa
                       </Button>
                     )}
                     {/* History toggle */}
-                    {t.history && t.history.length > 0 && (
-                      <Button size="sm" variant="ghost" onClick={() => setExpandedId(expanded ? null : t.id)}
+                    <Button size="sm" variant="ghost" onClick={() => toggleHistory(t.id)} disabled={historyLoadingId === t.id}
                         className="h-7 px-2 text-[9px] font-bold uppercase text-slate-500">
                         <History className="w-3 h-3 mr-1" />
                         {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </Button>
-                    )}
                   </div>
                 </div>
 
@@ -576,10 +600,11 @@ export default function TrainTicketsPanel({ bookingId, booking }: TrainTicketsPa
                 )}
 
                 {/* History log */}
-                {expanded && t.history && t.history.length > 0 && (
+                {expanded && (
                   <div className="border-t border-slate-100 px-3 py-2 space-y-1.5 max-h-48 overflow-y-auto bg-slate-50/50">
                     <p className="text-[8px] font-bold uppercase text-slate-400 tracking-wider">History</p>
-                    {[...t.history].reverse().map((h: any, i: number) => (
+                    {historyLoadingId === t.id && <p className="text-[10px] text-slate-400">Loading history…</p>}
+                    {historyByTicket[t.id]?.map((h: any, i: number) => (
                       <div key={i} className="flex items-start gap-2 text-[10px] text-slate-600">
                         <span className="shrink-0 w-16 text-[8px] text-slate-400 font-medium pt-0.5">
                           {new Date(h.createdAt).toLocaleString()}
@@ -593,6 +618,9 @@ export default function TrainTicketsPanel({ bookingId, booking }: TrainTicketsPa
                         </div>
                       </div>
                     ))}
+                    {historyLoadingId !== t.id && historyByTicket[t.id]?.length === 0 && (
+                      <p className="text-[10px] text-slate-400">No history available.</p>
+                    )}
                   </div>
                 )}
               </div>

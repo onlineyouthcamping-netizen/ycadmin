@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Compass, Calculator, CalendarCheck, CheckSquare, Sparkles, Plus, RefreshCw,
@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import api from "@/services/api";
-import { opsService, type OpsDayItinerary, type OpsTripExpense, type OpsAccountingSummary, type OpsSeatConfig, type AutoAllocationResult, type OpsTransportFleet, type OpsRoomInventory } from "@/services/ops.service";
+import { bookingsService } from "@/services/bookings.service";
+import { opsService, type OpsDayItinerary, type OpsTripExpense, type OpsAccountingSummary, type OpsSeatConfig, type OpsWorkspaceSummary, type AutoAllocationResult, type OpsTransportFleet, type OpsRoomInventory } from "@/services/ops.service";
 
 const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -22,6 +23,8 @@ export default function OperationsHubPage() {
   const [availableDepartureDates, setAvailableDepartureDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "hotels_transport" | "allocation" | "checklist" | "sop" | "leader" | "incidents" | "accounting">("overview");
+  const loadedWorkspaceTabs = useRef(new Set<string>());
+  const opsRequestId = useRef(0);
 
   // Excel Grids Data
   const [itinerary, setItinerary] = useState<OpsDayItinerary[]>([]);
@@ -30,6 +33,7 @@ export default function OperationsHubPage() {
   const [roomInventory, setRoomInventory] = useState<OpsRoomInventory[]>([]);
   const [summary, setSummary] = useState<OpsAccountingSummary | null>(null);
   const [seatConfig, setSeatConfig] = useState<OpsSeatConfig | null>(null);
+  const [workspaceSummary, setWorkspaceSummary] = useState<OpsWorkspaceSummary | null>(null);
 
   // SOP, Checklist, Incident, Leader states
   const [checklist, setChecklist] = useState<any[]>([]);
@@ -84,8 +88,7 @@ export default function OperationsHubPage() {
 
   // 1. Load trips
   useEffect(() => {
-    api.get("/trips").then(res => {
-      const list = res.data?.data || [];
+    bookingsService.getTrips().then(list => {
       setTrips(list);
       if (list.length > 0) setSelectedTripId(list[0].id);
     }).catch(() => toast.error("Failed to load trips"));
@@ -108,51 +111,73 @@ export default function OperationsHubPage() {
     });
   }, [selectedTripId]);
 
-  // 2. Load trip operational data (Departure Isolated with resilient fetching)
-  const loadTripOps = useCallback(async (tripId: string, depDate?: string) => {
+  // Load only the active tab. Hidden operational modules remain idle.
+  const loadTripOps = useCallback(async (
+    tripId: string,
+    depDate?: string,
+    tab = activeTab,
+    force = true,
+  ) => {
     if (!tripId || !depDate) return;
+    const filterKey = tab === "sop" ? `${sopFilterDestination}|${includeArchivedSops}` : "";
+    const cacheKey = `${tripId}|${depDate}|${tab}|${filterKey}`;
+    if (!force && loadedWorkspaceTabs.current.has(cacheKey)) return;
+
+    const requestId = ++opsRequestId.current;
     setLoading(true);
     try {
-      const results = await Promise.allSettled([
-        opsService.getDayItinerary(tripId, depDate),
-        opsService.getTripExpenses(tripId, depDate),
-        opsService.getAccountingSummary(tripId, depDate),
-        opsService.getSeatConfig(tripId, depDate),
-        opsService.getTransportFleet(tripId, depDate),
-        opsService.getRoomInventory(tripId, depDate),
-        opsService.getChecklist(tripId, depDate),
-        opsService.getTripLeader(tripId, depDate),
-        opsService.getIncidents(tripId, depDate)
-      ]);
+      if (tab === "overview") {
+        const overview = await opsService.getWorkspaceSummary(tripId, depDate);
+        if (requestId !== opsRequestId.current) return;
+        setWorkspaceSummary(overview);
+        setSeatConfig(overview.seatAvailability);
+      } else if (tab === "hotels_transport") {
+        const [itineraryResult, fleetResult] = await Promise.allSettled([
+          opsService.getDayItinerary(tripId, depDate),
+          opsService.getTransportFleet(tripId, depDate),
+        ]);
+        if (requestId !== opsRequestId.current) return;
+        if (itineraryResult.status === "fulfilled") setItinerary(itineraryResult.value);
+        if (fleetResult.status === "fulfilled") setFleet(fleetResult.value);
+      } else if (tab === "allocation") {
+        const [fleetResult, roomsResult] = await Promise.allSettled([
+          opsService.getTransportFleet(tripId, depDate),
+          opsService.getRoomInventory(tripId, depDate),
+        ]);
+        if (requestId !== opsRequestId.current) return;
+        if (fleetResult.status === "fulfilled") setFleet(fleetResult.value);
+        if (roomsResult.status === "fulfilled") setRoomInventory(roomsResult.value);
+      } else if (tab === "checklist") {
+        setChecklist(await opsService.getChecklist(tripId, depDate));
+      } else if (tab === "sop") {
+        setSops(await opsService.getSops(sopFilterDestination || undefined, includeArchivedSops));
+      } else if (tab === "leader") {
+        setLeader(await opsService.getTripLeader(tripId, depDate));
+      } else if (tab === "incidents") {
+        setIncidents(await opsService.getIncidents(tripId, depDate));
+      } else if (tab === "accounting") {
+        const [expensesResult, summaryResult] = await Promise.allSettled([
+          opsService.getTripExpenses(tripId, depDate),
+          opsService.getAccountingSummary(tripId, depDate),
+        ]);
+        if (requestId !== opsRequestId.current) return;
+        if (expensesResult.status === "fulfilled") setExpenses(expensesResult.value);
+        if (summaryResult.status === "fulfilled") setSummary(summaryResult.value);
+      }
 
-      if (results[0].status === "fulfilled") setItinerary(results[0].value);
-      if (results[1].status === "fulfilled") setExpenses(results[1].value);
-      if (results[2].status === "fulfilled") setSummary(results[2].value);
-      if (results[3].status === "fulfilled") setSeatConfig(results[3].value);
-      if (results[4].status === "fulfilled") setFleet(results[4].value);
-      if (results[5].status === "fulfilled") setRoomInventory(results[5].value);
-      if (results[6].status === "fulfilled") setChecklist(results[6].value);
-      if (results[7].status === "fulfilled") setLeader(results[7].value);
-      if (results[8].status === "fulfilled") setIncidents(results[8].value);
+      if (requestId === opsRequestId.current) loadedWorkspaceTabs.current.add(cacheKey);
     } catch {
-      // Graceful fallback
+      // Preserve the tab's existing empty-state fallback.
     } finally {
-      setLoading(false);
+      if (requestId === opsRequestId.current) setLoading(false);
     }
-  }, []);
+  }, [activeTab, includeArchivedSops, sopFilterDestination]);
 
   useEffect(() => {
     if (selectedTripId && selectedDepartureDate) {
-      loadTripOps(selectedTripId, selectedDepartureDate);
+      loadTripOps(selectedTripId, selectedDepartureDate, activeTab, false);
     }
-  }, [selectedTripId, selectedDepartureDate, loadTripOps]);
-
-  // SOP Library query hooks
-  useEffect(() => {
-    opsService.getSops(sopFilterDestination || undefined, includeArchivedSops)
-      .then(setSops)
-      .catch(() => {});
-  }, [sopFilterDestination, includeArchivedSops]);
+  }, [selectedTripId, selectedDepartureDate, activeTab, loadTripOps]);
 
   // Handle Itinerary Checkbox Updates
   const handleItinCheckToggle = async (row: OpsDayItinerary, field: "hotelVerified" | "vehicleVerified" | "guideVerified" | "checkInDone") => {
@@ -641,7 +666,7 @@ export default function OperationsHubPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-[10px] font-bold text-slate-400 uppercase">Approved Revenue</p>
-          <p className="text-2xl font-black text-emerald-700 mt-1">₹{(summary?.totalRevenueCollected || 0).toLocaleString("en-IN")}</p>
+          <p className="text-2xl font-black text-emerald-700 mt-1">₹{(workspaceSummary?.approvedCollections || 0).toLocaleString("en-IN")}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-[10px] font-bold text-slate-400 uppercase">Total Ops Cost</p>
@@ -716,11 +741,11 @@ export default function OperationsHubPage() {
                 <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4 border border-slate-100">
                   <div>
                     <p className="text-2xl font-black text-slate-800">
-                      {checklist.filter(c => c.isCompleted).length} / {checklist.length} Completed
+                      {workspaceSummary?.checklistCompletion.completed || 0} / {workspaceSummary?.checklistCompletion.total || 0} Completed
                     </p>
                     <p className="text-[10px] text-slate-400 font-medium">Standard checklist tasks completed.</p>
                   </div>
-                  {checklist.length === 0 ? (
+                  {(workspaceSummary?.checklistCompletion.total || 0) === 0 ? (
                     <Button size="sm" onClick={handleInitializeChecklist} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold h-8">
                       Initialize checklist
                     </Button>
@@ -734,23 +759,13 @@ export default function OperationsHubPage() {
 
               <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Active Incident Status</h3>
-                {incidents.filter(i => i.status === "OPEN").length === 0 ? (
+                {(workspaceSummary?.openIncidentCount || 0) === 0 ? (
                   <div className="bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-xl p-4 text-xs font-bold text-center">
                     ✓ All clear. No open incidents reported on this departure date.
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {incidents.filter(i => i.status === "OPEN").map(inc => (
-                      <div key={inc.id} className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-bold text-rose-950">{inc.title}</p>
-                          <p className="text-[10px] text-rose-800 mt-0.5">{inc.description}</p>
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-rose-200 text-rose-800">
-                          {inc.severity}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-900">
+                    {workspaceSummary?.openIncidentCount || 0} open incident{workspaceSummary?.openIncidentCount === 1 ? "" : "s"}. Open the Incidents tab for details.
                   </div>
                 )}
               </div>
@@ -758,9 +773,9 @@ export default function OperationsHubPage() {
 
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Departure Leader</h3>
-              {leader.length > 0 ? (
+              {(workspaceSummary?.leaders.length || 0) > 0 ? (
                 <div className="space-y-3">
-                  {leader.map((ld: any, idx: number) => (
+                  {workspaceSummary?.leaders.map((ld: any, idx: number) => (
                     <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-4">
                       <p className="text-[9px] font-bold text-slate-400 uppercase">
                         Leader Name {ld.isPrimary && <span className="text-[9px] text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded font-black ml-1.5">Primary</span>}

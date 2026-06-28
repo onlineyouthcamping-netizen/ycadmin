@@ -53,6 +53,21 @@ export interface OpsSeatConfig {
   waitingList: number;
 }
 
+export interface OpsWorkspaceSummary {
+  acceptedTravelerCount: number;
+  ticketReadiness: { approved: number; pending: number; cancelled: number };
+  approvedCollections: number;
+  pendingCollections: number;
+  remainingCollections: number;
+  seatAvailability: OpsSeatConfig & { configured: boolean };
+  hotelTransportStatus: { hotelsTotal: number; hotelsConfirmed: number; transportTotal: number };
+  allocationState: { status: string; version: number; roomAllocations: number; vehicleAllocations: number };
+  checklistCompletion: { completed: number; total: number };
+  blockingFlagCount: number;
+  openIncidentCount: number;
+  leaders: Array<{ id: string; leaderName: string; leaderPhone: string; leaderType: string; isPrimary: boolean }>;
+}
+
 export interface AutoAllocationResult {
   allocationRunId?: string;
   version?: number;
@@ -94,6 +109,11 @@ export interface OpsRoomInventory {
 }
 
 export const opsService = {
+  async getWorkspaceSummary(tripId: string, departureDate?: string): Promise<OpsWorkspaceSummary> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.get(`/ops/summary/${tripId}${q}`);
+    return res.data?.data;
+  },
   async getDayItinerary(tripId: string, departureDate?: string): Promise<OpsDayItinerary[]> {
     const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
     const res = await api.get(`/ops/itinerary/${tripId}${q}`);

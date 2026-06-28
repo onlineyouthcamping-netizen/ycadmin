@@ -88,6 +88,7 @@ export default function VerificationDetailsPanel({
 
   const [verificationData, setVerificationData] = useState<any>(null);
   const [trainTickets, setTrainTickets] = useState<TrainTicket[]>([]);
+  const [ticketCount, setTicketCount] = useState(0);
   const [selectedTicket, setSelectedTicket] = useState<TrainTicket | null>(null);
   const [templates, setTemplates] = useState<TrainTemplate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -135,30 +136,8 @@ export default function VerificationDetailsPanel({
   const loadData = async () => {
     setLoading(true);
     try {
-      const [vRes, ticketsRes, templatesRes] = await Promise.allSettled([
-        bookingVerificationService.getVerificationStatus(bookingId),
-        trainTicketService.getTicketsByBooking(bookingId),
-        trainTicketService.getTemplates(),
-      ]);
-
-      if (vRes.status === "fulfilled") {
-        setVerificationData(vRes.value);
-      }
-      if (ticketsRes.status === "fulfilled") {
-        const list = ticketsRes.value || [];
-        setTrainTickets(list);
-        if (list.length > 0) {
-          // Keep previous selection if still exists
-          const currentId = selectedTicket?.id;
-          const match = list.find((t) => t.id === currentId);
-          setSelectedTicket(match || list[0]);
-        } else {
-          setSelectedTicket(null);
-        }
-      }
-      if (templatesRes.status === "fulfilled") {
-        setTemplates(templatesRes.value || []);
-      }
+      const verification = await bookingVerificationService.getVerificationStatus(bookingId);
+      setVerificationData(verification);
     } catch (err) {
       console.error("Failed to load verification data:", err);
     }
@@ -435,7 +414,7 @@ export default function VerificationDetailsPanel({
                   activeTab === "ticket" ? "border-slate-900 text-slate-900" : "border-transparent text-slate-400"
                 )}
               >
-                Traveler Tickets ({trainTickets.length})
+                Traveler Tickets ({ticketCount})
               </button>
             </div>
 
@@ -491,7 +470,7 @@ export default function VerificationDetailsPanel({
 
               {activeTab === "ticket" && (
                 <div className="p-6">
-                  <TrainTicketsPanel bookingId={bookingId} booking={booking} />
+                  <TrainTicketsPanel bookingId={bookingId} booking={booking} onCountChange={setTicketCount} />
                 </div>
               )}
             </div>
