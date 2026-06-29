@@ -35,8 +35,26 @@ export const vendorsService = {
 
   async getBulkForTrips(tripIds?: string[]): Promise<Record<string, TripVendor[]>> {
     const query = tripIds && tripIds.length > 0 ? `?tripIds=${tripIds.join(",")}` : "";
-    const res = await api.get(`/vendors/bulk${query}`);
-    return res.data.data;
+    try {
+      const res = await api.get(`/vendors/bulk${query}`);
+      return res.data.data;
+    } catch (err: any) {
+      // Fallback: if the backend bulk endpoint is missing, fetch in parallel.
+      // This keeps the page working while the backend endpoint is being deployed.
+      if (err.response?.status === 404 && tripIds && tripIds.length > 0) {
+        const results = await Promise.all(
+          tripIds.map(async (id) => {
+            const { assignments } = await this.getForTrip(id);
+            return { id, assignments };
+          })
+        );
+        return results.reduce((acc, { id, assignments }) => {
+          acc[id] = assignments;
+          return acc;
+        }, {} as Record<string, TripVendor[]>);
+      }
+      throw err;
+    }
   },
 
   async assignToTrip(data: {
