@@ -57,16 +57,9 @@ export default function BookingDetailsModal({ open, onOpenChange, booking, onEdi
       return;
     }
 
-    console.log("Booking:", booking);
-    console.log("Booking ID:", booking?.id);
-    console.log("Email:", booking?.email);
-    console.log("Sending email to:", booking?.email || "No Email");
-    console.log("📡 [handleSendEmail] Triggering:", { bookingId: booking.id, type });
-    
     const toastId = toast.loading(`Sending ${type} email...`);
     try {
       await bookingsService.sendEmail(booking.id, type, booking.totalAmount);
-      console.log("✅ [handleSendEmail] Success");
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} email sent!`, { id: toastId });
       fetchEmailLogs();
     } catch (e: any) {

@@ -186,8 +186,6 @@ export default function NewBookingModal({ open, onOpenChange, onSuccess }: NewBo
       passengers,
     };
 
-    console.log("📡 Sending booking:", payload);
-
     if (!payload.name || !payload.phone || !payload.tripId || !payload.email || !payload.departureDate) {
       toast.error("Required fields: Name, Phone, Trip, Email, and Departure Date");
       return;
@@ -196,7 +194,6 @@ export default function NewBookingModal({ open, onOpenChange, onSuccess }: NewBo
     setSubmitting(true);
     try {
       const response = await bookingsService.create(payload);
-      console.log("✅ Booking Success:", response);
       toast.success("Booking created successfully");
       onOpenChange(false);
       onSuccess?.();
