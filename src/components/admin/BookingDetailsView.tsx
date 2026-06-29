@@ -368,13 +368,14 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
           }
 
           const defaultItems: any[] = [];
+          const baseRate = itemRate > 0 ? itemRate : (res?.price || 11999);
           
           travOpts.forEach((opt: any, idx: number) => {
             const isSelected = idx === selectedTravelIdx;
             defaultItems.push({
               id: opt.label.replace(/\s+/g, '_').toLowerCase(),
               name: opt.label,
-              rate: res?.price ? (res.price + (opt.priceDelta || 0)) : (booking.baseAmount || 11999),
+              rate: parseFloat((baseRate + (opt.priceDelta || 0)).toFixed(2)),
               qty: isSelected ? (booking.numberOfTravelers || 1) : 0
             });
           });
@@ -1641,7 +1642,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                         Total
                       </td>
                       <td className="px-6 py-5 text-right font-bold text-slate-900 text-lg">
-                        ₹ {booking.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹ {(bookingItems.length > 0 && Math.abs(calculatedTotal - booking.totalAmount) > 1 ? calculatedTotal : booking.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   </tbody>
