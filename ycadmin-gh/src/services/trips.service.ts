@@ -6,11 +6,15 @@ import type { Trip, TripFormData } from "@/types";
 // Cache TTL is 5 minutes — stale data clears on any create/update/delete.
 let _cache: Trip[] | null = null;
 let _cacheAt = 0;
+let _compactCache: Partial<Trip>[] | null = null;
+let _compactCacheAt = 0;
 const CACHE_TTL = 5 * 60 * 1000;
 
 function invalidate() {
   _cache = null;
   _cacheAt = 0;
+  _compactCache = null;
+  _compactCacheAt = 0;
 }
 
 export const tripsService = {
@@ -20,6 +24,14 @@ export const tripsService = {
     _cache = res.data.data;
     _cacheAt = Date.now();
     return _cache!;
+  },
+
+  async getCompact(): Promise<Trip[]> {
+    if (_compactCache && Date.now() - _compactCacheAt < CACHE_TTL) return _compactCache as Trip[];
+    const res = await api.get("/trips/compact?status=all");
+    _compactCache = res.data.data;
+    _compactCacheAt = Date.now();
+    return _compactCache as Trip[];
   },
 
   async getById(id: string): Promise<Trip | undefined> {

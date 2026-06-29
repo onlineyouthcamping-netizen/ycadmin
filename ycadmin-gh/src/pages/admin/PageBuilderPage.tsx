@@ -216,7 +216,7 @@ export default function PageBuilderPage() {
       const [userData, layoutData, tripsData] = await Promise.all([
         authService.getMe(),
         pageBuilderService.getDraft(page),
-        tripsService.getAll()
+        tripsService.getCompact()
       ]);
       
       if (userData?.role === 'agent') {

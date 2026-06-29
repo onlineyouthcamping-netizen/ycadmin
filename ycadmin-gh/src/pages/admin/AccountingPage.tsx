@@ -135,7 +135,7 @@ export default function AccountingPage() {
   const loadVendorAssignments = async () => {
     setLoadingVendors(true);
     try {
-      const trips = await tripsService.getAll();
+      const trips = await tripsService.getCompact();
       const tripIds = trips.map((t: any) => t.id || t._id).filter(Boolean);
       const byTripMap = await vendorsService.getBulkForTrips(tripIds);
 

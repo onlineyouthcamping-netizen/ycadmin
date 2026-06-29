@@ -59,7 +59,7 @@ export default function TrainTemplatesPage() {
     try {
       const [templatesData, tripsData] = await Promise.all([
         trainTicketService.getTemplates(),
-        tripsService.getAll(),
+        tripsService.getCompact(),
       ]);
       setTemplates(templatesData || []);
       setTrips(tripsData || []);
