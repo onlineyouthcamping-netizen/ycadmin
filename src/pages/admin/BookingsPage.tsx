@@ -355,6 +355,14 @@ export default function BookingsPage() {
     return m;
   }, [trips]);
 
+  useEffect(() => {
+    const handleReset = () => {
+      setDetailsTarget(null);
+    };
+    window.addEventListener("reset-bookings-view", handleReset);
+    return () => window.removeEventListener("reset-bookings-view", handleReset);
+  }, []);
+
   // Load trips once on mount (reusing memory cache)
   useEffect(() => {
     bookingsService.getTrips()

@@ -173,6 +173,11 @@ function AdminSidebar() {
                       <SidebarMenuButton asChild className="h-8.5 rounded-lg transition-all duration-200">
                         <NavLink
                           to={item.url}
+                          onClick={() => {
+                            if (item.url === "/admin/bookings") {
+                              window.dispatchEvent(new CustomEvent("reset-bookings-view"));
+                            }
+                          }}
                           className="flex items-center text-white/60 hover:text-white hover:bg-white/10 px-3 group/item"
                           activeClassName="bg-white/15 text-white font-semibold border-l-[3px] border-primary"
                         >
@@ -375,6 +380,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         open={bookingModalOpen} 
         onOpenChange={setBookingModalOpen} 
         onSuccess={() => {
+          console.log("📅 Booking created successfully!");
           if (location.pathname === '/admin/bookings') {
              window.location.reload();
           }
