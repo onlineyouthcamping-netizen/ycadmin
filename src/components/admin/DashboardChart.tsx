@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface MonthlyRevenue {
@@ -5,7 +6,7 @@ interface MonthlyRevenue {
   revenue: number;
 }
 
-export default function DashboardChart({ data }: { data: MonthlyRevenue[] }) {
+const DashboardChart = memo(function DashboardChart({ data }: { data: MonthlyRevenue[] }) {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>
@@ -40,4 +41,6 @@ export default function DashboardChart({ data }: { data: MonthlyRevenue[] }) {
       </BarChart>
     </ResponsiveContainer>
   );
-}
+});
+
+export default DashboardChart;

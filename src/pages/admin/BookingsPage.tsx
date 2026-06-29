@@ -126,7 +126,7 @@ function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Booking | 
   useEffect(() => {
     if (booking) {
       setEmail(booking.email || "");
-      const trip = trips.find(t => t.tripCode === booking.tripId);
+      const trip = trips.find(t => t.tripCode === booking.tripId || t.id === booking.tripId);
       if (trip && trip.price) {
         setTotal(trip.price.toString());
       } else {
@@ -345,6 +345,15 @@ export default function BookingsPage() {
   };
 
   const { admin: currentAdmin } = useAuthStore();
+
+  const tripMap = useMemo(() => {
+    const m = new Map<string, BookingTrip>();
+    for (const t of trips) {
+      if (t.id) m.set(t.id, t);
+      if (t.tripCode) m.set(t.tripCode, t);
+    }
+    return m;
+  }, [trips]);
 
   // Load trips once on mount (reusing memory cache)
   useEffect(() => {
@@ -1002,7 +1011,7 @@ export default function BookingsPage() {
                     </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filtered.map(b => {
-                      const tripName = b.tripName || trips.find(t => t.tripCode === b.tripId)?.tripName || "Expedition Tour Package";
+                      const tripName = b.tripName || tripMap.get(b.tripId)?.tripName || "Expedition Tour Package";
                       const meta = getBookingMetaData(b);
                       return (
                         <tr 
@@ -1178,7 +1187,7 @@ export default function BookingsPage() {
               {/* CARD LIST VIEW (Mobile Breakpoint) */}
               <div className="md:hidden space-y-2">
                 {filtered.map(b => {
-                  const tripName = b.tripName || trips.find(t => t.tripCode === b.tripId)?.tripName || "Expedition Tour Package";
+                  const tripName = b.tripName || tripMap.get(b.tripId)?.tripName || "Expedition Tour Package";
                   const meta = getBookingMetaData(b);
                   return (
                     <div 

@@ -61,10 +61,14 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
   ]
 };
 
+const ROLE_PERMISSIONS_SETS: Record<string, Set<string>> = Object.fromEntries(
+  Object.entries(ROLE_PERMISSIONS).map(([k, v]) => [k, new Set(v)])
+);
+
 export function hasPermission(role: string | undefined | null, permission: string): boolean {
   if (!role) return false;
   if (role === 'superadmin') return true;
-  const allowed = ROLE_PERMISSIONS[role];
-  if (!allowed) return false;
-  return allowed.includes(permission);
+  const set = ROLE_PERMISSIONS_SETS[role];
+  if (!set) return false;
+  return set.has(permission);
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { 
   Calendar, Users, Pencil, Trash2, Plus, ArrowLeft, Check, X, 
   ChevronRight, CreditCard, Globe, Languages, Tag, MessageSquare, 
@@ -188,25 +188,36 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
   const calculatedTotal = totalWithGST - gstDiscount;
 
   // Live preview values during editing
-  const previewItems = [...bookingItems];
-  if (customDescription && customRate) {
-    previewItems.push({
-      name: customDescription,
-      rate: parseFloat(customRate) || 0,
-      qty: parseInt(customQty) || 1
-    });
-  }
-  
-  const activePreviewItems = previewItems.filter(item => item.qty > 0 || item.rate < 0);
-  const basePreviewItems = activePreviewItems.filter(item => !(item.name.toLowerCase().includes("discount") || item.rate < 0));
-  const discountPreviewItems = activePreviewItems.filter(item => item.name.toLowerCase().includes("discount") || item.rate < 0);
-  
-  const previewBasePrice = basePreviewItems.reduce((acc, item) => acc + (item.rate * item.qty), 0);
-  const previewGstDiscount = discountPreviewItems.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
-  
-  const previewGstAmount = parseFloat(((previewBasePrice - previewGstDiscount) * gstRate).toFixed(2));
-  const previewTotalWithGST = previewBasePrice + previewGstAmount;
-  const previewFinalTotal = previewTotalWithGST - previewGstDiscount;
+  const { previewItems, previewBasePrice, previewGstDiscount, previewGstAmount, previewTotalWithGST, previewFinalTotal } = useMemo(() => {
+    const items = [...bookingItems];
+    if (customDescription && customRate) {
+      items.push({
+        name: customDescription,
+        rate: parseFloat(customRate) || 0,
+        qty: parseInt(customQty) || 1
+      });
+    }
+    
+    const active = items.filter(item => item.qty > 0 || item.rate < 0);
+    const base = active.filter(item => !(item.name.toLowerCase().includes("discount") || item.rate < 0));
+    const discount = active.filter(item => item.name.toLowerCase().includes("discount") || item.rate < 0);
+    
+    const baseP = base.reduce((acc, item) => acc + (item.rate * item.qty), 0);
+    const gstD = discount.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
+    
+    const gstA = parseFloat(((baseP - gstD) * gstRate).toFixed(2));
+    const totalW = baseP + gstA;
+    const finalT = totalW - gstD;
+
+    return {
+      previewItems: items,
+      previewBasePrice: baseP,
+      previewGstDiscount: gstD,
+      previewGstAmount: gstA,
+      previewTotalWithGST: totalW,
+      previewFinalTotal: finalT
+    };
+  }, [bookingItems, customDescription, customRate, customQty, gstRate]);
 
   useEffect(() => {
     setLoadingPayments(true);
