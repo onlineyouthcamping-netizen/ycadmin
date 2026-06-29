@@ -30,3 +30,6 @@ dist-ssr
 pnpm-lock.yaml
 bun.lock
 bun.lockb
+
+ycadmin-fix/
+ycadmin-gh/
