@@ -1,3 +1,4 @@
+import axios from "axios";
 import api from "./api";
 import type { Booking, BookingTrip } from "@/types";
 
@@ -18,7 +19,7 @@ export const bookingsService = {
     depEnd?: string;
     page?: number;
     limit?: number;
-  }): Promise<any> {
+  }, signal?: AbortSignal): Promise<any> {
     try {
       const params = new URLSearchParams();
       if (filters) {
@@ -29,9 +30,13 @@ export const bookingsService = {
         });
       }
 
-      const res = await api.get(`/bookings?${params.toString()}`);
+      const res = await api.get(`/bookings?${params.toString()}`, { signal });
       return res.data;
     } catch (err) {
+      if (axios.isCancel?.(err) || (err as any)?.name === 'CanceledError' || (err as any)?.name === 'AbortError') {
+        console.log("ℹ️ Request cancelled");
+        throw err;
+      }
       console.error("🔥 Bookings fetch failed:", err);
       throw err;
     }

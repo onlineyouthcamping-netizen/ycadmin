@@ -1,7 +1,7 @@
 // Sync trigger for Vercel admin deployment
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +39,15 @@ const AccessControlPage = lazy(() => import("./pages/admin/AccessControlPage.tsx
 const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage.tsx"));
 const UnauthorizedPage = lazy(() => import("./pages/admin/UnauthorizedPage.tsx"));
 const DynamicFormAdmin = lazy(() => import("./pages/admin/DynamicFormAdmin.tsx"));
+const GuidesDashboardPage = lazy(() => import("./pages/admin/GuidesDashboardPage.tsx"));
+const GuideOperationsCenterPage = lazy(() => import("./pages/admin/GuideOperationsCenterPage.tsx"));
+const GuidesListPage = lazy(() => import("./pages/admin/GuidesListPage.tsx"));
+const AttendanceLogsPage = lazy(() => import("./pages/admin/AttendanceLogsPage.tsx"));
+const AssignmentsPage = lazy(() => import("./pages/admin/AssignmentsPage.tsx"));
+const PayrollPage = lazy(() => import("./pages/admin/PayrollPage.tsx"));
+const ExpensesApprovalPage = lazy(() => import("./pages/admin/ExpensesApprovalPage.tsx"));
+const GuideDashboardPage = lazy(() => import("./pages/admin/GuideDashboardPage.tsx"));
+const GuideTripDetailPage = lazy(() => import("./pages/admin/GuideTripDetailPage.tsx"));
 
 // Named exports from PlaceholderPages Adapted to default exports expected by lazy
 const CollectionsPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.CollectionsPage })));
@@ -61,10 +70,9 @@ import { DynamicThemeProvider } from "./components/admin/DynamicThemeProvider.ts
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Dedupe identical requests across components & avoid refetch storms
-      staleTime: 60_000,              // data fresh for 1 min
-      gcTime: 5 * 60_000,             // keep in cache 5 min
-      refetchOnWindowFocus: false,    // huge win: no refetch when tabbing back
+      staleTime: 60_000,              // 1 min default stale time for queries
+      gcTime: 5 * 60_000,             // 5 min cache garbage collection
+      refetchOnWindowFocus: false,    // prevent unwanted refetches on tab switch
       refetchOnReconnect: false,
       retry: 1,
     },
@@ -139,20 +147,18 @@ const App = () => (
               <Route path="/admin/audit-logs" element={<AdminRoute><AuditLogsPage /></AdminRoute>} />
               <Route path="/admin/unauthorized" element={<AdminRoute><UnauthorizedPage /></AdminRoute>} />
               <Route path="/admin/dynamic-sync" element={<AdminRoute><DynamicFormAdmin /></AdminRoute>} />
+              <Route path="/admin/guides-dashboard" element={<AdminRoute><GuidesDashboardPage /></AdminRoute>} />
+              <Route path="/admin/guides-hub" element={<AdminRoute><GuideOperationsCenterPage /></AdminRoute>} />
+              <Route path="/admin/guides" element={<AdminRoute><GuidesListPage /></AdminRoute>} />
+              <Route path="/admin/attendance-logs" element={<AdminRoute><AttendanceLogsPage /></AdminRoute>} />
+              <Route path="/admin/assignments" element={<AdminRoute><AssignmentsPage /></AdminRoute>} />
+              <Route path="/admin/payroll" element={<AdminRoute><PayrollPage /></AdminRoute>} />
+              <Route path="/admin/expenses" element={<AdminRoute><ExpensesApprovalPage /></AdminRoute>} />
               <Route path="/admin/live-operations" element={<AdminRoute><LiveTripOperationsPage /></AdminRoute>} />
+              <Route path="/admin/guide-portal" element={<AdminRoute><GuideDashboardPage /></AdminRoute>} />
+              <Route path="/admin/guide-portal/trip/:assignmentId" element={<AdminRoute><GuideTripDetailPage /></AdminRoute>} />
               <Route path="/admin/accounting" element={<AdminRoute><AccountingPage /></AdminRoute>} />
               <Route path="/admin/operations" element={<AdminRoute><OperationsHubPage /></AdminRoute>} />
-              {/* Guide module removed — redirect all former Guide URLs to Dashboard */}
-              <Route path="/admin/guides-dashboard" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/guides-hub" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/guides" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/attendance-logs" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/assignments" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/payroll" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/expenses" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/live-operations" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/guide-portal" element={<Navigate to="/admin" replace />} />
-              <Route path="/admin/guide-portal/trip/:assignmentId" element={<Navigate to="/admin" replace />} />
               <Route path="*" element={<Suspense fallback={<LoadingUI />}><NotFound /></Suspense>} />
             </Routes>
           </BrowserRouter>

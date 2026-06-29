@@ -334,6 +334,7 @@ export default function BookingsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [salesOptions, setSalesOptions] = useState<string[]>([]);
   const bookingsRequestRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -365,6 +366,12 @@ export default function BookingsPage() {
   }, [currentAdmin]);
 
   const fetchBookings = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const requestId = ++bookingsRequestRef.current;
     setLoading(true);
     try {
@@ -382,7 +389,7 @@ export default function BookingsPage() {
         depEnd,
         page,
         limit: pageSize,
-      });
+      }, controller.signal);
       if (requestId !== bookingsRequestRef.current) return;
 
       const currentTotalPages = res.pagination?.totalPages || 0;
@@ -396,7 +403,8 @@ export default function BookingsPage() {
       setBookings(Array.isArray(res.data) ? res.data.filter((x: any) => x.status !== 'cancelled') : []);
       setTotalCount(res.pagination?.totalCount || 0);
       setTotalPages(currentTotalPages);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'CanceledError' || err?.name === 'AbortError') return;
       if (requestId !== bookingsRequestRef.current) return;
       console.error("🔥 Critical fetch error:", err);
       toast.error("Failed to load bookings");
@@ -453,16 +461,18 @@ export default function BookingsPage() {
   ]);
 
   const openBookingDetails = useCallback(async (booking: Booking) => {
-    if (detailsLoadingId) return;
+    // Open modal INSTANTLY with existing row data (0ms wait)
+    setDetailsTarget(booking);
     setDetailsLoadingId(booking.id);
     try {
-      setDetailsTarget(await bookingsService.getById(booking.id));
-    } catch {
-      toast.error("Failed to load booking details");
+      const full = await bookingsService.getById(booking.id);
+      setDetailsTarget(full);
+    } catch (err) {
+      console.warn("Background detail refresh skipped/failed", err);
     } finally {
       setDetailsLoadingId(null);
     }
-  }, [detailsLoadingId]);
+  }, []);
 
   const refreshBookingDetails = useCallback(async () => {
     const id = detailsTarget?.id;
