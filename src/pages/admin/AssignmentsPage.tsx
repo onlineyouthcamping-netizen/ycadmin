@@ -78,7 +78,7 @@ export default function AssignmentsPage() {
 
   useEffect(() => {
     const init = async () => {
-      await ensureGuideToken("9999999999", "admin");
+      await ensureGuideToken(import.meta.env.VITE_ADMIN_GUIDE_PHONE || "", "admin");
       fetchData();
     };
     init();

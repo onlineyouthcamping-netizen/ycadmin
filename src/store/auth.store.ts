@@ -11,12 +11,10 @@ export async function ensureGuideToken(phone: string, role: string): Promise<voi
 
   guideLoginAttemptedThisSession = true;
   try {
-    console.log("🤖 Attempting to ensure Guide API token...");
     const guideAuth = await guideService.login(phone, role);
     localStorage.setItem("guide_token", guideAuth.id.toString());
-    console.log("✅ Guide API token acquired, stored:", guideAuth.id);
-  } catch (guideErr) {
-    console.warn("⚠️ Failed to acquire Guide API token:", guideErr);
+  } catch {
+    // Silent — guide API may be offline; non-blocking for admin users
   }
 }
 
@@ -37,13 +35,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (email, password) => {
     set({ isLoading: true });
-    console.log("🚀 Attempting login for:", email);
     try {
       const auth = await authService.login(email, password);
       localStorage.setItem("token", auth.token);
       set({ admin: auth.admin, isAuthenticated: true, isLoading: false });
     } catch (err) {
-      console.error("❌ Login failed:", err);
       set({ isLoading: false });
       throw err;
     }
@@ -51,7 +47,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loginAsGuide: async (phone) => {
     set({ isLoading: true });
-    console.log("🚀 Attempting guide login for phone:", phone);
     try {
       const guideAuth = await guideService.login(phone, 'guide');
       localStorage.setItem("guide_token", guideAuth.id.toString());
@@ -66,7 +61,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false
       });
     } catch (err) {
-      console.error("❌ Guide login failed:", err);
       set({ isLoading: false });
       throw err;
     }
@@ -87,7 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const token = localStorage.getItem("token");
     const guideToken = localStorage.getItem("guide_token");
-    
+
     if (!token && !guideToken) {
       set({ admin: null, isAuthenticated: false, isLoading: false });
       return;
@@ -109,8 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
           isLoading: false
         });
-      } catch (err) {
-        console.error("❌ Guide auth check failed:", err);
+      } catch {
         localStorage.removeItem("guide_token");
         set({ admin: null, isAuthenticated: false, isLoading: false });
       }
@@ -121,8 +114,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const admin = await authService.getMe();
       set({ admin, isAuthenticated: true, isLoading: false });
-    } catch (err) {
-      console.error("❌ Auth check failed:", err);
+    } catch {
       localStorage.removeItem("token");
       localStorage.removeItem("guide_token");
       set({ admin: null, isAuthenticated: false, isLoading: false });
