@@ -272,10 +272,14 @@ const getBookingMetaData = (booking: Booking) => {
   return { bookedBy, source };
 };
 
+// Module-level caches for reference data to eliminate repeat fetches on mount
+let cachedBookingTrips: BookingTrip[] | null = null;
+let cachedSalesOptions: string[] | null = null;
+
 // ── MAIN PAGE ──
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [trips, setTrips] = useState<BookingTrip[]>([]);
+  const [trips, setTrips] = useState<BookingTrip[]>(cachedBookingTrips || []);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'pending' | 'confirmed'>('pending');
   const [search, setSearch] = useState("");
@@ -332,7 +336,7 @@ export default function BookingsPage() {
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [salesOptions, setSalesOptions] = useState<string[]>([]);
+  const [salesOptions, setSalesOptions] = useState<string[]>(cachedSalesOptions || []);
   const bookingsRequestRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -342,19 +346,27 @@ export default function BookingsPage() {
 
   const { admin: currentAdmin } = useAuthStore();
 
-  // Load trips once on mount
+  // Load trips once on mount (reusing memory cache)
   useEffect(() => {
     bookingsService.getTrips()
-      .then(t => setTrips(Array.isArray(t) ? t : []))
+      .then(t => {
+        const arr = Array.isArray(t) ? t : [];
+        cachedBookingTrips = arr;
+        setTrips(arr);
+      })
       .catch(err => console.error("Trips failed", err));
   }, []);
 
-  // Fetch sales agents list if admin, otherwise set to current user ID
+  // Fetch sales agents list if admin, otherwise set to current user ID (reusing memory cache)
   useEffect(() => {
     if (currentAdmin && (currentAdmin.role === "admin" || currentAdmin.role === "superadmin")) {
+      if (cachedSalesOptions) {
+        setSalesOptions(cachedSalesOptions);
+      }
       adminUsersService.listAdmins()
         .then((users) => {
           const ids = users.map((u: any) => u.id || u.username || u.email).filter(Boolean);
+          cachedSalesOptions = ids;
           setSalesOptions(ids);
         })
         .catch((err) => {
@@ -365,12 +377,23 @@ export default function BookingsPage() {
     }
   }, [currentAdmin]);
 
+  // Track filter changes to handle page reset cleanly without duplicate requests
+  const filterKey = `${tab}-${filterTrip}-${filterPayment}-${filterSalesAdmin}-${bookingStart}-${bookingEnd}-${depStart}-${depEnd}-${statusFilter}-${paymentStatusFilter}-${balanceOnly}-${search}`;
+  const lastFilterKeyRef = useRef(filterKey);
+
   const fetchBookings = useCallback(async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     const controller = new AbortController();
     abortControllerRef.current = controller;
+
+    let queryPage = page;
+    if (lastFilterKeyRef.current !== filterKey) {
+      lastFilterKeyRef.current = filterKey;
+      queryPage = 1;
+      setPage(1);
+    }
 
     const requestId = ++bookingsRequestRef.current;
     setLoading(true);
@@ -387,7 +410,7 @@ export default function BookingsPage() {
         bookingEnd,
         depStart,
         depEnd,
-        page,
+        page: queryPage,
         limit: pageSize,
       }, controller.signal);
       if (requestId !== bookingsRequestRef.current) return;
@@ -395,7 +418,7 @@ export default function BookingsPage() {
       const currentTotalPages = res.pagination?.totalPages || 0;
 
       // Safety Clamp: If filters reduce available results and current page is greater than totalPages
-      if (currentTotalPages > 0 && page > currentTotalPages) {
+      if (currentTotalPages > 0 && queryPage > currentTotalPages) {
         setPage(1);
         return;
       }
@@ -428,6 +451,7 @@ export default function BookingsPage() {
     depEnd,
     page,
     pageSize,
+    filterKey,
   ]);
 
   useEffect(() => {
@@ -442,23 +466,7 @@ export default function BookingsPage() {
     setPage(1);
   };
 
-  // Reset page on filter/search changes
-  useEffect(() => {
-    setPage(1);
-  }, [
-    tab,
-    filterTrip,
-    filterPayment,
-    filterSalesAdmin,
-    bookingStart,
-    bookingEnd,
-    depStart,
-    depEnd,
-    statusFilter,
-    paymentStatusFilter,
-    balanceOnly,
-    search,
-  ]);
+
 
   const openBookingDetails = useCallback(async (booking: Booking) => {
     // Open modal INSTANTLY with existing row data (0ms wait)

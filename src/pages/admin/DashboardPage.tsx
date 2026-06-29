@@ -1,21 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { KPICard } from "@/components/admin/KPICard";
 import { StatusBadge, getBookingBadgeVariant } from "@/components/admin/StatusBadge";
 import { dashboardService } from "@/services/dashboard.service";
 import type { DashboardStats } from "@/types";
 import { CalendarCheck, DollarSign, TrendingUp, AlertTriangle, Star } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
+const DashboardChart = lazy(() => import("@/components/admin/DashboardChart"));
+
+let cachedDashboardStats: DashboardStats | null = null;
+let cachedDashboardTimestamp = 0;
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(cachedDashboardStats);
+  const [loading, setLoading] = useState(!cachedDashboardStats);
 
   useEffect(() => {
-    dashboardService.getStats().then((data) => {
-      setStats(data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    const isStale = Date.now() - cachedDashboardTimestamp > 60_000;
+    if (!cachedDashboardStats || isStale) {
+      if (!cachedDashboardStats) setLoading(true);
+      dashboardService.getStats().then((data) => {
+        cachedDashboardStats = data;
+        cachedDashboardTimestamp = Date.now();
+        setStats(data);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    }
   }, []);
 
   const profit = stats?.totalProfit ?? 0;
@@ -50,46 +60,16 @@ export default function DashboardPage() {
                <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          {loading ? (
-            <div className="h-[350px] flex items-end gap-3 px-2">
-              {[40, 65, 55, 80, 45, 90, 70, 60, 85, 50, 75, 95].map((h, i) => (
-                <div key={i} className="flex-1 bg-zinc-100 animate-pulse rounded-t-xl" style={{ height: `${h}%` }} />
-              ))}
+          <Suspense fallback={
+            <div className="h-[350px] w-full flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+              <div className="flex flex-col items-center gap-2 text-slate-400">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Loading Revenue Chart...</span>
+              </div>
             </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={stats?.monthlyRevenue ?? []}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis 
-                  dataKey="month" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  fontSize={10} 
-                  fontWeight="500" 
-                  tick={{fill: '#94A3B8'}} 
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  fontSize={10} 
-                  fontWeight="500" 
-                  tick={{fill: '#94A3B8'}}
-                  dx={-10}
-                />
-                <Tooltip 
-                  cursor={{fill: '#F8FAFC'}} 
-                  contentStyle={{ 
-                    borderRadius: '16px', 
-                    border: '1px solid #E2E8F0', 
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-                    padding: '12px 16px'
-                  }} 
-                />
-                <Bar dataKey="revenue" fill="#FF5400" radius={[12, 12, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          }>
+            <DashboardChart data={stats?.monthlyRevenue ?? []} />
+          </Suspense>
         </div>
 
         {/* Sales Leaderboard */}

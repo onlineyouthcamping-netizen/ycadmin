@@ -8,7 +8,8 @@ if (!apiBaseUrl || apiBaseUrl.includes('onrender.com')) {
 console.log('🚀 [Admin API] Active API base URL:', apiBaseUrl);
 
 const api = axios.create({
-  baseURL: apiBaseUrl.replace(/\/api$/, '')
+  baseURL: apiBaseUrl.replace(/\/api$/, ''),
+  timeout: 15000,
 });
 
 let requestIdCounter = 0;

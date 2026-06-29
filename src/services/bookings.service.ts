@@ -24,7 +24,7 @@ export const bookingsService = {
       const params = new URLSearchParams();
       if (filters) {
         Object.entries(filters).forEach(([key, val]) => {
-          if (val !== undefined && val !== null && val !== "") {
+          if (val !== undefined && val !== null && val !== "" && String(val).toLowerCase() !== "all") {
             params.append(key, String(val));
           }
         });
