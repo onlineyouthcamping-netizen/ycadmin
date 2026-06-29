@@ -53,7 +53,7 @@ export default function BookingFormsPage() {
     try {
       const [formsData, tripsData] = await Promise.all([
         bookingFormsService.getAll(),
-        tripsService.getAll()
+        tripsService.getCompact()
       ]);
       setForms(formsData);
       setTrips(Array.isArray(tripsData) ? tripsData : []);

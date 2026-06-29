@@ -44,7 +44,7 @@ export default function ReviewsPage() {
     try {
       const [revs, tps] = await Promise.all([
         reviewsService.getAll(),
-        tripsService.getAll()
+        tripsService.getCompact()
       ]);
       setReviews(revs);
       setTrips(tps);

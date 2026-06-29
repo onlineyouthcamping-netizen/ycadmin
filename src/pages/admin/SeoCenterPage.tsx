@@ -36,7 +36,7 @@ export default function SeoCenterPage() {
 
   const loadPages = async () => {
     try {
-      const trips = await tripsService.getAll();
+      const trips = await tripsService.getCompact();
       const list = [
         { label: 'Home Page', value: 'home' },
         { label: 'About Us', value: 'about' },
