@@ -477,18 +477,9 @@ export default function BookingsPage() {
 
 
 
-  const openBookingDetails = useCallback(async (booking: Booking) => {
-    // Open modal INSTANTLY with existing row data (0ms wait)
+  const openBookingDetails = useCallback((booking: Booking) => {
     setDetailsTarget(booking);
-    setDetailsLoadingId(booking.id);
-    try {
-      const full = await bookingsService.getById(booking.id);
-      setDetailsTarget(full);
-    } catch (err) {
-      console.warn("Background detail refresh skipped/failed", err);
-    } finally {
-      setDetailsLoadingId(null);
-    }
+    setDetailsLoadingId(null);
   }, []);
 
   const refreshBookingDetails = useCallback(async () => {
