@@ -209,17 +209,25 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
   const previewFinalTotal = previewTotalWithGST - previewGstDiscount;
 
   useEffect(() => {
-    const fetchGlobalSettings = async () => {
-      try {
-        const data = await settingsService.get();
-        if (data) setSettings(data);
-      } catch (e) {
-        console.error("Failed to load settings", e);
+    setLoadingPayments(true);
+    Promise.allSettled([
+      settingsService.get(),
+      bookingsService.getEmailLogs(booking.id),
+      paymentsService.getByBooking(booking.id)
+    ]).then(([settingsRes, logsRes, paymentsRes]) => {
+      if (settingsRes.status === 'fulfilled' && settingsRes.value) {
+        setSettings(settingsRes.value);
       }
-    };
-    fetchGlobalSettings();
-    fetchEmailLogs();
-    fetchPayments();
+      if (logsRes.status === 'fulfilled' && logsRes.value) {
+        setEmailLogs(logsRes.value);
+      }
+      if (paymentsRes.status === 'fulfilled' && paymentsRes.value) {
+        setPaymentsList(paymentsRes.value.payments || []);
+      }
+    }).finally(() => {
+      setLoadingPayments(false);
+    });
+
     setNotesValue(booking.notes || "");
     setInternalNotesValue(booking.adminNotes || "");
     setConfirmEmail(booking.email || "");
@@ -1923,7 +1931,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
               </div>
               <button 
                 onClick={() => toast.info("Use edit guest attributes sidebar option to update legal info")}
-                className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1"
+                className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
               >
                 Edit
               </button>
@@ -2060,7 +2068,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                           <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 border border-slate-200 uppercase leading-none truncate max-w-[150px]">
                             Pickup: {booking.pickupCity || 'AHMEDABAD'}, Drop: {booking.pickupCity || 'AHMEDABAD'}
                           </span>
-                          <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-600 border border-blue-200 uppercase leading-none truncate max-w-[150px]">
+                          <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-primary/5 text-primary border border-primary/20 uppercase leading-none truncate max-w-[150px]">
                             Variant: {booking.trainClass || 'SLEEPER'}
                           </span>
                         </div>
@@ -2090,10 +2098,10 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
             
             {/* Trip label info */}
             <div className="pb-3 border-b border-slate-100">
-              <span className="bg-[#428bca] text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm uppercase tracking-wide mr-2">
+              <span className="bg-primary text-white font-bold text-[9px] px-1.5 py-0.5 rounded-sm uppercase tracking-wide mr-2">
                 {booking.tripId}
               </span>
-              <span className="font-bold text-blue-600 leading-tight text-xs">
+              <span className="font-bold text-primary leading-tight text-xs">
                 {booking.tripName || trips.find(t => t.tripCode === booking.tripId)?.tripName || "Spiti Valley Road Trip"}
               </span>
             </div>
@@ -2428,7 +2436,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
               ) : (
                 <div className="pl-5 space-y-0.5">
                   <p className="font-bold text-slate-800">{booking.fullName}</p>
-                  <p className="text-blue-600 hover:underline font-mono truncate max-w-[180px]">{booking.email || 'no-email@details.com'}</p>
+                  <p className="text-primary hover:underline font-mono truncate max-w-[180px]">{booking.email || 'no-email@details.com'}</p>
                   <p className="font-mono text-slate-500">+91 {booking.mobile}</p>
                 </div>
               )}
@@ -2862,7 +2870,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
             )}
 
             {paymentSource === 'online' && (
-              <div className="p-3 bg-blue-50 border border-blue-150 rounded text-blue-700 animate-fade-in">
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded text-primary animate-fade-in">
                 <p className="font-semibold mb-0.5">Online Request Automation:</p>
                 <p>Saving this will auto-generate a secure checkout payment link and send it via email reminder to: <strong>{booking.email || 'no-email'}</strong>.</p>
               </div>
@@ -2879,7 +2887,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
             <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
               <button 
                 onClick={() => setShowCreatePayment(false)}
-                className="bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold uppercase text-[9px] px-3.5 h-8 rounded"
+                disabled={savingPayment}
+                className="bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold uppercase text-[9px] px-3.5 h-8 rounded disabled:opacity-50"
               >
                 Cancel
               </button>

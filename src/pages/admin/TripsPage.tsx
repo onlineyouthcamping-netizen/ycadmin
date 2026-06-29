@@ -40,17 +40,13 @@ export default function TripsPage() {
   });
 
   const openCreate = () => { setEditing(null); setIsEditingMode(true); };
-  const openEdit = async (t: Trip) => { 
+  const openEdit = (t: Trip) => { 
     if (!t?.id) return;
-    try {
-      const fullTrip = await tripsService.getById(t.id);
-      setEditing(fullTrip || t);
-      setIsEditingMode(true); 
-    } catch (error) {
-      toast.error("Failed to load full trip details");
-      setEditing(t);
-      setIsEditingMode(true);
-    }
+    setEditing(t);
+    setIsEditingMode(true); 
+    tripsService.getById(t.id).then(fullTrip => {
+      if (fullTrip) setEditing(fullTrip);
+    }).catch(() => {});
   };
 
   const handleSave = async (data: TripFormData, editingId?: string) => {
@@ -138,7 +134,7 @@ export default function TripsPage() {
     { key: "tripCode", header: "Trip Code", render: (t: Trip) => {
       if (!t) return null;
       return (
-        <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+        <span className="font-mono text-xs font-bold text-primary bg-primary/5 px-2 py-1 rounded">
           {t.id || "N/A"}
         </span>
       );
@@ -173,7 +169,7 @@ export default function TripsPage() {
       return (
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" onClick={() => setVendorTrip(t)} title="Manage Vendors">
-            <Building2 className="h-4 w-4 text-blue-600" />
+            <Building2 className="h-4 w-4 text-primary" />
           </Button>
           <Button variant="ghost" size="icon" onClick={() => openEdit(t)}><Pencil className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>

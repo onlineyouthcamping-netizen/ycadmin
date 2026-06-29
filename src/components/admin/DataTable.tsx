@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -52,16 +52,22 @@ export function DataTable<T extends Record<string, any>>({
   const activePage = serverSide ? page : localPage;
   const activePageSize = pageSize;
 
-  const filtered = serverSide
-    ? data
-    : (data || []).filter((item) => {
-        if (!searchKey || !localSearch) return true;
-        const value = item[searchKey];
-        return String(value || "").toLowerCase().includes(localSearch.toLowerCase());
-      });
+  const filtered = useMemo(() => {
+    return serverSide
+      ? data
+      : (data || []).filter((item) => {
+          if (!searchKey || !localSearch) return true;
+          const value = item[searchKey];
+          return String(value || "").toLowerCase().includes(localSearch.toLowerCase());
+        });
+  }, [serverSide, data, searchKey, localSearch]);
 
   const computedTotalPages = serverSide ? totalPages : Math.ceil(filtered.length / activePageSize);
-  const paged = serverSide ? data : filtered.slice(activePage * activePageSize, (activePage + 1) * activePageSize);
+  
+  const paged = useMemo(() => {
+    return serverSide ? data : filtered.slice(activePage * activePageSize, (activePage + 1) * activePageSize);
+  }, [serverSide, data, filtered, activePage, activePageSize]);
+
   const totalItemsCount = serverSide ? totalCount : filtered.length;
 
   const handlePageChange = (newPage: number) => {

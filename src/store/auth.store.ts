@@ -81,7 +81,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   checkAuth: async (force = false) => {
     const currentState = get();
     if (!force && currentState.isAuthenticated && currentState.admin) {
-      console.log("⚡ Auth already active in session, skipping re-check");
       set({ isLoading: false });
       return;
     }
@@ -90,20 +89,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const guideToken = localStorage.getItem("guide_token");
     
     if (!token && !guideToken) {
-      console.log("🔄 No tokens found, redirecting to login...");
       set({ admin: null, isAuthenticated: false, isLoading: false });
       return;
     }
 
     set({ isLoading: true });
-    console.log("🔍 Checking auth, token exists:", !!token, "guideToken exists:", !!guideToken);
 
     // Case 1: Guide login session
     if (guideToken && !token) {
       try {
-        console.log("🤖 Fetching guide profile...");
         const guideProfile = await guideService.getProfile();
-        console.log("✅ Guide auth check success:", guideProfile.name);
         set({
           admin: {
             id: guideProfile.id,
@@ -125,8 +120,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Case 2: Admin/manager login session
     try {
       const admin = await authService.getMe();
-      console.log("✅ Auth check success:", admin?.email || admin?.name || "Admin");
-
       set({ admin, isAuthenticated: true, isLoading: false });
     } catch (err) {
       console.error("❌ Auth check failed:", err);
