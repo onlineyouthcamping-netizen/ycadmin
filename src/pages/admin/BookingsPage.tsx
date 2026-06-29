@@ -975,11 +975,11 @@ export default function BookingsPage() {
                   <table className="w-full text-left table-striped border-collapse">
                     <thead className="sticky top-0 bg-slate-50 border-b border-slate-150 z-10">
                       <tr className="text-xs font-semibold text-slate-500 tracking-tight">
-                        <th className="px-4 py-3 font-semibold">Tour Details</th>
-                        <th className="px-4 py-3 font-semibold">Contact Details</th>
-                        <th className="px-4 py-3 font-semibold hidden lg:table-cell">Departure Details</th>
-                        <th className="px-4 py-3 font-semibold">UPI Reference</th>
-                        <th className="px-4 py-3 font-semibold text-right lg:text-left">Booking Status</th>
+                        <th className="w-10 px-4 py-3"><input type="checkbox" className="rounded border-slate-300 text-primary focus:ring-primary" /></th>
+                        <th className="px-4 py-3 font-semibold">Tour details</th>
+                        <th className="px-4 py-3 font-semibold">Contact details</th>
+                        <th className="px-4 py-3 font-semibold hidden lg:table-cell">Departure details</th>
+                        <th className="px-4 py-3 font-semibold text-right lg:text-left">Booking status</th>
                       </tr>
                     </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -992,14 +992,19 @@ export default function BookingsPage() {
                           className="hover-actions cursor-pointer hover:bg-slate-50/70 transition-colors"
                           onClick={() => openBookingDetails(b)}
                         >
+                          {/* 0. CHECKBOX */}
+                          <td className="w-10 px-4 py-3.5 align-top" onClick={e => e.stopPropagation()}>
+                            <input type="checkbox" className="rounded border-slate-300 text-primary focus:ring-primary mt-1" />
+                          </td>
+
                           {/* 1. TOUR DETAILS */}
-                          <td className="px-3.5 py-2.5 align-top">
+                          <td className="px-4 py-3.5 align-top">
                             <div className="space-y-0.5 max-w-[280px]">
                               <p className="font-semibold text-rose-700 hover:underline text-xs leading-tight">
                                 {b.tripId} - {tripName}
                               </p>
-                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 flex-wrap">
-                                <span className="font-mono bg-slate-100 text-slate-650 px-1 py-0.2 rounded font-bold">#{b.bookingId}</span>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-550 flex-wrap">
+                                <span className="font-bold text-slate-655"># {b.bookingId}</span>
                                 <span>·</span>
                                 <span>{new Date(b.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                                 <span>at</span>
@@ -1007,7 +1012,7 @@ export default function BookingsPage() {
                               </div>
                               
                               {/* Extra departure details in table columns on tablet viewport */}
-                              <div className="lg:hidden text-[10px] text-slate-500 flex items-center gap-1.5 pt-0.5">
+                              <div className="lg:hidden text-[10px] text-slate-550 flex items-center gap-1.5 pt-0.5">
                                 <span className="font-medium text-slate-600">Dep:</span>
                                 <span>{b.departureDate ? new Date(b.departureDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'N/A'}</span>
                                 <span>·</span>
@@ -1017,14 +1022,14 @@ export default function BookingsPage() {
                           </td>
 
                           {/* 2. CONTACT DETAILS */}
-                          <td className="px-3.5 py-2.5 align-top">
-                            <div className="space-y-0.5">
+                          <td className="px-4 py-3.5 align-top">
+                            <div className="space-y-0.5 text-slate-600">
                               <p className="font-bold text-slate-800 leading-tight">{b.fullName}</p>
-                              <p className="text-[10px] text-slate-500 font-mono tracking-tight">{b.email || 'no-email@details.com'}</p>
-                              <p className="text-[10px] text-slate-500 font-mono tracking-tight">{b.mobile}</p>
+                              <p className="text-[10px] text-slate-500 font-mono tracking-tight">{b.email || 'youthcampingmedia@gmail.com'}</p>
+                              <p className="text-[10px] text-slate-500 font-mono tracking-tight">{b.mobile || 'no phone given'}</p>
                               
                               {/* Booked By Info */}
-                              <div className="pt-1.5 border-t border-slate-100 mt-1.5 space-y-0.5 text-[10.5px] text-slate-400">
+                              <div className="pt-1.5 border-t border-slate-100 mt-1.5 space-y-0.5 text-[10px] text-slate-400">
                                 <p className="leading-tight">
                                   Booked by: <span className="text-slate-600 font-semibold">{meta.bookedBy}</span>
                                 </p>
@@ -1036,7 +1041,7 @@ export default function BookingsPage() {
                           </td>
 
                           {/* 3. DEPARTURE DETAILS (Hidden on Tablet) */}
-                          <td className="px-3.5 py-2.5 align-top hidden lg:table-cell">
+                          <td className="px-4 py-3.5 align-top hidden lg:table-cell">
                             <div className="space-y-0.5">
                               <p className="font-semibold text-slate-700">
                                 {b.departureDate ? new Date(b.departureDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not Scheduled'}
@@ -1048,36 +1053,13 @@ export default function BookingsPage() {
                             </div>
                           </td>
 
-                          {/* UPI Reference Column */}
-                          <td className="px-3.5 py-2.5 align-top">
-                            <div className="space-y-0.5">
-                              {b.upi_reference ? (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-slate-700 font-medium bg-slate-100 px-1 py-0.2 rounded">{b.upi_reference}</span>
-                                  <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigator.clipboard.writeText(b.upi_reference || '');
-                                    toast.success("UPI reference copied!");
-                                  }} className="text-slate-400 hover:text-slate-650" title="Copy reference">
-                                    <Copy className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 font-mono italic">No Ref</span>
-                              )}
-                              <div className="text-[10px] text-slate-400 italic uppercase">
-                                {b.payment_method || 'upi'}
-                              </div>
-                            </div>
-                          </td>
-
                           {/* 4. BOOKING STATUS & HOVER ACTIONS */}
-                          <td className="px-3.5 py-2.5 align-top text-right lg:text-left">
-                            <div className="flex flex-col lg:items-start items-end gap-1">
+                          <td className="px-4 py-3.5 align-top text-right lg:text-left">
+                            <div className="flex flex-col lg:items-start items-end gap-1.5">
                               
                               {/* BADGES */}
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={cn("text-[8.5px] font-bold px-1.5 py-0.5 rounded-sm tracking-wide text-white uppercase", 
+                                <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-sm tracking-wide text-white uppercase", 
                                   getFlowStatus(b) === 'Confirmed'
                                     ? "bg-[#2f855a]"
                                     : getFlowStatus(b) === 'Cancelled'
@@ -1088,27 +1070,37 @@ export default function BookingsPage() {
                                 )}>
                                   {getFlowStatus(b)}
                                 </span>
-                                <span className={cn("text-[8.5px] font-bold px-1.5 py-0.5 rounded-sm tracking-wide text-white uppercase", 
-                                  (b.payment_status || 'pending').toLowerCase() === 'confirmed'
-                                    ? "bg-[#2f855a]"
-                                    : (b.payment_status || 'pending').toLowerCase() === 'failed'
-                                      ? "bg-[#9b2c2c]"
-                                      : "bg-amber-500"
-                                )}>
-                                  UPI: {b.payment_status || 'pending'}
-                                </span>
+                                
                                 {getFlowStatus(b) === 'Confirmed' && (b.remainingAmount || 0) > 0 && (
-                                  <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-sm bg-[#9b2c2c] text-white font-mono flex items-center gap-0.5">
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-[#9b2c2c] text-white font-mono flex items-center gap-0.5">
                                     ₹{Number(b.remainingAmount).toLocaleString('en-IN')} balance
                                     <span className="opacity-75 cursor-help pl-0.5" title="Outstanding balance due">?</span>
                                   </span>
                                 )}
                                 {getFlowStatus(b) === 'Confirmed' && (b.remainingAmount || 0) <= 0 && (
-                                  <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-sm bg-emerald-700 text-white font-mono uppercase">
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-emerald-700 text-white font-mono uppercase">
                                     Paid
                                   </span>
                                 )}
                               </div>
+
+                              {/* UPI Reference embedded */}
+                              {b.upi_reference && (
+                                <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                                  <span>Ref: {b.upi_reference}</span>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(b.upi_reference || '');
+                                      toast.success("UPI reference copied!");
+                                    }} 
+                                    className="text-slate-350 hover:text-slate-600"
+                                    title="Copy reference"
+                                  >
+                                    <Copy className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
+                              )}
 
                               {/* HOVER ACTION BUTTONS */}
                               <div 

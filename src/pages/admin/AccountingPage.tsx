@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   IndianRupee, Filter, Search, Loader2, CheckCircle2, XCircle, Clock,
-  Plus, RefreshCw, TrendingUp, Users, AlertTriangle, BarChart3, History, ChevronLeft, ChevronRight
+  Plus, RefreshCw, TrendingUp, Users, AlertTriangle, BarChart3, History,
+  ChevronLeft, ChevronRight, Building2, Truck, UserCheck, UtensilsCrossed, Wrench, HelpCircle, Save, Undo
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
@@ -15,6 +17,10 @@ import {
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { accountingService, type AccountingEntry } from "@/services/accounting.service";
+import { tripsService } from "@/services/trips.service";
+import { vendorsService } from "@/services/vendors.service";
+import type { Vendor } from "@/types";
+import { cn } from "@/lib/utils";
 
 // ── Status Styles ──
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: any }> = {
@@ -29,13 +35,33 @@ const MODE_LABELS: Record<string, string> = {
   BANK_TRANSFER: "🏦 Bank Transfer",
 };
 
+const VENDOR_TYPE_ICONS: Record<string, any> = {
+  hotel: Building2,
+  transport: Truck,
+  guide: UserCheck,
+  meals: UtensilsCrossed,
+  equipment: Wrench,
+  other: HelpCircle,
+};
+
+const VENDOR_TYPE_COLORS: Record<string, string> = {
+  hotel: "bg-blue-100 text-blue-700",
+  transport: "bg-amber-100 text-amber-700",
+  guide: "bg-emerald-100 text-emerald-700",
+  meals: "bg-orange-100 text-orange-700",
+  equipment: "bg-purple-100 text-purple-700",
+  other: "bg-gray-100 text-gray-700",
+};
+
+type TabId = "customer_ledger" | "customer_reports" | "vendor_accounting";
+
 export default function AccountingPage() {
   const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<TabId>("customer_ledger");
+
+  // Customer Accounting State
   const [entries, setEntries] = useState<AccountingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"ledger" | "reports">("ledger");
-
-  // Filters
   const [search, setSearch] = useState("");
   const [fStatus, setFStatus] = useState("ALL");
   const [fMode, setFMode] = useState("ALL");
@@ -45,7 +71,7 @@ export default function AccountingPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [ledgerTotals, setLedgerTotals] = useState({ APPROVED: 0, PENDING: 0, REJECTED: 0 });
 
-  // Create dialog
+  // Create payment dialog
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
@@ -60,9 +86,17 @@ export default function AccountingPage() {
   // History dialog
   const [historyDialog, setHistoryDialog] = useState<{ open: boolean; entry: AccountingEntry | null }>({ open: false, entry: null });
 
-  // Reports
+  // Reports State
   const [reports, setReports] = useState<any>(null);
   const [reportsLoading, setReportsLoading] = useState(false);
+
+  // Vendor Accounting State
+  const [vendorAssignments, setVendorAssignments] = useState<any[]>([]);
+  const [loadingVendors, setLoadingVendors] = useState(false);
+  const [updatingVendorId, setUpdatingVendorId] = useState<string | null>(null);
+  const [vendorSearch, setVendorSearch] = useState("");
+  const [vendorTypeFilter, setVendorTypeFilter] = useState("ALL");
+  const [vendorStatusFilter, setVendorStatusFilter] = useState("ALL");
 
   // ── Load entries ──
   const load = useCallback(async () => {
@@ -98,11 +132,47 @@ export default function AccountingPage() {
     }
   }, []);
 
+  const loadVendorAssignments = async () => {
+    setLoadingVendors(true);
+    try {
+      const trips = await tripsService.getAll();
+      const allAssignments: any[] = [];
+      await Promise.all(
+        trips.map(async (trip: any) => {
+          try {
+            const { assignments } = await vendorsService.getForTrip(trip.id || trip._id);
+            if (assignments && assignments.length > 0) {
+              assignments.forEach((a: any) => {
+                allAssignments.push({
+                  ...a,
+                  tripName: trip.title,
+                  tripCode: trip.tripCode,
+                  tripId: trip.id || trip._id
+                });
+              });
+            }
+          } catch (e) {
+            // Safe fail
+          }
+        })
+      );
+      setVendorAssignments(allAssignments);
+    } catch (e) {
+      toast.error("Failed to load vendor assignments");
+    } finally {
+      setLoadingVendors(false);
+    }
+  };
+
   useEffect(() => {
     const timer = window.setTimeout(load, 250);
     return () => window.clearTimeout(timer);
   }, [load]);
-  useEffect(() => { if (tab === "reports") loadReports(); }, [tab, loadReports]);
+
+  useEffect(() => {
+    if (activeTab === "customer_reports") loadReports();
+    if (activeTab === "vendor_accounting") loadVendorAssignments();
+  }, [activeTab, loadReports]);
 
   useEffect(() => { setPage(1); }, [search, fStatus, fMode, pageSize]);
 
@@ -180,351 +250,531 @@ export default function AccountingPage() {
     }
   };
 
+  // ── Update Vendor Assignment Payment ──
+  const handleUpdateVendorPayment = async (assignmentId: string, status: string, paidAmount: number) => {
+    setUpdatingVendorId(assignmentId);
+    try {
+      await vendorsService.updateAssignment(assignmentId, { paymentStatus: status as any, paidAmount });
+      toast.success("Vendor payment updated successfully");
+      loadVendorAssignments();
+    } catch {
+      toast.error("Failed to update vendor payment");
+    } finally {
+      setUpdatingVendorId(null);
+    }
+  };
+
   const canApprove = user?.role && ["superadmin", "admin", "finance"].includes(user.role);
 
+  // Filtered Vendor Assignments
+  const filteredVendors = vendorAssignments.filter(a => {
+    const vendor = typeof a.vendorId === 'object' ? a.vendorId as Vendor : null;
+    if (!vendor) return false;
+    
+    const matchesSearch = vendor.name.toLowerCase().includes(vendorSearch.toLowerCase()) || 
+                          a.tripName.toLowerCase().includes(vendorSearch.toLowerCase()) ||
+                          a.tripCode.toLowerCase().includes(vendorSearch.toLowerCase());
+                          
+    const matchesType = vendorTypeFilter === "ALL" || vendor.type === vendorTypeFilter;
+    const matchesStatus = vendorStatusFilter === "ALL" || a.paymentStatus === vendorStatusFilter;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const menuItems = [
+    { id: "customer_ledger", label: "Customer Ledger", icon: IndianRupee },
+    { id: "customer_reports", label: "Customer Reports", icon: BarChart3 },
+    { id: "vendor_accounting", label: "Vendor Accounting", icon: Building2 }
+  ];
+
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 pb-20">
+      {/* Workspace Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-5 border-slate-100">
         <div>
-          <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <IndianRupee className="w-5 h-5 text-emerald-600" /> Accounting & Collections
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5 font-medium">
-            Track manual payments, approvals, and financial performance.
-          </p>
+          <h1 className="text-3xl font-black uppercase tracking-tighter">Accounting & <span className="text-primary">Collections</span></h1>
+          <p className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wide">Manage customer payments, vendor invoices, reports, and ledger entry allocations</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={load} className="h-8 text-[10px] font-bold uppercase">
-            <RefreshCw className="w-3 h-3 mr-1" /> Refresh
-          </Button>
-          <Button size="sm" onClick={() => setShowCreate(true)} className="h-8 text-[10px] font-bold uppercase bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="w-3 h-3 mr-1" /> New Payment
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-0.5 w-fit">
-        <button onClick={() => setTab("ledger")} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${tab === "ledger" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-          📋 Ledger
-        </button>
-        <button onClick={() => setTab("reports")} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${tab === "reports" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-          📊 Reports
-        </button>
-      </div>
-
-      {tab === "ledger" && (
-        <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Approved</p>
-              <p className="text-2xl font-black text-emerald-800 mt-1">₹{totalApproved.toLocaleString("en-IN")}</p>
-            </div>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Pending Approval</p>
-              <p className="text-2xl font-black text-amber-800 mt-1">₹{totalPending.toLocaleString("en-IN")}</p>
-            </div>
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Rejected</p>
-              <p className="text-2xl font-black text-red-800 mt-1">₹{totalRejected.toLocaleString("en-IN")}</p>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-wrap gap-3 items-center">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search booking / customer / trip…"
-                className="h-8 text-xs pl-7 w-52" />
-            </div>
-            <Select value={fStatus} onValueChange={setFStatus}>
-              <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={fMode} onValueChange={setFMode}>
-              <SelectTrigger className="h-8 text-xs w-40"><SelectValue placeholder="Payment Mode" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Modes</SelectItem>
-                <SelectItem value="CASH">Cash</SelectItem>
-                <SelectItem value="UPI">UPI</SelectItem>
-                <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Table */}
-          {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" /> Loading…
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-14 bg-slate-50 rounded-xl border border-slate-100">
-              <IndianRupee className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm font-bold text-slate-500">No entries match your filters.</p>
-              <p className="text-[10px] text-slate-400 mt-1">Showing {filtered.length} of {entries.length} entries</p>
-            </div>
-          ) : (
-            <div className="border border-slate-200 rounded-xl overflow-hidden">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="text-left p-3">Booking</th>
-                    <th className="text-left p-3">Customer</th>
-                    <th className="text-left p-3">Trip</th>
-                    <th className="text-right p-3">Amount</th>
-                    <th className="text-center p-3">Mode</th>
-                    <th className="text-center p-3">Status</th>
-                    <th className="text-left p-3">Salesperson</th>
-                    <th className="text-left p-3">Date</th>
-                    <th className="text-center p-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((e) => {
-                    const st = STATUS_STYLES[e.status] || STATUS_STYLES.PENDING;
-                    const Icon = st.icon;
-                    return (
-                      <tr key={e.id} className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors">
-                        <td className="p-3 font-mono font-bold text-slate-700">{e.booking?.bookingId || e.bookingId}</td>
-                        <td className="p-3 text-slate-700">{e.booking?.fullName || e.booking?.name || "—"}</td>
-                        <td className="p-3 text-slate-600">{e.booking?.tripName || "—"}</td>
-                        <td className="p-3 text-right font-bold text-slate-800">₹{e.amount.toLocaleString("en-IN")}</td>
-                        <td className="p-3 text-center">{MODE_LABELS[e.paymentMode] || e.paymentMode}</td>
-                        <td className="p-3 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${st.bg} ${st.text}`}>
-                            <Icon className="w-3 h-3" /> {e.status}
-                          </span>
-                        </td>
-                        <td className="p-3 text-slate-600">{e.salesperson?.name || "—"}</td>
-                        <td className="p-3 text-slate-500">{new Date(e.createdAt).toLocaleDateString("en-IN")}</td>
-                        <td className="p-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            {canApprove && e.status === "PENDING" && (
-                              <>
-                                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-emerald-600 hover:bg-emerald-50"
-                                  onClick={() => handleApprove(e.id)}>
-                                  <CheckCircle2 className="w-3 h-3 mr-0.5" /> Approve
-                                </Button>
-                                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-red-600 hover:bg-red-50"
-                                  onClick={() => setRejectDialog({ open: true, entryId: e.id })}>
-                                  <XCircle className="w-3 h-3 mr-0.5" /> Reject
-                                </Button>
-                              </>
-                            )}
-                            <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-slate-500 hover:bg-slate-100"
-                              onClick={() => openHistory(e)}>
-                              <History className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div className="bg-slate-50 px-3 py-2 text-[10px] text-slate-500 font-medium border-t border-slate-100 flex items-center justify-between gap-3">
-                <span>Showing {filtered.length} of {totalCount} entries</span>
-                <div className="flex items-center gap-2">
-                  <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-7 rounded border border-slate-200 bg-white px-2">
-                    <option value={25}>25</option><option value={50}>50</option><option value={100}>100</option>
-                  </select>
-                  <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-3.5 w-3.5" /></Button>
-                  <span>Page {page} of {totalPages}</span>
-                  <Button size="sm" variant="outline" className="h-7 w-7 p-0" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}><ChevronRight className="h-3.5 w-3.5" /></Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Reports Tab */}
-      {tab === "reports" && (
-        <div className="space-y-5">
-          {reportsLoading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" /> Loading reports…
-            </div>
-          ) : !reports ? (
-            <div className="text-center py-14 text-slate-400">No report data available.</div>
-          ) : (
+          {activeTab === "customer_ledger" && (
             <>
-              {/* Pending Total Card */}
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Total Pending Collections</p>
-                </div>
-                <p className="text-3xl font-black text-amber-800">₹{(reports.pendingTotal || 0).toLocaleString("en-IN")}</p>
-              </div>
-
-              {/* Revenue per Trip */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
-                  <BarChart3 className="w-4 h-4 text-blue-500" /> Revenue per Trip
-                </h3>
-                {reports.revenuePerTrip?.length > 0 ? (
-                  <div className="space-y-2">
-                    {reports.revenuePerTrip.map((r: any) => (
-                      <div key={r.tripName} className="flex items-center justify-between bg-slate-50 rounded-lg px-4 py-2.5">
-                        <span className="text-xs font-semibold text-slate-700">{r.tripName}</span>
-                        <span className="text-xs font-black text-emerald-700">₹{r.amount.toLocaleString("en-IN")}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-xs text-slate-400">No approved revenue yet.</p>}
-              </div>
-
-              {/* Salesperson Performance */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
-                  <Users className="w-4 h-4 text-indigo-500" /> Salesperson Collection Performance
-                </h3>
-                {reports.salespersonCollection?.length > 0 ? (
-                  <div className="space-y-2">
-                    {reports.salespersonCollection.map((s: any, i: number) => (
-                      <div key={s.salespersonName} className="flex items-center justify-between bg-slate-50 rounded-lg px-4 py-2.5">
-                        <span className="text-xs font-semibold text-slate-700">
-                          <span className="inline-flex items-center justify-center w-5 h-5 bg-indigo-100 text-indigo-700 rounded-full text-[9px] font-black mr-2">{i + 1}</span>
-                          {s.salespersonName}
-                        </span>
-                        <span className="text-xs font-black text-indigo-700">₹{s.amount.toLocaleString("en-IN")}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-xs text-slate-400">No salesperson data yet.</p>}
-              </div>
-
-              {/* Monthly Revenue Trend */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" /> Monthly Revenue Trend
-                </h3>
-                {reports.monthlyRevenue?.length > 0 ? (
-                  <div className="space-y-2">
-                    {reports.monthlyRevenue.map((m: any) => (
-                      <div key={m.month} className="flex items-center justify-between bg-slate-50 rounded-lg px-4 py-2.5">
-                        <span className="text-xs font-semibold text-slate-700">{m.month}</span>
-                        <span className="text-xs font-black text-emerald-700">₹{m.amount.toLocaleString("en-IN")}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-xs text-slate-400">No monthly data yet.</p>}
-              </div>
+              <Button size="sm" variant="outline" onClick={load} className="h-9.5 text-xs font-bold uppercase tracking-wider rounded-xl">
+                <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh
+              </Button>
+              <Button size="sm" onClick={() => setShowCreate(true)} className="h-9.5 text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+                <Plus className="w-3.5 h-3.5 mr-1" /> New Entry
+              </Button>
             </>
           )}
+          {activeTab === "vendor_accounting" && (
+            <Button size="sm" variant="outline" onClick={loadVendorAssignments} className="h-9.5 text-xs font-bold uppercase tracking-wider rounded-xl">
+              <RefreshCw className="w-3.5 h-3.5 mr-1" /> Reload Assignments
+            </Button>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* ── Create Payment Dialog ── */}
+      {/* Workspace Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Side: Secondary Vertical Menu */}
+        <div className="lg:col-span-3 flex lg:flex-col overflow-x-auto lg:overflow-x-visible no-scrollbar pb-3 lg:pb-0 gap-1 bg-slate-50/50 p-2 rounded-2xl border border-slate-100 lg:sticky lg:top-4">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as TabId)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
+                  isActive
+                    ? "bg-white text-primary border-l-[3.5px] border-primary shadow-sm"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? "text-primary animate-pulse" : "text-slate-400"}`} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Side: Main Content Panel */}
+        <div className="lg:col-span-9 animate-fade-in">
+          
+          {/* CUSTOMER LEDGER TAB */}
+          {activeTab === "customer_ledger" && (
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-emerald-55/40 border border-emerald-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Approved Collection</p>
+                  <p className="text-3xl font-black text-emerald-800 mt-1">₹{totalApproved.toLocaleString("en-IN")}</p>
+                </Card>
+                <Card className="bg-amber-55/40 border border-amber-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Pending Approvals</p>
+                  <p className="text-3xl font-black text-amber-800 mt-1">₹{totalPending.toLocaleString("en-IN")}</p>
+                </Card>
+                <Card className="bg-red-55/40 border border-red-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Rejected Entries</p>
+                  <p className="text-3xl font-black text-red-800 mt-1">₹{totalRejected.toLocaleString("en-IN")}</p>
+                </Card>
+              </div>
+
+              {/* Filters */}
+              <div className="bg-white border rounded-2xl p-4 flex flex-wrap gap-4 items-center shadow-sm">
+                <Filter className="w-4 h-4 text-slate-450" />
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Input 
+                    value={search} 
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search booking / customer / trip…"
+                    className="h-10 text-xs pl-10 rounded-xl" 
+                  />
+                </div>
+                <Select value={fStatus} onValueChange={setFStatus}>
+                  <SelectTrigger className="h-10 text-xs w-40 rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={fMode} onValueChange={setFMode}>
+                  <SelectTrigger className="h-10 text-xs w-44 rounded-xl"><SelectValue placeholder="Payment Mode" /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="ALL">All Modes</SelectItem>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                    <SelectItem value="UPI">UPI</SelectItem>
+                    <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Table */}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-4 bg-white rounded-3xl border">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Loading ledger collections...</p>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-16 bg-white rounded-3xl border">
+                  <IndianRupee className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-slate-500">No collections match your filters.</p>
+                </div>
+              ) : (
+                <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50/70 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b">
+                          <th className="text-left p-4">Booking ID / Client</th>
+                          <th className="text-left p-4">Trip Details</th>
+                          <th className="text-left p-4">Amount</th>
+                          <th className="text-left p-4">Mode</th>
+                          <th className="text-left p-4">Reference</th>
+                          <th className="text-left p-4">Salesperson</th>
+                          <th className="text-center p-4">Status</th>
+                          <th className="text-right p-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {filtered.map((entry) => {
+                          const status = STATUS_STYLES[entry.status] || STATUS_STYLES.PENDING;
+                          const StatusIcon = status.icon;
+                          return (
+                            <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4">
+                                <div className="font-bold text-slate-800">{entry.booking?.bookingId || entry.bookingId}</div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">{entry.booking?.fullName || entry.booking?.name || "N/A"}</div>
+                              </td>
+                              <td className="p-4">
+                                <div className="font-bold text-slate-800 truncate max-w-[150px]">{entry.booking?.tripName || "N/A"}</div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">{new Date(entry.createdAt).toLocaleDateString()}</div>
+                              </td>
+                              <td className="p-4 font-bold text-slate-900">₹{entry.amount.toLocaleString("en-IN")}</td>
+                              <td className="p-4">{MODE_LABELS[entry.paymentMode] || entry.paymentMode}</td>
+                              <td className="p-4 font-mono text-[10px]">{entry.referenceNumber || "N/A"}</td>
+                              <td className="p-4 text-[10px]">{entry.salesperson?.name || "System"}</td>
+                              <td className="p-4 text-center">
+                                <span className={cn("inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border", status.bg, status.text)}>
+                                  <StatusIcon className="w-3 h-3" /> {entry.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-450 hover:text-slate-800" onClick={() => openHistory(entry)} title="View Logs">
+                                    <History className="w-4 h-4" />
+                                  </Button>
+                                  {entry.status === "PENDING" && canApprove && (
+                                    <>
+                                      <Button size="sm" variant="ghost" className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 text-[10px] font-bold uppercase" onClick={() => handleApprove(entry.id)}>
+                                        Approve
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 text-[10px] font-bold uppercase" onClick={() => setRejectDialog({ open: true, entryId: entry.id })}>
+                                        Reject
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between p-4 border-t bg-slate-50/50">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Page {page} of {totalPages} ({totalCount} entries)
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button size="icon" variant="outline" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="outline" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CUSTOMER REPORTS TAB */}
+          {activeTab === "customer_reports" && (
+            <div className="space-y-6">
+              {reportsLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4 bg-white rounded-3xl border">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-[10px] font-black uppercase tracking-wider">Compiling Reports...</p>
+                </div>
+              ) : !reports ? (
+                <div className="text-center py-16 bg-white rounded-3xl border">
+                  <BarChart3 className="w-12 h-12 text-slate-350 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-slate-500">Failed to compile reports. Reload page to retry.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                  {/* Collections by salesperson */}
+                  <Card className="rounded-3xl border border-slate-200 p-6 bg-white">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-1.5"><Users className="w-4 h-4 text-primary" /> Collection by Representative</h4>
+                    <div className="space-y-4">
+                      {reports.salespersonCollection?.map((item: any, i: number) => (
+                        <div key={i} className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                          <span className="truncate max-w-[150px]">{item.salespersonName || "Internal"}</span>
+                          <span className="font-bold text-slate-900">₹{item.amount.toLocaleString("en-IN")}</span>
+                        </div>
+                      ))}
+                      {(!reports.salespersonCollection || reports.salespersonCollection.length === 0) && (
+                        <div className="text-center py-8 text-slate-400 text-xs">No collections logged.</div>
+                      )}
+                    </div>
+                  </Card>
+
+                  {/* Revenue per trip */}
+                  <Card className="rounded-3xl border border-slate-200 p-6 bg-white">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-1.5"><TrendingUp className="w-4 h-4 text-primary" /> Collection per Tour package</h4>
+                    <div className="space-y-4">
+                      {reports.revenuePerTrip?.map((item: any, i: number) => (
+                        <div key={i} className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                          <span className="truncate max-w-[150px]">{item.tripName || "Tour"}</span>
+                          <span className="font-bold text-slate-900">₹{item.amount.toLocaleString("en-IN")}</span>
+                        </div>
+                      ))}
+                      {(!reports.revenuePerTrip || reports.revenuePerTrip.length === 0) && (
+                        <div className="text-center py-8 text-slate-400 text-xs">No collections logged.</div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* VENDOR ACCOUNTING TAB */}
+          {activeTab === "vendor_accounting" && (
+            <div className="space-y-6">
+              {/* Vendor Filters */}
+              <div className="bg-white border rounded-2xl p-4 flex flex-wrap gap-4 items-center shadow-sm">
+                <Filter className="w-4 h-4 text-slate-450" />
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Input 
+                    value={vendorSearch} 
+                    onChange={(e) => setVendorSearch(e.target.value)}
+                    placeholder="Search vendor name, trip name or trip code…"
+                    className="h-10 text-xs pl-10 rounded-xl" 
+                  />
+                </div>
+                <Select value={vendorTypeFilter} onValueChange={setVendorTypeFilter}>
+                  <SelectTrigger className="h-10 text-xs w-40 rounded-xl"><SelectValue placeholder="Vendor Type" /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="ALL">All Types</SelectItem>
+                    <SelectItem value="hotel">🏨 Hotel</SelectItem>
+                    <SelectItem value="transport">🚌 Transport</SelectItem>
+                    <SelectItem value="guide">👤 Guide</SelectItem>
+                    <SelectItem value="meals">🍽️ Meals</SelectItem>
+                    <SelectItem value="equipment">🔧 Equipment</SelectItem>
+                    <SelectItem value="other">❓ Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={vendorStatusFilter} onValueChange={setVendorStatusFilter}>
+                  <SelectTrigger className="h-10 text-xs w-40 rounded-xl"><SelectValue placeholder="Payment Status" /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="pending">⏳ Pending</SelectItem>
+                    <SelectItem value="partial">🟡 Partial</SelectItem>
+                    <SelectItem value="paid">✅ Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Table */}
+              {loadingVendors ? (
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-4 bg-white rounded-3xl border">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Loading vendor payables...</p>
+                </div>
+              ) : filteredVendors.length === 0 ? (
+                <div className="text-center py-16 bg-white rounded-3xl border">
+                  <Building2 className="w-12 h-12 text-slate-350 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-slate-500">No vendor assignments match your filters.</p>
+                </div>
+              ) : (
+                <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50/70 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b">
+                          <th className="text-left p-4">Vendor</th>
+                          <th className="text-left p-4">Trip Details</th>
+                          <th className="text-left p-4">Agreed Cost</th>
+                          <th className="text-left p-4">Paid Amount</th>
+                          <th className="text-left p-4">Balance</th>
+                          <th className="text-center p-4">Payment Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {filteredVendors.map((a) => {
+                          const vendor = typeof a.vendorId === 'object' ? a.vendorId as Vendor : null;
+                          if (!vendor) return null;
+                          const TypeIcon = VENDOR_TYPE_ICONS[vendor.type] || HelpCircle;
+                          const isUpdating = updatingVendorId === a.id;
+                          const balance = (a.agreedCost || 0) - (a.paidAmount || 0);
+
+                          return (
+                            <tr key={a.id || a._id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", VENDOR_TYPE_COLORS[vendor.type])}>
+                                    <TypeIcon className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-slate-800">{vendor.name}</div>
+                                    <div className="text-[10px] text-slate-450 mt-0.5 capitalize">{vendor.type}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <div className="font-bold text-slate-800">{a.tripName}</div>
+                                <div className="text-[10px] text-slate-400 mt-0.5 font-mono">{a.tripCode}</div>
+                              </td>
+                              <td className="p-4 font-bold text-slate-900">₹{a.agreedCost.toLocaleString()}</td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    placeholder="Paid amount"
+                                    defaultValue={a.paidAmount || 0}
+                                    disabled={isUpdating}
+                                    className="h-8 w-24 rounded-lg text-xs"
+                                    onBlur={(e) => {
+                                      const val = Number(e.target.value);
+                                      if (val !== a.paidAmount) {
+                                        const status = val >= a.agreedCost ? 'paid' : val > 0 ? 'partial' : 'pending';
+                                        handleUpdateVendorPayment(a.id || a._id!, status, val);
+                                      }
+                                    }}
+                                  />
+                                  {isUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
+                                </div>
+                              </td>
+                              <td className={`p-4 font-bold ${balance > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                                ₹{balance.toLocaleString()}
+                              </td>
+                              <td className="p-4 text-center">
+                                <Select
+                                  value={a.paymentStatus}
+                                  disabled={isUpdating}
+                                  onValueChange={(v) => handleUpdateVendorPayment(a.id || a._id!, v, a.paidAmount)}
+                                >
+                                  <SelectTrigger className="h-8 w-28 rounded-lg text-[10px] font-bold uppercase mx-auto">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">⏳ Pending</SelectItem>
+                                    <SelectItem value="partial">🟡 Partial</SelectItem>
+                                    <SelectItem value="paid">✅ Paid</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* CREATE DIALOG */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold">Submit Manual Payment</DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">Enter the payment details received from the customer.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase">Booking ID *</label>
-              <Input value={form.bookingId} onChange={e => setForm(p => ({ ...p, bookingId: e.target.value }))}
-                placeholder="e.g. BK-ABCDEF1234" className="h-8 text-xs mt-1" />
+        <DialogContent className="rounded-3xl border p-0 max-w-md">
+          <div className="px-6 py-5 border-b bg-muted/10">
+            <DialogHeader>
+              <DialogTitle className="text-base font-black uppercase tracking-tight">Create Manual Payment Roster</DialogTitle>
+              <DialogDescription className="text-slate-500 font-medium">Record client collection cash/UPI receipts.</DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="px-6 py-5 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Booking Reference ID *</label>
+              <Input value={form.bookingId} onChange={(e) => setForm({...form, bookingId: e.target.value})} placeholder="e.g. YC-2026-1002" className="h-10 rounded-xl" />
             </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase">Amount (₹) *</label>
-              <Input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
-                placeholder="e.g. 3000" className="h-8 text-xs mt-1" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Amount Collected (₹) *</label>
+              <Input type="number" value={form.amount} onChange={(e) => setForm({...form, amount: e.target.value})} placeholder="0" className="h-10 rounded-xl" />
             </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase">Payment Mode *</label>
-              <Select value={form.paymentMode} onValueChange={v => setForm(p => ({ ...p, paymentMode: v }))}>
-                <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CASH">💵 Cash</SelectItem>
-                  <SelectItem value="UPI">📱 UPI</SelectItem>
-                  <SelectItem value="BANK_TRANSFER">🏦 Bank Transfer</SelectItem>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Payment Mode *</label>
+              <Select value={form.paymentMode} onValueChange={(v) => setForm({...form, paymentMode: v})}>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="CASH">💵 Cash Collection</SelectItem>
+                  <SelectItem value="UPI">📱 UPI Payment</SelectItem>
+                  <SelectItem value="BANK_TRANSFER">🏦 Bank Wire</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase">Reference / Transaction ID</label>
-              <Input value={form.referenceNumber} onChange={e => setForm(p => ({ ...p, referenceNumber: e.target.value }))}
-                placeholder="Optional" className="h-8 text-xs mt-1" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Transaction ID / Reference</label>
+              <Input value={form.referenceNumber} onChange={(e) => setForm({...form, referenceNumber: e.target.value})} placeholder="Reference details" className="h-10 rounded-xl" />
             </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase">Notes</label>
-              <Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                placeholder="Optional notes" className="text-xs mt-1" rows={2} />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Internal Audit Notes</label>
+              <Textarea value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} placeholder="Additional details..." className="rounded-xl min-h-[60px]" />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowCreate(false)} className="text-xs">Cancel</Button>
-            <Button size="sm" onClick={handleCreate} disabled={creating} className="text-xs bg-emerald-600 hover:bg-emerald-700">
-              {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null} Submit for Approval
+          <DialogFooter className="px-6 py-4 bg-slate-50 border-t flex gap-2 rounded-b-3xl">
+            <Button variant="outline" onClick={() => setShowCreate(false)} className="rounded-xl h-9">Cancel</Button>
+            <Button onClick={handleCreate} disabled={creating} className="rounded-xl h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] tracking-widest">
+              {creating ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : null} Submit
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── Reject Dialog ── */}
-      <Dialog open={rejectDialog.open} onOpenChange={o => { if (!o) setRejectDialog({ open: false, entryId: "" }); }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-red-700">Reject Payment Entry</DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">Please provide a reason for rejection.</DialogDescription>
-          </DialogHeader>
-          <div className="py-2">
-            <Textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-              placeholder="Rejection reason…" className="text-xs" rows={3} />
+      {/* REJECT DIALOG */}
+      <Dialog open={rejectDialog.open} onOpenChange={(o) => !o && setRejectDialog({ open: false, entryId: "" })}>
+        <DialogContent className="rounded-3xl border p-0 max-w-sm">
+          <div className="px-6 py-5 border-b bg-muted/10">
+            <DialogHeader>
+              <DialogTitle className="text-base font-black uppercase tracking-tight text-red-650">Decline Ledger Payment</DialogTitle>
+              <DialogDescription className="text-slate-500 font-medium font-sans">Provide auditing reasons to reject this collection claim.</DialogDescription>
+            </DialogHeader>
           </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setRejectDialog({ open: false, entryId: "" })} className="text-xs">Cancel</Button>
-            <Button size="sm" onClick={handleReject} disabled={rejecting} className="text-xs bg-red-600 hover:bg-red-700">
-              {rejecting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null} Reject
+          <div className="px-6 py-5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Reason for Rejection *</label>
+            <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="State audit mismatches or missing receipt details..." className="rounded-xl min-h-[80px]" />
+          </div>
+          <DialogFooter className="px-6 py-4 bg-slate-50 border-t flex gap-2 rounded-b-3xl">
+            <Button variant="outline" onClick={() => setRejectDialog({ open: false, entryId: "" })} className="rounded-xl h-9">Cancel</Button>
+            <Button onClick={handleReject} disabled={rejecting} className="rounded-xl h-9 bg-red-600 hover:bg-red-700 text-white font-bold uppercase text-[10px] tracking-widest">
+              {rejecting ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : null} Reject
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── History Dialog ── */}
-      <Dialog open={historyDialog.open} onOpenChange={o => { if (!o) setHistoryDialog({ open: false, entry: null }); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold">Payment History</DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
-              {historyDialog.entry?.booking?.bookingId} — ₹{historyDialog.entry?.amount?.toLocaleString("en-IN")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-2 space-y-2 max-h-64 overflow-y-auto">
-            {historyDialog.entry?.history?.length ? (
-              historyDialog.entry.history.map((log) => (
-                <div key={log.id} className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-700">{log.action}</span>
-                    <span className="text-[9px] text-slate-400">{new Date(log.createdAt).toLocaleString("en-IN")}</span>
-                  </div>
-                  {log.notes && <p className="text-[10px] text-slate-500 mt-0.5">{log.notes}</p>}
-                  <p className="text-[9px] text-slate-400 mt-0.5">by {log.actor?.name || "System"}</p>
+      {/* HISTORY LOG DIALOG */}
+      <Dialog open={historyDialog.open} onOpenChange={(o) => !o && setHistoryDialog({ open: false, entry: null })}>
+        <DialogContent className="rounded-3xl border p-0 max-w-md">
+          <div className="px-6 py-5 border-b bg-muted/10">
+            <DialogHeader>
+              <DialogTitle className="text-base font-black uppercase tracking-tight">Ledger Allocation Audit Trail</DialogTitle>
+            </DialogHeader>
+          </div>
+          <div className="px-6 py-5 space-y-4 max-h-[300px] overflow-y-auto">
+            {historyDialog.entry?.history?.map((log) => (
+              <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-3 py-1 space-y-1">
+                <div className="font-bold text-slate-800">{log.action}</div>
+                {log.notes && <div className="text-slate-500 text-[11px] leading-relaxed">{log.notes}</div>}
+                <div className="text-[9px] text-slate-450 uppercase font-bold mt-0.5">
+                  By {log.actor?.name || "System"} on {new Date(log.createdAt).toLocaleString()}
                 </div>
-              ))
-            ) : (
-              <p className="text-xs text-slate-400 text-center py-4">No history available.</p>
-            )}
-            {historyDialog.entry?.rejectionReason && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                <p className="text-[10px] font-bold text-red-700">Rejection Reason</p>
-                <p className="text-[10px] text-red-600">{historyDialog.entry.rejectionReason}</p>
+              </div>
+            ))}
+            {(!historyDialog.entry?.history || historyDialog.entry.history.length === 0) && (
+              <div className="text-center py-8 text-slate-450 gap-2 flex items-center justify-center">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" /> Loading logs...
               </div>
             )}
           </div>
+          <DialogFooter className="px-6 py-4 bg-slate-50 border-t flex justify-end rounded-b-3xl">
+            <Button onClick={() => setHistoryDialog({ open: false, entry: null })} className="rounded-xl h-9">Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

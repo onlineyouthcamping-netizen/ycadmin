@@ -23,6 +23,8 @@ const PageEditorPage = lazy(() => import("./pages/admin/PageEditorPage.tsx"));
 const ThemePage = lazy(() => import("./pages/admin/ThemePage.tsx"));
 const SeoCenterPage = lazy(() => import("./pages/admin/SeoCenterPage.tsx"));
 const InquiryFormPage = lazy(() => import("./pages/admin/InquiryFormPage.tsx"));
+const WebsiteControlCenterPage = lazy(() => import("./pages/admin/WebsiteControlCenterPage.tsx"));
+const ApprovalsHubPage = lazy(() => import("./pages/admin/ApprovalsHubPage.tsx"));
 const PageBuilderPage = lazy(() => import("./pages/admin/PageBuilderPage.tsx"));
 const PreviewPage = lazy(() => import("./pages/admin/PreviewPage.tsx"));
 const AttractionsPage = lazy(() => import("./pages/admin/AttractionsPage.tsx"));
@@ -38,6 +40,7 @@ const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage.tsx"));
 const UnauthorizedPage = lazy(() => import("./pages/admin/UnauthorizedPage.tsx"));
 const DynamicFormAdmin = lazy(() => import("./pages/admin/DynamicFormAdmin.tsx"));
 const GuidesDashboardPage = lazy(() => import("./pages/admin/GuidesDashboardPage.tsx"));
+const GuideOperationsCenterPage = lazy(() => import("./pages/admin/GuideOperationsCenterPage.tsx"));
 const GuidesListPage = lazy(() => import("./pages/admin/GuidesListPage.tsx"));
 const AttendanceLogsPage = lazy(() => import("./pages/admin/AttendanceLogsPage.tsx"));
 const AssignmentsPage = lazy(() => import("./pages/admin/AssignmentsPage.tsx"));
@@ -99,6 +102,7 @@ const App = () => (
               <Route path="/admin/trips" element={<AdminRoute><TripsPage /></AdminRoute>} />
               <Route path="/admin/bookings" element={<AdminRoute><BookingsPage /></AdminRoute>} />
               <Route path="/admin/verification-queue" element={<AdminRoute><VerificationQueuePage /></AdminRoute>} />
+              <Route path="/admin/approvals-hub" element={<AdminRoute><ApprovalsHubPage /></AdminRoute>} />
               <Route path="/admin/train-templates" element={<AdminRoute><TrainTemplatesPage /></AdminRoute>} />
               <Route path="/admin/ticket-approvals" element={<AdminRoute><TicketApprovalsPage /></AdminRoute>} />
               <Route path="/admin/collections" element={<AdminRoute><CollectionsPage /></AdminRoute>} />
@@ -111,6 +115,7 @@ const App = () => (
               <Route path="/admin/theme" element={<AdminRoute><ThemePage /></AdminRoute>} />
               <Route path="/admin/seo" element={<AdminRoute><SeoCenterPage /></AdminRoute>} />
               <Route path="/admin/inquiry-form" element={<AdminRoute><InquiryFormPage /></AdminRoute>} />
+              <Route path="/admin/website" element={<AdminRoute><WebsiteControlCenterPage /></AdminRoute>} />
               <Route path="/admin/page-builder" element={<AdminRoute><PageBuilderPage /></AdminRoute>} />
               <Route path="/admin/page_builder" element={<AdminRoute><PageBuilderPage /></AdminRoute>} />
               <Route path="/admin/preview" element={<AdminRoute><PreviewPage /></AdminRoute>} />
@@ -133,6 +138,7 @@ const App = () => (
               <Route path="/admin/unauthorized" element={<AdminRoute><UnauthorizedPage /></AdminRoute>} />
               <Route path="/admin/dynamic-sync" element={<AdminRoute><DynamicFormAdmin /></AdminRoute>} />
               <Route path="/admin/guides-dashboard" element={<AdminRoute><GuidesDashboardPage /></AdminRoute>} />
+              <Route path="/admin/guides-hub" element={<AdminRoute><GuideOperationsCenterPage /></AdminRoute>} />
               <Route path="/admin/guides" element={<AdminRoute><GuidesListPage /></AdminRoute>} />
               <Route path="/admin/attendance-logs" element={<AdminRoute><AttendanceLogsPage /></AdminRoute>} />
               <Route path="/admin/assignments" element={<AdminRoute><AssignmentsPage /></AdminRoute>} />

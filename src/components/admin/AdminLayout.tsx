@@ -35,6 +35,7 @@ import {
   Star,
   Users,
   Search,
+  Globe,
   Banknote,
   Link2,
   Sparkles,
@@ -64,14 +65,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import NewBookingModal from "./NewBookingModal";
 
-// VacationLabs exact navigation structure
 const navGroups = [
   {
     items: [
       { title: "Dashboard", url: "/admin", icon: LayoutDashboard, permission: "dashboard.view" },
       { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck, permission: "bookings.view" },
-      { title: "Verification Queue", url: "/admin/verification-queue", icon: ClipboardCheck, permission: "bookings.view" },
-      { title: "Ticket Approvals", url: "/admin/ticket-approvals", icon: Train, permission: "tickets.approve" },
+      { title: "Booking Forms", url: "/admin/booking-forms", icon: Link2, permission: "bookings.view" },
+      { title: "Verification & Approvals", url: "/admin/approvals-hub", icon: ClipboardCheck, permission: "bookings.view" },
       { title: "Accounting", url: "/admin/accounting", icon: Banknote, permission: "accounting.view" },
       { title: "Operations", url: "/admin/operations", icon: Compass, permission: "ops.view" },
       { title: "Quotations", url: "/admin/quotations", icon: FileText, badge: "NEW", permission: "quotations.view" },
@@ -87,30 +87,13 @@ const navGroups = [
   {
     label: "Guide Operations",
     items: [
-      { title: "Guides Dashboard", url: "/admin/guides-dashboard", icon: LayoutDashboard, permission: "guides.view" },
-      { title: "Guides List", url: "/admin/guides", icon: Users, permission: "guides.view" },
-      { title: "Live Operations", url: "/admin/live-operations", icon: Map, permission: "operations.view" },
-      { title: "Attendance Logs", url: "/admin/attendance-logs", icon: CalendarCheck, permission: "guides.view" },
-      { title: "Assignments", url: "/admin/assignments", icon: Map, permission: "guides.view" },
-      { title: "Payroll & Payouts", url: "/admin/payroll", icon: Banknote, permission: "reports.view" },
-      { title: "Expense Approvals", url: "/admin/expenses", icon: Banknote, permission: "reports.view" },
+      { title: "Guide Operations", url: "/admin/guides-hub", icon: ClipboardCheck, permission: "guides.view" },
     ]
   },
   {
     label: "Website",
     items: [
-      { title: "Page Builder", url: "/admin/page-builder", icon: FilePlus, permission: "pagebuilder.view" },
-      { title: "Website Theme", url: "/admin/theme", icon: Paintbrush, permission: "settings.view" },
-      { title: "Footer Management", url: "/admin/footer-management", icon: Layout, permission: "settings.view" },
-      { title: "Watch & Read", url: "/admin/blogs", icon: BookOpen, permission: "trips.view" },
-      { title: "Attractions", url: "/admin/attractions", icon: Map, permission: "trips.view" },
-      { title: "Review Center", url: "/admin/reviews", icon: Star, permission: "trips.view" },
-    ]
-  },
-  {
-    label: "Marketing & Growth",
-    items: [
-      { title: "Booking Forms", url: "/admin/booking-forms", icon: Link2, permission: "bookings.view" },
+      { title: "Website", url: "/admin/website", icon: Globe, permission: "settings.view" },
     ]
   },
   {
