@@ -375,7 +375,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         open={bookingModalOpen} 
         onOpenChange={setBookingModalOpen} 
         onSuccess={() => {
-          console.log("📅 Booking created successfully!");
           if (location.pathname === '/admin/bookings') {
              window.location.reload();
           }

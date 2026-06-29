@@ -113,7 +113,6 @@ export default function BookingFormsPage() {
       bookAmt: (form.bookingAmount || 0).toString()
     });
     
-    console.log("🔗 [Admin] Generated Booking Link:", `${baseUrl}/book?${params.toString()}`);
     return `${baseUrl}/book?${params.toString()}`;
   };
 

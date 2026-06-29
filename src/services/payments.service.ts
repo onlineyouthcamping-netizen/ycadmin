@@ -7,7 +7,6 @@ export const paymentsService = {
       const res = await api.get(`/payments/booking/${bookingId}`);
       return { payments: res.data.data, summary: res.data.summary };
     } catch (err) {
-      console.warn("Using mock payments for booking:", bookingId);
       return {
         payments: [],
         summary: {
