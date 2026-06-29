@@ -50,38 +50,46 @@ export default function DashboardPage() {
                <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={stats?.monthlyRevenue ?? []}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-              <XAxis 
-                dataKey="month" 
-                axisLine={false} 
-                tickLine={false} 
-                fontSize={10} 
-                fontWeight="500" 
-                tick={{fill: '#94A3B8'}} 
-                dy={10}
-              />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                fontSize={10} 
-                fontWeight="500" 
-                tick={{fill: '#94A3B8'}}
-                dx={-10}
-              />
-              <Tooltip 
-                cursor={{fill: '#F8FAFC'}} 
-                contentStyle={{ 
-                  borderRadius: '16px', 
-                  border: '1px solid #E2E8F0', 
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-                  padding: '12px 16px'
-                }} 
-              />
-              <Bar dataKey="revenue" fill="#FF5400" radius={[12, 12, 0, 0]} barSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
+          {loading ? (
+            <div className="h-[350px] flex items-end gap-3 px-2">
+              {[40, 65, 55, 80, 45, 90, 70, 60, 85, 50, 75, 95].map((h, i) => (
+                <div key={i} className="flex-1 bg-zinc-100 animate-pulse rounded-t-xl" style={{ height: `${h}%` }} />
+              ))}
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={stats?.monthlyRevenue ?? []}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  fontSize={10} 
+                  fontWeight="500" 
+                  tick={{fill: '#94A3B8'}} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  fontSize={10} 
+                  fontWeight="500" 
+                  tick={{fill: '#94A3B8'}}
+                  dx={-10}
+                />
+                <Tooltip 
+                  cursor={{fill: '#F8FAFC'}} 
+                  contentStyle={{ 
+                    borderRadius: '16px', 
+                    border: '1px solid #E2E8F0', 
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+                    padding: '12px 16px'
+                  }} 
+                />
+                <Bar dataKey="revenue" fill="#FF5400" radius={[12, 12, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Sales Leaderboard */}

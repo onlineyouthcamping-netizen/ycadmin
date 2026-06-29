@@ -84,12 +84,7 @@ const navGroups = [
       { title: "Trips & Tours", url: "/admin/trips", icon: Map, permission: "trips.view" },
     ]
   },
-  {
-    label: "Guide Operations",
-    items: [
-      { title: "Guide Operations", url: "/admin/guides-hub", icon: ClipboardCheck, permission: "guides.view" },
-    ]
-  },
+
   {
     label: "Website",
     items: [
@@ -225,13 +220,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     // Skip checks for login and unauthorized pages
     if (currentPath === "/admin/login" || currentPath === "/admin/unauthorized") return;
 
-    // Special redirect for guides accessing dashboard root
-    if ((currentPath === "/admin" || currentPath === "/") && admin.role === 'guide') {
-      navigate("/admin/guide-portal");
-      return;
-    }
-
-    let allowed = true;
+let allowed = true;
 
     for (const group of navGroups) {
       const item = group.items.find(i => i.url === currentPath);
@@ -243,10 +232,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Special permissions check for guide portal: only guide and superadmin can view
-    if (currentPath.startsWith("/admin/guide-portal") && admin.role !== "guide" && admin.role !== "superadmin") {
-      allowed = false;
-    }
 
     if (!allowed) {
       console.warn("🚫 Unauthorized access attempt to:", currentPath);
