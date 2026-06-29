@@ -25,3 +25,8 @@ dist-ssr
 *.sln
 *.sw?
 *.tsbuildinfo
+
+# Lockfiles from other package managers
+pnpm-lock.yaml
+bun.lock
+bun.lockb
