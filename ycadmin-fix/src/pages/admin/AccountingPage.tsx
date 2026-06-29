@@ -136,26 +136,23 @@ export default function AccountingPage() {
     setLoadingVendors(true);
     try {
       const trips = await tripsService.getAll();
+      const tripIds = trips.map((t: any) => t.id || t._id).filter(Boolean);
+      const byTripMap = await vendorsService.getBulkForTrips(tripIds);
+
       const allAssignments: any[] = [];
-      await Promise.all(
-        trips.map(async (trip: any) => {
-          try {
-            const { assignments } = await vendorsService.getForTrip(trip.id || trip._id);
-            if (assignments && assignments.length > 0) {
-              assignments.forEach((a: any) => {
-                allAssignments.push({
-                  ...a,
-                  tripName: trip.title,
-                  tripCode: trip.tripCode,
-                  tripId: trip.id || trip._id
-                });
-              });
-            }
-          } catch (e) {
-            // Safe fail
-          }
-        })
-      );
+      trips.forEach((trip: any) => {
+        const tId = trip.id || trip._id;
+        const assignments = byTripMap[tId] || [];
+        assignments.forEach((a: any) => {
+          allAssignments.push({
+            ...a,
+            tripName: trip.title,
+            tripCode: trip.tripCode,
+            tripId: tId
+          });
+        });
+      });
+
       setVendorAssignments(allAssignments);
     } catch (e) {
       toast.error("Failed to load vendor assignments");

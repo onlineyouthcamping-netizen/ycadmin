@@ -33,6 +33,12 @@ export const vendorsService = {
     return { assignments: res.data.data, summary: res.data.summary };
   },
 
+  async getBulkForTrips(tripIds?: string[]): Promise<Record<string, TripVendor[]>> {
+    const query = tripIds && tripIds.length > 0 ? `?tripIds=${tripIds.join(",")}` : "";
+    const res = await api.get(`/vendors/bulk${query}`);
+    return res.data.data;
+  },
+
   async assignToTrip(data: {
     tripId: string;
     vendorId: string;

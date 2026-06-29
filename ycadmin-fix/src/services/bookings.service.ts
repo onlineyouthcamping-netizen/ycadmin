@@ -34,7 +34,6 @@ export const bookingsService = {
       return res.data;
     } catch (err) {
       if (axios.isCancel?.(err) || (err as any)?.name === 'CanceledError' || (err as any)?.name === 'AbortError') {
-        console.log("ℹ️ Request cancelled");
         throw err;
       }
       console.error("🔥 Bookings fetch failed:", err);
@@ -100,7 +99,6 @@ export const bookingsService = {
   // ── EMAILS ──
 
   async sendEmail(bookingId: string, type: 'confirmation' | 'payment' | 'reminder' | 'cancellation' | 'invoice', amount?: number): Promise<void> {
-    console.log("📡 [bookingsService] Sending email request:", { bookingId, type, amount });
     await api.post("/emails/send", { 
       bookingId, 
       type, 
