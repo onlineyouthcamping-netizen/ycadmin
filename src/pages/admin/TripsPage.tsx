@@ -10,9 +10,11 @@ import { Plus, Pencil, Trash2, Map, CalendarDays, Building2, Shuffle, GripVertic
 import { toast } from "sonner";
 import TripVendorsPanel from "@/components/admin/TripVendorsPanel";
 
+let cachedTripsList: Trip[] | null = null;
+
 export default function TripsPage() {
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [trips, setTrips] = useState<Trip[]>(cachedTripsList || []);
+  const [loading, setLoading] = useState(!cachedTripsList);
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editing, setEditing] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -20,13 +22,15 @@ export default function TripsPage() {
   const [sortModalOpen, setSortModalOpen] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!cachedTripsList) setLoading(true);
     try {
       const data = await tripsService.getAll();
-      setTrips(Array.isArray(data) ? data : []);
+      const arr = Array.isArray(data) ? data : [];
+      cachedTripsList = arr;
+      setTrips(arr);
     } catch (err) {
       console.error(err);
-      setTrips([]);
+      if (!cachedTripsList) setTrips([]);
     } finally {
       setLoading(false);
     }
@@ -40,13 +44,13 @@ export default function TripsPage() {
   });
 
   const openCreate = () => { setEditing(null); setIsEditingMode(true); };
-
-  // Use in-memory data directly — getAll() returns full trip objects.
-  // No redundant getById round-trip needed.
-  const openEdit = (t: Trip) => {
+  const openEdit = (t: Trip) => { 
     if (!t?.id) return;
     setEditing(t);
-    setIsEditingMode(true);
+    setIsEditingMode(true); 
+    tripsService.getById(t.id).then(fullTrip => {
+      if (fullTrip) setEditing(fullTrip);
+    }).catch(() => {});
   };
 
   const handleSave = async (data: TripFormData, editingId?: string) => {
@@ -193,24 +197,35 @@ export default function TripsPage() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* ─── Page Title ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="admin-title">Products</h1>
           <p className="admin-body">Manage travel itineraries, pricing, and configurations</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button onClick={() => setSortModalOpen(true)} className="admin-button-outline">
+          <Button 
+            onClick={() => setSortModalOpen(true)} 
+            className="admin-button-outline"
+          >
             <GripVertical className="w-4 h-4" /> Reorder
           </Button>
-          <Button onClick={handleShuffle} className="admin-button-outline">
+          <Button 
+            onClick={handleShuffle} 
+            className="admin-button-outline"
+          >
             <Shuffle className="w-4 h-4" /> Shuffle
           </Button>
-          <Button onClick={openCreate} className="admin-button-primary">
+          <Button 
+            onClick={openCreate} 
+            className="admin-button-primary"
+          >
             <Plus className="w-4 h-4" /> New Trip
           </Button>
         </div>
       </div>
 
+      {/* Payment automation banner */}
       <div className="bg-[#FFF8E6] border border-[#FFE0B2] rounded-2xl px-5 py-4 text-sm text-[#E65100] flex items-start gap-3 shadow-sm">
         <span className="bg-[#FF5400] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Update</span>
         <div>
@@ -222,12 +237,14 @@ export default function TripsPage() {
         <DataTable
           columns={columns} data={filtered} loading={loading}
           searchKey="title" searchPlaceholder="Search by title, code..."
-          emptyMessage="No trips found"
+          emptyMessage="No trips found" 
           emptyIcon={<Map className="h-8 w-8 text-slate-300" />}
           filters={[{ key: "status", label: "Status", options: [{ label: "Published", value: "published" }, { label: "Draft", value: "draft" }] }]}
           onFilterChange={(_, v) => setStatusFilter(v)}
         />
       </div>
+
+      {/* TripFormModal removed since we render inline */}
 
       {vendorTrip && (
         <TripVendorsPanel
@@ -238,11 +255,11 @@ export default function TripsPage() {
           onOpenChange={(open) => { if (!open) setVendorTrip(null); }}
         />
       )}
-      <TripSortModal
-        open={sortModalOpen}
-        onOpenChange={setSortModalOpen}
-        trips={trips}
-        onSaved={load}
+      <TripSortModal 
+        open={sortModalOpen} 
+        onOpenChange={setSortModalOpen} 
+        trips={trips} 
+        onSaved={load} 
       />
     </div>
   );

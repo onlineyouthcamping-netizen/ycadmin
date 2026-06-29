@@ -27,7 +27,6 @@ const formatDate = (dateStr?: string | null) => {
 };
 
 const normalizeDateInput = (value: string) => {
-  // Keep yyyy-mm-dd for HTML date input
   if (!value) return "";
   const d = new Date(value);
   if (isNaN(d.getTime())) return value;
@@ -45,19 +44,24 @@ const getTripPickupCities = (trip: any): string[] => {
   return [];
 };
 
+let cachedLinksData: BookingLinkRecord[] | null = null;
+let cachedLinksTotalPages = 1;
+let cachedTripsForLinks: Trip[] | null = null;
+let cachedAnalyticsData: any = null;
+
 export default function BookingLinksPage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedLinksData);
   const [generating, setGenerating] = useState(false);
-  const [links, setLinks] = useState<BookingLinkRecord[]>([]);
+  const [links, setLinks] = useState<BookingLinkRecord[]>(cachedLinksData || []);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [totalPages, setTotalPages] = useState(cachedLinksTotalPages);
+  const [trips, setTrips] = useState<Trip[]>(cachedTripsForLinks || []);
   const [analytics, setAnalytics] = useState<{
     linksGenerated: number;
     opened: number;
     completedBookings: number;
     revenueGenerated: number;
-  } | null>(null);
+  } | null>(cachedAnalyticsData);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -89,16 +93,25 @@ export default function BookingLinksPage() {
   }, [selectedTrip]);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!cachedLinksData) setLoading(true);
     try {
       const [linksData, tripsData, analyticsData] = await Promise.all([
         bookingLinksService.getAll(page, 25),
         tripsService.getAll(),
         bookingLinksService.getAnalytics(),
       ]);
-      setLinks(Array.isArray(linksData.data) ? linksData.data : []);
-      setTotalPages(linksData.pagination?.totalPages || 1);
-      setTrips(Array.isArray(tripsData) ? tripsData : []);
+      const lArr = Array.isArray(linksData.data) ? linksData.data : [];
+      const tArr = Array.isArray(tripsData) ? tripsData : [];
+      const tPages = linksData.pagination?.totalPages || 1;
+      
+      cachedLinksData = lArr;
+      cachedLinksTotalPages = tPages;
+      cachedTripsForLinks = tArr;
+      cachedAnalyticsData = analyticsData || null;
+
+      setLinks(lArr);
+      setTotalPages(tPages);
+      setTrips(tArr);
       setAnalytics(analyticsData || null);
     } catch {
       toast.error("Failed to load booking links");
