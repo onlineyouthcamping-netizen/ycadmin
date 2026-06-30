@@ -2964,7 +2964,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
             <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider pb-2 border-b">
               <Train className="w-4 h-4 text-primary" /> Train Ticket Booking
             </h4>
-            <TrainTicketsPanel bookingId={booking.id} booking={booking} onCountChange={() => {}} />
+            <TrainTicketsPanel bookingId={booking.bookingId} booking={booking} onCountChange={() => {}} />
           </div>
         </div>
 
