@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { GlassCard } from "@/components/admin/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
     ArrowLeft,
     Save,
@@ -52,10 +53,12 @@ const formatUrl = (url: any): string => {
 export default function QuotationFormPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const isEdit = id !== "new";
     
     const [isSaving, setIsSaving] = useState(false);
     const [loading, setLoading] = useState(isEdit);
+    const [showShareModal, setShowShareModal] = useState(location.state?.justCreated || false);
 
     const [formData, setFormData] = useState<Partial<Quotation>>({
         id: uuidv4(),
@@ -145,7 +148,11 @@ export default function QuotationFormPage() {
             const saved = await quotationsService.save(payload);
             setFormData(saved);
             toast.success(status === 'Published' ? "Quotation Published!" : "Draft Saved");
-            if (!isEdit) navigate(`/admin/quotations/${saved.id}`);
+            if (!isEdit) {
+                navigate(`/admin/quotations/${saved.id}`, { state: { justCreated: true } });
+            } else {
+                setShowShareModal(true);
+            }
         } catch (error: any) {
             toast.error("Failed to save");
         } finally {
@@ -1332,6 +1339,70 @@ ${formData.expert?.designation}`;
                     </div>
                 </div>
             </div>
+            
+            <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+                <DialogContent className="max-w-md p-8 bg-white border border-slate-100 rounded-3xl shadow-2xl">
+                    <DialogHeader className="space-y-3 text-center">
+                        <div className="mx-auto w-12 h-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center animate-bounce">
+                            <CheckCircle2 size={24} />
+                        </div>
+                        <DialogTitle className="text-xl font-black text-slate-800 tracking-tight">Proposal Ready to Share!</DialogTitle>
+                        <DialogDescription className="text-xs text-slate-400 font-medium">
+                            Your quotation for <strong className="text-slate-700">{formData.customerName || "Guest"}</strong> has been successfully prepared.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="mt-6 space-y-4">
+                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Quotation Link</span>
+                            <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-xl p-2.5">
+                                <span className="text-xs font-semibold text-slate-600 truncate flex-1 select-all">
+                                    {(() => {
+                                        const baseUrl = import.meta.env.VITE_FRONTEND_URL || 'https://youthcamping.online';
+                                        const tokenPart = formData.shareToken ? `?token=${formData.shareToken}` : '';
+                                        return `${baseUrl}/quote/${formData.slug || formData.id}${tokenPart}`;
+                                    })()}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button 
+                                variant="outline" 
+                                onClick={copyLink} 
+                                className="h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest border-slate-100 hover:bg-slate-50 flex items-center justify-center gap-2"
+                            >
+                                <Copy size={14} /> Copy Link
+                            </Button>
+                            <Button 
+                                onClick={sendWhatsApp} 
+                                className="h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-[#25D366] hover:bg-[#128C7E] text-white border-none flex items-center justify-center gap-2 shadow-lg shadow-green-100"
+                            >
+                                <WhatsAppIcon size={14} /> WhatsApp
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 pt-4 border-t border-slate-50 flex gap-3">
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => {
+                                setShowShareModal(false);
+                                navigate("/admin/quotations");
+                            }}
+                            className="flex-1 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-50"
+                        >
+                            Back to List
+                        </Button>
+                        <Button 
+                            onClick={() => setShowShareModal(false)}
+                            className="flex-1 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-slate-900 hover:bg-slate-800 text-white"
+                        >
+                            Edit Proposal
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
         </div>
     );
