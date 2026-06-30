@@ -3,10 +3,11 @@ import {
   Calendar, Users, Pencil, Trash2, Plus, ArrowLeft, Check, X, 
   ChevronRight, CreditCard, Globe, Languages, Tag, MessageSquare, 
   Clock, Send, HelpCircle, User, Phone, Mail, FileText, AlertCircle, CheckCircle2,
-  ShieldCheck, MapPin, History
+  ShieldCheck, MapPin, History, Train
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Booking, BookingTrip } from "@/types";
@@ -19,6 +20,7 @@ import { bookingVerificationService } from "@/services/bookingVerification.servi
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import VerificationDetailsPanel from "./VerificationDetailsPanel";
+import TrainTicketsPanel from "./TrainTicketsPanel";
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -2955,6 +2957,14 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
             >
               Generate Invoice PDF
             </button>
+          </div>
+
+          {/* Train Tickets Panel */}
+          <div className="bg-white border border-slate-200 rounded p-4 shadow-sm space-y-4">
+            <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider pb-2 border-b">
+              <Train className="w-4 h-4 text-primary" /> Train Ticket Booking
+            </h4>
+            <TrainTicketsPanel bookingId={booking.id} booking={booking} onCountChange={() => {}} />
           </div>
         </div>
 
