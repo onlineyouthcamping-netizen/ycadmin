@@ -193,6 +193,12 @@ export const opsService = {
     return res.data;
   },
 
+  async getConfirmedAllocations(tripId: string, departureDate?: string): Promise<{ rooms: any[]; vehicles: any[] }> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.get(`/ops/auto-allocate/${tripId}/confirmed${q}`);
+    return res.data?.data || { rooms: [], vehicles: [] };
+  },
+
   async overrideAllocation(data: { allocationRunId: string; targetType: string; targetId: string; beforeValue?: any; afterValue: any; reason: string }): Promise<any> {
     const res = await api.post(`/ops/auto-allocate/override`, data);
     return res.data;

@@ -45,6 +45,7 @@ export default function OperationsHubPage() {
   const [expenses, setExpenses] = useState<OpsTripExpense[]>([]);
   const [fleet, setFleet] = useState<OpsTransportFleet[]>([]);
   const [roomInventory, setRoomInventory] = useState<OpsRoomInventory[]>([]);
+  const [confirmedAllocs, setConfirmedAllocs] = useState<{ rooms: any[]; vehicles: any[] } | null>(null);
   const [summary, setSummary] = useState<OpsAccountingSummary | null>(null);
   const [seatConfig, setSeatConfig] = useState<OpsSeatConfig | null>(null);
   const [workspaceSummary, setWorkspaceSummary] = useState<OpsWorkspaceSummary | null>(null);
@@ -175,13 +176,15 @@ export default function OperationsHubPage() {
         if (itineraryResult.status === "fulfilled") setItinerary(itineraryResult.value);
         if (fleetResult.status === "fulfilled") setFleet(fleetResult.value);
       } else if (tab === "allocation") {
-        const [fleetResult, roomsResult] = await Promise.allSettled([
+        const [fleetResult, roomsResult, confirmedResult] = await Promise.allSettled([
           opsService.getTransportFleet(tripId, depDate),
           opsService.getRoomInventory(tripId, depDate),
+          opsService.getConfirmedAllocations(tripId, depDate)
         ]);
         if (requestId !== opsRequestId.current) return;
         if (fleetResult.status === "fulfilled") setFleet(fleetResult.value);
         if (roomsResult.status === "fulfilled") setRoomInventory(roomsResult.value);
+        if (confirmedResult.status === "fulfilled") setConfirmedAllocs(confirmedResult.value);
       } else if (tab === "checklist") {
         setChecklist(await opsService.getChecklist(tripId, depDate));
       } else if (tab === "sop") {
@@ -964,6 +967,118 @@ export default function OperationsHubPage() {
       {/* 3. ROOM & TEMPO ALLOCATION TAB */}
       {activeTab === "allocation" && (
         <div className="space-y-6">
+          {/* Confirmed Allotment Display */}
+          {confirmedAllocs && (confirmedAllocs.rooms.length > 0 || confirmedAllocs.vehicles.length > 0) && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 animate-bounce" /> Locked & Confirmed Allotment Run
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Currently active assignments for this departure date.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="text-[10px] font-bold h-7 uppercase text-emerald-600 hover:bg-emerald-50"
+                    onClick={() => {
+                      const txt = rebuildRoomText(confirmedAllocs.rooms);
+                      navigator.clipboard.writeText(txt);
+                      toast.success("Room list copied!");
+                    }}>
+                    <Copy className="w-3 h-3 mr-1" /> Copy Room List
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-[10px] font-bold h-7 uppercase text-blue-600 hover:bg-blue-50"
+                    onClick={() => {
+                      const txt = rebuildTempoText(confirmedAllocs.vehicles);
+                      navigator.clipboard.writeText(txt);
+                      toast.success("Vehicle list copied!");
+                    }}>
+                    <Copy className="w-3 h-3 mr-1" /> Copy Vehicle List
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Rooms List */}
+                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+                  <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    🏨 Hotel Room Assignments
+                  </h4>
+                  {confirmedAllocs.rooms.length === 0 ? (
+                    <p className="text-xs text-slate-400 font-medium">No room assignments confirmed.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+                      {Object.entries(
+                        confirmedAllocs.rooms.reduce((acc: Record<string, any>, r) => {
+                          if (!acc[r.roomNumber]) acc[r.roomNumber] = { type: r.roomType, gender: r.genderGroup, members: [] };
+                          acc[r.roomNumber].members.push(r.travelerName);
+                          return acc;
+                        }, {})
+                      ).map(([roomNum, rData]: any) => (
+                        <div key={roomNum} className="border border-slate-100 rounded-lg p-2.5 bg-slate-50 hover:border-emerald-200 transition-colors">
+                          <p className="text-[10px] font-bold text-slate-800 flex items-center justify-between">
+                            <span>Room {roomNum}</span>
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase ${
+                              rData.gender === 'BOYS' ? 'bg-blue-100 text-blue-800' :
+                              rData.gender === 'GIRLS' ? 'bg-pink-100 text-pink-800' :
+                              rData.gender === 'COUPLE' ? 'bg-purple-100 text-purple-800' :
+                              'bg-amber-100 text-amber-800'
+                            }`}>{rData.type} - {rData.gender}</span>
+                          </p>
+                          <ul className="mt-1.5 space-y-1">
+                            {rData.members.map((m: string, i: number) => (
+                              <li key={i} className="text-[10px] font-medium text-slate-600 flex items-center gap-1">
+                                <span className="h-1 w-1 bg-emerald-500 rounded-full shrink-0" />
+                                {m}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Vehicles List */}
+                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+                  <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    🚌 Transport Assignments
+                  </h4>
+                  {confirmedAllocs.vehicles.length === 0 ? (
+                    <p className="text-xs text-slate-400 font-medium">No vehicle assignments confirmed.</p>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                      {Object.entries(
+                        confirmedAllocs.vehicles.reduce((acc: Record<string, any>, v) => {
+                          if (!acc[v.fleetId]) acc[v.fleetId] = [];
+                          acc[v.fleetId].push(v);
+                          return acc;
+                        }, {})
+                      ).map(([fleetId, travelers]: any) => {
+                        const fleetItem = fleet.find(f => f.id === fleetId);
+                        return (
+                          <div key={fleetId} className="border border-slate-100 rounded-lg p-2.5 bg-slate-50 hover:border-blue-200 transition-colors">
+                            <p className="text-[10px] font-bold text-slate-800 flex items-center justify-between">
+                              <span>{fleetItem?.vehicleType || "Vehicle"}</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase font-mono">{travelers.length} / {fleetItem?.capacity || 17} Filled</span>
+                            </p>
+                            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                              {travelers.map((t: any, i: number) => (
+                                <p key={i} className="text-[10px] font-medium text-slate-600 truncate flex items-center gap-1.5">
+                                  <span className="text-[9px] font-bold font-mono text-blue-500 bg-blue-50 px-1 py-0.2 rounded shrink-0">#{t.seatNumber || i + 1}</span>
+                                  {t.travelerName}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
             <div>
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Auto-Allocation Engine Proposals</h3>
