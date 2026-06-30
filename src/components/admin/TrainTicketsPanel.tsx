@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import {
   Train, Plus, CheckCircle2, XCircle, AlertTriangle,
   RotateCcw, Ban, RefreshCw, History, ChevronDown, ChevronUp,
-  Edit3, Send, Loader2
+  Edit3, Send, Loader2, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +75,7 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
   const [templates, setTemplates]   = useState<TrainTemplate[]>([]);
   const [loading, setLoading]       = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
+  const [autoGenerating, setAutoGenerating] = useState(false);
 
   // Form state
   const [showForm, setShowForm]     = useState(false);
@@ -153,6 +154,20 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
     setForm({ ...emptyForm(), travelerName: defaultName });
     setEditingId(null);
     setShowForm(true);
+  }
+
+  async function handleAutoGenerate() {
+    if (autoGenerating) return;
+    setAutoGenerating(true);
+    try {
+      const result = await trainTicketService.autoGenerateTickets(bookingId);
+      toast.success(result.message || "Tickets auto-generated!");
+      await load();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to auto-generate tickets");
+    } finally {
+      setAutoGenerating(false);
+    }
   }
 
   function openEdit(t: TrainTicket) {
@@ -355,6 +370,13 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
             <Button size="sm" variant="outline" onClick={() => setShowBulk(true)}
               className="h-8 text-[10px] font-bold uppercase tracking-wider border-blue-200 text-blue-700">
               Bulk Update ({selected.size})
+            </Button>
+          )}
+          {canManage && tickets.length === 0 && (
+            <Button size="sm" onClick={handleAutoGenerate} disabled={autoGenerating}
+              className="h-8 text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+              {autoGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+              {autoGenerating ? "Generating…" : "Generate All Tickets"}
             </Button>
           )}
           {canManage && (

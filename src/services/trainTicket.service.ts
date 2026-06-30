@@ -78,6 +78,11 @@ export const trainTicketService = {
     return res.data.data;
   },
 
+  async autoGenerateTickets(bookingId: string): Promise<{ tickets: TrainTicket[]; message: string }> {
+    const res = await api.post(`/train-tickets/booking/${bookingId}/auto-generate`);
+    return { tickets: res.data.data, message: res.data.message };
+  },
+
   // Ticket-level operations
   async updateTicket(ticketId: string, data: any): Promise<TrainTicket> {
     const res = await api.patch(`/train-tickets/${ticketId}`, data);

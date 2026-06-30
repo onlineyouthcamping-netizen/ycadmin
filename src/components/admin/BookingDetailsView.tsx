@@ -2117,7 +2117,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
 
           {/* Card 5: Train Tickets */}
           <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-5">
-            <TrainTicketsPanel bookingId={booking.id} booking={booking} />
+            <TrainTicketsPanel bookingId={booking.bookingId} booking={booking} />
           </div>
         </div>
 
