@@ -18,6 +18,7 @@ import { settingsService } from "@/services/settings.service";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
+import VerificationDetailsPanel from "./VerificationDetailsPanel";
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -56,6 +57,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
   const [taskAssignedTo, setTaskAssignedTo] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
   const [creatingTask, setCreatingTask] = useState(false);
+  const [showVerificationPanel, setShowVerificationPanel] = useState(false);
 
   const [settings, setSettings] = useState<any>(null);
   const [paymentTab, setPaymentTab] = useState<'successful' | 'outstanding' | 'failed'>('successful');
@@ -2806,6 +2808,12 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                 <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wide flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-slate-400" /> Ticket Verification
                 </span>
+                <button
+                  onClick={() => setShowVerificationPanel(true)}
+                  className="text-[9px] font-bold uppercase text-indigo-600 hover:text-indigo-850 hover:underline transition-all"
+                >
+                  Manage Tickets &rarr;
+                </button>
               </div>
               <div className="pl-5 space-y-1.5 mt-1">
                 <div className="flex items-center gap-2">
@@ -3196,6 +3204,17 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
         </DialogContent>
       </Dialog>
 
+      {/* Verification & Tickets Side Panel */}
+      <VerificationDetailsPanel 
+        bookingId={booking.bookingId} 
+        booking={booking} 
+        open={showVerificationPanel} 
+        onClose={() => setShowVerificationPanel(false)} 
+        onRefresh={() => {
+          onRefresh();
+          fetchActivityLogs();
+        }}
+      />
     </div>
   );
 }
