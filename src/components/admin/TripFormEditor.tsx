@@ -114,9 +114,7 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
   const [previewCityIndex, setPreviewCityIndex] = useState<number | "">("");
   const [newInclusion, setNewInclusion] = useState("");
   const [newExclusion, setNewExclusion] = useState("");
-  const [repeatFreq, setRepeatFreq] = useState("weekly");
-  const [repeatCount, setRepeatCount] = useState(4);
-  const [repeatStartDate, setRepeatStartDate] = useState("");
+
   
   // Open Dates Modal States
   const [openDatesModalOpen, setOpenDatesModalOpen] = useState(false);
@@ -324,18 +322,7 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
   };
   const removeFaq = (index: number) => setForm({ ...form, faqs: form.faqs.filter((_, i) => i !== index) });
 
-  const generateRepeatDates = () => {
-    if (!repeatStartDate) return;
-    const start = new Date(repeatStartDate);
-    const newDates = [{ date: repeatStartDate, capacity: 99, bookedCount: 0 }];
-    for (let i = 1; i < repeatCount; i++) {
-      const next = new Date(start);
-      if (repeatFreq === "weekly") next.setDate(start.getDate() + (i * 7));
-      else if (repeatFreq === "monthly") next.setMonth(start.getMonth() + i);
-      newDates.push({ date: next.toISOString().split('T')[0], capacity: 99, bookedCount: 0 });
-    }
-    setForm({ ...form, availableDates: [...new Set([...form.availableDates, ...newDates])].sort((a:any, b:any) => a.date.localeCompare(b.date)) });
-  };
+
 
   const handleAddModalDates = (closeModal: boolean) => {
     if (!modalStartDate) {
@@ -1698,33 +1685,7 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                 );
               })()}
 
-              {/* Bulk generate and date list */}
-              <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Bulk Generate Dates</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black opacity-50">Start Date</Label>
-                    <Input type="date" value={repeatStartDate} onChange={(e) => setRepeatStartDate(e.target.value)} className="h-9 text-xs rounded-xl bg-white" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black opacity-50">Frequency</Label>
-                    <Select value={repeatFreq} onValueChange={setRepeatFreq}>
-                      <SelectTrigger className="h-9 text-xs rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex items-end gap-4">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-[9px] uppercase font-black opacity-50">Repeat Count</Label>
-                    <Input type="number" value={repeatCount} onChange={(e) => setRepeatCount(Number(e.target.value))} className="h-9 text-xs rounded-xl bg-white" />
-                  </div>
-                  <Button variant="secondary" className="h-9 text-[10px] font-black uppercase rounded-xl bg-slate-900 text-white hover:bg-slate-800" onClick={generateRepeatDates}>Generate</Button>
-                </div>
-              </div>
+
 
               <div className="space-y-3">
                 <Label className="text-xs font-black uppercase tracking-widest opacity-50">Configured Departure Dates</Label>
