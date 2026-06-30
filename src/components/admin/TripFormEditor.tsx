@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdminModal } from "./AdminModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { Trip, TripFormData, ItineraryDay, FAQ } from "@/types";
 import { Loader2, Plus, Trash2, CalendarDays, ImagePlus, Image as ImageIcon, X, HelpCircle, Star, CheckCircle, XCircle, FileText, Globe, Upload, Plane, Car, Train, ArrowUp, ArrowDown, MessageSquare, MapPin, Settings2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -116,6 +117,14 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
   const [repeatFreq, setRepeatFreq] = useState("weekly");
   const [repeatCount, setRepeatCount] = useState(4);
   const [repeatStartDate, setRepeatStartDate] = useState("");
+  
+  // Open Dates Modal States
+  const [openDatesModalOpen, setOpenDatesModalOpen] = useState(false);
+  const [modalStartDate, setModalStartDate] = useState("");
+  const [modalRepeat, setModalRepeat] = useState(false);
+  const [modalRepeatFreq, setModalRepeatFreq] = useState("daily"); // "daily" | "weekly"
+  const [modalRepeatUntil, setModalRepeatUntil] = useState("");
+  const [selectedVariants, setSelectedVariants] = useState<Record<number, boolean>>({});
 
   // 1. Fetch Global Custom Field Definitions
   useEffect(() => {
@@ -326,6 +335,77 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
       newDates.push({ date: next.toISOString().split('T')[0], capacity: 99, bookedCount: 0 });
     }
     setForm({ ...form, availableDates: [...new Set([...form.availableDates, ...newDates])].sort((a:any, b:any) => a.date.localeCompare(b.date)) });
+  };
+
+  const handleAddModalDates = (closeModal: boolean) => {
+    if (!modalStartDate) {
+      toast.error("Please select a start date");
+      return;
+    }
+
+    const generated: { date: string; capacity: number; bookedCount: number }[] = [];
+    const start = new Date(modalStartDate);
+
+    if (!modalRepeat) {
+      generated.push({ date: modalStartDate, capacity: 99, bookedCount: 0 });
+    } else {
+      if (!modalRepeatUntil) {
+        toast.error("Please select a 'repeats until' date");
+        return;
+      }
+      const until = new Date(modalRepeatUntil);
+      if (until < start) {
+        toast.error("'Repeats until' date must be after start date");
+        return;
+      }
+
+      let current = new Date(start);
+      // Limit loop to prevent potential infinite loops
+      let countLimit = 0;
+      while (current <= until && countLimit < 500) {
+        countLimit++;
+        const dateStr = current.toISOString().split('T')[0];
+        generated.push({ date: dateStr, capacity: 99, bookedCount: 0 });
+        
+        if (modalRepeatFreq === "daily") {
+          current.setDate(current.getDate() + 1);
+        } else if (modalRepeatFreq === "weekly") {
+          current.setDate(current.getDate() + 7);
+        } else {
+          break;
+        }
+      }
+    }
+
+    const existingDates = form.availableDates || [];
+    const merged = [...existingDates];
+
+    generated.forEach(item => {
+      if (!merged.some((d: any) => {
+        const dStr = typeof d === 'string' ? d : d.date;
+        return dStr === item.date;
+      })) {
+        merged.push(item);
+      }
+    });
+
+    merged.sort((a: any, b: any) => {
+      const ad = typeof a === 'string' ? a : a.date;
+      const bd = typeof b === 'string' ? b : b.date;
+      return ad.localeCompare(bd);
+    });
+
+    setForm({ ...form, availableDates: merged });
+    toast.success(`${generated.length} date(s) added successfully!`);
+
+    if (closeModal) {
+      setOpenDatesModalOpen(false);
+      setModalStartDate("");
+      setModalRepeat(false);
+      setModalRepeatUntil("");
+    } else {
+      setModalStartDate("");
+    }
   };
 
   const footer = (
@@ -1505,6 +1585,19 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
           {/* CALENDAR TAB CONTENT */}
           <TabsContent value="dates" className="mt-0 space-y-6">
             <div className="space-y-6">
+              <div className="flex justify-between items-center bg-slate-50 p-4 border border-slate-205 rounded-2xl shadow-sm">
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Departure Dates Scheduler</h4>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Define single departures or set recurring schedules</p>
+                </div>
+                <Button 
+                  type="button"
+                  onClick={() => setOpenDatesModalOpen(true)}
+                  className="rounded-xl h-11 px-5 bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-md shadow-slate-900/10"
+                >
+                  <Plus size={14} strokeWidth={3} /> Open Dates
+                </Button>
+              </div>
               {/* Calendar header controls */}
               {(() => {
                 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -2895,11 +2988,135 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
 
       </div>
 
-      {/* Floating Chat offline widget */}
-      <div className="fixed bottom-4 right-4 z-50 bg-[#0070f3] text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 cursor-pointer hover:bg-blue-600 transition-all font-semibold text-[11px]">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        We're offline
-      </div>
+      {/* Open Dates (VacationLabs Style Calendar & Repeats) Dialog Modal */}
+      <Dialog open={openDatesModalOpen} onOpenChange={setOpenDatesModalOpen}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-[24px] bg-white flex flex-col max-h-[90vh]">
+          {/* Modal Header */}
+          <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <DialogTitle className="text-base font-extrabold text-slate-800 uppercase tracking-wider">Open Dates</DialogTitle>
+          </div>
+
+          {/* Modal Body */}
+          <div className="p-8 overflow-y-auto space-y-6 flex-1 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              {/* Left Column: Date Fields */}
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-extrabold uppercase tracking-widest text-[#FF5400]">Start date *</Label>
+                  <div className="relative">
+                    <Input 
+                      type="date" 
+                      value={modalStartDate} 
+                      onChange={e => setModalStartDate(e.target.value)} 
+                      className="h-12 bg-white border-slate-200 rounded-xl text-xs font-black pr-10 focus:border-[#FF5400]/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Repeat options */}
+                <div className="space-y-4 pt-2">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={modalRepeat} 
+                      onChange={e => setModalRepeat(e.target.checked)}
+                      className="accent-[#FF5400] h-4 w-4 rounded border-slate-250 focus:ring-0" 
+                    />
+                    <span className="font-bold text-slate-700">Repeat</span>
+                  </label>
+
+                  {modalRepeat && (
+                    <div className="space-y-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                      <div className="space-y-2">
+                        <Label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Repeats</Label>
+                        <Select value={modalRepeatFreq} onValueChange={setModalRepeatFreq}>
+                          <SelectTrigger className="h-10 text-xs rounded-xl bg-white border-slate-200"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Every day</SelectItem>
+                            <SelectItem value="weekly">Every week</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Till</Label>
+                        <Input 
+                          type="date" 
+                          value={modalRepeatUntil} 
+                          onChange={e => setModalRepeatUntil(e.target.value)} 
+                          className="h-10 bg-white border-slate-200 rounded-xl text-xs font-black"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Duration info and Location variants */}
+              <div className="space-y-5">
+                <div className="space-y-1 bg-slate-50/50 p-4 border border-slate-100 rounded-2xl">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Duration</span>
+                  <p className="font-black text-slate-800 text-sm">{form.duration || "N/A"}</p>
+                  <p className="text-[10px] text-slate-450">Advertised as {form.duration || "N/A"}</p>
+                </div>
+
+                {/* Location Variants checkboxes list */}
+                <div className="space-y-3.5">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Select Variants</span>
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
+                    {form.variants?.map((v: any, idx: number) => (
+                      <label key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:bg-slate-50 transition-all cursor-pointer shadow-sm">
+                        <div className="flex items-center gap-2.5">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedVariants[idx] !== false} 
+                            onChange={e => setSelectedVariants({ ...selectedVariants, [idx]: e.target.checked })}
+                            className="accent-[#FF5400] h-4 w-4 rounded border-slate-200" 
+                          />
+                          <div className="text-[10px]">
+                            <span className="font-extrabold text-slate-800">{v.location || "Delhi to Delhi"}</span>
+                            <span className="text-slate-400 font-bold ml-1.5"> - {v.duration || "Variant"}</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded">₹{v.discountedPrice || v.originalPrice || 0} INR</span>
+                      </label>
+                    ))}
+                    {(!form.variants || form.variants.length === 0) && (
+                      <p className="text-[10px] text-slate-400 italic text-center py-4 bg-slate-50 rounded-xl">No variants defined under "PRICES & RATES" yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex justify-end items-center gap-3">
+            <Button 
+              type="button"
+              variant="outline" 
+              onClick={() => setOpenDatesModalOpen(false)}
+              className="h-11 rounded-xl text-[10px] font-extrabold uppercase tracking-widest border-slate-200 hover:bg-slate-100 text-slate-600"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button"
+              onClick={() => handleAddModalDates(false)}
+              className="h-11 rounded-xl text-[10px] font-extrabold uppercase tracking-widest bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5"
+            >
+              Open & Add new &rarr;
+            </Button>
+            <Button 
+              type="button"
+              onClick={() => handleAddModalDates(true)}
+              className="h-11 rounded-xl text-[10px] font-extrabold uppercase tracking-widest bg-[#25d366] hover:bg-[#128C7E] text-white flex items-center gap-1.5 border-none shadow-md shadow-green-100"
+            >
+              Open
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Tabs>
   );
 }
