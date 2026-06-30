@@ -59,11 +59,12 @@ const emptyForm = () => ({
 interface TrainTicketsPanelProps {
   bookingId: string;
   booking?: any;
+  passengers?: any[];
   onCountChange?: (count: number) => void;
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
-export default function TrainTicketsPanel({ bookingId, booking, onCountChange }: TrainTicketsPanelProps) {
+export default function TrainTicketsPanel({ bookingId, booking, passengers, onCountChange }: TrainTicketsPanelProps) {
   const { admin } = useAuthStore();
   const role = admin?.role ?? "";
 
@@ -128,7 +129,7 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
   }
 
   async function handleAutoGenerateTickets() {
-    const passengersList = booking?.passengers || [];
+    const passengersList = passengers || booking?.passengers || [];
     if (!passengersList || passengersList.length === 0) {
       toast.error("No passengers found in this booking");
       return;
@@ -228,9 +229,10 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
 
   function openCreate() {
     let defaultName = "";
-    if (booking?.passengers && Array.isArray(booking.passengers)) {
+    const plist = passengers || booking?.passengers || [];
+    if (Array.isArray(plist)) {
       const taken = new Set(tickets.map((t) => t.travelerName));
-      const free  = booking.passengers.find((p: any) => p?.name && !taken.has(p.name));
+      const free  = plist.find((p: any) => p?.name && !taken.has(p.name));
       if (free) defaultName = free.name;
     }
     setForm({ ...emptyForm(), travelerName: defaultName });
