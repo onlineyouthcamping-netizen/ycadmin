@@ -148,7 +148,7 @@ export interface TripStatusUpdate {
 
 export const guideService = {
   async login(phone: string, role: string) {
-    const res = await guideApi.post<{ id: number; name: string; role: string }>('/auth/login', { phone, role });
+    const res = await guideApi.post<{ token?: string; id: number; name: string; role: string }>('/auth/login', { phone, role });
     return res.data;
   },
 

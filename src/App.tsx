@@ -1,10 +1,12 @@
 // Sync trigger for Vercel admin deployment
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuthStore } from "@/store/auth.store";
+import { hasPermission } from "@/lib/permissions";
 
 const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -86,7 +88,13 @@ const LoadingUI = () => (
   </div>
 );
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
+function AdminRoute({ children, requiredPermission }: { children: React.ReactNode; requiredPermission?: string }) {
+  const { admin } = useAuthStore();
+
+  if (requiredPermission && admin && !hasPermission(admin.role, requiredPermission)) {
+    return <Navigate to="/admin/unauthorized" replace />;
+  }
+
   return (
     <AdminLayout>
       <Suspense fallback={<LoadingUI />}>
@@ -107,58 +115,58 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Suspense fallback={<LoadingUI />}><LoginPage /></Suspense>} />
               <Route path="/admin/login" element={<Suspense fallback={<LoadingUI />}><LoginPage /></Suspense>} />
-              <Route path="/" element={<AdminRoute><DashboardPage /></AdminRoute>} />
-              <Route path="/admin" element={<AdminRoute><DashboardPage /></AdminRoute>} />
-              <Route path="/admin/trips" element={<AdminRoute><TripsPage /></AdminRoute>} />
-              <Route path="/admin/bookings" element={<AdminRoute><BookingsPage /></AdminRoute>} />
-              <Route path="/admin/verification-queue" element={<AdminRoute><VerificationQueuePage /></AdminRoute>} />
-              <Route path="/admin/approvals-hub" element={<AdminRoute><ApprovalsHubPage /></AdminRoute>} />
-              <Route path="/admin/train-templates" element={<AdminRoute><TrainTemplatesPage /></AdminRoute>} />
-              <Route path="/admin/ticket-approvals" element={<AdminRoute><TicketApprovalsPage /></AdminRoute>} />
-              <Route path="/admin/collections" element={<AdminRoute><CollectionsPage /></AdminRoute>} />
-              <Route path="/admin/promotions" element={<AdminRoute><PromotionsPage /></AdminRoute>} />
-              <Route path="/admin/blogs" element={<AdminRoute><BlogsPage /></AdminRoute>} />
-              <Route path="/admin/attractions" element={<AdminRoute><AttractionsPage /></AdminRoute>} />
-              <Route path="/admin/reviews" element={<AdminRoute><ReviewsPage /></AdminRoute>} />
-              <Route path="/admin/pages" element={<AdminRoute><PagesPage /></AdminRoute>} />
-              <Route path="/admin/pages/:id" element={<AdminRoute><PageEditorPage /></AdminRoute>} />
-              <Route path="/admin/theme" element={<AdminRoute><ThemePage /></AdminRoute>} />
-              <Route path="/admin/seo" element={<AdminRoute><SeoCenterPage /></AdminRoute>} />
-              <Route path="/admin/inquiry-form" element={<AdminRoute><InquiryFormPage /></AdminRoute>} />
-              <Route path="/admin/website" element={<AdminRoute><WebsiteControlCenterPage /></AdminRoute>} />
-              <Route path="/admin/page-builder" element={<AdminRoute><PageBuilderPage /></AdminRoute>} />
-              <Route path="/admin/page_builder" element={<AdminRoute><PageBuilderPage /></AdminRoute>} />
-              <Route path="/admin/preview" element={<AdminRoute><PreviewPage /></AdminRoute>} />
-              <Route path="/admin/inquiries" element={<AdminRoute><InquiriesPage /></AdminRoute>} />
-              <Route path="/admin/media" element={<AdminRoute><MediaPage /></AdminRoute>} />
-              <Route path="/admin/vendors" element={<AdminRoute><VendorsPage /></AdminRoute>} />
-              <Route path="/admin/booking-forms" element={<AdminRoute><BookingLinksPage /></AdminRoute>} />
-              <Route path="/admin/quotations" element={<AdminRoute><QuotationsPage /></AdminRoute>} />
-              <Route path="/admin/quotations/:id" element={<AdminRoute><QuotationFormPage /></AdminRoute>} />
-              <Route path="/admin/ai-itinerary" element={<AdminRoute><AIItineraryGeneratorPage /></AdminRoute>} />
-              <Route path="/admin/questions" element={<AdminRoute><QuestionsPage /></AdminRoute>} />
-              <Route path="/admin/footer-management" element={<AdminRoute><FooterManagementPage /></AdminRoute>} />
-              <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-              <Route path="/admin/distribution" element={<AdminRoute><DistributionPage /></AdminRoute>} />
-              <Route path="/admin/reports" element={<AdminRoute><ReportsPage /></AdminRoute>} />
-              <Route path="/admin/billing" element={<AdminRoute><BillingPage /></AdminRoute>} />
-              <Route path="/admin/users" element={<AdminRoute><UserManagementPage /></AdminRoute>} />
-              <Route path="/admin/access-control" element={<AdminRoute><AccessControlPage /></AdminRoute>} />
-              <Route path="/admin/audit-logs" element={<AdminRoute><AuditLogsPage /></AdminRoute>} />
+              <Route path="/" element={<AdminRoute requiredPermission="dashboard.view"><DashboardPage /></AdminRoute>} />
+              <Route path="/admin" element={<AdminRoute requiredPermission="dashboard.view"><DashboardPage /></AdminRoute>} />
+              <Route path="/admin/trips" element={<AdminRoute requiredPermission="trips.view"><TripsPage /></AdminRoute>} />
+              <Route path="/admin/bookings" element={<AdminRoute requiredPermission="bookings.view"><BookingsPage /></AdminRoute>} />
+              <Route path="/admin/verification-queue" element={<AdminRoute requiredPermission="bookings.view"><VerificationQueuePage /></AdminRoute>} />
+              <Route path="/admin/approvals-hub" element={<AdminRoute requiredPermission="bookings.view"><ApprovalsHubPage /></AdminRoute>} />
+              <Route path="/admin/train-templates" element={<AdminRoute requiredPermission="tickets.templates.manage"><TrainTemplatesPage /></AdminRoute>} />
+              <Route path="/admin/ticket-approvals" element={<AdminRoute requiredPermission="tickets.approve"><TicketApprovalsPage /></AdminRoute>} />
+              <Route path="/admin/collections" element={<AdminRoute requiredPermission="settings.view"><CollectionsPage /></AdminRoute>} />
+              <Route path="/admin/promotions" element={<AdminRoute requiredPermission="settings.view"><PromotionsPage /></AdminRoute>} />
+              <Route path="/admin/blogs" element={<AdminRoute requiredPermission="settings.view"><BlogsPage /></AdminRoute>} />
+              <Route path="/admin/attractions" element={<AdminRoute requiredPermission="trips.view"><AttractionsPage /></AdminRoute>} />
+              <Route path="/admin/reviews" element={<AdminRoute requiredPermission="settings.view"><ReviewsPage /></AdminRoute>} />
+              <Route path="/admin/pages" element={<AdminRoute requiredPermission="settings.view"><PagesPage /></AdminRoute>} />
+              <Route path="/admin/pages/:id" element={<AdminRoute requiredPermission="settings.view"><PageEditorPage /></AdminRoute>} />
+              <Route path="/admin/theme" element={<AdminRoute requiredPermission="settings.view"><ThemePage /></AdminRoute>} />
+              <Route path="/admin/seo" element={<AdminRoute requiredPermission="seo.view"><SeoCenterPage /></AdminRoute>} />
+              <Route path="/admin/inquiry-form" element={<AdminRoute requiredPermission="inquiries.view"><InquiryFormPage /></AdminRoute>} />
+              <Route path="/admin/website" element={<AdminRoute requiredPermission="settings.view"><WebsiteControlCenterPage /></AdminRoute>} />
+              <Route path="/admin/page-builder" element={<AdminRoute requiredPermission="settings.view"><PageBuilderPage /></AdminRoute>} />
+              <Route path="/admin/page_builder" element={<AdminRoute requiredPermission="settings.view"><PageBuilderPage /></AdminRoute>} />
+              <Route path="/admin/preview" element={<AdminRoute requiredPermission="settings.view"><PreviewPage /></AdminRoute>} />
+              <Route path="/admin/inquiries" element={<AdminRoute requiredPermission="inquiries.view"><InquiriesPage /></AdminRoute>} />
+              <Route path="/admin/media" element={<AdminRoute requiredPermission="settings.view"><MediaPage /></AdminRoute>} />
+              <Route path="/admin/vendors" element={<AdminRoute requiredPermission="settings.view"><VendorsPage /></AdminRoute>} />
+              <Route path="/admin/booking-forms" element={<AdminRoute requiredPermission="bookings.view"><BookingLinksPage /></AdminRoute>} />
+              <Route path="/admin/quotations" element={<AdminRoute requiredPermission="quotations.view"><QuotationsPage /></AdminRoute>} />
+              <Route path="/admin/quotations/:id" element={<AdminRoute requiredPermission="quotations.view"><QuotationFormPage /></AdminRoute>} />
+              <Route path="/admin/ai-itinerary" element={<AdminRoute requiredPermission="trips.view"><AIItineraryGeneratorPage /></AdminRoute>} />
+              <Route path="/admin/questions" element={<AdminRoute requiredPermission="settings.view"><QuestionsPage /></AdminRoute>} />
+              <Route path="/admin/footer-management" element={<AdminRoute requiredPermission="settings.view"><FooterManagementPage /></AdminRoute>} />
+              <Route path="/admin/settings" element={<AdminRoute requiredPermission="settings.view"><SettingsPage /></AdminRoute>} />
+              <Route path="/admin/distribution" element={<AdminRoute requiredPermission="settings.view"><DistributionPage /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute requiredPermission="reports.view"><ReportsPage /></AdminRoute>} />
+              <Route path="/admin/billing" element={<AdminRoute requiredPermission="settings.view"><BillingPage /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute requiredPermission="users.manage"><UserManagementPage /></AdminRoute>} />
+              <Route path="/admin/access-control" element={<AdminRoute requiredPermission="roles.manage"><AccessControlPage /></AdminRoute>} />
+              <Route path="/admin/audit-logs" element={<AdminRoute requiredPermission="audit.view"><AuditLogsPage /></AdminRoute>} />
               <Route path="/admin/unauthorized" element={<AdminRoute><UnauthorizedPage /></AdminRoute>} />
-              <Route path="/admin/dynamic-sync" element={<AdminRoute><DynamicFormAdmin /></AdminRoute>} />
-              <Route path="/admin/guides-dashboard" element={<AdminRoute><GuidesDashboardPage /></AdminRoute>} />
-              <Route path="/admin/guides-hub" element={<AdminRoute><GuideOperationsCenterPage /></AdminRoute>} />
-              <Route path="/admin/guides" element={<AdminRoute><GuidesListPage /></AdminRoute>} />
-              <Route path="/admin/attendance-logs" element={<AdminRoute><AttendanceLogsPage /></AdminRoute>} />
-              <Route path="/admin/assignments" element={<AdminRoute><AssignmentsPage /></AdminRoute>} />
-              <Route path="/admin/payroll" element={<AdminRoute><PayrollPage /></AdminRoute>} />
-              <Route path="/admin/expenses" element={<AdminRoute><ExpensesApprovalPage /></AdminRoute>} />
-              <Route path="/admin/live-operations" element={<AdminRoute><LiveTripOperationsPage /></AdminRoute>} />
-              <Route path="/admin/guide-portal" element={<AdminRoute><GuideDashboardPage /></AdminRoute>} />
-              <Route path="/admin/guide-portal/trip/:assignmentId" element={<AdminRoute><GuideTripDetailPage /></AdminRoute>} />
-              <Route path="/admin/accounting" element={<AdminRoute><AccountingPage /></AdminRoute>} />
-              <Route path="/admin/operations" element={<AdminRoute><OperationsHubPage /></AdminRoute>} />
+              <Route path="/admin/dynamic-sync" element={<AdminRoute requiredPermission="settings.view"><DynamicFormAdmin /></AdminRoute>} />
+              <Route path="/admin/guides-dashboard" element={<AdminRoute requiredPermission="guides.view"><GuidesDashboardPage /></AdminRoute>} />
+              <Route path="/admin/guides-hub" element={<AdminRoute requiredPermission="guides.view"><GuideOperationsCenterPage /></AdminRoute>} />
+              <Route path="/admin/guides" element={<AdminRoute requiredPermission="guides.view"><GuidesListPage /></AdminRoute>} />
+              <Route path="/admin/attendance-logs" element={<AdminRoute requiredPermission="guides.view"><AttendanceLogsPage /></AdminRoute>} />
+              <Route path="/admin/assignments" element={<AdminRoute requiredPermission="guides.view"><AssignmentsPage /></AdminRoute>} />
+              <Route path="/admin/payroll" element={<AdminRoute requiredPermission="guides.view"><PayrollPage /></AdminRoute>} />
+              <Route path="/admin/expenses" element={<AdminRoute requiredPermission="guides.view"><ExpensesApprovalPage /></AdminRoute>} />
+              <Route path="/admin/live-operations" element={<AdminRoute requiredPermission="guides.view"><LiveTripOperationsPage /></AdminRoute>} />
+              <Route path="/admin/guide-portal" element={<AdminRoute requiredPermission="trips.view"><GuideDashboardPage /></AdminRoute>} />
+              <Route path="/admin/guide-portal/trip/:assignmentId" element={<AdminRoute requiredPermission="trips.view"><GuideTripDetailPage /></AdminRoute>} />
+              <Route path="/admin/accounting" element={<AdminRoute requiredPermission="accounting.view"><AccountingPage /></AdminRoute>} />
+              <Route path="/admin/operations" element={<AdminRoute requiredPermission="ops.view"><OperationsHubPage /></AdminRoute>} />
               <Route path="*" element={<Suspense fallback={<LoadingUI />}><NotFound /></Suspense>} />
             </Routes>
           </BrowserRouter>

@@ -12,7 +12,7 @@ export async function ensureGuideToken(phone: string, role: string): Promise<voi
   guideLoginAttemptedThisSession = true;
   try {
     const guideAuth = await guideService.login(phone, role);
-    localStorage.setItem("guide_token", guideAuth.id.toString());
+    localStorage.setItem("guide_token", guideAuth.token || guideAuth.id.toString());
   } catch {
     // Silent — guide API may be offline; non-blocking for admin users
   }
@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const guideAuth = await guideService.login(phone, 'guide');
-      localStorage.setItem("guide_token", guideAuth.id.toString());
+      localStorage.setItem("guide_token", guideAuth.token || guideAuth.id.toString());
       set({
         admin: {
           id: guideAuth.id,
