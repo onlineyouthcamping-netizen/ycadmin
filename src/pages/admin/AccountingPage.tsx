@@ -902,6 +902,7 @@ export default function AccountingPage() {
           <div className="px-6 py-5 border-b bg-muted/10">
             <DialogHeader>
               <DialogTitle className="text-base font-black uppercase tracking-tight">Ledger Allocation Audit Trail</DialogTitle>
+              <DialogDescription className="sr-only">View audit history logs for this entry</DialogDescription>
             </DialogHeader>
           </div>
           <div className="px-6 py-5 space-y-4 max-h-[300px] overflow-y-auto">
