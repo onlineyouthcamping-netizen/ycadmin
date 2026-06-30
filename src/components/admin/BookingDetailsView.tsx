@@ -2091,9 +2091,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                         </div>
                       </td>
                       
-                      {/* Legal attributes */}
                       <td className="px-4 py-3 font-bold text-slate-800">
-                        {p.name.startsWith("Mr") || p.name.startsWith("Mrs") || p.name.startsWith("Ms") ? "" : "Mr. "}{p.name}
+                        {p.name && (p.name.startsWith("Mr") || p.name.startsWith("Mrs") || p.name.startsWith("Ms")) ? "" : "Mr. "}{p.name || "N/A"}
                       </td>
                       <td className="px-4 py-3">{p.gender}</td>
                       <td className="px-4 py-3 font-mono">{p.age}</td>
