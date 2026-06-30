@@ -98,6 +98,22 @@ export default function AccountingPage() {
   const [vendorTypeFilter, setVendorTypeFilter] = useState("ALL");
   const [vendorStatusFilter, setVendorStatusFilter] = useState("ALL");
 
+  // Outgoing Vendor Payment Modal State
+  const [vendorPayDialog, setVendorPayDialog] = useState<{
+    open: boolean;
+    assignment: any | null;
+  }>({ open: false, assignment: null });
+
+  const [outgoingForm, setOutgoingForm] = useState({
+    paidAmount: 0,
+    paymentStatus: "pending",
+    outgoingPaymentMode: "CASH",
+    onlinePersonAccount: "",
+    cashDepositorName: "",
+    depositAccountName: "",
+    notes: ""
+  });
+
   // ── Load entries ──
   const load = useCallback(async () => {
     setLoading(true);
@@ -135,7 +151,7 @@ export default function AccountingPage() {
   const loadVendorAssignments = async () => {
     setLoadingVendors(true);
     try {
-      const trips = await tripsService.getCompact();
+      const trips = await tripsService.getAll();
       const tripIds = trips.map((t: any) => t.id || t._id).filter(Boolean);
       const byTripMap = await vendorsService.getBulkForTrips(tripIds);
 
@@ -253,6 +269,31 @@ export default function AccountingPage() {
     try {
       await vendorsService.updateAssignment(assignmentId, { paymentStatus: status as any, paidAmount });
       toast.success("Vendor payment updated successfully");
+      loadVendorAssignments();
+    } catch {
+      toast.error("Failed to update vendor payment");
+    } finally {
+      setUpdatingVendorId(null);
+    }
+  };
+
+  const handleRecordVendorPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vendorPayDialog.assignment) return;
+    const assignmentId = vendorPayDialog.assignment.id || vendorPayDialog.assignment._id;
+    setUpdatingVendorId(assignmentId);
+    try {
+      await vendorsService.updateAssignment(assignmentId, {
+        paidAmount: Number(outgoingForm.paidAmount),
+        paymentStatus: outgoingForm.paymentStatus as any,
+        notes: outgoingForm.notes || undefined,
+        outgoingPaymentMode: outgoingForm.outgoingPaymentMode,
+        onlinePersonAccount: outgoingForm.outgoingPaymentMode === "ONLINE" ? outgoingForm.onlinePersonAccount : null,
+        cashDepositorName: outgoingForm.outgoingPaymentMode === "CASH" ? outgoingForm.cashDepositorName : null,
+        depositAccountName: outgoingForm.outgoingPaymentMode === "CASH" ? outgoingForm.depositAccountName : null
+      });
+      toast.success("Vendor payment details updated successfully");
+      setVendorPayDialog({ open: false, assignment: null });
       loadVendorAssignments();
     } catch {
       toast.error("Failed to update vendor payment");
@@ -411,7 +452,7 @@ export default function AccountingPage() {
                           <th className="text-left p-4">Amount</th>
                           <th className="text-left p-4">Mode</th>
                           <th className="text-left p-4">Reference</th>
-                          <th className="text-left p-4">Salesperson</th>
+                          <th className="text-left p-4">Collected / Approved By</th>
                           <th className="text-center p-4">Status</th>
                           <th className="text-right p-4">Actions</th>
                         </tr>
@@ -433,7 +474,14 @@ export default function AccountingPage() {
                               <td className="p-4 font-bold text-slate-900">₹{entry.amount.toLocaleString("en-IN")}</td>
                               <td className="p-4">{MODE_LABELS[entry.paymentMode] || entry.paymentMode}</td>
                               <td className="p-4 font-mono text-[10px]">{entry.referenceNumber || "N/A"}</td>
-                              <td className="p-4 text-[10px]">{entry.salesperson?.name || "System"}</td>
+                              <td className="p-4 text-[10px]">
+                                <div className="font-bold text-slate-800">Col: {entry.salesperson?.name || "System"}</div>
+                                {entry.actionedBy?.name && (
+                                  <div className="text-[9px] text-emerald-600 mt-0.5 font-semibold">
+                                    App: {entry.actionedBy.name}
+                                  </div>
+                                )}
+                              </td>
                               <td className="p-4 text-center">
                                 <span className={cn("inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border", status.bg, status.text)}>
                                   <StatusIcon className="w-3 h-3" /> {entry.status}
@@ -530,6 +578,80 @@ export default function AccountingPage() {
                       )}
                     </div>
                   </Card>
+
+                  {/* Cash Collections Breakdowns */}
+                  <Card className="rounded-3xl border border-slate-200 p-6 bg-white md:col-span-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-1.5">
+                      💵 Cash Collections Breakdown
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block border-b pb-1">Date-wise</span>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                          {reports.cashCollectionDatewise?.map((item: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                              <span>{new Date(item.date).toLocaleDateString()}</span>
+                              <span className="font-bold text-slate-900">₹{item.amount.toLocaleString("en-IN")}</span>
+                            </div>
+                          ))}
+                          {(!reports.cashCollectionDatewise || reports.cashCollectionDatewise.length === 0) && (
+                            <div className="text-center py-8 text-slate-400 text-[10px]">No cash collections logged.</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block border-b pb-1">Trip-wise</span>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                          {reports.cashCollectionTripwise?.map((item: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                              <span className="truncate max-w-[180px]">{item.tripName}</span>
+                              <span className="font-bold text-slate-900">₹{item.amount.toLocaleString("en-IN")}</span>
+                            </div>
+                          ))}
+                          {(!reports.cashCollectionTripwise || reports.cashCollectionTripwise.length === 0) && (
+                            <div className="text-center py-8 text-slate-400 text-[10px]">No cash collections logged.</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Online Collections Breakdowns */}
+                  <Card className="rounded-3xl border border-slate-200 p-6 bg-white md:col-span-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-1.5">
+                      📱 Online Collections Breakdown
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block border-b pb-1">Date-wise</span>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                          {reports.onlineCollectionDatewise?.map((item: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                              <span>{new Date(item.date).toLocaleDateString()}</span>
+                              <span className="font-bold text-slate-900">₹{item.amount.toLocaleString("en-IN")}</span>
+                            </div>
+                          ))}
+                          {(!reports.onlineCollectionDatewise || reports.onlineCollectionDatewise.length === 0) && (
+                            <div className="text-center py-8 text-slate-400 text-[10px]">No online collections logged.</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block border-b pb-1">Trip-wise</span>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                          {reports.onlineCollectionTripwise?.map((item: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                              <span className="truncate max-w-[180px]">{item.tripName}</span>
+                              <span className="font-bold text-slate-900">₹{item.amount.toLocaleString("en-IN")}</span>
+                            </div>
+                          ))}
+                          {(!reports.onlineCollectionTripwise || reports.onlineCollectionTripwise.length === 0) && (
+                            <div className="text-center py-8 text-slate-400 text-[10px]">No online collections logged.</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
               )}
             </div>
@@ -596,6 +718,7 @@ export default function AccountingPage() {
                           <th className="text-left p-4">Paid Amount</th>
                           <th className="text-left p-4">Balance</th>
                           <th className="text-center p-4">Payment Status</th>
+                          <th className="text-right p-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -615,7 +738,14 @@ export default function AccountingPage() {
                                   </div>
                                   <div>
                                     <div className="font-bold text-slate-800">{vendor.name}</div>
-                                    <div className="text-[10px] text-slate-450 mt-0.5 capitalize">{vendor.type}</div>
+                                    <div className="text-[10px] text-slate-455 mt-0.5 capitalize">{vendor.type}</div>
+                                    {a.outgoingPaymentMode && (
+                                      <div className="text-[9px] text-indigo-650 mt-1 font-bold">
+                                        Pay: {a.outgoingPaymentMode}
+                                        {a.outgoingPaymentMode === "ONLINE" && a.onlinePersonAccount && ` (Acc: ${a.onlinePersonAccount})`}
+                                        {a.outgoingPaymentMode === "CASH" && (a.cashDepositorName || a.depositAccountName) && ` (Dep: ${a.cashDepositorName || '—'}, Acc: ${a.depositAccountName || '—'})`}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </td>
@@ -661,6 +791,27 @@ export default function AccountingPage() {
                                     <SelectItem value="paid">✅ Paid</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </td>
+                              <td className="p-4 text-right">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => {
+                                    setOutgoingForm({
+                                      paidAmount: a.paidAmount || 0,
+                                      paymentStatus: a.paymentStatus || "pending",
+                                      outgoingPaymentMode: a.outgoingPaymentMode || "CASH",
+                                      onlinePersonAccount: a.onlinePersonAccount || "",
+                                      cashDepositorName: a.cashDepositorName || "",
+                                      depositAccountName: a.depositAccountName || "",
+                                      notes: a.notes || ""
+                                    });
+                                    setVendorPayDialog({ open: true, assignment: a });
+                                  }}
+                                  className="h-7 text-[9px] font-bold uppercase rounded-lg border-slate-200"
+                                >
+                                  Record Pay
+                                </Button>
                               </td>
                             </tr>
                           );
@@ -772,6 +923,114 @@ export default function AccountingPage() {
           <DialogFooter className="px-6 py-4 bg-slate-50 border-t flex justify-end rounded-b-3xl">
             <Button onClick={() => setHistoryDialog({ open: false, entry: null })} className="rounded-xl h-9">Close</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* VENDOR PAY DETAILS RECORD DIALOG */}
+      <Dialog open={vendorPayDialog.open} onOpenChange={(o) => !o && setVendorPayDialog({ open: false, assignment: null })}>
+        <DialogContent className="rounded-3xl border p-0 max-w-md">
+          <form onSubmit={handleRecordVendorPayment}>
+            <div className="px-6 py-5 border-b bg-muted/10">
+              <DialogHeader>
+                <DialogTitle className="text-base font-black uppercase tracking-tight">Record Outgoing Vendor Payment</DialogTitle>
+                <DialogDescription className="text-slate-500 font-medium">
+                  Enter payment details for vendor <b>{vendorPayDialog.assignment?.vendorId?.name}</b>
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Paid Amount (₹) *</label>
+                  <Input 
+                    type="number" 
+                    required 
+                    value={outgoingForm.paidAmount} 
+                    onChange={e => setOutgoingForm({ ...outgoingForm, paidAmount: Number(e.target.value) })}
+                    className="rounded-xl h-9" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Payment Status *</label>
+                  <select 
+                    value={outgoingForm.paymentStatus} 
+                    onChange={e => setOutgoingForm({ ...outgoingForm, paymentStatus: e.target.value })}
+                    className="w-full h-9 bg-white border border-slate-200 rounded-xl px-2 text-xs"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="partial">Partial</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Outgoing Payment Mode *</label>
+                <select 
+                  value={outgoingForm.outgoingPaymentMode} 
+                  onChange={e => setOutgoingForm({ ...outgoingForm, outgoingPaymentMode: e.target.value })}
+                  className="w-full h-9 bg-white border border-slate-200 rounded-xl px-2 text-xs"
+                >
+                  <option value="CASH">CASH</option>
+                  <option value="ONLINE">ONLINE</option>
+                </select>
+              </div>
+
+              {outgoingForm.outgoingPaymentMode === "ONLINE" ? (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Paid From Person's Account *</label>
+                  <Input 
+                    required 
+                    value={outgoingForm.onlinePersonAccount} 
+                    onChange={e => setOutgoingForm({ ...outgoingForm, onlinePersonAccount: e.target.value })}
+                    placeholder="e.g. Parth Shah Account / HDFC Bank"
+                    className="rounded-xl h-9" 
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Deposited By (Person Name) *</label>
+                    <Input 
+                      required 
+                      value={outgoingForm.cashDepositorName} 
+                      onChange={e => setOutgoingForm({ ...outgoingForm, cashDepositorName: e.target.value })}
+                      placeholder="e.g. Parth Shah"
+                      className="rounded-xl h-9" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Deposit Account Name *</label>
+                    <Input 
+                      required 
+                      value={outgoingForm.depositAccountName} 
+                      onChange={e => setOutgoingForm({ ...outgoingForm, depositAccountName: e.target.value })}
+                      placeholder="e.g. Main Cash Vault / Cash Drawer"
+                      className="rounded-xl h-9" 
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Notes / Remarks</label>
+                <Textarea 
+                  value={outgoingForm.notes} 
+                  onChange={e => setOutgoingForm({ ...outgoingForm, notes: e.target.value })} 
+                  placeholder="Reference number or reason for payment..." 
+                  className="rounded-xl min-h-[60px]" 
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="px-6 py-4 bg-slate-50 border-t flex justify-end gap-2 rounded-b-3xl">
+              <Button type="button" variant="outline" onClick={() => setVendorPayDialog({ open: false, assignment: null })} className="rounded-xl h-9">Cancel</Button>
+              <Button type="submit" className="rounded-xl h-9 bg-primary text-white font-bold uppercase text-[10px] tracking-widest">
+                Save Record
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

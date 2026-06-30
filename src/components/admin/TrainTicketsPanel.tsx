@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import {
   Train, Plus, CheckCircle2, XCircle, AlertTriangle,
   RotateCcw, Ban, RefreshCw, History, ChevronDown, ChevronUp,
-  Edit3, Send, Loader2, Zap
+  Edit3, Send, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,9 +49,9 @@ function Pill({ label, colorClass }: { label: string; colorClass: string }) {
 
 // ── EMPTY FORM ─────────────────────────────────────────────────────────────────
 const emptyForm = () => ({
-  travelerName: "", passengerReference: "", pnr: "", trainName: "", trainNumber: "",
-  journeyDate: "", sourceStation: "", destinationStation: "", coach: "", seatNumber: "",
-  berthType: "", ticketAmount: "", amountMode: "PAYMENT_LINK", internalNote: "",
+  travelerName: "", pnr: "", trainName: "", trainNumber: "",
+  journeyDate: "", sourceStation: "", destinationStation: "",
+  ticketAmount: "", amountMode: "PAYMENT_LINK", internalNote: "",
   ticketBookingPerson: "", ticketStatus: "PENDING" as const,
 });
 
@@ -75,7 +75,6 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
   const [templates, setTemplates]   = useState<TrainTemplate[]>([]);
   const [loading, setLoading]       = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
-  const [autoGenerating, setAutoGenerating] = useState(false);
 
   // Form state
   const [showForm, setShowForm]     = useState(false);
@@ -91,9 +90,8 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
   const [selected, setSelected]     = useState<Set<string>>(new Set());
   const [showBulk, setShowBulk]     = useState(false);
   const [bulkForm, setBulkForm]     = useState({
-    status: "", trainNumber: "", journeyDate: "", pnr: "", coach: "",
+    status: "", trainNumber: "", journeyDate: "", pnr: "",
     sourceStation: "", destinationStation: "",
-    seatNumber: "", berthType: "", // only sent if explicitly filled
     notes: "",
   });
 
@@ -156,33 +154,15 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
     setShowForm(true);
   }
 
-  async function handleAutoGenerate() {
-    if (autoGenerating) return;
-    setAutoGenerating(true);
-    try {
-      const result = await trainTicketService.autoGenerateTickets(bookingId);
-      toast.success(result.message || "Tickets auto-generated!");
-      await load();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to auto-generate tickets");
-    } finally {
-      setAutoGenerating(false);
-    }
-  }
-
   function openEdit(t: TrainTicket) {
     setForm({
       travelerName: t.travelerName ?? "",
-      passengerReference: t.passengerReference ?? "",
       pnr: t.pnr ?? "",
       trainName: t.trainName ?? "",
       trainNumber: t.trainNumber ?? "",
       journeyDate: t.journeyDate ? t.journeyDate.slice(0, 10) : "",
       sourceStation: t.sourceStation ?? "",
       destinationStation: t.destinationStation ?? "",
-      coach: t.coach ?? "",
-      seatNumber: t.seatNumber ?? "",
-      berthType: t.berthType ?? "",
       ticketAmount: t.ticketAmount != null ? String(t.ticketAmount) : "",
       amountMode: t.amountMode ?? "PAYMENT_LINK",
       internalNote: t.internalNote ?? "",
@@ -200,8 +180,6 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
       trainNumber:       prev.trainNumber       || tmpl.trainNumber       || "",
       sourceStation:     prev.sourceStation     || tmpl.source            || "",
       destinationStation:prev.destinationStation|| tmpl.destination       || "",
-      coach:             prev.coach             || tmpl.defaultCoach      || "",
-      berthType:         prev.berthType         || tmpl.defaultClass      || "",
       journeyDate:       prev.journeyDate       || (tmpl.journeyDate ? tmpl.journeyDate.slice(0, 10) : "") ,
     }));
     toast.success(`Prefilled from template: ${tmpl.trainName || tmpl.trainNumber}`);
@@ -303,12 +281,8 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
     if (bulkForm.trainNumber)       payload.trainNumber       = bulkForm.trainNumber;
     if (bulkForm.journeyDate)       payload.journeyDate       = bulkForm.journeyDate;
     if (bulkForm.pnr)               payload.pnr               = bulkForm.pnr;
-    if (bulkForm.coach)             payload.coach             = bulkForm.coach;
     if (bulkForm.sourceStation)     payload.sourceStation     = bulkForm.sourceStation;
     if (bulkForm.destinationStation)payload.destinationStation = bulkForm.destinationStation;
-    // seat/berth only if explicitly entered
-    if (bulkForm.seatNumber.trim()) payload.seatNumber        = bulkForm.seatNumber;
-    if (bulkForm.berthType.trim())  payload.berthType         = bulkForm.berthType;
 
     setActionBusy(true);
     try {
@@ -372,13 +346,6 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
               Bulk Update ({selected.size})
             </Button>
           )}
-          {canManage && tickets.length === 0 && (
-            <Button size="sm" onClick={handleAutoGenerate} disabled={autoGenerating}
-              className="h-8 text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
-              {autoGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-              {autoGenerating ? "Generating…" : "Generate All Tickets"}
-            </Button>
-          )}
           {canManage && (
             <Button size="sm" onClick={openCreate}
               className="h-8 text-[10px] font-bold uppercase tracking-wider bg-primary text-white flex items-center gap-1">
@@ -418,7 +385,7 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
               <Input value={form.travelerName} onChange={(e) => setForm({ ...form, travelerName: e.target.value })}
                 required className="h-8 text-xs" />
             </div>
-            {(["pnr","trainName","trainNumber","journeyDate","sourceStation","destinationStation","coach","seatNumber","berthType","ticketAmount","passengerReference","ticketBookingPerson"] as const).map((key) => (
+            {(["pnr","trainName","trainNumber","journeyDate","sourceStation","destinationStation","ticketAmount","ticketBookingPerson"] as const).map((key) => (
               <div key={key} className="space-y-1">
                 <label className="text-[9px] font-bold uppercase text-slate-500">
                   {key.replace(/([A-Z])/g, " $1").trim()}
@@ -520,9 +487,6 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
                       {t.trainName && <span>{t.trainName} {t.trainNumber ? `(${t.trainNumber})` : ""}</span>}
                       {t.journeyDate && <span>{new Date(t.journeyDate).toDateString()}</span>}
                       {t.sourceStation && t.destinationStation && <span>{t.sourceStation} → {t.destinationStation}</span>}
-                      {t.coach && <span>Coach {t.coach}</span>}
-                      {t.seatNumber && <span>Seat {t.seatNumber}</span>}
-                      {t.berthType && <span>{t.berthType}</span>}
                       {t.ticketAmount != null && Number(t.ticketAmount) > 0 && (
                         <span className="font-semibold text-slate-700">₹{Number(t.ticketAmount).toFixed(2)}</span>
                       )}
@@ -548,7 +512,7 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
                     {/* Submit */}
                     {t.approvalStatus === "DRAFT" && canManage && !t.isLocked && t.ticketStatus !== "CANCELLED" && (
                       <Button size="sm" onClick={() => doSubmitApproval(t.id)} disabled={actionBusy}
-                        className="h-7 px-2 text-[9px] font-bold uppercase bg-blue-600 text-white">
+                        className="h-7 px-2 text-[9px] font-bold uppercase bg-primary hover:bg-primary/90 text-white">
                         <Send className="w-3 h-3 mr-1" />Submit
                       </Button>
                     )}
@@ -668,11 +632,8 @@ export default function TrainTicketsPanel({ bookingId, booking, onCountChange }:
                 ["trainNumber", "Train Number", "text"],
                 ["journeyDate", "Journey Date", "date"],
                 ["pnr", "PNR", "text"],
-                ["coach", "Coach", "text"],
                 ["sourceStation", "Source Station", "text"],
                 ["destinationStation", "Destination Station", "text"],
-                ["seatNumber", "Seat Number (optional)", "text"],
-                ["berthType", "Berth Type (optional)", "text"],
               ].map(([key, label, type]) => (
                 <div key={key} className={cn("space-y-1", key === "sourceStation" || key === "destinationStation" ? "col-span-2" : "")}>
                   <label className="text-[9px] font-bold uppercase text-slate-500">{label}</label>

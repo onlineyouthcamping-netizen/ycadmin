@@ -3,7 +3,7 @@ import {
   Calendar, Users, Pencil, Trash2, Plus, ArrowLeft, Check, X, 
   ChevronRight, CreditCard, Globe, Languages, Tag, MessageSquare, 
   Clock, Send, HelpCircle, User, Phone, Mail, FileText, AlertCircle, CheckCircle2,
-  ShieldCheck, MapPin
+  ShieldCheck, MapPin, History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,6 @@ import { settingsService } from "@/services/settings.service";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
-import TrainTicketsPanel from "./TrainTicketsPanel";
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -40,11 +39,24 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
     gender: "Male",
     age: "",
     phone: "",
-    email: "",
-    foodPreference: "Normal Food"
+    email: ""
   });
   
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [colleagues, setColleagues] = useState<any[]>([]);
+  const [loadingActivityLogs, setLoadingActivityLogs] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
+  // For Task Creation
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskAssignedTo, setTaskAssignedTo] = useState("");
+  const [taskDueDate, setTaskDueDate] = useState("");
+  const [creatingTask, setCreatingTask] = useState(false);
+
   const [settings, setSettings] = useState<any>(null);
   const [paymentTab, setPaymentTab] = useState<'successful' | 'outstanding' | 'failed'>('successful');
   const [isConfirming, setIsConfirming] = useState(false);
@@ -159,6 +171,79 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
     }
   };
 
+  const fetchActivityLogs = async () => {
+    setLoadingActivityLogs(true);
+    try {
+      const logs = await bookingsService.getActivityLogs(booking.id);
+      setActivityLogs(logs || []);
+    } catch (e) {
+      console.error("Failed to fetch activity logs", e);
+    } finally {
+      setLoadingActivityLogs(false);
+    }
+  };
+
+  const fetchTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      const t = await bookingsService.getTasks(booking.id);
+      setTasks(t || []);
+    } catch (e) {
+      console.error("Failed to fetch tasks", e);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  const fetchColleagues = async () => {
+    try {
+      const c = await bookingsService.getColleagues();
+      setColleagues(c || []);
+    } catch (e) {
+      console.error("Failed to fetch colleagues", e);
+    }
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskTitle || !taskAssignedTo) {
+      toast.error("Task title and assignee are required");
+      return;
+    }
+    setCreatingTask(true);
+    try {
+      await bookingsService.createTask(booking.id, {
+        title: taskTitle,
+        description: taskDescription,
+        assignedToId: taskAssignedTo,
+        dueDate: taskDueDate || undefined
+      });
+      toast.success("Task assigned successfully");
+      setTaskTitle("");
+      setTaskDescription("");
+      setTaskAssignedTo("");
+      setTaskDueDate("");
+      setShowCreateTask(false);
+      fetchTasks();
+      fetchActivityLogs();
+    } catch (e) {
+      toast.error("Failed to create task");
+    } finally {
+      setCreatingTask(false);
+    }
+  };
+
+  const handleUpdateTaskStatus = async (taskId: string, status: string) => {
+    try {
+      await bookingsService.updateTask(taskId, status);
+      toast.success(`Task status updated to ${status}`);
+      fetchTasks();
+      fetchActivityLogs();
+    } catch (e) {
+      toast.error("Failed to update task status");
+    }
+  };
+
   // Math helpers matching correct GST + Discount Calculation Order
   const qty = booking.numberOfTravelers || 1;
   const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
@@ -223,6 +308,9 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
 
   useEffect(() => {
     setLoadingPayments(true);
+    fetchActivityLogs();
+    fetchTasks();
+    fetchColleagues();
     Promise.allSettled([
       settingsService.get(),
       bookingsService.getEmailLogs(booking.id),
@@ -821,8 +909,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
       gender: p.gender || "Male",
       age: p.age?.toString() || "",
       phone: p.phone || "",
-      email: p.email !== "Not specified" ? p.email : "",
-      foodPreference: p.foodPreference || "Normal Food"
+      email: p.email !== "Not specified" ? p.email : ""
     });
     setShowAddPassenger(true);
   };
@@ -842,7 +929,6 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
-        foodPreference: newPassenger.foodPreference
       } : p);
       toast.success("Passenger updated");
     } else {
@@ -853,7 +939,6 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
-        foodPreference: newPassenger.foodPreference,
         type: `${booking.trainClass} Train`,
         status: 'Form complete'
       };
@@ -2033,7 +2118,6 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                     <th className="px-4 py-2 w-16">Age</th>
                     <th className="px-4 py-2 w-32">Phone</th>
                     <th className="px-4 py-2 w-40">E-mail</th>
-                    <th className="px-4 py-2 w-28">Food Option</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -2092,22 +2176,14 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                         </div>
                       </td>
                       
+                      {/* Legal attributes */}
                       <td className="px-4 py-3 font-bold text-slate-800">
-                        {p.name && (p.name.startsWith("Mr") || p.name.startsWith("Mrs") || p.name.startsWith("Ms")) ? "" : "Mr. "}{p.name || "N/A"}
+                        {p.name.startsWith("Mr") || p.name.startsWith("Mrs") || p.name.startsWith("Ms") ? "" : "Mr. "}{p.name}
                       </td>
                       <td className="px-4 py-3">{p.gender}</td>
                       <td className="px-4 py-3 font-mono">{p.age}</td>
                       <td className="px-4 py-3 font-mono text-slate-500">{p.phone}</td>
                       <td className="px-4 py-3 font-mono text-slate-500 truncate max-w-[120px]">{p.email || 'N/A'}</td>
-                      <td className="px-4 py-3 font-bold text-[9px] uppercase">
-                        {p.foodPreference ? (
-                          <span className={cn("px-2 py-0.5 rounded", p.foodPreference === 'Jain Food' ? 'bg-amber-100 text-amber-700 border border-amber-250/20' : 'bg-green-100 text-green-700 border border-green-250/20')}>
-                            {p.foodPreference}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 font-normal">—</span>
-                        )}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -2115,10 +2191,195 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
             </div>
           </div>
 
-          {/* Card 5: Train Tickets */}
-          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-5">
-            <TrainTicketsPanel bookingId={booking.bookingId} booking={booking} />
+          {/* Team Interaction & Booking Tasks */}
+          <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                <Users className="w-4 h-4 text-primary" /> Team Interaction & Tasks
+              </h4>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setShowCreateTask(!showCreateTask)}
+                className="h-7 text-[9px] font-bold uppercase rounded"
+              >
+                {showCreateTask ? "Cancel" : "Assign Task"}
+              </Button>
+            </div>
+
+            {showCreateTask && (
+              <form onSubmit={handleCreateTask} className="bg-slate-50 border border-slate-200 rounded p-4 space-y-3">
+                <p className="text-[10px] font-bold text-slate-700 uppercase">Assign Task to Colleague</p>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-500">Task Title *</label>
+                  <Input 
+                    required 
+                    value={taskTitle} 
+                    onChange={e => setTaskTitle(e.target.value)} 
+                    placeholder="e.g. Call client for remaining payment" 
+                    className="h-8 text-xs bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase text-slate-500">Task Description</label>
+                  <Input 
+                    value={taskDescription} 
+                    onChange={e => setTaskDescription(e.target.value)} 
+                    placeholder="e.g. Ask for GPay screenshot" 
+                    className="h-8 text-xs bg-white"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold uppercase text-slate-500">Assign To *</label>
+                    <select 
+                      required
+                      value={taskAssignedTo}
+                      onChange={e => setTaskAssignedTo(e.target.value)}
+                      className="w-full h-8 text-xs bg-white border border-slate-200 rounded px-2"
+                    >
+                      <option value="">Select colleague...</option>
+                      {colleagues.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold uppercase text-slate-500">Due Date</label>
+                    <Input 
+                      type="date"
+                      value={taskDueDate} 
+                      onChange={e => setTaskDueDate(e.target.value)} 
+                      className="h-8 text-xs bg-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button 
+                    type="submit" 
+                    disabled={creatingTask} 
+                    size="sm" 
+                    className="h-8 text-[10px] font-bold uppercase bg-primary text-white"
+                  >
+                    {creatingTask ? "Assigning..." : "Assign"}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              {loadingTasks ? (
+                <p className="text-[10px] text-slate-450 italic">Loading tasks...</p>
+              ) : tasks.length === 0 ? (
+                <p className="text-[10px] text-slate-450 italic">No tasks assigned for this booking.</p>
+              ) : (
+                tasks.map((task: any) => (
+                  <div key={task.id} className="p-3 bg-slate-50/70 border border-slate-150 rounded-lg space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h5 className="font-bold text-slate-800 text-xs">{task.title}</h5>
+                        {task.description && <p className="text-[10px] text-slate-500">{task.description}</p>}
+                      </div>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
+                        task.status === 'COMPLETED' ? "bg-emerald-100 text-emerald-700" :
+                        task.status === 'IN_PROGRESS' ? "bg-blue-100 text-blue-700" :
+                        "bg-amber-100 text-amber-700"
+                      )}>
+                        {task.status.replace('_', ' ')}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between text-[9px] text-slate-400 font-medium">
+                      <span>By <b>{task.assignedBy?.name}</b> &rarr; <b>{task.assignedTo?.name}</b></span>
+                      {task.dueDate && <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>}
+                    </div>
+
+                    {task.status !== 'COMPLETED' && (
+                      <div className="flex gap-2 justify-end pt-1 border-t border-slate-100">
+                        {task.status === 'PENDING' && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleUpdateTaskStatus(task.id, 'IN_PROGRESS')}
+                            className="h-6 px-2 text-[8px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 uppercase"
+                          >
+                            Mark In Progress
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleUpdateTaskStatus(task.id, 'COMPLETED')}
+                          className="h-6 px-2 text-[8px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 uppercase"
+                        >
+                          Mark Completed
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
+
+          {/* Booking Activity Log / Audit Trail */}
+          <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+            <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider pb-2 border-b">
+              <History className="w-4 h-4 text-slate-450" /> Booking Activity Logs
+            </h4>
+
+            <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+              {loadingActivityLogs ? (
+                <p className="text-[10px] text-slate-450 italic">Loading activity logs...</p>
+              ) : activityLogs.length === 0 ? (
+                <p className="text-[10px] text-slate-450 italic">No activity logs recorded.</p>
+              ) : (
+                <div className="relative border-l border-slate-200 ml-2.5 pl-4 space-y-4">
+                  {activityLogs.map((log: any) => {
+                    const actionColors: Record<string, string> = {
+                      CREATE: "bg-emerald-500",
+                      STATUS_CHANGE: "bg-blue-500",
+                      TRAIN_TICKET: "bg-purple-500",
+                      PAYMENT_SUBMITTED: "bg-amber-500",
+                      PAYMENT_APPROVED: "bg-emerald-600",
+                      PAYMENT_REJECTED: "bg-red-500",
+                      TASK_ASSIGNED: "bg-indigo-500",
+                      TASK_UPDATED: "bg-sky-500",
+                      DETAILS_UPDATE: "bg-slate-500",
+                    };
+                    const color = actionColors[log.action] || "bg-slate-400";
+                    return (
+                      <div key={log.id} className="relative text-[11px] space-y-1">
+                        {/* Timeline dot */}
+                        <span className={cn("absolute -left-[21.5px] top-1.5 w-2 h-2 rounded-full ring-4 ring-white", color)} />
+                        
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-[9px]">
+                          <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-bold text-white uppercase", color)}>
+                            {log.action}
+                          </span>
+                          <span className="text-slate-400 font-medium">
+                            {new Date(log.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
+                          </span>
+                        </div>
+
+                        <p className="text-slate-700 font-medium leading-relaxed">
+                          {log.details}
+                        </p>
+                        
+                        {log.performedBy && (
+                          <p className="text-[9px] text-slate-450 font-bold uppercase">
+                            By {log.performedBy.name} ({log.performedBy.role})
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
 
         {/* RIGHT COLUMN: Sidebar metadata attributes */}
@@ -2741,16 +3002,6 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
               <div className="space-y-1">
                 <label className="text-[9px] font-bold uppercase text-slate-400">E-mail</label>
                 <Input value={newPassenger.email} onChange={e => setNewPassenger({...newPassenger, email: e.target.value})} placeholder="Email address" className="h-8 text-xs rounded font-mono" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">Food Option</label>
-                <Select value={newPassenger.foodPreference} onValueChange={v => setNewPassenger({...newPassenger, foodPreference: v})}>
-                  <SelectTrigger className="h-8 text-xs rounded"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Normal Food" className="text-xs">Normal Food</SelectItem>
-                    <SelectItem value="Jain Food" className="text-xs">Jain Food</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             
