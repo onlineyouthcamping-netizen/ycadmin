@@ -18,6 +18,7 @@ import { settingsService } from "@/services/settings.service";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
+import TrainTicketsPanel from "./TrainTicketsPanel";
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -2112,6 +2113,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Card 5: Train Tickets */}
+          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden p-5">
+            <TrainTicketsPanel bookingId={booking.id} booking={booking} />
           </div>
         </div>
 
