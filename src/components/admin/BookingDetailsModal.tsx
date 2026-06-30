@@ -33,7 +33,8 @@ export default function BookingDetailsModal({ open, onOpenChange, booking, onEdi
     gender: "Male",
     age: "",
     phone: "",
-    email: ""
+    email: "",
+    foodPreference: "Normal Food"
   });
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
 
@@ -136,7 +137,8 @@ export default function BookingDetailsModal({ open, onOpenChange, booking, onEdi
       gender: p.gender || "Male",
       age: p.age?.toString() || "",
       phone: p.phone || "",
-      email: p.email !== "Not specified" ? p.email : ""
+      email: p.email !== "Not specified" ? p.email : "",
+      foodPreference: p.foodPreference || "Normal Food"
     });
     setShowAddPassenger(true);
   };
@@ -158,6 +160,7 @@ export default function BookingDetailsModal({ open, onOpenChange, booking, onEdi
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
+        foodPreference: newPassenger.foodPreference
       } : p);
       toast.success("Passenger updated");
     } else {
@@ -169,6 +172,7 @@ export default function BookingDetailsModal({ open, onOpenChange, booking, onEdi
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
+        foodPreference: newPassenger.foodPreference,
         type: `${booking?.trainClass} Train`,
         status: 'Pending'
       };
@@ -832,6 +836,11 @@ export default function BookingDetailsModal({ open, onOpenChange, booking, onEdi
                            <div className="flex gap-2">
                              <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-bold uppercase">{p.gender}</span>
                              <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-bold uppercase">{p.age} Yrs</span>
+                             {p.foodPreference && (
+                               <span className={cn("px-2 py-0.5 rounded text-[9px] font-bold uppercase", p.foodPreference === 'Jain Food' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700')}>
+                                 {p.foodPreference}
+                               </span>
+                             )}
                            </div>
                         </td>
                         <td className="px-10 py-7 text-right">
@@ -911,6 +920,16 @@ export default function BookingDetailsModal({ open, onOpenChange, booking, onEdi
               <div className="space-y-1.5">
                 <Label text="Email" />
                 <Input value={newPassenger.email} onChange={e => setNewPassenger({...newPassenger, email: e.target.value})} placeholder="Email Address" />
+              </div>
+              <div className="space-y-1.5">
+                <Label text="Food Option" />
+                <Select value={newPassenger.foodPreference} onValueChange={v => setNewPassenger({...newPassenger, foodPreference: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Normal Food">Normal Food</SelectItem>
+                    <SelectItem value="Jain Food">Jain Food</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

@@ -39,7 +39,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
     gender: "Male",
     age: "",
     phone: "",
-    email: ""
+    email: "",
+    foodPreference: "Normal Food"
   });
   
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
@@ -819,7 +820,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
       gender: p.gender || "Male",
       age: p.age?.toString() || "",
       phone: p.phone || "",
-      email: p.email !== "Not specified" ? p.email : ""
+      email: p.email !== "Not specified" ? p.email : "",
+      foodPreference: p.foodPreference || "Normal Food"
     });
     setShowAddPassenger(true);
   };
@@ -839,6 +841,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
+        foodPreference: newPassenger.foodPreference
       } : p);
       toast.success("Passenger updated");
     } else {
@@ -849,6 +852,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
+        foodPreference: newPassenger.foodPreference,
         type: `${booking.trainClass} Train`,
         status: 'Form complete'
       };
@@ -2028,6 +2032,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                     <th className="px-4 py-2 w-16">Age</th>
                     <th className="px-4 py-2 w-32">Phone</th>
                     <th className="px-4 py-2 w-40">E-mail</th>
+                    <th className="px-4 py-2 w-28">Food Option</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -2094,6 +2099,15 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
                       <td className="px-4 py-3 font-mono">{p.age}</td>
                       <td className="px-4 py-3 font-mono text-slate-500">{p.phone}</td>
                       <td className="px-4 py-3 font-mono text-slate-500 truncate max-w-[120px]">{p.email || 'N/A'}</td>
+                      <td className="px-4 py-3 font-bold text-[9px] uppercase">
+                        {p.foodPreference ? (
+                          <span className={cn("px-2 py-0.5 rounded", p.foodPreference === 'Jain Food' ? 'bg-amber-100 text-amber-700 border border-amber-250/20' : 'bg-green-100 text-green-700 border border-green-250/20')}>
+                            {p.foodPreference}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-normal">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -2722,6 +2736,16 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips }
               <div className="space-y-1">
                 <label className="text-[9px] font-bold uppercase text-slate-400">E-mail</label>
                 <Input value={newPassenger.email} onChange={e => setNewPassenger({...newPassenger, email: e.target.value})} placeholder="Email address" className="h-8 text-xs rounded font-mono" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase text-slate-400">Food Option</label>
+                <Select value={newPassenger.foodPreference} onValueChange={v => setNewPassenger({...newPassenger, foodPreference: v})}>
+                  <SelectTrigger className="h-8 text-xs rounded"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Normal Food" className="text-xs">Normal Food</SelectItem>
+                    <SelectItem value="Jain Food" className="text-xs">Jain Food</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
