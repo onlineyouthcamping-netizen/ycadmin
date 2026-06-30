@@ -386,7 +386,11 @@ export default function OperationsHubPage() {
     }
     setAllocModal(prev => ({ ...prev, confirming: true }));
     try {
-      await opsService.confirmAllocation(allocModal.data.allocationRunId);
+      await opsService.confirmAllocation(
+        allocModal.data.allocationRunId,
+        allocModal.data.roomAllocations,
+        allocModal.data.vehicleAllocations
+      );
       toast.success("Allocation locked and confirmed!");
       setAllocModal({ open: false, data: null, confirming: false });
       loadTripOps(selectedTripId, selectedDepartureDate);
