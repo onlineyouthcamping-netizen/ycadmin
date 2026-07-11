@@ -875,7 +875,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       toast.success("Booking confirmed successfully!");
       setIsConfirming(false);
       try {
-        await bookingsService.sendEmail(booking.id, 'confirmation');
+        await bookingsService.sendEmail(booking.id, 'confirmation', undefined, confirmSendTicket);
         toast.success("Confirmation email sent to guest!");
       } catch (err) {
         toast.error("Booking confirmed, but email notification failed");
@@ -1551,6 +1551,20 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
               <Input type="email" value={confirmEmail} onChange={e => setConfirmEmail(e.target.value)} className="h-8 text-xs bg-white" />
             </div>
           </div>
+          {confirmTrainStatus !== 'SELF_BOOKED' && (
+            <div className="flex items-center gap-2 py-1.5 px-2 bg-emerald-100/60 rounded border border-emerald-200/50 max-w-sm">
+              <input 
+                type="checkbox" 
+                id="sendTrainWithEmail" 
+                checked={confirmSendTicket} 
+                onChange={e => setConfirmSendTicket(e.target.checked)} 
+                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+              />
+              <label htmlFor="sendTrainWithEmail" className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none">
+                Include train ticket confirmation details inside email
+              </label>
+            </div>
+          )}
           <div className="flex gap-2 justify-end pt-2 border-t">
             <button onClick={() => setIsConfirming(false)} className="bg-white border text-slate-655 px-4 py-1.5 rounded">Cancel</button>
             <button onClick={handleConfirmSubmit} disabled={confirmingLoading} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-1.5 rounded">{confirmingLoading ? "Confirming..." : "Confirm Booking"}</button>
