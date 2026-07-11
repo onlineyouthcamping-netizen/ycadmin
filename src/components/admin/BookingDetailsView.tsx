@@ -96,6 +96,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   const [confirmEmail, setConfirmEmail] = useState("");
   const [confirmTrainStatus, setConfirmTrainStatus] = useState("PENDING");
   const [confirmingLoading, setConfirmingLoading] = useState(false);
+  const [confirmSendTicket, setConfirmSendTicket] = useState(false);
 
   // Manual payment recording inline form
   const [showAddPaymentInline, setShowAddPaymentInline] = useState(false);
