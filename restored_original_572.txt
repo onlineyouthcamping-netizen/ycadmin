@@ -1,0 +1,150 @@
+            {/* Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+              {[
+                { v: "8", l: "TOTAL NIGHTS", desc: "Across 8 days", color: "text-indigo-600 bg-indigo-50 border-indigo-100", icon: Bed },
+                { v: "7", l: "CONFIRMED", desc: "87.5% of nights", color: "text-emerald-600 bg-emerald-50 border-emerald-100", icon: Check },
+                { v: "1", l: "PENDING", desc: "12.5% of nights", color: "text-amber-600 bg-amber-50 border-amber-100", icon: Clock },
+                { v: "42", l: "TOTAL ROOMS", desc: "All rooms combined", color: "text-blue-600 bg-blue-50 border-blue-100", icon: Compass },
+                { v: "37 / 42", l: "ROOMS BOOKED", desc: "88.1% occupancy", color: "text-cyan-600 bg-cyan-50 border-cyan-100", icon: Users },
+              ].map(k => (
+                <div key={k.l} className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex items-center gap-3">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 border", k.color)}>
+                    <k.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">{k.l}</p>
+                    <p className="text-xl font-black text-slate-800 mt-0.5">{k.v}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{k.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Filter Bar */}
+            <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex flex-wrap gap-2.5 items-center">
+              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
+                <option>All Hotel Status</option>
+              </select>
+              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
+                <option>All Cities</option>
+              </select>
+              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
+                <option>All Room Types</option>
+              </select>
+              <div className="relative flex-1 max-w-xs min-w-[150px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-450" />
+                <input type="text" placeholder="Search hotel or location..." className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none" />
+              </div>
+              <button className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 bg-white hover:bg-slate-50 text-slate-755 flex items-center gap-1.5 ml-auto shadow-3xs">
+                <Filter className="w-3.5 h-3.5 text-slate-450" /> Filters
+              </button>
+            </div>
+
+            {/* Hotels Table */}
+            <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50 border-b border-[#E2E8F0]">
+                  <tr className="text-[9.5px] font-bold text-slate-450 uppercase tracking-wider">
+                    <th className="p-3 border-r border-slate-100">DAY</th>
+                    <th className="p-3 border-r border-slate-100">DESTINATION</th>
+                    <th className="p-3 border-r border-slate-100">HOTEL DETAILS</th>
+                    <th className="p-3 border-r border-slate-100">ROOM TYPE & PLAN</th>
+                    <th className="p-3 border-r border-slate-100 text-center">ROOMS BOOKED</th>
+                    <th className="p-3 border-r border-slate-100 text-center">NIGHTS</th>
+                    <th className="p-3 border-r border-slate-100">STATUS</th>
+                    <th className="p-3 border-r border-slate-100">AMOUNT (₹)</th>
+                    <th className="p-3 text-center">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0]">
+                  {computedHotels.map((row, idx) => {
+                    const dayNum = idx + 1;
+                    const badgeColors = [
+                      "bg-red-50 text-red-600 border-red-100",
+                      "bg-emerald-50 text-emerald-600 border-emerald-100",
+                      "bg-amber-50 text-amber-600 border-amber-100",
+                      "bg-blue-50 text-blue-600 border-blue-100",
+                      "bg-purple-50 text-purple-600 border-purple-100",
+                      "bg-pink-50 text-pink-600 border-pink-100",
+                      "bg-teal-50 text-teal-600 border-teal-100"
+                    ];
+                    const badgeClass = badgeColors[idx % badgeColors.length];
+
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-3 border-r border-slate-100">
+                          <span className={cn("inline-block px-1.5 py-0.5 rounded-[3px] font-bold text-[9px] mb-1 border", badgeClass)}>{row.day}</span>
+                          <p className="font-extrabold text-slate-800 text-[10px]">{row.wd}</p>
+                          <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">{row.date}</p>
+                        </td>
+                        <td className="p-3 border-r border-slate-100">
+                          <p className="font-bold text-slate-800">{row.dest}</p>
+                          <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">Himachal Pradesh</p>
+                        </td>
+                        <td className="p-3 border-r border-slate-100">
+                          <div>
+                            <p className="font-bold text-slate-855 text-[11px]">{row.hotel}</p>
+                            <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">{row.sub}</p>
+                            {row.rating && row.rating !== "—" && (
+                              <p className="text-[9.5px] text-amber-500 font-bold mt-0.5">★ {row.rating}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3 border-r border-slate-100">
+                          <p className="font-semibold text-slate-800">{row.type}</p>
+                          <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">{row.plan}</p>
+                          <p className="text-[9.5px] text-slate-400 font-semibold">({row.paxSub || "2 Pax per room"})</p>
+                        </td>
+                        <td className="p-3 border-r border-slate-100 text-center">
+                          <p className="font-bold text-slate-800">{row.rooms}</p>
+                          <p className="text-[9.5px] text-slate-400 font-bold">{row.roomSub}</p>
+                        </td>
+                        <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-700">{row.nights}</td>
+                        <td className="p-3 border-r border-slate-100">
+                          <span className={cn("text-[8px] font-black px-1.5 py-0.5 rounded-[3px] border uppercase tracking-wider block w-fit",
+                            row.status === "CONFIRMED" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"
+                          )}>{row.status}</span>
+                          <span className="text-[9.5px] text-slate-400 font-semibold mt-0.5 block">{row.voucher}</span>
+                        </td>
+                        <td className="p-3 border-r border-slate-100">
+                          <p className="font-bold text-slate-850">{row.amt}</p>
+                          <p className="text-[9.5px] text-slate-400 font-semibold">{row.amtSub}</p>
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="flex justify-center">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:bg-slate-50 hover:text-slate-750 rounded">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Bottom calculation status */}
+            <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold shadow-xs">
+              <div className="flex flex-wrap items-center gap-6">
+                <span className="text-slate-700 font-bold">Total (8 Nights)</span>
+                <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+                <span className="text-slate-600 flex items-center gap-1.5">
+                  <Compass className="w-4 h-4 text-slate-400" /> 42 Total Rooms
+                </span>
+                <span className="text-slate-600 flex items-center gap-1.5">
+                  <Bed className="w-4 h-4 text-slate-400" /> 37 / 42 Rooms Booked
+                </span>
+                <span className="text-slate-600 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-slate-400" /> 88.1% Occupancy
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-6 ml-auto">
+                <p className="text-slate-500 font-medium">Total Amount <span className="font-black text-slate-800 ml-1">₹ 1,48,900</span></p>
+                <p className="text-slate-500 font-medium">Paid: <span className="font-bold text-emerald-600 ml-1">₹ 1,33,500</span></p>
+                <p className="text-slate-500 font-medium">Pending: <span className="font-bold text-rose-600 ml-1">₹ 15,400</span></p>
+                <button onClick={() => toast.info("Report downloading...")} className="h-8.5 rounded-[4px] bg-slate-900 hover:bg-slate-800 font-bold text-xs flex items-center gap-1.5 text-white px-4 shadow-sm">
+                  <Download className="w-3.5 h-3.5" /> Download Report
+                </button>
+              </div>
+            </div>

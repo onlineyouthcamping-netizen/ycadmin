@@ -1,0 +1,200 @@
+  const computedHotels = useMemo(() => {
+    const hotelAssignments = tripVendors.filter((v: any) => {
+      const vendorObj = typeof v.vendorId === 'object' ? v.vendorId : null;
+      const type = vendorObj?.type || v.vendorType || '';
+      return type === 'hotel';
+    });
+
+    if (hotelAssignments.length > 0) {
+      return hotelAssignments.map((v: any, idx: number) => {
+        const vendorObj = typeof v.vendorId === 'object' ? v.vendorId : { name: 'Assigned Hotel' };
+        const dayNum = idx + 1;
+        const { wd, date } = getDayDateAndWd(departureDateStr, idx);
+        const dest = tripDetails?.location || "Manali";
+        
+        return {
+          day: `Day ${dayNum}`,
+          wd: wd.toUpperCase(),
+          date: `${date.split(" ")[0]} ${date.split(" ")[1]}`,
+          dest: `${dest} Stay`,
+          hotel: vendorObj.name,
+          sub: vendorObj.location || "Stay Location",
+          rating: "4.5 (88 reviews)",
+          image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100&auto=format&fit=crop&q=60",
+          type: "Deluxe Room",
+          plan: "MAP (Breakfast + Dinner)",
+          paxSub: "(2 Pax per room)",
+          rooms: "5 Rooms",
+          roomSub: "10 Guests",
+          nights: 1,
+          status: v.paymentStatus?.toUpperCase() === 'PAID' ? 'CONFIRMED' : 'PENDING',
+          voucher: v.paymentStatus === 'paid' ? 'Hotel Voucher Sent' : 'Waiting for Confirmation',
+          amt: v.agreedCost ? `₹ ${v.agreedCost.toLocaleString('en-IN')}` : "—",
+          amtSub: v.agreedCost ? `Paid: ₹${v.paidAmount?.toLocaleString('en-IN') || 0}` : "Not Paid"
+        };
+      });
+    }
+
+    return [
+      {
+        day: "Day 1",
+        wd: "TUE",
+        date: "14 Jul",
+        dest: "Kasol",
+        hotel: "The Riverwood Kasol",
+        sub: "Riverside, Kasol",
+        rating: "4.6 (128 reviews)",
+        image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100&auto=format&fit=crop&q=60",
+        type: "Deluxe Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "5 Rooms",
+        roomSub: "10 Guests",
+        nights: 1,
+        status: "CONFIRMED",
+        voucher: "Hotel Voucher Sent",
+        amt: "₹ 17,000",
+        amtSub: "Paid: ₹17,000"
+      },
+      {
+        day: "Day 2",
+        wd: "WED",
+        date: "15 Jul",
+        dest: "Kaza",
+        hotel: "Hotel Deyzor",
+        sub: "Near Main Market, Kaza",
+        rating: "4.4 (96 reviews)",
+        image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=100&auto=format&fit=crop&q=60",
+        type: "Super Deluxe Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "6 Rooms",
+        roomSub: "12 Guests",
+        nights: 1,
+        status: "CONFIRMED",
+        voucher: "Hotel Voucher Sent",
+        amt: "₹ 22,800",
+        amtSub: "Paid: ₹22,800"
+      },
+      {
+        day: "Day 3",
+        wd: "THU",
+        date: "16 Jul",
+        dest: "Kaza",
+        hotel: "Himalayan Eco Stay",
+        sub: "Kaza, Spiti",
+        rating: "4.2 (74 reviews)",
+        image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=100&auto=format&fit=crop&q=60",
+        type: "Deluxe Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "6 Rooms",
+        roomSub: "12 Guests",
+        nights: 1,
+        status: "CONFIRMED",
+        voucher: "Hotel Voucher Sent",
+        amt: "₹ 21,600",
+        amtSub: "Paid: ₹21,600"
+      },
+      {
+        day: "Day 4",
+        wd: "FRI",
+        date: "17 Jul",
+        dest: "Tabo",
+        hotel: "Tabo Heights Homestay",
+        sub: "Near Monastery, Tabo",
+        rating: "4.5 (63 reviews)",
+        image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=100&auto=format&fit=crop&q=60",
+        type: "Standard Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "5 Rooms",
+        roomSub: "10 Guests",
+        nights: 1,
+        status: "CONFIRMED",
+        voucher: "Hotel Voucher Sent",
+        amt: "₹ 15,000",
+        amtSub: "Paid: ₹15,000"
+      },
+      {
+        day: "Day 5",
+        wd: "SAT",
+        date: "18 Jul",
+        dest: "Dhankar",
+        hotel: "Dhankar View Hotel",
+        sub: "Dhankar Village",
+        rating: "—",
+        image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=100&auto=format&fit=crop&q=60",
+        type: "Deluxe Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "5 Rooms",
+        roomSub: "10 Guests",
+        nights: 1,
+        status: "PENDING",
+        voucher: "Waiting for Confirmation",
+        amt: "—",
+        amtSub: "Not Paid"
+      },
+      {
+        day: "Day 6",
+        wd: "SUN",
+        date: "19 Jul",
+        dest: "Komic",
+        hotel: "Komic Village Stay",
+        sub: "Komic, Spiti",
+        rating: "4.3 (51 reviews)",
+        image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=100&auto=format&fit=crop&q=60",
+        type: "Standard Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "5 Rooms",
+        roomSub: "10 Guests",
+        nights: 1,
+        status: "CONFIRMED",
+        voucher: "Hotel Voucher Sent",
+        amt: "₹ 15,500",
+        amtSub: "Paid: ₹15,500"
+      },
+      {
+        day: "Day 7",
+        wd: "MON",
+        date: "20 Jul",
+        dest: "Langza",
+        hotel: "Langza Homestay",
+        sub: "Langza Village",
+        rating: "4.6 (41 reviews)",
+        image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=100&auto=format&fit=crop&q=60",
+        type: "Standard Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "5 Rooms",
+        roomSub: "10 Guests",
+        nights: 1,
+        status: "CONFIRMED",
+        voucher: "Hotel Voucher Sent",
+        amt: "₹ 15,000",
+        amtSub: "Paid: ₹15,000"
+      },
+      {
+        day: "Day 8",
+        wd: "TUE",
+        date: "21 Jul",
+        dest: "Kaza",
+        hotel: "Himalayan Eco Stay",
+        sub: "Kaza, Spiti",
+        rating: "4.2 (74 reviews)",
+        image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=100&auto=format&fit=crop&q=60",
+        type: "Deluxe Room",
+        plan: "MAP (Breakfast + Dinner)",
+        paxSub: "2 Pax per room",
+        rooms: "5 Rooms",
+        roomSub: "10 Guests",
+        nights: 1,
+        status: "CONFIRMED",
+        voucher: "Hotel Voucher Sent",
+        amt: "₹ 21,600",
+        amtSub: "Paid: ₹21,600"
+      }
+    ];
+  }, [tripVendors, tripDetails, departureDateStr]);
