@@ -131,6 +131,7 @@ function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Booking | 
   const [email, setEmail] = useState("");
   const [trainStatus, setTrainStatus] = useState("PENDING");
   const [saving, setSaving] = useState(false);
+  const [sendTicket, setSendTicket] = useState(false);
 
   useEffect(() => {
     if (booking) {
@@ -184,7 +185,7 @@ function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Booking | 
 
       toast.success("Booking confirmed!");
       try {
-        await bookingsService.sendEmail(booking.id, 'confirmation');
+        await bookingsService.sendEmail(booking.id, 'confirmation', undefined, sendTicket);
         toast.success("Confirmation email sent!");
       } catch (e) {
         console.error("Failed to send automatic confirmation email", e);
@@ -262,6 +263,20 @@ function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Booking | 
             <label className="text-[9px] font-bold uppercase text-slate-400">Customer Email (For confirmation)</label>
             <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="customer@example.com" className="h-8 text-xs rounded bg-white" />
           </div>
+          {trainStatus !== 'SELF_BOOKED' && (
+            <div className="flex items-center gap-2 py-1.5 px-2 bg-emerald-50 rounded border border-emerald-100 max-w-sm my-2">
+              <input 
+                type="checkbox" 
+                id="modalSendTrainWithEmail" 
+                checked={sendTicket} 
+                onChange={e => setSendTicket(e.target.checked)} 
+                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+              />
+              <label htmlFor="modalSendTrainWithEmail" className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none">
+                Include train ticket confirmation details inside email
+              </label>
+            </div>
+          )}
           <Button onClick={handleConfirm} disabled={saving} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider h-9 rounded text-[10px] mt-2 shadow-sm">
             {saving ? "Processing..." : "Confirm Booking"}
           </Button>

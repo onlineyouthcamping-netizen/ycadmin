@@ -192,7 +192,8 @@ export default function NewBookingModal({ open, onOpenChange, onSuccess, booking
     return list;
   }, [selectedTripDetails]);
 
-  // Dynamic price calculation
+  // Dynamic price calculation disabled so user can manually feed total fee
+  /*
   useEffect(() => {
     if (!form.tripId) return;
 
@@ -230,6 +231,7 @@ export default function NewBookingModal({ open, onOpenChange, onSuccess, booking
       totalAmount
     }));
   }, [form.tripId, form.pickupCity, form.roomType, form.trainClass, form.numberOfTravelers, selectedTripDetails, locationOptions]);
+  */
 
   const handleSubmit = async () => {
     // Populate passengers list corresponding to the traveler count to inform the backend

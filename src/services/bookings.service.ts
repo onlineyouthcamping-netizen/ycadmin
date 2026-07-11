@@ -102,15 +102,16 @@ export const bookingsService = {
 
   // ── EMAILS ──
 
-  async sendEmail(bookingId: string, type: 'confirmation' | 'payment' | 'reminder' | 'cancellation' | 'invoice', amount?: number): Promise<void> {
-    console.log("📡 [bookingsService] Sending email request:", { bookingId, type, amount });
+  async sendEmail(bookingId: string, type: 'confirmation' | 'payment' | 'reminder' | 'cancellation' | 'invoice', amount?: number, includeTicket?: boolean): Promise<void> {
+    console.log("📡 [bookingsService] Sending email request:", { bookingId, type, amount, includeTicket });
     if (type === 'invoice' && amount === undefined) {
       throw new Error("Amount is required for invoice emails");
     }
     await api.post("/emails/send", { 
       bookingId, 
       type, 
-      amount 
+      amount,
+      includeTicket
     });
   },
 

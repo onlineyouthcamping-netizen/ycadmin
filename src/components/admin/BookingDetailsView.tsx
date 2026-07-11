@@ -2169,50 +2169,22 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                     </table>
                   </div>
                 ) : (
-                  booking.advancePaid > 0 ? (
-                    <div className="border border-slate-200/60 rounded overflow-hidden">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                            <th className="px-4 py-2">Payment comments</th>
-                            <th className="px-4 py-2">Ref num</th>
-                            <th className="px-4 py-2 text-right">Amt</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="text-slate-700">
-                            <td className="px-4 py-3 font-semibold flex items-center gap-1.5">
-                              <span className="text-[8px] font-bold px-1 rounded uppercase bg-slate-200 text-slate-700 font-mono">
-                                {booking.paymentMode || 'Unknown'}
-                              </span>
-                              Advance booking payment
-                            </td>
-                            <td className="px-4 py-3 text-slate-400 font-mono">
-                              payments.offlinepayment
-                            </td>
-                            <td className="px-4 py-3 text-right font-bold font-mono">₹ {booking.advancePaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center py-6 text-center text-slate-400">
-                      <CreditCard className="w-10 h-10 text-slate-300 mb-2" />
-                      <p className="text-[11px] italic mb-3">No successful payments yet</p>
-                      <button 
-                        onClick={() => {
-                          setPayAmount(booking.remainingAmount.toString());
-                          setPaymentSource('collected');
-                          setPayMode("UPI");
-                          setPayComments("");
-                          setShowCreatePayment(true);
-                        }}
-                        className="bg-primary hover:bg-primary/95 text-white font-bold text-[9px] uppercase px-4 py-1.5 rounded transition-all shadow-sm"
-                      >
-                        + Create Payment Request
-                      </button>
-                    </div>
-                  )
+                  <div className="flex flex-col items-center py-6 text-center text-slate-400">
+                    <CreditCard className="w-10 h-10 text-slate-300 mb-2" />
+                    <p className="text-[11px] italic mb-3">No successful payments yet</p>
+                    <button 
+                      onClick={() => {
+                        setPayAmount(booking.remainingAmount.toString());
+                        setPaymentSource('collected');
+                        setPayMode("UPI");
+                        setPayComments("");
+                        setShowCreatePayment(true);
+                      }}
+                      className="bg-primary hover:bg-primary/95 text-white font-bold text-[9px] uppercase px-4 py-1.5 rounded transition-all shadow-sm"
+                    >
+                      + Create Payment Request
+                    </button>
+                  </div>
                 )
               )}
 
