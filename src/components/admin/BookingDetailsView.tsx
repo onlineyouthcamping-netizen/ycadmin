@@ -97,6 +97,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   const [confirmTrainStatus, setConfirmTrainStatus] = useState("PENDING");
   const [confirmingLoading, setConfirmingLoading] = useState(false);
   const [confirmSendTicket, setConfirmSendTicket] = useState(false);
+  const [confirmTicketFile, setConfirmTicketFile] = useState<string | null>(null);
+  const [confirmTicketFileName, setConfirmTicketFileName] = useState<string | null>(null);
 
   // Manual payment recording inline form
   const [showAddPaymentInline, setShowAddPaymentInline] = useState(false);
@@ -876,7 +878,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       toast.success("Booking confirmed successfully!");
       setIsConfirming(false);
       try {
-        await bookingsService.sendEmail(booking.id, 'confirmation', undefined, confirmSendTicket);
+        await bookingsService.sendEmail(booking.id, 'confirmation', undefined, confirmSendTicket, confirmTicketFile, confirmTicketFileName);
         toast.success("Confirmation email sent to guest!");
       } catch (err) {
         toast.error("Booking confirmed, but email notification failed");
@@ -1553,17 +1555,49 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             </div>
           </div>
           {confirmTrainStatus !== 'SELF_BOOKED' && (
-            <div className="flex items-center gap-2 py-1.5 px-2 bg-emerald-100/60 rounded border border-emerald-200/50 max-w-sm">
-              <input 
-                type="checkbox" 
-                id="sendTrainWithEmail" 
-                checked={confirmSendTicket} 
-                onChange={e => setConfirmSendTicket(e.target.checked)} 
-                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
-              />
-              <label htmlFor="sendTrainWithEmail" className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none">
-                Include train ticket confirmation details inside email
-              </label>
+            <div className="flex flex-col gap-2 p-2 bg-emerald-100/60 rounded border border-emerald-200/50 max-w-md">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="sendTrainWithEmail" 
+                  checked={confirmSendTicket} 
+                  onChange={e => setConfirmSendTicket(e.target.checked)} 
+                  className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                />
+                <label htmlFor="sendTrainWithEmail" className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none">
+                  Include train ticket confirmation details inside email
+                </label>
+              </div>
+              {confirmSendTicket && (
+                <div className="space-y-1 pl-5">
+                  <label className="block text-[9px] font-bold uppercase text-slate-500">Attach Train Ticket File (Optional)</label>
+                  <input 
+                    type="file" 
+                    accept=".pdf,image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setConfirmTicketFileName(file.name);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const base64Str = reader.result as string;
+                          // Extract pure base64 code omitting format headers
+                          const base64Data = base64Str.split(',')[1] || base64Str;
+                          setConfirmTicketFile(base64Data);
+                        };
+                        reader.readAsDataURL(file);
+                      } else {
+                        setConfirmTicketFile(null);
+                        setConfirmTicketFileName(null);
+                      }
+                    }}
+                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+                  />
+                  {confirmTicketFileName && (
+                    <p className="text-[10px] text-slate-500 font-medium font-mono">Selected: {confirmTicketFileName}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
           <div className="flex gap-2 justify-end pt-2 border-t">

@@ -132,6 +132,8 @@ function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Booking | 
   const [trainStatus, setTrainStatus] = useState("PENDING");
   const [saving, setSaving] = useState(false);
   const [sendTicket, setSendTicket] = useState(false);
+  const [ticketFile, setTicketFile] = useState<string | null>(null);
+  const [ticketFileName, setTicketFileName] = useState<string | null>(null);
 
   useEffect(() => {
     if (booking) {
@@ -185,7 +187,7 @@ function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Booking | 
 
       toast.success("Booking confirmed!");
       try {
-        await bookingsService.sendEmail(booking.id, 'confirmation', undefined, sendTicket);
+        await bookingsService.sendEmail(booking.id, 'confirmation', undefined, sendTicket, ticketFile, ticketFileName);
         toast.success("Confirmation email sent!");
       } catch (e) {
         console.error("Failed to send automatic confirmation email", e);
@@ -264,17 +266,48 @@ function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Booking | 
             <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="customer@example.com" className="h-8 text-xs rounded bg-white" />
           </div>
           {trainStatus !== 'SELF_BOOKED' && (
-            <div className="flex items-center gap-2 py-1.5 px-2 bg-emerald-50 rounded border border-emerald-100 max-w-sm my-2">
-              <input 
-                type="checkbox" 
-                id="modalSendTrainWithEmail" 
-                checked={sendTicket} 
-                onChange={e => setSendTicket(e.target.checked)} 
-                className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
-              />
-              <label htmlFor="modalSendTrainWithEmail" className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none">
-                Include train ticket confirmation details inside email
-              </label>
+            <div className="flex flex-col gap-2 p-2 bg-emerald-50 rounded border border-emerald-100 max-w-sm my-2">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="modalSendTrainWithEmail" 
+                  checked={sendTicket} 
+                  onChange={e => setSendTicket(e.target.checked)} 
+                  className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                />
+                <label htmlFor="modalSendTrainWithEmail" className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none">
+                  Include train ticket confirmation details inside email
+                </label>
+              </div>
+              {sendTicket && (
+                <div className="space-y-1 pl-5">
+                  <label className="block text-[9px] font-bold uppercase text-slate-500">Attach Train Ticket File (Optional)</label>
+                  <input 
+                    type="file" 
+                    accept=".pdf,image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setTicketFileName(file.name);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const base64Str = reader.result as string;
+                          const base64Data = base64Str.split(',')[1] || base64Str;
+                          setTicketFile(base64Data);
+                        };
+                        reader.readAsDataURL(file);
+                      } else {
+                        setTicketFile(null);
+                        setTicketFileName(null);
+                      }
+                    }}
+                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+                  />
+                  {ticketFileName && (
+                    <p className="text-[10px] text-slate-500 font-medium font-mono">Selected: {ticketFileName}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
           <Button onClick={handleConfirm} disabled={saving} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider h-9 rounded text-[10px] mt-2 shadow-sm">
