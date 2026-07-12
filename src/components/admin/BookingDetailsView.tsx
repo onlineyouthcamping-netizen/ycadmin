@@ -560,11 +560,21 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             const label = optLabel.toLowerCase().trim();
             const cls = trainClass.toLowerCase().trim();
             if (label.includes(cls) || cls.includes(label)) return true;
+            
+            const clsIsNonAc = cls.includes("non ac") || cls.includes("non-ac");
+            const labelIsNonAc = label.includes("non ac") || label.includes("non-ac");
+            
             if (cls.includes("sleeper") || cls === "sl") {
-              return label.includes("sleeper") || label.includes("sl");
+              if (!cls.includes("ac") || clsIsNonAc) {
+                return label.includes("sleeper") || label.includes("sl");
+              }
             }
             if (cls.includes("3ac") || cls.includes("3-tier") || cls.includes("ac") || cls.includes("3c") || cls.includes("3-tier ac train")) {
-              return label.includes("3ac") || label.includes("3-tier") || label.includes("ac") || label.includes("3c");
+              if (clsIsNonAc) {
+                return labelIsNonAc;
+              } else {
+                return (label.includes("3ac") || label.includes("3-tier") || label.includes("ac") || label.includes("3c")) && !labelIsNonAc;
+              }
             }
             return false;
           };
@@ -660,9 +670,21 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         const label = optLabel.toLowerCase().trim();
         const cls = trainClass.toLowerCase().trim();
         if (label.includes(cls) || cls.includes(label)) return true;
-        if (cls.includes("sleeper") || cls === "sl") return label.includes("sleeper") || label.includes("sl");
+        
+        const clsIsNonAc = cls.includes("non ac") || cls.includes("non-ac");
+        const labelIsNonAc = label.includes("non ac") || label.includes("non-ac");
+        
+        if (cls.includes("sleeper") || cls === "sl") {
+          if (!cls.includes("ac") || clsIsNonAc) {
+            return label.includes("sleeper") || label.includes("sl");
+          }
+        }
         if (cls.includes("3ac") || cls.includes("3-tier") || cls.includes("ac") || cls.includes("3c") || cls.includes("3-tier ac train")) {
-          return label.includes("3ac") || label.includes("3-tier") || label.includes("ac") || label.includes("3c");
+          if (clsIsNonAc) {
+            return labelIsNonAc;
+          } else {
+            return (label.includes("3ac") || label.includes("3-tier") || label.includes("ac") || label.includes("3c")) && !labelIsNonAc;
+          }
         }
         return false;
       };
@@ -2333,8 +2355,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                     <td className="px-4 py-2.5 text-slate-400 italic">Not specified</td>
                   </tr>
                   <tr>
-                    <td className="px-4 py-2.5 text-slate-500">Street Address</td>
-                    <td className="px-4 py-2.5 text-slate-850">{booking.notes ? booking.notes.substring(0, 50) : 'Not specified'}</td>
+                    <td className="px-4 py-2.5 text-slate-500">Special Requests / Notes</td>
+                    <td className="px-4 py-2.5 text-slate-850">{booking.notes || 'Not specified'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -2460,7 +2482,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                     const populatedItems = bookingItems.map(item => {
                       let displayName = item.name;
                       if (!item.name.startsWith("Pickup:") && (item.name.toLowerCase().includes("train") || item.name.toLowerCase().includes("sleeper"))) {
-                        const is3ac = item.name.toLowerCase().includes("3ac") || item.name.toLowerCase().includes("3-tier") || item.name.toLowerCase().includes("3c") || item.name.toLowerCase().includes("ac");
+                        const is3ac = (item.name.toLowerCase().includes("3ac") || item.name.toLowerCase().includes("3-tier") || item.name.toLowerCase().includes("3c") || item.name.toLowerCase().includes("ac")) && !(item.name.toLowerCase().includes("non ac") || item.name.toLowerCase().includes("non-ac"));
                         displayName = `Pickup: ${(booking.pickupCity || 'AHMEDABAD').toUpperCase()}, Drop: ${(fullTrip?.location || 'GANDHINAGAR').toUpperCase()} ${is3ac ? '3TIER AC' : 'Non AC'} Sleeper`;
                       }
                       return { ...item, name: displayName };
@@ -2831,10 +2853,12 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
                           let displayName = item.name;
                           if (!item.name.startsWith("Pickup:") && (item.name.toLowerCase().includes("train") || item.name.toLowerCase().includes("sleeper"))) {
-                            const is3ac = item.name.toLowerCase().includes("3ac") || 
+                            const is3ac = (item.name.toLowerCase().includes("3ac") || 
                                           item.name.toLowerCase().includes("3-tier") || 
                                           item.name.toLowerCase().includes("3 tier") || 
-                                          item.name.toLowerCase().includes("ac");
+                                          item.name.toLowerCase().includes("ac")) && 
+                                          !(item.name.toLowerCase().includes("non ac") || 
+                                          item.name.toLowerCase().includes("non-ac"));
                             displayName = `Pickup: ${(booking.pickupCity || 'AHMEDABAD').toUpperCase()}, Drop: ${(fullTrip?.location || 'GANDHINAGAR').toUpperCase()} ${is3ac ? '3TIER AC' : 'Non AC'} Sleeper`;
                           }
 
@@ -2858,7 +2882,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                           <span className="bg-[#808080] text-white font-semibold px-1.5 py-0.5 rounded-[3px] text-[10px] mr-2.5 inline-block leading-none">
                             Per-Pax
                           </span>
-                          Pickup: {(booking.pickupCity || 'AHMEDABAD').toUpperCase()}, Drop: {(fullTrip?.location || 'GANDHINAGAR').toUpperCase()} {((booking.trainClass === '3AC' || booking.trainClass?.includes('3AC') || booking.trainClass?.toLowerCase().includes('3-tier') || booking.trainClass?.toLowerCase().includes('3c') || booking.trainClass?.toLowerCase().includes('ac')) ? '3TIER AC' : 'Non AC')} Sleeper
+                          Pickup: {(booking.pickupCity || 'AHMEDABAD').toUpperCase()}, Drop: {(fullTrip?.location || 'GANDHINAGAR').toUpperCase()} {(((booking.trainClass === '3AC' || booking.trainClass?.includes('3AC') || booking.trainClass?.toLowerCase().includes('3-tier') || booking.trainClass?.toLowerCase().includes('3c') || booking.trainClass?.toLowerCase().includes('ac')) && !(booking.trainClass?.toLowerCase().includes('non ac') || booking.trainClass?.toLowerCase().includes('non-ac'))) ? '3TIER AC' : 'Non AC')} Sleeper
                         </td>
                         <td className="px-6 py-4 text-right font-mono text-slate-700">
                           {itemRate.toLocaleString('en-IN', {
@@ -2914,10 +2938,61 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           {/* === FILES TAB === */}
           {adminActiveTab === "files" && (
             <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
-              <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider pb-2 border-b">Files & Internal Notes</h4>
+              <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider pb-2 border-b">Files & Notes</h4>
+              
+              {/* Customer Booking Notes / Special Requests */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Customer Booking Notes / Special Requests</label>
+                  {!editingNotes && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingNotes(true)}
+                      className="text-[10px] font-bold text-[#F5760E] hover:underline"
+                    >
+                      Edit Notes
+                    </button>
+                  )}
+                </div>
+                {editingNotes ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={notesValue}
+                      onChange={(e) => setNotesValue(e.target.value)}
+                      className="w-full min-h-[100px] text-xs p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#F5760E] focus:ring-1 focus:ring-[#F5760E]/20"
+                      placeholder="Add customer requests or booking notes..."
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setEditingNotes(false)}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 text-xs font-semibold"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveNotes}
+                        disabled={savingNotes}
+                        className="px-3 py-1.5 bg-[#F5760E] hover:bg-[#D9650C] text-white rounded text-xs font-semibold disabled:opacity-50"
+                      >
+                        {savingNotes ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-150 whitespace-pre-wrap">
+                    {booking.notes || "No special requests or customer notes recorded."}
+                  </p>
+                )}
+              </div>
+
+              <div className="h-px bg-slate-100" />
+
+              {/* Office Admin Notes */}
               <div>
-                <label className="text-[10px] font-bold text-slate-455 uppercase tracking-wider block mb-1">Office Admin Notes</label>
-                <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-150">{booking.adminNotes || "No office notes recorded."}</p>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Office Admin Notes</label>
+                <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-150 whitespace-pre-wrap">{booking.adminNotes || "No office notes recorded."}</p>
               </div>
             </div>
           )}
