@@ -296,6 +296,15 @@ export default function DepartureHubPage() {
   const [genderFilter, setGenderFilter] = useState("All");
   const [page, setPage] = useState(1);
 
+  // New Passengers Grouping & Room Allocation states
+  const [bookingGroupFilter, setBookingGroupFilter] = useState("All");
+  const [coupleFilter, setCoupleFilter] = useState("All");
+  const [roomAllocFilter, setRoomAllocFilter] = useState("All");
+  const [trainTicketFilter, setTrainTicketFilter] = useState("All");
+  const [expandedBookings, setExpandedBookings] = useState<Record<string, boolean>>({});
+  const [selectedBookingForRoomAlloc, setSelectedBookingForRoomAlloc] = useState<any | null>(null);
+  const [modalAllocations, setModalAllocations] = useState<Record<string, { roomType: string, coupleWith: string, roomNo: string }>>({});
+
   // Tasks filter
   const [taskStatusFilter, setTaskStatusFilter] = useState("All");
   const [taskCategoryFilter, setTaskCategoryFilter] = useState("All");
@@ -386,97 +395,177 @@ export default function DepartureHubPage() {
   const [actStatusFilter, setActStatusFilter] = useState("All Status");
   const [actSearch, setActSearch] = useState("");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const bookingsRes = await api.get(`/bookings?status=all&tripId=${tripId}&limit=100`);
-        const allBookings = bookingsRes.data?.data || [];
-        let filtered = allBookings.filter((b: any) =>
-          b.tripId === tripId && b.departureDate?.substring(0, 10) === departureDateStr
-        );
-        if (filtered.length === 0) filtered = generateMockBookings(tripId, departureDateStr);
-        setBookings(filtered);
+  const fetchPageData = async () => {
+    setLoading(true);
+    try {
+      const bookingsRes = await api.get(`/bookings?status=all&tripId=${tripId}&limit=100`);
+      const allBookings = bookingsRes.data?.data || [];
+      let filtered = allBookings.filter((b: any) =>
+        b.tripId === tripId && b.departureDate?.substring(0, 10) === departureDateStr
+      );
+      if (filtered.length === 0) filtered = generateMockBookings(tripId, departureDateStr);
+      setBookings(filtered);
 
-        const itinRes = await api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`);
-        setItineraryList(itinRes.data?.data || []);
+      const itinRes = await api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`);
+      setItineraryList(itinRes.data?.data || []);
 
-        // Load trip details
-        const tripRes = await api.get(`/trips/${tripId}`).catch(() => null);
-        if (tripRes?.data?.success) {
-          setTripDetails(tripRes.data.data);
-        }
-
-        // Load operations hotels, transport, and guides
-        const hotelsRes = await api.get(`/ops/hotels/${tripId}?departureDate=${departureDateStr}`).catch(() => ({ data: { data: [] } }));
-        const transportRes = await api.get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`).catch(() => ({ data: { data: [] } }));
-        const guidesRes = await api.get(`/ops/guides/${tripId}?departureDate=${departureDateStr}`).catch(() => ({ data: { data: [] } }));
-
-        const hotels = hotelsRes.data?.data || [];
-        const transports = transportRes.data?.data || [];
-        const guides = guidesRes.data?.data || [];
-
-        // Combine them into tripVendors structure
-        const mappedVendors = [
-          ...hotels.map((h: any) => ({
-            id: h.id,
-            vendorType: 'hotel',
-            vendorId: {
-              name: h.hotelName,
-              location: h.location,
-              notes: h.notes
-            },
-            paymentStatus: h.confirmed === 'CONFIRMED' ? 'paid' : 'pending',
-            notes: h.notes,
-            agreedCost: h.totalAmount,
-            paidAmount: h.advancePaid,
-            balanceDue: h.balanceAmount
-          })),
-          ...transports.map((t: any) => ({
-            id: t.id,
-            vendorType: 'transport',
-            vendorId: {
-              name: t.vehicleType,
-              location: t.driverName || 'Driver',
-              notes: t.notes
-            },
-            paymentStatus: t.balanceAmount === 0 ? 'paid' : 'pending',
-            notes: t.notes,
-            agreedCost: t.totalAmount,
-            paidAmount: t.advancePaid,
-            balanceDue: t.balanceAmount
-          })),
-          ...guides.map((g: any) => ({
-            id: g.id,
-            vendorType: 'guide',
-            vendor: {
-              name: g.guideName,
-              type: 'guide'
-            },
-            paymentStatus: g.paymentStatus === 'PAID' ? 'paid' : 'pending',
-            agreedCost: g.agreedAmount,
-            paidAmount: g.advancePaid,
-            balanceDue: g.balanceAmount
-          }))
-        ];
-
-        setTripVendors(mappedVendors);
-
-        const checkRes = await api.get(`/ops/checklists/${tripId}?departureDate=${departureDateStr}`).catch(() => null);
-        if (checkRes?.data?.success && checkRes.data.data.length > 0) {
-          setChecklistTasks(checkRes.data.data);
-        } else {
-          const initRes = await api.post(`/ops/checklists/${tripId}/initialize?departureDate=${departureDateStr}`).catch(() => null);
-          if (initRes?.data?.success) {
-            setChecklistTasks(initRes.data.data);
-          }
-        }
-      } catch { /* silent */ } finally {
-        setLoading(false);
+      // Load trip details
+      const tripRes = await api.get(`/trips/${tripId}`).catch(() => null);
+      if (tripRes?.data?.success) {
+        setTripDetails(tripRes.data.data);
       }
-    };
-    fetchData();
+
+      // Load operations hotels, transport, and guides
+      const hotelsRes = await api.get(`/ops/hotels/${tripId}?departureDate=${departureDateStr}`).catch(() => ({ data: { data: [] } }));
+      const transportRes = await api.get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`).catch(() => ({ data: { data: [] } }));
+      const guidesRes = await api.get(`/ops/guides/${tripId}?departureDate=${departureDateStr}`).catch(() => ({ data: { data: [] } }));
+
+      const hotels = hotelsRes.data?.data || [];
+      const transports = transportRes.data?.data || [];
+      const guides = guidesRes.data?.data || [];
+
+      // Combine them into tripVendors structure
+      const mappedVendors = [
+        ...hotels.map((h: any) => ({
+          id: h.id,
+          vendorType: 'hotel',
+          vendorId: {
+            name: h.hotelName,
+            location: h.location,
+            notes: h.notes
+          },
+          paymentStatus: h.confirmed === 'CONFIRMED' ? 'paid' : 'pending',
+          notes: h.notes,
+          agreedCost: h.totalAmount,
+          paidAmount: h.advancePaid,
+          balanceDue: h.balanceAmount
+        })),
+        ...transports.map((t: any) => ({
+          id: t.id,
+          vendorType: 'transport',
+          vendorId: {
+            name: t.vehicleType,
+            location: t.driverName || 'Driver',
+            notes: t.notes
+          },
+          paymentStatus: t.balanceAmount === 0 ? 'paid' : 'pending',
+          notes: t.notes,
+          agreedCost: t.totalAmount,
+          paidAmount: t.advancePaid,
+          balanceDue: t.balanceAmount
+        })),
+        ...guides.map((g: any) => ({
+          id: g.id,
+          vendorType: 'guide',
+          vendor: {
+            name: g.guideName,
+            type: 'guide'
+          },
+          paymentStatus: g.paymentStatus === 'PAID' ? 'paid' : 'pending',
+          agreedCost: g.agreedAmount,
+          paidAmount: g.advancePaid,
+          balanceDue: g.balanceAmount
+        }))
+      ];
+
+      setTripVendors(mappedVendors);
+
+      const checkRes = await api.get(`/ops/checklists/${tripId}?departureDate=${departureDateStr}`).catch(() => null);
+      if (checkRes?.data?.success && checkRes.data.data.length > 0) {
+        setChecklistTasks(checkRes.data.data);
+      } else {
+        const initRes = await api.post(`/ops/checklists/${tripId}/initialize?departureDate=${departureDateStr}`).catch(() => null);
+        if (initRes?.data?.success) {
+          setChecklistTasks(initRes.data.data);
+        }
+      }
+    } catch { /* silent */ } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPageData();
   }, [tripId, departureDateStr]);
+
+  const handleModalFieldChange = (name: string, field: string, value: string) => {
+    setModalAllocations(prev => {
+      const updated = {
+        ...prev,
+        [name]: {
+          ...(prev[name] || { roomType: "Individual", coupleWith: "", roomNo: "—" }),
+          [field]: value
+        }
+      };
+
+      // Auto-linking couples: if passenger A is coupled with B, automatically set B's coupleWith to A and type to Couple
+      if (field === "coupleWith" && value) {
+        updated[value] = {
+          ...(updated[value] || { roomType: "Individual", coupleWith: "", roomNo: "—" }),
+          roomType: "Couple",
+          coupleWith: name
+        };
+        // Auto-match room number if available
+        if (updated[name].roomNo && updated[name].roomNo !== "—") {
+          updated[value].roomNo = updated[name].roomNo;
+        }
+      } else if (field === "roomNo" && updated[name]?.roomType === "Couple" && updated[name]?.coupleWith) {
+        const partner = updated[name].coupleWith;
+        if (updated[partner]) {
+          updated[partner].roomNo = value;
+        }
+      }
+
+      return updated;
+    });
+  };
+
+  const handleSaveRoomAllocations = async () => {
+    if (!selectedBookingForRoomAlloc) return;
+    const bg = selectedBookingForRoomAlloc;
+
+    try {
+      const currentPassengers = bg.rawBooking.passengers || { details: {}, persons: [] };
+      const currentDetails = currentPassengers.details || {};
+
+      const newPersonsRoomDetails = {
+        ...(currentDetails.personsRoomDetails || {}),
+        ...modalAllocations
+      };
+
+      const updatedPassengers = {
+        ...currentPassengers,
+        details: {
+          ...currentDetails,
+          personsRoomDetails: newPersonsRoomDetails
+        }
+      };
+
+      await api.put(`/bookings/${bg.bookingId}`, { passengers: updatedPassengers });
+
+      toast.success("Room allocations saved successfully!");
+      setSelectedBookingForRoomAlloc(null);
+      await fetchPageData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save room allocations");
+    }
+  };
+
+  const getRelationshipBadge = (type: string) => {
+    const styles: Record<string, string> = {
+      "Couple": "bg-pink-50 text-pink-700 border-pink-200",
+      "Family": "bg-blue-50 text-blue-700 border-blue-200",
+      "Friends": "bg-emerald-50 text-emerald-700 border-emerald-200",
+      "Triple Sharing": "bg-purple-50 text-purple-700 border-purple-200",
+      "Individual": "bg-slate-50 text-slate-600 border-slate-200"
+    };
+    return (
+      <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold border", styles[type] || styles["Individual"])}>
+        {type || "Individual"}
+      </span>
+    );
+  };
 
   const handleToggleTask = async (task: any) => {
     try {
@@ -1975,6 +2064,158 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
   const paginatedPassengers = useMemo(() => filteredPassengers.slice((page-1)*10, page*10), [filteredPassengers, page]);
 
+  const bookingGroups = useMemo(() => {
+    return bookings.map((b: any) => {
+      const due = (b.totalAmount || 0) - (b.advancePaid || 0);
+      const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
+      const paymentStatusShort = due <= 0 ? "PAID" : b.advancePaid > 0 ? "PARTIALLY PAID" : "UNPAID";
+
+      const personsRoomDetails = b.passengers?.details?.personsRoomDetails || {};
+
+      const leadName = b.fullName || b.name;
+      const leadRoomInfo = personsRoomDetails[leadName] || {};
+      const leadPassenger = {
+        name: leadName,
+        age: b.age || 24,
+        gender: b.gender || "Male",
+        phone: b.phone || b.mobile || "—",
+        email: b.email || "—",
+        pickupPoint: b.pickupCity || "Ahmedabad",
+        isLead: true,
+        roomType: leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing"),
+        coupleWith: leadRoomInfo.coupleWith || "",
+        roomNo: leadRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
+        paymentStatus: paymentLabel,
+        amount: b.totalAmount || 12000,
+        paidAmount: b.advancePaid || 0,
+        balance: due > 0 ? due : 0
+      };
+
+      const personsList = [leadPassenger];
+
+      if (Array.isArray(b.passengers?.persons)) {
+        b.passengers.persons.forEach((p: any, idx: number) => {
+          // Prevent duplicating lead if they are listed in persons too
+          if (p.name === leadName) return;
+          const coRoomInfo = personsRoomDetails[p.name] || {};
+          personsList.push({
+            name: p.name,
+            age: p.age || 24,
+            gender: p.gender || "Male",
+            phone: p.phone || b.phone || "—",
+            email: p.email || "—",
+            pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
+            isLead: false,
+            roomType: coRoomInfo.roomType || "Triple Sharing",
+            coupleWith: coRoomInfo.coupleWith || "",
+            roomNo: coRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
+            paymentStatus: paymentLabel,
+            amount: 0,
+            paidAmount: 0,
+            balance: 0
+          });
+        });
+      }
+
+      let coupleCount = 0;
+      const coupleNames = new Set<string>();
+      personsList.forEach(p => {
+        if (p.roomType === "Couple" && p.coupleWith) {
+          const partner = personsList.find(other => other.name === p.coupleWith);
+          if (partner && partner.roomType === "Couple" && partner.coupleWith === p.name) {
+            coupleNames.add([p.name, partner.name].sort().join("-"));
+          }
+        }
+      });
+      coupleCount = coupleNames.size;
+
+      const roomsMap: Record<string, typeof personsList> = {};
+      personsList.forEach(p => {
+        const rNo = p.roomNo || "Unassigned";
+        if (!roomsMap[rNo]) roomsMap[rNo] = [];
+        roomsMap[rNo].push(p);
+      });
+
+      const roomSummaries = Object.entries(roomsMap).map(([rNo, pList]) => {
+        const couplesInRoom = pList.filter(p => p.roomType === "Couple" && p.coupleWith);
+        let roomDesc = "";
+        if (couplesInRoom.length >= 2) {
+          const pairNames: string[] = [];
+          const matched = new Set<string>();
+          couplesInRoom.forEach(p => {
+            if (matched.has(p.name)) return;
+            const partner = couplesInRoom.find(other => other.name === p.coupleWith);
+            if (partner) {
+              pairNames.push(`${p.name} + ${partner.name}`);
+              matched.add(p.name);
+              matched.add(partner.name);
+            }
+          });
+          const nonCouple = pList.filter(p => !matched.has(p.name));
+          roomDesc = `${pairNames.join(", ")} (Couple)`;
+          if (nonCouple.length > 0) {
+            roomDesc += ` + ${nonCouple.map(n => n.name).join(", ")}`;
+          }
+        } else {
+          roomDesc = pList.map(p => p.name).join(", ");
+        }
+        return `${rNo}: ${roomDesc}`;
+      });
+
+      const roomRequirement = roomSummaries.join(" | ") || "No rooms allocated";
+
+      return {
+        bookingId: b.id,
+        bookingRef: b.bookingId || b.id,
+        leadName,
+        totalPassengers: personsList.length,
+        coupleCount,
+        roomRequirement,
+        totalAmount: b.totalAmount || 0,
+        paidAmount: b.advancePaid || 0,
+        balance: due > 0 ? due : 0,
+        paymentStatus: paymentLabel,
+        paymentStatusShort,
+        trainTicketStatus: b.trainTicketStatus || "PENDING",
+        pickupPoint: b.pickupCity || "Ahmedabad",
+        passengers: personsList,
+        rawBooking: b
+      };
+    });
+  }, [bookings]);
+
+  const filteredBookingGroups = useMemo(() => {
+    return bookingGroups.filter((bg: any) => {
+      const matchSearch = paxSearch === "" || 
+        bg.bookingRef.toLowerCase().includes(paxSearch.toLowerCase()) ||
+        bg.leadName.toLowerCase().includes(paxSearch.toLowerCase()) ||
+        bg.passengers.some((p: any) => p.name.toLowerCase().includes(paxSearch.toLowerCase()) || p.phone.includes(paxSearch));
+
+      const matchBookingGroup = bookingGroupFilter === "All" || bg.bookingId === bookingGroupFilter;
+
+      const matchCouple = coupleFilter === "All" ||
+        (coupleFilter === "With Couples" && bg.coupleCount > 0) ||
+        (coupleFilter === "Without Couples" && bg.coupleCount === 0);
+
+      const hasUnallocated = bg.passengers.some((p: any) => p.roomNo === "—" || p.roomNo.toLowerCase() === "unassigned" || !p.roomNo);
+      const matchRoomAlloc = roomAllocFilter === "All" ||
+        (roomAllocFilter === "Allocated" && !hasUnallocated) ||
+        (roomAllocFilter === "Not Allocated" && hasUnallocated);
+
+      const matchPayment = paymentFilter === "All" || bg.paymentStatus === paymentFilter;
+
+      const matchPickup = pickupFilter === "All" || bg.pickupPoint === pickupFilter || bg.passengers.some((p: any) => p.pickupPoint === pickupFilter);
+
+      const matchTrainTicket = trainTicketFilter === "All" || bg.trainTicketStatus === trainTicketFilter;
+
+      return matchSearch && matchBookingGroup && matchCouple && matchRoomAlloc && matchPayment && matchPickup && matchTrainTicket;
+    });
+  }, [bookingGroups, paxSearch, bookingGroupFilter, coupleFilter, roomAllocFilter, paymentFilter, pickupFilter, trainTicketFilter]);
+
+  const paginatedBookingGroups = useMemo(() => {
+    return filteredBookingGroups.slice((page - 1) * 10, page * 10);
+  }, [filteredBookingGroups, page]);
+
   // Payment stats
   const paymentKpis = useMemo(() => {
     const total = computedPayments.reduce((s,p)=>s+p.amount,0);
@@ -2512,24 +2753,55 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
             {/* Filters */}
             <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm p-3 flex flex-wrap gap-2 items-center">
-              <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <div className="relative flex-grow min-w-[180px] max-w-xs">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input type="text" placeholder="Search by name, phone..." value={paxSearch} onChange={e => { setPaxSearch(e.target.value); setPage(1); }}
                   className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 outline-none focus:ring-1 focus:ring-[#F97316]/30" />
               </div>
-              {[
-                { value:paymentFilter, setter:setPaymentFilter, opts:[["All","All Payment Status"],["Paid in Full","Paid in Full"],["Partial Payment","Partial Payment"],["Payment Pending","Payment Pending"]] },
-                { value:pickupFilter,  setter:setPickupFilter,  opts:[["All","All Pickup Points"],...pickupOptions.map(p=>[p,p])] },
-                { value:genderFilter,  setter:setGenderFilter,  opts:[["All","All Genders"],["Male","Male"],["Female","Female"]] },
-              ].map((f,i) => (
-                <select key={i} value={f.value} onChange={e=>{f.setter(e.target.value);setPage(1);}}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
-                  {f.opts.map(([v,l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              ))}
-              <button className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 ml-auto">
-                <Filter className="w-3.5 h-3.5 text-slate-400" /> More Filters
-              </button>
+
+              <select value={bookingGroupFilter} onChange={e => { setBookingGroupFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 max-w-[180px]">
+                <option value="All">All Booking Groups</option>
+                {bookingGroups.map((bg: any) => (
+                  <option key={bg.bookingId} value={bg.bookingId}>{bg.bookingRef} ({bg.leadName})</option>
+                ))}
+              </select>
+
+              <select value={coupleFilter} onChange={e => { setCoupleFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
+                <option value="All">All Couples Status</option>
+                <option value="With Couples">Has Couple</option>
+                <option value="Without Couples">No Couple</option>
+              </select>
+
+              <select value={roomAllocFilter} onChange={e => { setRoomAllocFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
+                <option value="All">All Room Allocation</option>
+                <option value="Allocated">Allocated</option>
+                <option value="Not Allocated">Not Allocated</option>
+              </select>
+
+              <select value={paymentFilter} onChange={e => { setPaymentFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
+                <option value="All">All Payments</option>
+                <option value="Paid in Full">Paid in Full</option>
+                <option value="Partial Payment">Partial Payment</option>
+                <option value="Payment Pending">Pending</option>
+              </select>
+
+              <select value={pickupFilter} onChange={e => { setPickupFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
+                <option value="All">All Pickup Points</option>
+                {pickupOptions.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+
+              <select value={trainTicketFilter} onChange={e => { setTrainTicketFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
+                <option value="All">All Train Tickets</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="PENDING">PENDING</option>
+                <option value="RAC">RAC</option>
+              </select>
             </div>
 
             {/* Table */}
@@ -2537,11 +2809,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-[#E2E8F0]">
                   <tr>
-                    <th className="p-3 w-10"><input type="checkbox" className="rounded-[2px] border-slate-300" /></th>
+                    <th className="p-3 w-12 text-center">TOGGLE</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PASSENGER</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PHONE</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PICKUP</th>
-                    
+                    <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">ROOM TYPE / RELATIONSHIP</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PAYMENT</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">AMOUNT</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">BALANCE</th>
@@ -2550,63 +2822,153 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
-                  {paginatedPassengers.map((p, idx) => {
-                    const isNewGroup = idx === 0 || paginatedPassengers[idx - 1].bookingId !== p.bookingId;
+                  {paginatedBookingGroups.map((bg: any) => {
+                    const isGroupExpanded = expandedBookings[bg.bookingId] !== false;
                     return (
-                      <React.Fragment key={p.id}>
-                        {isNewGroup && (
-                          <tr className="bg-slate-50 font-semibold text-slate-700 border-t border-[#E2E8F0]">
-                            <td colSpan={9} className="p-2.5 pl-3 text-[10px] uppercase tracking-wider text-slate-500 font-bold bg-slate-100/50">
-                              📦 Booking: <span className="text-blue-600 font-extrabold hover:underline cursor-pointer" onClick={() => handleOpenBookingDetails(p.bookingId)}>{p.bookingRef}</span> — {p.leadPassengerName}'s Group
-                            </td>
-                          </tr>
-                        )}
-                        <tr className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-3"><input type="checkbox" className="rounded-[2px] border-slate-300" /></td>
-                          <td className="p-3 pl-4">
-                            <div className="flex items-center gap-1.5">
-                              <div className={cn("font-bold text-slate-800 hover:text-blue-600 hover:underline cursor-pointer", !p.isLead && "text-slate-650 font-semibold pl-2 border-l border-slate-300")} onClick={() => handleOpenBookingDetails(p.bookingId)}>
-                                {p.name}
-                              </div>
-                              {!p.isLead && (
-                                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                                  co-traveler
-                                </span>
-                              )}
-                            </div>
-                            <div className={cn("text-[10px] text-slate-400", !p.isLead && "pl-4")}>{p.gender}, {p.age} yrs</div>
-                          </td>
-                          <td className="p-3 font-mono text-slate-600">{p.phone}</td>
-                          <td className="p-3 font-semibold text-slate-700">{p.pickupPoint}</td>
-                          
-                          <td className="p-3"><StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} /></td>
-                          <td className="p-3 text-right font-bold text-slate-700">₹{p.amount.toLocaleString("en-IN")}</td>
-                          <td className={cn("p-3 text-right font-bold", p.balance>0?"text-red-650":"text-emerald-600")}>₹{p.balance.toLocaleString("en-IN")}</td>
-                          <td className="p-3 text-center"><FileText className={cn("w-4 h-4 mx-auto", p.hasDocs?"text-emerald-500":"text-slate-300")} /></td>
+                      <React.Fragment key={bg.bookingId}>
+                        {/* Expandable Group Header */}
+                        <tr className="bg-slate-100/80 font-semibold text-slate-800 border-t border-b border-slate-200">
                           <td className="p-3 text-center">
-                            <div className="flex gap-2 justify-center">
-                              <MessageSquare className="w-4 h-4 text-green-500 cursor-pointer hover:opacity-80" />
-                              <PhoneCall className="w-3.5 h-3.5 text-blue-500 cursor-pointer hover:opacity-80" />
-                              <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer hover:opacity-80" />
+                            <button
+                              onClick={() => {
+                                setExpandedBookings(prev => ({
+                                  ...prev,
+                                  [bg.bookingId]: prev[bg.bookingId] === false ? true : false
+                                }));
+                              }}
+                              className="p-1 hover:bg-slate-200 rounded text-slate-500"
+                            >
+                              {isGroupExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                            </button>
+                          </td>
+                          <td colSpan={9} className="p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-3">
+                                <span className="font-bold text-slate-900 bg-white border border-slate-200 rounded px-1.5 py-0.5">{bg.bookingRef}</span>
+                                <span className="font-extrabold text-slate-800">{bg.leadName}'s Group</span>
+                                <span className="text-slate-400">•</span>
+                                <span className="font-semibold text-slate-600 bg-slate-200/50 rounded-full px-2 py-0.5">{bg.totalPassengers} Passengers</span>
+                                {bg.coupleCount > 0 && (
+                                  <span className="font-semibold text-pink-700 bg-pink-50 border border-pink-100 rounded-full px-2 py-0.5 flex items-center gap-1">
+                                    ♥ {bg.coupleCount} Couple{bg.coupleCount > 1 ? "s" : ""}
+                                  </span>
+                                )}
+                                <span className="text-slate-400">•</span>
+                                <span className="text-slate-500 italic max-w-md truncate font-medium" title={bg.roomRequirement}>Rooms: {bg.roomRequirement}</span>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                {/* Financials */}
+                                <div className="text-right text-[11px] space-y-0.5">
+                                  <div>
+                                    Total: <span className="font-bold text-slate-700">₹{bg.totalAmount.toLocaleString("en-IN")}</span> |
+                                    Paid: <span className="font-bold text-emerald-600">₹{bg.paidAmount.toLocaleString("en-IN")}</span>
+                                  </div>
+                                  <div>
+                                    Balance: <span className={cn("font-bold", bg.balance > 0 ? "text-red-600" : "text-emerald-600")}>₹{bg.balance.toLocaleString("en-IN")}</span>
+                                  </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedBookingForRoomAlloc(bg);
+                                      const initialModal: any = {};
+                                      bg.passengers.forEach((p: any) => {
+                                        initialModal[p.name] = {
+                                          roomType: p.roomType || "Individual",
+                                          coupleWith: p.coupleWith || "",
+                                          roomNo: p.roomNo || "—"
+                                        };
+                                      });
+                                      setModalAllocations(initialModal);
+                                    }}
+                                    className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors"
+                                  >
+                                    Allocate Rooms
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenBookingDetails(bg.bookingId)}
+                                    className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded transition-colors"
+                                  >
+                                    Details
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </td>
                         </tr>
+
+                        {/* Passenger Rows */}
+                        {isGroupExpanded && bg.passengers.map((p: any) => (
+                          <tr key={p.name} className="hover:bg-slate-50/30 transition-colors">
+                            <td className="p-3 text-center"><input type="checkbox" className="rounded-[2px] border-slate-300" /></td>
+                            <td className="p-3 pl-6">
+                              <div className="flex items-center gap-1.5">
+                                <div className={cn("font-bold text-slate-800 hover:text-blue-600 hover:underline cursor-pointer", !p.isLead && "text-slate-650 font-medium pl-2 border-l border-slate-300")} onClick={() => handleOpenBookingDetails(bg.bookingId)}>
+                                  {p.roomType === "Couple" && p.coupleWith ? (
+                                    <span className="flex items-center gap-1">
+                                      <span>{p.name}</span>
+                                      <span className="text-pink-500 text-xs">♥</span>
+                                      <span className="text-slate-600 font-semibold">{p.coupleWith}</span>
+                                    </span>
+                                  ) : (
+                                    p.name
+                                  )}
+                                </div>
+                                {!p.isLead && !p.coupleWith && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                    co-traveler
+                                  </span>
+                                )}
+                              </div>
+                              <div className={cn("text-[10px] text-slate-400", !p.isLead && "pl-4")}>{p.gender}, {p.age} yrs</div>
+                            </td>
+                            <td className="p-3 font-mono text-slate-600">{p.phone}</td>
+                            <td className="p-3 font-semibold text-slate-700">{p.pickupPoint}</td>
+                            
+                            {/* Room Type Badge / Relationship */}
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                {getRelationshipBadge(p.roomType)}
+                                {p.roomNo && p.roomNo !== "—" && (
+                                  <span className="bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] font-mono">
+                                    {p.roomNo}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="p-3"><StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} /></td>
+                            <td className="p-3 text-right font-bold text-slate-700">₹{p.amount.toLocaleString("en-IN")}</td>
+                            <td className={cn("p-3 text-right font-bold", p.balance>0?"text-red-650":"text-emerald-600")}>₹{p.balance.toLocaleString("en-IN")}</td>
+                            <td className="p-3 text-center"><FileText className={cn("w-4 h-4 mx-auto", p.hasDocs?"text-emerald-500":"text-slate-300")} /></td>
+                            <td className="p-3 text-center">
+                              <div className="flex gap-2 justify-center">
+                                <MessageSquare className="w-4 h-4 text-green-500 cursor-pointer hover:opacity-80" />
+                                <PhoneCall className="w-3.5 h-3.5 text-blue-500 cursor-pointer hover:opacity-80" />
+                                <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer hover:opacity-80" />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
                       </React.Fragment>
                     );
                   })}
-                  {paginatedPassengers.length === 0 && (
+                  {paginatedBookingGroups.length === 0 && (
                     <tr><td colSpan={10} className="text-center p-10 text-slate-400 font-semibold">No passengers found.</td></tr>
                   )}
                 </tbody>
               </table>
               <div className="px-4 py-3 border-t border-[#E2E8F0] flex items-center justify-between text-[11px] text-slate-500">
-                <span>Showing {(page-1)*10+1} to {Math.min(page*10,filteredPassengers.length)} of {filteredPassengers.length} passengers</span>
+                <span>Showing {(page-1)*10+1} to {Math.min(page*10,filteredBookingGroups.length)} of {filteredBookingGroups.length} booking groups</span>
                 <div className="flex items-center gap-1">
                   <button disabled={page===1} onClick={()=>setPage(p=>Math.max(p-1,1))} className="border border-slate-200 rounded-[4px] p-1 bg-white hover:bg-slate-50 disabled:opacity-40"><ChevronLeft className="w-3.5 h-3.5" /></button>
-                  {[...Array(Math.min(5,Math.ceil(filteredPassengers.length/10)))].map((_,i)=>(
+                  {[...Array(Math.min(5,Math.ceil(filteredBookingGroups.length/10)))].map((_,i)=>(
                     <button key={i+1} onClick={()=>setPage(i+1)} className={cn("w-7 h-7 rounded-[4px] text-[11px] font-bold border", page===i+1?"bg-[#F97316] text-white border-[#F97316]":"bg-white border-slate-200 hover:bg-slate-50 text-slate-700")}>{i+1}</button>
                   ))}
-                  <button disabled={page>=Math.ceil(filteredPassengers.length/10)} onClick={()=>setPage(p=>Math.min(p+1,Math.ceil(filteredPassengers.length/10)))} className="border border-slate-200 rounded-[4px] p-1 bg-white hover:bg-slate-50 disabled:opacity-40"><ChevronRight className="w-3.5 h-3.5" /></button>
+                  <button disabled={page>=Math.ceil(filteredBookingGroups.length/10)} onClick={()=>setPage(p=>Math.min(p+1,Math.ceil(filteredBookingGroups.length/10)))} className="border border-slate-200 rounded-[4px] p-1 bg-white hover:bg-slate-50 disabled:opacity-40"><ChevronRight className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
             </div>
@@ -5144,6 +5506,107 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         </Dialog>
       )}
 
+      {selectedBookingForRoomAlloc && (() => {
+        const bg = selectedBookingForRoomAlloc;
+        return (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-[999] p-4">
+            <div className="bg-white rounded-lg border border-slate-200 shadow-xl max-w-2xl w-full flex flex-col max-h-[85vh]">
+              {/* Header */}
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-slate-800 text-sm">Allocate Rooms & Relationships</h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Booking: {bg.bookingRef} — {bg.leadName}'s Group ({bg.totalPassengers} Passengers)</p>
+                </div>
+                <button onClick={() => setSelectedBookingForRoomAlloc(null)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 overflow-y-auto space-y-4 flex-1">
+                <div className="space-y-3.5">
+                  {bg.passengers.map((p: any) => {
+                    const current = modalAllocations[p.name] || { roomType: "Individual", coupleWith: "", roomNo: "—" };
+                    return (
+                      <div key={p.name} className="p-3 bg-slate-50 rounded border border-slate-100 flex flex-wrap items-center gap-3 justify-between">
+                        <div className="min-w-[150px]">
+                          <div className="font-bold text-slate-800 text-xs">{p.name}</div>
+                          <div className="text-[10px] text-slate-500">{p.gender}, {p.age} yrs {p.isLead ? "• Lead" : ""}</div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {/* Relationship Dropdown */}
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Relationship</label>
+                            <select
+                              value={current.roomType}
+                              onChange={(e) => handleModalFieldChange(p.name, "roomType", e.target.value)}
+                              className="px-2 py-1 text-xs border border-slate-200 rounded bg-white text-slate-700 focus:outline-none w-28 h-7"
+                            >
+                              <option value="Couple">Couple</option>
+                              <option value="Family">Family</option>
+                              <option value="Friends">Friends</option>
+                              <option value="Triple Sharing">Triple Sharing</option>
+                              <option value="Individual">Individual</option>
+                            </select>
+                          </div>
+
+                          {/* Couple With Dropdown */}
+                          {current.roomType === "Couple" && (
+                            <div>
+                              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Couple With</label>
+                              <select
+                                value={current.coupleWith}
+                                onChange={(e) => handleModalFieldChange(p.name, "coupleWith", e.target.value)}
+                                className="px-2 py-1 text-xs border border-slate-200 rounded bg-white text-slate-700 focus:outline-none w-28 h-7"
+                              >
+                                <option value="">Select Partner</option>
+                                {bg.passengers
+                                  .filter((other: any) => other.name !== p.name)
+                                  .map((other: any) => (
+                                    <option key={other.name} value={other.name}>{other.name}</option>
+                                  ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {/* Room Number Input */}
+                          <div>
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Room No</label>
+                            <input
+                              type="text"
+                              value={current.roomNo === "—" ? "" : current.roomNo}
+                              onChange={(e) => handleModalFieldChange(p.name, "roomNo", e.target.value)}
+                              placeholder="e.g. Room 101"
+                              className="px-2 py-1 h-7 text-xs border border-slate-200 rounded focus:outline-none w-24"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2 rounded-b-lg">
+                <button
+                  onClick={() => setSelectedBookingForRoomAlloc(null)}
+                  className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded text-xs hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveRoomAllocations}
+                  className="px-3 py-1.5 bg-orange-500 text-white rounded text-xs hover:bg-orange-600 font-bold transition-colors"
+                >
+                  Save Allocations
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       </div>
     </div>
