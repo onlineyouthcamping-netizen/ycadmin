@@ -528,18 +528,18 @@ export default function DepartureHubPage() {
         }
       };
 
-      // Auto-linking couples: if passenger A is coupled with B, automatically set B's coupleWith to A and type to Couple
+      // Auto-linking couples/double sharing: if passenger A is coupled with B, automatically set B's coupleWith to A and type to A's type
       if (field === "coupleWith" && value) {
         updated[value] = {
-          ...(updated[value] || { roomType: "Individual", coupleWith: "", roomNo: "—" }),
-          roomType: "Couple",
+          ...(updated[value] || { roomType: "Double", coupleWith: "", roomNo: "—" }),
+          roomType: updated[name].roomType || "Double",
           coupleWith: name
         };
         // Auto-match room number if available
         if (updated[name].roomNo && updated[name].roomNo !== "—") {
           updated[value].roomNo = updated[name].roomNo;
         }
-      } else if (field === "roomNo" && updated[name]?.roomType === "Couple" && updated[name]?.coupleWith) {
+      } else if (field === "roomNo" && (updated[name]?.roomType === "Couple" || updated[name]?.roomType === "Double") && updated[name]?.coupleWith) {
         const partner = updated[name].coupleWith;
         if (updated[partner]) {
           updated[partner].roomNo = value;
@@ -2230,9 +2230,9 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       let coupleCount = 0;
       const coupleNames = new Set<string>();
       personsList.forEach(p => {
-        if (p.roomType === "Couple" && p.coupleWith) {
+        if ((p.roomType === "Couple" || p.roomType === "Double") && p.coupleWith) {
           const partner = personsList.find(other => other.name === p.coupleWith);
-          if (partner && partner.roomType === "Couple" && partner.coupleWith === p.name) {
+          if (partner && (partner.roomType === "Couple" || partner.roomType === "Double") && partner.coupleWith === p.name) {
             coupleNames.add([p.name, partner.name].sort().join("-"));
           }
         }
@@ -2247,7 +2247,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       });
 
       const roomSummaries = Object.entries(roomsMap).map(([rNo, pList]) => {
-        const couplesInRoom = pList.filter(p => p.roomType === "Couple" && p.coupleWith);
+        const couplesInRoom = pList.filter(p => (p.roomType === "Couple" || p.roomType === "Double") && p.coupleWith);
         let roomDesc = "";
         if (couplesInRoom.length >= 2) {
           const pairNames: string[] = [];
@@ -2262,7 +2262,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             }
           });
           const nonCouple = pList.filter(p => !matched.has(p.name));
-          roomDesc = `${pairNames.join(", ")} (Couple)`;
+          roomDesc = `${pairNames.join(", ")} (Double Sharing)`;
           if (nonCouple.length > 0) {
             roomDesc += ` + ${nonCouple.map(n => n.name).join(", ")}`;
           }
@@ -3017,7 +3017,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                             <td className="p-3 pl-6">
                               <div className="flex items-center gap-1.5">
                                 <div className={cn("font-bold text-slate-800 hover:text-blue-600 hover:underline cursor-pointer", !p.isLead && "text-slate-650 font-medium pl-2 border-l border-slate-300")} onClick={() => handleOpenBookingDetails(bg.bookingId)}>
-                                  {p.roomType === "Couple" && p.coupleWith ? (
+                                  {(p.roomType === "Couple" || p.roomType === "Double") && p.coupleWith ? (
                                     <span className="flex items-center gap-1">
                                       <span>{p.name}</span>
                                       <span className="text-pink-500 text-xs">♥</span>
@@ -5671,12 +5671,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                           {/* Relationship Dropdown */}
                           <div>
                             <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Relationship</label>
-                            <select
+                             <select
                               value={current.roomType}
                               onChange={(e) => handleModalFieldChange(p.name, "roomType", e.target.value)}
                               className="px-2 py-1 text-xs border border-slate-200 rounded bg-white text-slate-700 focus:outline-none w-28 h-7"
                             >
                               <option value="Couple">Couple</option>
+                              <option value="Double">Double Sharing</option>
                               <option value="Family">Family</option>
                               <option value="Friends">Friends</option>
                               <option value="Triple Sharing">Triple Sharing</option>
@@ -5685,7 +5686,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                           </div>
 
                           {/* Couple With Dropdown */}
-                          {current.roomType === "Couple" && (
+                          {(current.roomType === "Couple" || current.roomType === "Double") && (
                             <div>
                               <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Couple With</label>
                               <select
