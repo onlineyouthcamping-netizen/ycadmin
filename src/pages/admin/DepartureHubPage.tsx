@@ -1757,6 +1757,14 @@ export default function DepartureHubPage() {
       
       const leadRoomNo = personsRoomDetails[b.fullName || b.name]?.roomNo || b.passengers?.details?.roomAllocation || "—";
 
+      const paxList = b.passengers?.persons || [];
+      const filteredCoPax = paxList.filter((p: any) => p.name !== (b.fullName || b.name));
+      const passengerCount = filteredCoPax.length + 1;
+
+      const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
+      const perPersonPaid = (b.advancePaid || 0) / passengerCount;
+      const perPersonBalance = due > 0 ? (due / passengerCount) : 0;
+
       const base = { 
         bookingId: b.id, 
         bookingRef: b.bookingId || b.id,
@@ -1774,9 +1782,9 @@ export default function DepartureHubPage() {
         emergencyContact:"9876543211", 
         roomNo: leadRoomNo, 
         paymentStatus:paymentLabel, 
-        amount:b.totalAmount||12000, 
-        paidAmount:b.advancePaid||0, 
-        balance:due>0?due:0, 
+        amount: perPersonAmount, 
+        paidAmount: perPersonPaid, 
+        balance: perPersonBalance, 
         paymentMode:"UPI", 
         paymentDate:"2027-06-16", 
         idProofType:"Aadhar Card", 
@@ -1801,9 +1809,9 @@ export default function DepartureHubPage() {
             phone:p.phone||b.phone||"—", 
             email:p.email||"—", 
             pickupPoint:p.pickupPoint||b.pickupCity||"Ahmedabad", 
-            amount:0, 
-            paidAmount:0, 
-            balance:0, 
+            amount: perPersonAmount, 
+            paidAmount: perPersonPaid, 
+            balance: perPersonBalance, 
             notes:"Co-traveler", 
             isLead: false,
             gender: p.gender || "Male",
@@ -2143,6 +2151,15 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
+
+      const paxList = b.passengers?.persons || [];
+      const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
+      const passengerCount = filteredCoPax.length + 1;
+
+      const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
+      const perPersonPaid = (b.advancePaid || 0) / passengerCount;
+      const perPersonBalance = due > 0 ? (due / passengerCount) : 0;
+
       const leadPassenger = {
         name: leadName,
         age: b.age || 24,
@@ -2155,9 +2172,9 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         coupleWith: leadRoomInfo.coupleWith || "",
         roomNo: leadRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
         paymentStatus: paymentLabel,
-        amount: b.totalAmount || 12000,
-        paidAmount: b.advancePaid || 0,
-        balance: due > 0 ? due : 0
+        amount: perPersonAmount,
+        paidAmount: perPersonPaid,
+        balance: perPersonBalance
       };
 
       const personsList = [leadPassenger];
@@ -2179,9 +2196,9 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             coupleWith: coRoomInfo.coupleWith || "",
             roomNo: coRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
             paymentStatus: paymentLabel,
-            amount: 0,
-            paidAmount: 0,
-            balance: 0
+            amount: perPersonAmount,
+            paidAmount: perPersonPaid,
+            balance: perPersonBalance
           });
         });
       }
@@ -3006,8 +3023,18 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                               </span>
                             </td>
 
-                            <td className="p-3"><StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} /></td>
-                            <td className={cn("p-3 text-right font-bold", p.balance>0?"text-red-655":"text-emerald-600")}>₹{p.balance.toLocaleString("en-IN")}</td>
+                             <td className="p-3">
+                              <StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} />
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                Paid: ₹{p.paidAmount.toLocaleString("en-IN")} / pax
+                              </div>
+                            </td>
+                            <td className={cn("p-3 text-right font-bold", p.balance > 0 ? "text-red-500" : "text-emerald-600")}>
+                              <div>₹{p.balance.toLocaleString("en-IN")} <span className="text-[10px] font-normal text-slate-400">/ pax</span></div>
+                              <div className="text-[9.5px] text-slate-400 font-normal mt-0.5">
+                                Group Due: ₹{bg.balance.toLocaleString("en-IN")}
+                              </div>
+                            </td>
                             
                             {/* Room Type Badge / Relationship */}
                             <td className="p-3">
