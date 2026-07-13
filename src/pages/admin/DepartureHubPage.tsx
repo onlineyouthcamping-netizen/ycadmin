@@ -1717,6 +1717,12 @@ export default function DepartureHubPage() {
     bookings.forEach((b: any) => {
       const due = (b.totalAmount || 0) - (b.advancePaid || 0);
       const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
+      
+      const roomDetailsObj = b.roomDetails || {};
+      const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
+      
+      const leadRoomNo = personsRoomDetails[b.fullName || b.name]?.roomNo || b.passengers?.details?.roomAllocation || "—";
+
       const base = { 
         bookingId: b.id, 
         bookingRef: b.bookingId || b.id,
@@ -1732,7 +1738,7 @@ export default function DepartureHubPage() {
         roomSharing:b.passengers?.details?.roomType||"Triple", 
         roomType:"Deluxe", 
         emergencyContact:"9876543211", 
-        roomNo:b.passengers?.details?.roomAllocation||"—", 
+        roomNo: leadRoomNo, 
         paymentStatus:paymentLabel, 
         amount:b.totalAmount||12000, 
         paidAmount:b.advancePaid||0, 
@@ -1749,10 +1755,15 @@ export default function DepartureHubPage() {
       arr.push({ id:b.id, name:b.fullName||b.name, ...base, isLead: true });
       if (Array.isArray(b.passengers?.persons)) {
         b.passengers.persons.forEach((p: any, idx: number) => {
+          // Avoid duplicating the lead traveler if they are also listed in persons
+          if (p.name === (b.fullName || b.name)) return;
+
+          const coRoomNo = personsRoomDetails[p.name]?.roomNo || "—";
           arr.push({ 
             id:`${b.id}-co-${idx}`, 
             name:p.name, 
             ...base, 
+            roomNo: coRoomNo,
             phone:p.phone||b.phone||"—", 
             email:p.email||"—", 
             pickupPoint:p.pickupPoint||b.pickupCity||"Ahmedabad", 
