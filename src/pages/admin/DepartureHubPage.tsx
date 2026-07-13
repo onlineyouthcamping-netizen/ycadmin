@@ -1926,11 +1926,10 @@ const [sharingPref, setSharingPref] = useState<string>("3");
   const handleTriggerAutoAllocate = () => {
     const newAllocs: Record<string, any> = {};
     let roomNum = 1;
-    let seatNum = 1;
     const activeTravelers = allPassengers.filter(p => p.notes !== "Cancelled");
     const allocated = new Set<string>();
 
-    // Step 1: Identify couples/groups — travelers sharing the same bookingId with mixed genders
+    // Step 1: Identify couples/groups — travelers sharing the same bookingId
     const bookingGroups: Record<string, any[]> = {};
     activeTravelers.forEach(p => {
       const bId = String(p.bookingId).replace(/-co-\d+$/, "");
@@ -1948,9 +1947,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             // Couple → 2-sharing room
             group.forEach(p => {
               newAllocs[p.name] = {
-                room: `Room ${roomNum}`,
-                vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-                seat: String(seatNum++)
+                room: `Room ${roomNum}`
               };
               allocated.add(p.name);
             });
@@ -1973,9 +1970,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         const chunk = travelersList.slice(index, index + 4);
         chunk.forEach(p => {
           newAllocs[p.name] = {
-            room: `Room ${roomNum}`,
-            vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-            seat: String(seatNum++)
+            room: `Room ${roomNum}`
           };
           allocated.add(p.name);
         });
@@ -1988,9 +1983,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         const chunk = travelersList.slice(index, index + 2);
         chunk.forEach(p => {
           newAllocs[p.name] = {
-            room: `Room ${roomNum}`,
-            vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-            seat: String(seatNum++)
+            room: `Room ${roomNum}`
           };
           allocated.add(p.name);
         });
@@ -2003,9 +1996,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         const chunk = travelersList.slice(index, index + 3);
         chunk.forEach(p => {
           newAllocs[p.name] = {
-            room: `Room ${roomNum}`,
-            vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-            seat: String(seatNum++)
+            room: `Room ${roomNum}`
           };
           allocated.add(p.name);
         });
@@ -2029,14 +2020,47 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     // Step 4: Anyone still unallocated (no gender set, etc.)
     activeTravelers.filter(p => !allocated.has(p.name)).forEach(p => {
       newAllocs[p.name] = {
-        room: `Room ${roomNum}`,
-        vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-        seat: String(seatNum++)
+        room: `Room ${roomNum}`
       };
     });
 
+    // ── VEHICLE & TEMPO AUTO-ALLOCATION PASS ──
+    // Initialize available fleet status
+    const fleetStatus = allocFleet.length > 0
+      ? allocFleet.map(f => ({ ...f, remainingSeats: f.capacity }))
+      : [{ id: "tempo-1", name: "Tempo 1", capacity: 17, remainingSeats: 17 }];
+
+    // Sort booking groups: groups containing female participants first to ensure they travel together
+    const sortedGroups = Object.entries(bookingGroups).sort(([, aList], [, bList]) => {
+      const aHasFemale = aList.some(p => p.gender === "Female") ? 1 : 0;
+      const bHasFemale = bList.some(p => p.gender === "Female") ? 1 : 0;
+      return bHasFemale - aHasFemale; // Descending: female-containing groups first
+    });
+
+    sortedGroups.forEach(([bId, groupMembers]) => {
+      const gSize = groupMembers.length;
+      // Try to find a vehicle that can fit the entire group
+      let vehicle = fleetStatus.find(f => f.remainingSeats >= gSize);
+      if (!vehicle) {
+        // Fallback: assign to the vehicle with the most remaining space
+        vehicle = fleetStatus.reduce((max, f) => f.remainingSeats > max.remainingSeats ? f : max, fleetStatus[0]);
+      }
+
+      if (vehicle) {
+        groupMembers.forEach(p => {
+          const seatIndex = vehicle.capacity - vehicle.remainingSeats + 1;
+          newAllocs[p.name] = {
+            ...newAllocs[p.name],
+            vehicle: vehicle.name,
+            seat: String(seatIndex)
+          };
+          vehicle.remainingSeats -= 1;
+        });
+      }
+    });
+
     setPassengerAllocations(newAllocs);
-    toast.success(`Auto-allocated: couples in 2-sharing, same-gender 3/4 sharing rooms.`);
+    toast.success(`Auto-allocated: couples in 2-sharing, same-gender 3/4 sharing rooms, and grouped vehicle seats.`);
   };
 
 
