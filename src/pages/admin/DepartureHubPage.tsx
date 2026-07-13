@@ -2725,7 +2725,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-black text-slate-800">Passengers</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">All confirmed passengers for this departure</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">{filteredPassengers.length} Passengers • {filteredBookingGroups.length} Bookings</p>
               </div>
               <div className="flex gap-2">
                 <button className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5">
@@ -2813,11 +2813,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PASSENGER</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PHONE</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PICKUP</th>
-                    <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">ROOM TYPE / RELATIONSHIP</th>
+                    <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">TRAIN STATUS</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PAYMENT</th>
-                    <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">AMOUNT</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">BALANCE</th>
-                    <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">DOCS</th>
+                    <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">ROOM</th>
+                    <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">REMARKS</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">ACTION</th>
                   </tr>
                 </thead>
@@ -2865,7 +2865,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                                     Paid: <span className="font-bold text-emerald-600">₹{bg.paidAmount.toLocaleString("en-IN")}</span>
                                   </div>
                                   <div>
-                                    Balance: <span className={cn("font-bold", bg.balance > 0 ? "text-red-600" : "text-emerald-600")}>₹{bg.balance.toLocaleString("en-IN")}</span>
+                                    Balance: <span className={cn("font-bold", bg.balance > 0 ? "text-red-650" : "text-emerald-600")}>₹{bg.balance.toLocaleString("en-IN")}</span>
                                   </div>
                                 </div>
 
@@ -2928,6 +2928,18 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                             <td className="p-3 font-mono text-slate-600">{p.phone}</td>
                             <td className="p-3 font-semibold text-slate-700">{p.pickupPoint}</td>
                             
+                            {/* Train Status */}
+                            <td className="p-3 text-center">
+                              <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border", 
+                                bg.trainTicketStatus === "CONFIRMED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"
+                              )}>
+                                {bg.trainTicketStatus}
+                              </span>
+                            </td>
+
+                            <td className="p-3"><StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} /></td>
+                            <td className={cn("p-3 text-right font-bold", p.balance>0?"text-red-655":"text-emerald-600")}>₹{p.balance.toLocaleString("en-IN")}</td>
+                            
                             {/* Room Type Badge / Relationship */}
                             <td className="p-3">
                               <div className="flex items-center gap-2">
@@ -2940,10 +2952,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                               </div>
                             </td>
 
-                            <td className="p-3"><StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} /></td>
-                            <td className="p-3 text-right font-bold text-slate-700">₹{p.amount.toLocaleString("en-IN")}</td>
-                            <td className={cn("p-3 text-right font-bold", p.balance>0?"text-red-650":"text-emerald-600")}>₹{p.balance.toLocaleString("en-IN")}</td>
-                            <td className="p-3 text-center"><FileText className={cn("w-4 h-4 mx-auto", p.hasDocs?"text-emerald-500":"text-slate-300")} /></td>
+                            {/* Remarks */}
+                            <td className="p-3 text-slate-600 italic text-[11px] max-w-[150px] truncate" title={p.notes || bg.rawBooking.adminNotes || "—"}>
+                              {p.notes || bg.rawBooking.adminNotes || "—"}
+                            </td>
+
                             <td className="p-3 text-center">
                               <div className="flex gap-2 justify-center">
                                 <MessageSquare className="w-4 h-4 text-green-500 cursor-pointer hover:opacity-80" />
