@@ -1979,23 +1979,36 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       bookingGroups[bId].push(p);
     });
 
-    // Couples = bookings with 2 people of mixed gender
+    // Couples = travelers in the same booking group who have roomType "Couple" and match each other
     if (prioritizeCouples) {
       Object.values(bookingGroups).forEach(group => {
-        if (group.length === 2) {
-          const hasMale = group.some(p => p.gender === "Male");
-          const hasFemale = group.some(p => p.gender === "Female");
-          if (hasMale && hasFemale) {
-            // Couple → 2-sharing room
-            group.forEach(p => {
+        const matched = new Set<string>();
+        group.forEach(p => {
+          if (allocated.has(p.name) || matched.has(p.name)) return;
+          
+          // Check if traveler is couple or has coupleWith configured
+          const couplePartnerName = p.coupleWith || "";
+          if (couplePartnerName) {
+            const partner = group.find(other => 
+              other.name === couplePartnerName && 
+              !allocated.has(other.name) && 
+              !matched.has(other.name)
+            );
+            if (partner) {
               newAllocs[p.name] = {
                 room: `Room ${roomNum}`
               };
+              newAllocs[partner.name] = {
+                room: `Room ${roomNum}`
+              };
               allocated.add(p.name);
-            });
-            roomNum++;
+              allocated.add(partner.name);
+              matched.add(p.name);
+              matched.add(partner.name);
+              roomNum++;
+            }
           }
-        }
+        });
       });
     }
 
