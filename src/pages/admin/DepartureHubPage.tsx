@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/services/api";
+import { opsService } from "@/services/ops.service";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -330,27 +331,49 @@ export default function DepartureHubPage() {
   const [newVehicleCost, setNewVehicleCost] = useState("");
   const [newVehicleVendor, setNewVehicleVendor] = useState("");
 
-  const handleAddVehicle = (e: React.FormEvent) => {
+  const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
     const cap = newVehicleType.includes("17") ? 17 : newVehicleType.includes("13") ? 13 : 6;
-    const newV = {
-      id: `vehicle-${Date.now()}`,
-      name: newVehicleName || `Tempo ${allocFleet.length + 1}`,
-      vehicleType: newVehicleType,
-      capacity: cap,
-      cost: parseInt(newVehicleCost) || 35000,
-      vendor: newVehicleVendor || "General Vendor"
-    };
-    setAllocFleet([...allocFleet, newV]);
-    setNewVehicleName("");
-    setNewVehicleCost("");
-    setNewVehicleVendor("");
-    toast.success(`Added ${newV.name} (${newV.vehicleType}) to fleet!`);
+    const vName = newVehicleName || `Tempo ${allocFleet.length + 1}`;
+    
+    try {
+      const savedVehicle = await opsService.createTransportFleet(tripId, {
+        vehicleType: newVehicleType,
+        capacity: cap,
+        totalAmount: parseFloat(newVehicleCost) || 35000,
+        driverName: vName,
+        notes: newVehicleVendor || "General Vendor"
+      }, departureDateStr);
+
+      const newV = {
+        id: savedVehicle.id,
+        name: savedVehicle.driverName || vName,
+        vehicleType: savedVehicle.vehicleType,
+        capacity: savedVehicle.capacity,
+        cost: savedVehicle.totalAmount,
+        vendor: savedVehicle.notes || "General Vendor"
+      };
+
+      setAllocFleet(prev => [...prev, newV]);
+      setNewVehicleName("");
+      setNewVehicleCost("");
+      setNewVehicleVendor("");
+      toast.success(`Added ${newV.name} (${newV.vehicleType}) and saved to database!`);
+      fetchPageData();
+    } catch {
+      toast.error("Failed to save vehicle details to database");
+    }
   };
 
-  const handleDeleteVehicle = (id: string) => {
-    setAllocFleet(allocFleet.filter(v => v.id !== id));
-    toast.info("Removed vehicle from fleet");
+  const handleDeleteVehicle = async (id: string) => {
+    try {
+      await opsService.deleteTransportFleet(id);
+      setAllocFleet(prev => prev.filter(v => v.id !== id));
+      toast.info("Removed vehicle from database and fleet");
+      fetchPageData();
+    } catch {
+      toast.error("Failed to delete vehicle from database");
+    }
   };
 
   const handleCopyTempoList = () => {
@@ -419,6 +442,17 @@ export default function DepartureHubPage() {
       const hotels = hotelsRes.data?.data || [];
       const transports = transportRes.data?.data || [];
       const guides = guidesRes.data?.data || [];
+
+      // Populate allocFleet from database
+      const initialFleet = transports.map((t: any) => ({
+        id: t.id,
+        name: t.driverName || "Tempo 1",
+        vehicleType: t.vehicleType,
+        capacity: t.capacity,
+        cost: t.totalAmount,
+        vendor: t.notes || "Self-driven"
+      }));
+      setAllocFleet(initialFleet);
 
       // Combine them into tripVendors structure
       const mappedVendors = [
