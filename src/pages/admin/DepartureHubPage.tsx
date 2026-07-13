@@ -1623,9 +1623,18 @@ export default function DepartureHubPage() {
       });
     });
 
-    // 3. Dynamic Customer ID Proofs from Bookings
+     // 3. Dynamic Customer ID Proofs from Bookings
     bookings.forEach((b: any) => {
-      if (b.passengers?.details?.idProof || b.idProof) {
+      let passengersObj = b.passengers;
+      if (typeof passengersObj === 'string') {
+        try {
+          passengersObj = JSON.parse(passengersObj);
+        } catch (e) {
+          passengersObj = {};
+        }
+      }
+
+      if (passengersObj?.details?.idProof || b.idProof) {
         const name = b.fullName || b.name || "Passenger";
         list.push({
           id: `doc-b-${b.id}`,
@@ -1641,8 +1650,8 @@ export default function DepartureHubPage() {
         });
       }
       
-      if (Array.isArray(b.passengers?.persons)) {
-        b.passengers.persons.forEach((p: any, idx: number) => {
+      if (Array.isArray(passengersObj?.persons)) {
+        passengersObj.persons.forEach((p: any, idx: number) => {
           if (p.idProof) {
             list.push({
               id: `doc-p-${b.id}-${idx}`,
@@ -1749,19 +1758,28 @@ export default function DepartureHubPage() {
   const allPassengers = useMemo(() => {
     const arr: any[] = [];
     bookings.forEach((b: any) => {
+      let passengersObj = b.passengers;
+      if (typeof passengersObj === 'string') {
+        try {
+          passengersObj = JSON.parse(passengersObj);
+        } catch (e) {
+          passengersObj = {};
+        }
+      }
+
       const due = (b.totalAmount || 0) - (b.advancePaid || 0);
       const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
       
-      const roomDetailsObj = b.roomDetails || b.passengers?.details || {};
+      const roomDetailsObj = b.roomDetails || passengersObj?.details || {};
       const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
       
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
-      const leadRoomNo = leadRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—";
+      const leadRoomNo = leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—";
       const leadRoomType = leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
       const leadCoupleWith = leadRoomInfo.coupleWith || "";
 
-      const paxList = b.passengers?.persons || [];
+      const paxList = passengersObj?.persons || [];
       const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
       const passengerCount = filteredCoPax.length + 1;
 
@@ -1781,7 +1799,7 @@ export default function DepartureHubPage() {
         email:b.email||"—", 
         pickupPoint:b.pickupCity||"Ahmedabad", 
         dropPoint:"Manali", 
-        roomSharing:b.passengers?.details?.roomType||"Triple", 
+        roomSharing:passengersObj?.details?.roomType||"Triple", 
         roomType: leadRoomType, 
         coupleWith: leadCoupleWith,
         emergencyContact:"9876543211", 
@@ -1796,12 +1814,12 @@ export default function DepartureHubPage() {
         guideName:"Dikshu Sharma", 
         transportDetails:"Tempo Traveller AC", 
         notes:b.notes||"No special requirements", 
-        hasDocs:!!b.passengers?.details?.idProof,
+        hasDocs:!!passengersObj?.details?.idProof,
         leadPassengerName: b.fullName || b.name
       };
       arr.push({ id:b.id, name:leadName, ...base, isLead: true });
-      if (Array.isArray(b.passengers?.persons)) {
-        b.passengers.persons.forEach((p: any, idx: number) => {
+      if (Array.isArray(passengersObj?.persons)) {
+        passengersObj.persons.forEach((p: any, idx: number) => {
           // Avoid duplicating the lead traveler if they are also listed in persons
           if (p.name === leadName) return;
 
@@ -2167,16 +2185,25 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
   const bookingGroups = useMemo(() => {
     return bookings.map((b: any) => {
+      let passengersObj = b.passengers;
+      if (typeof passengersObj === 'string') {
+        try {
+          passengersObj = JSON.parse(passengersObj);
+        } catch (e) {
+          passengersObj = {};
+        }
+      }
+
       const due = (b.totalAmount || 0) - (b.advancePaid || 0);
       const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
       const paymentStatusShort = due <= 0 ? "PAID" : b.advancePaid > 0 ? "PARTIALLY PAID" : "UNPAID";
 
-      const personsRoomDetails = b.roomDetails?.personsRoomDetails || b.passengers?.details?.personsRoomDetails || {};
+      const personsRoomDetails = b.roomDetails?.personsRoomDetails || passengersObj?.details?.personsRoomDetails || {};
 
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
 
-      const paxList = b.passengers?.persons || [];
+      const paxList = passengersObj?.persons || [];
       const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
       const passengerCount = filteredCoPax.length + 1;
 
@@ -2194,7 +2221,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         isLead: true,
         roomType: leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing"),
         coupleWith: leadRoomInfo.coupleWith || "",
-        roomNo: leadRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
+        roomNo: leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—",
         paymentStatus: paymentLabel,
         amount: perPersonAmount,
         paidAmount: perPersonPaid,
@@ -2203,8 +2230,8 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       const personsList = [leadPassenger];
 
-      if (Array.isArray(b.passengers?.persons)) {
-        b.passengers.persons.forEach((p: any, idx: number) => {
+      if (Array.isArray(passengersObj?.persons)) {
+        passengersObj.persons.forEach((p: any, idx: number) => {
           // Prevent duplicating lead if they are listed in persons too
           if (p.name === leadName) return;
           const coRoomInfo = personsRoomDetails[p.name] || {};
