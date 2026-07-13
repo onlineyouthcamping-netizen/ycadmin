@@ -1752,7 +1752,7 @@ export default function DepartureHubPage() {
       const due = (b.totalAmount || 0) - (b.advancePaid || 0);
       const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
       
-      const roomDetailsObj = b.roomDetails || {};
+      const roomDetailsObj = b.roomDetails || b.passengers?.details || {};
       const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
       
       const leadName = b.fullName || b.name;
@@ -2171,7 +2171,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
       const paymentStatusShort = due <= 0 ? "PAID" : b.advancePaid > 0 ? "PARTIALLY PAID" : "UNPAID";
 
-      const personsRoomDetails = b.passengers?.details?.personsRoomDetails || {};
+      const personsRoomDetails = b.roomDetails?.personsRoomDetails || b.passengers?.details?.personsRoomDetails || {};
 
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
