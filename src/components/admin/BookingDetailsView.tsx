@@ -123,6 +123,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   // Change dates state
   const [showChangeDates, setShowChangeDates] = useState(false);
   const [newDepartureDate, setNewDepartureDate] = useState("");
+  const [changeReason, setChangeReason] = useState("");
 
   // Edit Booking Items state
   const [isEditingItems, setIsEditingItems] = useState(false);
@@ -970,9 +971,13 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   const handleSaveDates = async () => {
     if (!newDepartureDate) return toast.error("Please select a valid date");
     try {
-      await bookingsService.update(booking.id, { departureDate: newDepartureDate });
+      await bookingsService.update(booking.id, { 
+        departureDate: newDepartureDate,
+        reason: changeReason
+      });
       toast.success("Departure date updated successfully!");
       setShowChangeDates(false);
+      setChangeReason("");
       onRefresh();
     } catch (e) {
       toast.error("Failed to update departure date");
@@ -1733,7 +1738,21 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                     <div className="text-sm font-bold text-[#F5760E] mt-1">3AC Available</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Departure</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between gap-2">
+                      <span>Departure</span>
+                      {canManageBooking && !isExpired && (
+                        <button 
+                          onClick={() => {
+                            setNewDepartureDate(getInitialDateString(booking.departureDate));
+                            setChangeReason("");
+                            setShowChangeDates(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-[10px] font-semibold flex items-center gap-0.5"
+                        >
+                          <Pencil className="w-2.5 h-2.5" /> Edit
+                        </button>
+                      )}
+                    </div>
                     <div className="text-sm font-bold text-slate-800 mt-1">
                       {safeFormatDate(booking.departureDate, { day: '2-digit', month: 'short', year: 'numeric' }, "27 Jul 2026")}
                     </div>
@@ -3343,6 +3362,16 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 type="date"
                 value={newDepartureDate}
                 onChange={e => setNewDepartureDate(e.target.value)}
+                className="h-8 text-xs rounded"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase text-slate-450">Reason for Change</label>
+              <Input 
+                type="text"
+                placeholder="e.g., Customer requested rescheduling"
+                value={changeReason}
+                onChange={e => setChangeReason(e.target.value)}
                 className="h-8 text-xs rounded"
               />
             </div>
