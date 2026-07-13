@@ -1778,17 +1778,13 @@ export default function DepartureHubPage() {
     if (allPassengers && allPassengers.length > 0) {
       const initial: Record<string, { room: string, vehicle: string, seat: string }> = {};
       allPassengers.forEach((p) => {
-        if (!passengerAllocations[p.name]) {
-          initial[p.name] = {
-            room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
-            vehicle: "—",
-            seat: "—"
-          };
-        }
+        initial[p.name] = {
+          room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
+          vehicle: "—",
+          seat: "—"
+        };
       });
-      if (Object.keys(initial).length > 0) {
-        setPassengerAllocations(prev => ({ ...prev, ...initial }));
-      }
+      setPassengerAllocations(initial);
     }
   }, [allPassengers]);
 
