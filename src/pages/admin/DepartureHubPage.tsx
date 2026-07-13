@@ -1777,11 +1777,13 @@ export default function DepartureHubPage() {
   useEffect(() => {
     if (allPassengers && allPassengers.length > 0) {
       const initial: Record<string, { room: string, vehicle: string, seat: string }> = {};
-      allPassengers.forEach((p, idx) => {
+      allPassengers.forEach((p) => {
         if (!passengerAllocations[p.name]) {
-          if (idx === 0) initial[p.name] = { room: "Group No. 1", vehicle: "Tempo 1", seat: "1" };
-          else if (idx === 1) initial[p.name] = { room: "Group No. 1", vehicle: "Tempo 1", seat: "2" };
-          else initial[p.name] = { room: "—", vehicle: "—", seat: "—" };
+          initial[p.name] = {
+            room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
+            vehicle: "—",
+            seat: "—"
+          };
         }
       });
       if (Object.keys(initial).length > 0) {
