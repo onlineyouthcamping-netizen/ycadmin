@@ -1755,10 +1755,14 @@ export default function DepartureHubPage() {
       const roomDetailsObj = b.roomDetails || {};
       const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
       
-      const leadRoomNo = personsRoomDetails[b.fullName || b.name]?.roomNo || b.passengers?.details?.roomAllocation || "—";
+      const leadName = b.fullName || b.name;
+      const leadRoomInfo = personsRoomDetails[leadName] || {};
+      const leadRoomNo = leadRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—";
+      const leadRoomType = leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
+      const leadCoupleWith = leadRoomInfo.coupleWith || "";
 
       const paxList = b.passengers?.persons || [];
-      const filteredCoPax = paxList.filter((p: any) => p.name !== (b.fullName || b.name));
+      const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
       const passengerCount = filteredCoPax.length + 1;
 
       const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
@@ -1778,7 +1782,8 @@ export default function DepartureHubPage() {
         pickupPoint:b.pickupCity||"Ahmedabad", 
         dropPoint:"Manali", 
         roomSharing:b.passengers?.details?.roomType||"Triple", 
-        roomType:"Deluxe", 
+        roomType: leadRoomType, 
+        coupleWith: leadCoupleWith,
         emergencyContact:"9876543211", 
         roomNo: leadRoomNo, 
         paymentStatus:paymentLabel, 
@@ -1794,18 +1799,24 @@ export default function DepartureHubPage() {
         hasDocs:!!b.passengers?.details?.idProof,
         leadPassengerName: b.fullName || b.name
       };
-      arr.push({ id:b.id, name:b.fullName||b.name, ...base, isLead: true });
+      arr.push({ id:b.id, name:leadName, ...base, isLead: true });
       if (Array.isArray(b.passengers?.persons)) {
         b.passengers.persons.forEach((p: any, idx: number) => {
           // Avoid duplicating the lead traveler if they are also listed in persons
-          if (p.name === (b.fullName || b.name)) return;
+          if (p.name === leadName) return;
 
-          const coRoomNo = personsRoomDetails[p.name]?.roomNo || "—";
+          const coRoomInfo = personsRoomDetails[p.name] || {};
+          const coRoomNo = coRoomInfo.roomNo || "—";
+          const coRoomType = coRoomInfo.roomType || "Triple Sharing";
+          const coCoupleWith = coRoomInfo.coupleWith || "";
+
           arr.push({ 
             id:`${b.id}-co-${idx}`, 
             name:p.name, 
             ...base, 
             roomNo: coRoomNo,
+            roomType: coRoomType,
+            coupleWith: coCoupleWith,
             phone:p.phone||b.phone||"—", 
             email:p.email||"—", 
             pickupPoint:p.pickupPoint||b.pickupCity||"Ahmedabad", 
