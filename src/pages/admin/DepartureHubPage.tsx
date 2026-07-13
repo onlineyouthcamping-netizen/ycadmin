@@ -1960,67 +1960,69 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       });
     }
 
-    // Step 2: Same-gender groups from same booking (e.g. 2 girls who booked together)
-    Object.values(bookingGroups).forEach(group => {
-      if (group.length === 2 && group.every(p => !allocated.has(p.name))) {
-        const allFemale = group.every(p => p.gender === "Female");
-        const allMale = group.every(p => p.gender === "Male");
-        if (allFemale || allMale) {
-          group.forEach(p => {
-            newAllocs[p.name] = {
-              room: `Room ${roomNum}`,
-              vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-              seat: String(seatNum++)
-            };
-            allocated.add(p.name);
-          });
-          roomNum++;
-        }
-      }
-    });
+    // Helper to allocate a list of same-gender travelers into rooms of 3 and 4
+    const allocateSameGender = (travelersList: any[]) => {
+      const N = travelersList.length;
+      if (N === 0) return;
 
-    // Step 3: Remaining males → N-sharing (default 3)
-    const targetSize = parseInt(sharingPref) || 3;
+      let index = 0;
+      
+      // If N % 3 === 1, we need one room of 4, and the rest rooms of 3
+      if (N % 3 === 1) {
+        // Allocate first 4 into a room
+        const chunk = travelersList.slice(index, index + 4);
+        chunk.forEach(p => {
+          newAllocs[p.name] = {
+            room: `Room ${roomNum}`,
+            vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
+            seat: String(seatNum++)
+          };
+          allocated.add(p.name);
+        });
+        roomNum++;
+        index += 4;
+      } 
+      // If N % 3 === 2, we need one room of 2, and the rest rooms of 3
+      else if (N % 3 === 2) {
+        // Allocate first 2 into a room
+        const chunk = travelersList.slice(index, index + 2);
+        chunk.forEach(p => {
+          newAllocs[p.name] = {
+            room: `Room ${roomNum}`,
+            vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
+            seat: String(seatNum++)
+          };
+          allocated.add(p.name);
+        });
+        roomNum++;
+        index += 2;
+      }
+
+      // Allocate the remaining travelers in chunks of 3
+      while (index < N) {
+        const chunk = travelersList.slice(index, index + 3);
+        chunk.forEach(p => {
+          newAllocs[p.name] = {
+            room: `Room ${roomNum}`,
+            vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
+            seat: String(seatNum++)
+          };
+          allocated.add(p.name);
+        });
+        roomNum++;
+        index += 3;
+      }
+    };
+
+    // Step 2: Allocate remaining boys
     const remainingMales = activeTravelers.filter(p => p.gender === "Male" && !allocated.has(p.name));
-    let maleCount = 0;
-    remainingMales.forEach(p => {
-      newAllocs[p.name] = {
-        room: `Room ${roomNum}`,
-        vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-        seat: String(seatNum++)
-      };
-      allocated.add(p.name);
-      maleCount++;
-      if (maleCount >= targetSize) {
-        maleCount = 0;
-        roomNum++;
-      }
-    });
-    if (maleCount > 0) {
-      if (fallbackToQuad && maleCount < targetSize) {
-        toast.info("Fallback rule applied: leftover males merged into next group");
-      }
-      roomNum++;
-    }
+    allocateSameGender(remainingMales);
 
-    // Step 4: Remaining females → N-sharing
+    // Step 3: Allocate remaining girls
     const remainingFemales = activeTravelers.filter(p => p.gender === "Female" && !allocated.has(p.name));
-    let femaleCount = 0;
-    remainingFemales.forEach(p => {
-      newAllocs[p.name] = {
-        room: `Room ${roomNum}`,
-        vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
-        seat: String(seatNum++)
-      };
-      allocated.add(p.name);
-      femaleCount++;
-      if (femaleCount >= targetSize) {
-        femaleCount = 0;
-        roomNum++;
-      }
-    });
+    allocateSameGender(remainingFemales);
 
-    // Step 5: Anyone still unallocated (no gender set, etc.)
+    // Step 4: Anyone still unallocated (no gender set, etc.)
     activeTravelers.filter(p => !allocated.has(p.name)).forEach(p => {
       newAllocs[p.name] = {
         room: `Room ${roomNum}`,
@@ -2030,7 +2032,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     });
 
     setPassengerAllocations(newAllocs);
-    toast.success(`Auto-allocated: couples in 2-sharing, same-gender ${sharingPref}-sharing rooms.`);
+    toast.success(`Auto-allocated: couples in 2-sharing, same-gender 3/4 sharing rooms.`);
   };
 
 
