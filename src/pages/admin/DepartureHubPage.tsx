@@ -324,11 +324,7 @@ export default function DepartureHubPage() {
 
 
   const [passengerAllocations, setPassengerAllocations] = useState<Record<string, { room: string, vehicle: string, seat: string }>>({});
-  const [allocFleet, setAllocFleet] = useState<any[]>([
-    { id: "tempo-1", name: "Tempo 1", vehicleType: "13 Seater Tempo", capacity: 13, cost: 45000, vendor: "ABC Travels" },
-    { id: "tempo-2", name: "Tempo 2", vehicleType: "17 Seater Tempo", capacity: 17, cost: 58000, vendor: "XYZ Travels" },
-    { id: "car-1", name: "Car 1", vehicleType: "6 Seater Car", capacity: 6, cost: 22000, vendor: "Self-driven" }
-  ]);
+  const [allocFleet, setAllocFleet] = useState<any[]>([]);
   const [newVehicleType, setNewVehicleType] = useState("17 Seater Tempo");
   const [newVehicleName, setNewVehicleName] = useState("");
   const [newVehicleCost, setNewVehicleCost] = useState("");
