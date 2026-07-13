@@ -2014,12 +2014,16 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       }
     };
 
-    // Step 2: Allocate remaining boys
-    const remainingMales = activeTravelers.filter(p => p.gender === "Male" && !allocated.has(p.name));
+    // Step 2: Allocate remaining boys sorted by age
+    const remainingMales = activeTravelers
+      .filter(p => p.gender === "Male" && !allocated.has(p.name))
+      .sort((a, b) => (a.age || 0) - (b.age || 0));
     allocateSameGender(remainingMales);
 
-    // Step 3: Allocate remaining girls
-    const remainingFemales = activeTravelers.filter(p => p.gender === "Female" && !allocated.has(p.name));
+    // Step 3: Allocate remaining girls sorted by age
+    const remainingFemales = activeTravelers
+      .filter(p => p.gender === "Female" && !allocated.has(p.name))
+      .sort((a, b) => (a.age || 0) - (b.age || 0));
     allocateSameGender(remainingFemales);
 
     // Step 4: Anyone still unallocated (no gender set, etc.)
