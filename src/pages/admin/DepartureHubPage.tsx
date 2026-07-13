@@ -1632,11 +1632,53 @@ export default function DepartureHubPage() {
     bookings.forEach((b: any) => {
       const due = (b.totalAmount || 0) - (b.advancePaid || 0);
       const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
-      const base = { bookingId: b.id, bookingDate: b.createdAt?.substring(0,10) || "2027-06-15", departureDate: b.departureDate?.substring(0,10) || departureDateStr, batchGroup:"Batch 1", gender:b.gender||"Male", age:b.age||24, phone:b.phone||b.mobile||"—", email:b.email||"—", pickupPoint:b.pickupCity||"Ahmedabad", dropPoint:"Manali", roomSharing:"Triple", roomType:"Deluxe", emergencyContact:"9876543211", roomNo:b.passengers?.details?.roomAllocation||"—", paymentStatus:paymentLabel, amount:b.totalAmount||12000, paidAmount:b.advancePaid||0, balance:due>0?due:0, paymentMode:"UPI", paymentDate:"2027-06-16", idProofType:"Aadhar Card", guideName:"Dikshu Sharma", transportDetails:"Tempo Traveller AC", notes:"No special requirements", hasDocs:!!b.passengers?.details?.idProof };
-      arr.push({ id:b.id, name:b.fullName||b.name, ...base });
+      const base = { 
+        bookingId: b.id, 
+        bookingRef: b.bookingId || b.id,
+        bookingDate: b.createdAt?.substring(0,10) || "2027-06-15", 
+        departureDate: b.departureDate?.substring(0,10) || departureDateStr, 
+        batchGroup:"Batch 1", 
+        gender:b.gender||"Male", 
+        age:b.age||24, 
+        phone:b.phone||b.mobile||"—", 
+        email:b.email||"—", 
+        pickupPoint:b.pickupCity||"Ahmedabad", 
+        dropPoint:"Manali", 
+        roomSharing:b.passengers?.details?.roomType||"Triple", 
+        roomType:"Deluxe", 
+        emergencyContact:"9876543211", 
+        roomNo:b.passengers?.details?.roomAllocation||"—", 
+        paymentStatus:paymentLabel, 
+        amount:b.totalAmount||12000, 
+        paidAmount:b.advancePaid||0, 
+        balance:due>0?due:0, 
+        paymentMode:"UPI", 
+        paymentDate:"2027-06-16", 
+        idProofType:"Aadhar Card", 
+        guideName:"Dikshu Sharma", 
+        transportDetails:"Tempo Traveller AC", 
+        notes:b.notes||"No special requirements", 
+        hasDocs:!!b.passengers?.details?.idProof,
+        leadPassengerName: b.fullName || b.name
+      };
+      arr.push({ id:b.id, name:b.fullName||b.name, ...base, isLead: true });
       if (Array.isArray(b.passengers?.persons)) {
         b.passengers.persons.forEach((p: any, idx: number) => {
-          arr.push({ id:`${b.id}-co-${idx}`, name:p.name, ...base, phone:p.phone||b.phone||"—", email:p.email||"—", pickupPoint:p.pickupPoint||b.pickupCity||"Ahmedabad", amount:0, paidAmount:0, balance:0, notes:"Co-traveler" });
+          arr.push({ 
+            id:`${b.id}-co-${idx}`, 
+            name:p.name, 
+            ...base, 
+            phone:p.phone||b.phone||"—", 
+            email:p.email||"—", 
+            pickupPoint:p.pickupPoint||b.pickupCity||"Ahmedabad", 
+            amount:0, 
+            paidAmount:0, 
+            balance:0, 
+            notes:"Co-traveler", 
+            isLead: false,
+            gender: p.gender || "Male",
+            age: p.age || 24
+          });
         });
       }
     });
@@ -2508,31 +2550,50 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
-                  {paginatedPassengers.map((p, idx) => (
-                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3"><input type="checkbox" className="rounded-[2px] border-slate-300" /></td>
-                      <td className="p-3">
-                        <div className="font-bold text-slate-800 hover:text-blue-600 hover:underline cursor-pointer" onClick={() => handleOpenBookingDetails(p.bookingId || p.id)}>
-                           {p.name}
-                         </div>
-                        <div className="text-[10px] text-slate-400">{p.gender}, {p.age} yrs</div>
-                      </td>
-                      <td className="p-3 font-mono text-slate-600">{p.phone}</td>
-                      <td className="p-3 font-semibold text-slate-700">{p.pickupPoint}</td>
-                      
-                      <td className="p-3"><StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} /></td>
-                      <td className="p-3 text-right font-bold text-slate-700">₹{p.amount.toLocaleString("en-IN")}</td>
-                      <td className={cn("p-3 text-right font-bold", p.balance>0?"text-red-600":"text-emerald-600")}>₹{p.balance.toLocaleString("en-IN")}</td>
-                      <td className="p-3 text-center"><FileText className={cn("w-4 h-4 mx-auto", p.hasDocs?"text-emerald-500":"text-slate-300")} /></td>
-                      <td className="p-3 text-center">
-                        <div className="flex gap-2 justify-center">
-                          <MessageSquare className="w-4 h-4 text-green-500 cursor-pointer hover:opacity-80" />
-                          <PhoneCall className="w-3.5 h-3.5 text-blue-500 cursor-pointer hover:opacity-80" />
-                          <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer hover:opacity-80" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {paginatedPassengers.map((p, idx) => {
+                    const isNewGroup = idx === 0 || paginatedPassengers[idx - 1].bookingId !== p.bookingId;
+                    return (
+                      <React.Fragment key={p.id}>
+                        {isNewGroup && (
+                          <tr className="bg-slate-50 font-semibold text-slate-700 border-t border-[#E2E8F0]">
+                            <td colSpan={9} className="p-2.5 pl-3 text-[10px] uppercase tracking-wider text-slate-500 font-bold bg-slate-100/50">
+                              📦 Booking: <span className="text-blue-600 font-extrabold hover:underline cursor-pointer" onClick={() => handleOpenBookingDetails(p.bookingId)}>{p.bookingRef}</span> — {p.leadPassengerName}'s Group
+                            </td>
+                          </tr>
+                        )}
+                        <tr className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-3"><input type="checkbox" className="rounded-[2px] border-slate-300" /></td>
+                          <td className="p-3 pl-4">
+                            <div className="flex items-center gap-1.5">
+                              <div className={cn("font-bold text-slate-800 hover:text-blue-600 hover:underline cursor-pointer", !p.isLead && "text-slate-650 font-semibold pl-2 border-l border-slate-300")} onClick={() => handleOpenBookingDetails(p.bookingId)}>
+                                {p.name}
+                              </div>
+                              {!p.isLead && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                  co-traveler
+                                </span>
+                              )}
+                            </div>
+                            <div className={cn("text-[10px] text-slate-400", !p.isLead && "pl-4")}>{p.gender}, {p.age} yrs</div>
+                          </td>
+                          <td className="p-3 font-mono text-slate-600">{p.phone}</td>
+                          <td className="p-3 font-semibold text-slate-700">{p.pickupPoint}</td>
+                          
+                          <td className="p-3"><StatusBadge status={p.paymentStatus === "Paid in Full" ? "PAID" : p.paymentStatus === "Partial Payment" ? "PARTIALLY PAID" : "UNPAID"} /></td>
+                          <td className="p-3 text-right font-bold text-slate-700">₹{p.amount.toLocaleString("en-IN")}</td>
+                          <td className={cn("p-3 text-right font-bold", p.balance>0?"text-red-650":"text-emerald-600")}>₹{p.balance.toLocaleString("en-IN")}</td>
+                          <td className="p-3 text-center"><FileText className={cn("w-4 h-4 mx-auto", p.hasDocs?"text-emerald-500":"text-slate-300")} /></td>
+                          <td className="p-3 text-center">
+                            <div className="flex gap-2 justify-center">
+                              <MessageSquare className="w-4 h-4 text-green-500 cursor-pointer hover:opacity-80" />
+                              <PhoneCall className="w-3.5 h-3.5 text-blue-500 cursor-pointer hover:opacity-80" />
+                              <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer hover:opacity-80" />
+                            </div>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    );
+                  })}
                   {paginatedPassengers.length === 0 && (
                     <tr><td colSpan={10} className="text-center p-10 text-slate-400 font-semibold">No passengers found.</td></tr>
                   )}
