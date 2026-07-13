@@ -1937,7 +1937,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             // Couple → 2-sharing room
             group.forEach(p => {
               newAllocs[p.name] = {
-                room: `Group No. ${roomNum}`,
+                room: `Room ${roomNum}`,
                 vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
                 seat: String(seatNum++)
               };
@@ -1957,7 +1957,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         if (allFemale || allMale) {
           group.forEach(p => {
             newAllocs[p.name] = {
-              room: `Group No. ${roomNum}`,
+              room: `Room ${roomNum}`,
               vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
               seat: String(seatNum++)
             };
@@ -1974,7 +1974,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     let maleCount = 0;
     remainingMales.forEach(p => {
       newAllocs[p.name] = {
-        room: `Group No. ${roomNum}`,
+        room: `Room ${roomNum}`,
         vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
         seat: String(seatNum++)
       };
@@ -1997,7 +1997,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     let femaleCount = 0;
     remainingFemales.forEach(p => {
       newAllocs[p.name] = {
-        room: `Group No. ${roomNum}`,
+        room: `Room ${roomNum}`,
         vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
         seat: String(seatNum++)
       };
@@ -2012,7 +2012,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     // Step 5: Anyone still unallocated (no gender set, etc.)
     activeTravelers.filter(p => !allocated.has(p.name)).forEach(p => {
       newAllocs[p.name] = {
-        room: `Group No. ${roomNum}`,
+        room: `Room ${roomNum}`,
         vehicle: allocFleet.length > 0 ? allocFleet[0].name : "Tempo 1",
         seat: String(seatNum++)
       };
