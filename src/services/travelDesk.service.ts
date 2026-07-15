@@ -215,8 +215,32 @@ export const travelDeskService = {
     const res = await api.get(`/travel-desk/documents/${tripId}`);
     return res.data;
   },
-  createDocument: async (data: Partial<TripDocument>): Promise<TripDocument> => {
-    const res = await api.post(`/travel-desk/documents`, data);
+  uploadDocuments: async (
+    tripId: string,
+    files: File[],
+    category?: string,
+    visibility?: string,
+    validFrom?: string,
+    validUntil?: string
+  ): Promise<any> => {
+    const formData = new FormData();
+    formData.append('tripId', tripId);
+    if (category) formData.append('category', category);
+    if (visibility) formData.append('visibility', visibility);
+    if (validFrom) formData.append('validFrom', validFrom);
+    if (validUntil) formData.append('validUntil', validUntil);
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    const res = await api.post(`/travel-desk/documents/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return res.data;
+  },
+  reviewDocument: async (id: string, status: string, approvalDetails?: any): Promise<TripDocument> => {
+    const res = await api.put(`/travel-desk/documents/${id}/status`, { status, approvalDetails });
     return res.data.data;
   },
   deleteDocument: async (id: string): Promise<void> => {
@@ -252,4 +276,65 @@ export const travelDeskService = {
   deleteNote: async (id: string): Promise<void> => {
     await api.delete(`/travel-desk/notes/${id}`);
   },
+
+  // ── KNOWLEDGE BASE ITEMS ──
+  getKnowledgeItems: async (tripId: string, filters?: { category?: string; search?: string; status?: string }): Promise<any[]> => {
+    const res = await api.get(`/travel-desk/knowledge-items/${tripId}`, { params: filters });
+    return res.data.data;
+  },
+  updateKnowledgeItem: async (id: string, data: any): Promise<any> => {
+    const res = await api.put(`/travel-desk/knowledge-items/${id}`, data);
+    return res.data.data;
+  },
+
+  // ── TRAVEL AI ──
+  askTravelAi: async (tripId: string, message: string): Promise<{ answer: string; answerUnavailable?: boolean }> => {
+    const res = await api.post(`/travel-desk/ai/chat`, { tripId, message });
+    return res.data;
+  },
+
+  // ── ESCALATED QUESTIONS ──
+  getEscalatedQuestions: async (tripId: string): Promise<any[]> => {
+    const res = await api.get(`/travel-desk/questions/${tripId}`);
+    return res.data.data;
+  },
+  createEscalatedQuestion: async (tripId: string, question: string, escalatedTo: string): Promise<any> => {
+    const res = await api.post(`/travel-desk/questions`, { tripId, question, escalatedTo });
+    return res.data.data;
+  },
+  answerEscalatedQuestion: async (id: string, answer: string, status: string): Promise<any> => {
+    const res = await api.put(`/travel-desk/questions/${id}/answer`, { answer, status });
+    return res.data.data;
+  },
+
+  // ── TRIP NOTICES & UPDATES ACKS ──
+  acknowledgeNotice: async (id: string): Promise<any> => {
+    const res = await api.post(`/travel-desk/notices/${id}/acknowledge`);
+    return res.data.data;
+  },
+  getNoticeAcks: async (id: string): Promise<any[]> => {
+    const res = await api.get(`/travel-desk/notices/${id}/acks`);
+    return res.data.data;
+  },
+
+  // ── QUICK SALES ACTION ──
+  createSalesRecord: async (data: {
+    type: 'inquiry' | 'quotation' | 'booking';
+    tripId: string;
+    departureDate?: string;
+    joiningCity?: string;
+    price?: number;
+    passengerName: string;
+    passengerPhone?: string;
+    passengerEmail?: string;
+  }): Promise<any> => {
+    const res = await api.post(`/travel-desk/create-record`, data);
+    return res.data.data;
+  },
+
+  bulkCreateTrips: async (trips?: string[]): Promise<any> => {
+    const res = await api.post(`/travel-desk/bulk-trips`, { trips });
+    return res.data;
+  }
 };
+

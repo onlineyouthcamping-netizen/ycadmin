@@ -74,6 +74,11 @@ export const bookingsService = {
     await api.delete(`/bookings/${id}`);
   },
 
+  async cancelWithRefund(id: string, data: { reason: string; cancellationCharges: number; refundAmount: number; refundPaymentMode: string }): Promise<Booking> {
+    const res = await api.post(`/bookings/${id}/cancel`, data);
+    return res.data.booking;
+  },
+
   // ── TRIPS ──
 
   async getTrips(): Promise<BookingTrip[]> {

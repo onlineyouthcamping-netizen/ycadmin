@@ -83,14 +83,19 @@ export interface OpsTransportFleet {
   id?: string;
   departureDate?: string;
   vehicleType: string;
+  vehicleNumber?: string;      // registration plate
   capacity: number;
   vendorId?: string;
-  vendor?: { id: string; name: string };
+  vendor?: { id: string; name: string; phone?: string };
   driverName?: string;
   driverPhone?: string;
   route?: string;
   pickupPoints?: string;
   dropPoints?: string;
+  reportingTime?: string;      // HH:MM
+  departureTime?: string;      // HH:MM
+  confirmationStatus?: string; // UNCONFIRMED | CONFIRMED | CANCELLED
+  paymentDueDate?: string;
   totalAmount?: number;
   advancePaid?: number;
   balanceAmount?: number;
@@ -106,6 +111,37 @@ export interface OpsRoomInventory {
   capacity: number;
   hotelName?: string;
   notes?: string;
+}
+
+export interface OpsActivity {
+  id?: string;
+  tenantId?: string;
+  tripId?: string;
+  departureDate?: string;
+  dayNumber: number;
+  date?: string;
+  name: string;
+  type: string;
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  description?: string;
+  responsibleGuideId?: string;
+  responsibleGuide?: { id: string; name: string; email: string };
+  responsibleStaff?: string;
+  vendorId?: string;
+  vendor?: { id: string; name: string; type: string };
+  vendorName?: string;
+  estimatedCost: number;
+  actualCost: number;
+  maxParticipants: number;
+  safetyInstructions?: string;
+  requiredEquipment?: string;
+  status: string;
+  remarks?: string;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const opsService = {
@@ -152,6 +188,10 @@ export const opsService = {
     const res = await api.post(`/ops/transport/${tripId}${q}`, data);
     return res.data?.data;
   },
+  async updateTransportFleet(id: string, data: Partial<OpsTransportFleet>): Promise<OpsTransportFleet> {
+    const res = await api.put(`/ops/transport/${id}`, data);
+    return res.data?.data;
+  },
   async deleteTransportFleet(id: string): Promise<void> {
     await api.delete(`/ops/transport/${id}`);
   },
@@ -168,6 +208,40 @@ export const opsService = {
   },
   async deleteRoomInventory(id: string): Promise<void> {
     await api.delete(`/ops/rooms/${id}`);
+  },
+
+  // ── GUIDE PAYMENTS ──
+  async getGuidePayments(tripId: string, departureDate?: string): Promise<any[]> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : '';
+    const res = await api.get(`/ops/guides/${tripId}${q}`);
+    return res.data?.data || [];
+  },
+  async createGuidePayment(tripId: string, data: {
+    guideName: string;
+    guideAdminId?: string;
+    vendorId?: string;
+    assignmentType?: string;
+    assignmentStatus?: string;
+    startDate?: string;
+    endDate?: string;
+    reportingLocation?: string;
+    reportingTime?: string;
+    emergencyContact?: string;
+    daysWorked?: number;
+    agreedAmount: number;
+    advancePaid?: number;
+    notes?: string;
+  }, departureDate?: string): Promise<any> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : '';
+    const res = await api.post(`/ops/guides/${tripId}${q}`, data);
+    return res.data?.data;
+  },
+  async updateGuidePayment(id: string, data: any): Promise<any> {
+    const res = await api.put(`/ops/guides/${id}`, data);
+    return res.data?.data;
+  },
+  async deleteGuidePayment(id: string): Promise<void> {
+    await api.delete(`/ops/guides/${id}`);
   },
 
   async getAccountingSummary(tripId: string, departureDate?: string): Promise<OpsAccountingSummary> {
@@ -298,6 +372,171 @@ export const opsService = {
 
   async restoreTripLeader(tripId: string, departureDate: string, id?: string, leaderPhone?: string): Promise<any> {
     const res = await api.post(`/ops/leaders/${tripId}/restore`, { departureDate, id, leaderPhone });
+    return res.data;
+  },
+
+  async getActivities(tripId: string, departureDate?: string): Promise<OpsActivity[]> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.get(`/ops/activities/${tripId}${q}`);
+    return res.data?.data || [];
+  },
+
+  async createActivity(tripId: string, data: Partial<OpsActivity>, departureDate?: string): Promise<OpsActivity> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.post(`/ops/activities/${tripId}${q}`, data);
+    return res.data?.data;
+  },
+
+  async updateActivity(tripId: string, id: string, data: Partial<OpsActivity>, departureDate?: string): Promise<OpsActivity> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.put(`/ops/activities/${tripId}/${id}${q}`, data);
+    return res.data?.data;
+  },
+
+  async deleteActivity(id: string): Promise<void> {
+    await api.delete(`/ops/activities/${id}`);
+  },
+
+  async copyActivities(tripId: string, fromTripId: string, fromDepartureDate: string, departureDate?: string): Promise<any> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.post(`/ops/activities/${tripId}/copy${q}`, { fromTripId, fromDepartureDate });
+    return res.data;
+  },
+
+  async getClientPayments(tripId: string, departureDate: string): Promise<{ bookings: any[]; receipts: any[] }> {
+    const res = await api.get(`/ops/payments/client/${tripId}?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data || { bookings: [], receipts: [] };
+  },
+  async addClientPayment(bookingId: string, data: any): Promise<any> {
+    const res = await api.post(`/ops/payments/client/add/${bookingId}`, data);
+    return res.data?.data;
+  },
+  async verifyClientPayment(id: string, status: string, remarks?: string): Promise<any> {
+    const res = await api.patch(`/ops/payments/client/verify/${id}`, { status, remarks });
+    return res.data?.data;
+  },
+  async getVendorPayments(tripId: string, departureDate: string): Promise<any[]> {
+    const res = await api.get(`/ops/payments/vendor/${tripId}?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data || [];
+  },
+  async createVendorPayment(tripId: string, data: any): Promise<any> {
+    const res = await api.post(`/ops/payments/vendor/${tripId}`, data);
+    return res.data?.data;
+  },
+  async updateVendorPayment(tripId: string, id: string, data: any): Promise<any> {
+    const res = await api.put(`/ops/payments/vendor/${tripId}/${id}`, data);
+    return res.data?.data;
+  },
+  async deleteVendorPayment(id: string): Promise<void> {
+    await api.delete(`/ops/payments/vendor/${id}`);
+  },
+  async getPaymentsDashboardStats(tripId: string, departureDate: string): Promise<any> {
+    const res = await api.get(`/ops/payments/dashboard/${tripId}?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data;
+  },
+
+  // Checklist/Tasks Endpoints
+  async getTasks(tripId: string, departureDate: string): Promise<any[]> {
+    const res = await api.get(`/ops/tasks-docs-comm/tasks/${tripId}?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data || [];
+  },
+  async createTask(tripId: string, departureDate: string, data: any): Promise<any> {
+    const res = await api.post(`/ops/tasks-docs-comm/tasks/${tripId}?departureDate=${encodeURIComponent(departureDate)}`, data);
+    return res.data?.data;
+  },
+  async updateTask(tripId: string, departureDate: string, id: string, data: any): Promise<any> {
+    const res = await api.put(`/ops/tasks-docs-comm/tasks/${tripId}/${id}?departureDate=${encodeURIComponent(departureDate)}`, data);
+    return res.data?.data;
+  },
+  async deleteTask(id: string): Promise<void> {
+    await api.delete(`/ops/tasks-docs-comm/tasks/${id}`);
+  },
+
+  // Documents Endpoints
+  async getDocuments(tripId: string, departureDate: string): Promise<any[]> {
+    const res = await api.get(`/ops/tasks-docs-comm/documents/${tripId}?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data || [];
+  },
+  async createDocument(tripId: string, departureDate: string, data: any): Promise<any> {
+    const res = await api.post(`/ops/tasks-docs-comm/documents/${tripId}?departureDate=${encodeURIComponent(departureDate)}`, data);
+    return res.data?.data;
+  },
+  async verifyDocument(id: string, status: string, remarks?: string): Promise<any> {
+    const res = await api.patch(`/ops/tasks-docs-comm/documents/verify/${id}`, { status, remarks });
+    return res.data?.data;
+  },
+  async deleteDocument(id: string): Promise<void> {
+    await api.delete(`/ops/tasks-docs-comm/documents/${id}`);
+  },
+
+  // Communication Endpoints
+  async getMessages(tripId: string, departureDate: string): Promise<any[]> {
+    const res = await api.get(`/ops/tasks-docs-comm/messages/${tripId}?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data || [];
+  },
+  async createMessage(tripId: string, departureDate: string, data: any): Promise<any> {
+    const res = await api.post(`/ops/tasks-docs-comm/messages/${tripId}?departureDate=${encodeURIComponent(departureDate)}`, data);
+    return res.data?.data;
+  },
+
+  // Allocation Endpoints
+  async saveManualAllocations(tripId: string, departureDate: string, data: {
+    roomAllocations: Array<{
+      roomNumber: string; roomType: string; genderGroup: string;
+      bookingId: string; travelerName: string;
+      sharingType?: string; hotelBookingId?: string; notes?: string;
+    }>;
+    vehicleAllocations: Array<{
+      fleetId: string; bookingId: string; travelerName: string;
+      seatNumber?: number; routeSegment?: string; pickupPoint?: string;
+    }>;
+    clearExisting?: boolean;
+  }): Promise<any> {
+    const res = await api.post(`/ops/auto-allocate/manual-save`, {
+      tripId,
+      departureDate,
+      ...data
+    });
+    return res.data;
+  },
+
+  async getConfirmedAllocations(tripId: string, departureDate: string): Promise<{
+    rooms: any[];
+    vehicles: any[];
+    summary: { totalRoomAllocations: number; totalVehicleAllocations: number; vehicleCapacitySummary: any[] };
+  }> {
+    const res = await api.get(`/ops/auto-allocate/${tripId}/confirmed?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data || { rooms: [], vehicles: [], summary: { totalRoomAllocations: 0, totalVehicleAllocations: 0, vehicleCapacitySummary: [] } };
+  },
+
+  async getTransportPassengerGroups(tripId: string, departureDate: string): Promise<any> {
+    const res = await api.get(`/ops/transport/${tripId}/passenger-groups?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data;
+  },
+
+  async getReportData(tripId: string, departureDate: string): Promise<any> {
+    const res = await api.get(`/ops/tasks-docs-comm/reports/${tripId}?departureDate=${encodeURIComponent(departureDate)}`);
+    return res.data?.data;
+  },
+
+  async getHotelBookings(tripId: string, departureDate?: string): Promise<any[]> {
+    const q = departureDate ? `?departureDate=${encodeURIComponent(departureDate)}` : "";
+    const res = await api.get(`/ops/hotels/${tripId}${q}`);
+    return res.data?.data || [];
+  },
+
+  async saveHotelBookings(tripId: string, departureDate: string, hotels: any[]): Promise<any> {
+    const res = await api.post(`/ops/hotels/${tripId}?departureDate=${encodeURIComponent(departureDate)}`, { hotels });
+    return res.data;
+  },
+
+  async saveHotelOverride(tripId: string, data: any): Promise<any> {
+    const res = await api.post(`/ops/hotels/${tripId}/override`, data);
+    return res.data;
+  },
+
+  async resetHotelOverride(tripId: string, data: any): Promise<any> {
+    const res = await api.post(`/ops/hotels/${tripId}/reset-override`, data);
     return res.data;
   }
 };

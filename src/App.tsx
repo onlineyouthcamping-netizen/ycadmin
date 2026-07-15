@@ -32,6 +32,7 @@ const PageBuilderPage = lazy(() => import("./pages/admin/PageBuilderPage.tsx"));
 const PreviewPage = lazy(() => import("./pages/admin/PreviewPage.tsx"));
 const AttractionsPage = lazy(() => import("./pages/admin/AttractionsPage.tsx"));
 const VendorsPage = lazy(() => import("./pages/admin/VendorsPage.tsx"));
+const VendorDirectoryPage = lazy(() => import("./pages/admin/VendorDirectoryPage.tsx"));
 const BookingLinksPage = lazy(() => import("./pages/admin/BookingLinksPage.tsx"));
 const QuotationsPage = lazy(() => import("./pages/admin/QuotationsPage.tsx"));
 const QuotationFormPage = lazy(() => import("./pages/admin/QuotationFormPage.tsx"));
@@ -175,6 +176,7 @@ const App = () => (
               <Route path="/admin/inquiries" element={<AdminRoute requiredPermission="inquiries.view"><InquiriesPage /></AdminRoute>} />
               <Route path="/admin/media" element={<AdminRoute requiredPermission="settings.view"><MediaPage /></AdminRoute>} />
               <Route path="/admin/vendors" element={<AdminRoute requiredPermission="settings.view"><VendorsPage /></AdminRoute>} />
+              <Route path="/admin/vendor-directory" element={<AdminRoute requiredPermission="settings.view"><VendorDirectoryPage /></AdminRoute>} />
               <Route path="/admin/booking-forms" element={<AdminRoute requiredPermission="bookings.view"><BookingLinksPage /></AdminRoute>} />
               <Route path="/admin/quotations" element={<AdminRoute requiredPermission="quotations.view"><QuotationsPage /></AdminRoute>} />
               <Route path="/admin/quotations/:id" element={<AdminRoute requiredPermission="quotations.view"><QuotationFormPage /></AdminRoute>} />

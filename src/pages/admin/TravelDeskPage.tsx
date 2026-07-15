@@ -43,10 +43,10 @@ const tabs = [
 const quickActionsMap: Record<string, { icon: React.ComponentType<any>; label: string }[]> = {
   "Knowledge Hub": [
     { icon: FilePlusIcon, label: "Upload Document" },
-    { icon: FilePlusIcon, label: "Add New SOP" },
-    { icon: MessageSquare, label: "Create FAQ" },
-    { icon: TicketIcon, label: "Add Ticketing SOP" },
-    { icon: Bell, label: "Add Update / Notice" }
+    { icon: Bell, label: "Add Update / Notice" },
+    { icon: ExternalLink, label: "Create Inquiry" },
+    { icon: ExternalLink, label: "Create Quotation" },
+    { icon: ExternalLink, label: "Create Booking" }
   ],
   "Ticketing": [
     { icon: TicketIcon, label: "Add Ticketing SOP" },
@@ -136,6 +136,8 @@ export default function TravelDeskPage() {
   const [itinerarySubTab, setItinerarySubTab] = useState<"days" | "routeMap" | "inclusions" | "exclusions" | "notes">("days");
   const [showAddItinerary, setShowAddItinerary] = useState(false);
   const [newItineraryName, setNewItineraryName] = useState("");
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [newNoteBody, setNewNoteBody] = useState("");
 
   // Tab 4: SOPs state
   const [tripSops, setTripSops] = useState<TripSop[]>([]);
@@ -160,26 +162,59 @@ export default function TravelDeskPage() {
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [isLoadingTabs, setIsLoadingTabs] = useState(false);
 
-  useEffect(() => {
-    const loadTrips = async () => {
-      try {
-        const allTrips = await tripsService.getAll();
-        setTrips(allTrips || []);
-        const matching = (allTrips || []).find(t => {
-          const type = t.tripType?.toLowerCase() || t.category?.toLowerCase() || "";
-          return tripTypeFilter === "international" 
-            ? (type === "international" || t.location.toLowerCase().includes("vietnam"))
-            : (type === "domestic" || (!type && !t.location.toLowerCase().includes("vietnam")));
-        });
-        if (matching) {
-          setActiveTrip(matching);
-        } else if (allTrips && allTrips.length > 0) {
-          setActiveTrip(allTrips[0]);
-        }
-      } catch (err) {
-        console.error("Failed to load trips:", err);
+  // --- Travel Desk Functional States ───
+  const [isKnowledgeListOpen, setIsKnowledgeListOpen] = useState(false);
+  const [knowledgeItems, setKnowledgeItems] = useState<any[]>([]);
+  const [knowledgeSearch, setKnowledgeSearch] = useState("");
+  const [knowledgeStatusFilter, setKnowledgeStatusFilter] = useState("all");
+  const [editingKnowledgeItem, setEditingKnowledgeItem] = useState<any | null>(null);
+
+  const [aiMessages, setAiMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; answerUnavailable?: boolean }>>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  const [uploadFiles, setUploadFiles] = useState<FileList | null>(null);
+  const [uploadCategory, setUploadCategory] = useState("Trip Documents");
+  const [uploadVisibility, setUploadVisibility] = useState("internal");
+  const [uploadValidFrom, setUploadValidFrom] = useState("");
+  const [uploadValidUntil, setUploadValidUntil] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  const [showEscalateModal, setShowEscalateModal] = useState(false);
+  const [escalationQuestion, setEscalationQuestion] = useState("");
+  const [escalateTo, setEscalateTo] = useState("Product");
+
+  const [showCreateRecordModal, setShowCreateRecordModal] = useState(false);
+  const [createRecordType, setCreateRecordType] = useState<'inquiry' | 'quotation' | 'booking'>('booking');
+  const [passengerName, setPassengerName] = useState("");
+  const [passengerPhone, setPassengerPhone] = useState("");
+  const [passengerEmail, setPassengerEmail] = useState("");
+  const [joiningCity, setJoiningCity] = useState("");
+  const [price, setPrice] = useState(0);
+  const [departureDate, setDepartureDate] = useState("");
+
+
+  const loadTrips = async () => {
+    try {
+      const allTrips = await tripsService.getAll();
+      setTrips(allTrips || []);
+      const matching = (allTrips || []).find(t => {
+        const type = t.tripType?.toLowerCase() || t.category?.toLowerCase() || "";
+        return tripTypeFilter === "international" 
+          ? (type === "international" || t.location.toLowerCase().includes("vietnam"))
+          : (type === "domestic" || (!type && !t.location.toLowerCase().includes("vietnam")));
+      });
+      if (matching) {
+        setActiveTrip(matching);
+      } else if (allTrips && allTrips.length > 0) {
+        setActiveTrip(allTrips[0]);
       }
-    };
+    } catch (err) {
+      console.error("Failed to load trips:", err);
+    }
+  };
+
+  useEffect(() => {
     loadTrips();
   }, []);
 
@@ -308,21 +343,189 @@ export default function TravelDeskPage() {
     return match ? match.itemCount : 0;
   };
 
-  const handleCardClick = (metaTitle: string) => {
-    const targetTabKey = tabKeyMap[metaTitle] || metaTitle;
-    const match = sections.find(s => s.tabKey.toLowerCase().replace(/\s/g, "") === targetTabKey.toLowerCase().replace(/\s/g, ""));
-    
-    setSelectedTabKey(targetTabKey);
-    if (match) {
-      setSectionTitle(match.title);
-      setSectionDesc(match.description);
-      setSectionItemCount(match.itemCount);
-    } else {
-      setSectionTitle(metaTitle);
-      setSectionDesc("");
-      setSectionItemCount(0);
+  const loadFilteredKnowledgeItems = async (cat?: string) => {
+    if (!activeTrip) return;
+    const category = cat || selectedTabKey;
+    try {
+      const items = await travelDeskService.getKnowledgeItems(activeTrip.id, {
+        category,
+        search: knowledgeSearch || undefined,
+        status: knowledgeStatusFilter === "all" ? undefined : knowledgeStatusFilter
+      });
+      setKnowledgeItems(items || []);
+    } catch (err) {
+      console.error("Failed to load filtered knowledge items:", err);
     }
-    setIsEditSectionOpen(true);
+  };
+
+  useEffect(() => {
+    if (isKnowledgeListOpen) {
+      loadFilteredKnowledgeItems();
+    }
+  }, [knowledgeSearch, knowledgeStatusFilter, isKnowledgeListOpen]);
+
+  const handleCardClick = async (metaTitle: string) => {
+    if (!activeTrip) return;
+    const targetTabKey = tabKeyMap[metaTitle] || metaTitle;
+    setSelectedTabKey(targetTabKey);
+    setKnowledgeSearch("");
+    setKnowledgeStatusFilter("all");
+    setIsKnowledgeListOpen(true);
+    await loadFilteredKnowledgeItems(targetTabKey);
+  };
+
+  const handleUploadDocuments = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTrip || !uploadFiles || uploadFiles.length === 0) {
+      toast.error("Please select one or more files to upload.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const filesArr = Array.from(uploadFiles);
+      await travelDeskService.uploadDocuments(
+        activeTrip.id,
+        filesArr,
+        uploadCategory,
+        uploadVisibility,
+        uploadValidFrom || undefined,
+        uploadValidUntil || undefined
+      );
+      toast.success("Documents uploaded and knowledge base extracted page-by-page successfully!");
+      setShowAddDoc(false);
+      setUploadFiles(null);
+      
+      // Reload documents and reload trip counts
+      const res = await travelDeskService.getDocuments(activeTrip.id);
+      setDocuments(res.data || []);
+      setDocsSummary(res.summary || {});
+      await reloadTripData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload and process documents.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleReviewDocument = async (docId: string, status: string) => {
+    if (!activeTrip) return;
+    try {
+      await travelDeskService.reviewDocument(docId, status);
+      toast.success(`Document marked as ${status}`);
+      const res = await travelDeskService.getDocuments(activeTrip.id);
+      setDocuments(res.data || []);
+      setDocsSummary(res.summary || {});
+      await reloadTripData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update document status.");
+    }
+  };
+
+  const handleUpdateKnowledgeItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingKnowledgeItem) return;
+    try {
+      await travelDeskService.updateKnowledgeItem(editingKnowledgeItem.id, {
+        title: editingKnowledgeItem.title,
+        content: editingKnowledgeItem.content,
+        category: editingKnowledgeItem.category,
+        status: editingKnowledgeItem.status
+      });
+      toast.success("Knowledge Item updated successfully!");
+      setEditingKnowledgeItem(null);
+      await loadFilteredKnowledgeItems();
+      await reloadTripData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update knowledge item.");
+    }
+  };
+
+  const handleAskAi = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTrip || !aiInput.trim()) return;
+
+    const userMsg = aiInput.trim();
+    setAiMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setAiInput("");
+    setIsAiLoading(true);
+
+    try {
+      const res = await travelDeskService.askTravelAi(activeTrip.id, userMsg);
+      setAiMessages(prev => [...prev, {
+        role: 'assistant',
+        content: res.answer,
+        answerUnavailable: res.answerUnavailable
+      }]);
+    } catch (err) {
+      console.error(err);
+      setAiMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "Sorry, I encountered an error communicating with the AI service."
+      }]);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleEscalateQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTrip || !escalationQuestion.trim()) return;
+    try {
+      await travelDeskService.createEscalatedQuestion(activeTrip.id, escalationQuestion.trim(), escalateTo);
+      toast.success(`Question successfully escalated to ${escalateTo}!`);
+      setShowEscalateModal(false);
+      setEscalationQuestion("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to escalate question.");
+    }
+  };
+
+  const handleAcknowledgeNotice = async (noticeId: string) => {
+    try {
+      await travelDeskService.acknowledgeNotice(noticeId);
+      toast.success("Notice marked as read and understood.");
+      await reloadTripData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to acknowledge update.");
+    }
+  };
+
+  const handleCreateSalesRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTrip || !passengerName.trim()) {
+      toast.error("Passenger name is required.");
+      return;
+    }
+    try {
+      const data = {
+        type: createRecordType,
+        tripId: activeTrip.id,
+        passengerName: passengerName.trim(),
+        passengerPhone: passengerPhone || undefined,
+        passengerEmail: passengerEmail || undefined,
+        joiningCity: joiningCity || undefined,
+        price: price || undefined,
+        departureDate: departureDate || undefined
+      };
+      const res = await travelDeskService.createSalesRecord(data);
+      toast.success(`${createRecordType.toUpperCase()} record created successfully! (ID: ${res.bookingId || res.id})`);
+      setShowCreateRecordModal(false);
+      setPassengerName("");
+      setPassengerPhone("");
+      setPassengerEmail("");
+      setJoiningCity("");
+      setPrice(0);
+      setDepartureDate("");
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed to create ${createRecordType} record.`);
+    }
   };
 
   const reloadTripData = async () => {
@@ -584,6 +787,23 @@ export default function TravelDeskPage() {
                 className="w-full bg-slate-50 border border-slate-200 rounded-[6px] pl-8 pr-3 py-1.5 text-xs placeholder-slate-400 font-bold focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
               />
             </div>
+            <button
+              onClick={async () => {
+                const id = toast.loading("Feeding trips and building sections...");
+                try {
+                  const res = await travelDeskService.bulkCreateTrips();
+                  toast.dismiss(id);
+                  toast.success(`Successfully loaded ${res.count} trips!`);
+                  await loadTrips();
+                } catch (e) {
+                  toast.dismiss(id);
+                  toast.error("Failed to load bulk trips");
+                }
+              }}
+              className="w-full bg-[#FF6B00] hover:bg-orange-655 text-white py-1.5 rounded-[6px] text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer shadow-sm"
+            >
+              <FilePlusIcon className="w-3 h-3" /> Feed Trips & Sections
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -993,19 +1213,74 @@ export default function TravelDeskPage() {
                           )}
 
                           {itinerarySubTab === "notes" && (
-                            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
-                              <h4 className="text-xs font-bold text-slate-900 uppercase">Important Notes</h4>
-                              {(activeItinerary.notes || []).map(n => (
-                                <div key={n.id} className="p-3 border rounded-lg bg-orange-50/20 border-orange-100">
-                                  <p className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                                    <AlertTriangle className="w-3.5 h-3.5 text-[#FF6B00]" /> {n.title}
-                                  </p>
-                                  <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">{n.body}</p>
+                            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4">
+                              <div className="flex justify-between items-center">
+                                <h4 className="text-xs font-bold text-slate-900 uppercase">Important Notes &amp; Explanations</h4>
+                              </div>
+                              <div className="space-y-3">
+                                {(activeItinerary.notes || []).map(n => (
+                                  <div key={n.id} className="p-3 border rounded-lg bg-orange-50/20 border-orange-100">
+                                    <p className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                                      <AlertTriangle className="w-3.5 h-3.5 text-[#FF6B00]" /> {n.title}
+                                    </p>
+                                    <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">{n.body}</p>
+                                  </div>
+                                ))}
+                                {(!activeItinerary.notes || activeItinerary.notes.length === 0) && (
+                                  <p className="text-xs text-slate-450 italic text-center py-2">No important notes or customer explanations provided.</p>
+                                )}
+                              </div>
+
+                              <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (!activeItinerary || !newNoteTitle.trim() || !newNoteBody.trim()) return;
+                                try {
+                                  const existingNotes = activeItinerary.notes || [];
+                                  const updatedNotes = [...existingNotes.map(n => ({ title: n.title, body: n.body })), { title: newNoteTitle.trim(), body: newNoteBody.trim() }];
+                                  const res = await travelDeskService.updateItinerary(activeItinerary.id, {
+                                    notes: updatedNotes
+                                  });
+                                  toast.success("Itinerary note added successfully!");
+                                  // Update itineraries list state
+                                  setItineraries(prev => prev.map(i => i.id === res.id ? res : i));
+                                  setActiveItinerary(res);
+                                  setNewNoteTitle("");
+                                  setNewNoteBody("");
+                                } catch (err) {
+                                  console.error(err);
+                                  toast.error("Failed to add itinerary note");
+                                }
+                              }} className="border-t border-slate-100 pt-4 space-y-3 bg-slate-50/50 p-3 rounded-lg">
+                                <p className="text-xs font-bold text-slate-800">Add Internal Note or Customer Explanation</p>
+                                <div className="space-y-1">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase">Note Type / Title</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={newNoteTitle}
+                                    onChange={e => setNewNoteTitle(e.target.value)}
+                                    placeholder="e.g. Internal Sales Note / Customer Explanation"
+                                    className="w-full bg-white border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                                  />
                                 </div>
-                              ))}
-                              {(!activeItinerary.notes || activeItinerary.notes.length === 0) && (
-                                <p className="text-xs text-slate-450 italic text-center py-4">No important notes provided.</p>
-                              )}
+                                <div className="space-y-1">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase">Content</label>
+                                  <textarea
+                                    required
+                                    rows={3}
+                                    value={newNoteBody}
+                                    onChange={e => setNewNoteBody(e.target.value)}
+                                    placeholder="Type details here..."
+                                    className="w-full bg-white border border-slate-200 rounded-md px-3 py-1.5 text-xs resize-none"
+                                  />
+                                </div>
+                                <button
+                                  type="submit"
+                                  className="w-full bg-[#0F172A] hover:bg-slate-850 text-white font-bold py-1.5 rounded text-xs transition-colors cursor-pointer"
+                                >
+                                  Add Itinerary Note
+                                </button>
+                              </form>
                             </div>
                           )}
                         </div>
@@ -1291,10 +1566,22 @@ export default function TravelDeskPage() {
                   <div
                     key={act.label}
                     onClick={() => {
-                      if (act.label.toLowerCase().includes("notice") || act.label.toLowerCase().includes("update")) {
+                      const lbl = act.label.toLowerCase();
+                      if (lbl.includes("upload document")) {
+                        setShowAddDoc(true);
+                      } else if (lbl.includes("notice") || lbl.includes("update")) {
                         setIsAddNoticeOpen(true);
+                      } else if (lbl.includes("inquiry")) {
+                        setCreateRecordType('inquiry');
+                        setShowCreateRecordModal(true);
+                      } else if (lbl.includes("quotation")) {
+                        setCreateRecordType('quotation');
+                        setShowCreateRecordModal(true);
+                      } else if (lbl.includes("booking")) {
+                        setCreateRecordType('booking');
+                        setShowCreateRecordModal(true);
                       } else {
-                        toast.success(`${act.label} Action Executed Successfully`);
+                        toast.success(`${act.label} Action Executed`);
                       }
                     }}
                     className="flex items-center gap-2 text-xs text-slate-755 py-2 px-2.5 rounded-[6px] hover:bg-slate-50 cursor-pointer transition-all hover:text-[#FF6B00] font-bold"
@@ -1311,23 +1598,66 @@ export default function TravelDeskPage() {
           <div className="border border-slate-200 rounded-lg p-4 shadow-xxs bg-white">
             <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
               <p className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Trip Updates (Latest)</p>
-              <span className="text-[10px] text-[#FF6B00] font-bold cursor-pointer hover:underline" onClick={() => toast.info("Navigating to all updates list")}>View all</span>
+              <span className="text-[10px] text-[#FF6B00] font-bold cursor-pointer hover:underline" onClick={() => setActiveTab("Notes & Updates")}>View all</span>
             </div>
             <div className="space-y-3">
-              {(notices || []).slice(0, 5).map((notice, nIdx) => {
+              {(notices || []).slice(0, 5).map((notice: any, nIdx) => {
                 const isNew = nIdx < 2;
                 const dot = isNew ? "bg-[#FF6B00]" : "bg-slate-300";
+                
+                // Check if user role is sales
+                const isSales = admin?.role === 'sales';
+                // Check if acknowledged
+                const isAcked = notice.acks?.some((a: any) => a.userId === admin?.id);
 
                 return (
-                  <div key={notice.id || nIdx} className="flex items-start gap-2.5">
-                    <span className={cn("w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0", dot)}></span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-1.5">
-                        <p className="text-[11px] font-bold text-slate-800 leading-snug">{notice.title}</p>
-                        {isNew && <span className="text-[8px] bg-rose-50 text-rose-600 px-1 py-0.2 rounded-[4px] font-bold border border-rose-100 flex-shrink-0">NEW</span>}
+                  <div key={notice.id || nIdx} className="flex flex-col gap-1.5 border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+                    <div className="flex items-start gap-2.5">
+                      <span className={cn("w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0", dot)}></span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-1.5">
+                          <p className="text-[11px] font-bold text-slate-800 leading-snug">{notice.title}</p>
+                          {isNew && <span className="text-[8px] bg-rose-50 text-rose-600 px-1 py-0.2 rounded-[4px] font-bold border border-rose-100 flex-shrink-0">NEW</span>}
+                        </div>
+                        <p className="text-[10px] text-slate-650 mt-1">{notice.body}</p>
+                        <p className="text-[9px] text-slate-400 mt-1 font-semibold">
+                          {new Date(notice.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                          {notice.author ? ` • By ${notice.author}` : ''}
+                        </p>
                       </div>
-                      <p className="text-[9px] text-slate-400 mt-1 font-semibold">{new Date(notice.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}</p>
                     </div>
+                    {/* Acknowledgment action */}
+                    {notice.isMajor && (
+                      <div className="pl-4 flex items-center justify-between gap-2 mt-1">
+                        <span className="text-[9px] text-rose-500 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">MAJOR UPDATE</span>
+                        {isSales ? (
+                          isAcked ? (
+                            <span className="text-[9px] text-green-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Acknowledged</span>
+                          ) : (
+                            <button
+                              onClick={() => handleAcknowledgeNotice(notice.id)}
+                              className="text-[9px] bg-[#FF6B00] text-white font-bold px-2 py-1 rounded hover:bg-orange-600 transition-colors cursor-pointer"
+                            >
+                              Read & Understood
+                            </button>
+                          )
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const acks = await travelDeskService.getNoticeAcks(notice.id);
+                                toast.info(`Acks: ${acks.map((a: any) => a.userName).join(', ') || 'No one yet'}`);
+                              } catch (err) {
+                                toast.error("Failed to load acks");
+                              }
+                            }}
+                            className="text-[9px] text-[#FF6B00] hover:underline font-bold cursor-pointer"
+                          >
+                            View Acks ({notice.acks?.length || 0})
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1338,77 +1668,453 @@ export default function TravelDeskPage() {
           </div>
 
           {/* CONVERSATION AI BOX */}
-          <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 shadow-xxs">
-            <p className="text-xs font-bold mb-1 text-slate-800">Need help?</p>
-            <p className="text-[11px] text-slate-500 font-medium mb-3">Search something or ask Travel AI...</p>
-            <button className="w-full bg-[#0F172A] hover:bg-slate-800 text-white text-xs rounded-[6px] py-2 flex items-center justify-center gap-1.5 transition-all font-bold shadow-sm cursor-pointer"
-              onClick={() => toast.info("Ask Travel AI instance ready.")}
-            >
-              <Bot className="w-3.5 h-3.5" /> Ask Travel AI
-            </button>
+          <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 shadow-xxs flex flex-col h-[320px]">
+            <p className="text-xs font-bold mb-1 text-slate-800 flex items-center gap-1.5"><Bot className="w-4 h-4 text-[#FF6B00]" /> Travel AI</p>
+            <div className="flex-1 overflow-y-auto space-y-2 my-2 pr-1 text-[11px] leading-relaxed">
+              {aiMessages.map((msg, idx) => (
+                <div key={idx} className={cn("p-2 rounded-lg max-w-[85%]", msg.role === 'user' ? "bg-slate-100 text-slate-800 ml-auto" : "bg-white border border-slate-200 text-slate-700")}>
+                  <p>{msg.content}</p>
+                  {msg.answerUnavailable && (
+                    <button
+                      onClick={() => {
+                        setEscalationQuestion(aiMessages[idx - 1]?.content || "");
+                        setShowEscalateModal(true);
+                      }}
+                      className="mt-2 w-full text-center text-[10px] bg-[#FF6B00] hover:bg-orange-600 text-white font-bold py-1 rounded cursor-pointer"
+                    >
+                      Escalate Question
+                    </button>
+                  )}
+                </div>
+              ))}
+              {aiMessages.length === 0 && (
+                <p className="text-slate-400 text-center italic py-8">Ask Travel AI anything about the active trip details, visas, or SOPs...</p>
+              )}
+              {isAiLoading && (
+                <div className="flex items-center gap-1 text-slate-400 italic">
+                  <RotateCw className="w-3 h-3 animate-spin" /> Thinking...
+                </div>
+              )}
+            </div>
+            <form onSubmit={handleAskAi} className="flex gap-1 mt-1">
+              <input
+                type="text"
+                value={aiInput}
+                onChange={e => setAiInput(e.target.value)}
+                placeholder="Ask Travel AI..."
+                className="flex-1 bg-white border border-slate-200 rounded-md px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
+              />
+              <button
+                type="submit"
+                disabled={isAiLoading || !aiInput.trim()}
+                className="bg-[#0F172A] hover:bg-slate-800 text-white px-3 py-1 rounded-md text-xs font-bold disabled:opacity-50 cursor-pointer"
+              >
+                Send
+              </button>
+            </form>
           </div>
         </div>
       </div>
 
-      {/* EDIT SECTION MODAL */}
-      {isEditSectionOpen && (
+           {/* KNOWLEDGE LIST & REVIEW MODAL */}
+      {isKnowledgeListOpen && (
         <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-xxs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">Edit Section - {selectedTabKey}</h3>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">Knowledge Items - {selectedTabKey}</h3>
+                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Search, filter, edit and approve extracted document pages</p>
+              </div>
               <button 
-                onClick={() => setIsEditSectionOpen(false)}
-                className="text-slate-400 hover:text-slate-655 transition-colors text-xs font-bold cursor-pointer"
+                onClick={() => setIsKnowledgeListOpen(false)}
+                className="text-slate-400 hover:text-slate-655 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleSaveSection} className="p-5 space-y-4">
+            
+            <div className="p-5 flex-1 overflow-y-auto space-y-4">
+              {/* Search & Filters */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 text-slate-400 w-3.5 h-3.5" />
+                  <input
+                    type="text"
+                    value={knowledgeSearch}
+                    onChange={e => setKnowledgeSearch(e.target.value)}
+                    placeholder="Search text snippets in this section..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
+                  />
+                </div>
+                <select
+                  value={knowledgeStatusFilter}
+                  onChange={e => setKnowledgeStatusFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs text-slate-700 font-bold focus:outline-none"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="PUBLISHED">Published</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+              </div>
+
+              {editingKnowledgeItem ? (
+                /* Edit Sub-form */
+                <form onSubmit={handleUpdateKnowledgeItem} className="bg-slate-50 p-4 border border-slate-200 rounded-lg space-y-3">
+                  <p className="text-xs font-bold text-slate-800">Edit Knowledge Item Details</p>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingKnowledgeItem.title}
+                      onChange={e => setEditingKnowledgeItem({...editingKnowledgeItem, title: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Content Snippet</label>
+                    <textarea
+                      required
+                      rows={5}
+                      value={editingKnowledgeItem.content}
+                      onChange={e => setEditingKnowledgeItem({...editingKnowledgeItem, content: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-md px-3 py-1.5 text-xs resize-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Category Card</label>
+                      <select
+                        value={editingKnowledgeItem.category}
+                        onChange={e => setEditingKnowledgeItem({...editingKnowledgeItem, category: e.target.value})}
+                        className="w-full bg-white border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                      >
+                        {Object.keys(tabKeyMap).map(k => (
+                          <option key={k} value={tabKeyMap[k]}>{k}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
+                      <select
+                        value={editingKnowledgeItem.status}
+                        onChange={e => setEditingKnowledgeItem({...editingKnowledgeItem, status: e.target.value})}
+                        className="w-full bg-white border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                      >
+                        <option value="DRAFT">DRAFT</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="PUBLISHED">PUBLISHED</option>
+                        <option value="ARCHIVED">ARCHIVED</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setEditingKnowledgeItem(null)} className="px-3 py-1.5 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 cursor-pointer">Cancel</button>
+                    <button type="submit" className="px-4 py-1.5 text-xs bg-[#FF6B00] text-white font-bold rounded-md hover:bg-orange-655 cursor-pointer">Save Item</button>
+                  </div>
+                </form>
+              ) : (
+                /* Items List Table */
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-xxs">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-[#F8FAFC] text-slate-500 border-b border-slate-200">
+                      <tr>
+                        <th className="p-3 font-bold uppercase tracking-wider text-[9px] w-1/4">Title / Page</th>
+                        <th className="p-3 font-bold uppercase tracking-wider text-[9px] w-2/5">Snippet Content</th>
+                        <th className="p-3 font-bold uppercase tracking-wider text-[9px]">Source Doc</th>
+                        <th className="p-3 font-bold uppercase tracking-wider text-[9px]">Status</th>
+                        <th className="p-3 font-bold uppercase tracking-wider text-[9px] text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {knowledgeItems.map((item, idx) => (
+                        <tr key={item.id || idx} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                          <td className="p-3">
+                            <p className="font-bold text-slate-800">{item.title}</p>
+                            <p className="text-[9px] text-slate-400 mt-0.5">Page {item.pageNumber} • Ver {item.version}</p>
+                          </td>
+                          <td className="p-3 text-slate-600">
+                            <p className="line-clamp-2 leading-relaxed">{item.content}</p>
+                          </td>
+                          <td className="p-3 text-slate-500 font-semibold truncate max-w-[120px]">{item.sourceDocName}</td>
+                          <td className="p-3">
+                            <span className={cn(
+                              "text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider",
+                              item.status === 'PUBLISHED' ? "bg-green-50 text-green-600 border-green-200" :
+                              item.status === 'APPROVED' ? "bg-blue-50 text-blue-600 border-blue-200" :
+                              item.status === 'ARCHIVED' ? "bg-slate-100 text-slate-400 border-slate-200" :
+                              "bg-orange-50 text-orange-600 border-orange-200"
+                            )}>
+                              {item.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {admin?.role !== 'sales' && (
+                                <>
+                                  <button onClick={() => setEditingKnowledgeItem(item)} className="text-[10px] text-slate-500 hover:text-slate-800 hover:underline font-bold cursor-pointer">Edit</button>
+                                  {item.status !== 'PUBLISHED' && (
+                                    <button 
+                                      onClick={async () => {
+                                        try {
+                                          await travelDeskService.updateKnowledgeItem(item.id, { status: 'PUBLISHED' });
+                                          toast.success("Item published!");
+                                          loadFilteredKnowledgeItems();
+                                          reloadTripData();
+                                        } catch (e) { toast.error("Failed to publish"); }
+                                      }} 
+                                      className="text-[10px] text-[#FF6B00] hover:underline font-bold cursor-pointer"
+                                    >
+                                      Publish
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {knowledgeItems.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="p-6 text-center text-xs text-slate-450 italic">No knowledge items found in this section.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setIsKnowledgeListOpen(false)}
+                className="px-4.5 py-1.5 text-xs font-bold bg-[#0F172A] text-white rounded-[6px] hover:bg-slate-800 cursor-pointer"
+              >
+                Close View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD DOCUMENT MODAL */}
+      {showAddDoc && (
+        <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-xxs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">Upload & Process Documents</h3>
+              <button onClick={() => setShowAddDoc(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={handleUploadDocuments} className="p-5 space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Title</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Select Files (PDF, DOCX, PNG, JPG)</label>
                 <input
-                  type="text"
+                  type="file"
+                  multiple
                   required
-                  value={sectionTitle}
-                  onChange={e => setSectionTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-[6px] px-3 py-2 text-xs text-slate-850 font-bold focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
-                  placeholder="e.g. Safety protocols & health advice"
+                  accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                  onChange={e => setUploadFiles(e.target.files)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-xs font-bold focus:outline-none"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</label>
-                <textarea
-                  value={sectionDesc}
-                  onChange={e => setSectionDesc(e.target.value)}
-                  rows={4}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-[6px] px-3 py-2 text-xs text-slate-700 leading-relaxed focus:outline-none focus:ring-1 focus:ring-[#FF6B00] resize-none"
-                  placeholder="Provide deep details, process instructions or reference links..."
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Category</label>
+                  <select
+                    value={uploadCategory}
+                    onChange={e => setUploadCategory(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  >
+                    <option value="Trip Documents">Trip Documents</option>
+                    <option value="SOPs & Processes">SOPs & Processes</option>
+                    <option value="Vendor Documents">Vendor Documents</option>
+                    <option value="Customer Documents">Customer Documents</option>
+                    <option value="Marketing Materials">Marketing Materials</option>
+                    <option value="Competitor Docs">Competitor Docs</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Visibility</label>
+                  <select
+                    value={uploadVisibility}
+                    onChange={e => setUploadVisibility(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  >
+                    <option value="internal">Internal Only</option>
+                    <option value="public">Customer Shareable</option>
+                  </select>
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Item Count</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={sectionItemCount}
-                  onChange={e => setSectionItemCount(parseInt(e.target.value) || 0)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-[6px] px-3 py-2 text-xs text-slate-850 font-bold focus:outline-none focus:ring-1 focus:ring-[#FF6B00]"
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Valid From</label>
+                  <input
+                    type="date"
+                    value={uploadValidFrom}
+                    onChange={e => setUploadValidFrom(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Valid Until</label>
+                  <input
+                    type="date"
+                    value={uploadValidUntil}
+                    onChange={e => setUploadValidUntil(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  />
+                </div>
               </div>
+
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
                 <button
                   type="button"
-                  onClick={() => setIsEditSectionOpen(false)}
-                  className="px-3 h-8 text-xs font-bold border border-slate-200 rounded-[6px] hover:bg-slate-50 text-slate-650 transition-colors cursor-pointer"
+                  onClick={() => setShowAddDoc(false)}
+                  className="px-3 h-8 text-xs font-bold border border-slate-200 rounded-[6px] hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4.5 h-8 text-xs font-bold bg-[#0F172A] text-white rounded-[6px] hover:bg-slate-800 transition-colors cursor-pointer"
+                  disabled={isUploading}
+                  className="px-4.5 h-8 text-xs font-bold bg-[#FF6B00] text-white rounded-[6px] hover:bg-orange-600 disabled:opacity-50 cursor-pointer"
                 >
-                  Save Changes
+                  {isUploading ? "Processing & Chunking..." : "Upload Files"}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ESCALATE QUESTION MODAL */}
+      {showEscalateModal && (
+        <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-xxs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">Escalate Internal Question</h3>
+              <button onClick={() => setShowEscalateModal(false)} className="text-slate-400 hover:text-slate-655 cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={handleEscalateQuestion} className="p-5 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Question Details</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={escalationQuestion}
+                  onChange={e => setEscalationQuestion(e.target.value)}
+                  placeholder="Type the question for internal escalation..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-[#FF6B00] focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Escalate To Department</label>
+                <select
+                  value={escalateTo}
+                  onChange={e => setEscalateTo(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs focus:outline-none"
+                >
+                  <option value="Senior Sales">Senior Sales</option>
+                  <option value="Product">Product Admin</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Ticketing">Ticketing Queue</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+                <button type="button" onClick={() => setShowEscalateModal(false)} className="px-3 h-8 text-xs font-bold border border-slate-200 rounded-[6px] cursor-pointer">Cancel</button>
+                <button type="submit" className="px-4.5 bg-[#0F172A] text-white rounded-[6px] h-8 text-xs font-bold hover:bg-slate-850 cursor-pointer">Escalate Question</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE SALES RECORD MODAL */}
+      {showCreateRecordModal && (
+        <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-xxs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#FF6B00]">Quick Create {createRecordType.toUpperCase()}</h3>
+              <button onClick={() => setShowCreateRecordModal(false)} className="text-slate-400 hover:text-slate-655 cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={handleCreateSalesRecord} className="p-5 space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Passenger Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={passengerName}
+                  onChange={e => setPassengerName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Phone Number</label>
+                  <input
+                    type="text"
+                    value={passengerPhone}
+                    onChange={e => setPassengerPhone(e.target.value)}
+                    placeholder="9998887770"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Email Address</label>
+                  <input
+                    type="email"
+                    value={passengerEmail}
+                    onChange={e => setPassengerEmail(e.target.value)}
+                    placeholder="john@example.com"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Joining City</label>
+                  <input
+                    type="text"
+                    value={joiningCity}
+                    onChange={e => setJoiningCity(e.target.value)}
+                    placeholder="Delhi"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Departure Date</label>
+                  <input
+                    type="date"
+                    value={departureDate}
+                    onChange={e => setDepartureDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Custom Price (INR)</label>
+                <input
+                  type="number"
+                  value={price}
+                  onChange={e => setPrice(parseFloat(e.target.value) || 0)}
+                  placeholder="Package Price"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 mt-2">
+                <button type="button" onClick={() => setShowCreateRecordModal(false)} className="px-3 h-8 text-xs font-bold border border-slate-200 rounded-[6px] cursor-pointer">Cancel</button>
+                <button type="submit" className="px-4.5 bg-[#FF6B00] text-white rounded-[6px] h-8 text-xs font-bold hover:bg-orange-600 cursor-pointer">Create Record</button>
               </div>
             </form>
           </div>

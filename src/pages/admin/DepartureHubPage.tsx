@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Users, Calendar, User, Compass, Upload, Download, FileText,
@@ -7,7 +7,7 @@ import {
   Bed, Bus, Sliders, FileSpreadsheet, ClipboardCheck, Check,
   AlertTriangle, Clock, MapPin, Star, Link2, Paperclip, Image, History, Trash, Copy,
   Smile, AtSign, Send, Shield, Folder, Filter, RefreshCw, MoreVertical,
-  ArrowRight, CheckSquare, Circle, PauseCircle, XCircle, ChevronLeft, ChevronRight,
+  ArrowRight, ArrowLeft, CheckSquare, Circle, PauseCircle, XCircle, ChevronLeft, ChevronRight,
   TrendingUp, DollarSign, CreditCard, BarChart2, Activity, CalendarCheck, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReportsConsole from "@/components/admin/ReportsConsole";
 import BookingDetailsModal from "@/components/admin/BookingDetailsModal";
+import DepartureActivities from "@/components/admin/DepartureActivities";
+import DepartureCommunication from "@/components/admin/DepartureCommunication";
+import DepartureDocuments from "@/components/admin/DepartureDocuments";
+import DeparturePayments from "@/components/admin/DeparturePayments";
+import DepartureReports from "@/components/admin/DepartureReports";
+import DepartureTasks from "@/components/admin/DepartureTasks";
+import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
   DropdownMenu, 
@@ -274,13 +281,138 @@ const generateMockBookings = (tripId: string, departureDateStr: string) => {
 
 export default function DepartureHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tripId = searchParams.get("tripId") || "MKA-0705";
-  const departureDateStr = searchParams.get("departureDate") || "2027-07-05";
+
+  // Extract from departureId if present (format: tripId_YYYY-MM-DD)
+  const departureIdParam = searchParams.get("departureId");
+  let resolvedTripId = searchParams.get("tripId") || "MKA-0705";
+  let resolvedDepartureDateStr = searchParams.get("departureDate") || "2027-07-05";
+
+  if (departureIdParam && departureIdParam.includes("_")) {
+    const idx = departureIdParam.indexOf("_");
+    resolvedTripId = departureIdParam.substring(0, idx);
+    resolvedDepartureDateStr = departureIdParam.substring(idx + 1);
+  }
+
+  const tripId = resolvedTripId;
+  const departureDateStr = resolvedDepartureDateStr;
   const activeTab = searchParams.get("tab") || "overview";
-  const setActiveTab = (tab: string) => setSearchParams({ tripId, departureDate: departureDateStr, tab });
+
+  const setActiveTab = (tab: string) => {
+    const nextParams: Record<string, string> = { tab };
+    if (departureIdParam) {
+      nextParams.departureId = departureIdParam;
+    } else {
+      nextParams.tripId = tripId;
+      nextParams.departureDate = departureDateStr;
+    }
+    setSearchParams(nextParams);
+  };
+
+  const initializationKeyRef = useRef<string | null>(null);
 
   // Data states
   const [bookings, setBookings] = useState<any[]>([]);
+  const allPassengers = useMemo(() => {
+    const arr: any[] = [];
+    bookings.filter((b: any) => b.status !== "cancelled").forEach((b: any) => {
+      let passengersObj = b.passengers;
+      if (typeof passengersObj === 'string') {
+        try {
+          passengersObj = JSON.parse(passengersObj);
+        } catch (e) {
+          passengersObj = {};
+        }
+      }
+
+      const due = (b.totalAmount || 0) - (b.advancePaid || 0);
+      const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
+      
+      const roomDetailsObj = b.roomDetails || passengersObj?.details || {};
+      const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
+      
+      const leadName = b.fullName || b.name;
+      const leadRoomInfo = personsRoomDetails[leadName] || {};
+      const leadRoomNo = leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—";
+      const leadRoomType = leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
+      const leadCoupleWith = leadRoomInfo.coupleWith || "";
+
+      const paxList = passengersObj?.persons || [];
+      const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
+      const passengerCount = filteredCoPax.length + 1;
+
+      const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
+      const perPersonPaid = (b.advancePaid || 0) / passengerCount;
+      const perPersonBalance = due > 0 ? (due / passengerCount) : 0;
+
+      const base = { 
+        bookingId: b.id, 
+        bookingRef: b.bookingId || b.id,
+        bookingDate: b.createdAt?.substring(0,10) || "2027-06-15", 
+        departureDate: b.departureDate?.substring(0,10) || departureDateStr, 
+        batchGroup:"Batch 1", 
+        gender:b.gender||"Male", 
+        age:b.age||24, 
+        phone:b.phone||b.mobile||"—", 
+        email:b.email||"—", 
+        pickupPoint:b.pickupCity||"Ahmedabad", 
+        dropPoint:"Manali", 
+        roomSharing:passengersObj?.details?.roomType||"Triple", 
+        roomType: leadRoomType, 
+        coupleWith: leadCoupleWith,
+        emergencyContact:"9876543211", 
+        roomNo: leadRoomNo, 
+        paymentStatus:paymentLabel, 
+        amount: perPersonAmount, 
+        paidAmount: perPersonPaid, 
+        balance: perPersonBalance, 
+        paymentMode:"UPI", 
+        paymentDate:"2027-06-16", 
+        idProofType:"Aadhar Card", 
+        guideName:"Dikshu Sharma", 
+        transportDetails:"Tempo Traveller AC", 
+        notes:b.notes||"No special requirements", 
+        hasDocs:!!passengersObj?.details?.idProof,
+        ticketStatus: b.trainTicketStatus || "PENDING",
+        ticketVerified: b.trainTicketStatus === "CONFIRMED",
+        documentStatus: (passengersObj?.details?.idProof || b.idProofType) ? "Verified" : "Missing",
+        leadPassengerName: b.fullName || b.name
+      };
+      arr.push({ id:b.id, name:leadName, ...base, isLead: true });
+      if (Array.isArray(passengersObj?.persons)) {
+        passengersObj.persons.forEach((p: any, idx: number) => {
+          if (p.name === leadName) return;
+
+          const coRoomInfo = personsRoomDetails[p.name] || {};
+          const coRoomNo = coRoomInfo.roomNo || "—";
+          const coRoomType = coRoomInfo.roomType || "Triple Sharing";
+          const coCoupleWith = coRoomInfo.coupleWith || "";
+
+          arr.push({ 
+            id: `${b.id}-co-${idx}`, 
+            name: p.name, 
+            ...base, 
+            roomNo: coRoomNo,
+            roomType: coRoomType,
+            coupleWith: coCoupleWith,
+            phone: p.phone || b.phone || "—", 
+            email: p.email || "—", 
+            pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad", 
+            amount: perPersonAmount, 
+            paidAmount: perPersonPaid, 
+            balance: perPersonBalance, 
+            notes: "Co-traveler", 
+            isLead: false,
+            gender: p.gender || "Male",
+            age: p.age || 24,
+            ticketStatus: p.ticketStatus || b.trainTicketStatus || "PENDING",
+            ticketVerified: p.ticketStatus === "CONFIRMED" || b.trainTicketStatus === "CONFIRMED",
+            documentStatus: p.idProof ? "Verified" : "Missing"
+          });
+        });
+      }
+    });
+    return arr;
+  }, [bookings, departureDateStr]);
   const [itineraryList, setItineraryList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [tripDetails, setTripDetails] = useState<any | null>(null);
@@ -289,6 +421,7 @@ export default function DepartureHubPage() {
   const [chatMessages, setChatMessages] = useState<any[]>(MOCK_MESSAGES);
   const [dbTasks, setDbTasks] = useState<any[]>([]);
   const [checklistTasks, setChecklistTasks] = useState<any[]>([]);
+  const [dbVendors, setDbVendors] = useState<any[]>([]);
 
   // Passengers filter states
   const [paxSearch, setPaxSearch] = useState("");
@@ -302,6 +435,9 @@ export default function DepartureHubPage() {
   const [coupleFilter, setCoupleFilter] = useState("All");
   const [roomAllocFilter, setRoomAllocFilter] = useState("All");
   const [trainTicketFilter, setTrainTicketFilter] = useState("All");
+  const [joiningCityFilter, setJoiningCityFilter] = useState("All");
+  const [docStatusFilter, setDocStatusFilter] = useState("All");
+  const [selectedPaxIds, setSelectedPaxIds] = useState<Record<string, boolean>>({});
   const [expandedBookings, setExpandedBookings] = useState<Record<string, boolean>>({});
   const [selectedBookingForRoomAlloc, setSelectedBookingForRoomAlloc] = useState<any | null>(null);
   const [modalAllocations, setModalAllocations] = useState<Record<string, { roomType: string, coupleWith: string, roomNo: string }>>({});
@@ -330,6 +466,66 @@ export default function DepartureHubPage() {
   const [newVehicleName, setNewVehicleName] = useState("");
   const [newVehicleCost, setNewVehicleCost] = useState("");
   const [newVehicleVendor, setNewVehicleVendor] = useState("");
+  const [isSavingAllocations, setIsSavingAllocations] = useState(false);
+  const [showClearAllocationsDialog, setShowClearAllocationsDialog] = useState(false);
+
+  const handleSaveAllocationsToDb = async (clearExisting = false) => {
+    setIsSavingAllocations(true);
+    try {
+      const roomAllocations: Array<{roomNumber: string; roomType: string; genderGroup: string; bookingId: string; travelerName: string; sharingType?: string}> = [];
+      const vehicleAllocations: Array<{fleetId: string; bookingId: string; travelerName: string; seatNumber?: number}> = [];
+
+      // Map passengerAllocations to proper DB format
+      allPassengers.forEach((p: any) => {
+        const alloc = passengerAllocations[p.name];
+        if (!alloc) return;
+        if (alloc.room && alloc.room !== '—') {
+          roomAllocations.push({
+            roomNumber: alloc.room,
+            roomType: 'STANDARD',
+            genderGroup: p.gender === 'Female' ? 'GIRLS' : 'BOYS',
+            bookingId: p.bookingRef,
+            travelerName: p.name,
+            sharingType: 'STANDARD'
+          });
+        }
+        if (alloc.vehicle && alloc.vehicle !== '—') {
+          const fleet = allocFleet.find(f => 
+            f.name === alloc.vehicle || 
+            f.id === alloc.vehicle || 
+            f.vehicleType === alloc.vehicle
+          );
+          if (fleet) {
+            vehicleAllocations.push({
+              fleetId: fleet.id,
+              bookingId: p.bookingRef,
+              travelerName: p.name,
+              seatNumber: alloc.seat && alloc.seat !== '—' ? parseInt(alloc.seat) : undefined
+            });
+          }
+        }
+      });
+
+      if (clearExisting && roomAllocations.length === 0 && vehicleAllocations.length === 0) {
+        await opsService.saveManualAllocations(tripId, departureDateStr, { roomAllocations, vehicleAllocations, clearExisting: true });
+        toast.success('Allocations cleared from database');
+        setShowClearAllocationsDialog(false);
+        return;
+      }
+
+      const result = await opsService.saveManualAllocations(tripId, departureDateStr, { roomAllocations, vehicleAllocations, clearExisting });
+      if (result.success) {
+        toast.success(`Saved: ${result.data?.rooms?.length || 0} room + ${result.data?.vehicles?.length || 0} vehicle allocations`);
+        fetchPageData();
+      } else {
+        toast.error(result.message || 'Failed to save allocations');
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to save allocations to database');
+    } finally {
+      setIsSavingAllocations(false);
+    }
+  };
 
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,6 +569,55 @@ export default function DepartureHubPage() {
       fetchPageData();
     } catch {
       toast.error("Failed to delete vehicle from database");
+    }
+  };
+
+  // Guide state
+  const [dbGuides, setDbGuides] = useState<any[]>([]);
+  const [addGuideOpen, setAddGuideOpen] = useState(false);
+  const [guideForm, setGuideForm] = useState({
+    guideName: '', agreedAmount: '', advancePaid: '0', daysWorked: '5', notes: '',
+    assignmentType: 'PRIMARY_GUIDE', reportingLocation: '', reportingTime: '', emergencyContact: ''
+  });
+  const [isSavingGuide, setIsSavingGuide] = useState(false);
+
+  const handleAddGuide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guideForm.guideName.trim()) { toast.error('Guide name is required'); return; }
+    setIsSavingGuide(true);
+    try {
+      const saved = await opsService.createGuidePayment(tripId, {
+        guideName: guideForm.guideName,
+        agreedAmount: parseFloat(guideForm.agreedAmount) || 0,
+        advancePaid: parseFloat(guideForm.advancePaid) || 0,
+        daysWorked: parseInt(guideForm.daysWorked) || 5,
+        notes: guideForm.notes,
+        assignmentType: guideForm.assignmentType || 'PRIMARY_GUIDE',
+        reportingLocation: guideForm.reportingLocation || undefined,
+        reportingTime: guideForm.reportingTime || undefined,
+        emergencyContact: guideForm.emergencyContact || undefined,
+      }, departureDateStr);
+      setDbGuides(prev => [...prev, saved]);
+      setGuideForm({ guideName: '', agreedAmount: '', advancePaid: '0', daysWorked: '5', notes: '', assignmentType: 'PRIMARY_GUIDE', reportingLocation: '', reportingTime: '', emergencyContact: '' });
+      setAddGuideOpen(false);
+      toast.success(`Guide "${saved.guideName}" added and saved to database!`);
+      fetchPageData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to save guide');
+    } finally {
+      setIsSavingGuide(false);
+    }
+  };
+
+  const handleDeleteGuide = async (id: string, guideName: string) => {
+    if (!window.confirm(`Remove guide "${guideName}" from this departure?`)) return;
+    try {
+      await opsService.deleteGuidePayment(id);
+      setDbGuides(prev => prev.filter(g => g.id !== id));
+      toast.info(`Guide "${guideName}" removed from departure`);
+      fetchPageData();
+    } catch {
+      toast.error('Failed to remove guide');
     }
   };
 
@@ -428,6 +673,24 @@ export default function DepartureHubPage() {
       const itinRes = await api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`);
       setItineraryList(itinRes.data?.data || []);
 
+      // Load vendors from Directory (has room rates + trip mappings)
+      const vendorsRes = await api.get("/vendors/directory").catch(() => ({ data: { data: [] } }));
+      const allVendors = vendorsRes.data?.data || [];
+      // Hotel/homestay/camp vendors — trip-mapped ones shown first
+      const tripHotelVendors = allVendors.filter((v: any) =>
+        ["hotel", "homestay", "camp"].includes(v.type?.toLowerCase())
+      );
+      tripHotelVendors.sort((a: any, b: any) => {
+        const aMap = a.tripMappings?.find((m: any) => m.tripId === tripId);
+        const bMap = b.tripMappings?.find((m: any) => m.tripId === tripId);
+        if (aMap && !bMap) return -1;
+        if (!aMap && bMap) return 1;
+        if (aMap?.isPrimary && !bMap?.isPrimary) return -1;
+        if (!aMap?.isPrimary && bMap?.isPrimary) return 1;
+        return 0;
+      });
+      setDbVendors(tripHotelVendors);
+
       // Load trip details
       const tripRes = await api.get(`/trips/${tripId}`).catch(() => null);
       if (tripRes?.data?.success) {
@@ -442,6 +705,7 @@ export default function DepartureHubPage() {
       const hotels = hotelsRes.data?.data || [];
       const transports = transportRes.data?.data || [];
       const guides = guidesRes.data?.data || [];
+      setDbGuides(guides);
 
       // Populate allocFleet from database
       const initialFleet = transports.map((t: any) => ({
@@ -504,9 +768,40 @@ export default function DepartureHubPage() {
       if (checkRes?.data?.success && checkRes.data.data.length > 0) {
         setChecklistTasks(checkRes.data.data);
       } else {
-        const initRes = await api.post(`/ops/checklists/${tripId}/initialize?departureDate=${departureDateStr}`).catch(() => null);
-        if (initRes?.data?.success) {
-          setChecklistTasks(initRes.data.data);
+        const key = `${tripId}-${departureDateStr}`;
+        if (initializationKeyRef.current !== key) {
+          initializationKeyRef.current = key;
+          const initRes = await api.post(`/ops/checklists/${tripId}/initialize?departureDate=${departureDateStr}`).catch(() => {
+            initializationKeyRef.current = null;
+            return null;
+          });
+          if (initRes?.data?.success) {
+            setChecklistTasks(initRes.data.data);
+          }
+        }
+      }
+
+      // Load confirmed room + vehicle allocations and hydrate manual shuffler
+      const allocRes = await api.get(`/ops/auto-allocate/${tripId}/confirmed?departureDate=${departureDateStr}`).catch(() => null);
+      if (allocRes?.data?.success) {
+        const { rooms = [], vehicles = [] } = allocRes.data.data;
+        if (rooms.length > 0 || vehicles.length > 0) {
+          setPassengerAllocations((prev: any) => {
+            const next = { ...prev };
+            rooms.forEach((r: any) => {
+              const key = r.travelerName;
+              next[key] = { ...(next[key] || { vehicle: '—', seat: '—' }), room: r.roomNumber };
+            });
+            // Build fleetId-to-name map from initialFleet
+            const fleetNameMap: Record<string, string> = {};
+            initialFleet.forEach((f: any) => { fleetNameMap[f.id] = f.name; });
+            vehicles.forEach((v: any) => {
+              const key = v.travelerName;
+              const vName = fleetNameMap[v.fleetId] || v.fleetId;
+              next[key] = { ...(next[key] || { room: '—' }), vehicle: vName, seat: v.seatNumber ? String(v.seatNumber) : '—' };
+            });
+            return next;
+          });
         }
       }
     } catch { /* silent */ } finally {
@@ -719,6 +1014,74 @@ export default function DepartureHubPage() {
   const [transportPaidForm, setTransportPaidForm] = useState(0);
   const [transportNotesForm, setTransportNotesForm] = useState("");
 
+  // Hotel Pricing Automation states
+  const [pricingMethod, setPricingMethod] = useState<"room-wise" | "double-extra" | "per-person" | "manual">("room-wise");
+  
+  const [doubleRate, setDoubleRate] = useState(2600);
+  const [tripleRate, setTripleRate] = useState(3400);
+  const [quadRate, setQuadRate] = useState(4200);
+  const [extraPersonRate, setExtraPersonRate] = useState(800);
+  const [extraChildRate, setExtraChildRate] = useState(0);
+
+  const [doubleRoomsCount, setDoubleRoomsCount] = useState(0);
+  const [tripleRoomsCount, setTripleRoomsCount] = useState(0);
+  const [quadRoomsCount, setQuadRoomsCount] = useState(0);
+  const [extraPersonsCount, setExtraPersonsCount] = useState(0);
+
+  const [checkInDateForm, setCheckInDateForm] = useState("");
+  const [checkOutDateForm, setCheckOutDateForm] = useState("");
+  const [hotelNightsCount, setHotelNightsCount] = useState(1);
+  const [hotelVendorId, setHotelVendorId] = useState("");
+  const [voucherStatusForm, setVoucherStatusForm] = useState("PENDING");
+
+  const [overrideApplied, setOverrideApplied] = useState(false);
+  const [overrideAmount, setOverrideAmount] = useState(0);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideAuthor, setOverrideAuthor] = useState("Super Admin");
+
+  const [overrideTripleRate, setOverrideTripleRate] = useState(false);
+  const [overrideQuadRate, setOverrideQuadRate] = useState(false);
+  const [showInternalNotes, setShowInternalNotes] = useState(false);
+  const [activeCalculationDrawer, setActiveCalculationDrawer] = useState<string | null>(null);
+  const [editingHotel, setEditingHotel] = useState<any | null>(null);
+
+  // Calculated Hotel Cost logic (Passenger Sharing Rates per Person)
+  const doubleCost = doubleRoomsCount * doubleRate * hotelNightsCount; // Twin Sharing Pax
+  const tripleCost = tripleRoomsCount * tripleRate * hotelNightsCount; // Triple Sharing Pax
+  const quadCost = quadRoomsCount * quadRate * hotelNightsCount; // Quad Sharing Pax
+  const extraPersonCost = extraPersonsCount * extraPersonRate * hotelNightsCount; // Extra Pax
+
+  const calculatedTotalCost = doubleCost + tripleCost + quadCost + extraPersonCost;
+  const totalPaxCapacity = doubleRoomsCount + tripleRoomsCount + quadRoomsCount + extraPersonsCount;
+  const totalRoomsCount = Math.ceil(doubleRoomsCount / 2) + Math.ceil(tripleRoomsCount / 3) + Math.ceil(quadRoomsCount / 4) + (extraPersonsCount ? 1 : 0);
+  const formatDateToYYYYMMDD = (dateObj: Date) => {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const handleCheckInChange = (newVal: string) => {
+    setCheckInDateForm(newVal);
+    if (newVal) {
+      const d = new Date(newVal);
+      if (!isNaN(d.getTime())) {
+        d.setDate(d.getDate() + hotelNightsCount);
+        setCheckOutDateForm(formatDateToYYYYMMDD(d));
+      }
+    }
+  };
+
+  const handleNightsChange = (nights: number) => {
+    setHotelNightsCount(nights);
+    if (checkInDateForm) {
+      const d = new Date(checkInDateForm);
+      if (!isNaN(d.getTime())) {
+        d.setDate(d.getDate() + nights);
+        setCheckOutDateForm(formatDateToYYYYMMDD(d));
+      }
+    }
+  };
   const handleOpenEditHotel = (row: any) => {
     const raw = row.rawAssignment || {};
     setSelectedHotelId(row.id);
@@ -729,8 +1092,183 @@ export default function DepartureHubPage() {
     setHotelCostForm(raw.totalAmount || 0);
     setHotelPaidForm(raw.advancePaid || 0);
     setHotelConfirmedForm(raw.confirmed || (row.status === "CONFIRMED" ? "CONFIRMED" : "UNCONFIRMED"));
-    setHotelNotesForm(raw.notes || "");
-    setEditHotelOpen(true);
+    setVoucherStatusForm(raw.voucherStatus || "PENDING");
+
+    // Pricing Automation fallback unpacking
+    let pricingData: any = null;
+    if (raw.notes && raw.notes.trim().startsWith("{")) {
+      try {
+        pricingData = JSON.parse(raw.notes);
+      } catch (e) {}
+    }
+
+    const dayNumStr = row.day ? String(row.day).replace("Day ", "").trim() : "1";
+    const dayIndex = (parseInt(dayNumStr) - 1) || 0;
+
+
+
+    const dCheckIn = new Date(departureDateStr);
+    if (!isNaN(dCheckIn.getTime())) {
+      dCheckIn.setDate(dCheckIn.getDate() + dayIndex);
+    }
+    const calculatedCheckIn = formatDateToYYYYMMDD(dCheckIn);
+
+    const dCheckOut = new Date(dCheckIn);
+    if (!isNaN(dCheckOut.getTime())) {
+      dCheckOut.setDate(dCheckOut.getDate() + (row.nights || 1));
+    }
+    const calculatedCheckOut = formatDateToYYYYMMDD(dCheckOut);
+
+    if (pricingData && pricingData.__isHotelPricing) {
+      setPricingMethod(pricingData.pricingMethod || "room-wise");
+      setDoubleRate(pricingData.rates?.doubleRate ?? 2600);
+      setTripleRate(pricingData.rates?.tripleRate ?? 3400);
+      setQuadRate(pricingData.rates?.quadRate ?? 4200);
+      setExtraPersonRate(pricingData.rates?.extraPersonRate ?? 800);
+      setExtraChildRate(pricingData.rates?.extraChildRate ?? 0);
+
+      setDoubleRoomsCount(pricingData.allocations?.doubleRoomsCount ?? 5);
+      setTripleRoomsCount(pricingData.allocations?.tripleRoomsCount ?? 0);
+      setQuadRoomsCount(pricingData.allocations?.quadRoomsCount ?? 0);
+      setExtraPersonsCount(pricingData.allocations?.extraPersonsCount ?? 0);
+
+      setCheckInDateForm(pricingData.checkInDate || calculatedCheckIn);
+      setCheckOutDateForm(pricingData.checkOutDate || calculatedCheckOut);
+      setHotelNightsCount(pricingData.nightsCount || row.nights || 1);
+      setHotelVendorId(pricingData.vendorId || raw.vendorId || "");
+      setVoucherStatusForm(pricingData.voucherStatus || "PENDING");
+
+      setOverrideApplied(pricingData.override?.applied ?? false);
+      setOverrideAmount(pricingData.override?.amount ?? 0);
+      setOverrideReason(pricingData.override?.reason ?? "");
+      setOverrideAuthor(pricingData.override?.author ?? "Super Admin");
+
+      setOverrideTripleRate(pricingData.overrideTripleRate ?? false);
+      setOverrideQuadRate(pricingData.overrideQuadRate ?? false);
+      setShowInternalNotes(!!pricingData.userNotes);
+
+      setHotelNotesForm(pricingData.userNotes || "");
+    } else {
+      setPricingMethod("room-wise");
+      setDoubleRate(2600);
+      setTripleRate(3400);
+      setQuadRate(4200);
+      setExtraPersonRate(800);
+      setExtraChildRate(0);
+
+      setDoubleRoomsCount(raw.numberOfRooms || 5);
+      setTripleRoomsCount(0);
+      setQuadRoomsCount(0);
+      setExtraPersonsCount(0);
+
+      setCheckInDateForm(raw.checkIn ? raw.checkIn.substring(0, 10) : calculatedCheckIn);
+      setCheckOutDateForm(raw.checkOut ? raw.checkOut.substring(0, 10) : calculatedCheckOut);
+      setHotelNightsCount(row.nights || 1);
+      setHotelVendorId(raw.vendorId || "");
+      setVoucherStatusForm("PENDING");
+
+      setOverrideApplied(false);
+      setOverrideAmount(0);
+      setOverrideReason("");
+      setOverrideAuthor("Super Admin");
+
+      setOverrideTripleRate(false);
+      setOverrideQuadRate(false);
+      setShowInternalNotes(false);
+
+      setHotelNotesForm(raw.notes || "");
+    }
+
+    setEditingHotel(row);
+  };
+
+  const handleEditHotelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const pricingPayload = {
+        __isHotelPricing: true,
+        pricingMethod,
+        rates: {
+          doubleRate,
+          tripleRate,
+          quadRate,
+          extraPersonRate,
+          extraChildRate
+        },
+        allocations: {
+          doubleRoomsCount,
+          tripleRoomsCount,
+          quadRoomsCount,
+          extraPersonsCount
+        },
+        checkInDate: checkInDateForm,
+        checkOutDate: checkOutDateForm,
+        nightsCount: hotelNightsCount,
+        vendorId: hotelVendorId,
+        voucherStatus: voucherStatusForm,
+        override: {
+          applied: overrideApplied,
+          amount: overrideAmount,
+          reason: overrideReason,
+          author: overrideAuthor
+        },
+        overrideTripleRate,
+        overrideQuadRate,
+        userNotes: hotelNotesForm
+      };
+
+      const finalCost = overrideApplied ? overrideAmount : calculatedTotalCost;
+
+      await opsService.saveHotelBookings(tripId, departureDateStr, [
+        {
+          id: selectedHotelId,
+          hotelName: hotelNameForm,
+          location: hotelLocationForm,
+          roomType: hotelRoomTypeForm,
+          numberOfRooms: totalRoomsCount,
+          totalAmount: finalCost,
+          advancePaid: hotelPaidForm,
+          confirmed: hotelConfirmedForm,
+          notes: JSON.stringify(pricingPayload),
+          pricingMethod,
+          doubleRoomsCount,
+          tripleRoomsCount,
+          quadRoomsCount,
+          extraPersonsCount,
+          nightsCount: hotelNightsCount,
+          doubleRate,
+          tripleRate,
+          quadRate,
+          extraBedRate: extraPersonRate,
+          checkIn: checkInDateForm,
+          checkOut: checkOutDateForm,
+          vendorId: hotelVendorId
+        }
+      ]);
+
+      // If override is modified, sync it with the override endpoint if needed
+      if (overrideApplied) {
+        await opsService.saveHotelOverride(tripId, {
+          departureHotelId: selectedHotelId,
+          fieldName: 'totalAmount',
+          originalValue: calculatedTotalCost,
+          overriddenValue: overrideAmount,
+          reason: overrideReason,
+          advancePaid: hotelPaidForm
+        }).catch(() => null);
+      } else {
+        await opsService.resetHotelOverride(tripId, {
+          departureHotelId: selectedHotelId
+        }).catch(() => null);
+      }
+
+      toast.success("Hotel details updated successfully!");
+      setEditingHotel(null);
+      fetchPageData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update hotel details.");
+    }
   };
 
   const handleOpenEditTransport = (row: any) => {
@@ -745,30 +1283,6 @@ export default function DepartureHubPage() {
     setTransportPaidForm(raw.advancePaid || 0);
     setTransportNotesForm(raw.notes || "");
     setEditTransportOpen(true);
-  };
-
-  const handleEditHotelSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await api.post(`/ops/hotels/${tripId}?departureDate=${departureDateStr}`, {
-        id: selectedHotelId,
-        hotelName: hotelNameForm,
-        location: hotelLocationForm,
-        roomType: hotelRoomTypeForm,
-        numberOfRooms: hotelRoomsForm,
-        totalAmount: hotelCostForm,
-        advancePaid: hotelPaidForm,
-        confirmed: hotelConfirmedForm,
-        notes: hotelNotesForm
-      });
-      toast.success("Hotel details updated successfully!");
-      setEditHotelOpen(false);
-      // Refresh
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update hotel details.");
-    }
   };
 
   const handleEditTransportSubmit = async (e: React.FormEvent) => {
@@ -1228,7 +1742,12 @@ export default function DepartureHubPage() {
 
   const getDayDateAndWd = (startStr: string, offsetDays: number) => {
     try {
-      const d = new Date(startStr);
+      const parts = startStr.substring(0, 10).split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      
+      const d = new Date(year, month, day);
       d.setDate(d.getDate() + offsetDays);
       const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -1280,42 +1799,99 @@ export default function DepartureHubPage() {
 
 
   const computedHotels = useMemo(() => {
+    const isSpiti = tripId?.toLowerCase().includes("spt") || tripId?.toLowerCase().includes("spiti");
+
+    // SPT itinerary: 9 nights → 8 hotel rows (Kaza = 2 nights in 1 row)
+    // Day 1 = train, Day 10-11 = return/home — no hotel rows
+    const sptNights = [
+      { dayNum: 2,   city: "Shimla",           region: "Himachal Pradesh", nights: 1, dayLabel: "Day 2" },
+      { dayNum: 3,   city: "Sangla / Chitkul",  region: "Himachal Pradesh", nights: 1, dayLabel: "Day 3" },
+      { dayNum: 4,   city: "Tabo",              region: "Himachal Pradesh", nights: 1, dayLabel: "Day 4" },
+      { dayNum: 5,   city: "Kaza",              region: "Spiti Valley",     nights: 2, dayLabel: "Day 5–6" },
+      { dayNum: 7,   city: "Chandratal",         region: "Spiti Valley",     nights: 1, dayLabel: "Day 7" },
+      { dayNum: 8,   city: "Manali",             region: "Himachal Pradesh", nights: 1, dayLabel: "Day 8" },
+      { dayNum: 9,   city: "Kullu",              region: "Himachal Pradesh", nights: 1, dayLabel: "Day 9" },
+    ];
+
+    // Real DB hotel assignments from ops
     const hotelAssignments = tripVendors.filter((v: any) => {
       const vendorObj = typeof v.vendorId === 'object' ? v.vendorId : null;
       const type = vendorObj?.type || v.vendorType || '';
       return type === 'hotel';
     });
 
+    if (isSpiti) {
+      return sptNights.map((night, idx) => {
+        const { wd } = getDayDateAndWd(departureDateStr, night.dayNum - 1);
+        const assignment = hotelAssignments[idx] || null;
+        const vendorObj = assignment ? (typeof assignment.vendorId === 'object' ? assignment.vendorId : null) : null;
+        const raw = assignment?.rawAssignment || assignment;
+
+        return {
+          id: assignment?.id || `spt-stay-${idx}`,
+          day: night.dayLabel,          // e.g. "Day 5–6" for Kaza
+          wd,
+          destRegion: night.region,
+          destCity: night.city,
+          hotel: vendorObj?.name || raw?.hotelName || "— Not Assigned —",
+          vendor: vendorObj?.location || raw?.location || night.city,
+          allocations: assignment
+            ? [{ text: `${raw?.numberOfRooms || '?'} Rooms`, color: 'blue' }]
+            : [{ text: "Pending", color: "orange" }],
+          totalPaxText: assignment ? `${raw?.totalPax || allPassengers.length} Pax` : "Not booked",
+          capacityPercent: 100,
+          capacityColor: assignment ? "bg-emerald-500" : "bg-slate-300",
+          nights: night.nights,         // use itinerary-defined nights (Kaza = 2)
+          status: assignment
+            ? (raw?.confirmed === 'CONFIRMED' || assignment.paymentStatus === 'paid' ? 'CONFIRMED' : 'PENDING')
+            : 'PENDING',
+          statusSub: assignment
+            ? (raw?.confirmed === 'CONFIRMED' ? 'Voucher Sent' : 'Payment Due')
+            : 'Not Assigned',
+          amt: assignment
+            ? ((raw?.totalAmount || assignment.agreedCost || 0).toLocaleString('en-IN'))
+            : "0",
+          amtSub: assignment
+            ? `Paid: ₹${(raw?.advancePaid || assignment.paidAmount || 0).toLocaleString('en-IN')}`
+            : "No payment",
+          rawAssignment: raw || assignment,
+        };
+      });
+    }
+
+    // Non-SPT trips: use real DB assignments
     if (hotelAssignments.length > 0) {
       return hotelAssignments.map((v: any, idx: number) => {
         const vendorObj = typeof v.vendorId === 'object' ? v.vendorId : { name: 'Assigned Hotel' };
         const dayNum = idx + 1;
-        const { wd, date } = getDayDateAndWd(departureDateStr, idx);
+        const { wd } = getDayDateAndWd(departureDateStr, idx);
         const dest = tripDetails?.location || "Manali";
-        
+        const raw = v.rawAssignment || v;
+
         return {
+          id: v.id,
           day: `Day ${dayNum}`,
           wd,
-          date: `${date.split(" ")[0]} ${date.split(" ")[1]}, ${wd.charAt(0).toUpperCase()}${wd.slice(1).toLowerCase()}`,
-          dest: `${dest} Stay`,
-          hotel: vendorObj.name,
-          sub: vendorObj.location || "Stay Location",
-          stayBadge: v.paymentStatus === 'paid' ? 'CONFIRMED' : 'PENDING',
-          badgeText: vendorObj.notes || 'HOTEL',
-          rooms: "Group Allocation",
-          roomSub: "Rooms",
-          type: v.notes || "Deluxe Stay",
-          nights: 1,
-          status: v.paymentStatus?.toUpperCase() || 'PENDING',
-          voucher: v.paymentStatus === 'paid' ? 'Voucher Sent' : 'Payment Due',
-          amt: v.agreedCost?.toLocaleString('en-IN') || "0",
-          amtSub: `Paid: ₹${v.paidAmount?.toLocaleString('en-IN') || 0}`
+          destRegion: "Himachal Pradesh",
+          destCity: dest,
+          hotel: vendorObj.name || raw?.hotelName || "Hotel",
+          vendor: vendorObj.location || raw?.location || "Stay Location",
+          allocations: [{ text: `${raw?.numberOfRooms || '?'} Rooms`, color: "blue" }],
+          totalPaxText: `${raw?.totalPax || allPassengers.length} Pax`,
+          capacityPercent: 100,
+          capacityColor: "bg-emerald-500",
+          nights: raw?.nights || 1,
+          status: raw?.confirmed === 'CONFIRMED' || v.paymentStatus === 'paid' ? 'CONFIRMED' : 'PENDING',
+          statusSub: raw?.confirmed === 'CONFIRMED' ? 'Voucher Sent' : 'Payment Due',
+          amt: (raw?.totalAmount || v.agreedCost || 0).toLocaleString('en-IN'),
+          amtSub: `Paid: ₹${(raw?.advancePaid || v.paidAmount || 0).toLocaleString('en-IN')}`,
+          rawAssignment: raw,
         };
       });
     }
 
     return [];
-  }, [tripVendors, tripDetails, departureDateStr]);
+  }, [tripVendors, tripDetails, departureDateStr, tripId, bookings]);
 
   const computedTransport = useMemo(() => {
     const transAssignments = tripVendors.filter((v: any) => {
@@ -1755,102 +2331,7 @@ export default function DepartureHubPage() {
     };
   }, [tripVendors, bookings]);
 
-  const allPassengers = useMemo(() => {
-    const arr: any[] = [];
-    bookings.forEach((b: any) => {
-      let passengersObj = b.passengers;
-      if (typeof passengersObj === 'string') {
-        try {
-          passengersObj = JSON.parse(passengersObj);
-        } catch (e) {
-          passengersObj = {};
-        }
-      }
 
-      const due = (b.totalAmount || 0) - (b.advancePaid || 0);
-      const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
-      
-      const roomDetailsObj = b.roomDetails || passengersObj?.details || {};
-      const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
-      
-      const leadName = b.fullName || b.name;
-      const leadRoomInfo = personsRoomDetails[leadName] || {};
-      const leadRoomNo = leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—";
-      const leadRoomType = leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
-      const leadCoupleWith = leadRoomInfo.coupleWith || "";
-
-      const paxList = passengersObj?.persons || [];
-      const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
-      const passengerCount = filteredCoPax.length + 1;
-
-      const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
-      const perPersonPaid = (b.advancePaid || 0) / passengerCount;
-      const perPersonBalance = due > 0 ? (due / passengerCount) : 0;
-
-      const base = { 
-        bookingId: b.id, 
-        bookingRef: b.bookingId || b.id,
-        bookingDate: b.createdAt?.substring(0,10) || "2027-06-15", 
-        departureDate: b.departureDate?.substring(0,10) || departureDateStr, 
-        batchGroup:"Batch 1", 
-        gender:b.gender||"Male", 
-        age:b.age||24, 
-        phone:b.phone||b.mobile||"—", 
-        email:b.email||"—", 
-        pickupPoint:b.pickupCity||"Ahmedabad", 
-        dropPoint:"Manali", 
-        roomSharing:passengersObj?.details?.roomType||"Triple", 
-        roomType: leadRoomType, 
-        coupleWith: leadCoupleWith,
-        emergencyContact:"9876543211", 
-        roomNo: leadRoomNo, 
-        paymentStatus:paymentLabel, 
-        amount: perPersonAmount, 
-        paidAmount: perPersonPaid, 
-        balance: perPersonBalance, 
-        paymentMode:"UPI", 
-        paymentDate:"2027-06-16", 
-        idProofType:"Aadhar Card", 
-        guideName:"Dikshu Sharma", 
-        transportDetails:"Tempo Traveller AC", 
-        notes:b.notes||"No special requirements", 
-        hasDocs:!!passengersObj?.details?.idProof,
-        leadPassengerName: b.fullName || b.name
-      };
-      arr.push({ id:b.id, name:leadName, ...base, isLead: true });
-      if (Array.isArray(passengersObj?.persons)) {
-        passengersObj.persons.forEach((p: any, idx: number) => {
-          // Avoid duplicating the lead traveler if they are also listed in persons
-          if (p.name === leadName) return;
-
-          const coRoomInfo = personsRoomDetails[p.name] || {};
-          const coRoomNo = coRoomInfo.roomNo || "—";
-          const coRoomType = coRoomInfo.roomType || "Triple Sharing";
-          const coCoupleWith = coRoomInfo.coupleWith || "";
-
-          arr.push({ 
-            id:`${b.id}-co-${idx}`, 
-            name:p.name, 
-            ...base, 
-            roomNo: coRoomNo,
-            roomType: coRoomType,
-            coupleWith: coCoupleWith,
-            phone:p.phone||b.phone||"—", 
-            email:p.email||"—", 
-            pickupPoint:p.pickupPoint||b.pickupCity||"Ahmedabad", 
-            amount: perPersonAmount, 
-            paidAmount: perPersonPaid, 
-            balance: perPersonBalance, 
-            notes:"Co-traveler", 
-            isLead: false,
-            gender: p.gender || "Male",
-            age: p.age || 24
-          });
-        });
-      }
-    });
-    return arr;
-  }, [bookings, departureDateStr]);
 
   useEffect(() => {
     if (allPassengers && allPassengers.length > 0) {
@@ -1922,21 +2403,6 @@ export default function DepartureHubPage() {
     setShuffleVehicle(current.vehicle);
     setShuffleSeat(current.seat);
     setShuffleModalOpen(true);
-  };
-
-  const handleSaveShuffle = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!shufflingTraveler) return;
-    setPassengerAllocations(prev => ({
-      ...prev,
-      [shufflingTraveler.name]: {
-        room: shuffleRoom,
-        vehicle: shuffleVehicle,
-        seat: shuffleSeat
-      }
-    }));
-    setShuffleModalOpen(false);
-    toast.success(`Updated allocation for ${shufflingTraveler.name}`);
   };
 
   const [activitiesList, setActivitiesList] = useState<any[]>([]);
@@ -2321,6 +2787,17 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     });
   }, [bookings]);
 
+  const joiningCities = useMemo(() => {
+    const cities = new Set<string>();
+    bookingGroups.forEach((bg: any) => {
+      if (bg.pickupPoint) cities.add(bg.pickupPoint);
+      bg.passengers.forEach((p: any) => {
+        if (p.pickupPoint) cities.add(p.pickupPoint);
+      });
+    });
+    return Array.from(cities);
+  }, [bookingGroups]);
+
   const filteredBookingGroups = useMemo(() => {
     return bookingGroups.filter((bg: any) => {
       const matchSearch = paxSearch === "" || 
@@ -2345,9 +2822,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       const matchTrainTicket = trainTicketFilter === "All" || bg.trainTicketStatus === trainTicketFilter;
 
-      return matchSearch && matchBookingGroup && matchCouple && matchRoomAlloc && matchPayment && matchPickup && matchTrainTicket;
+      const matchJoiningCity = joiningCityFilter === "All" || bg.pickupPoint === joiningCityFilter || bg.passengers.some((p: any) => p.pickupPoint === joiningCityFilter);
+
+      const matchDocStatus = docStatusFilter === "All" || bg.passengers.some((p: any) => (p.documentStatus || "Verified") === docStatusFilter);
+
+      return matchSearch && matchBookingGroup && matchCouple && matchRoomAlloc && matchPayment && matchPickup && matchTrainTicket && matchJoiningCity && matchDocStatus;
     });
-  }, [bookingGroups, paxSearch, bookingGroupFilter, coupleFilter, roomAllocFilter, paymentFilter, pickupFilter, trainTicketFilter]);
+  }, [bookingGroups, paxSearch, bookingGroupFilter, coupleFilter, roomAllocFilter, paymentFilter, pickupFilter, trainTicketFilter, joiningCityFilter, docStatusFilter]);
 
   const paginatedBookingGroups = useMemo(() => {
     return filteredBookingGroups.slice((page - 1) * 10, page * 10);
@@ -2454,7 +2935,10 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               <Compass className="w-5 h-5" />
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl font-black text-slate-900 tracking-tight">{tripId}</h1>
+              <div>
+                <span className="text-[9.5px] font-black text-[#F97316] uppercase tracking-wider block mb-0.5">Departure Operations Workspace</span>
+                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none">{tripId}</h1>
+              </div>
               <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase tracking-wider border border-emerald-200">CONFIRMED</span>
               <span className="text-slate-300">•</span>
               <span className="text-sm text-slate-600 font-semibold">{tripDetails?.title || "Manali Kasol Amritsar"}</span>
@@ -2888,6 +3372,34 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               ))}
             </div>
 
+            {/* Reconciliation Checklist Stats */}
+            <div className="bg-slate-50 border border-[#E2E8F0] rounded-[4px] p-3 flex flex-wrap items-center gap-6 text-xs text-slate-600 shadow-sm">
+              <span className="font-bold text-slate-800 uppercase tracking-wider text-[9.5px]">Reconciliation Checklist:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-slate-800">{passengerStats.total}</span> <span className="text-slate-400 font-medium">Confirmed</span>
+              </div>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-slate-800">{passengerStats.ticketed || 0}</span> <span className="text-slate-400 font-medium">Ticketed</span>
+              </div>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-[#F97316]">{passengerStats.ticketVerified || 0}</span> <span className="text-slate-400 font-medium">Verified</span>
+              </div>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-slate-800">{passengerStats.roomAllocated || 0}</span> <span className="text-slate-400 font-medium">Room Allocated</span>
+              </div>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-slate-800">{passengerStats.transportAllocated || 0}</span> <span className="text-slate-400 font-medium">Transport Allocated</span>
+              </div>
+              <span className="text-slate-300">|</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-red-650">{passengerStats.missingDocument || 0}</span> <span className="text-slate-400 font-medium">Missing Docs</span>
+              </div>
+            </div>
+
             {/* Filters */}
             <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm p-3 flex flex-wrap gap-2 items-center">
               <div className="relative flex-grow min-w-[180px] max-w-xs">
@@ -2932,6 +3444,20 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 {pickupOptions.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
 
+              <select value={joiningCityFilter} onChange={e => { setJoiningCityFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
+                <option value="All">All Joining Cities</option>
+                {joiningCities.map(city => <option key={city} value={city}>{city}</option>)}
+              </select>
+
+              <select value={docStatusFilter} onChange={e => { setDocStatusFilter(e.target.value); setPage(1); }}
+                className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
+                <option value="All">All Doc Status</option>
+                <option value="Verified">Verified</option>
+                <option value="Missing">Missing</option>
+                <option value="Under Review">Under Review</option>
+              </select>
+
               <select value={trainTicketFilter} onChange={e => { setTrainTicketFilter(e.target.value); setPage(1); }}
                 className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
                 <option value="All">All Train Tickets</option>
@@ -2946,7 +3472,24 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-[#E2E8F0]">
                   <tr>
-                    <th className="p-3 w-12 text-center">TOGGLE</th>
+                    <th className="p-3 w-20 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={paginatedBookingGroups.length > 0 && paginatedBookingGroups.every(bg => selectedPaxIds[bg.bookingId])}
+                          onChange={e => {
+                            const checked = e.target.checked;
+                            const nextSelect = { ...selectedPaxIds };
+                            paginatedBookingGroups.forEach(bg => {
+                              nextSelect[bg.bookingId] = checked;
+                            });
+                            setSelectedPaxIds(nextSelect);
+                          }}
+                          className="rounded border-slate-300 text-[#F97316] focus:ring-[#F97316] w-3.5 h-3.5 cursor-pointer"
+                        />
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">SEL</span>
+                      </div>
+                    </th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PASSENGER</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PHONE</th>
                     <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">PICKUP</th>
@@ -2965,7 +3508,18 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                       <React.Fragment key={bg.bookingId}>
                         {/* Expandable Group Header */}
                         <tr className="bg-slate-100/80 font-semibold text-slate-800 border-t border-b border-slate-200">
-                          <td className="p-3 text-center">
+                          <td className="p-3 text-center flex items-center justify-center gap-1">
+                            <input
+                              type="checkbox"
+                              checked={!!selectedPaxIds[bg.bookingId]}
+                              onChange={e => {
+                                setSelectedPaxIds(prev => ({
+                                  ...prev,
+                                  [bg.bookingId]: e.target.checked
+                                }));
+                              }}
+                              className="rounded border-slate-300 text-[#F97316] focus:ring-[#F97316] w-3.5 h-3.5 cursor-pointer mr-1"
+                            />
                             <button
                               onClick={() => {
                                 setExpandedBookings(prev => ({
@@ -3037,9 +3591,8 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                           </td>
                         </tr>
 
-                        {/* Passenger Rows */}
                         {isGroupExpanded && bg.passengers.map((p: any) => (
-                          <tr key={p.name} className="hover:bg-slate-50/30 transition-colors">
+                          <tr key={p.id || p.name} className="hover:bg-slate-50/30 transition-colors">
                             <td className="p-3 text-center"><input type="checkbox" className="rounded-[2px] border-slate-300" /></td>
                             <td className="p-3 pl-6">
                               <div className="flex items-center gap-1.5">
@@ -3712,37 +4265,531 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         {/* ──────────────────────── HOTELS ──────────────────────── */}
         {activeTab === "hotels" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-black text-slate-800">Hotels</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Manage hotels and stay arrangements for each day</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => toast.info("View Timeline")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
-                  <Sliders className="w-3.5 h-3.5 text-slate-400" /> View as Timeline
-                </button>
-                <button onClick={() => toast.info("Download")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
-                  <Download className="w-3.5 h-3.5 text-slate-400" /> Download
-                </button>
-              </div>
-            </div>
-
-            {/* Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
-              {[
-                { v: String(hotelStats.totalNights), l: "Total Nights", desc: `Across ${hotelStats.totalNights} stays`, bg: "bg-blue-50/50" },
-                { v: String(hotelStats.confirmedNights), l: "Confirmed", desc: `${((hotelStats.confirmedNights / (hotelStats.totalNights || 1))*100).toFixed(1)}% of stays`, bg: "bg-emerald-50/50" },
-                { v: String(hotelStats.pendingNights), l: "Pending", desc: `${((hotelStats.pendingNights / (hotelStats.totalNights || 1))*100).toFixed(1)}% of stays`, bg: "bg-amber-50/50" },
-                { v: String(hotelStats.totalRooms), l: "Total Rooms", desc: "All rooms combined", bg: "bg-purple-50/50" },
-                { v: `${hotelStats.roomsBooked} / ${hotelStats.totalRooms}`, l: "Rooms Booked", desc: `${hotelStats.occupancy}% occupancy`, bg: "bg-cyan-50/50" },
-              ].map(k => (
-                <div key={k.l} className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs">
-                  <p className="text-2xl font-black text-slate-800">{k.v}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{k.l}</p>
-                  <p className="text-[9.5px] text-slate-450 mt-1">{k.desc}</p>
+            {editingHotel ? (
+              <form onSubmit={handleEditHotelSubmit} className="space-y-4">
+                {/* Zoho Header Bar */}
+                <div className="flex items-center justify-between bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-3xs">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setEditingHotel(null)}
+                      className="text-slate-450 hover:text-slate-700 transition-colors"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <h2 className="text-base font-black text-slate-800">Edit Hotel</h2>
+                    <span className={cn(
+                      "text-[9px] font-black px-2 py-0.5 rounded-[4px] border uppercase tracking-wider",
+                      hotelConfirmedForm === "CONFIRMED" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"
+                    )}>
+                      {hotelConfirmedForm}
+                    </span>
+                    <span className="text-[9px] font-black bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-[4px] uppercase tracking-wider">
+                      Voucher {voucherStatusForm}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingHotel(null)}
+                      className="text-xs font-bold border border-slate-200 rounded-[4px] px-4 py-2 hover:bg-slate-50 bg-white text-slate-700 shadow-3xs transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 shadow-sm transition-all"
+                    >
+                      Save Hotel
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  {/* Left Column: Editor Sections */}
+                  <div className="lg:col-span-2 space-y-5">
+                    
+                    {/* 1. HOTEL DETAILS */}
+                    <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-5 shadow-3xs space-y-4">
+                      <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">1</span>
+                        <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Hotel Details</h3>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Hotel Name *</label>
+                          <input
+                            type="text"
+                            required
+                            value={hotelNameForm}
+                            onChange={e => setHotelNameForm(e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] font-semibold text-slate-800"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Destination / City *</label>
+                          <input
+                            type="text"
+                            required
+                            value={hotelLocationForm}
+                            onChange={e => setHotelLocationForm(e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] font-semibold text-slate-800"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Check-in Date *</label>
+                          <input
+                            type="date"
+                            required
+                            value={checkInDateForm}
+                            onChange={e => handleCheckInChange(e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] text-slate-700 bg-white font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Check-out Date *</label>
+                          <input
+                            type="date"
+                            required
+                            value={checkOutDateForm}
+                            onChange={e => setCheckOutDateForm(e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] text-slate-700 bg-white font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Nights *</label>
+                          <input
+                            type="number"
+                            required
+                            value={hotelNightsCount}
+                            onChange={e => handleNightsChange(Number(e.target.value))}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] text-slate-700 bg-white font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Vendor Directory Lookup</label>
+                          <select
+                            value={hotelVendorId}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setHotelVendorId(val);
+                              const selected = dbVendors.find((v: any) => v.id === val);
+                              if (selected) {
+                                setHotelNameForm(selected.name);
+                                setHotelLocationForm(selected.location || "");
+                                // AUTO-FILL RATES FROM DIRECTORY ROOM RATES
+                                const rates: any[] = selected.roomRates || [];
+                                // Per-person rate = room rate / occupancy
+                                const getRatePerPax = (sharingType: string, occupancy: number) => {
+                                  const r = rates.find((r: any) => r.sharingType === sharingType);
+                                  if (!r || !r.amount) return 0;
+                                  return r.rateBasis === 'PER_PERSON_PER_NIGHT'
+                                    ? Number(r.amount)
+                                    : Math.round(Number(r.amount) / occupancy);
+                                };
+                                const dbl = getRatePerPax('DOUBLE', 2);
+                                const tri = getRatePerPax('TRIPLE', 3);
+                                const qud = getRatePerPax('QUAD', 4);
+                                if (dbl > 0) setDoubleRate(dbl);
+                                if (tri > 0) setTripleRate(tri);
+                                if (qud > 0) setQuadRate(qud);
+                              }
+                            }}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] bg-white outline-none cursor-pointer font-bold text-slate-750 focus:border-[#F97316]"
+                          >
+                            <option value="">-- Select Vendor --</option>
+                            {dbVendors.map((vendor: any) => {
+                              const tripMap = vendor.tripMappings?.find((m: any) => m.tripId === tripId);
+                              const badge = tripMap ? (tripMap.isPrimary ? " 🥇 Primary" : " 🥈 Backup") : "";
+                              return (
+                                <option key={vendor.id} value={vendor.id}>
+                                  {vendor.name}{badge}{vendor.location ? ` · ${vendor.location}` : ""}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-455 uppercase tracking-wider block">Confirmation Status</label>
+                          <select
+                            value={hotelConfirmedForm}
+                            onChange={e => setHotelConfirmedForm(e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] bg-white outline-none cursor-pointer font-bold text-slate-700"
+                          >
+                            <option value="CONFIRMED">CONFIRMED</option>
+                            <option value="UNCONFIRMED">PENDING / UNCONFIRMED</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-455 uppercase tracking-wider block">Voucher Status</label>
+                          <select
+                            value={voucherStatusForm}
+                            onChange={e => setVoucherStatusForm(e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-[4px] bg-white outline-none cursor-pointer font-bold text-slate-700"
+                          >
+                            <option value="UPLOADED">UPLOADED</option>
+                            <option value="PENDING">PENDING</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+
+                    {/* 2. PASSENGER PRICING & ALLOCATION */}
+                    <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-5 shadow-3xs space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">2</span>
+                          <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Passenger Pricing & Allocation</h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-slate-450 font-bold">Stay Nights:</span>
+                          <input
+                            type="number"
+                            required
+                            value={hotelNightsCount}
+                            onChange={e => setHotelNightsCount(Number(e.target.value))}
+                            className="h-7 w-14 text-xs text-center border border-slate-200 rounded bg-white font-bold text-slate-800 outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Passengerwise Sharing Calculations */}
+                      <div className="border border-slate-200 rounded-[6px] overflow-hidden">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead className="bg-slate-50 border-b border-slate-200">
+                            <tr className="text-[9.5px] font-black text-slate-455 uppercase tracking-wider">
+                              <th className="p-3 border-r border-slate-100">SHARING TYPE</th>
+                              <th className="p-3 border-r border-slate-100 text-center w-28">PASSENGERS</th>
+                              <th className="p-3 border-r border-slate-100 text-center w-28">RATE PER PAX (₹)</th>
+                              <th className="p-3 border-r border-slate-100 text-center">NIGHTS</th>
+                              <th className="p-3 text-center">SUBTOTAL (₹)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {/* Twin Sharing */}
+                            <tr>
+                              <td className="p-3 border-r border-slate-100 font-bold text-slate-750">Twin Sharing (per pax)</td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={doubleRoomsCount}
+                                  onChange={e => setDoubleRoomsCount(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={doubleRate}
+                                  onChange={e => setDoubleRate(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-500">{hotelNightsCount}</td>
+                              <td className="p-3 text-center font-black text-slate-750">₹{doubleCost.toLocaleString('en-IN')}</td>
+                            </tr>
+
+                            {/* Triple Sharing */}
+                            <tr>
+                              <td className="p-3 border-r border-slate-100 font-bold text-slate-750">Triple Sharing (per pax)</td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={tripleRoomsCount}
+                                  onChange={e => setTripleRoomsCount(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={tripleRate}
+                                  onChange={e => setTripleRate(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-500">{hotelNightsCount}</td>
+                              <td className="p-3 text-center font-black text-slate-750">₹{tripleCost.toLocaleString('en-IN')}</td>
+                            </tr>
+
+                            {/* Quad Sharing */}
+                            <tr>
+                              <td className="p-3 border-r border-slate-100 font-bold text-slate-750">Quad Sharing (per pax)</td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={quadRoomsCount}
+                                  onChange={e => setQuadRoomsCount(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={quadRate}
+                                  onChange={e => setQuadRate(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-500">{hotelNightsCount}</td>
+                              <td className="p-3 text-center font-black text-slate-750">₹{quadCost.toLocaleString('en-IN')}</td>
+                            </tr>
+
+                            {/* Extra Person */}
+                            <tr>
+                              <td className="p-3 border-r border-slate-100 font-bold text-slate-750">Extra Bed / Person (per pax)</td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={extraPersonsCount}
+                                  onChange={e => setExtraPersonsCount(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100">
+                                <input
+                                  type="number"
+                                  value={extraPersonRate}
+                                  onChange={e => setExtraPersonRate(Number(e.target.value))}
+                                  className="w-full text-xs px-2 py-0.5 border rounded text-center font-semibold text-slate-800 bg-white"
+                                />
+                              </td>
+                              <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-500">{hotelNightsCount}</td>
+                              <td className="p-3 text-center font-black text-slate-750">₹{extraPersonCost.toLocaleString('en-IN')}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Allocated Travelers</p>
+                          <p className="text-xs font-semibold text-slate-650 mt-0.5">
+                            {totalPaxCapacity} allocated / {allPassengers.length} manifest passengers
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Calculated Cost</p>
+                          <p className="text-lg font-black text-[#F97316]">₹{calculatedTotalCost.toLocaleString('en-IN')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Summaries Sidebar */}
+                  <div className="space-y-5">
+                    
+                    {/* HOTEL COST SUMMARY */}
+                    <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-5 shadow-3xs space-y-3.5">
+                      <h3 className="text-[10px] font-black text-slate-455 uppercase tracking-wider border-b border-slate-100 pb-1.5">Hotel Cost Summary</h3>
+                      
+                      <div className="space-y-2 text-xs font-semibold text-slate-600">
+                        {doubleRoomsCount > 0 && (
+                          <div className="flex justify-between">
+                            <span>Twin Sharing ({doubleRoomsCount} Pax)</span>
+                            <span className="font-bold text-slate-800">₹{doubleCost.toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+                        {tripleRoomsCount > 0 && (
+                          <div className="flex justify-between">
+                            <span>Triple Sharing ({tripleRoomsCount} Pax)</span>
+                            <span className="font-bold text-slate-800">₹{tripleCost.toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+                        {quadRoomsCount > 0 && (
+                          <div className="flex justify-between">
+                            <span>Quad Sharing ({quadRoomsCount} Pax)</span>
+                            <span className="font-bold text-slate-800">₹{quadCost.toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+                        {extraPersonsCount > 0 && (
+                          <div className="flex justify-between">
+                            <span>Extra Bed ({extraPersonsCount} Pax)</span>
+                            <span className="font-bold text-slate-800">₹{extraPersonCost.toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+
+                        <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-sm font-black text-slate-800">
+                          <span>Total Hotel Cost</span>
+                          <span className="text-[#F97316] text-base">₹{calculatedTotalCost.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    </div>
+
+
+                    {/* PAYMENT SUMMARY */}
+                    <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-5 shadow-3xs space-y-3.5">
+                      <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-1.5">Payment Summary</h3>
+                      
+                      <div className="space-y-2 text-xs font-semibold text-slate-600">
+                        <div className="flex justify-between">
+                          <span>Hotel Cost</span>
+                          <span className="font-bold text-slate-800">₹{calculatedTotalCost.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Advance Paid</span>
+                          <span className="font-bold text-slate-800">₹{hotelPaidForm.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-100 pb-2.5">
+                          <span>Balance Due</span>
+                          <span className="font-black text-red-600">
+                            ₹{(calculatedTotalCost - hotelPaidForm).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-1">
+                          <span className="text-[10px] font-black text-slate-450 uppercase">Payment Status</span>
+                          <span className={cn(
+                            "text-[8px] font-black px-2 py-0.5 rounded-[4px] border uppercase tracking-wider block w-fit",
+                            hotelPaidForm >= calculatedTotalCost 
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              : hotelPaidForm > 0 
+                                ? "bg-amber-50 text-amber-600 border-amber-100" 
+                                : "bg-red-50 text-red-600 border-red-100"
+                          )}>
+                            {hotelPaidForm >= calculatedTotalCost ? "PAID IN FULL" : hotelPaidForm > 0 ? "PARTIALLY PAID" : "UNPAID"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 pt-2 text-[10px]">
+                          <div>
+                            <span className="text-slate-400 block font-bold">Last Payment</span>
+                            <span className="text-slate-700 font-extrabold block mt-0.5">10 Jul 2026</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block font-bold">Paid By</span>
+                            <span className="text-slate-700 font-extrabold block mt-0.5">Himalayan Stays</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* OVERRIDE (IF APPLICABLE) */}
+                    <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-5 shadow-3xs space-y-3">
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
+                        <span className="text-[10px] font-black text-slate-450 uppercase tracking-wider">Override (If Applicable)</span>
+                        <button
+                          type="button"
+                          onClick={() => setOverrideApplied(!overrideApplied)}
+                          className="text-[10px] font-extrabold text-[#F97316] hover:underline"
+                        >
+                          {overrideApplied ? "Reset" : "+ Add Override"}
+                        </button>
+                      </div>
+
+                      {overrideApplied ? (
+                        <div className="space-y-3.5 text-xs">
+                          <div>
+                            <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Overridden Cost (₹) *</label>
+                            <input
+                              type="number"
+                              required
+                              value={overrideAmount}
+                              onChange={e => setOverrideAmount(Number(e.target.value))}
+                              className="w-full border border-orange-200 rounded-[4px] px-3 py-1.5 mt-0.5 font-bold text-orange-700 bg-orange-50/10 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-slate-450 uppercase tracking-wider block">Reason for Override *</label>
+                            <input
+                              type="text"
+                              required
+                              value={overrideReason}
+                              onChange={e => setOverrideReason(e.target.value)}
+                              placeholder="e.g. Bulk stay flat discount"
+                              className="w-full border rounded-[4px] px-3 py-1.5 mt-0.5 text-slate-750 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[10.5px] text-slate-400 font-semibold italic leading-normal">
+                          No override applied. Turn on override to set custom total pricing bypassing normal sharing rate rules.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* NOTES */}
+                    <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-5 shadow-3xs space-y-2">
+                      <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-1.5">Notes</h3>
+                      <textarea
+                        value={hotelNotesForm}
+                        onChange={e => setHotelNotesForm(e.target.value)}
+                        placeholder="Add any notes about this hotel..."
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] h-20 resize-none"
+                      />
+                    </div>
+
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-black text-slate-800">Hotels</h2>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Manage hotels and stay arrangements for each day</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => toast.info("View Timeline")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
+                      <Sliders className="w-3.5 h-3.5 text-slate-400" /> View as Timeline
+                    </button>
+                    <button onClick={() => toast.info("Download")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
+                      <Download className="w-3.5 h-3.5 text-slate-400" /> Download
+                    </button>
+                  </div>
+                </div>
+
+
+
+            {/* Metrics - computed from real hotel data */}
+            {(() => {
+              const totalNights = computedHotels.reduce((s: number, h: any) => s + (h.nights || 1), 0);
+              const confirmed = computedHotels.filter((h: any) => h.status === 'PAID' || h.rawAssignment?.confirmed === 'CONFIRMED').length;
+              const pending = computedHotels.length - confirmed;
+              const confirmedPct = computedHotels.length > 0 ? ((confirmed / computedHotels.length) * 100).toFixed(1) : '0.0';
+              const pendingPct = computedHotels.length > 0 ? ((pending / computedHotels.length) * 100).toFixed(1) : '0.0';
+              const totalRooms = computedHotels.reduce((s: number, h: any) => {
+                const raw = h.rawAssignment;
+                return s + (raw?.numberOfRooms || 0);
+              }, 0);
+              const totalAmount = computedHotels.reduce((s: number, h: any) => {
+                const raw = h.rawAssignment;
+                const amt = raw?.totalAmount || parseFloat((h.amt || '0').replace(/,/g, '')) || 0;
+                return s + amt;
+              }, 0);
+              const stats = [
+                { v: String(totalNights || computedHotels.length), l: "TOTAL NIGHTS", desc: `Across ${computedHotels.length} stays`, color: "text-purple-600", bg: "bg-purple-50 border-purple-100", icon: Calendar },
+                { v: String(confirmed), l: "CONFIRMED", desc: `${confirmedPct}% of stays`, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100", icon: CheckCircle2 },
+                { v: String(pending), l: "PENDING", desc: `${pendingPct}% of stays`, color: "text-amber-500", bg: "bg-amber-50 border-amber-100", icon: Clock },
+                { v: totalRooms > 0 ? String(totalRooms) : "—", l: "TOTAL ROOMS", desc: "All rooms combined", color: "text-blue-600", bg: "bg-blue-50 border-blue-100", icon: Bed },
+                { v: `₹${Math.round(totalAmount / 1000)}K`, l: "TOTAL AMOUNT", desc: "Agreed hotel cost", color: "text-rose-600", bg: "bg-rose-50 border-rose-100", icon: Users },
+                { v: String(computedHotels.length), l: "TOTAL STAYS", desc: "Hotel nights booked", color: "text-teal-600", bg: "bg-teal-50 border-teal-100", icon: TrendingUp },
+              ];
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-3.5">
+                  {stats.map(k => {
+                    const IconComponent = k.icon;
+                    return (
+                      <div key={k.l} className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex items-center gap-3 shadow-xxs">
+                        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border", k.bg)}>
+                          <IconComponent className={cn("w-5 h-5", k.color)} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{k.l}</p>
+                          <p className="text-lg font-black text-slate-800 leading-tight mt-0.5">{k.v}</p>
+                          <p className="text-[9px] text-slate-500 font-semibold mt-0.5">{k.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Filter Bar */}
             <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex flex-wrap gap-2.5 items-center">
@@ -3767,72 +4814,182 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             {/* Hotels Table */}
             <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                  <tr className="text-[9.5px] font-bold text-slate-450 uppercase tracking-wider">
+                <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                  <tr className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">
                     <th className="p-3 border-r border-slate-100">DAY</th>
                     <th className="p-3 border-r border-slate-100">DESTINATION</th>
-                    <th className="p-3 border-r border-slate-100">HOTEL DETAILS</th>
-                    <th className="p-3 border-r border-slate-100">ROOM TYPE</th>
-                    <th className="p-3 border-r border-slate-100 text-center">ROOMS BOOKED</th>
+                    <th className="p-3 border-r border-slate-100">HOTEL & VENDOR</th>
+                    <th className="p-3 border-r border-slate-100">BOOKED ROOMS</th>
                     <th className="p-3 border-r border-slate-100 text-center">NIGHTS</th>
                     <th className="p-3 border-r border-slate-100">STATUS</th>
                     <th className="p-3 border-r border-slate-100">AMOUNT (₹)</th>
-                    <th className="p-3 text-center">ACTION</th>
+                    <th className="p-3 text-right">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
-                  {computedHotels.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-800">{row.day}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{row.wd}</p>
-                      </td>
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-800">{row.dest}</p>
-                      </td>
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-800">{row.hotel}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] text-slate-400 font-semibold">{row.sub}</span>
-                          {row.stayBadge === "CONFIRMED" && (
-                            <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1 py-0.2 rounded-full uppercase tracking-wider">CONFIRMED</span>
-                          )}
-                          {row.badgeText && (
-                            <span className={cn("text-[7.5px] font-black px-1.5 py-0.2 rounded-full border tracking-wider",
-                              row.badgeText === "DELUXE" ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            )}>{row.badgeText}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3 border-r border-slate-100 text-slate-600 font-semibold">{row.type}</td>
-                      <td className="p-3 border-r border-slate-100 text-center">
-                        <p className="font-bold text-slate-800">{row.rooms}</p>
-                        <p className="text-[9.5px] text-slate-400 font-bold">{row.roomSub}</p>
-                      </td>
-                      <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-700">{row.nights}</td>
-                      <td className="p-3 border-r border-slate-100">
-                        <span className={cn("text-[8px] font-black px-1.5 py-0.5 rounded-[3px] border uppercase tracking-wider block w-fit",
-                          row.status === "CONFIRMED" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"
-                        )}>{row.status}</span>
-                        <span className="text-[9.5px] text-slate-400 font-semibold mt-0.5 block">{row.voucher}</span>
-                      </td>
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-850">{row.amt}</p>
-                        <p className="text-[9.5px] text-slate-400 font-semibold">{row.amtSub}</p>
-                      </td>
-                      <td className="p-3 text-center">
-                        {row.status === "PENDING" ? (
-                          <button onClick={() => toast.info("Booking flow")} className="text-[11px] font-bold text-blue-600 border border-blue-200 rounded-[4px] px-2.5 py-1 bg-white hover:bg-blue-50">Book Now</button>
-                        ) : (
-                          <div className="flex justify-center">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </div>
+                  {computedHotels.map((row, idx) => {
+                    const rawNotes = row.rawAssignment?.notes;
+                    let pricingObj: any = null;
+                    if (rawNotes && rawNotes.trim().startsWith("{")) {
+                      try { pricingObj = JSON.parse(rawNotes); } catch (e) {}
+                    }
+                    const isAutomated = pricingObj && pricingObj.__isHotelPricing;
+                    const showDrawer = activeCalculationDrawer === row.id;
+
+                    return (
+                      <React.Fragment key={row.id || idx}>
+                        <tr className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-3 border-r border-slate-100">
+                            <p className="font-extrabold text-slate-800">{row.day}</p>
+                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">{row.wd}</p>
+                          </td>
+                          <td className="p-3 border-r border-slate-100">
+                            <p className="font-bold text-slate-800">{row.destRegion}</p>
+                            <p className="text-[10px] text-slate-400 font-bold mt-0.5 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {row.destCity}
+                            </p>
+                          </td>
+                          <td className="p-3 border-r border-slate-100">
+                            <p className="font-bold text-slate-855">{row.hotel}</p>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                                <User className="w-3 h-3" /> {row.vendor}
+                              </span>
+                              <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-wider">CONFIRMED</span>
+                              <span className="text-[8px] font-black bg-purple-50 text-purple-600 border border-purple-100 px-1.5 py-0.5 rounded uppercase tracking-wider flex items-center gap-0.5">
+                                <FileText className="w-2.5 h-2.5" /> Voucher Sent
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-3 border-r border-slate-100">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {(row.allocations || []).map((alloc: any, aIdx: number) => (
+                                <span
+                                  key={aIdx}
+                                  className={cn(
+                                    "text-[9px] font-black px-1.5 py-0.5 rounded",
+                                    alloc.color === 'blue' ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                                    alloc.color === 'orange' ? "bg-orange-50 text-orange-600 border border-orange-100" :
+                                    "bg-purple-50 text-purple-600 border border-purple-100"
+                                  )}
+                                >
+                                  {alloc.text}
+                                </span>
+                              ))}
+                            </div>
+                            <p className="text-[9.5px] text-slate-400 font-bold mt-1.5">{row.totalPaxText}</p>
+                          </td>
+                          <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-700">{row.nights}</td>
+                          <td className="p-3 border-r border-slate-100">
+                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-green-50 text-green-600 border border-green-150 uppercase tracking-wider block w-fit">
+                              {row.status}
+                            </span>
+                            <span className="text-[9.5px] text-slate-400 font-semibold mt-1 block">
+                              {row.statusSub}
+                            </span>
+                          </td>
+                          <td className="p-3 border-r border-slate-100">
+                            <p className="font-bold text-slate-800">₹{row.amt}</p>
+                            <p className="text-[9.5px] text-slate-400 font-semibold">{row.amtSub}</p>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenEditHotel(row)}
+                                className="text-[10px] font-extrabold text-[#FF6B00] border border-orange-200 hover:border-orange-300 rounded-[4px] px-3.5 py-1 bg-white hover:bg-orange-50 shadow-3xs transition-all cursor-pointer"
+                              >
+                                View
+                              </button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:bg-slate-50 hover:text-slate-755 rounded border border-slate-200">
+                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-white border border-slate-200 rounded-[6px] shadow-md text-xs font-semibold">
+                                  <DropdownMenuItem onClick={() => handleOpenEditHotel(row)} className="hover:bg-slate-50 cursor-pointer p-2 flex items-center gap-1.5">
+                                    Edit Pricing
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Inline Popover Cost Calculation Breakdown Drawer */}
+                        {showDrawer && (
+                          <tr className="bg-slate-50/80">
+                            <td colSpan={8} className="p-4 border-b border-[#E2E8F0]">
+                              <div className="bg-white border border-slate-200 rounded-[6px] p-4 text-xs shadow-md max-w-xl space-y-2">
+                                <h4 className="font-black text-slate-800 border-b border-slate-150 pb-2 flex items-center justify-between">
+                                  <span>Hotel Cost Calculation Breakdown</span>
+                                  <span className="text-[10px] font-bold text-slate-400">{row.hotel} ({row.day})</span>
+                                </h4>
+                                
+                                {isAutomated ? (
+                                  <div className="space-y-1.5 font-medium text-slate-600">
+                                    {pricingObj.allocations?.doubleRoomsCount > 0 && (
+                                      <div className="flex justify-between">
+                                        <span>Double Sharing Allocation:</span>
+                                        <span className="font-bold text-slate-800">
+                                          {pricingObj.allocations.doubleRoomsCount} Rooms × ₹{pricingObj.rates.doubleRate.toLocaleString('en-IN')} × {pricingObj.nightsCount} Nights = ₹{(pricingObj.allocations.doubleRoomsCount * pricingObj.rates.doubleRate * pricingObj.nightsCount).toLocaleString('en-IN')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {pricingObj.allocations?.tripleRoomsCount > 0 && (
+                                      <div className="flex justify-between">
+                                        <span>Triple Sharing Allocation:</span>
+                                        <span className="font-bold text-slate-800">
+                                          {pricingObj.allocations.tripleRoomsCount} Rooms × ₹{pricingObj.rates.tripleRate.toLocaleString('en-IN')} × {pricingObj.nightsCount} Nights = ₹{(pricingObj.allocations.tripleRoomsCount * pricingObj.rates.tripleRate * pricingObj.nightsCount).toLocaleString('en-IN')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {pricingObj.allocations?.quadRoomsCount > 0 && (
+                                      <div className="flex justify-between">
+                                        <span>Quad Sharing Allocation:</span>
+                                        <span className="font-bold text-slate-800">
+                                          {pricingObj.allocations.quadRoomsCount} Rooms × ₹{pricingObj.rates.quadRate.toLocaleString('en-IN')} × {pricingObj.nightsCount} Nights = ₹{(pricingObj.allocations.quadRoomsCount * pricingObj.rates.quadRate * pricingObj.nightsCount).toLocaleString('en-IN')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {pricingObj.allocations?.extraPersonsCount > 0 && (
+                                      <div className="flex justify-between">
+                                        <span>Extra Bed Allocation:</span>
+                                        <span className="font-bold text-slate-800">
+                                          {pricingObj.allocations.extraPersonsCount} Pax × ₹{pricingObj.rates.extraPersonRate.toLocaleString('en-IN')} × {pricingObj.nightsCount} Nights = ₹{(pricingObj.allocations.extraPersonsCount * pricingObj.rates.extraPersonRate * pricingObj.nightsCount).toLocaleString('en-IN')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    
+                                    <div className="border-t border-slate-100 pt-2 flex justify-between font-black text-slate-800 text-sm">
+                                      <span>Sum Computed Cost:</span>
+                                      <span>₹{row.rawAssignment?.totalAmount?.toLocaleString('en-IN') || "0"}</span>
+                                    </div>
+
+                                    {pricingObj.override?.applied && (
+                                      <div className="bg-orange-50/50 border border-orange-100 rounded p-2 mt-2 text-[11px] text-orange-850">
+                                        <div className="flex justify-between font-bold">
+                                          <span>⚠️ Manual Override Applied:</span>
+                                          <span>₹{pricingObj.override.amount?.toLocaleString('en-IN')}</span>
+                                        </div>
+                                        <p className="text-[10px] text-orange-650 mt-0.5">Reason: {pricingObj.override.reason || "Not specified"}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p className="text-slate-500 font-semibold italic">This hotel stay uses legacy pricing details.</p>
+                                    <p className="text-xs font-bold text-slate-750 mt-1.5">Raw Notes/Details:</p>
+                                    <pre className="text-[11px] bg-slate-50 p-2.5 rounded mt-1 overflow-x-auto text-slate-650 font-mono whitespace-pre-wrap">{row.type}</pre>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -3848,8 +5005,10 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               </div>
               <button onClick={() => toast.info("View Payment Summary")} className="text-[11.5px] font-extrabold text-blue-600 hover:underline">View Payment Summary →</button>
             </div>
-          </div>
+          </>
         )}
+      </div>
+    )}
 
         {/* ──────────────────────── TRANSPORT ──────────────────────── */}
         {activeTab === "allocation" && (
@@ -3861,6 +5020,15 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 <p className="text-[11px] text-slate-500 mt-0.5">Manage room sharing groups and vehicle seat allotments with manual shuffling</p>
               </div>
               <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  onClick={handleSaveAllocationsToDb} 
+                  disabled={isSavingAllocations}
+                  className="h-8.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] shadow-sm flex items-center gap-1.5"
+                >
+                  {isSavingAllocations ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  {isSavingAllocations ? 'Saving...' : 'Save to Database'}
+                </Button>
                 <Button size="sm" onClick={handleTriggerAutoAllocate} className="h-8.5 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] shadow-sm flex items-center gap-1.5">
                   <RefreshCw className="w-3.5 h-3.5" /> Run Auto-Allocation
                 </Button>
@@ -4024,7 +5192,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               </div>
               <ul className="text-[11px] text-red-750 font-bold space-y-1.5 pl-6 list-disc">
                 {allPassengers.filter(p => !passengerAllocations[p.name]?.room || passengerAllocations[p.name]?.room === "—").map(p => (
-                  <li key={p.name}>{p.name} unallocated to group room/tempo - assign manually below</li>
+                  <li key={p.id || p.name}>{p.name} unallocated to group room/tempo - assign manually below</li>
                 ))}
                 {allPassengers.filter(p => !passengerAllocations[p.name]?.room || passengerAllocations[p.name]?.room === "—").length === 0 && (
                   <p className="text-slate-500 font-semibold list-none -ml-6">All passengers successfully matched. No flags active.</p>
@@ -4159,7 +5327,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     {allPassengers.map((p) => {
                       const current = passengerAllocations[p.name] || { room: "—", vehicle: "—", seat: "—" };
                       return (
-                        <tr key={p.name} className="hover:bg-slate-50/50 transition-colors">
+                        <tr key={p.id || p.name} className="hover:bg-slate-50/50 transition-colors">
                           <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">
                             {p.name}
                           </td>
@@ -4232,6 +5400,56 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 </table>
               </div>
             </div>
+
+            {/* Save Allocations to DB + Clear */}
+            <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-between gap-4">
+              <div className="text-xs font-semibold text-slate-600">
+                <span className="text-emerald-700 font-black">{Object.values(passengerAllocations).filter(a => a.room !== '—').length}</span> room + <span className="text-blue-700 font-black">{Object.values(passengerAllocations).filter(a => a.vehicle !== '—').length}</span> vehicle allocations pending save
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowClearAllocationsDialog(true)}
+                  className="h-8 text-[11px] font-bold text-red-500 border-red-200 hover:bg-red-50 rounded-[4px]"
+                >
+                  Clear DB Allocations
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={isSavingAllocations}
+                  onClick={() => handleSaveAllocationsToDb(false)}
+                  className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px]"
+                >
+                  {isSavingAllocations ? 'Saving...' : '💾 Save to Database'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Clear Allocations Confirmation Dialog */}
+            {showClearAllocationsDialog && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-xl w-96 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-800">Clear All Allocations?</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">This will soft-cancel all ACTIVE room and vehicle allocations for this departure in the database. This action cannot be undone.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1 justify-end">
+                    <Button size="sm" variant="ghost" onClick={() => setShowClearAllocationsDialog(false)} className="h-8 text-[11px] font-bold text-slate-600">
+                      Cancel
+                    </Button>
+                    <Button size="sm" disabled={isSavingAllocations} onClick={() => handleSaveAllocationsToDb(true)} className="h-8 text-[11px] font-bold bg-red-600 hover:bg-red-700 text-white rounded-[4px]">
+                      {isSavingAllocations ? 'Clearing...' : 'Yes, Clear All'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -4240,143 +5458,182 @@ const [sharingPref, setSharingPref] = useState<string>("3");
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-black text-slate-800">Guides</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Manage and track guides assigned to this departure</p>
+                <h2 className="text-base font-black text-slate-800">Guides & Crew</h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">Manage guides assigned to this departure — payment tracking and day-wise allocation</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => toast.info("View Timeline")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
-                  <Sliders className="w-3.5 h-3.5 text-slate-400" /> View as Timeline
-                </button>
-                <button onClick={() => toast.info("Download")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
-                  <Download className="w-3.5 h-3.5 text-slate-400" /> Download
-                </button>
+                <Button
+                  size="sm"
+                  onClick={() => setAddGuideOpen(v => !v)}
+                  className="h-8.5 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] shadow-sm flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Assign Guide
+                </Button>
               </div>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+            {/* KPI Cards — live from dbGuides */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
               {[
-                { v: "1", l: "Lead Guide", sub: "Assigned", bg: "bg-blue-50/50" },
-                { v: "3", l: "Support Guides", sub: "Assigned", bg: "bg-emerald-50/50" },
-                { v: "1", l: "Trip Captain", sub: "Assigned", bg: "bg-purple-50/50" },
-                { v: "1", l: "Drivers", sub: "Assigned", bg: "bg-amber-50/50" },
-                { v: "100%", l: "Coverage", sub: "All roles assigned", bg: "bg-cyan-50/50" },
+                { v: String(dbGuides.length), l: "Total Guides", sub: "Assigned to departure" },
+                { v: `₹${dbGuides.reduce((s,g) => s + (g.agreedAmount||0), 0).toLocaleString('en-IN')}`, l: "Total Agreed", sub: "All guides combined" },
+                { v: `₹${dbGuides.reduce((s,g) => s + (g.advancePaid||0), 0).toLocaleString('en-IN')}`, l: "Total Advance", sub: "Paid so far" },
+                { v: `₹${dbGuides.reduce((s,g) => s + (g.balanceAmount||0), 0).toLocaleString('en-IN')}`, l: "Balance Due", sub: "Remaining payment" },
               ].map(k => (
                 <div key={k.l} className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs">
                   <p className="text-2xl font-black text-slate-800">{k.v}</p>
-                  <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider mt-0.5">{k.l}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{k.l}</p>
                   <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">{k.sub}</p>
                 </div>
               ))}
             </div>
 
-            {/* Sub Tabs */}
-            <div className="flex items-center gap-1.5 border-b border-slate-100 pb-1">
-              {[
-                { label: "All Guides", count: 6 },
-                { label: "Lead Guide", count: 1 },
-                { label: "Support Guides", count: 3 },
-                { label: "Drivers", count: 1 },
-                { label: "Trip Captain", count: 1 }
-              ].map((t, idx) => (
-                <button key={t.label} className={cn("px-3 py-1.5 text-[11px] font-bold rounded-[4px] flex items-center gap-1.5 transition-colors",
-                  idx === 0 ? "bg-[#F97316]/10 text-[#F97316] font-extrabold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-                )}>
-                  {t.label}
-                  <span className={cn("text-[9px] font-bold px-1.5 py-0.2 rounded-full",
-                    idx === 0 ? "bg-[#F97316]/20 text-[#F97316]" : "bg-slate-100 text-slate-500"
-                  )}>{t.count}</span>
-                </button>
-              ))}
-            </div>
+            {/* Add Guide Inline Form */}
+            {addGuideOpen && (
+              <form onSubmit={handleAddGuide} className="bg-orange-50 border border-orange-200 rounded-[6px] p-4 space-y-3">
+                <p className="text-[11px] font-black text-orange-700 uppercase tracking-wider">Assign Guide to Departure</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Guide Name *</label>
+                    <input
+                      required value={guideForm.guideName} onChange={e => setGuideForm(f => ({...f, guideName: e.target.value}))}
+                      placeholder="e.g. Dikshu Sharma"
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Role / Type</label>
+                    <select
+                      value={guideForm.assignmentType} onChange={e => setGuideForm(f => ({...f, assignmentType: e.target.value}))}
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    >
+                      <option value="PRIMARY_GUIDE">Primary Guide</option>
+                      <option value="ASSISTANT_GUIDE">Assistant Guide</option>
+                      <option value="TRIP_LEADER">Trip Leader</option>
+                      <option value="DRIVER_GUIDE">Driver Guide</option>
+                      <option value="FREELANCER">Freelancer</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Days Working</label>
+                    <input
+                      type="number" value={guideForm.daysWorked} min="1" max="30" onChange={e => setGuideForm(f => ({...f, daysWorked: e.target.value}))}
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Agreed Amount (₹)</label>
+                    <input
+                      type="number" value={guideForm.agreedAmount} min="0" onChange={e => setGuideForm(f => ({...f, agreedAmount: e.target.value}))}
+                      placeholder="e.g. 8000"
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Advance Paid (₹)</label>
+                    <input
+                      type="number" value={guideForm.advancePaid} min="0" onChange={e => setGuideForm(f => ({...f, advancePaid: e.target.value}))}
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Reporting Time</label>
+                    <input
+                      type="time" value={guideForm.reportingTime} onChange={e => setGuideForm(f => ({...f, reportingTime: e.target.value}))}
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Notes</label>
+                    <input
+                      value={guideForm.notes} onChange={e => setGuideForm(f => ({...f, notes: e.target.value}))}
+                      placeholder="e.g. Lead guide, experienced in Spiti"
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Emergency Contact</label>
+                    <input
+                      value={guideForm.emergencyContact} onChange={e => setGuideForm(f => ({...f, emergencyContact: e.target.value}))}
+                      placeholder="+91 XXXXXXXXXX"
+                      className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button type="submit" size="sm" disabled={isSavingGuide} className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px]">
+                    {isSavingGuide ? 'Saving...' : 'Save Guide'}
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setAddGuideOpen(false)} className="h-8 text-[11px] font-bold text-slate-600 rounded-[4px]">
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            )}
 
-            {/* Filter selectors row */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex flex-wrap gap-2.5 items-center">
-              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                <option>All Roles</option>
-              </select>
-              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                <option>All Status</option>
-              </select>
-              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                <option>All Assignments</option>
-              </select>
-              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                <option>All Experience</option>
-              </select>
-              <div className="relative flex-1 max-w-xs min-w-[150px]">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-450" />
-                <input type="text" placeholder="Search guide by name or phone..." className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none" />
-              </div>
-              <button className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 bg-white hover:bg-slate-50 text-slate-750 flex items-center gap-1.5 ml-auto shadow-3xs">
-                <Sliders className="w-3.5 h-3.5 text-slate-450" /> More Filters
-              </button>
-            </div>
-
-            {/* Guides Table */}
+            {/* Guides Table — live from dbGuides */}
             <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                  <tr className="text-[9.5px] font-bold text-slate-455 uppercase tracking-wider">
-                    <th className="p-3 border-r border-slate-100 w-8 text-center"></th>
-                    <th className="p-3 border-r border-slate-100">GUIDE</th>
+                  <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="p-3 border-r border-slate-100">GUIDE NAME</th>
                     <th className="p-3 border-r border-slate-100">ROLE</th>
-                    <th className="p-3 border-r border-slate-100">ASSIGNMENT</th>
-                    <th className="p-3 border-r border-slate-100">PHONE</th>
-                    <th className="p-3 border-r border-slate-100">EXPERIENCE</th>
-                    <th className="p-3 border-r border-slate-100">STATUS</th>
-                    <th className="p-3 border-r border-slate-100">DOCUMENTS</th>
+                    <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
+                    <th className="p-3 border-r border-slate-100 text-center">DAYS</th>
+                    <th className="p-3 border-r border-slate-100 text-right">AGREED</th>
+                    <th className="p-3 border-r border-slate-100 text-right">ADVANCE PAID</th>
+                    <th className="p-3 border-r border-slate-100 text-right">BALANCE DUE</th>
+                    <th className="p-3 border-r border-slate-100">NOTES</th>
+                    <th className="p-3 border-r border-slate-100">ADDED ON</th>
                     <th className="p-3 text-center">ACTION</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
-                  {computedGuides.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3 text-center border-r border-slate-100">
-                        <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[10px] uppercase">
-                          {row.name.split(" ").map(n => n[0]).join("")}
+                  {dbGuides.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="p-8 text-center text-[11px] text-slate-400 font-semibold">
+                        No guides assigned yet. Click "Assign Guide" to add the first guide.
+                      </td>
+                    </tr>
+                  ) : dbGuides.filter((g: any) => g.assignmentStatus !== 'CANCELLED').map((g: any) => (
+                    <tr key={g.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-3 border-r border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px] uppercase">
+                            {g.guideName?.split(' ').map((n: string) => n[0]).join('').substring(0,2)}
+                          </div>
+                          <span className="font-bold text-slate-800">{g.guideName}</span>
                         </div>
                       </td>
                       <td className="p-3 border-r border-slate-100">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-slate-800">{row.name}</span>
-                          {row.lead && <span className="text-[7.5px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.2 rounded-full uppercase tracking-wider">LEAD</span>}
-                        </div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">{(g.assignmentType || 'PRIMARY_GUIDE').replace(/_/g, ' ')}</span>
                       </td>
-                      <td className="p-3 border-r border-slate-100 text-slate-600 font-semibold">{row.role}</td>
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-800">{row.assign}</p>
-                        <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">{row.date}</p>
+                      <td className="p-3 border-r border-slate-100 text-center">
+                        <span className={cn("px-2 py-0.5 rounded-[3px] text-[9px] font-black uppercase tracking-wider border",
+                          g.assignmentStatus === 'CONFIRMED' || g.assignmentStatus === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          g.assignmentStatus === 'ASSIGNED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          g.assignmentStatus === 'CANCELLED' ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                          'bg-amber-50 text-amber-700 border-amber-200'
+                        )}>{g.assignmentStatus || 'ASSIGNED'}</span>
                       </td>
-                      <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.phone}</td>
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-800">{row.exp}</p>
-                        <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">{row.trips}</p>
+                      <td className="p-3 border-r border-slate-100 text-center font-semibold text-slate-600">{g.daysWorked}</td>
+                      <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-800">₹{Number(g.agreedAmount||0).toLocaleString('en-IN')}</td>
+                      <td className="p-3 border-r border-slate-100 text-right font-semibold text-emerald-700">₹{Number(g.advancePaid||0).toLocaleString('en-IN')}</td>
+                      <td className="p-3 border-r border-slate-100 text-right">
+                        <span className={cn("font-bold", Number(g.balanceAmount||0) > 0 ? "text-red-600" : "text-emerald-600")}>
+                          ₹{Number(g.balanceAmount||0).toLocaleString('en-IN')}
+                        </span>
                       </td>
-                      <td className="p-3 border-r border-slate-100">
-                        <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider block w-fit">CONFIRMED</span>
-                        <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">{row.sub}</p>
-                      </td>
-                      <td className="p-3 border-r border-slate-100">
-                        <div className="flex items-center gap-2 text-[9px] font-bold">
-                          {Object.entries(row.docs).map(([k, has]) => (
-                            <span key={k} className={cn("inline-flex items-center gap-1 uppercase select-none",
-                              has ? "text-emerald-650" : "text-amber-600"
-                            )}>
-                              {has ? "✓" : "!"} {k}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
+                      <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">{g.notes || '—'}</td>
+                      <td className="p-3 border-r border-slate-100 text-slate-400 text-[10px] font-semibold">{new Date(g.createdAt).toLocaleDateString('en-IN', {day:'2-digit', month:'short'})}</td>
                       <td className="p-3 text-center">
-                        <div className="flex justify-center items-center gap-1.5">
-                          <select className="h-7 text-[10px] font-bold border border-slate-200 rounded-[4px] px-1.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                            <option>View</option>
-                          </select>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="ghost" size="icon"
+                          onClick={() => handleDeleteGuide(g.id, g.guideName)}
+                          className="h-7 w-7 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
+                        >
+                          <Trash className="w-3.5 h-3.5" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -4386,739 +5643,65 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
             {/* Bottom summary bar */}
             <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-between text-xs font-semibold">
-              <span>Showing 1 to 6 of 6 guides</span>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">Show</span>
-                <select className="h-7 text-[10px] font-bold border border-slate-200 bg-white rounded px-1 cursor-pointer">
-                  <option>10</option>
-                </select>
-                <span className="text-slate-400">per page</span>
-              </div>
+              <span>{dbGuides.length === 0 ? 'No guides assigned' : `${dbGuides.length} guide${dbGuides.length !== 1 ? 's' : ''} assigned to this departure`}</span>
+              <span className="text-slate-400 text-[10px]">All changes saved to database automatically</span>
             </div>
           </div>
         )}
+
 
         {/* ──────────────────────── ACTIVITIES ──────────────────────── */}
         {activeTab === "activities" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-black text-slate-800">Activities</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Manage day wise activities and inclusions for this departure</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => toast.info("View Timeline")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
-                  <Sliders className="w-3.5 h-3.5 text-slate-400" /> View as Timeline
-                </button>
-                <button onClick={() => toast.info("Download")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
-                  <Download className="w-3.5 h-3.5 text-slate-400" /> Download
-                </button>
-              </div>
-            </div>
-
-            {/* KPI */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
-              {[
-                { label: "Total Activities", value: computedActivities.length, desc: "Across departure days", bg: "bg-blue-50/50" },
-                { label: "Confirmed", value: computedActivities.filter(a => a.status === 'CONFIRMED' || a.status === 'COMPLETED').length, desc: `${((computedActivities.filter(a => a.status === 'CONFIRMED' || a.status === 'COMPLETED').length / (computedActivities.length || 1))*100).toFixed(1)}%`, bg: "bg-emerald-50/50" },
-                { label: "Pending", value: computedActivities.filter(a => a.status === 'PENDING').length, desc: "Action required", bg: "bg-amber-50/50" },
-                { label: "Cancelled", value: computedActivities.filter(a => a.status === 'CANCELLED').length, desc: "Inactive", bg: "bg-red-50/50" },
-                { label: "Optional Activities", value: computedActivities.filter(a => a.isOptional).length, desc: "Exclusions", bg: "bg-purple-50/50" }
-              ].map(kpi => (
-                <div key={kpi.label} className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs">
-                  <p className="text-2xl font-black text-slate-800">{kpi.value}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{kpi.label}</p>
-                  <p className="text-[9.5px] text-slate-400 mt-1">{kpi.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex flex-wrap gap-2.5 items-center">
-              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                <option>All Days</option>
-              </select>
-              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                <option>All Activity Type</option>
-              </select>
-              <select className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                <option>All Status</option>
-              </select>
-              <div className="relative flex-1 max-w-xs min-w-[150px]">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-450" />
-                <input type="text" placeholder="Search activity..." className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none" />
-              </div>
-              <button className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 bg-white hover:bg-slate-50 text-slate-750 flex items-center gap-1.5 ml-auto shadow-3xs">
-                <Sliders className="w-3.5 h-3.5 text-slate-450" /> More Filters
-              </button>
-            </div>
-
-            {/* Table */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                  <tr className="text-[9.5px] font-bold text-slate-455 uppercase tracking-wider">
-                    <th className="p-3 border-r border-slate-100">DAY</th>
-                    <th className="p-3 border-r border-slate-100">ACTIVITY</th>
-                    <th className="p-3 border-r border-slate-100 w-28">TYPE</th>
-                    <th className="p-3 border-r border-slate-100">INCLUDED</th>
-                    <th className="p-3 border-r border-slate-100">TIME</th>
-                    <th className="p-3 border-r border-slate-100">LOCATION</th>
-                    <th className="p-3 border-r border-slate-100">STATUS</th>
-                    <th className="p-3 text-center w-24">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
-                  {computedActivities.map((a, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-800">{a.day}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{a.wd}</p>
-                      </td>
-                      <td className="p-3 border-r border-slate-100">
-                        <p className="font-bold text-slate-800">{a.act}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{a.sub}</p>
-                      </td>
-                      <td className="p-3 border-r border-slate-100">
-                        <span className={cn("text-[8.5px] font-black px-2 py-0.5 rounded-[3px] border uppercase tracking-wider block w-fit",
-                          a.type === "TRAVEL" ? "bg-blue-50 text-blue-600 border-blue-100" :
-                          a.type === "SIGHTSEEING" ? "bg-purple-50 text-purple-600 border-purple-100" :
-                          "bg-amber-50 text-amber-600 border-amber-100"
-                        )}>{a.type}</span>
-                      </td>
-                      <td className="p-3 border-r border-slate-100">
-                        {a.inc ? (
-                          <span className="flex items-center gap-1.5 text-[10.5px] text-emerald-650 font-bold">✓ Included</span>
-                        ) : (
-                          <span className="flex items-center gap-1.5 text-[10.5px] text-slate-400 font-semibold">✗ Not Included</span>
-                        )}
-                      </td>
-                      <td className="p-3 border-r border-slate-100 text-slate-600 font-semibold">{a.time}</td>
-                      <td className="p-3 border-r border-slate-100 text-slate-650 font-medium">{a.loc}</td>
-                      <td className="p-3 border-r border-slate-100">
-                        <span className={cn("text-[8.5px] font-black px-1.5 py-0.5 rounded-[3px] border uppercase tracking-wider block w-fit", a.statusClass)}>
-                          {a.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex justify-center items-center gap-1.5">
-                          <select className="h-7 text-[10px] font-bold border border-slate-200 rounded-[4px] px-1.5 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
-                            <option>View</option>
-                          </select>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Bottom summary bar */}
-            <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-between text-xs font-semibold">
-              <span>Showing 1 to 10 of 18 activities</span>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">Show</span>
-                <select className="h-7 text-[10px] font-bold border border-slate-200 bg-white rounded px-1 cursor-pointer">
-                  <option>10</option>
-                </select>
-                <span className="text-slate-400">per page</span>
-              </div>
-            </div>
-          </div>
+          <DepartureActivities
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+            tripDetails={tripDetails}
+            tripVendors={tripVendors}
+            activitiesList={activitiesList}
+            fetchPageData={fetchPageData}
+            setActivitiesList={setActivitiesList}
+            api={api}
+          />
         )}
-
-        {/* ──────────────────────── PAYMENTS ──────────────────────── */}
+                {/* ──────────────────────── PAYMENTS ──────────────────────── */}
         {activeTab === "payments" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-black text-slate-800">Payments</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Track all customer payments for this departure</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={()=>toast.info("Payment summary")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"><BarChart2 className="w-3.5 h-3.5 text-slate-400" /> Payment Summary</button>
-                <button onClick={() => handleDownloadCSV(computedPayments, "payments_log.csv")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"><Download className="w-3.5 h-3.5 text-slate-400" /> Download</button>
-              </div>
-            </div>
-
-            {/* KPI */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
-                { label:"Total Received",     value:`₹${paymentKpis.received.toLocaleString("en-IN")}`, sub:`${((paymentKpis.received/paymentKpis.total)*100).toFixed(1)}% of total`, icon:<TrendingUp className="w-5 h-5" />, bg:"bg-emerald-50", color:"text-emerald-600" },
-                { label:"Pending Collection", value:`₹${paymentKpis.pending.toLocaleString("en-IN")}`,  sub:`${((paymentKpis.pending/paymentKpis.total)*100).toFixed(1)}% of total`, icon:<Clock className="w-5 h-5" />,       bg:"bg-blue-50",    color:"text-blue-600" },
-                { label:"Overdue",            value:`₹${paymentKpis.overdue.toLocaleString("en-IN")}`,  sub:"2 Bookings",                                                              icon:<AlertTriangle className="w-5 h-5" />,bg:"bg-amber-50",   color:"text-amber-600" },
-                { label:"Total Refunds",      value:`₹${paymentKpis.refunds.toLocaleString("en-IN")}`,  sub:`${((paymentKpis.refunds/paymentKpis.total)*100).toFixed(1)}% of total`, icon:<RefreshCw className="w-5 h-5" />,    bg:"bg-purple-50",  color:"text-purple-600" },
-                { label:"Paid Bookings",      value:`${paymentKpis.paidCount}/${paymentKpis.totalCount}`,sub:"95.0% of bookings",                                                    icon:<Users className="w-5 h-5" />,         bg:"bg-slate-100",  color:"text-slate-700" },
-              ].map(kpi=>(
-                <div key={kpi.label} className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm flex items-center gap-3">
-                  <div className={cn("w-9 h-9 rounded-[4px] flex items-center justify-center shrink-0", kpi.bg, kpi.color)}>{kpi.icon}</div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{kpi.label}</p>
-                    <p className={cn("text-lg font-black mt-0.5", kpi.color)}>{kpi.value}</p>
-                    <p className="text-[10px] text-slate-400">{kpi.sub}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm p-3 flex flex-wrap gap-2">
-              {[["All","All Status"],["PAID","Paid"],["PARTIALLY PAID","Partially Paid"],["UNPAID","Unpaid"],["REFUNDED","Refunded"]].map(([v,l])=>(
-                <button key={v} onClick={()=>setPayStatusFilter(v)}
-                  className={cn("h-8 text-[11px] font-bold rounded-[4px] px-3 border transition-colors", payStatusFilter===v?"bg-[#F97316] text-white border-[#F97316]":"bg-white border-slate-200 text-slate-700 hover:bg-slate-50")}>
-                  {l}
-                </button>
-              ))}
-              <div className="relative ml-auto min-w-[180px]">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input type="text" placeholder="Search by name, booking ID..." className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 outline-none" />
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                  <tr>
-                    <th className="p-3 w-10"><input type="checkbox" className="rounded-[2px] border-slate-300" /></th>
-                    {["BOOKING ID","PASSENGER","PAYMENT PLAN","AMOUNT (₹)","PAID (₹)","PENDING (₹)","PAYMENT MODE","STATUS","LAST PAYMENT","ACTION"].map(h=>(
-                      <th key={h} className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
-                  {filteredPayments.map(p=>(
-                    <tr key={p.id} className="hover:bg-slate-50/50">
-                      <td className="p-3"><input type="checkbox" className="rounded-[2px] border-slate-300" /></td>
-                      <td className="p-3">
-                        <div className="font-mono font-bold text-slate-700 text-[10px]">{p.id}</div>
-                        <StatusBadge status={p.bookingStatus} />
-                      </td>
-                      <td className="p-3">
-                        <div className="font-bold text-slate-800">{p.passenger}</div>
-                        <div className="text-[10px] text-slate-400">{p.pax} Pax · +91 {p.phone}</div>
-                      </td>
-                      <td className="p-3">
-                        <div className="font-semibold text-slate-700">{p.plan}</div>
-                        <div className="text-[10px] text-slate-400">₹ {(p.amount/p.pax).toLocaleString("en-IN")} / Pax</div>
-                      </td>
-                      <td className="p-3 font-black text-slate-800">₹ {p.amount.toLocaleString("en-IN")}</td>
-                      <td className="p-3 font-black text-emerald-600">₹ {p.paid.toLocaleString("en-IN")}<div className="text-[9px] font-bold text-slate-400">{p.amount>0?Math.round((p.paid/p.amount)*100):0}%</div></td>
-                      <td className={cn("p-3 font-black", p.pending>0?"text-red-600":"text-slate-400")}>₹ {p.pending.toLocaleString("en-IN")}</td>
-                      <td className="p-3">
-                        <div className="font-semibold text-slate-700">{p.mode}</div>
-                        <div className="text-[10px] text-slate-400">{p.modeDetail}</div>
-                      </td>
-                      <td className="p-3"><StatusBadge status={p.status} /></td>
-                      <td className="p-3 text-slate-500 whitespace-nowrap">{p.lastPayment}</td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-1.5">
-                          <button onClick={() => handleOpenBookingDetails(p.id)} className="text-[10px] font-bold text-slate-600 border border-slate-200 rounded-[3px] px-2 py-0.5 hover:bg-slate-50">View</button>
-                          {p.status==="UNPAID"&&<button className="text-[10px] font-bold text-[#F97316] border border-[#F97316]/30 rounded-[3px] px-2 py-0.5 hover:bg-orange-50">Remind</button>}
-                          <MoreVertical className="w-4 h-4 text-slate-400 cursor-pointer" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-slate-50 border-t-2 border-[#E2E8F0]">
-                  <tr>
-                    <td colSpan={4} className="p-3 text-[11px] font-bold text-slate-600">Showing 1 to {filteredPayments.length} of {MOCK_PAYMENTS.length} bookings</td>
-                    <td className="p-3 font-black text-slate-800 text-[11px]">₹ {filteredPayments.reduce((s,p)=>s+p.amount,0).toLocaleString("en-IN")}</td>
-                    <td className="p-3 font-black text-emerald-600 text-[11px]">₹ {filteredPayments.reduce((s,p)=>s+p.paid,0).toLocaleString("en-IN")}</td>
-                    <td className="p-3 font-black text-red-600 text-[11px]">₹ {filteredPayments.reduce((s,p)=>s+p.pending,0).toLocaleString("en-IN")}</td>
-                    <td colSpan={4}></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
+          <DeparturePayments
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+            tripDetails={tripDetails}
+            tripVendors={tripVendors}
+          />
         )}
-
-        {/* ──────────────────────── TASKS ──────────────────────── */}
+                {/* ──────────────────────── TASKS ──────────────────────── */}
         {activeTab === "tasks" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-black text-slate-800">Tasks</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Manage and track all tasks for this departure</p>
-              </div>
-              <div className="flex gap-2">
-                <button className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"><CheckSquare className="w-3.5 h-3.5 text-slate-400" /> View as Kanban</button>
-                <button onClick={() => handleDownloadCSV(computedTasks, "checklist_tasks.csv")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"><Download className="w-3.5 h-3.5 text-slate-400" /> Download</button>
-              </div>
-            </div>
-
-            {/* KPI */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
-                { label:"Total Tasks",  value:taskKpis.total,     sub:"Across all categories", icon:<ClipboardList className="w-5 h-5" />, bg:"bg-blue-50",    color:"text-blue-600" },
-                { label:"Completed",    value:taskKpis.completed,  sub:`${Math.round((taskKpis.completed/taskKpis.total)*100)}% of total`,  icon:<CheckCircle2 className="w-5 h-5" />, bg:"bg-emerald-50",color:"text-emerald-600" },
-                { label:"In Progress",  value:taskKpis.inProgress, sub:"25% of total",          icon:<Clock className="w-5 h-5" />,           bg:"bg-amber-50",   color:"text-amber-600" },
-                { label:"Pending",      value:taskKpis.pending,    sub:"8.33% of total",         icon:<PauseCircle className="w-5 h-5" />,     bg:"bg-slate-100",  color:"text-slate-600" },
-                { label:"Overdue",      value:taskKpis.overdue,    sub:"8.33% of total",         icon:<AlertTriangle className="w-5 h-5" />,   bg:"bg-red-50",     color:"text-red-600" },
-              ].map(kpi=>(
-                <div key={kpi.label} className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm flex items-center gap-3">
-                  <div className={cn("w-9 h-9 rounded-[4px] flex items-center justify-center shrink-0", kpi.bg, kpi.color)}>{kpi.icon}</div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{kpi.label}</p>
-                    <p className={cn("text-2xl font-black", kpi.color)}>{kpi.value}</p>
-                    <p className="text-[10px] text-slate-400">{kpi.sub}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm p-3 flex flex-wrap gap-2">
-              {[
-                {value:taskStatusFilter,   setter:setTaskStatusFilter,   opts:["All","IN PROGRESS","COMPLETED","PENDING","OVERDUE","NOT STARTED"].map(v=>[v,v==="All"?"All Status":v])},
-                {value:taskCategoryFilter, setter:setTaskCategoryFilter, opts:[["All","All Categories"],["PAYMENTS","Payments"],["DOCUMENTS","Documents"],["HOTELS","Hotels"],["TRANSPORT","Transport"],["GUIDES","Guides"],["OPERATIONS","Operations"],["COMMUNICATION","Communication"]]},
-              ].map((f,i)=>(
-                <select key={i} value={f.value} onChange={e=>f.setter(e.target.value)}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
-                  {f.opts.map(([v,l])=><option key={v} value={v}>{l}</option>)}
-                </select>
-              ))}
-              <div className="relative flex-1 min-w-[180px] max-w-xs">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input type="text" placeholder="Search task..." className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 outline-none" />
-              </div>
-              <button className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 ml-auto">
-                <Filter className="w-3.5 h-3.5 text-slate-400" /> More Filters
-              </button>
-            </div>
-
-            {/* Table */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                  <tr>
-                    <th className="p-3 w-10"><input type="checkbox" className="rounded-[2px] border-slate-300" /></th>
-                    {["TASK","CATEGORY","ASSIGNED TO","ASSIGNED BY","PRIORITY","DUE DATE","STATUS","CREATED ON","ACTION"].map(h=>(
-                      <th key={h} className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
-                  {filteredTasks.map(t=>(
-                    <tr key={t.id} className="hover:bg-slate-50/50">
-                      <td className="p-3">
-                        <input
-                          type="checkbox"
-                          className="rounded-[2px] border-slate-300 cursor-pointer"
-                          checked={t.status === "COMPLETED"}
-                          onChange={() => t.rawTask && handleToggleTask(t.rawTask)}
-                        />
-                      </td>
-                      <td className="p-3">
-                        <div className="font-bold text-slate-800">{t.task}</div>
-                        <div className="text-[10px] text-slate-400">{t.sub}</div>
-                      </td>
-                      <td className="p-3"><TypeBadge type={t.category} /></td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-1.5">
-                          <Avatar initials={t.assignee.split(" ").map((n:string)=>n[0]).join("")} className="bg-slate-700 w-6 h-6 text-[8px]" />
-                          <div>
-                            <div className="font-bold text-slate-800">{t.assignee}</div>
-                            <div className="text-[10px] text-slate-400">{t.role}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3"><PriorityBadge priority={t.priority} /></td>
-                      <td className="p-3">
-                        <div className="font-semibold text-slate-700">{t.dueDate}</div>
-                        <div className={cn("text-[10px] font-bold", t.status==="OVERDUE"?"text-red-500":"text-amber-600")}>{t.dueNote}</div>
-                      </td>
-                      <td className="p-3"><StatusBadge status={t.status} /></td>
-                      <td className="p-3 text-slate-500 whitespace-nowrap">{t.createdOn}</td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-1.5">
-                          <button className="text-[10px] font-bold text-slate-600 border border-slate-200 rounded-[3px] px-2 py-0.5 hover:bg-slate-50">View</button>
-                          <MoreVertical className="w-4 h-4 text-slate-400 cursor-pointer" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="px-4 py-3 border-t border-[#E2E8F0] text-[11px] text-slate-500">
-                Showing 1 to {filteredTasks.length} of {MOCK_TASKS.length} tasks
-              </div>
-            </div>
-          </div>
+          <DepartureTasks
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+          />
         )}
-
-        {/* ──────────────────────── DOCUMENTS ──────────────────────── */}
+                {/* ──────────────────────── DOCUMENTS ──────────────────────── */}
         {activeTab === "documents" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-black text-slate-800">Documents</h2>
-                <p className="text-[11px] text-slate-500 mt-0.5">Store, organize and manage all documents for this departure</p>
-              </div>
-              <div className="flex gap-2">
-                <button className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700">View as Grid</button>
-                <button onClick={() => handleDownloadCSV(computedDocuments, "documents_catalog.csv")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"><Download className="w-3.5 h-3.5 text-slate-400" /> Download</button>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                {v:128,l:"Total Documents",  sub:"Across all categories",  icon:<Folder className="w-5 h-5" />, bg:"bg-blue-50",   color:"text-blue-600"},
-                {v:96, l:"Verified",          sub:"75.00% of total",        icon:<CheckCircle2 className="w-5 h-5" />, bg:"bg-emerald-50",color:"text-emerald-600"},
-                {v:18, l:"Pending Verification",sub:"14.06% of total",      icon:<Clock className="w-5 h-5" />, bg:"bg-amber-50",  color:"text-amber-600"},
-                {v:6,  l:"Action Required",   sub:"4.69% of total",         icon:<AlertTriangle className="w-5 h-5" />, bg:"bg-red-50",   color:"text-red-600"},
-              ].map(kpi=>(
-                <div key={kpi.l} className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm flex items-center gap-3">
-                  <div className={cn("w-9 h-9 rounded-[4px] flex items-center justify-center shrink-0", kpi.bg, kpi.color)}>{kpi.icon}</div>
-                  <div>
-                    <p className="text-2xl font-black text-slate-800">{kpi.v}</p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{kpi.l}</p>
-                    <p className="text-[10px] text-slate-400">{kpi.sub}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm p-3 flex flex-wrap gap-2">
-              <select className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
-                <option>All Categories</option>
-              </select>
-              <select className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
-                <option>All Sub Categories</option>
-              </select>
-              <select className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
-                <option>All Uploaded By</option>
-              </select>
-              <select className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50">
-                <option>All Status</option>
-                <option>VERIFIED</option>
-                <option>PENDING</option>
-                <option>ACTION REQUIRED</option>
-              </select>
-              <div className="relative flex-1 min-w-[180px] max-w-xs">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input type="text" placeholder="Search document name..." value={docSearch} onChange={e=>setDocSearch(e.target.value)}
-                  className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 outline-none" />
-              </div>
-              <button className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 ml-auto">
-                <Filter className="w-3.5 h-3.5 text-slate-400" /> More Filters
-              </button>
-            </div>
-
-            {/* 2-col layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
-              {/* Category sidebar */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-[#E2E8F0]">
-                  <p className="text-xs font-black text-slate-700 uppercase tracking-wider">Categories</p>
-                </div>
-                <div className="py-1">
-                  {MOCK_DOC_CATEGORIES.map(cat=>(
-                    <button key={cat.id} onClick={()=>setDocCategory(cat.id)}
-                      className={cn("w-full flex items-center justify-between px-4 py-2.5 text-[11px] font-semibold transition-colors",
-                        docCategory===cat.id?"bg-[#FFF0E6] text-[#F97316] font-bold":"text-slate-700 hover:bg-slate-50")}>
-                      <span className="flex items-center gap-2">
-                        <Folder className={cn("w-3.5 h-3.5", docCategory===cat.id?"text-[#F97316]":"text-slate-400")} />
-                        {cat.label}
-                      </span>
-                      <span className={cn("text-[10px] font-black px-1.5 py-0.5 rounded-full", docCategory===cat.id?"bg-[#F97316] text-white":"bg-slate-100 text-slate-500")}>
-                        {cat.count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <div className="px-4 py-3 border-t border-[#E2E8F0] space-y-1">
-                  <div className="flex justify-between text-[10px] text-slate-500 font-semibold">
-                    <span>Storage Used</span><span>2.48 GB / 10 GB</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#F97316] rounded-full" style={{width:"24.8%"}} />
-                  </div>
-                  <p className="text-[10px] text-slate-400">24.8% Used</p>
-                  <button className="text-[10px] font-bold text-[#F97316] hover:underline">Manage Storage</button>
-                </div>
-              </div>
-
-              {/* Documents table */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden shadow-sm">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                    <tr>
-                      <th className="p-3 w-10"><input type="checkbox" className="rounded-[2px] border-slate-300" /></th>
-                      {["DOCUMENT NAME","CATEGORY","SUB CATEGORY","UPLOADED BY","UPLOADED ON","STATUS","ACTIONS"].map(h=>(
-                        <th key={h} className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
-                    {filteredDocs.map(doc=>(
-                      <tr key={doc.id} className="hover:bg-slate-50/50">
-                        <td className="p-3"><input type="checkbox" className="rounded-[2px] border-slate-300" /></td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className={cn("w-7 h-7 rounded-[4px] flex items-center justify-center shrink-0", doc.status==="VERIFIED"?"bg-emerald-50 text-emerald-600":doc.status==="ACTION REQUIRED"?"bg-red-50 text-red-600":"bg-amber-50 text-amber-600")}>
-                              <FileText className="w-3.5 h-3.5" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-800">{doc.name}</div>
-                              <div className="text-[10px] text-slate-400">{doc.sub}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-3"><TypeBadge type={doc.category.split(" ")[0].toUpperCase()} /></td>
-                        <td className="p-3 text-slate-600">{doc.subcat}</td>
-                        <td className="p-3">
-                          <div className="font-bold text-slate-800">{doc.uploadedBy}</div>
-                          <div className="text-[10px] text-slate-400">{doc.role}</div>
-                        </td>
-                        <td className="p-3 text-slate-500 whitespace-nowrap">{doc.uploadedOn}</td>
-                        <td className="p-3"><StatusBadge status={doc.status} /></td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-1.5">
-                            <button onClick={() => doc.url ? window.open(doc.url, '_blank') : toast.info(`Viewing document: ${doc.name}`)} className="text-[10px] font-bold text-slate-600 border border-slate-200 rounded-[3px] px-2 py-0.5 hover:bg-slate-50 flex items-center gap-1">View <ChevronDown className="w-2.5 h-2.5" /></button>
-                            <MoreVertical className="w-4 h-4 text-slate-400 cursor-pointer" />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="px-4 py-3 border-t border-[#E2E8F0] flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Showing 1 to {filteredDocs.length} of {computedDocuments.length} documents</span>
-                  <div className="flex items-center gap-1">
-                    <span>Show</span>
-                    <select className="h-7 text-[11px] border border-slate-200 rounded-[4px] px-1.5 bg-white outline-none"><option>10</option><option>25</option><option>50</option></select>
-                    <span>per page</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DepartureDocuments
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+          />
         )}
-
-        {/* ──────────────────────── COMMUNICATION ──────────────────────── */}
+                {/* ──────────────────────── COMMUNICATION ──────────────────────── */}
         {activeTab === "communication" && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-base font-black text-slate-800">Communication</h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">All messages, announcements and updates for this departure</p>
-            </div>
-
-            {/* Sub-filter tabs */}
-            <div className="flex items-center gap-2">
-              {["All","Announcements","Group Chats","Direct Messages"].map(f=>(
-                <button key={f} onClick={()=>setConvFilter(f)}
-                  className={cn("text-[11px] font-bold px-3 py-1.5 rounded-[4px] border transition-colors", convFilter===f?"bg-[#F97316] text-white border-[#F97316]":"bg-white border-slate-200 text-slate-700 hover:bg-slate-50")}>
-                  {f}
-                </button>
-              ))}
-              <div className="ml-auto flex gap-2">
-                <button onClick={()=>toast.info("Message templates")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"><MessageSquare className="w-3.5 h-3.5 text-slate-400" /> Message Templates <ChevronDown className="w-3.5 h-3.5" /></button>
-                <button onClick={()=>toast.info("Export")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"><Download className="w-3.5 h-3.5 text-slate-400" /> Export <ChevronDown className="w-3 h-3" /></button>
-              </div>
-            </div>
-
-            {/* 3-panel layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_240px] gap-4 h-[560px]">
-              {/* Conversation list */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden shadow-sm flex flex-col">
-                <div className="p-3 border-b border-[#E2E8F0]">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input type="text" placeholder="Search conversations..." className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-slate-50 placeholder:text-slate-400 outline-none" />
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto divide-y divide-slate-50">
-                  {computedConversations.map(conv=>(
-                    <div key={conv.id} onClick={()=>setActiveConv(conv.id)}
-                      className={cn("flex items-start gap-2.5 p-3 cursor-pointer transition-colors", activeConv===conv.id?"bg-[#FFF0E6]":"hover:bg-slate-50")}>
-                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-[13px] shrink-0", activeConv===conv.id?"bg-[#F97316] text-white":"bg-slate-100")}>
-                        {conv.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="text-[11px] font-bold text-slate-800 truncate">{conv.name}</p>
-                          <span className="text-[9px] text-slate-400 shrink-0">{conv.time}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 truncate mt-0.5">{conv.sub}</p>
-                      </div>
-                      {conv.unread>0 && <span className="w-4 h-4 bg-[#F97316] text-white text-[8px] font-black rounded-full flex items-center justify-center shrink-0 mt-1">{conv.unread}</span>}
-                    </div>
-                  ))}
-                </div>
-                <div className="p-3 border-t border-[#E2E8F0]">
-                  <button onClick={()=>toast.info("New conversation")} className="w-full text-[11px] font-bold border border-slate-200 rounded-[4px] py-2 bg-white hover:bg-slate-50 text-slate-700 flex items-center justify-center gap-1.5">
-                    <Plus className="w-3.5 h-3.5" /> New Conversation
-                  </button>
-                </div>
-              </div>
-
-              {/* Chat feed */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden shadow-sm flex flex-col">
-                {/* Chat header */}
-                <div className="px-4 py-3 border-b border-[#E2E8F0] flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-[#FFF0E6] text-[#F97316] flex items-center justify-center text-sm">🏕️</div>
-                    <div>
-                      <p className="text-[12px] font-black text-slate-800">{computedConversations.find(c => c.id === activeConv)?.name || "General Chat"}</p>
-                      <p className="text-[10px] text-slate-400">{passengerStats.total + (leadGuideName ? 1 : 0)} participants</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Search className="w-4 h-4 text-slate-400 cursor-pointer" />
-                    <MoreVertical className="w-4 h-4 text-slate-400 cursor-pointer" />
-                  </div>
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
-                  <div className="flex justify-center">
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">Today</span>
-                  </div>
-                  {chatMessages.filter(msg => msg.convId === activeConv || !msg.convId).map(msg=>(
-                    <div key={msg.id} className={cn("flex gap-2.5", msg.isMine && "flex-row-reverse")}>
-                      {!msg.isMine && (
-                        <div className="w-7 h-7 rounded-full bg-slate-700 text-white flex items-center justify-center text-[8px] font-black shrink-0 mt-1">{msg.avatar}</div>
-                      )}
-                      <div className={cn("max-w-[70%] space-y-1", msg.isMine && "items-end")}>
-                        {!msg.isMine && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-black text-slate-700">{msg.sender}</span>
-                            <span className="text-[9px] text-slate-400">{msg.role}</span>
-                          </div>
-                        )}
-                        <div className={cn("rounded-[8px] px-3.5 py-2.5 text-[11px] leading-relaxed whitespace-pre-wrap", msg.isMine?"bg-[#F97316] text-white rounded-tr-none":"bg-white border border-[#E2E8F0] text-slate-700 rounded-tl-none shadow-xs")}>
-                          {msg.text}
-                        </div>
-                        <div className={cn("flex items-center gap-2", msg.isMine && "justify-end")}>
-                          <span className="text-[9px] text-slate-400">{msg.time}</span>
-                          {msg.reactions.map((r,i)=>(
-                            <span key={i} className="text-[10px] bg-white border border-slate-200 rounded-full px-1.5 py-0.5 shadow-xs">{r.emoji} {r.count}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Message input */}
-                <div className="border-t border-[#E2E8F0] bg-white">
-                  <div className="px-4 pt-2 flex gap-4 border-b border-slate-50">
-                    {["Message","Announcement"].map(t=>(
-                      <button key={t} onClick={()=>setChatTab(t.toLowerCase())}
-                        className={cn("pb-2 text-[11px] font-bold border-b-2 transition-colors", chatTab===t.toLowerCase()?"text-[#F97316] border-[#F97316]":"text-slate-400 border-transparent hover:text-slate-600")}>
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="p-3 flex items-end gap-2">
-                    <div className="flex-1 flex items-center gap-1 px-1">
-                      <Smile className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600 shrink-0" />
-                      <Paperclip className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600 shrink-0" />
-                      <Image className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600 shrink-0" />
-                      <MapPin className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600 shrink-0" />
-                      <AtSign className="w-4 h-4 text-slate-400 cursor-pointer hover:text-slate-600 shrink-0" />
-                      <input
-                        value={chatInput} onChange={e=>setChatInput(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="Type your message..."
-                        className="flex-1 text-[11px] outline-none placeholder:text-slate-400 px-2"
-                      />
-                    </div>
-                    <button
-                      onClick={handleSendMessage}
-                      className="h-9 px-4 bg-[#F97316] hover:bg-[#E05E00] text-white text-[11px] font-bold rounded-[4px] flex items-center gap-1.5 shrink-0 transition-colors"
-                    >
-                      <Send className="w-3.5 h-3.5" /> Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right sidebar */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden shadow-sm flex flex-col">
-                <div className="p-4 border-b border-[#E2E8F0]">
-                  <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Group Details</p>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-5">
-                  {/* Group info */}
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-10 h-10 rounded-full bg-[#FFF0E6] text-[#F97316] flex items-center justify-center text-lg shrink-0">🏕️</div>
-                    <div>
-                      <p className="font-black text-slate-800 text-[12px]">MKA-0705 – General Group</p>
-                      <StatusBadge status="CONFIRMED" />
-                      <p className="text-[10px] text-slate-400 mt-1">Created on 10 Jun 2027 by Suresh Kumar</p>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Description</p>
-                    <p className="text-[11px] text-slate-600 leading-relaxed">General group for all participants, guides and team members for MKA-0705 departure.</p>
-                  </div>
-
-                  {/* Media */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Media, Links & Files</p>
-                      <button className="text-[10px] font-bold text-[#F97316]">View all</button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {["bg-slate-200","bg-blue-100","bg-green-100","bg-amber-100"].map((c,i)=>(
-                        <div key={i} className={cn("aspect-square rounded-[4px]", c, "flex items-center justify-center text-slate-400")}>
-                          <Image className="w-5 h-5" />
-                        </div>
-                      ))}
-                      <div className="aspect-square rounded-[4px] bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">+12</div>
-                    </div>
-                  </div>
-
-                  {/* Participants */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Participants ({computedParticipants.length})</p>
-                      <button className="text-[10px] font-bold text-[#F97316]">View all</button>
-                    </div>
-                    <div className="space-y-2">
-                      {computedParticipants.map((p,i)=>(
-                        <div key={i} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Avatar initials={p.name.split(" ").map(n=>n[0]).join("")} className="bg-slate-700 w-6 h-6 text-[8px]" />
-                            <div>
-                              <p className="text-[11px] font-bold text-slate-800">{p.name}</p>
-                              <p className="text-[10px] text-slate-400">{p.role}</p>
-                            </div>
-                          </div>
-                          <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">{p.badge}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-3 border-t border-[#E2E8F0]">
-                  <button onClick={()=>toast.info("Group settings")} className="w-full text-[11px] font-bold border border-slate-200 rounded-[4px] py-2 bg-white hover:bg-slate-50 text-slate-700 flex items-center justify-center gap-1.5">
-                    <Sliders className="w-3.5 h-3.5 text-slate-400" /> Group Settings
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DepartureCommunication
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+            tripDetails={tripDetails}
+          />
         )}
-
-        {/* ──────────────────────── REPORTS ──────────────────────── */}
+                {/* ──────────────────────── REPORTS ──────────────────────── */}
         {activeTab === "reports" && (
-          <ReportsConsole tripId={tripId} departureDateStr={departureDateStr} />
+          <DepartureReports
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+          />
         )}
-
-      {bookingModalOpen && selectedBooking && (
+              {bookingModalOpen && selectedBooking && (
         <BookingDetailsModal
           open={bookingModalOpen}
           onOpenChange={setBookingModalOpen}
@@ -5323,114 +5906,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         </Dialog>
       )}
 
-      {editHotelOpen && (
-        <Dialog open={editHotelOpen} onOpenChange={setEditHotelOpen}>
-          <DialogContent className="max-w-md bg-white rounded-xl border border-slate-200 shadow-2xl p-6">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-black text-slate-800">Edit Hotel Stay Details</DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">Update arrangement, allocation, costs, or booking notes for this stay.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleEditHotelSubmit} className="space-y-3.5 mt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Hotel Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={hotelNameForm}
-                    onChange={e => setHotelNameForm(e.target.value)}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Location / City</label>
-                  <input
-                    type="text"
-                    required
-                    value={hotelLocationForm}
-                    onChange={e => setHotelLocationForm(e.target.value)}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Room Type</label>
-                  <input
-                    type="text"
-                    value={hotelRoomTypeForm}
-                    onChange={e => setHotelRoomTypeForm(e.target.value)}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">No. of Rooms</label>
-                  <input
-                    type="number"
-                    value={hotelRoomsForm}
-                    onChange={e => setHotelRoomsForm(Number(e.target.value))}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Total Cost (₹)</label>
-                  <input
-                    type="number"
-                    value={hotelCostForm}
-                    onChange={e => setHotelCostForm(Number(e.target.value))}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Advance Paid (₹)</label>
-                  <input
-                    type="number"
-                    value={hotelPaidForm}
-                    onChange={e => setHotelPaidForm(Number(e.target.value))}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Confirmation Status</label>
-                <select
-                  value={hotelConfirmedForm}
-                  onChange={e => setHotelConfirmedForm(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none bg-white"
-                >
-                  <option value="CONFIRMED">CONFIRMED</option>
-                  <option value="UNCONFIRMED">PENDING / UNCONFIRMED</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Notes / Special Instructions</label>
-                <textarea
-                  value={hotelNotesForm}
-                  onChange={e => setHotelNotesForm(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316] h-16 resize-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditHotelOpen(false)}
-                  className="text-xs font-bold border border-slate-200 rounded-[4px] px-4 py-2 hover:bg-slate-50 text-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
-                >
-                  Save Stay Details
-                </button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
+
 
       {editTransportOpen && (
         <Dialog open={editTransportOpen} onOpenChange={setEditTransportOpen}>
@@ -5688,7 +6164,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   {bg.passengers.map((p: any) => {
                     const current = modalAllocations[p.name] || { roomType: "Individual", coupleWith: "", roomNo: "—" };
                     return (
-                      <div key={p.name} className="p-3 bg-slate-50 rounded border border-slate-100 flex flex-wrap items-center gap-3 justify-between">
+                      <div key={p.id || p.name} className="p-3 bg-slate-50 rounded border border-slate-100 flex flex-wrap items-center gap-3 justify-between">
                         <div className="min-w-[150px]">
                           <div className="font-bold text-slate-800 text-xs">{p.name}</div>
                           <div className="text-[10px] text-slate-500">{p.gender}, {p.age} yrs {p.isLead ? "• Lead" : ""}</div>

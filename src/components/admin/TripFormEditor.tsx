@@ -1659,11 +1659,44 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                     <Label className="text-xs font-black uppercase tracking-widest text-primary">Day {day.day}</Label>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100" onClick={() => removeDay(idx)}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
-                  <Input value={day.title} placeholder="Title (e.g. Arrival in Manali)" onChange={(e) => updateDay(idx, "title", e.target.value)} className="h-9 text-xs font-bold" />
-                  <Input value={day.location} placeholder="Location" onChange={(e) => updateDay(idx, "location", e.target.value)} className="h-9 text-xs" />
+                   <Input value={day.title} placeholder="Title (e.g. Arrival in Manali)" onChange={(e) => updateDay(idx, "title", e.target.value)} className="h-9 text-xs font-bold" />
                   <Textarea value={day.description} placeholder="What will happen today?" onChange={(e) => updateDay(idx, "description", e.target.value)} className="text-xs min-h-[80px]" />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input value={day.stay} placeholder="Stay (e.g. Luxury Camp)" onChange={(e) => updateDay(idx, "stay", e.target.value)} className="h-8 text-[10px]" />
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-[9px] uppercase opacity-60 font-bold block mb-0.5">Stay Option</Label>
+                      <select
+                        value={day.stay === "Night Journey" ? "journey" : "stay"}
+                        onChange={(e) => {
+                          const val = e.target.value === "journey" ? "Night Journey" : "Stay Included";
+                          updateDay(idx, "stay", val);
+                          if (e.target.value === "journey") {
+                            updateDay(idx, "location", "—");
+                          }
+                        }}
+                        className="w-full h-8 text-[11px] border border-slate-200 rounded px-2 bg-white font-semibold text-slate-800 focus:outline-none"
+                      >
+                        <option value="stay">Stay Included</option>
+                        <option value="journey">Night Journey</option>
+                      </select>
+                    </div>
+
+                    {day.stay !== "Night Journey" ? (
+                      <div className="space-y-1 col-span-2">
+                        <Label className="text-[9px] uppercase opacity-60 font-bold block mb-0.5">Location</Label>
+                        <Input 
+                          value={day.location || ""} 
+                          placeholder="Location (e.g. Shimla)" 
+                          onChange={(e) => updateDay(idx, "location", e.target.value)} 
+                          className="h-8 text-xs font-semibold" 
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-1 col-span-2 flex flex-col justify-end">
+                        <span className="text-[10px] text-slate-400 font-semibold italic pb-2">No hotel required for Night Journey</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
                     <Input value={day.meals} placeholder="Meals (e.g. B, D)" onChange={(e) => updateDay(idx, "meals", e.target.value)} className="h-8 text-[10px]" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t">

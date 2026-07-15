@@ -206,7 +206,7 @@ export default function OperationsHubPage() {
 
               return (
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => {
-                  navigate(`/admin/departure-workspace?tripId=${row.tripId}&departureDate=${row.departureDateStr}&tab=overview`);
+                  navigate(`/admin/departure-workspace?departureId=${row.tripId}_${row.departureDateStr}&tab=overview`);
                 }}>
                   <td className="px-4 py-3">
                     <span className="font-bold text-[#F97316] text-[11px] block whitespace-nowrap">{row.code}</span>
