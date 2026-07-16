@@ -5520,10 +5520,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             </div>
 
             {/* Save Allocations to DB + Clear */}
-            <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-between gap-4">
-              <div className="text-xs font-semibold text-slate-600">
-                <span className="text-emerald-700 font-black">{Object.values(passengerAllocations).filter(a => a.room !== '—').length}</span> room + <span className="text-blue-700 font-black">{Object.values(passengerAllocations).filter(a => a.vehicle !== '—').length}</span> vehicle allocations pending save
-              </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-end gap-2">
               <div className="flex gap-2">
                 <Button
                   size="sm"
