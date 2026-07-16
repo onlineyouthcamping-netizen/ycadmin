@@ -1156,10 +1156,54 @@ export default function DepartureHubPage() {
       setExtraPersonRate(800);
       setExtraChildRate(0);
 
-      setDoubleRoomsCount(raw.numberOfRooms || 5);
-      setTripleRoomsCount(0);
-      setQuadRoomsCount(0);
-      setExtraPersonsCount(0);
+      // Dynamically calculate passenger counts from the manifest list
+      let twinPax = 0;
+      let triplePax = 0;
+      let quadPax = 0;
+      let extraPax = 0;
+
+      // Filter manifest to travelers for this departure/trip
+      const activePassengers = bookings.flatMap((b: any) => {
+        const due = (b.totalAmount || 0) - (b.advancePaid || 0);
+        const paymentLabel = due <= 0 ? "PAID" : b.advancePaid > 0 ? "PARTIAL" : "UNPAID";
+        const leadRoomType = b.roomSharing || b.roomType || "Triple Sharing";
+
+        // Map lead passenger
+        const lead = {
+          name: b.name || b.fullName || "Traveler",
+          roomSharing: leadRoomType
+        };
+
+        // Map co-passengers
+        const coPax = Array.isArray(b.coPassengers) ? b.coPassengers : [];
+        const coMapped = coPax.map((co: any) => {
+          const rawDetails = co.details || {};
+          return {
+            name: co.name || "Co-Traveler",
+            roomSharing: rawDetails.roomType || rawDetails.roomSharing || leadRoomType
+          };
+        });
+
+        return [lead, ...coMapped];
+      });
+
+      activePassengers.forEach((p: any) => {
+        const sharing = (p.roomSharing || "").toLowerCase();
+        if (sharing.includes("twin") || sharing.includes("double")) {
+          twinPax++;
+        } else if (sharing.includes("triple")) {
+          triplePax++;
+        } else if (sharing.includes("quad")) {
+          quadPax++;
+        } else {
+          extraPax++;
+        }
+      });
+
+      setDoubleRoomsCount(twinPax);
+      setTripleRoomsCount(triplePax);
+      setQuadRoomsCount(quadPax);
+      setExtraPersonsCount(extraPax);
 
       setCheckInDateForm(raw.checkIn ? raw.checkIn.substring(0, 10) : calculatedCheckIn);
       setCheckOutDateForm(raw.checkOut ? raw.checkOut.substring(0, 10) : calculatedCheckOut);

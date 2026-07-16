@@ -59,6 +59,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   const [editedCustomerPhone, setEditedCustomerPhone] = useState(booking.mobile || booking.phone || "");
   const [editedCustomerEmail, setEditedCustomerEmail] = useState(booking.email || "");
   const [newPassenger, setNewPassenger] = useState({
+    salutation: "Mr.",
     firstName: "",
     lastName: "",
     gender: "Male",
@@ -1214,9 +1215,22 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   };
 
   const handleEditPassenger = (p: any) => {
-    const names = p.name.split(' ');
+    let rawName = p.name || "";
+    let salutation = "Mr.";
+    if (rawName.toLowerCase().startsWith("mr. ")) {
+      salutation = "Mr.";
+      rawName = rawName.substring(4);
+    } else if (rawName.toLowerCase().startsWith("mrs. ")) {
+      salutation = "Mrs.";
+      rawName = rawName.substring(5);
+    } else if (rawName.toLowerCase().startsWith("ms. ")) {
+      salutation = "Ms.";
+      rawName = rawName.substring(4);
+    }
+    const names = rawName.split(' ');
     setEditingPassenger(p);
     setNewPassenger({
+      salutation,
       firstName: names[0] || "",
       lastName: names.slice(1).join(' ') || "",
       gender: p.gender || "Male",
@@ -1236,7 +1250,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
     let updatedPassengers = [];
     let isMainGuestUpdate = false;
-    const name = `${newPassenger.firstName} ${newPassenger.lastName}`.trim();
+    const salutationPrefix = newPassenger.salutation ? `${newPassenger.salutation} ` : "";
+    const name = `${salutationPrefix}${newPassenger.firstName} ${newPassenger.lastName}`.trim();
 
     if (editingPassenger) {
       if (editingPassenger.id === 'main' || editingPassenger.name === booking.fullName || editingPassenger.name === booking.name) {
@@ -1287,7 +1302,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       toast.error("Failed to sync passengers and booking items with backend");
     }
 
-    setNewPassenger({ firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food" });
+    setNewPassenger({ salutation: "Mr.", firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food" });
     setEditingPassenger(null);
     if (!keepOpen) setShowAddPassenger(false);
   };
@@ -1988,11 +2003,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                         </td>
                         
                         <td className="px-4 py-3 font-bold text-slate-800">
-                          {p.name ? (
-                            (p.name.startsWith("Mr") || p.name.startsWith("Mrs") || p.name.startsWith("Ms") ? "" : "Mr. ") + p.name
-                          ) : (
-                            "N/A"
-                          )}
+                          {p.name || "N/A"}
                         </td>
                         <td className="px-4 py-3 font-mono">{p.age}</td>
                         <td className="px-4 py-3">{p.gender}</td>
@@ -3319,6 +3330,17 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             </div>
             
             <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase text-slate-400">Salutation</label>
+                <Select value={newPassenger.salutation} onValueChange={v => setNewPassenger({...newPassenger, salutation: v})}>
+                  <SelectTrigger className="h-8 text-xs rounded"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mr." className="text-xs">Mr.</SelectItem>
+                    <SelectItem value="Mrs." className="text-xs">Mrs.</SelectItem>
+                    <SelectItem value="Ms." className="text-xs">Ms.</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-bold uppercase text-slate-400">First Name *</label>
                 <Input value={newPassenger.firstName} onChange={e => setNewPassenger({...newPassenger, firstName: e.target.value})} placeholder="First Name" className="h-8 text-xs rounded" />
