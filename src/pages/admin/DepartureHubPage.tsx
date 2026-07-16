@@ -324,8 +324,13 @@ export default function DepartureHubPage() {
         }
       }
 
-      const due = (b.totalAmount || 0) - (b.advancePaid || 0);
-      const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
+      const due = b.remainingAmount !== undefined ? b.remainingAmount : ((b.totalAmount || 0) - (b.advancePaid || 0));
+      const paymentStatusStr = (b.paymentStatus || '').toLowerCase();
+      const paymentLabel = due <= 0 
+        ? "Paid in Full" 
+        : (paymentStatusStr.includes('pending') || b.advancePaid === 0 || b.advancePaid === null) 
+          ? "Payment Pending" 
+          : "Partial Payment";
       
       const roomDetailsObj = b.roomDetails || passengersObj?.details || {};
       const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
@@ -2861,9 +2866,14 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         }
       }
 
-      const due = (b.totalAmount || 0) - (b.advancePaid || 0);
-      const paymentLabel = due <= 0 ? "Paid in Full" : b.advancePaid > 0 ? "Partial Payment" : "Payment Pending";
-      const paymentStatusShort = due <= 0 ? "PAID" : b.advancePaid > 0 ? "PARTIALLY PAID" : "UNPAID";
+      const due = b.remainingAmount !== undefined ? b.remainingAmount : ((b.totalAmount || 0) - (b.advancePaid || 0));
+      const paymentStatusStr = (b.paymentStatus || '').toLowerCase();
+      const paymentLabel = due <= 0 
+        ? "Paid in Full" 
+        : (paymentStatusStr.includes('pending') || b.advancePaid === 0 || b.advancePaid === null) 
+          ? "Payment Pending" 
+          : "Partial Payment";
+      const paymentStatusShort = due <= 0 ? "PAID" : (paymentStatusStr.includes('pending') || b.advancePaid === 0 || b.advancePaid === null) ? "UNPAID" : "PARTIALLY PAID";
 
       const personsRoomDetails = b.roomDetails?.personsRoomDetails || passengersObj?.details?.personsRoomDetails || {};
 
