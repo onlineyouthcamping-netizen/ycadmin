@@ -2839,7 +2839,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     const totalDue = allPassengers.filter(p => p.balance > 0).reduce((s, p) => s + p.balance, 0);
     const outstandingPartial = allPassengers.filter(p => p.paymentStatus === "Partial Payment").reduce((s,p) => s+p.balance, 0);
     const outstandingPending = allPassengers.filter(p => p.paymentStatus === "Payment Pending").reduce((s,p) => s+p.balance, 0);
-    return { total, paidInFull, paidPercent: total>0 ? ((paidInFull/total)*100).toFixed(1) : "0", partial, outstandingPartial, pending, outstandingPending, withDue, totalDue };
+    // Reconciliation checklist stats
+    const ticketed = allPassengers.filter(p => p.ticketStatus && p.ticketStatus !== "PENDING").length;
+    const ticketVerified = allPassengers.filter(p => p.ticketVerified === true).length;
+    const roomAllocated = allPassengers.filter(p => p.roomNo && p.roomNo !== "—" && p.roomNo !== "Unassigned").length;
+    const transportAllocated = allPassengers.filter(p => p.pickupPoint && p.pickupPoint !== "—").length;
+    const missingDocument = allPassengers.filter(p => p.documentStatus === "Missing").length;
+    return { total, paidInFull, paidPercent: total>0 ? ((paidInFull/total)*100).toFixed(1) : "0", partial, outstandingPartial, pending, outstandingPending, withDue, totalDue, ticketed, ticketVerified, roomAllocated, transportAllocated, missingDocument };
   }, [allPassengers]);
 
   const pickupOptions = useMemo(() => {
@@ -5226,7 +5232,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                                   <div>
                                     <p className="text-slate-500 font-semibold italic">This hotel stay uses legacy pricing details.</p>
                                     <p className="text-xs font-bold text-slate-750 mt-1.5">Raw Notes/Details:</p>
-                                    <pre className="text-[11px] bg-slate-50 p-2.5 rounded mt-1 overflow-x-auto text-slate-650 font-mono whitespace-pre-wrap">{row.type}</pre>
+                                    <pre className="text-[11px] bg-slate-50 p-2.5 rounded mt-1 overflow-x-auto text-slate-650 font-mono whitespace-pre-wrap">{JSON.stringify(row.rawAssignment, null, 2)}</pre>
                                   </div>
                                 )}
                               </div>
