@@ -683,7 +683,7 @@ export default function DepartureHubPage() {
     try {
       const bookingsRes = await api.get(`/bookings?status=all&tripId=${tripId}&limit=100`);
       const allBookings = bookingsRes.data?.data || [];
-      let filtered = allBookings.filter((b: any) =>
+      const filtered = allBookings.filter((b: any) =>
         b.tripId === tripId && b.departureDate?.substring(0, 10) === departureDateStr
       );
       setBookings(filtered);
@@ -1118,7 +1118,7 @@ export default function DepartureHubPage() {
     if (raw.notes && raw.notes.trim().startsWith("{")) {
       try {
         pricingData = JSON.parse(raw.notes);
-      } catch (e) {}
+      } catch (_e) { /* ignore invalid JSON */ }
     }
 
     const dayNumStr = row.day ? String(row.day).replace("Day ", "").trim() : "1";
@@ -1461,7 +1461,7 @@ export default function DepartureHubPage() {
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {}
+      } catch (_e) { /* ignore invalid JSON */ }
     }
     return [
       {
@@ -5086,7 +5086,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     const rawNotes = row.rawAssignment?.notes;
                     let pricingObj: any = null;
                     if (rawNotes && rawNotes.trim().startsWith("{")) {
-                      try { pricingObj = JSON.parse(rawNotes); } catch (e) {}
+                      try { pricingObj = JSON.parse(rawNotes); } catch (_e) { /* ignore invalid JSON */ }
                     }
                     const isAutomated = pricingObj && pricingObj.__isHotelPricing;
                     const showDrawer = activeCalculationDrawer === row.id;
