@@ -6274,6 +6274,92 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         </Dialog>
       )}
 
+      {shuffleModalOpen && shufflingTraveler && (
+        <Dialog open={shuffleModalOpen} onOpenChange={setShuffleModalOpen}>
+          <DialogContent className="max-w-md bg-white rounded-xl border border-slate-200 shadow-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-black text-slate-800">Reshuffle Traveler</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Change room assignment and transport allocation for <strong>{shufflingTraveler.name}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Room Assignment</label>
+                <select
+                  value={shuffleRoom}
+                  onChange={(e) => setShuffleRoom(e.target.value)}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none bg-white"
+                >
+                  <option value="—">Unassigned</option>
+                  <option value="Group No. 1">Group No. 1</option>
+                  <option value="Group No. 2">Group No. 2</option>
+                  <option value="Group No. 3">Group No. 3</option>
+                  <option value="Group No. 4">Group No. 4</option>
+                  <option value="Group No. 5">Group No. 5</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Vehicle Assignment</label>
+                <select
+                  value={shuffleVehicle}
+                  onChange={(e) => setShuffleVehicle(e.target.value)}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none bg-white"
+                >
+                  <option value="—">Unassigned</option>
+                  {allocFleet.map(f => (
+                    <option key={f.id} value={f.name}>{f.name} ({f.vehicleType})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Seat Number</label>
+                <select
+                  value={shuffleSeat}
+                  onChange={(e) => setShuffleSeat(e.target.value)}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none bg-white"
+                >
+                  <option value="—">Unassigned</option>
+                  {[...Array(17)].map((_, i) => (
+                    <option key={i + 1} value={String(i + 1)}>Seat #{i + 1}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShuffleModalOpen(false)}
+                  className="text-xs font-bold border border-slate-200 rounded-[4px] px-4 py-2 hover:bg-slate-50 text-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPassengerAllocations(prev => ({
+                      ...prev,
+                      [shufflingTraveler.name]: {
+                        room: shuffleRoom,
+                        vehicle: shuffleVehicle,
+                        seat: shuffleSeat
+                      }
+                    }));
+                    toast.success(`Updated allocations for ${shufflingTraveler.name}`);
+                    setShuffleModalOpen(false);
+                  }}
+                  className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                >
+                  Save Reshuffle
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {selectedBookingForRoomAlloc && (() => {
         const bg = selectedBookingForRoomAlloc;
         return (
