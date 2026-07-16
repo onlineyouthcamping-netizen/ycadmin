@@ -2548,7 +2548,11 @@ export default function DepartureHubPage() {
     setShufflingTraveler(traveler);
     const current = passengerAllocations[traveler.name] || { room: "—", vehicle: "—", seat: "—" };
     setShuffleRoom(current.room);
-    setShuffleVehicle(current.vehicle);
+    
+    // Resolve matching fleet item ID for correct select dropdown selection state
+    const matchedFleet = allocFleet.find(f => f.name === current.vehicle || f.id === current.vehicle);
+    setShuffleVehicle(matchedFleet ? matchedFleet.id : "—");
+    
     setShuffleSeat(current.seat);
     setShuffleModalOpen(true);
   };
@@ -6228,7 +6232,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 >
                   <option value="—">Unassigned</option>
                   {allocFleet.map(f => (
-                    <option key={f.id} value={f.name}>{f.name} ({f.vehicleType})</option>
+                    <option key={f.id} value={f.id}>{f.name} ({f.vehicleType})</option>
                   ))}
                 </select>
               </div>
@@ -6255,11 +6259,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 <button
                   type="button"
                   onClick={() => {
+                    const matchedFleet = allocFleet.find(f => f.id === shuffleVehicle);
+                    const vehicleVal = matchedFleet ? matchedFleet.name : shuffleVehicle;
                     setPassengerAllocations(prev => ({
                       ...prev,
                       [shufflingTraveler.name]: {
                         room: shuffleRoom,
-                        vehicle: shuffleVehicle,
+                        vehicle: vehicleVal,
                         seat: shuffleSeat
                       }
                     }));
