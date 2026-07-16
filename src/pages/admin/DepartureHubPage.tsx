@@ -667,7 +667,6 @@ export default function DepartureHubPage() {
       let filtered = allBookings.filter((b: any) =>
         b.tripId === tripId && b.departureDate?.substring(0, 10) === departureDateStr
       );
-      if (filtered.length === 0) filtered = generateMockBookings(tripId, departureDateStr);
       setBookings(filtered);
 
       const itinRes = await api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`);
