@@ -473,6 +473,7 @@ export default function DepartureHubPage() {
   const [passengerAllocations, setPassengerAllocations] = useState<Record<string, { room: string, vehicle: string, seat: string }>>({});
   const [allocFleet, setAllocFleet] = useState<any[]>([]);
   const [newVehicleType, setNewVehicleType] = useState("17 Seater Tempo");
+  const [newVehicleCapacity, setNewVehicleCapacity] = useState("17");
   const [newVehicleName, setNewVehicleName] = useState("");
   const [newVehicleCost, setNewVehicleCost] = useState("");
   const [newVehicleVendor, setNewVehicleVendor] = useState("");
@@ -541,7 +542,7 @@ export default function DepartureHubPage() {
 
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cap = newVehicleType.includes("17") ? 17 : newVehicleType.includes("13") ? 13 : 6;
+    const cap = parseInt(newVehicleCapacity) || 17;
     const vName = newVehicleName || `Tempo ${allocFleet.length + 1}`;
     
     try {
@@ -5203,17 +5204,37 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 <span className="text-[10px] font-bold text-slate-400">Add available tempos/cars for this departure</span>
               </div>
 
-              <form onSubmit={handleAddVehicle} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+              <form onSubmit={handleAddVehicle} className="grid grid-cols-1 sm:grid-cols-6 gap-3 items-end">
                 <div>
                   <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Vehicle Type</label>
                   <select
                     value={newVehicleType}
-                    onChange={(e) => setNewVehicleType(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewVehicleType(val);
+                      // Auto-suggest matching seats
+                      if (val.includes("13")) setNewVehicleCapacity("13");
+                      else if (val.includes("17")) setNewVehicleCapacity("17");
+                      else if (val.includes("6") || val.includes("Car")) setNewVehicleCapacity("6");
+                    }}
                     className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
                   >
                     <option value="13 Seater Tempo">13 Seater Tempo</option>
                     <option value="17 Seater Tempo">17 Seater Tempo</option>
                     <option value="6 Seater Car">6 Seater Car</option>
+                    <option value="Custom Vehicle">Custom Vehicle</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">Capacity (Seats)</label>
+                  <select
+                    value={newVehicleCapacity}
+                    onChange={(e) => setNewVehicleCapacity(e.target.value)}
+                    className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
+                  >
+                    {[...Array(60)].map((_, i) => (
+                      <option key={i + 1} value={String(i + 1)}>{i + 1} Seats</option>
+                    ))}
                   </select>
                 </div>
                 <div>
