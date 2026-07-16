@@ -3005,7 +3005,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         rawBooking: b
       };
     });
-  }, [bookings]);
+  }, [bookings, departureDateStr]);
 
   const joiningCities = useMemo(() => {
     const cities = new Set<string>();
