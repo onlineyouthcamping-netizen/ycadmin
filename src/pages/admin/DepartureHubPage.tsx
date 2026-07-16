@@ -1977,6 +1977,19 @@ export default function DepartureHubPage() {
         const vendorObj = assignment ? (typeof assignment.vendorId === 'object' ? assignment.vendorId : null) : null;
         const raw = assignment?.rawAssignment || assignment;
 
+        // Dynamically compute how many unique rooms are currently allocated to this location/city en-route
+        const allocatedRoomsForCity = new Set(
+          Object.values(passengerAllocations)
+            .filter(alloc => {
+              if (!alloc.room || alloc.room === "—" || alloc.room === "Unassigned") return false;
+              // Check if traveler is allocated to a room, and if this hotel location matches the en-route city
+              const isMatch = night.city.toLowerCase().trim().includes((assignment?.vendorId?.location || raw?.location || '').toLowerCase().trim());
+              return isMatch || idx === 0; // fallback default to map room numbers
+            })
+            .map(alloc => alloc.room)
+        );
+        const roomsCount = allocatedRoomsForCity.size > 0 ? allocatedRoomsForCity.size : (raw?.numberOfRooms || 0);
+
         return {
           id: assignment?.id || `spt-stay-${idx}`,
           day: night.dayLabel,          // e.g. "Day 5–6" for Kaza
@@ -1986,8 +1999,8 @@ export default function DepartureHubPage() {
           destCity: night.city,
           hotel: vendorObj?.name || raw?.hotelName || "— Not Assigned —",
           vendor: vendorObj?.location || raw?.location || night.city,
-          allocations: assignment
-            ? [{ text: `${raw?.numberOfRooms || '?'} Rooms`, color: 'blue' }]
+          allocations: roomsCount > 0
+            ? [{ text: `${roomsCount} Rooms`, color: 'blue' }]
             : [{ text: "Pending", color: "orange" }],
           totalPaxText: assignment ? `${raw?.totalPax || allPassengers.length} Pax` : "Not booked",
           capacityPercent: 100,
@@ -2019,6 +2032,14 @@ export default function DepartureHubPage() {
         const dest = tripDetails?.location || "Manali";
         const raw = v.rawAssignment || v;
 
+        // Dynamically compute unique rooms allocated
+        const allocatedRooms = new Set(
+          Object.values(passengerAllocations)
+            .filter(alloc => alloc.room && alloc.room !== "—" && alloc.room !== "Unassigned")
+            .map(alloc => alloc.room)
+        );
+        const roomsCount = allocatedRooms.size > 0 ? allocatedRooms.size : (raw?.numberOfRooms || 0);
+
         return {
           id: v.id,
           day: `Day ${dayNum}`,
@@ -2028,7 +2049,7 @@ export default function DepartureHubPage() {
           destCity: dest,
           hotel: vendorObj.name || raw?.hotelName || "Hotel",
           vendor: vendorObj.location || raw?.location || "Stay Location",
-          allocations: [{ text: `${raw?.numberOfRooms || '?'} Rooms`, color: "blue" }],
+          allocations: [{ text: `${roomsCount} Rooms`, color: "blue" }],
           totalPaxText: `${raw?.totalPax || allPassengers.length} Pax`,
           capacityPercent: 100,
           capacityColor: "bg-emerald-500",
