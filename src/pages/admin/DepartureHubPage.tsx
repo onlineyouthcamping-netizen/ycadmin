@@ -336,8 +336,18 @@ export default function DepartureHubPage() {
       const leadRoomType = leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
       const leadCoupleWith = leadRoomInfo.coupleWith || "";
 
+      const normalizeCompareName = (nameStr: string) => {
+        if (!nameStr) return "";
+        let clean = nameStr.toLowerCase().trim();
+        if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
+        else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
+        else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
+        return clean;
+      };
+
+      const normLeadName = normalizeCompareName(leadName);
       const paxList = passengersObj?.persons || [];
-      const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
+      const filteredCoPax = paxList.filter((p: any) => normalizeCompareName(p.name) !== normLeadName);
       const passengerCount = filteredCoPax.length + 1;
 
       const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
@@ -380,7 +390,7 @@ export default function DepartureHubPage() {
       arr.push({ id:b.id, name:leadName, ...base, isLead: true });
       if (Array.isArray(passengersObj?.persons)) {
         passengersObj.persons.forEach((p: any, idx: number) => {
-          if (p.name === leadName) return;
+          if (normalizeCompareName(p.name) === normLeadName) return;
 
           const coRoomInfo = personsRoomDetails[p.name] || {};
           const coRoomNo = coRoomInfo.roomNo || "—";
@@ -2619,13 +2629,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
     // Step 2: Allocate remaining boys sorted by age
     const remainingMales = activeTravelers
-      .filter(p => p.gender === "Male" && !allocated.has(p.name))
+      .filter(p => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.name))
       .sort((a, b) => (a.age || 0) - (b.age || 0));
     allocateSameGender(remainingMales);
 
     // Step 3: Allocate remaining girls sorted by age
     const remainingFemales = activeTravelers
-      .filter(p => p.gender === "Female" && !allocated.has(p.name))
+      .filter(p => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.name))
       .sort((a, b) => (a.age || 0) - (b.age || 0));
     allocateSameGender(remainingFemales);
 
