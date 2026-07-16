@@ -477,6 +477,7 @@ export default function DepartureHubPage() {
   const [newVehicleName, setNewVehicleName] = useState("");
   const [newVehicleCost, setNewVehicleCost] = useState("");
   const [newVehicleVendor, setNewVehicleVendor] = useState("");
+  const [manualRooms, setManualRooms] = useState<string[]>([]);
   const [isSavingAllocations, setIsSavingAllocations] = useState(false);
   const [showClearAllocationsDialog, setShowClearAllocationsDialog] = useState(false);
 
@@ -2496,6 +2497,8 @@ export default function DepartureHubPage() {
 
   const computedRoomAllocations = useMemo(() => {
     const list: any[] = [];
+    
+    // 1. Gather all traveler allocations
     Object.entries(passengerAllocations).forEach(([name, alloc]) => {
       if (alloc.room && alloc.room !== "Unassigned" && alloc.room !== "—") {
         const pObj = allPassengers.find(p => p.name === name);
@@ -2508,8 +2511,23 @@ export default function DepartureHubPage() {
         });
       }
     });
+
+    // 2. Add empty placeholder rooms for manually added room values
+    manualRooms.forEach((rNum) => {
+      const hasMembers = list.some(x => x.roomNumber === rNum);
+      if (!hasMembers) {
+        list.push({
+          roomNumber: rNum,
+          travelerName: "",
+          genderGroup: "BOYS",
+          roomType: "Double",
+          isEmptyPlaceholder: true
+        });
+      }
+    });
+
     return list;
-  }, [passengerAllocations, allPassengers]);
+  }, [passengerAllocations, allPassengers, manualRooms]);
 
   const computedVehicleAllocations = useMemo(() => {
     const list: any[] = [];
@@ -2543,6 +2561,8 @@ export default function DepartureHubPage() {
   const [shuffleVehicle, setShuffleVehicle] = useState("");
   const [shuffleSeat, setShuffleSeat] = useState("");
   const [shuffleModalOpen, setShuffleModalOpen] = useState(false);
+  const [addRoomModalOpen, setAddRoomModalOpen] = useState(false);
+  const [newRoomName, setNewRoomName] = useState("");
 
   const handleOpenShuffle = (traveler: any) => {
     setShufflingTraveler(traveler);
@@ -5386,9 +5406,19 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Hotel Group Assignments */}
               <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  Hotel Group Assignments
-                </h3>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    Hotel Group Assignments
+                  </h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setAddRoomModalOpen(true)}
+                    className="h-7 text-[10px] font-bold text-[#F97316] border-[#F97316]/20 hover:bg-[#F97316]/5 rounded px-2"
+                  >
+                    + Add Room
+                  </Button>
+                </div>
                 {computedRoomAllocations.length === 0 ? (
                   <p className="text-xs text-slate-400 font-medium py-4 text-center">No group assignments. Use the shuffler below or Auto-Allocate.</p>
                 ) : (
@@ -5410,12 +5440,15 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                             <span>{roomNum}</span>
                           </p>
                           <ul className="mt-2 space-y-1.5">
-                            {rData.members.map((m: string, i: number) => (
+                            {rData.members.filter(Boolean).map((m: string, i: number) => (
                               <li key={i} className="text-[11px] font-bold text-slate-655 flex items-center gap-1.5 cursor-pointer hover:text-[#F97316] transition-colors" onClick={() => handleOpenShuffle({ name: m })}>
                                 <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full shrink-0" />
                                 {m}
                               </li>
                             ))}
+                            {rData.members.filter(Boolean).length === 0 && (
+                              <li className="text-[10px] italic text-slate-400 font-medium">Empty Room</li>
+                            )}
                           </ul>
                         </div>
                       );
@@ -6275,6 +6308,61 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
                 >
                   Save Reshuffle
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {addRoomModalOpen && (
+        <Dialog open={addRoomModalOpen} onOpenChange={setAddRoomModalOpen}>
+          <DialogContent className="max-w-md bg-white rounded-xl border border-slate-200 shadow-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-black text-slate-800">Add Custom Room</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Create an empty room placeholder to shuffle travelers into.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-3">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Room Name / Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Room 105, Cottage 3"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAddRoomModalOpen(false)}
+                  className="text-xs font-bold border border-slate-200 rounded-[4px] px-4 py-2 hover:bg-slate-50 text-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cleanName = newRoomName.trim();
+                    if (!cleanName) {
+                      toast.error("Please enter a room name");
+                      return;
+                    }
+                    if (manualRooms.includes(cleanName)) {
+                      toast.error("Room already exists");
+                      return;
+                    }
+                    setManualRooms(prev => [...prev, cleanName]);
+                    toast.success(`Created room: ${cleanName}`);
+                    setNewRoomName("");
+                    setAddRoomModalOpen(false);
+                  }}
+                  className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 transition-colors"
+                >
+                  Create Room
                 </button>
               </div>
             </div>
