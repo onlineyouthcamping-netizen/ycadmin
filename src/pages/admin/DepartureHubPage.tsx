@@ -1053,6 +1053,7 @@ export default function DepartureHubPage() {
   const [showInternalNotes, setShowInternalNotes] = useState(false);
   const [activeCalculationDrawer, setActiveCalculationDrawer] = useState<string | null>(null);
   const [editingHotel, setEditingHotel] = useState<any | null>(null);
+  const [isSavingHotel, setIsSavingHotel] = useState(false);
 
   // Calculated Hotel Cost logic (Passenger Sharing Rates per Person)
   const doubleCost = doubleRoomsCount * doubleRate * hotelNightsCount; // Twin Sharing Pax
@@ -1254,65 +1255,96 @@ export default function DepartureHubPage() {
 
   const handleEditHotelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingHotel) return;
+    setIsSavingHotel(true);
     try {
+      // Helper to convert inputs safely to numbers
+      const toFiniteNum = (val: any) => {
+        const parsed = parseFloat(String(val));
+        return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, parsed);
+      };
+      const toFiniteInt = (val: any) => {
+        const parsed = parseInt(String(val), 10);
+        return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, parsed);
+      };
+
+      const cleanDoubleRate = toFiniteNum(doubleRate);
+      const cleanTripleRate = toFiniteNum(tripleRate);
+      const cleanQuadRate = toFiniteNum(quadRate);
+      const cleanExtraPersonRate = toFiniteNum(extraPersonRate);
+      const cleanExtraChildRate = toFiniteNum(extraChildRate);
+
+      const cleanDoubleRooms = toFiniteInt(doubleRoomsCount);
+      const cleanTripleRooms = toFiniteInt(tripleRoomsCount);
+      const cleanQuadRooms = toFiniteInt(quadRoomsCount);
+      const cleanExtraPersons = toFiniteInt(extraPersonsCount);
+
+      const cleanNightsCount = Math.max(1, toFiniteInt(hotelNightsCount));
+      const cleanOverrideAmount = toFiniteNum(overrideAmount);
+      const cleanPaid = toFiniteNum(hotelPaidForm);
+
+      // Normalize check-in / check-out dates (format to YYYY-MM-DD or empty)
+      const cleanCheckIn = checkInDateForm ? new Date(checkInDateForm).toISOString().substring(0, 10) : "";
+      const cleanCheckOut = checkOutDateForm ? new Date(checkOutDateForm).toISOString().substring(0, 10) : "";
+
       const pricingPayload = {
         __isHotelPricing: true,
         pricingMethod,
         rates: {
-          doubleRate,
-          tripleRate,
-          quadRate,
-          extraPersonRate,
-          extraChildRate
+          doubleRate: cleanDoubleRate,
+          tripleRate: cleanTripleRate,
+          quadRate: cleanQuadRate,
+          extraPersonRate: cleanExtraPersonRate,
+          extraChildRate: cleanExtraChildRate
         },
         allocations: {
-          doubleRoomsCount,
-          tripleRoomsCount,
-          quadRoomsCount,
-          extraPersonsCount
+          doubleRoomsCount: cleanDoubleRooms,
+          tripleRoomsCount: cleanTripleRooms,
+          quadRoomsCount: cleanQuadRooms,
+          extraPersonsCount: cleanExtraPersons
         },
-        checkInDate: checkInDateForm,
-        checkOutDate: checkOutDateForm,
-        nightsCount: hotelNightsCount,
-        vendorId: hotelVendorId,
-        voucherStatus: voucherStatusForm,
+        checkInDate: cleanCheckIn,
+        checkOutDate: cleanCheckOut,
+        nightsCount: cleanNightsCount,
+        vendorId: hotelVendorId || "",
+        voucherStatus: voucherStatusForm || "PENDING",
         override: {
           applied: overrideApplied,
-          amount: overrideAmount,
-          reason: overrideReason,
-          author: overrideAuthor
+          amount: cleanOverrideAmount,
+          reason: overrideReason || "",
+          author: overrideAuthor || "Super Admin"
         },
         overrideTripleRate,
         overrideQuadRate,
-        userNotes: hotelNotesForm
+        userNotes: hotelNotesForm || ""
       };
 
-      const finalCost = overrideApplied ? overrideAmount : calculatedTotalCost;
+      const finalCost = overrideApplied ? cleanOverrideAmount : calculatedTotalCost;
 
       await opsService.saveHotelBookings(tripId, departureDateStr, [
         {
           id: selectedHotelId,
-          hotelName: hotelNameForm,
-          location: hotelLocationForm,
-          roomType: hotelRoomTypeForm,
-          numberOfRooms: totalRoomsCount,
+          hotelName: hotelNameForm || "",
+          location: hotelLocationForm || "",
+          roomType: hotelRoomTypeForm || "",
+          numberOfRooms: totalRoomsCount || 1,
           totalAmount: finalCost,
-          advancePaid: hotelPaidForm,
-          confirmed: hotelConfirmedForm,
+          advancePaid: cleanPaid,
+          confirmed: hotelConfirmedForm || "UNCONFIRMED",
           notes: JSON.stringify(pricingPayload),
           pricingMethod,
-          doubleRoomsCount,
-          tripleRoomsCount,
-          quadRoomsCount,
-          extraPersonsCount,
-          nightsCount: hotelNightsCount,
-          doubleRate,
-          tripleRate,
-          quadRate,
-          extraBedRate: extraPersonRate,
-          checkIn: checkInDateForm,
-          checkOut: checkOutDateForm,
-          vendorId: hotelVendorId
+          doubleRoomsCount: cleanDoubleRooms,
+          tripleRoomsCount: cleanTripleRooms,
+          quadRoomsCount: cleanQuadRooms,
+          extraPersonsCount: cleanExtraPersons,
+          nightsCount: cleanNightsCount,
+          doubleRate: cleanDoubleRate,
+          tripleRate: cleanTripleRate,
+          quadRate: cleanQuadRate,
+          extraBedRate: cleanExtraPersonRate,
+          checkIn: cleanCheckIn,
+          checkOut: cleanCheckOut,
+          vendorId: hotelVendorId || null
         }
       ]);
 
@@ -1322,9 +1354,9 @@ export default function DepartureHubPage() {
           departureHotelId: selectedHotelId,
           fieldName: 'totalAmount',
           originalValue: calculatedTotalCost,
-          overriddenValue: overrideAmount,
-          reason: overrideReason,
-          advancePaid: hotelPaidForm
+          overriddenValue: cleanOverrideAmount,
+          reason: overrideReason || "",
+          advancePaid: cleanPaid
         }).catch(() => null);
       } else {
         await opsService.resetHotelOverride(tripId, {
@@ -1335,9 +1367,12 @@ export default function DepartureHubPage() {
       toast.success("Hotel details updated successfully!");
       setEditingHotel(null);
       fetchPageData();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update hotel details.");
+    } catch (err: any) {
+      console.error("Failed to save hotel bookings", err.response?.data || err);
+      const errMsg = err.response?.data?.message || "Failed to update hotel details.";
+      toast.error(errMsg);
+    } finally {
+      setIsSavingHotel(false);
     }
   };
 
@@ -4379,9 +4414,10 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     </button>
                     <button
                       type="submit"
-                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 shadow-sm transition-all"
+                      disabled={isSavingHotel}
+                      className="text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-5 py-2 shadow-sm transition-all disabled:opacity-50"
                     >
-                      Save Hotel
+                      {isSavingHotel ? "Saving..." : "Save Hotel"}
                     </button>
                   </div>
                 </div>
