@@ -5046,9 +5046,6 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                                 <User className="w-3 h-3" /> {row.vendor}
                               </span>
                               <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-wider">CONFIRMED</span>
-                              <span className="text-[8px] font-black bg-purple-50 text-purple-600 border border-purple-100 px-1.5 py-0.5 rounded uppercase tracking-wider flex items-center gap-0.5">
-                                <FileText className="w-2.5 h-2.5" /> Voucher Sent
-                              </span>
                             </div>
                           </td>
                           <td className="p-3 border-r border-slate-100">
