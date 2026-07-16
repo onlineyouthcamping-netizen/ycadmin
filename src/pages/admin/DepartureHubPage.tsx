@@ -5034,9 +5034,9 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                             <p className="text-[10px] text-slate-400 font-bold mt-0.5">{row.wd} &middot; {row.date}</p>
                           </td>
                           <td className="p-3 border-r border-slate-100">
-                            <p className="font-bold text-slate-800">{row.destRegion}</p>
+                            <p className="font-bold text-slate-800">{row.destCity}</p>
                             <p className="text-[10px] text-slate-400 font-bold mt-0.5 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" /> {row.destCity}
+                              <MapPin className="w-3 h-3" /> {row.destRegion}
                             </p>
                           </td>
                           <td className="p-3 border-r border-slate-100">
