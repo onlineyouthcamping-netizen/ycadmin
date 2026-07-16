@@ -5187,11 +5187,33 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             {/* Bottom calculation status */}
             <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold">
               <div className="flex flex-wrap items-center gap-6">
-                <span>Showing all 9 nights</span>
+                <span>Showing all {computedHotels.length} nights</span>
                 <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-                <p className="text-slate-500 font-medium">Total Amount (₹) <span className="font-black text-slate-800 ml-1">3,57,000</span> <span className="font-bold text-emerald-600 ml-1.5">Paid Advance</span></p>
-                <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-                <p className="text-slate-500 font-medium">Outstanding (₹) <span className="font-black text-red-650 ml-1">24,000</span></p>
+                {(() => {
+                  const total = computedHotels.reduce((acc, h) => {
+                    const rawVal = h.rawAssignment || {};
+                    const amt = parseFloat(rawVal.totalAmount || rawVal.agreedCost || h.amt?.replace(/,/g, '') || 0);
+                    return acc + amt;
+                  }, 0);
+                  const paid = computedHotels.reduce((acc, h) => {
+                    const rawVal = h.rawAssignment || {};
+                    const amt = parseFloat(rawVal.advancePaid || rawVal.paidAmount || 0);
+                    return acc + amt;
+                  }, 0);
+                  const outstanding = Math.max(0, total - paid);
+                  return (
+                    <>
+                      <p className="text-slate-500 font-medium">
+                        Total Amount (₹) <span className="font-black text-slate-800 ml-1">{total.toLocaleString('en-IN')}</span> 
+                        <span className="font-bold text-emerald-600 ml-1.5">Paid Advance: ₹{paid.toLocaleString('en-IN')}</span>
+                      </p>
+                      <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+                      <p className="text-slate-500 font-medium">
+                        Outstanding (₹) <span className="font-black text-red-650 ml-1">{outstanding.toLocaleString('en-IN')}</span>
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
               <button onClick={() => toast.info("View Payment Summary")} className="text-[11.5px] font-extrabold text-blue-600 hover:underline">View Payment Summary →</button>
             </div>
