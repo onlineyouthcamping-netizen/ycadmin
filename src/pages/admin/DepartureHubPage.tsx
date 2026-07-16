@@ -494,7 +494,7 @@ export default function DepartureHubPage() {
             roomNumber: alloc.room,
             roomType: 'STANDARD',
             genderGroup: p.gender === 'Female' ? 'GIRLS' : 'BOYS',
-            bookingId: p.bookingId,
+            bookingId: p.bookingRef,
             travelerName: p.name,
             sharingType: 'STANDARD'
           });
@@ -508,7 +508,7 @@ export default function DepartureHubPage() {
           if (fleet) {
             vehicleAllocations.push({
               fleetId: fleet.id,
-              bookingId: p.bookingId,
+              bookingId: p.bookingRef,
               travelerName: p.name,
               seatNumber: alloc.seat && alloc.seat !== '—' ? parseInt(alloc.seat) : undefined
             });
@@ -5472,42 +5472,20 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     <tr className="text-[9.5px] font-bold text-slate-455 uppercase tracking-wider">
                       <th className="p-2.5 border-r border-slate-100">Traveler Name</th>
                       <th className="p-2.5 border-r border-slate-100">Gender / Age</th>
-                      <th className="p-2.5 border-r border-slate-100">Room Assignment</th>
                       <th className="p-2.5 border-r border-slate-100">Vehicle Assignment</th>
                       <th className="p-2.5 text-center">Seat Number</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0]">
                     {allPassengers.map((p) => {
-                      const current = passengerAllocations[p.name] || { room: "—", vehicle: "—", seat: "—" };
-                      return (
+                       const current = passengerAllocations[p.name] || { room: "—", vehicle: "—", seat: "—" };
+                       return (
                         <tr key={p.id || p.name} className="hover:bg-slate-50/50 transition-colors">
                           <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">
                             {p.name}
                           </td>
                           <td className="p-2.5 border-r border-slate-100 font-medium text-slate-600">
                             {p.gender} / {p.age} Yrs
-                          </td>
-                          <td className="p-2.5 border-r border-slate-100">
-                            <select
-                              value={current.room}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setPassengerAllocations(prev => ({
-                                  ...prev,
-                                  [p.name]: { ...current, room: val }
-                                }));
-                                toast.success(`Moved ${p.name} to ${val}`);
-                              }}
-                              className="h-7 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 w-full cursor-pointer"
-                            >
-                              <option value="—">Unassigned</option>
-                              <option value="Group No. 1">Group No. 1</option>
-                              <option value="Group No. 2">Group No. 2</option>
-                              <option value="Group No. 3">Group No. 3</option>
-                              <option value="Group No. 4">Group No. 4</option>
-                              <option value="Group No. 5">Group No. 5</option>
-                            </select>
                           </td>
                           <td className="p-2.5 border-r border-slate-100">
                             <select
