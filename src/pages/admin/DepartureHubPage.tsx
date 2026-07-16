@@ -1167,6 +1167,15 @@ export default function DepartureHubPage() {
       };
 
       bookings.forEach((b: any) => {
+        let passengersObj = b.passengers;
+        if (typeof passengersObj === 'string') {
+          try {
+            passengersObj = JSON.parse(passengersObj);
+          } catch (e) {
+            passengersObj = {};
+          }
+        }
+
         const leadRoomType = b.roomSharing || b.roomType || "Triple Sharing";
         const leadName = b.name || b.fullName || "Traveler";
         const normLeadName = normalizeCompareName(leadName);
@@ -1177,8 +1186,8 @@ export default function DepartureHubPage() {
           roomSharing: leadRoomType
         });
 
-        // Map co-passengers
-        const coPax = Array.isArray(b.coPassengers) ? b.coPassengers : [];
+        // Map co-passengers from parsed passengers JSON list
+        const coPax = Array.isArray(passengersObj?.persons) ? passengersObj.persons : [];
         coPax.forEach((co: any) => {
           if (normalizeCompareName(co.name) === normLeadName) return;
           const rawDetails = co.details || {};
