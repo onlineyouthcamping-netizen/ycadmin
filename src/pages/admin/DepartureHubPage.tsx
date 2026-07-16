@@ -2835,9 +2835,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     const paidInFull = allPassengers.filter(p => p.paymentStatus === "Paid in Full").length;
     const partial = allPassengers.filter(p => p.paymentStatus === "Partial Payment").length;
     const pending = allPassengers.filter(p => p.paymentStatus === "Payment Pending").length;
+    const withDue = allPassengers.filter(p => p.balance > 0).length;
+    const totalDue = allPassengers.filter(p => p.balance > 0).reduce((s, p) => s + p.balance, 0);
     const outstandingPartial = allPassengers.filter(p => p.paymentStatus === "Partial Payment").reduce((s,p) => s+p.balance, 0);
     const outstandingPending = allPassengers.filter(p => p.paymentStatus === "Payment Pending").reduce((s,p) => s+p.balance, 0);
-    return { total, paidInFull, paidPercent: total>0 ? ((paidInFull/total)*100).toFixed(1) : "0", partial, outstandingPartial, pending, outstandingPending };
+    return { total, paidInFull, paidPercent: total>0 ? ((paidInFull/total)*100).toFixed(1) : "0", partial, outstandingPartial, pending, outstandingPending, withDue, totalDue };
   }, [allPassengers]);
 
   const pickupOptions = useMemo(() => {
@@ -2847,7 +2849,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
   const filteredPassengers = useMemo(() =>
     allPassengers.filter(p => {
       const matchSearch = p.name.toLowerCase().includes(paxSearch.toLowerCase()) || p.phone.includes(paxSearch);
-      const matchPayment = paymentFilter === "All" || p.paymentStatus === paymentFilter;
+      const matchPayment = paymentFilter === "All"
+        ? true
+        : paymentFilter === "Has Due Balance"
+          ? p.balance > 0
+          : p.paymentStatus === paymentFilter;
       const matchPickup = pickupFilter === "All" || p.pickupPoint === pickupFilter;
       const matchGender = genderFilter === "All" || p.gender.toLowerCase() === genderFilter.toLowerCase();
       return matchSearch && matchPayment && matchPickup && matchGender;
@@ -3036,7 +3042,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         (roomAllocFilter === "Allocated" && !hasUnallocated) ||
         (roomAllocFilter === "Not Allocated" && hasUnallocated);
 
-      const matchPayment = paymentFilter === "All" || bg.paymentStatus === paymentFilter;
+      const matchPayment = paymentFilter === "All"
+        ? true
+        : paymentFilter === "Has Due Balance"
+          ? bg.balance > 0
+          : bg.paymentStatus === paymentFilter;
 
       const matchPickup = pickupFilter === "All" || bg.pickupPoint === pickupFilter || bg.passengers.some((p: any) => p.pickupPoint === pickupFilter);
 
@@ -3578,13 +3588,20 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             {/* KPI cards */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
-                { label:"Total Passengers",  value:passengerStats.total,        sub:"Total confirmed",          color:"text-slate-800" },
-                { label:"Paid in Full",       value:passengerStats.paidInFull,   sub:`${passengerStats.paidPercent}% of total`, color:"text-emerald-600" },
-                { label:"Partial Payment",    value:passengerStats.partial,      sub:`₹${passengerStats.outstandingPartial.toLocaleString("en-IN")} due`, color:"text-amber-600" },
-                { label:"Payment Pending",    value:passengerStats.pending,      sub:`₹${passengerStats.outstandingPending.toLocaleString("en-IN")} due`, color:"text-red-600" },
-                { label:"Cancelled",          value:0,                           sub:"0% of total",             color:"text-slate-400" },
+                { label:"Total Passengers",  value:passengerStats.total,        sub:"Total confirmed",          color:"text-slate-800",   onClick: () => { setPaymentFilter("All"); setPage(1); } },
+                { label:"Paid in Full",       value:passengerStats.paidInFull,   sub:`${passengerStats.paidPercent}% of total`, color:"text-emerald-600", onClick: () => { setPaymentFilter("Paid in Full"); setPage(1); } },
+                { label:"Partial Payment",    value:passengerStats.partial,      sub:`₹${passengerStats.outstandingPartial.toLocaleString("en-IN")} due`, color:"text-amber-600", onClick: () => { setPaymentFilter("Partial Payment"); setPage(1); } },
+                { label:"Due Balance",        value:passengerStats.withDue,      sub:`₹${passengerStats.totalDue.toLocaleString("en-IN")} outstanding`, color:"text-red-600",   onClick: () => { setPaymentFilter("Has Due Balance"); setPage(1); } },
+                { label:"Cancelled",          value:0,                           sub:"0% of total",             color:"text-slate-400",   onClick: undefined },
               ].map(kpi => (
-                <div key={kpi.label} className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm">
+                <div
+                  key={kpi.label}
+                  onClick={kpi.onClick}
+                  className={cn(
+                    "bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm transition-all",
+                    kpi.onClick ? "cursor-pointer hover:border-orange-300 hover:shadow-md" : ""
+                  )}
+                >
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{kpi.label}</p>
                   <p className={cn("text-2xl font-black", kpi.color)}>{kpi.value}</p>
                   <p className="text-[10px] text-slate-400 mt-0.5">{kpi.sub}</p>
@@ -3656,6 +3673,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 <option value="Paid in Full">Paid in Full</option>
                 <option value="Partial Payment">Partial Payment</option>
                 <option value="Payment Pending">Payment Pending</option>
+                <option value="Has Due Balance">Has Due Balance</option>
               </select>
 
               <select value={pickupFilter} onChange={e => { setPickupFilter(e.target.value); setPage(1); }}
