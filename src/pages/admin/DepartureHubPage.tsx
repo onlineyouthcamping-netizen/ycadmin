@@ -1187,8 +1187,12 @@ export default function DepartureHubPage() {
           }
         }
 
-        const leadRoomType = b.roomSharing || b.roomType || "Triple Sharing";
-        const leadName = b.name || b.fullName || "Traveler";
+        const roomDetailsObj = b.roomDetails || passengersObj?.details || {};
+        const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
+
+        const leadName = b.fullName || b.name || "Traveler";
+        const leadRoomInfo = personsRoomDetails[leadName] || {};
+        const leadRoomType = leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
         const normLeadName = normalizeCompareName(leadName);
 
         // Add lead passenger
@@ -1201,10 +1205,11 @@ export default function DepartureHubPage() {
         const coPax = Array.isArray(passengersObj?.persons) ? passengersObj.persons : [];
         coPax.forEach((co: any) => {
           if (normalizeCompareName(co.name) === normLeadName) return;
-          const rawDetails = co.details || {};
+          const coRoomInfo = personsRoomDetails[co.name] || {};
+          const coRoomType = coRoomInfo.roomType || "Triple Sharing";
           activePassengers.push({
             name: co.name || "Co-Traveler",
-            roomSharing: rawDetails.roomType || rawDetails.roomSharing || leadRoomType
+            roomSharing: coRoomType
           });
         });
       });
