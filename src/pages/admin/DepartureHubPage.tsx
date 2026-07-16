@@ -1770,7 +1770,9 @@ export default function DepartureHubPage() {
     const hotelsConfirmStr = allHotelsConfirmed ? "Confirmed" : "Pending Confirmation";
 
     const depDate = new Date(departureDateStr);
-    const departureDayStr = depDate.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const departureDayStr = !isNaN(depDate.getTime()) 
+      ? depDate.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : departureDateStr || "TBD";
 
     return [
       { title: "Booking Started", date: bookingStartedStr, user: "System", active: sortedBookings.length > 0 },
