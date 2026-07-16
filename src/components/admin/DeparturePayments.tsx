@@ -77,6 +77,8 @@ export default function DeparturePayments({
 
   const [viewHistoryOpen, setViewHistoryOpen] = useState(false);
 
+  const [dbVendors, setDbVendors] = useState<any[]>([]);
+
   // Fetch Page Data
   const fetchData = async () => {
     try {
@@ -92,6 +94,10 @@ export default function DeparturePayments({
       // 3. Vendor payables
       const vendorData = await opsService.getVendorPayments(tripId, departureDateStr);
       setVendorPayments(vendorData || []);
+
+      // 4. Load predefined directory vendors
+      const vendorsRes = await api.get("/vendors/directory").catch(() => ({ data: { data: [] } }));
+      setDbVendors(vendorsRes.data?.data || []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load payment workspace data");
@@ -725,6 +731,61 @@ export default function DeparturePayments({
           </h3>
           <form onSubmit={handleVendorPaymentSubmit} className="space-y-4 mt-3">
             <div>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Predefined Vendor Select (Optional)</label>
+              <select
+                onChange={e => {
+                  const val = e.target.value;
+                  if (!val) return;
+                  const selected = dbVendors.find((v: any) => v.id === val);
+                  if (selected) {
+                    let cat = "Hotels";
+                    const selectedType = (selected.type || "").toLowerCase();
+                    if (selectedType.includes("hotel") || selectedType.includes("camp") || selectedType.includes("homestay")) {
+                      cat = "Hotels";
+                    } else if (selectedType.includes("transport")) {
+                      cat = "Transport";
+                    } else if (selectedType.includes("activity") || selectedType.includes("activities")) {
+                      cat = "Activities";
+                    } else if (selectedType.includes("guide")) {
+                      cat = "Guides";
+                    }
+
+                    // Auto-calculate default rate if roomRates list is available
+                    let rateVal = 0;
+                    if (Array.isArray(selected.roomRates) && selected.roomRates.length > 0) {
+                      rateVal = selected.roomRates[0].amount || 0;
+                    }
+
+                    setVendorPaymentForm(prev => {
+                      const agreed = rateVal || parseFloat(prev.agreedAmount) || 0;
+                      const advance = parseFloat(prev.advancePaid) || 0;
+                      let autoStatus = "Not Paid";
+                      if (advance >= agreed && agreed > 0) {
+                        autoStatus = "Paid";
+                      } else if (advance > 0) {
+                        autoStatus = "Partially Paid";
+                      }
+
+                      return {
+                        ...prev,
+                        vendorName: selected.name,
+                        category: cat,
+                        agreedAmount: String(rateVal || prev.agreedAmount || ""),
+                        status: autoStatus
+                      };
+                    });
+                  }
+                }}
+                className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer mb-2"
+              >
+                <option value="">-- Choose Predefined Vendor --</option>
+                {dbVendors.map((vendor: any) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name} · {vendor.type || 'Vendor'} {vendor.location ? `(${vendor.location})` : ''}
+                  </option>
+                ))}
+              </select>
+
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Vendor Partner Name</label>
               <input
                 type="text"
@@ -758,7 +819,19 @@ export default function DeparturePayments({
                   type="number"
                   required
                   value={vendorPaymentForm.agreedAmount}
-                  onChange={e => setVendorPaymentForm(prev => ({ ...prev, agreedAmount: e.target.value }))}
+                  onChange={e => {
+                    const rateVal = parseFloat(e.target.value) || 0;
+                    setVendorPaymentForm(prev => {
+                      const advance = parseFloat(prev.advancePaid) || 0;
+                      let autoStatus = "Not Paid";
+                      if (advance >= rateVal && rateVal > 0) {
+                        autoStatus = "Paid";
+                      } else if (advance > 0) {
+                        autoStatus = "Partially Paid";
+                      }
+                      return { ...prev, agreedAmount: e.target.value, status: autoStatus };
+                    });
+                  }}
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700 outline-none"
                 />
               </div>
@@ -770,7 +843,19 @@ export default function DeparturePayments({
                 <input
                   type="number"
                   value={vendorPaymentForm.advancePaid}
-                  onChange={e => setVendorPaymentForm(prev => ({ ...prev, advancePaid: e.target.value }))}
+                  onChange={e => {
+                    const advanceVal = parseFloat(e.target.value) || 0;
+                    setVendorPaymentForm(prev => {
+                      const agreed = parseFloat(prev.agreedAmount) || 0;
+                      let autoStatus = "Not Paid";
+                      if (advanceVal >= agreed && agreed > 0) {
+                        autoStatus = "Paid";
+                      } else if (advanceVal > 0) {
+                        autoStatus = "Partially Paid";
+                      }
+                      return { ...prev, advancePaid: e.target.value, status: autoStatus };
+                    });
+                  }}
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700 outline-none"
                 />
               </div>
