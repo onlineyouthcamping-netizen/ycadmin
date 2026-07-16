@@ -5336,23 +5336,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               </div>
             </div>
 
-            {/* FLAGS & WARNINGS Box */}
-            <div className="bg-red-50 border border-red-150 rounded-[6px] p-4 shadow-3xs space-y-2">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                <h4 className="text-xs font-black text-red-800 uppercase tracking-wider">
-                  FLAGS ({allPassengers.filter(p => !passengerAllocations[p.name]?.room || passengerAllocations[p.name]?.room === "—").length > 0 ? "Issues" : "0 Issues"} Need Manual Review)
-                </h4>
-              </div>
-              <ul className="text-[11px] text-red-750 font-bold space-y-1.5 pl-6 list-disc">
-                {allPassengers.filter(p => !passengerAllocations[p.name]?.room || passengerAllocations[p.name]?.room === "—").map(p => (
-                  <li key={p.id || p.name}>{p.name} unallocated to group room/tempo - assign manually below</li>
-                ))}
-                {allPassengers.filter(p => !passengerAllocations[p.name]?.room || passengerAllocations[p.name]?.room === "—").length === 0 && (
-                  <p className="text-slate-500 font-semibold list-none -ml-6">All passengers successfully matched. No flags active.</p>
-                )}
-              </ul>
-            </div>
+
 
             {/* WhatsApp Generated Lists Bar */}
             <div className="bg-slate-900 border border-slate-800 rounded-[6px] p-4 flex items-center justify-between text-white shadow-sm">
