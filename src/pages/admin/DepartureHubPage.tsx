@@ -5443,82 +5443,6 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               </div>
             </div>
 
-            {/* Travelers Allocation Shuffler Panel */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-              <div>
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                  Travelers Manual Allocation Shuffler
-                </h3>
-                <p className="text-[10px] text-slate-455 font-semibold mt-0.5 font-sans">Assign room sharing groups and vehicle seats directly. Shuffling updates both previews instantly.</p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                    <tr className="text-[9.5px] font-bold text-slate-455 uppercase tracking-wider">
-                      <th className="p-2.5 border-r border-slate-100">Traveler Name</th>
-                      <th className="p-2.5 border-r border-slate-100">Gender / Age</th>
-                      <th className="p-2.5 border-r border-slate-100">Vehicle Assignment</th>
-                      <th className="p-2.5 text-center">Seat Number</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
-                    {allPassengers.map((p) => {
-                       const current = passengerAllocations[p.name] || { room: "—", vehicle: "—", seat: "—" };
-                       return (
-                        <tr key={p.id || p.name} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">
-                            {p.name}
-                          </td>
-                          <td className="p-2.5 border-r border-slate-100 font-medium text-slate-600">
-                            {p.gender} / {p.age} Yrs
-                          </td>
-                          <td className="p-2.5 border-r border-slate-100">
-                            <select
-                              value={current.vehicle}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setPassengerAllocations(prev => ({
-                                  ...prev,
-                                  [p.name]: { ...current, vehicle: val }
-                                }));
-                                toast.success(`Assigned ${p.name} to ${val}`);
-                              }}
-                              className="h-7 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 w-full cursor-pointer"
-                            >
-                              <option value="—">Unassigned</option>
-                              {allocFleet.map(f => (
-                                <option key={f.id} value={f.name}>{f.name} ({f.vehicleType})</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="p-2.5">
-                            <select
-                              value={current.seat}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setPassengerAllocations(prev => ({
-                                  ...prev,
-                                  [p.name]: { ...current, seat: val }
-                                }));
-                                toast.success(`Assigned ${p.name} to Seat #${val}`);
-                              }}
-                              className="h-7 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 w-24 mx-auto block cursor-pointer"
-                            >
-                              <option value="—">Unassigned</option>
-                              {[...Array(17)].map((_, i) => (
-                                <option key={i + 1} value={String(i + 1)}>Seat #{i + 1}</option>
-                              ))}
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
             {/* Save Allocations to DB + Clear */}
             <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-end gap-2">
               <div className="flex gap-2">
@@ -5540,6 +5464,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 </Button>
               </div>
             </div>
+
 
             {/* Clear Allocations Confirmation Dialog */}
             {showClearAllocationsDialog && (
