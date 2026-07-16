@@ -2710,11 +2710,20 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       const personsRoomDetails = b.roomDetails?.personsRoomDetails || passengersObj?.details?.personsRoomDetails || {};
 
+      const normalizeCompareName = (nameStr: string) => {
+        if (!nameStr) return "";
+        let clean = nameStr.toLowerCase().trim();
+        if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
+        else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
+        else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
+        return clean;
+      };
+
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
-
+      const normLeadName = normalizeCompareName(leadName);
       const paxList = passengersObj?.persons || [];
-      const filteredCoPax = paxList.filter((p: any) => p.name !== leadName);
+      const filteredCoPax = paxList.filter((p: any) => normalizeCompareName(p.name) !== normLeadName);
       const passengerCount = filteredCoPax.length + 1;
 
       const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
@@ -2743,7 +2752,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       if (Array.isArray(passengersObj?.persons)) {
         passengersObj.persons.forEach((p: any, idx: number) => {
           // Prevent duplicating lead if they are listed in persons too
-          if (p.name === leadName) return;
+          if (normalizeCompareName(p.name) === normLeadName) return;
           const coRoomInfo = personsRoomDetails[p.name] || {};
           personsList.push({
             name: p.name,
