@@ -6194,18 +6194,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             <div className="space-y-4 mt-2">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Room Assignment</label>
-                <select
-                  value={shuffleRoom}
-                  onChange={(e) => setShuffleRoom(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none bg-white"
-                >
-                  <option value="—">Unassigned</option>
-                  <option value="Group No. 1">Group No. 1</option>
-                  <option value="Group No. 2">Group No. 2</option>
-                  <option value="Group No. 3">Group No. 3</option>
-                  <option value="Group No. 4">Group No. 4</option>
-                  <option value="Group No. 5">Group No. 5</option>
-                </select>
+                <input
+                  type="text"
+                  placeholder="e.g. Room 101, Group No. 1"
+                  value={shuffleRoom === "—" ? "" : shuffleRoom}
+                  onChange={(e) => setShuffleRoom(e.target.value || "—")}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -6224,16 +6219,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Seat Number</label>
-                <select
-                  value={shuffleSeat}
-                  onChange={(e) => setShuffleSeat(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none bg-white"
-                >
-                  <option value="—">Unassigned</option>
-                  {[...Array(17)].map((_, i) => (
-                    <option key={i + 1} value={String(i + 1)}>Seat #{i + 1}</option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  placeholder="e.g. 1, 12, Window"
+                  value={shuffleSeat === "—" ? "" : shuffleSeat}
+                  onChange={(e) => setShuffleSeat(e.target.value || "—")}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-[4px] focus:outline-none focus:border-[#F97316]"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
