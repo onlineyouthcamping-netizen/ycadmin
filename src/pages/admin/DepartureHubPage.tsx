@@ -2515,8 +2515,9 @@ export default function DepartureHubPage() {
     const list: any[] = [];
     Object.entries(passengerAllocations).forEach(([name, alloc]) => {
       if (alloc.vehicle && alloc.vehicle !== "Unassigned" && alloc.vehicle !== "—") {
+        const fleetItem = allocFleet.find(f => f.name === alloc.vehicle || f.id === alloc.vehicle);
         list.push({
-          fleetId: "tempo-1",
+          fleetId: fleetItem?.id || "tempo-1",
           vehicleType: alloc.vehicle,
           seatNumber: alloc.seat,
           travelerName: name
@@ -2524,7 +2525,7 @@ export default function DepartureHubPage() {
       }
     });
     return list;
-  }, [passengerAllocations]);
+  }, [passengerAllocations, allocFleet]);
 
   const allocWarnings = useMemo(() => {
     const warnings: string[] = [];
