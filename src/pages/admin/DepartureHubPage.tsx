@@ -1962,7 +1962,7 @@ export default function DepartureHubPage() {
 
     if (isSpiti) {
       return sptNights.map((night, idx) => {
-        const { wd } = getDayDateAndWd(departureDateStr, night.dayNum - 1);
+        const { wd, date } = getDayDateAndWd(departureDateStr, night.dayNum - 1);
         const assignment = hotelAssignments[idx] || null;
         const vendorObj = assignment ? (typeof assignment.vendorId === 'object' ? assignment.vendorId : null) : null;
         const raw = assignment?.rawAssignment || assignment;
@@ -1971,6 +1971,7 @@ export default function DepartureHubPage() {
           id: assignment?.id || `spt-stay-${idx}`,
           day: night.dayLabel,          // e.g. "Day 5–6" for Kaza
           wd,
+          date,
           destRegion: night.region,
           destCity: night.city,
           hotel: vendorObj?.name || raw?.hotelName || "— Not Assigned —",
@@ -2004,7 +2005,7 @@ export default function DepartureHubPage() {
       return hotelAssignments.map((v: any, idx: number) => {
         const vendorObj = typeof v.vendorId === 'object' ? v.vendorId : { name: 'Assigned Hotel' };
         const dayNum = idx + 1;
-        const { wd } = getDayDateAndWd(departureDateStr, idx);
+        const { wd, date } = getDayDateAndWd(departureDateStr, idx);
         const dest = tripDetails?.location || "Manali";
         const raw = v.rawAssignment || v;
 
@@ -2012,6 +2013,7 @@ export default function DepartureHubPage() {
           id: v.id,
           day: `Day ${dayNum}`,
           wd,
+          date,
           destRegion: "Himachal Pradesh",
           destCity: dest,
           hotel: vendorObj.name || raw?.hotelName || "Hotel",
@@ -4995,7 +4997,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                         <tr className="hover:bg-slate-50/50 transition-colors">
                           <td className="p-3 border-r border-slate-100">
                             <p className="font-extrabold text-slate-800">{row.day}</p>
-                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">{row.wd}</p>
+                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">{row.wd} &middot; {row.date}</p>
                           </td>
                           <td className="p-3 border-r border-slate-100">
                             <p className="font-bold text-slate-800">{row.destRegion}</p>
