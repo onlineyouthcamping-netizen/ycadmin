@@ -1155,36 +1155,44 @@ export default function DepartureHubPage() {
       setExtraPersonRate(800);
       setExtraChildRate(0);
 
-      // Dynamically calculate passenger counts from the manifest list
+      // Filter manifest to travelers for this departure/trip
+      const activePassengers: any[] = [];
+      const normalizeCompareName = (nameStr: string) => {
+        if (!nameStr) return "";
+        let clean = nameStr.toLowerCase().trim();
+        if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
+        else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
+        else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
+        return clean;
+      };
+
+      bookings.forEach((b: any) => {
+        const leadRoomType = b.roomSharing || b.roomType || "Triple Sharing";
+        const leadName = b.name || b.fullName || "Traveler";
+        const normLeadName = normalizeCompareName(leadName);
+
+        // Add lead passenger
+        activePassengers.push({
+          name: leadName,
+          roomSharing: leadRoomType
+        });
+
+        // Map co-passengers
+        const coPax = Array.isArray(b.coPassengers) ? b.coPassengers : [];
+        coPax.forEach((co: any) => {
+          if (normalizeCompareName(co.name) === normLeadName) return;
+          const rawDetails = co.details || {};
+          activePassengers.push({
+            name: co.name || "Co-Traveler",
+            roomSharing: rawDetails.roomType || rawDetails.roomSharing || leadRoomType
+          });
+        });
+      });
+
       let twinPax = 0;
       let triplePax = 0;
       let quadPax = 0;
       let extraPax = 0;
-
-      // Filter manifest to travelers for this departure/trip
-      const activePassengers = bookings.flatMap((b: any) => {
-        const due = (b.totalAmount || 0) - (b.advancePaid || 0);
-        const paymentLabel = due <= 0 ? "PAID" : b.advancePaid > 0 ? "PARTIAL" : "UNPAID";
-        const leadRoomType = b.roomSharing || b.roomType || "Triple Sharing";
-
-        // Map lead passenger
-        const lead = {
-          name: b.name || b.fullName || "Traveler",
-          roomSharing: leadRoomType
-        };
-
-        // Map co-passengers
-        const coPax = Array.isArray(b.coPassengers) ? b.coPassengers : [];
-        const coMapped = coPax.map((co: any) => {
-          const rawDetails = co.details || {};
-          return {
-            name: co.name || "Co-Traveler",
-            roomSharing: rawDetails.roomType || rawDetails.roomSharing || leadRoomType
-          };
-        });
-
-        return [lead, ...coMapped];
-      });
 
       activePassengers.forEach((p: any) => {
         const sharing = (p.roomSharing || "").toLowerCase();
