@@ -3645,7 +3645,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 <option value="All">All Payments</option>
                 <option value="Paid in Full">Paid in Full</option>
                 <option value="Partial Payment">Partial Payment</option>
-                <option value="Payment Pending">Pending</option>
+                <option value="Payment Pending">Payment Pending</option>
               </select>
 
               <select value={pickupFilter} onChange={e => { setPickupFilter(e.target.value); setPage(1); }}
