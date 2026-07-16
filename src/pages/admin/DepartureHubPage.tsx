@@ -1965,7 +1965,15 @@ export default function DepartureHubPage() {
     if (isSpiti) {
       return sptNights.map((night, idx) => {
         const { wd, date } = getDayDateAndWd(departureDateStr, night.dayNum - 1);
-        const assignment = hotelAssignments[idx] || null;
+        
+        // Find matching hotel assignment by location/city name instead of plain index matching
+        const assignment = hotelAssignments.find(h => {
+          const raw = h.rawAssignment || h;
+          const loc = (raw?.location || h.vendorId?.location || '').toLowerCase().trim();
+          const target = night.city.toLowerCase().trim();
+          return loc.includes(target) || target.includes(loc);
+        }) || null;
+
         const vendorObj = assignment ? (typeof assignment.vendorId === 'object' ? assignment.vendorId : null) : null;
         const raw = assignment?.rawAssignment || assignment;
 
