@@ -494,7 +494,7 @@ export default function DepartureHubPage() {
             roomNumber: alloc.room,
             roomType: 'STANDARD',
             genderGroup: p.gender === 'Female' ? 'GIRLS' : 'BOYS',
-            bookingId: p.bookingRef,
+            bookingId: p.bookingId,
             travelerName: p.name,
             sharingType: 'STANDARD'
           });
@@ -508,7 +508,7 @@ export default function DepartureHubPage() {
           if (fleet) {
             vehicleAllocations.push({
               fleetId: fleet.id,
-              bookingId: p.bookingRef,
+              bookingId: p.bookingId,
               travelerName: p.name,
               seatNumber: alloc.seat && alloc.seat !== '—' ? parseInt(alloc.seat) : undefined
             });
@@ -524,14 +524,16 @@ export default function DepartureHubPage() {
       }
 
       const result = await opsService.saveManualAllocations(tripId, departureDateStr, { roomAllocations, vehicleAllocations, clearExisting });
-      if (result.success) {
+      if (result?.success) {
         toast.success(`Saved: ${result.data?.rooms?.length || 0} room + ${result.data?.vehicles?.length || 0} vehicle allocations`);
         fetchPageData();
       } else {
-        toast.error(result.message || 'Failed to save allocations');
+        toast.error(result?.message || 'Failed to save allocations');
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to save allocations to database');
+      const errMsg = err?.response?.data?.message || err?.message || err?.response?.statusText || '';
+      toast.error(errMsg || 'Failed to save allocations to database');
+      console.error('saveManualAllocations error:', err);
     } finally {
       setIsSavingAllocations(false);
     }
@@ -1219,18 +1221,44 @@ export default function DepartureHubPage() {
       let quadPax = 0;
       let extraPax = 0;
 
-      activePassengers.forEach((p: any) => {
-        const sharing = (p.roomSharing || "").toLowerCase();
-        if (sharing.includes("twin") || sharing.includes("double")) {
-          twinPax++;
-        } else if (sharing.includes("triple")) {
-          triplePax++;
-        } else if (sharing.includes("quad")) {
-          quadPax++;
-        } else {
-          extraPax++;
+      // Check if we have active room allocations saved in our shuffler
+      const roomGroups: Record<string, number> = {};
+      Object.entries(passengerAllocations).forEach(([name, alloc]) => {
+        if (alloc.room && alloc.room !== "—" && alloc.room !== "Unassigned") {
+          roomGroups[alloc.room] = (roomGroups[alloc.room] || 0) + 1;
         }
       });
+
+      const hasSavedRoomAllocations = Object.keys(roomGroups).length > 0;
+
+      if (hasSavedRoomAllocations) {
+        // Calculate rooms directly from saved shuffler groups
+        Object.entries(roomGroups).forEach(([room, count]) => {
+          if (count === 2) {
+            twinPax += 2; // 1 Double Room = 2 passengers
+          } else if (count === 3) {
+            triplePax += 3; // 1 Triple Room = 3 passengers
+          } else if (count === 4) {
+            quadPax += 4; // 1 Quad Room = 4 passengers
+          } else {
+            extraPax += count; // Single or extra bed passengers
+          }
+        });
+      } else {
+        // Fallback: use raw passenger preferences from the bookings sheet
+        activePassengers.forEach((p: any) => {
+          const sharing = (p.roomSharing || "").toLowerCase();
+          if (sharing.includes("twin") || sharing.includes("double")) {
+            twinPax++;
+          } else if (sharing.includes("triple")) {
+            triplePax++;
+          } else if (sharing.includes("quad")) {
+            quadPax++;
+          } else {
+            extraPax++;
+          }
+        });
+      }
 
       setDoubleRoomsCount(twinPax);
       setTripleRoomsCount(triplePax);
@@ -2447,15 +2475,19 @@ export default function DepartureHubPage() {
 
   useEffect(() => {
     if (allPassengers && allPassengers.length > 0) {
-      const initial: Record<string, { room: string, vehicle: string, seat: string }> = {};
-      allPassengers.forEach((p) => {
-        initial[p.name] = {
-          room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
-          vehicle: "—",
-          seat: "—"
-        };
+      setPassengerAllocations(prev => {
+        const next = { ...prev };
+        allPassengers.forEach((p) => {
+          if (!next[p.name]) {
+            next[p.name] = {
+              room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
+              vehicle: "—",
+              seat: "—"
+            };
+          }
+        });
+        return next;
       });
-      setPassengerAllocations(initial);
     }
   }, [allPassengers]);
 
@@ -5144,7 +5176,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               <div className="flex gap-2">
                 <Button 
                   size="sm" 
-                  onClick={handleSaveAllocationsToDb} 
+                  onClick={() => handleSaveAllocationsToDb(false)} 
                   disabled={isSavingAllocations}
                   className="h-8.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] shadow-sm flex items-center gap-1.5"
                 >
