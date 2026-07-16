@@ -5436,18 +5436,62 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                       const roomTag = (hasBoys && hasGirls) ? "COUPLE" : hasGirls ? "GIRLS" : "BOYS";
                       return (
                         <div key={roomNum} className="border border-slate-100 rounded-lg p-3 bg-slate-50 hover:border-emerald-250 transition-colors">
-                          <p className="text-[10px] font-extrabold text-slate-800 flex items-center justify-between">
+                          <p className="text-[10px] font-extrabold text-slate-800 flex items-center justify-between border-b border-slate-100/60 pb-1">
                             <span>{roomNum}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setManualRooms(prev => prev.filter(r => r !== roomNum));
+                                setPassengerAllocations(prev => {
+                                  const updated = { ...prev };
+                                  Object.entries(updated).forEach(([name, alloc]) => {
+                                    if (alloc.room === roomNum) {
+                                      updated[name] = { ...alloc, room: "—" };
+                                    }
+                                  });
+                                  return updated;
+                                });
+                                toast.success(`Deleted room: ${roomNum}`);
+                              }}
+                              className="text-red-500 hover:text-red-700 transition-colors p-0.5 rounded hover:bg-red-50"
+                            >
+                              <Trash className="w-3.5 h-3.5" />
+                            </button>
                           </p>
-                          <ul className="mt-2 space-y-1.5">
+                          <ul
+                            className="mt-2 space-y-1.5 min-h-[40px] rounded p-1"
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const travelerName = e.dataTransfer.getData("travelerName");
+                              if (!travelerName) return;
+                              setPassengerAllocations(prev => {
+                                const current = prev[travelerName] || { room: "—", vehicle: "—", seat: "—" };
+                                return {
+                                  ...prev,
+                                  [travelerName]: { ...current, room: roomNum }
+                                };
+                              });
+                              toast.success(`Moved ${travelerName} to ${roomNum}`);
+                            }}
+                          >
                             {rData.members.filter(Boolean).map((m: string, i: number) => (
-                              <li key={i} className="text-[11px] font-bold text-slate-655 flex items-center gap-1.5 cursor-pointer hover:text-[#F97316] transition-colors" onClick={() => handleOpenShuffle({ name: m })}>
+                              <li
+                                key={i}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("travelerName", m);
+                                }}
+                                className="text-[11px] font-bold text-slate-655 flex items-center gap-1.5 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2 py-1 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none"
+                                onClick={() => handleOpenShuffle({ name: m })}
+                              >
                                 <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full shrink-0" />
                                 {m}
                               </li>
                             ))}
                             {rData.members.filter(Boolean).length === 0 && (
-                              <li className="text-[10px] italic text-slate-400 font-medium">Empty Room</li>
+                              <li className="text-[10px] italic text-slate-400 font-medium py-1 text-center">Empty Room</li>
                             )}
                           </ul>
                         </div>
@@ -5475,14 +5519,40 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     ).map(([fleetId, travelers]: any) => {
                       const fleetItem = allocFleet.find(f => f.id === fleetId);
                       return (
-                        <div key={fleetId} className="border border-slate-100 rounded-lg p-3 bg-slate-50 hover:border-blue-250 transition-colors">
+                        <div
+                          key={fleetId}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const travelerName = e.dataTransfer.getData("travelerName");
+                            if (!travelerName) return;
+                            const fleetName = fleetItem?.name || "Tempo Traveller";
+                            setPassengerAllocations(prev => {
+                              const current = prev[travelerName] || { room: "—", vehicle: "—", seat: "—" };
+                              return {
+                                ...prev,
+                                [travelerName]: { ...current, vehicle: fleetName }
+                              };
+                            });
+                            toast.success(`Moved ${travelerName} to ${fleetName}`);
+                          }}
+                          className="border border-slate-100 rounded-lg p-3 bg-slate-50 hover:border-blue-250 transition-colors"
+                        >
                           <p className="text-[10px] font-extrabold text-slate-800 flex items-center justify-between">
                             <span>{fleetItem?.name || "Tempo Traveller"} ({fleetItem?.vehicleType})</span>
                             <span className="text-[9px] font-black text-slate-450 uppercase font-mono">{travelers.length} / {fleetItem?.capacity || 17} Seats Filled</span>
                           </p>
-                          <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+                          <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 min-h-[40px]">
                             {travelers.map((t: any, i: number) => (
-                              <p key={i} className="text-[11px] font-bold text-slate-650 truncate flex items-center gap-2 cursor-pointer hover:text-[#F97316] transition-colors" onClick={() => handleOpenShuffle({ name: t.travelerName })}>
+                              <p
+                                key={i}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("travelerName", t.travelerName);
+                                }}
+                                className="text-[11px] font-bold text-slate-650 truncate flex items-center gap-2 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2 py-1 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none"
+                                onClick={() => handleOpenShuffle({ name: t.travelerName })}
+                              >
                                 <span className="text-[9px] font-black font-mono text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.2 rounded shrink-0">#{t.seatNumber || i + 1}</span>
                                 {t.travelerName}
                               </p>
