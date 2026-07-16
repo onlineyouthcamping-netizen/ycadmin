@@ -2851,7 +2851,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       const matchSearch = p.name.toLowerCase().includes(paxSearch.toLowerCase()) || p.phone.includes(paxSearch);
       const matchPayment = paymentFilter === "All"
         ? true
-        : paymentFilter === "Has Due Balance"
+        : (paymentFilter === "Payment Pending" || paymentFilter === "Has Due Balance")
           ? p.balance > 0
           : p.paymentStatus === paymentFilter;
       const matchPickup = pickupFilter === "All" || p.pickupPoint === pickupFilter;
@@ -3044,7 +3044,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       const matchPayment = paymentFilter === "All"
         ? true
-        : paymentFilter === "Has Due Balance"
+        : (paymentFilter === "Payment Pending" || paymentFilter === "Has Due Balance")
           ? bg.balance > 0
           : bg.paymentStatus === paymentFilter;
 
@@ -3587,26 +3587,36 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
             {/* KPI cards */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
-                { label:"Total Passengers",  value:passengerStats.total,        sub:"Total confirmed",          color:"text-slate-800",   onClick: () => { setPaymentFilter("All"); setPage(1); } },
-                { label:"Paid in Full",       value:passengerStats.paidInFull,   sub:`${passengerStats.paidPercent}% of total`, color:"text-emerald-600", onClick: () => { setPaymentFilter("Paid in Full"); setPage(1); } },
-                { label:"Partial Payment",    value:passengerStats.partial,      sub:`₹${passengerStats.outstandingPartial.toLocaleString("en-IN")} due`, color:"text-amber-600", onClick: () => { setPaymentFilter("Partial Payment"); setPage(1); } },
-                { label:"Due Balance",        value:passengerStats.withDue,      sub:`₹${passengerStats.totalDue.toLocaleString("en-IN")} outstanding`, color:"text-red-600",   onClick: () => { setPaymentFilter("Has Due Balance"); setPage(1); } },
-                { label:"Cancelled",          value:0,                           sub:"0% of total",             color:"text-slate-400",   onClick: undefined },
-              ].map(kpi => (
-                <div
-                  key={kpi.label}
-                  onClick={kpi.onClick}
-                  className={cn(
-                    "bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm transition-all",
-                    kpi.onClick ? "cursor-pointer hover:border-orange-300 hover:shadow-md" : ""
-                  )}
-                >
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{kpi.label}</p>
-                  <p className={cn("text-2xl font-black", kpi.color)}>{kpi.value}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{kpi.sub}</p>
-                </div>
-              ))}
+              {/* Total Passengers */}
+              <div onClick={() => { setPaymentFilter("All"); setPage(1); }} className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-orange-300 hover:shadow-md transition-all">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Passengers</p>
+                <p className="text-2xl font-black text-slate-800">{passengerStats.total}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Total confirmed</p>
+              </div>
+              {/* Paid in Full */}
+              <div onClick={() => { setPaymentFilter("Paid in Full"); setPage(1); }} className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-orange-300 hover:shadow-md transition-all">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Paid in Full</p>
+                <p className="text-2xl font-black text-emerald-600">{passengerStats.paidInFull}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{passengerStats.paidPercent}% of total</p>
+              </div>
+              {/* Partial Payment */}
+              <div onClick={() => { setPaymentFilter("Partial Payment"); setPage(1); }} className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-orange-300 hover:shadow-md transition-all">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Partial Payment</p>
+                <p className="text-2xl font-black text-amber-600">{passengerStats.partial}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">₹{passengerStats.outstandingPartial.toLocaleString("en-IN")} due</p>
+              </div>
+              {/* Pending Due — shows ₹ amount prominently */}
+              <div onClick={() => { setPaymentFilter("Payment Pending"); setPage(1); }} className="bg-red-50/50 border border-red-200 rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-red-400 hover:shadow-md transition-all">
+                <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1">Pending Due</p>
+                <p className="text-xl font-black text-red-600 leading-tight">₹{passengerStats.totalDue.toLocaleString("en-IN")}</p>
+                <p className="text-[10px] text-red-400 font-bold mt-0.5">{passengerStats.withDue} passengers with due</p>
+              </div>
+              {/* Cancelled */}
+              <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cancelled</p>
+                <p className="text-2xl font-black text-slate-400">0</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">0% of total</p>
+              </div>
             </div>
 
             {/* Reconciliation Checklist Stats */}
