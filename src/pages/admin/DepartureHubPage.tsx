@@ -297,7 +297,11 @@ export default function DepartureHubPage() {
 
   const tripId = resolvedTripId;
   const departureDateStr = resolvedDepartureDateStr;
-  const activeTab = searchParams.get("tab") || "overview";
+  
+  let activeTab = searchParams.get("tab") || "overview";
+  if (activeTab === "manifest") {
+    activeTab = "passengers";
+  }
 
   const setActiveTab = (tab: string) => {
     const nextParams: Record<string, string> = { tab };
