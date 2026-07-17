@@ -132,7 +132,7 @@ export const TravelDeskDepartures: React.FC<TravelDeskDeparturesProps> = ({ trip
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-[#FF6B00] hover:border-[#FF6B00] transition-colors shadow-sm"
                 >
                   <Users className="w-3.5 h-3.5" />
-                  View Manifest
+                  View Passengers
                 </button>
                 <button 
                   onClick={() => {
