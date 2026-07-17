@@ -1,4 +1,46 @@
 import api from './api';
+import { Trip } from '../types';
+
+export interface TravelDeskWorkspace {
+  id: string;
+  tripId: string;
+  status: string;
+  readinessScore: number;
+  categories: any[];
+}
+
+export interface TravelDeskVendorLink {
+  id: string;
+  workspaceId: string;
+  vendorId: string;
+  departureDate?: string;
+  relationshipType: string;
+  negotiatedRate?: number;
+  validFrom?: string;
+  validUntil?: string;
+  internalNotes?: string;
+  isPreferred: boolean;
+  status: string;
+  vendor: any;
+}
+
+export interface TravelDeskArticle {
+  id: string;
+  workspaceId: string;
+  categoryId: string;
+  title: string;
+  summary?: string;
+  content: string;
+  status: string;
+  category?: any;
+}
+
+export interface DepartureSummary {
+  departureDate: string;
+  confirmedPassengers: number;
+  pendingPassengers: number;
+  bookingsCount: number;
+}
 
 export interface TicketingSopItem {
   id: string;
@@ -140,6 +182,75 @@ export interface TripNote {
 }
 
 export const travelDeskService = {
+  // ── CORE WORKSPACE & TRIPS (Stage 3) ──
+  getTravelDeskTrips: async (signal?: AbortSignal): Promise<any[]> => {
+    const res = await api.get(`/travel-desk/trips`, { signal });
+    return res.data.data;
+  },
+  feedWorkspaces: async (tripIds: string[]): Promise<any> => {
+    const res = await api.post(`/travel-desk/workspaces/feed`, { tripIds });
+    return res.data.data;
+  },
+  getWorkspace: async (tripId: string, signal?: AbortSignal): Promise<TravelDeskWorkspace> => {
+    const res = await api.get(`/travel-desk/workspaces/${tripId}`, { signal });
+    return res.data.data;
+  },
+  getTripOverview: async (tripId: string, signal?: AbortSignal): Promise<Trip> => {
+    const res = await api.get(`/travel-desk/${tripId}/overview`, { signal });
+    return res.data.data;
+  },
+  getOfficialItinerary: async (tripId: string, signal?: AbortSignal): Promise<any> => {
+    const res = await api.get(`/travel-desk/${tripId}/itinerary`, { signal });
+    return res.data.data;
+  },
+  getDepartures: async (tripId: string, signal?: AbortSignal): Promise<DepartureSummary[]> => {
+    const res = await api.get(`/travel-desk/${tripId}/departures`, { signal });
+    return res.data.data;
+  },
+  
+  // ── VENDORS ──
+  getVendors: async (tripId: string, signal?: AbortSignal): Promise<TravelDeskVendorLink[]> => {
+    const res = await api.get(`/travel-desk/${tripId}/vendors`, { signal });
+    return res.data.data;
+  },
+  linkVendor: async (tripId: string, data: any): Promise<TravelDeskVendorLink> => {
+    const res = await api.post(`/travel-desk/${tripId}/vendors/link`, data);
+    return res.data.data;
+  },
+  unlinkVendor: async (tripId: string, linkId: string): Promise<void> => {
+    await api.delete(`/travel-desk/${tripId}/vendors/${linkId}`);
+  },
+
+  // ── ARTICLES ──
+  getArticles: async (tripId: string, signal?: AbortSignal): Promise<TravelDeskArticle[]> => {
+    const res = await api.get(`/travel-desk/${tripId}/articles`, { signal });
+    return res.data.data;
+  },
+  createArticle: async (tripId: string, data: any): Promise<TravelDeskArticle> => {
+    const res = await api.post(`/travel-desk/${tripId}/articles`, data);
+    return res.data.data;
+  },
+  updateArticle: async (tripId: string, articleId: string, data: any): Promise<TravelDeskArticle> => {
+    const res = await api.patch(`/travel-desk/${tripId}/articles/${articleId}`, data);
+    return res.data.data;
+  },
+  approveArticle: async (tripId: string, articleId: string): Promise<TravelDeskArticle> => {
+    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/approve`);
+    return res.data.data;
+  },
+  publishArticle: async (tripId: string, articleId: string): Promise<TravelDeskArticle> => {
+    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/publish`);
+    return res.data.data;
+  },
+  archiveArticle: async (tripId: string, articleId: string): Promise<TravelDeskArticle> => {
+    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/archive`);
+    return res.data.data;
+  },
+  getReadiness: async (tripId: string, signal?: AbortSignal): Promise<{ readinessScore: number }> => {
+    const res = await api.get(`/travel-desk/${tripId}/readiness`, { signal });
+    return res.data.data;
+  },
+
   // ── TICKETING ──
   getTicketing: async (tripId: string): Promise<{ sops: TicketingSop[]; links: TicketingLink[] }> => {
     const res = await api.get(`/travel-desk/ticketing/${tripId}`);
@@ -252,9 +363,13 @@ export const travelDeskService = {
     const res = await api.get(`/travel-desk/gallery/${tripId}`);
     return res.data.data;
   },
-  createGalleryItem: async (data: Partial<TripGallery>): Promise<TripGallery> => {
-    const res = await api.post(`/travel-desk/gallery`, data);
-    return res.data.data;
+  uploadGallery: async (formData: FormData): Promise<any> => {
+    const res = await api.post(`/travel-desk/gallery`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return res.data;
   },
   deleteGalleryItem: async (id: string): Promise<void> => {
     await api.delete(`/travel-desk/gallery/${id}`);
@@ -335,6 +450,38 @@ export const travelDeskService = {
   bulkCreateTrips: async (trips?: string[]): Promise<any> => {
     const res = await api.post(`/travel-desk/bulk-trips`, { trips });
     return res.data;
+  },
+
+  // ── CONTENT MANAGEMENT & APPROVALS (STAGE 4) ──
+  getArticles: async (tripId: string, signal?: AbortSignal): Promise<any[]> => {
+    const res = await api.get(`/travel-desk/${tripId}/articles`, { signal });
+    return res.data.data;
+  },
+  createArticle: async (tripId: string, data: any): Promise<any> => {
+    const res = await api.post(`/travel-desk/${tripId}/articles`, data);
+    return res.data.data;
+  },
+  updateArticle: async (tripId: string, articleId: string, data: any): Promise<any> => {
+    const res = await api.patch(`/travel-desk/${tripId}/articles/${articleId}`, data);
+    return res.data.data;
+  },
+  requestArticleChanges: async (tripId: string, articleId: string, comment: string): Promise<any> => {
+    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/request-changes`, { comment });
+    return res.data.data;
+  },
+  changeArticleStatus: async (tripId: string, articleId: string, status: string): Promise<any> => {
+    const res = await api.patch(`/travel-desk/${tripId}/articles/${articleId}/status`, { status });
+    return res.data.data;
+  },
+  getPendingApprovals: async (tripId: string, signal?: AbortSignal): Promise<any> => {
+    const res = await api.get(`/travel-desk/${tripId}/approvals`, { signal });
+    return res.data.data;
+  },
+
+  // ── ACTIVITY LOG ──
+  getActivityLog: async (tripId: string, signal?: AbortSignal): Promise<any> => {
+    const res = await api.get(`/travel-desk/${tripId}/activity-log`, { signal });
+    return res.data.data;
   }
 };
 

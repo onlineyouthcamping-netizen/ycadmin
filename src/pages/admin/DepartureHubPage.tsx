@@ -25,6 +25,7 @@ import DepartureDocuments from "@/components/admin/DepartureDocuments";
 import DeparturePayments from "@/components/admin/DeparturePayments";
 import DepartureReports from "@/components/admin/DepartureReports";
 import DepartureTasks from "@/components/admin/DepartureTasks";
+import DepartureTicketing from "@/components/admin/DepartureTicketing";
 import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
@@ -3128,6 +3129,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     { id:"allocation",     label:"Room & Tempo Allocation" },
     { id:"guides",         label:"Guides" },
     { id:"activities",     label:"Activities" },
+    { id:"ticketing",      label:"Ticketing" },
     { id:"payments",       label:"Payments",   badge: computedPayments.filter(p => p.pending > 0).length },
     { id:"tasks",          label:"Tasks",      badge: computedTasks.filter(t => t.status !== "COMPLETED").length },
     { id:"documents",      label:"Documents",  badge: computedDocuments.length },
@@ -3141,7 +3143,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     documents:"+ Upload Document", communication:"+ New Message",
     overview:"Edit Departure", passengers:"+ Add Passenger",
     itinerary:"+ Add Day", hotels:"+ Add Hotel", allocation:"+ Add Vehicle",
-    guides:"+ Assign Guide", reports:"Download Report",
+    guides:"+ Assign Guide", reports:"Download Report", ticketing:"+ Add Template",
   };
 
   return (
@@ -5920,7 +5922,15 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             api={api}
           />
         )}
-                {/* ──────────────────────── PAYMENTS ──────────────────────── */}
+                {activeTab === "ticketing" && (
+          <DepartureTicketing
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+            tripDetails={tripDetails}
+          />
+        )}
+        
+        {/* ──────────────────────── PAYMENTS ──────────────────────── */}
         {activeTab === "payments" && (
           <DeparturePayments
             tripId={tripId}

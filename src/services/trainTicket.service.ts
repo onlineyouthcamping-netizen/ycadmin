@@ -50,6 +50,9 @@ export interface TrainTemplate {
   tripId?: string;
   tripTitle?: string;
   departureDate?: string;
+  scope: 'TRIP' | 'DEPARTURE';
+  transportMode: 'TRAIN' | 'FLIGHT' | 'BUS';
+  
   trainName?: string;
   trainNumber?: string;
   source?: string;
@@ -59,6 +62,17 @@ export interface TrainTemplate {
   journeyDate?: string;
   boardingPoint?: string;
   droppingPoint?: string;
+
+  flightAirline?: string;
+  flightNumber?: string;
+  flightOrigin?: string;
+  flightDestination?: string;
+  flightTerminal?: string;
+  baggageGuidance?: string;
+
+  reportingTime?: string;
+  arrivalTime?: string;
+
   waitlistDisclaimer?: string;
   isActive: boolean;
   createdAt: string;
@@ -181,9 +195,14 @@ export const trainTicketService = {
   },
 
   // Template CRUD operations
-  async getTemplates(): Promise<TrainTemplate[]> {
-    const res = await api.get("/train-ticket-templates");
+  async getTemplates(params?: { tripId?: string; departureDate?: string }): Promise<TrainTemplate[]> {
+    const res = await api.get("/train-ticket-templates", { params });
     return (res.data?.data || []).filter((x: TrainTemplate) => x.isActive);
+  },
+
+  async getEffectiveTemplates(tripId: string, departureDate: string): Promise<any[]> {
+    const res = await api.get("/train-ticket-templates/effective", { params: { tripId, departureDate } });
+    return res.data?.data || [];
   },
 
   async createTemplate(data: any): Promise<TrainTemplate> {
@@ -198,6 +217,14 @@ export const trainTicketService = {
 
   async deleteTemplate(id: string): Promise<void> {
     await api.delete(`/train-ticket-templates/${id}`);
+  },
+
+  async archiveTemplate(id: string): Promise<void> {
+    await api.post(`/train-ticket-templates/${id}/archive`);
+  },
+
+  async restoreTemplate(id: string): Promise<void> {
+    await api.post(`/train-ticket-templates/${id}/restore`);
   }
 };
 
