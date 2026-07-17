@@ -5,6 +5,8 @@ import { Image as ImageIcon, Trash2, Download } from 'lucide-react';
 import { TravelDeskLoadingState, TravelDeskEmptyState } from './TravelDeskStateComponents';
 import { TravelDeskUploadGalleryModal } from './TravelDeskUploadGalleryModal';
 
+import { toast } from 'sonner';
+
 interface TravelDeskGalleryProps {
   trip: Trip;
 }
@@ -27,6 +29,18 @@ export const TravelDeskGallery: React.FC<TravelDeskGalleryProps> = ({ trip }) =>
     };
     fetchGallery();
   }, [trip.id]);
+
+  const handleDeleteImage = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this media item?')) return;
+    try {
+      await travelDeskService.deleteGalleryItem(id);
+      setImages(images.filter(img => img.id !== id));
+      toast.success('Media item deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete media item');
+    }
+  };
 
   if (loading) return <TravelDeskLoadingState message="Loading Gallery..." />;
 
@@ -63,10 +77,10 @@ export const TravelDeskGallery: React.FC<TravelDeskGalleryProps> = ({ trip }) =>
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-[10px] text-white/70 font-semibold">{img.category}</span>
                   <div className="flex gap-2">
-                    <button className="p-1.5 bg-white/20 hover:bg-white/40 rounded backdrop-blur-sm text-white transition-colors" title="Download">
+                    <a href={img.url} target="_blank" rel="noreferrer" className="p-1.5 bg-white/20 hover:bg-white/40 rounded backdrop-blur-sm text-white transition-colors" title="View/Download">
                       <Download className="w-3.5 h-3.5" />
-                    </button>
-                    <button className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded backdrop-blur-sm text-white transition-colors" title="Delete">
+                    </a>
+                    <button onClick={() => handleDeleteImage(img.id)} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded backdrop-blur-sm text-white transition-colors" title="Delete">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>

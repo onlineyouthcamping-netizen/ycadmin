@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Trip } from '@/types';
 import { travelDeskService } from '@/services/travelDesk.service';
-import { FileText, Download, Eye, Clock, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { FileText, Download, Eye, Clock, CheckCircle2, AlertTriangle, XCircle, Trash2 } from 'lucide-react';
 import { TravelDeskLoadingState, TravelDeskEmptyState } from './TravelDeskStateComponents';
 import { cn } from '@/lib/utils';
 import { TravelDeskUploadDocumentModal } from './TravelDeskUploadDocumentModal';
+import { toast } from 'sonner';
 
 interface TravelDeskDocumentsProps {
   trip: Trip;
@@ -37,6 +38,18 @@ export const TravelDeskDocuments: React.FC<TravelDeskDocumentsProps> = ({ trip }
       case 'UNDER_REVIEW': return { color: 'text-yellow-700 bg-yellow-50 border-yellow-200', icon: Clock };
       case 'REJECTED': return { color: 'text-red-700 bg-red-50 border-red-200', icon: XCircle };
       default: return { color: 'text-slate-700 bg-slate-50 border-slate-200', icon: FileText };
+    }
+  };
+
+  const handleDeleteDoc = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    try {
+      await travelDeskService.deleteDocument(id);
+      setDocuments(documents.filter(d => d.id !== id));
+      toast.success('Document deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete document');
     }
   };
 
@@ -84,7 +97,7 @@ export const TravelDeskDocuments: React.FC<TravelDeskDocumentsProps> = ({ trip }
                         </div>
                         <div>
                           <p className="text-slate-800 font-bold">{doc.title}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">v{doc.version} • {doc.size}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">v{doc.version || 1} • {doc.fileSize || doc.size || 'N/A'}</p>
                         </div>
                       </div>
                     </td>
@@ -95,15 +108,22 @@ export const TravelDeskDocuments: React.FC<TravelDeskDocumentsProps> = ({ trip }
                         {doc.status}
                       </div>
                     </td>
-                    <td className="p-4 text-xs text-slate-500">{doc.addedBy}</td>
-                    <td className="p-4 text-xs text-slate-500">{new Date(doc.dateAdded).toLocaleDateString()}</td>
+                    <td className="p-4 text-xs text-slate-500">{doc.uploadedBy || doc.addedBy || 'System'}</td>
+                    <td className="p-4 text-xs text-slate-500">{new Date(doc.createdAt || doc.dateAdded).toLocaleDateString()}</td>
                     <td className="p-4 pr-6 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors" title="View">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Download">
-                          <Download className="w-4 h-4" />
+                        {doc.fileUrl && (
+                          <>
+                            <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors" title="View">
+                              <Eye className="w-4 h-4" />
+                            </a>
+                            <a href={doc.fileUrl} download className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Download">
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </>
+                        )}
+                        <button onClick={() => handleDeleteDoc(doc.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

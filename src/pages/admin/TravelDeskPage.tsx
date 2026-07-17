@@ -4,12 +4,13 @@ import { useAuthStore } from "@/store/auth.store";
 import { travelDeskService, TravelDeskWorkspace, DepartureSummary } from "@/services/travelDesk.service";
 import { Trip } from "@/types";
 import { Compass, Search } from "lucide-react";
+import { toast } from "sonner";
 import { TravelDeskHeader } from "@/components/travel-desk/TravelDeskHeader";
 import { TravelDeskTabs } from "@/components/travel-desk/TravelDeskTabs";
 import { TravelDeskTripSidebar } from "@/components/travel-desk/TravelDeskTripSidebar";
 import { TravelDeskQuickActions } from "@/components/travel-desk/TravelDeskQuickActions";
 import { FeedTripsDrawer } from "@/components/travel-desk/FeedTripsDrawer";
-import { TravelDeskLoadingState, TravelDeskErrorState, TravelDeskEmptyState } from "@/components/travel-desk/TravelDeskStateComponents";
+import { TravelDeskLoadingState, TravelDeskErrorState, TravelDeskEmptyState, TravelDeskActivationState } from "@/components/travel-desk/TravelDeskStateComponents";
 import { TravelDeskKnowledgeHub } from "@/components/travel-desk/TravelDeskKnowledgeHub";
 import { TravelDeskDepartures } from "@/components/travel-desk/TravelDeskDepartures";
 import { TravelDeskItinerary } from "@/components/travel-desk/TravelDeskItinerary";
@@ -44,6 +45,32 @@ export default function TravelDeskPage() {
 
   // AbortController ref
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const [isActivating, setIsActivating] = useState(false);
+
+  const handleActivateWorkspace = async () => {
+    if (!tripId) return;
+    setIsActivating(true);
+    try {
+      await travelDeskService.feedWorkspaces([tripId]);
+      toast.success("Workspace activated successfully!");
+      
+      // Reload Workspace Data
+      setIsMainLoading(true);
+      const ws = await travelDeskService.getWorkspace(tripId);
+      setWorkspace(ws);
+      
+      // Also update sidebar list to show it's active
+      const loadedTrips = await travelDeskService.getTravelDeskTrips();
+      setTrips(loadedTrips || []);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to activate workspace");
+    } finally {
+      setIsActivating(false);
+      setIsMainLoading(false);
+    }
+  };
 
   // 1. Initial Load of Sidebar Trips
   useEffect(() => {
@@ -81,11 +108,22 @@ export default function TravelDeskPage() {
       setMainError(null);
 
       try {
-        const [overviewData, workspaceData, departuresData] = await Promise.all([
+        const [overviewData, departuresData] = await Promise.all([
           travelDeskService.getTripOverview(tripId, abortController.signal),
-          travelDeskService.getWorkspace(tripId, abortController.signal),
           travelDeskService.getDepartures(tripId, abortController.signal)
         ]);
+
+        let workspaceData = null;
+        try {
+          workspaceData = await travelDeskService.getWorkspace(tripId, abortController.signal);
+        } catch (err: any) {
+          if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+            return;
+          }
+          if (err?.response?.status !== 404) {
+            throw err;
+          }
+        }
 
         setActiveTrip(overviewData);
         setWorkspace(workspaceData);
@@ -161,8 +199,14 @@ export default function TravelDeskPage() {
             <TravelDeskLoadingState message="Loading Workspace..." />
           ) : mainError ? (
             <TravelDeskErrorState message={mainError} />
-          ) : !activeTrip || !workspace ? (
+          ) : !activeTrip ? (
             <TravelDeskEmptyState title="No Workspace Selected" description="Please select an active trip from the sidebar to view its workspace." />
+          ) : !workspace ? (
+            <TravelDeskActivationState 
+              tripTitle={activeTrip.title} 
+              onActivate={handleActivateWorkspace} 
+              isActivating={isActivating} 
+            />
           ) : (
             <>
               <TravelDeskHeader 
