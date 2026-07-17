@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trip } from '@/types';
 import { DepartureSummary } from '@/services/travelDesk.service';
 import { Calendar, Users, ChevronRight, FileText, Settings, Clock, CheckCircle2 } from 'lucide-react';
@@ -10,6 +11,7 @@ interface TravelDeskDeparturesProps {
 }
 
 export const TravelDeskDepartures: React.FC<TravelDeskDeparturesProps> = ({ trip, departures }) => {
+  const navigate = useNavigate();
   const maxPax = trip.maxGroupSize || 45;
 
   if (!departures || departures.length === 0) {
@@ -122,11 +124,23 @@ export const TravelDeskDepartures: React.FC<TravelDeskDeparturesProps> = ({ trip
 
               {/* ACTION FOOTER */}
               <div className="bg-slate-50 border-t border-slate-100 p-3 px-5 flex items-center justify-end gap-3">
-                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-[#FF6B00] hover:border-[#FF6B00] transition-colors shadow-sm">
+                <button 
+                  onClick={() => {
+                    const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    navigate(`/admin/departure-workspace?tripId=${trip.id}&departureDate=${formattedDate}&tab=manifest`);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-[#FF6B00] hover:border-[#FF6B00] transition-colors shadow-sm"
+                >
                   <Users className="w-3.5 h-3.5" />
                   View Manifest
                 </button>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white border border-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shadow-sm">
+                <button 
+                  onClick={() => {
+                    const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    navigate(`/admin/departure-workspace?tripId=${trip.id}&departureDate=${formattedDate}&tab=overview`);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white border border-slate-800 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shadow-sm"
+                >
                   <Settings className="w-3.5 h-3.5" />
                   Manage Operations
                   <ChevronRight className="w-3.5 h-3.5 ml-0.5 opacity-50" />
