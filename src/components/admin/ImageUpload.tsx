@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, Loader2, Image as ImageIcon, X, RefreshCw } from "lucide-react";
 import api from "@/services/api";
 import { ENV } from "@/config/environment";
+import { toast } from "sonner";
 
 interface ImageUploadProps {
   onUpload: (url: string) => void;
@@ -40,12 +41,15 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
   const handleFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
+    const maxLimitBytes = ENV.IMAGE_MAX_BYTES;
+    const maxLimitMb = ENV.IMAGE_MAX_BYTES / (1024 * 1024);
+
     if (multiple) {
        const formData = new FormData();
        let validCount = 0;
        for (let i = 0; i < files.length; i++) {
-         if (files[i].size > 10 * 1024 * 1024) {
-           alert(`File ${files[i].name} exceeds 10MB limit`);
+         if (files[i].size > maxLimitBytes) {
+           toast.error(`File ${files[i].name} exceeds ${maxLimitMb}MB limit`);
            continue;
          }
          formData.append("images", files[i]);
@@ -69,19 +73,19 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
               res.data.urls.forEach((url: string) => onUpload(url));
             }
           } else {
-            alert("Upload failed: " + (res.data.message || "Unknown error"));
+            toast.error("Upload failed: " + (res.data.message || "Unknown error"));
           }
        } catch (err: any) {
          console.error("Upload failed:", err);
-         alert("Upload failed: " + (err.response?.data?.message || err.message || "Network error"));
+         toast.error("Upload failed: " + (err.response?.data?.message || err.message || "Network error"));
        } finally {
          setUploading(false);
          setProgress(0);
        }
     } else {
        const file = files[0];
-       if (file.size > 10 * 1024 * 1024) {
-         alert("File size exceeds 10MB limit");
+       if (file.size > maxLimitBytes) {
+         toast.error(`File size exceeds ${maxLimitMb}MB limit`);
          return;
        }
        const formData = new FormData();
@@ -100,11 +104,11 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
            console.log("[ImageUpload] ✅ Upload success:", res.data.url);
            onUpload(res.data.url);
          } else {
-           alert("Upload failed: " + (res.data.message || "Unknown error"));
+           toast.error("Upload failed: " + (res.data.message || "Unknown error"));
          }
        } catch (err: any) {
          console.error("Upload failed:", err);
-         alert("Upload failed: " + (err.response?.data?.message || err.message || "Network error"));
+         toast.error("Upload failed: " + (err.response?.data?.message || err.message || "Network error"));
        } finally {
          setUploading(false);
          setProgress(0);

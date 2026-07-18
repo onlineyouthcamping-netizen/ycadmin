@@ -3,16 +3,26 @@ import type { Admin } from "@/types";
 import { authService } from "@/services/auth.service";
 import { guideService } from "@/services/guide.service";
 
+function looksLikeJwt(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return value.split(".").length === 3;
+}
+
 let guideLoginPromise: Promise<string | null> | null = null;
 
 export async function ensureGuideToken(phone: string, role: string): Promise<string | null> {
-  const stored = localStorage.getItem("guide_access_token");
-  if (stored && stored !== "undefined" && stored !== "null" && isNaN(Number(stored))) {
-    return stored;
+  const legacy = localStorage.getItem("guide_token");
+  if (legacy) {
+    if (looksLikeJwt(legacy)) {
+      localStorage.setItem("guide_access_token", legacy);
+    }
+    localStorage.removeItem("guide_token");
   }
 
-  // Clear legacy numeric id token
-  localStorage.removeItem("guide_token");
+  const stored = localStorage.getItem("guide_access_token");
+  if (looksLikeJwt(stored)) {
+    return stored;
+  }
 
   if (guideLoginPromise) {
     return guideLoginPromise;
@@ -22,7 +32,7 @@ export async function ensureGuideToken(phone: string, role: string): Promise<str
     try {
       console.log("🤖 Attempting to ensure Guide API token...");
       const guideAuth = await guideService.login(phone, role);
-      if (guideAuth && guideAuth.token && typeof guideAuth.token === 'string' && guideAuth.token.trim() !== '') {
+      if (guideAuth && guideAuth.token && looksLikeJwt(guideAuth.token)) {
         localStorage.setItem("guide_access_token", guideAuth.token);
         console.log("✅ Guide API token acquired successfully.");
         return guideAuth.token;
@@ -115,8 +125,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = localStorage.getItem("token");
     const guideToken = localStorage.getItem("guide_access_token");
     
-    if (!token && !guideToken) {
-      // Clean up legacy
+    const hasValidToken = token && token.trim() !== ""; // Admin tokens might be structured or session strings
+    const hasValidGuideToken = looksLikeJwt(guideToken);
+    
+    if (!hasValidToken && !hasValidGuideToken) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("guide_access_token");
       localStorage.removeItem("guide_token");
       set({ admin: null, isAuthenticated: false, isLoading: false });
       return;
@@ -125,7 +139,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
 
     // Case 1: Guide login session
-    if (guideToken && !token) {
+    if (hasValidGuideToken && !hasValidToken) {
       try {
         const guideProfile = await guideService.getProfile();
         set({
