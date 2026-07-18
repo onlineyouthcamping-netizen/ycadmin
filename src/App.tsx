@@ -117,7 +117,7 @@ function AdminRoute({ children, requiredPermission }: { children: React.ReactNod
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (requiredPermission && !hasPermission(admin.role, requiredPermission)) {
+  if (requiredPermission && !hasPermission(admin.permissions, requiredPermission, admin.role)) {
     return <Navigate to="/admin/unauthorized" replace />;
   }
 

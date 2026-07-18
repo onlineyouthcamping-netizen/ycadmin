@@ -40,7 +40,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function TicketApprovalsPage() {
   const { admin } = useAuthStore();
-  const canApprove = admin?.role ? hasPermission(admin.role, 'tickets.approve') : false;
+  const canApprove = admin ? hasPermission(admin.permissions, 'tickets.approve', admin.role) : false;
 
   const [approvals, setApprovals] = useState<TicketApproval[]>([]);
   const [stats, setStats] = useState<TicketApprovalStats>({ pendingCount: 0, approvedToday: 0, rejectedToday: 0 });

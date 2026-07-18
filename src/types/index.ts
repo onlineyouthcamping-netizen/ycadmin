@@ -2,7 +2,7 @@ export type AdminRole = 'superadmin' | 'admin' | 'sales' | 'operations' | 'finan
 
 export interface Admin {
   id: string;
-  email: string;
+  email: string | null;
   name: string;
   role: AdminRole;
   isActive: boolean;
@@ -11,6 +11,7 @@ export interface Admin {
   tenantId?: string;
   createdAt?: string;
   updatedAt?: string;
+  permissions?: string[];
 }
 
 export interface AuditLog {
@@ -488,4 +489,13 @@ export interface Quotation {
   viewCount?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CompactTrip {
+  id: string;
+  code: string | null;
+  title: string;
+  status: string;
+  destination?: string | null;
+  availableDates?: string[];
 }

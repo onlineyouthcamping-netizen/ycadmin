@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { bookingFormsService, type BookingFormRecord } from "@/services/bookingForms.service";
 import { tripsService } from "@/services/trips.service";
-import type { Trip } from "@/types";
+import type { Trip, CompactTrip } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,12 +29,12 @@ import { cn, formatDate, getUpcomingDefaultDates } from "@/lib/utils";
 
 export default function BookingFormsPage() {
   const [forms, setForms] = useState<BookingFormRecord[]>([]);
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [trips, setTrips] = useState<CompactTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   
   // Selection States
-  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [selectedTrip, setSelectedTrip] = useState<CompactTrip | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // Dialogs

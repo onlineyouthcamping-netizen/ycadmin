@@ -1,19 +1,14 @@
 import axios from 'axios';
-
-let apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.youthcamping.online/api';
-if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-  apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-} else if (!apiBaseUrl || apiBaseUrl.includes('onrender.com')) {
-  apiBaseUrl = 'https://api.youthcamping.online/api';
-}
+import { ENV } from '../config/environment';
 
 const api = axios.create({
-  baseURL: apiBaseUrl,
-  timeout: 30000, // 30s standard request timeout
+  baseURL: ENV.API_BASE_URL.endsWith('/api') ? ENV.API_BASE_URL : `${ENV.API_BASE_URL}/api`,
+  timeout: ENV.API_TIMEOUT_MS,
   withCredentials: true, // Support httpOnly secure session cookies
 });
 
 let requestIdCounter = 0;
+let adminRedirectInProgress = false;
 
 api.interceptors.request.use((config) => {
   // Ensure relative endpoints don't get double prefixed if baseURL is fully configured
@@ -58,14 +53,20 @@ api.interceptors.response.use(
         console.log(`[TRACE][${isCancelled ? 'CANCELLED' : 'FAILED'}] ID: ${config._reqId} | Endpoint: ${config?.url} | Duration: ${duration}ms | Status: ${err.response?.status || 'ERR'}`);
       }
     }
+
     // 401 Handling: Session expired or unauthorized
-    if (err.response?.status === 401) {
-      console.warn("🔐 Session expired - Clearing token and redirecting");
-      localStorage.removeItem('token');
-      
-      // Redirect to admin login when session is invalid/expired
-      if (typeof window !== 'undefined' && !window.location.pathname.includes("/admin/login")) {
-        window.location.href = '/admin/login';
+    if (err.response?.status === 401 && !axios.isCancel(err)) {
+      const isLoginRequest = err.config?.url?.includes("/admin/login") || err.config?.url?.includes("/login");
+      const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes("/admin/login");
+
+      if (!isLoginRequest && !isAlreadyOnLoginPage) {
+        console.warn("🔐 Session expired - Clearing token and redirecting");
+        localStorage.removeItem('token');
+        
+        if (!adminRedirectInProgress) {
+          adminRedirectInProgress = true;
+          window.location.href = '/admin/login';
+        }
       }
     }
     return Promise.reject(err);

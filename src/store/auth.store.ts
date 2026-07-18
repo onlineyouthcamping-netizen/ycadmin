@@ -3,20 +3,41 @@ import type { Admin } from "@/types";
 import { authService } from "@/services/auth.service";
 import { guideService } from "@/services/guide.service";
 
-let guideLoginAttemptedThisSession = false;
+let guideLoginPromise: Promise<string | null> | null = null;
 
-export async function ensureGuideToken(phone: string, role: string): Promise<void> {
-  if (guideLoginAttemptedThisSession) return;
-  if (localStorage.getItem("guide_token")) return;
+export async function ensureGuideToken(phone: string, role: string): Promise<string | null> {
+  const stored = localStorage.getItem("guide_access_token");
+  if (stored && stored !== "undefined" && stored !== "null" && isNaN(Number(stored))) {
+    return stored;
+  }
 
-  guideLoginAttemptedThisSession = true;
+  // Clear legacy numeric id token
+  localStorage.removeItem("guide_token");
+
+  if (guideLoginPromise) {
+    return guideLoginPromise;
+  }
+
+  guideLoginPromise = (async () => {
+    try {
+      console.log("🤖 Attempting to ensure Guide API token...");
+      const guideAuth = await guideService.login(phone, role);
+      if (guideAuth && guideAuth.token && typeof guideAuth.token === 'string' && guideAuth.token.trim() !== '') {
+        localStorage.setItem("guide_access_token", guideAuth.token);
+        console.log("✅ Guide API token acquired successfully.");
+        return guideAuth.token;
+      }
+      return null;
+    } catch (guideErr) {
+      console.warn("⚠️ Failed to acquire Guide API token:", guideErr);
+      return null;
+    }
+  })();
+
   try {
-    console.log("🤖 Attempting to ensure Guide API token...");
-    const guideAuth = await guideService.login(phone, role);
-    localStorage.setItem("guide_token", guideAuth.id.toString());
-    console.log("✅ Guide API token acquired, stored:", guideAuth.id);
-  } catch (guideErr) {
-    console.warn("⚠️ Failed to acquire Guide API token:", guideErr);
+    return await guideLoginPromise;
+  } finally {
+    guideLoginPromise = null;
   }
 }
 
@@ -54,13 +75,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     console.log("🚀 Attempting guide login for phone:", phone);
     try {
       const guideAuth = await guideService.login(phone, 'guide');
-      localStorage.setItem("guide_token", guideAuth.id.toString());
+      if (guideAuth && guideAuth.token) {
+        localStorage.setItem("guide_access_token", guideAuth.token);
+      }
       set({
         admin: {
-          id: guideAuth.id,
+          id: guideAuth.id.toString(),
           name: guideAuth.name,
           email: guideAuth.email || null,
-          role: "guide"
+          role: "guide",
+          isActive: true,
+          tokenVersion: 0
         },
         isAuthenticated: true,
         isLoading: false
@@ -74,8 +99,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("guide_access_token");
     localStorage.removeItem("guide_token");
-    guideLoginAttemptedThisSession = false;
+    guideLoginPromise = null;
     set({ admin: null, isAuthenticated: false });
   },
 
@@ -87,9 +113,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const token = localStorage.getItem("token");
-    const guideToken = localStorage.getItem("guide_token");
+    const guideToken = localStorage.getItem("guide_access_token");
     
     if (!token && !guideToken) {
+      // Clean up legacy
+      localStorage.removeItem("guide_token");
       set({ admin: null, isAuthenticated: false, isLoading: false });
       return;
     }
@@ -102,16 +130,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const guideProfile = await guideService.getProfile();
         set({
           admin: {
-            id: guideProfile.id,
+            id: guideProfile.id.toString(),
             name: guideProfile.name,
             email: guideProfile.email || null,
-            role: "guide"
+            role: "guide",
+            isActive: true,
+            tokenVersion: 0
           },
           isAuthenticated: true,
           isLoading: false
         });
       } catch (err) {
         console.error("❌ Guide auth check failed:", err);
+        localStorage.removeItem("guide_access_token");
         localStorage.removeItem("guide_token");
         set({ admin: null, isAuthenticated: false, isLoading: false });
       }

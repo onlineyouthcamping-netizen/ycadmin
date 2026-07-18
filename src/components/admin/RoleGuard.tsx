@@ -1,22 +1,17 @@
 import React from "react";
 import { useAuthStore } from "@/store/auth.store";
-
-// Role hierarchy definition where higher roles possess access to lower levels implicitly
-const ROLE_HIERARCHY: Record<string, number> = {
-  admin: 3,
-  superadmin: 3,
-  manager: 2,
-  user: 1,
-};
+import { hasPermission } from "@/lib/permissions";
 
 interface RoleGuardProps {
-  allowedRoles: ("admin" | "manager" | "user" | "superadmin")[];
+  allowedRoles?: string[];
+  permission?: string;
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }
 
 export const RoleGuard: React.FC<RoleGuardProps> = ({ 
   allowedRoles, 
+  permission,
   children, 
   fallback = null 
 }) => {
@@ -26,23 +21,38 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
     return <>{fallback}</>;
   }
 
-  // Allow implicit access if user's hierarchical rank matches or exceeds any allowed roles
-  const userRank = ROLE_HIERARCHY[admin.role.toLowerCase()] || 0;
-  const isAllowed = allowedRoles.some(role => {
-    const requiredRank = ROLE_HIERARCHY[role.toLowerCase()] || 0;
-    return userRank >= requiredRank;
-  });
+  // 1. If permission is specified, check via the new permission system
+  if (permission) {
+    const isAllowed = hasPermission(admin.permissions, permission, admin.role);
+    if (!isAllowed) return <>{fallback}</>;
+  }
 
-  if (!isAllowed) {
-    return <>{fallback}</>;
+  // 2. If allowedRoles is specified, fallback check role list
+  if (allowedRoles && allowedRoles.length > 0) {
+    const roleMatch = allowedRoles.map(r => r.toLowerCase()).includes(admin.role.toLowerCase());
+    if (!roleMatch && admin.role.toLowerCase() !== "superadmin") {
+      return <>{fallback}</>;
+    }
   }
 
   return <>{children}</>;
 };
 
-export const RequireRole: React.FC<RoleGuardProps> = ({ allowedRoles, children, fallback }) => {
+export const RequireRole: React.FC<RoleGuardProps> = ({ allowedRoles, permission, children, fallback }) => {
   return (
-    <RoleGuard allowedRoles={allowedRoles} fallback={fallback}>
+    <RoleGuard allowedRoles={allowedRoles} permission={permission} fallback={fallback}>
+      {children}
+    </RoleGuard>
+  );
+};
+
+export const RequirePermission: React.FC<{
+  permission: string;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}> = ({ permission, children, fallback = null }) => {
+  return (
+    <RoleGuard permission={permission} fallback={fallback}>
       {children}
     </RoleGuard>
   );

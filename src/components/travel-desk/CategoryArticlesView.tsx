@@ -152,6 +152,37 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
     }
   }, [tripId, category.id]);
 
+  // Bidirectional HTML/Bullet-points converters
+  const convertHtmlToBullets = (html: string): string => {
+    if (!html || !html.trim().startsWith('<')) return html;
+    const liRegex = /<li>([\s\S]*?)<\/li>/gi;
+    const items: string[] = [];
+    let match;
+    while ((match = liRegex.exec(html)) !== null) {
+      items.push(`• ${match[1].trim()}`);
+    }
+    if (items.length > 0) return items.join('\n');
+    return html;
+  };
+
+  const convertBulletsToHtml = (text: string): string => {
+    if (!text) return '';
+    const lines = text.split('\n');
+    const hasBullets = lines.some(line => /^\s*[•*\-]\s*/.test(line));
+    if (!hasBullets) return text;
+    
+    const liItems = lines.map(line => {
+      const cleaned = line.replace(/^\s*[•*\-]\s*/, '').trim();
+      if (!cleaned) return '';
+      return `<li>${cleaned}</li>`;
+    }).filter(Boolean);
+    
+    if (liItems.length > 0) {
+      return `<ul>\n${liItems.join('\n')}\n</ul>`;
+    }
+    return text;
+  };
+
   // Article handlers
   const handleOpenAddArticle = () => {
     setEditingArticle(null);
@@ -169,7 +200,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
     setEditingArticle(article);
     setArtTitle(article.title);
     setArtSummary(article.summary || '');
-    setArtContent(article.content);
+    setArtContent(convertHtmlToBullets(article.content));
     setArtTags(article.tags || '');
     setArtVisibility(article.visibility);
     setArtEffectiveFrom(article.effectiveFrom ? new Date(article.effectiveFrom).toISOString().split('T')[0] : '');
@@ -194,7 +225,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
         categoryId: category.id,
         title: artTitle,
         summary: artSummary,
-        content: artContent,
+        content: convertBulletsToHtml(artContent),
         tags: artTags || null,
         visibility: artVisibility,
         effectiveFrom: artEffectiveFrom ? new Date(artEffectiveFrom).toISOString() : null,

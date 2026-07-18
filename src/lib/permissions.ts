@@ -67,11 +67,42 @@ const ROLE_PERMISSIONS_SETS: Record<string, Set<string>> = Object.fromEntries(
   Object.entries(ROLE_PERMISSIONS).map(([k, v]) => [k, new Set(v)])
 );
 
-export function hasPermission(role: string | undefined | null, permission: string): boolean {
-  if (!role) return false;
-  const normalizedRole = role.toLowerCase();
-  if (normalizedRole === 'superadmin') return true;
-  const set = ROLE_PERMISSIONS_SETS[normalizedRole];
-  if (!set) return false;
-  return set.has(permission);
+export function hasPermission(
+  permissionsOrRole: readonly string[] | string | null | undefined,
+  required: string,
+  role?: string
+): boolean {
+  if (typeof permissionsOrRole === 'string') {
+    const normalizedRole = permissionsOrRole.toLowerCase();
+    if (normalizedRole === 'superadmin') return true;
+    const set = ROLE_PERMISSIONS_SETS[normalizedRole];
+    if (!set) return false;
+    return set.has(required);
+  }
+
+  if (role?.toLowerCase() === "superadmin") return true;
+  if (!permissionsOrRole) return false;
+  return permissionsOrRole.includes(required);
 }
+
+export function hasAnyPermission(
+  permissions: readonly string[] | null | undefined,
+  requiredPermissions: string[],
+  role?: string
+): boolean {
+  if (role?.toLowerCase() === "superadmin") return true;
+  if (!permissions) return false;
+  return requiredPermissions.some(p => permissions.includes(p));
+}
+
+export function hasAllPermissions(
+  permissions: readonly string[] | null | undefined,
+  requiredPermissions: string[],
+  role?: string
+): boolean {
+  if (role?.toLowerCase() === "superadmin") return true;
+  if (!permissions) return false;
+  return requiredPermissions.every(p => permissions.includes(p));
+}
+
+

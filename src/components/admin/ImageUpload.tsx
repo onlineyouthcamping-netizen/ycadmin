@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, Loader2, Image as ImageIcon, X, RefreshCw } from "lucide-react";
 import api from "@/services/api";
+import { ENV } from "@/config/environment";
 
 interface ImageUploadProps {
   onUpload: (url: string) => void;
@@ -22,9 +23,9 @@ interface ImageUploadProps {
 const formatUrl = (url: any): string => {
   if (!url || typeof url !== 'string') return "";
   if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
-  // Build absolute URL from the API base
-  const apiBase = api.defaults.baseURL || "https://api.youthcamping.online/api";
-  const serverBase = apiBase.replace('/api', '');
+  
+  // Resolve using centralized environment API base URL
+  const serverBase = ENV.API_BASE_URL.replace(/\/api$/, "");
   return `${serverBase}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 

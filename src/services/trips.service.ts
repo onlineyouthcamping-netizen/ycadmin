@@ -1,5 +1,5 @@
 import api from "./api";
-import type { Trip, TripFormData } from "@/types";
+import type { Trip, TripFormData, CompactTrip } from "@/types";
 
 export const tripsService = {
   async getAll(): Promise<Trip[]> {
@@ -7,9 +7,15 @@ export const tripsService = {
     return res.data.data;
   },
 
-  async getCompact(): Promise<Trip[]> {
-    const res = await api.get("/trips?status=all");
-    return res.data.data;
+  async getCompact(): Promise<CompactTrip[]> {
+    const res = await api.get("/trips?status=all&compact=true");
+    return res.data.data.map((trip: any) => ({
+      id: trip.id,
+      code: trip.shortName || null,
+      title: trip.title,
+      status: trip.status,
+      availableDates: trip.availableDates || [],
+    }));
   },
 
   async getById(id: string): Promise<Trip | undefined> {
