@@ -302,7 +302,6 @@ function AdminSidebar() {
               }
             }
 
-            const isExpanded = expandedModule === mod.title;
             const hasSub = mod.hasSubItems;
             
             // Check if any sub-item is active
@@ -381,6 +380,7 @@ function AdminSidebar() {
             const isAnySubActive = hasSub && visibleSubItems.some(sub => isSubActive(sub.url));
             const isDirectActive = !hasSub && mod.url && (location.pathname === mod.url || (mod.url !== "/admin" && location.pathname.startsWith(mod.url)));
             const isModuleActive = isDirectActive || isAnySubActive;
+            const isExpanded = expandedModule === mod.title || isAnySubActive;
 
             return (
               <div key={mod.title} className="flex flex-col gap-0.5">

@@ -237,7 +237,7 @@ export default function TravelDeskPage() {
               ) : tab === 'activity' ? (
                 <TravelDeskActivityLog trip={activeTrip} />
               ) : (
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-4">
                   <div className="bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm">
                     <h2 className="text-xl font-bold text-slate-800 mb-2 capitalize">{tab} Module</h2>
                     <p className="text-slate-500 font-semibold text-sm">

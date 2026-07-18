@@ -23,8 +23,8 @@ export const TravelDeskTabs: React.FC<TravelDeskTabsProps> = ({ tripId }) => {
   const currentTab = searchParams.get('tab') || 'knowledge';
 
   return (
-    <div className="bg-white px-6 pt-2 border-b border-slate-200 shrink-0">
-      <div className="flex gap-6 overflow-x-auto no-scrollbar">
+    <div className="bg-white px-4 pt-2 border-b border-slate-200 shrink-0">
+      <div className="flex gap-5 overflow-x-auto no-scrollbar">
         {TRAVEL_DESK_TABS.map((tab) => {
           const isActive = currentTab === tab.id;
           return (

@@ -19,28 +19,23 @@ export const TravelDeskQuickActions = () => {
     switch (tab) {
       case 'knowledge':
         return [
-          { icon: FilePlus, label: "Upload Document" },
-          { icon: Plus, label: "Add New SOP" },
-          { icon: FileText, label: "Create FAQ" },
-          { icon: CreditCard, label: "Add Ticketing SOP" },
-          { icon: Bell, label: "Add Update / Notice" }
+          { icon: Plus, label: "Add Knowledge Item" },
+          { icon: CreditCard, label: "Manage Approvals" },
+          { icon: Bell, label: "Add Notice" }
         ];
       case 'departures':
         return [
-          { icon: Plus, label: "Add Custom Departure" },
           { icon: ExternalLink, label: "View All Bookings" },
           { icon: Bell, label: "Add Operations Notice" }
         ];
       case 'ticketing':
         return [
           { icon: CreditCard, label: "Add Ticketing SOP" },
-          { icon: ExternalLink, label: "Add Quick Link" },
-          { icon: FilePlus, label: "Upload Ticket Sample" }
+          { icon: ExternalLink, label: "Add Quick Link" }
         ];
       case 'itinerary':
         return [
-          { icon: Plus, label: "Add Day Plan" },
-          { icon: FilePlus, label: "Add Route Map" }
+          { icon: Plus, label: "Add Day Plan" }
         ];
       case 'sops':
         return [
@@ -54,14 +49,9 @@ export const TravelDeskQuickActions = () => {
         return [
           { icon: Plus, label: "Link Vendor" }
         ];
-      case 'notices':
-        return [
-          { icon: Bell, label: "Add Trip Update" },
-          { icon: FileText, label: "Add New Note" }
-        ];
       default:
         return [
-          { icon: Bell, label: "Add Trip Update" }
+          { icon: Bell, label: "Add Notice" }
         ];
     }
   };
@@ -69,7 +59,7 @@ export const TravelDeskQuickActions = () => {
   const actions = getActionsForTab(currentTab);
 
   return (
-    <div className="w-64 bg-white border-l border-slate-200 shrink-0 flex flex-col h-full overflow-hidden">
+    <div className="w-[280px] bg-white border-l border-slate-200 shrink-0 flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-slate-100 bg-slate-50">
         <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Quick Actions</h3>
       </div>

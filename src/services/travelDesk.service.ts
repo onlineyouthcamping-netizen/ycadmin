@@ -357,6 +357,10 @@ export const travelDeskService = {
   deleteDocument: async (id: string): Promise<void> => {
     await api.delete(`/travel-desk/documents/${id}`);
   },
+  updateDocument: async (id: string, data: any): Promise<any> => {
+    const res = await api.patch(`/travel-desk/documents/${id}`, data);
+    return res.data.data;
+  },
 
   // ── GALLERY ──
   getGallery: async (tripId: string): Promise<TripGallery[]> => {

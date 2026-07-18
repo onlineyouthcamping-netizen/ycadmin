@@ -3,6 +3,7 @@ import { Trip } from '@/types';
 import { vendorsService } from '@/services/vendors.service';
 import { Building2, Phone, Mail, MapPin, ExternalLink } from 'lucide-react';
 import { TravelDeskLoadingState, TravelDeskEmptyState } from './TravelDeskStateComponents';
+import { TravelDeskLinkVendorModal } from './TravelDeskLinkVendorModal';
 import { cn } from '@/lib/utils';
 
 interface TravelDeskVendorsProps {
@@ -12,6 +13,7 @@ interface TravelDeskVendorsProps {
 export const TravelDeskVendors: React.FC<TravelDeskVendorsProps> = ({ trip }) => {
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchVendors = async () => {
     try {
@@ -31,15 +33,23 @@ export const TravelDeskVendors: React.FC<TravelDeskVendorsProps> = ({ trip }) =>
   if (loading) return <TravelDeskLoadingState message="Loading Vendors..." />;
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
         <div>
           <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Trip Vendors & Suppliers</h2>
-          <p className="text-xs text-slate-500 mt-0.5 font-semibold">Manage hotels, transport, and local guides for this trip</p>
+          <p className="text-xs text-slate-550 mt-0.5 font-bold">Manage hotels, transport, and local guides for this trip</p>
         </div>
-        <button className="px-4 py-2 bg-[#FF6B00] text-white rounded-lg text-xs font-bold hover:bg-[#E66000] shadow-sm flex items-center gap-1.5">
-          Manage in Directory
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 bg-[#FF6B00] text-white rounded-lg text-xs font-bold hover:bg-[#E66000] shadow-sm flex items-center gap-1.5"
+          >
+            + Link Vendor
+          </button>
+          <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold shadow-sm flex items-center gap-1.5">
+            Manage in Directory
+          </button>
+        </div>
       </div>
 
       {(!vendors || vendors.length === 0) ? (
@@ -116,6 +126,16 @@ export const TravelDeskVendors: React.FC<TravelDeskVendorsProps> = ({ trip }) =>
         </div>
       )}
 
+      {isModalOpen && (
+        <TravelDeskLinkVendorModal 
+          tripId={trip.id} 
+          onClose={() => setIsModalOpen(false)} 
+          onSuccess={() => {
+            setIsModalOpen(false);
+            fetchVendors();
+          }} 
+        />
+      )}
     </div>
   );
 };

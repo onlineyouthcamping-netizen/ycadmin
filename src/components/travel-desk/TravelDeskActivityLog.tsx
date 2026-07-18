@@ -29,11 +29,11 @@ export const TravelDeskActivityLog: React.FC<TravelDeskActivityLogProps> = ({ tr
   if (loading) return <TravelDeskLoadingState message="Loading Activity Log..." />;
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
         <div>
           <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Workspace Activity Log</h2>
-          <p className="text-xs text-slate-500 mt-0.5 font-semibold">Audit trail of all changes made to this trip's resources</p>
+          <p className="text-xs text-slate-550 mt-0.5 font-bold">Audit trail of all changes made to this trip's resources</p>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export const TravelDeskActivityLog: React.FC<TravelDeskActivityLogProps> = ({ tr
           <TravelDeskEmptyState title="No Activity Recorded" description="There is no audit history available for this trip workspace." />
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="relative border-l-2 border-slate-100 ml-4 space-y-8 pb-4">
             {logs.map((log: any, idx: number) => {
               const isLatest = idx === 0;
