@@ -25,18 +25,18 @@ function parseTimeout(value: string | undefined, defaultValue: number): number {
   return parsed;
 }
 
-const isProduction = import.meta.env.PROD;
-const isDevelopment = import.meta.env.DEV;
+const IS_PRODUCTION = import.meta.env.PROD;
+const IS_DEVELOPMENT = import.meta.env.DEV;
 
 // Resolve default configuration based on environment
-const defaultApiUrl = isDevelopment ? "http://localhost:3001" : "https://api.youthcamping.online";
-const defaultGuideApiUrl = isDevelopment ? "http://localhost:5000" : "https://api.youthcamping.online";
+const defaultApiUrl = IS_DEVELOPMENT ? "http://localhost:3001" : "https://api.youthcamping.online";
+const defaultGuideApiUrl = IS_DEVELOPMENT ? "http://localhost:5000" : "https://api.youthcamping.online";
 
 const rawApiUrl = import.meta.env.VITE_API_URL;
 const rawGuideApiUrl = import.meta.env.VITE_GUIDE_API_URL;
 
 // In production, enforce that configuration exists
-if (isProduction) {
+if (IS_PRODUCTION) {
   if (!rawApiUrl) {
     console.error("❌ Critical: VITE_API_URL is missing in production environment!");
   }
