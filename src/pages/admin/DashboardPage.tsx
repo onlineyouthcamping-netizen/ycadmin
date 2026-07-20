@@ -294,24 +294,22 @@ export default function DashboardPage() {
             <span onClick={() => navigate("/admin/departure-workspace")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
           </div>
           <div className="p-3.5 flex-1 space-y-3.5">
-            {[
-              { code: "MKA - 01 July", name: "Manali, Kasol, Amritsar", size: 28, stay: "Kasol" },
-              { code: "Spiti Valley - 29 June", name: "Spiti Valley Circuit", size: 16, stay: "Kaza" },
-              { code: "Kashmir - 30 June", name: "Srinagar, Pahalgam, Gulmarg", size: 24, stay: "Pahalgam" },
-              { code: "Kerala Family Trip - 28 June", name: "Cochin, Munnar, Alleppey", size: 32, stay: "Munnar" },
-              { code: "Goa Trip - 01 July", name: "Goa, Dudhsagar", size: 18, stay: "North Goa" }
-            ].map((trip, idx) => (
-              <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
-                <div className="space-y-0.5">
-                  <p className="text-[12px] font-bold text-[#162B45]">{trip.code}</p>
-                  <p className="text-[10px] text-[#74839A] font-medium leading-none">{trip.name}</p>
+            {(!stats?.tripsRunningNow || stats.tripsRunningNow.length === 0) ? (
+              <p className="text-xs text-[#74839A] italic text-center py-4">No active trips running today.</p>
+            ) : (
+              stats.tripsRunningNow.map((trip: any, idx: number) => (
+                <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
+                  <div className="space-y-0.5">
+                    <p className="text-[12px] font-bold text-[#162B45]">{trip.code}</p>
+                    <p className="text-[10px] text-[#74839A] font-medium leading-none">{trip.name}</p>
+                  </div>
+                  <div className="text-right space-y-0.5">
+                    <p className="text-[10.5px] font-semibold text-[#162B45] flex items-center justify-end gap-1">👤 {trip.size}</p>
+                    <p className="text-[9.5px] text-emerald-600 font-bold leading-none">📍 {trip.stay}</p>
+                  </div>
                 </div>
-                <div className="text-right space-y-0.5">
-                  <p className="text-[10.5px] font-semibold text-[#162B45] flex items-center justify-end gap-1">👤 {trip.size}</p>
-                  <p className="text-[9.5px] text-emerald-600 font-bold leading-none">📍 {trip.stay}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -322,28 +320,26 @@ export default function DashboardPage() {
             <span onClick={() => navigate("/admin/operations")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
           </div>
           <div className="p-3.5 flex-1 space-y-3.5">
-            {[
-              { name: "MKA", date: "05 July 2024", count: "35/40", status: "full" },
-              { name: "Spiti Valley", date: "07 July 2024", count: "18/25", status: "normal" },
-              { name: "Kashmir", date: "08 July 2024", count: "22/30", status: "normal" },
-              { name: "Leh Ladakh Bike Trip", date: "10 July 2024", count: "12/15", status: "full" },
-              { name: "Kerala Family Trip", date: "12 July 2024", count: "28/30", status: "full" }
-            ].map((trip, idx) => (
-              <div key={idx} onClick={() => navigate("/admin/operations")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
-                <div className="space-y-0.5">
-                  <p className="text-[12px] font-bold text-[#162B45]">{trip.name}</p>
-                  <p className="text-[10px] text-[#74839A] font-semibold leading-none">{trip.date}</p>
+            {(!stats?.tripsDepartingNext7Days || stats.tripsDepartingNext7Days.length === 0) ? (
+              <p className="text-xs text-[#74839A] italic text-center py-4">No departures in the next 7 days.</p>
+            ) : (
+              stats.tripsDepartingNext7Days.map((trip: any, idx: number) => (
+                <div key={idx} onClick={() => navigate("/admin/operations")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
+                  <div className="space-y-0.5">
+                    <p className="text-[12px] font-bold text-[#162B45]">{trip.name}</p>
+                    <p className="text-[10px] text-[#74839A] font-semibold leading-none">{trip.date}</p>
+                  </div>
+                  <span className={cn(
+                    "text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
+                    trip.status === "full" 
+                      ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200" 
+                      : "bg-[#EFF6FF] text-[#2563EB] border-blue-200"
+                  )}>
+                    {trip.count} Booked
+                  </span>
                 </div>
-                <span className={cn(
-                  "text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
-                  trip.status === "full" 
-                    ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200" 
-                    : "bg-[#EFF6FF] text-[#2563EB] border-blue-200"
-                )}>
-                  {trip.count} Booked
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -359,21 +355,19 @@ export default function DashboardPage() {
             <span onClick={() => navigate("/admin/departure-workspace")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View Full</span>
           </div>
           <div className="p-3.5 flex-1 space-y-3">
-            {[
-              { time: "09:00 AM", label: "MKA Departure - Ahmedabad", color: "bg-[#2563EB]" },
-              { time: "10:30 AM", label: "Hotel Payment Due - Barpa", color: "bg-[#F97316]" },
-              { time: "11:00 AM", label: "Train Chart Preparation", color: "bg-[#2563EB]" },
-              { time: "02:00 PM", label: "Vendor Meeting - Tempo", color: "bg-teal-500" },
-              { time: "05:00 PM", label: "Guide Briefing - Spiti Valley", color: "bg-[#16A34A]" }
-            ].map((sched, idx) => (
-              <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex gap-2 items-start min-h-[30px] cursor-pointer hover:bg-slate-50/55 p-0.5 rounded transition-colors">
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#74839A] w-[54px] shrink-0 mt-0.5">{sched.time}</span>
-                <div className="flex items-start gap-1.5">
-                  <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", sched.color)} />
-                  <span className="text-[12px] font-semibold text-[#162B45] leading-tight truncate max-w-[130px]">{sched.label}</span>
+            {(!stats?.todaysSchedule || stats.todaysSchedule.length === 0) ? (
+              <p className="text-xs text-[#74839A] italic text-center py-4">No tasks or departures scheduled today.</p>
+            ) : (
+              stats.todaysSchedule.map((sched: any, idx: number) => (
+                <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex gap-2 items-start min-h-[30px] cursor-pointer hover:bg-slate-50/55 p-0.5 rounded transition-colors">
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#74839A] w-[54px] shrink-0 mt-0.5">{sched.time}</span>
+                  <div className="flex items-start gap-1.5">
+                    <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", sched.color)} />
+                    <span className="text-[12px] font-semibold text-[#162B45] leading-tight truncate max-w-[130px]">{sched.label}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -412,7 +406,7 @@ export default function DashboardPage() {
             <div onClick={() => navigate("/admin/accounting-workspace")} className="bg-[#ECFDF3] p-2 rounded border border-emerald-100 flex items-center justify-between cursor-pointer hover:bg-emerald-50/80 transition-colors">
               <div>
                 <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">Collection Today</p>
-                <p className="text-[13px] font-bold text-[#16A34A]">₹ 1,82,000</p>
+                <p className="text-[13px] font-bold text-[#16A34A]">₹ {(stats?.cashFlow?.collectionToday || 0).toLocaleString('en-IN')}</p>
               </div>
               <span className="text-[#16A34A] text-xs">📈</span>
             </div>
@@ -420,14 +414,16 @@ export default function DashboardPage() {
             <div onClick={() => navigate("/admin/accounting-workspace")} className="bg-[#FFF1F3] p-2 rounded border border-rose-100 flex items-center justify-between mt-1 cursor-pointer hover:bg-rose-50/80 transition-colors">
               <div>
                 <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">Payments Today</p>
-                <p className="text-[13px] font-bold text-[#E23D4D]">₹ 95,000</p>
+                <p className="text-[13px] font-bold text-[#E23D4D]">₹ {(stats?.cashFlow?.paymentsToday || 0).toLocaleString('en-IN')}</p>
               </div>
               <span className="text-[#E23D4D] text-xs">📉</span>
             </div>
 
             <div className="border-t border-[#E3EAF2] pt-2 mt-2 flex items-center justify-between text-[11px] font-bold">
               <span className="text-[#74839A] uppercase tracking-wider">Net Cash Inflow:</span>
-              <span className="text-[#16A34A] font-extrabold text-[12px]">₹ 87,000</span>
+              <span className={cn("font-extrabold text-[12px]", (stats?.cashFlow?.netCashInflow || 0) >= 0 ? "text-[#16A34A]" : "text-[#E23D4D]")}>
+                ₹ {(stats?.cashFlow?.netCashInflow || 0).toLocaleString('en-IN')}
+              </span>
             </div>
 
           </div>
