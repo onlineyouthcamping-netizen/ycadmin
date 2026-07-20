@@ -2782,9 +2782,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
     // ── VEHICLE & TEMPO AUTO-ALLOCATION PASS ──
     // Initialize available fleet status
+    const fallbackCapacity = parseInt(newVehicleCapacity) || 17;
+    const fallbackName = newVehicleName || newVehicleType || "Tempo 1";
     const fleetStatus = allocFleet.length > 0
       ? allocFleet.map(f => ({ ...f, remainingSeats: f.capacity }))
-      : [{ id: "tempo-1", name: "Tempo 1", capacity: 17, remainingSeats: 17 }];
+      : [{ id: "tempo-1", name: fallbackName, capacity: fallbackCapacity, remainingSeats: fallbackCapacity, vehicleType: newVehicleType }];
 
     // Sort booking groups: groups containing female participants first to ensure they travel together
     const sortedGroups = Object.entries(bookingGroups).sort(([, aList], [, bList]) => {
@@ -5626,8 +5628,8 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                           className="border border-slate-100 rounded-lg p-3 bg-slate-50 hover:border-blue-250 transition-colors"
                         >
                           <p className="text-[10px] font-extrabold text-slate-800 flex items-center justify-between">
-                            <span>{fleetItem?.name || "Tempo Traveller"} ({fleetItem?.vehicleType})</span>
-                            <span className="text-[9px] font-black text-slate-450 uppercase font-mono">{travelers.length} / {fleetItem?.capacity || 17} Seats Filled</span>
+                            <span>{fleetItem?.name || travelers[0]?.vehicleType || "Tempo Traveller"} ({fleetItem?.vehicleType || travelers[0]?.vehicleType || "Tempo"})</span>
+                            <span className="text-[9px] font-black text-slate-450 uppercase font-mono">{travelers.length} / {fleetItem?.capacity || (parseInt(travelers[0]?.vehicleType?.match(/\d+/)?.[0]) || 17)} Seats Filled</span>
                           </p>
                           <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 min-h-[40px]">
                             {travelers.map((t: any, i: number) => (
