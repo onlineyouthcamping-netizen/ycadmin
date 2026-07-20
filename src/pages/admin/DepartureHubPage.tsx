@@ -1854,15 +1854,7 @@ export default function DepartureHubPage() {
     }
   }, [departureDateStr, tripDetails]);
 
-  const hasDateMismatch = useMemo(() => {
-    try {
-      const depDate = new Date(departureDateStr);
-      const createdDate = new Date("2027-06-15");
-      return depDate.getTime() < createdDate.getTime();
-    } catch {
-      return false;
-    }
-  }, [departureDateStr]);
+
 
   const timelineSteps = useMemo(() => {
     const confirmedBookings = bookings.filter((b: any) => b.status !== "cancelled");
@@ -2925,7 +2917,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         email: b.email || "—",
         pickupPoint: b.pickupCity || "Ahmedabad",
         isLead: true,
-        roomType: leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing"),
+        roomType: leadRoomInfo.roomType || passengersObj?.details?.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing"),
         coupleWith: leadRoomInfo.coupleWith || "",
         roomNo: leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—",
         paymentStatus: paymentLabel,
@@ -2949,7 +2941,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             email: p.email || "—",
             pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
             isLead: false,
-            roomType: coRoomInfo.roomType || "Triple Sharing",
+            roomType: coRoomInfo.roomType || p.roomSharing || passengersObj?.details?.roomType || "Triple Sharing",
             coupleWith: coRoomInfo.coupleWith || "",
             roomNo: coRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
             paymentStatus: paymentLabel,
@@ -3154,14 +3146,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased">
-      {hasDateMismatch && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-2.5 flex items-center gap-2 text-xs font-semibold text-[#B45309] shrink-0">
-          <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
-          <span>
-            Warning: The departure date (14 Jul 2026) occurs before the creation date (15 Jun 2027) of this departure workspace. Please verify the scheduling.
-          </span>
-        </div>
-      )}
+
 
       {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
       <div className="bg-white border-b border-[#E2E8F0] shadow-xs">
@@ -3732,7 +3717,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             </div>
 
             {/* Table */}
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden shadow-sm">
+            <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden overflow-x-auto shadow-sm">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-[#E2E8F0]">
                   <tr>
