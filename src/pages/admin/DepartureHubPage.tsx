@@ -345,7 +345,7 @@ export default function DepartureHubPage() {
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
       const leadRoomNo = leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—";
-      const leadRoomType = leadRoomInfo.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
+      const leadRoomType = leadRoomInfo.roomType || passengersObj?.details?.roomType || (b.numberOfTravelers === 1 ? "Individual" : "Triple Sharing");
       const leadCoupleWith = leadRoomInfo.coupleWith || "";
 
       const normalizeCompareName = (nameStr: string) => {
@@ -406,7 +406,7 @@ export default function DepartureHubPage() {
 
           const coRoomInfo = personsRoomDetails[p.name] || {};
           const coRoomNo = coRoomInfo.roomNo || "—";
-          const coRoomType = coRoomInfo.roomType || "Triple Sharing";
+          const coRoomType = coRoomInfo.roomType || p.roomSharing || passengersObj?.details?.roomType || "Triple Sharing";
           const coCoupleWith = coRoomInfo.coupleWith || "";
 
           arr.push({ 
