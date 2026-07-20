@@ -348,10 +348,75 @@ export default function AccountingPage() {
     { name: "Other", value: 1900, color: "#6B7280" },
   ];
 
+  // Dynamic Collections (Approved entries)
+  const dynamicInflows = entries
+    .filter(e => e.status === "APPROVED")
+    .map(e => ({
+      date: e.createdAt.split('T')[0],
+      time: new Date(e.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      type: "Income",
+      particulars: `Received from ${e.booking?.fullName || e.booking?.name || 'Guest'}`,
+      subParticulars: "Booking Payment",
+      reference: e.booking?.tripName || "Trip",
+      account: e.paymentMode === 'CASH' ? 'Cash' : 'ICICI Bank A/c',
+      mode: e.paymentMode === 'CASH' ? 'Cash' : (e.paymentMode === 'UPI' ? 'UPI' : 'Bank Transfer'),
+      inflow: e.amount,
+      outflow: 0,
+      category: "Booking Payment",
+      categoryColor: "bg-blue-500",
+      addedBy: e.salesperson?.name || "System"
+    }));
+
+  // Dynamic Payouts (Paid vendor assignments)
+  const dynamicOutflows = vendorAssignments
+    .filter(a => (a.paidAmount || 0) > 0)
+    .map(a => ({
+      date: a.updatedAt ? a.updatedAt.split('T')[0] : new Date().toISOString().split('T')[0],
+      time: "12:00 PM",
+      type: "Expense",
+      particulars: `Paid to ${typeof a.vendorId === 'object' ? a.vendorId.name : "Vendor"}`,
+      subParticulars: "Vendor Payment",
+      reference: a.tripCode || "Trip",
+      account: "HDFC Bank A/c",
+      mode: "Bank Transfer",
+      inflow: 0,
+      outflow: a.paidAmount,
+      category: "Transport",
+      categoryColor: "bg-green-500",
+      addedBy: "System"
+    }));
+
+  // Dynamic Office Expenses
+  const dynamicOfficeExpenses = officeExpenses.map(e => ({
+    date: e.date,
+    time: "10:00 AM",
+    type: "Expense",
+    particulars: e.note || "Office Expense",
+    subParticulars: e.category || "Utilities",
+    reference: "—",
+    account: e.outgoingPaymentMode === "CASH" ? "Cash" : "ICICI Bank A/c",
+    mode: e.outgoingPaymentMode || "UPI",
+    inflow: 0,
+    outflow: e.amount,
+    category: e.category || "Utilities",
+    categoryColor: "bg-orange-500",
+    addedBy: "Admin"
+  }));
+
+  const rawTransactions = [...dynamicInflows, ...dynamicOutflows, ...dynamicOfficeExpenses];
+
+  // Dynamic bank summary calculations
+  const iciciBalance = rawTransactions
+    .reduce((sum, t) => sum + (t.account === "ICICI Bank A/c" ? (t.inflow - t.outflow) : 0), 585300);
+  const hdfcBalance = rawTransactions
+    .reduce((sum, t) => sum + (t.account === "HDFC Bank A/c" ? (t.inflow - t.outflow) : 0), 325500);
+  const cashBalance = rawTransactions
+    .reduce((sum, t) => sum + (t.account === "Cash" ? (t.inflow - t.outflow) : 0), 160000);
+
   const bankSummary = [
-    { name: "ICICI Bank A/c", amount: 585300, icon: "bank" },
-    { name: "HDFC Bank A/c", amount: 325500, icon: "bank" },
-    { name: "Cash", amount: 160000, icon: "cash" },
+    { name: "ICICI Bank A/c", amount: iciciBalance, icon: "bank" },
+    { name: "HDFC Bank A/c", amount: hdfcBalance, icon: "bank" },
+    { name: "Cash", amount: cashBalance, icon: "cash" },
   ];
 
   const pendingVendorPayments = vendorAssignments.filter(a => a.paymentStatus !== "paid").slice(0, 5).map(a => ({
@@ -361,40 +426,32 @@ export default function AccountingPage() {
     amount: a.totalAmount - (a.paidAmount || 0)
   }));
 
-  const tripProfitability = [
-    { name: "MKA - Manali Kasol Amritsar", date: "05 Jul 2024", revenue: 680000, cost: 345000, profit: 335000, pct: 49, paid: 265000, pending: 80000 },
-    { name: "Spiti Valley Circuit", date: "07 Jul 2024", revenue: 450000, cost: 238000, profit: 212000, pct: 47, paid: 186000, pending: 50000 },
-    { name: "Kashmir Group Tour", date: "08 Jul 2024", revenue: 520000, cost: 285000, profit: 235000, pct: 45, paid: 210000, pending: 75000 },
-    { name: "Leh Ladakh Bike Trip", date: "10 Jul 2024", revenue: 375000, cost: 192000, profit: 183000, pct: 49, paid: 132000, pending: 60000 },
-    { name: "Kerala Family Trip", date: "12 Jul 2024", revenue: 410000, cost: 205000, profit: 205000, pct: 50, paid: 165000, pending: 40000 },
-  ];
-
-  // Cash Book unified transactions with precise timestamps and sub-particulars matching mockup
-  const rawTransactions = [
-    // 03 Jul Transactions
-    { date: "2024-07-03", time: "10:20 AM", type: "Income", particulars: "Received from Viraj Patel", subParticulars: "Booking Payment", reference: "MKA - 05 Jul", account: "ICICI Bank A/c", mode: "UPI", inflow: 18000, outflow: 0, category: "Booking Payment", categoryColor: "bg-blue-500", addedBy: "Neeki Sharma" },
-    { date: "2024-07-03", time: "09:45 AM", type: "Expense", particulars: "Paid to Barpa Cottage", subParticulars: "Hotel Payment", reference: "MKA - 05 Jul", account: "HDFC Bank A/c", mode: "Bank Transfer", inflow: 0, outflow: 40000, category: "Hotel", categoryColor: "bg-purple-500", addedBy: "Hemal Patel" },
-    { date: "2024-07-03", time: "09:15 AM", type: "Expense", particulars: "Electricity Bill Payment", subParticulars: "Office Expense", reference: "—", account: "ICICI Bank A/c", mode: "UPI", inflow: 0, outflow: 8450, category: "Utilities", categoryColor: "bg-orange-500", addedBy: "Neeki Sharma" },
-    // 02 Jul Transactions
-    { date: "2024-07-02", time: "04:30 PM", type: "Income", particulars: "Received from Suruchi Shah", subParticulars: "Booking Payment", reference: "Spiti Valley - 07 Jul", account: "ICICI Bank A/c", mode: "UPI", inflow: 24000, outflow: 0, category: "Booking Payment", categoryColor: "bg-blue-500", addedBy: "Neeki Sharma" },
-    { date: "2024-07-02", time: "03:45 PM", type: "Expense", particulars: "Paid to Tempo Traveller (Ravi)", subParticulars: "Transport Payment", reference: "Kashmir - 08 Jul", account: "HDFC Bank A/c", mode: "UPI", inflow: 0, outflow: 38000, category: "Transport", categoryColor: "bg-green-500", addedBy: "Neeki Sharma" },
-    { date: "2024-07-02", time: "02:15 PM", type: "Expense", particulars: "Guide Advance - Sachin", subParticulars: "Guide Payment", reference: "Leh Ladakh - 10 Jul", account: "Cash in Hand", mode: "Cash", inflow: 0, outflow: 5000, category: "Guide", categoryColor: "bg-teal-500", addedBy: "Neeki Sharma" },
-    { date: "2024-07-02", time: "11:30 AM", type: "Income", particulars: "Received from Devansh Joshi", subParticulars: "Booking Payment", reference: "Kashmir - 08 Jul", account: "HDFC Bank A/c", mode: "UPI", inflow: 16500, outflow: 0, category: "Booking Payment", categoryColor: "bg-blue-500", addedBy: "Neeki Sharma" },
-    { date: "2024-07-02", time: "10:05 AM", type: "Expense", particulars: "Office Rent", subParticulars: "Office Expense", reference: "—", account: "HDFC Bank A/c", mode: "Bank Transfer", inflow: 0, outflow: 24000, category: "Rent", categoryColor: "bg-orange-500", addedBy: "Hemal Patel" },
-    // 01 Jul Transactions
-    { date: "2024-07-01", time: "05:20 PM", type: "Income", particulars: "Received from Tanvi Shah", subParticulars: "Booking Payment", reference: "Kerala Trip - 12 Jul", account: "ICICI Bank A/c", mode: "UPI", inflow: 35000, outflow: 0, category: "Booking Payment", categoryColor: "bg-blue-500", addedBy: "Neeki Sharma" },
-    { date: "2024-07-01", time: "04:10 PM", type: "Expense", particulars: "Fuel for Tempo (Kashmir 08 Jul)", subParticulars: "Transport Expense", reference: "Kashmir - 08 Jul", account: "Cash in Hand", mode: "Cash", inflow: 0, outflow: 5000, category: "Fuel", categoryColor: "bg-amber-800", addedBy: "Neeki Sharma" },
-    { date: "2024-07-01", time: "09:00 AM", type: "Income", particulars: "Opening Balance", subParticulars: "Opening Balance", reference: "—", account: "ICICI Bank A/c", mode: "—", inflow: 895250, outflow: 0, category: "Opening Balance", categoryColor: "bg-slate-400", addedBy: "System" },
-  ];
+  const tripProfitability = reportsData?.revenuePerTrip?.map((r: any) => {
+    const tripVendors = vendorAssignments.filter(v => v.tripRef?.title === r.tripName || v.tripCode === r.tripName);
+    const cost = tripVendors.reduce((sum, v) => sum + v.totalAmount, 0);
+    const paid = tripVendors.reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+    const profit = r.amount - cost;
+    const pct = r.amount > 0 ? Math.round((profit / r.amount) * 100) : 0;
+    return {
+      name: r.tripName,
+      date: "Active",
+      revenue: r.amount,
+      cost,
+      profit,
+      pct,
+      paid,
+      pending: cost - paid
+    };
+  }) || [];
 
   // Helper to parse date + time into absolute timestamp
   const parseDateTime = (dateStr: string, timeStr: string) => {
     const [time, modifier] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
+    let [hours, minutes] = (time || '12:00').split(':').map(Number);
     if (modifier === 'PM' && hours < 12) hours += 12;
     if (modifier === 'AM' && hours === 12) hours = 0;
     const d = new Date(dateStr);
-    d.setHours(hours, minutes, 0, 0);
+    d.setHours(hours || 12, minutes || 0, 0, 0);
     return d.getTime();
   };
 
@@ -405,15 +462,13 @@ export default function AccountingPage() {
     return timeA - timeB;
   });
   
-  // Starting balance is 8,95,250 (Opening Balance on 01 Jul 2024)
+  // Starting balance is 8,95,250
   let currentBalance = 895250;
   const computedTransactions = sortedChronological.map(t => {
-    if (t.particulars !== "Opening Balance") {
-      if (t.type === "Income") {
-        currentBalance += t.inflow;
-      } else {
-        currentBalance -= t.outflow;
-      }
+    if (t.type === "Income") {
+      currentBalance += t.inflow;
+    } else {
+      currentBalance -= t.outflow;
     }
     return {
       ...t,
@@ -441,13 +496,13 @@ export default function AccountingPage() {
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "transactions", label: "Transactions" },
-    { id: "cash_book", label: "Cash Book (Sample)" },
-    { id: "bank_accounts", label: "Bank Accounts (Sample)" },
+    { id: "cash_book", label: "Cash Book" },
+    { id: "bank_accounts", label: "Bank Accounts" },
     { id: "vendor_payments", label: "Vendor Payments" },
     { id: "office_expenses", label: "Office Expenses" },
     { id: "payments", label: "Payments" },
     { id: "profit_loss", label: "Profit & Loss" },
-    { id: "trip_profitability", label: "Trip Profitability (Sample)" },
+    { id: "trip_profitability", label: "Trip Profitability" },
     { id: "reports", label: "Reports" }
   ];
 
@@ -1543,20 +1598,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { date: "03 Jul 2024 10:30 AM", cat: "Office Rent", icon: Building2, iconColor: "bg-rose-50 text-rose-500", desc: "Office Rent - July 2024", vendor: "—", account: "ICICI Bank A/c", amount: 50000, mode: "Bank Transfer", rec: "INV-2024-07-01", trip: "—", addedBy: "Neeki Sharma" },
-                      { date: "03 Jul 2024 09:15 AM", cat: "Electricity", icon: Sparkles, iconColor: "bg-amber-50 text-amber-500", desc: "Electricity Bill - Office", vendor: "Gujarat Urja Vikas Nigam Ltd.", account: "ICICI Bank A/c", amount: 8450, mode: "UPI", rec: "EB-2024-07-03", trip: "—", addedBy: "Neeki Sharma" },
-                      { date: "03 Jul 2024 11:45 AM", cat: "Internet", icon: Globe, iconColor: "bg-blue-50 text-blue-500", desc: "Internet Bill - July 2024", vendor: "Jio Fiber", account: "HDFC Bank A/c", amount: 1299, mode: "Auto Debit", rec: "NET-2024-07-03", trip: "—", addedBy: "Suresh Bhai" },
-                      { date: "02 Jul 2024 04:20 PM", cat: "Marketing", icon: MessageSquare, iconColor: "bg-purple-50 text-purple-500", desc: "Facebook Ads - June", vendor: "Meta Platforms", account: "HDFC Bank A/c", amount: 12375.60, mode: "UPI", rec: "ADS-2024-06-30", trip: "—", addedBy: "Zeel Shah" },
-                      { date: "02 Jul 2024 03:10 PM", cat: "Office Supplies", icon: ClipboardCheck, iconColor: "bg-emerald-50 text-emerald-500", desc: "Printer Paper, Files, Stationery", vendor: "Office Needs", account: "Cash In Hand", amount: 2350, mode: "Cash", rec: "—", trip: "—", addedBy: "Parth Parmar" },
-                      { date: "02 Jul 2024 01:30 PM", cat: "Refreshments", icon: UtensilsCrossed, iconColor: "bg-pink-50 text-pink-500", desc: "Tea, Water, Snacks", vendor: "Local Vendor", account: "Cash In Hand", amount: 650, mode: "Cash", rec: "—", trip: "—", addedBy: "Parth Parmar" },
-                      { date: "01 Jul 2024 06:15 PM", cat: "Travel", icon: Compass, iconColor: "bg-cyan-50 text-cyan-500", desc: "Local Travel - Auto", vendor: "Ramesh Auto", account: "Cash In Hand", amount: 450, mode: "Cash", rec: "—", trip: "—", addedBy: "Neeki Sharma" },
-                      { date: "01 Jul 2024 05:40 PM", cat: "Software", icon: LayoutDashboard, iconColor: "bg-indigo-50 text-indigo-500", desc: "TeleCRM - Monthly Plan", vendor: "TeleCRM Solutions", account: "HDFC Bank A/c", amount: 9000, mode: "Net Banking", rec: "SW-2024-07-01", trip: "—", addedBy: "Hemal Patel" },
-                      { date: "01 Jul 2024 04:00 PM", cat: "Maintenance", icon: Wrench, iconColor: "bg-teal-50 text-teal-500", desc: "AC Maintenance", vendor: "Cool Tech Services", account: "Cash In Hand", amount: 1800, mode: "Cash", rec: "—", trip: "—", addedBy: "Neeki Sharma" },
-                      { date: "01 Jul 2024 11:20 AM", cat: "Miscellaneous", icon: HelpCircle, iconColor: "bg-slate-50 text-slate-500", desc: "Door Repair", vendor: "Local Technician", account: "Cash In Hand", amount: 750, mode: "Cash", rec: "—", trip: "—", addedBy: "Neeki Sharma" },
-                      { date: "01 Jul 2024 10:05 AM", cat: "Marketing", icon: MessageSquare, iconColor: "bg-purple-50 text-purple-500", desc: "Brochure Printing", vendor: "Print Point", account: "Cash In Hand", amount: 1250, mode: "Cash", rec: "—", trip: "—", addedBy: "Parth Parmar" },
-                      { date: "01 Jul 2024 09:00 AM", cat: "Opening Balance", icon: Banknote, iconColor: "bg-slate-50 text-slate-500", desc: "Opening Balance", vendor: "—", account: "Cash In Hand", amount: 5000, mode: "—", rec: "—", trip: "—", addedBy: "System" }
-                    ].map((row, idx) => {
+                    {[].map((row, idx) => {
                       const Icon = row.icon;
                       return (
                         <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/30 transition-colors">
@@ -1606,23 +1648,23 @@ export default function AccountingPage() {
                 <div className="space-y-2.5 text-xs font-bold text-slate-650">
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-slate-450 font-semibold">Total Expenses</span>
-                    <span className="text-slate-800 font-black">₹ 88,374.60</span>
+                    <span className="text-slate-800 font-black">₹ 0.00</span>
                   </div>
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-slate-450 font-semibold">This Month</span>
-                    <span className="text-slate-800 font-black">₹ 88,374.60</span>
+                    <span className="text-slate-800 font-black">₹ 0.00</span>
                   </div>
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-slate-450 font-semibold">Last Month</span>
-                    <span className="text-slate-800 font-black">₹ 1,24,560.00</span>
+                    <span className="text-slate-800 font-black">₹ 0.00</span>
                   </div>
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-slate-450 font-semibold">This Week</span>
-                    <span className="text-slate-800 font-black">₹ 45,150.00</span>
+                    <span className="text-slate-800 font-black">₹ 0.00</span>
                   </div>
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-slate-450 font-semibold">Yesterday</span>
-                    <span className="text-slate-800 font-black">₹ 8,450.00</span>
+                    <span className="text-slate-800 font-black">₹ 0.00</span>
                   </div>
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-slate-450 font-semibold">Today</span>
@@ -1639,13 +1681,7 @@ export default function AccountingPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={[
-                          { name: "Office Rent", value: 50000 },
-                          { name: "Marketing", value: 25625.60 },
-                          { name: "Electricity", value: 8450 },
-                          { name: "Software", value: 9000 },
-                          { name: "Others", value: 5299 }
-                        ]}
+                        data={[{ name: 'No Data', value: 1 }]}
                         cx="50%"
                         cy="50%"
                         innerRadius={45}
@@ -1663,33 +1699,12 @@ export default function AccountingPage() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute flex flex-col items-center justify-center">
-                    <span className="text-[11px] font-black text-slate-800">₹ 88,374.60</span>
+                    <span className="text-[11px] font-black text-slate-800">₹ 0.00</span>
                     <span className="text-[8px] font-bold text-slate-400 uppercase">Total</span>
                   </div>
                 </div>
 
-                <div className="space-y-2 text-[11px] font-semibold text-slate-650">
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Office Rent</span>
-                    <span>₹ 50,000.00 <span className="text-[9px] text-slate-400">(56.60%)</span></span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /> Marketing</span>
-                    <span>₹ 25,625.60 <span className="text-[9px] text-slate-400">(28.99%)</span></span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> Electricity</span>
-                    <span>₹ 8,450.00 <span className="text-[9px] text-slate-400">(9.57%)</span></span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Software</span>
-                    <span>₹ 9,000.00 <span className="text-[9px] text-slate-400">(10.19%)</span></span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500" /> Others</span>
-                    <span>₹ 5,299.00 <span className="text-[9px] text-slate-400">(5.99%)</span></span>
-                  </div>
-                </div>
+                <div className="space-y-2 text-[11px] font-semibold text-slate-650 flex items-center justify-center h-24 text-slate-400">No categories to display</div>
               </Card>
 
               {/* Recent Expenses */}
