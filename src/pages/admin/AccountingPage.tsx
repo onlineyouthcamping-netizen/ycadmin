@@ -124,6 +124,19 @@ export default function AccountingPage() {
 
   const [officeExpenses, setOfficeExpenses] = useState<any[]>([]);
   const [selectedBankIdx, setSelectedBankIdx] = useState(0);
+  const [bankOverrides, setBankOverrides] = useState<Record<string, any>>({});
+  const [showEditBankModal, setShowEditBankModal] = useState(false);
+  const [editingBankIdx, setEditingBankIdx] = useState<number | null>(null);
+  const [bankDetailsForm, setBankDetailsForm] = useState({
+    name: "",
+    nick: "",
+    num: "",
+    holder: "",
+    type: "",
+    branch: "",
+    ifsc: "",
+    openBal: 0
+  });
 
   // ── Load entries ──
   const load = useCallback(async () => {
@@ -224,6 +237,35 @@ export default function AccountingPage() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleEditBank = (idx: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setEditingBankIdx(idx);
+    const bank = bankAccountsListGlobal[idx];
+    setBankDetailsForm({
+      name: bank.name,
+      nick: bank.nick,
+      num: bank.num,
+      holder: bank.holder,
+      type: bank.type,
+      branch: bank.branch,
+      ifsc: bank.ifsc,
+      openBal: bank.openBal
+    });
+    setShowEditBankModal(true);
+  };
+
+  const handleSaveBank = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingBankIdx === null) return;
+    const code = bankAccountsListGlobal[editingBankIdx].code;
+    setBankOverrides(prev => ({
+      ...prev,
+      [code]: { ...bankDetailsForm }
+    }));
+    setShowEditBankModal(false);
+    toast.success("Bank details updated successfully!");
   };
 
   // ── Approve ──
@@ -425,6 +467,30 @@ export default function AccountingPage() {
     { name: "HDFC Bank A/c", amount: hdfcBalance, icon: "bank" },
     { name: "Cash", amount: cashBalance, icon: "cash" },
   ];
+
+  const getBankAccountsList = () => {
+    const defaults = [
+      { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: iciciBalance, openBal: 585300, rec: "Yesterday", status: "Active" },
+      { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: hdfcBalance, openBal: 325500, rec: "Today", status: "Active" },
+      { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: 248100, openBal: 248100, rec: "2 Jul 2024", status: "Active" },
+      { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: 312750, openBal: 312750, rec: "30 Jun 2024", status: "Active" },
+      { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: 125800, openBal: 125800, rec: "28 Jun 2024", status: "Active" },
+      { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: cashBalance, openBal: 160000, rec: "Today", status: "Active" }
+    ];
+    return defaults.map(b => {
+      const over = bankOverrides[b.code];
+      if (over) {
+        let currentBal = b.bal;
+        if (over.openBal !== b.openBal) {
+          const diff = Number(over.openBal) - b.openBal;
+          currentBal += diff;
+        }
+        return { ...b, ...over, openBal: Number(over.openBal), bal: currentBal };
+      }
+      return b;
+    });
+  };
+  const bankAccountsListGlobal = getBankAccountsList();
 
   const pendingVendorPayments = vendorAssignments.filter(a => a.paymentStatus !== "paid").slice(0, 5).map(a => ({
     vendor: typeof a.vendorId === 'object' ? a.vendorId.name : "Vendor",
@@ -1362,48 +1428,38 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0]">
-                    {(() => {
-                      const bankAccountsList = [
-                        { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: iciciBalance, openBal: 585300, rec: "Yesterday", status: "Active" },
-                        { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: hdfcBalance, openBal: 325500, rec: "Today", status: "Active" },
-                        { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: 248100, openBal: 248100, rec: "2 Jul 2024", status: "Active" },
-                        { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: 312750, openBal: 312750, rec: "30 Jun 2024", status: "Active" },
-                        { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: 125800, openBal: 125800, rec: "28 Jun 2024", status: "Active" },
-                        { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: cashBalance, openBal: 160000, rec: "Today", status: "Active" }
-                      ];
-                      return bankAccountsList.map((row, idx) => (
-                        <tr
-                          key={idx}
-                          onClick={() => setSelectedBankIdx(idx)}
-                          className={cn("hover:bg-slate-50/50 transition-colors cursor-pointer", selectedBankIdx === idx && "bg-slate-100/50")}
-                        >
-                          <td className="p-3 text-center border-r border-slate-100">
-                            <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[9px] uppercase">
-                              {row.name.substring(0, 2)}
-                            </div>
-                          </td>
-                          <td className="p-3 border-r border-slate-100 font-bold text-slate-800">{row.name}</td>
-                          <td className="p-3 border-r border-slate-100 text-slate-650 font-semibold">{row.nick}</td>
-                          <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.num}</td>
-                          <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.holder}</td>
-                          <td className="p-3 border-r border-slate-100 text-slate-500 font-semibold">{row.type}</td>
-                          <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.branch}</td>
-                          <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.ifsc}</td>
-                          <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-650">₹ {row.bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
-                          <td className="p-3 border-r border-slate-100 text-slate-500 font-medium">{row.rec}</td>
-                          <td className="p-3 border-r border-slate-100">
-                            <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider block w-fit">ACTIVE</span>
-                          </td>
-                          <td className="p-3 text-center">
-                            <div className="flex justify-center items-center gap-1.5">
-                              <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Eye className="w-3.5 h-3.5" /></button>
-                              <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Edit3 className="w-3.5 h-3.5" /></button>
-                              <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Download className="w-3.5 h-3.5" /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      ));
-                    })()}
+                    {bankAccountsListGlobal.map((row, idx) => (
+                      <tr
+                        key={idx}
+                        onClick={() => setSelectedBankIdx(idx)}
+                        className={cn("hover:bg-slate-50/50 transition-colors cursor-pointer", selectedBankIdx === idx && "bg-slate-100/50")}
+                      >
+                        <td className="p-3 text-center border-r border-slate-100">
+                          <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[9px] uppercase">
+                            {row.name.substring(0, 2)}
+                          </div>
+                        </td>
+                        <td className="p-3 border-r border-slate-100 font-bold text-slate-800">{row.name}</td>
+                        <td className="p-3 border-r border-slate-100 text-slate-650 font-semibold">{row.nick}</td>
+                        <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.num}</td>
+                        <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.holder}</td>
+                        <td className="p-3 border-r border-slate-100 text-slate-500 font-semibold">{row.type}</td>
+                        <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.branch}</td>
+                        <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.ifsc}</td>
+                        <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-650">₹ {row.bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                        <td className="p-3 border-r border-slate-100 text-slate-500 font-medium">{row.rec}</td>
+                        <td className="p-3 border-r border-slate-100">
+                          <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider block w-fit">ACTIVE</span>
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="flex justify-center items-center gap-1.5">
+                            <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Eye className="w-3.5 h-3.5" /></button>
+                            <button onClick={(e) => handleEditBank(idx, e)} className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Edit3 className="w-3.5 h-3.5" /></button>
+                            <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Download className="w-3.5 h-3.5" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -1423,15 +1479,7 @@ export default function AccountingPage() {
 
             {/* Right Side Widgets Sidebar Panel */}
             {(() => {
-              const bankAccountsList = [
-                { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: iciciBalance, openBal: 585300, rec: "Yesterday", status: "Active" },
-                { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: hdfcBalance, openBal: 325500, rec: "Today", status: "Active" },
-                { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: 248100, openBal: 248100, rec: "2 Jul 2024", status: "Active" },
-                { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: 312750, openBal: 312750, rec: "30 Jun 2024", status: "Active" },
-                { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: 125800, openBal: 125800, rec: "28 Jun 2024", status: "Active" },
-                { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: cashBalance, openBal: 160000, rec: "Today", status: "Active" }
-              ];
-              const activeBank = bankAccountsList[selectedBankIdx] || bankAccountsList[0];
+              const activeBank = bankAccountsListGlobal[selectedBankIdx] || bankAccountsListGlobal[0];
               const activeBankDocs = [
                 { name: `${activeBank.code}_PAN_Card.pdf`, size: "1.2 MB", date: "12 May 2024" },
                 { name: `${activeBank.code}_Aadhaar_Card.pdf`, size: "1.1 MB", date: "12 May 2024" },
@@ -2843,6 +2891,102 @@ export default function AccountingPage() {
               </Button>
               <Button type="submit" size="sm" className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white">
                 Record Payment
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Bank Account Modal */}
+      <Dialog open={showEditBankModal} onOpenChange={setShowEditBankModal}>
+        <DialogContent className="rounded-[4px] border-[#E2E8F0] p-6 bg-white shadow-lg max-w-md">
+          <DialogHeader className="border-b border-[#E2E8F0] pb-3">
+            <DialogTitle className="text-xs font-black text-slate-800 uppercase tracking-wider">Edit Bank Details</DialogTitle>
+            <DialogDescription className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              Modify details for the selected bank drawer
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveBank} className="space-y-4 pt-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Bank Name</label>
+              <Input
+                value={bankDetailsForm.name}
+                onChange={(e) => setBankDetailsForm({ ...bankDetailsForm, name: e.target.value })}
+                className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Account Nickname</label>
+              <Input
+                value={bankDetailsForm.nick}
+                onChange={(e) => setBankDetailsForm({ ...bankDetailsForm, nick: e.target.value })}
+                className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Account Number</label>
+                <Input
+                  value={bankDetailsForm.num}
+                  onChange={(e) => setBankDetailsForm({ ...bankDetailsForm, num: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">IFSC Code</label>
+                <Input
+                  value={bankDetailsForm.ifsc}
+                  onChange={(e) => setBankDetailsForm({ ...bankDetailsForm, ifsc: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Branch</label>
+                <Input
+                  value={bankDetailsForm.branch}
+                  onChange={(e) => setBankDetailsForm({ ...bankDetailsForm, branch: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-455">Opening Balance</label>
+                <Input
+                  type="number"
+                  value={bankDetailsForm.openBal}
+                  onChange={(e) => setBankDetailsForm({ ...bankDetailsForm, openBal: Number(e.target.value) })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Account Holder</label>
+              <Input
+                value={bankDetailsForm.holder}
+                onChange={(e) => setBankDetailsForm({ ...bankDetailsForm, holder: e.target.value })}
+                className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                required
+              />
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-[#E2E8F0]">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowEditBankModal(false)} className="h-8.5 px-4 rounded-[4px] font-semibold text-xs border border-slate-200">
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white">
+                Save Changes
               </Button>
             </DialogFooter>
           </form>
