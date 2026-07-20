@@ -5,7 +5,15 @@ import { guideService } from "@/services/guide.service";
 
 function looksLikeJwt(value: string | null | undefined): boolean {
   if (!value) return false;
-  return value.split(".").length === 3;
+  const parts = value.split(".");
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(atob(parts[1]));
+    if (payload && typeof payload.exp === 'number') {
+      return payload.exp * 1000 > Date.now() + 60000; // token is valid for at least 1 more minute
+    }
+  } catch (e) {}
+  return true;
 }
 
 let guideLoginPromise: Promise<string | null> | null = null;
