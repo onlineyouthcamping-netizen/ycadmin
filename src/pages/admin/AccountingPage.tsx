@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { accountingService, type AccountingEntry } from "@/services/accounting.service";
 import { tripsService } from "@/services/trips.service";
+import { bookingsService } from "@/services/bookings.service";
 import { vendorsService } from "@/services/vendors.service";
 import type { Vendor } from "@/types";
 import { cn } from "@/lib/utils";
@@ -137,22 +138,31 @@ export default function AccountingPage() {
     ifsc: "",
     openBal: 0
   });
+  const [bookings, setBookings] = useState<any[]>([]);
 
   // ── Load entries ──
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await accountingService.getEntries({
-        page: String(page),
-        limit: String(pageSize),
-        ...(search.trim() ? { search: search.trim() } : {}),
-        ...(fStatus !== "ALL" ? { status: fStatus } : {}),
-        ...(fMode !== "ALL" ? { paymentMode: fMode } : {}),
-      });
-      setEntries(result.data);
-      setLedgerTotals(result.summary);
-      setTotalCount(result.pagination.totalCount);
-      setTotalPages(result.pagination.totalPages);
+      const [result, bookingsRes] = await Promise.all([
+        accountingService.getEntries({
+          page: String(page),
+          limit: String(pageSize),
+          ...(search.trim() ? { search: search.trim() } : {}),
+          ...(fStatus !== "ALL" ? { status: fStatus } : {}),
+          ...(fMode !== "ALL" ? { paymentMode: fMode } : {}),
+        }),
+        bookingsService.getAll({ limit: 100 }).catch(() => null)
+      ]);
+      if (result) {
+        setEntries(result.data);
+        setLedgerTotals(result.summary);
+        setTotalCount(result.pagination.totalCount);
+        setTotalPages(result.pagination.totalPages);
+      }
+      if (bookingsRes) {
+        setBookings(bookingsRes.data || []);
+      }
     } catch {
       toast.error("Failed to load accounting entries");
     } finally {
@@ -369,8 +379,27 @@ export default function AccountingPage() {
     { name: "03 Jul", Collection: 335000, "Vendor Payments": 85000, Expenses: 14000 },
   ];
 
+  const simulatedEntries = bookings
+    .filter(b => b.advancePaid > 0)
+    .map(b => ({
+      id: `sim-${b.id}`,
+      bookingId: b.bookingId,
+      booking: {
+        bookingId: b.bookingId,
+        fullName: b.fullName || b.name,
+        tripName: b.tripName,
+        totalAmount: b.totalAmount
+      },
+      amount: b.advancePaid,
+      paymentMode: b.paymentMode || 'UPI',
+      status: b.paymentStatus === 'Partial' || b.paymentStatus === 'Paid' ? 'APPROVED' : 'PENDING',
+      createdAt: typeof b.createdAt === 'string' ? b.createdAt : new Date().toISOString()
+    }));
+
+  const mergedEntries = entries.length > 0 ? entries : simulatedEntries;
+
   // Dynamic Collections (Approved entries)
-  const dynamicInflows = entries
+  const dynamicInflows = mergedEntries
     .filter(e => e.status === "APPROVED")
     .map(e => ({
       date: e.createdAt.split('T')[0],
@@ -2051,7 +2080,7 @@ export default function AccountingPage() {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry) => (
+                {mergedEntries.map((entry) => (
                   <tr key={entry.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     <td className="px-4 py-3 font-semibold text-slate-700">#{entry.booking?.bookingId}</td>
                     <td className="px-4 py-3">
@@ -2652,13 +2681,19 @@ export default function AccountingPage() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Booking ID</label>
-              <Input 
-                placeholder="e.g. BOOK-1234"
-                value={form.bookingId} 
-                onChange={(e) => setForm({ ...form, bookingId: e.target.value })}
-                className="h-8.5 text-xs rounded-[4px] border-[#E2E8F0]" 
-              />
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Select Booking</label>
+              <Select value={form.bookingId} onValueChange={(val) => setForm({ ...form, bookingId: val })}>
+                <SelectTrigger className="h-8.5 text-xs rounded-[4px] border-[#E2E8F0]">
+                  <SelectValue placeholder="Select Booking" />
+                </SelectTrigger>
+                <SelectContent className="rounded-[4px]">
+                  {bookings.map((b) => (
+                    <SelectItem key={b.id} value={b.bookingId}>
+                      {b.fullName || b.name} ({b.bookingId}) - {b.tripName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">
