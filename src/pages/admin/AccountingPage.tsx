@@ -327,23 +327,6 @@ export default function AccountingPage() {
     { name: "03 Jul", Collection: 335000, "Vendor Payments": 85000, Expenses: 14000 },
   ];
 
-  const expensesData = [
-    { name: "Hotel Bookings", value: 72500, color: "#3B82F6" },
-    { name: "Transport", value: 28000, color: "#10B981" },
-    { name: "Guide & Staff", value: 12500, color: "#8B5CF6" },
-    { name: "Activities", value: 8700, color: "#F59E0B" },
-    { name: "Other Expenses", value: 6900, color: "#EF4444" },
-  ];
-
-  const horizontalBarsData = [
-    { name: "Accommodation", value: 72500, color: "#3B82F6" },
-    { name: "Transport", value: 28000, color: "#10B981" },
-    { name: "Guide & Staff", value: 12500, color: "#8B5CF6" },
-    { name: "Activities", value: 8700, color: "#F59E0B" },
-    { name: "Food", value: 4800, color: "#EC4899" },
-    { name: "Other", value: 1900, color: "#6B7280" },
-  ];
-
   // Dynamic Collections (Approved entries)
   const dynamicInflows = entries
     .filter(e => e.status === "APPROVED")
@@ -408,6 +391,34 @@ export default function AccountingPage() {
     .reduce((sum, t) => sum + (t.account === "HDFC Bank A/c" ? (t.inflow - t.outflow) : 0), 325500);
   const cashBalance = rawTransactions
     .reduce((sum, t) => sum + (t.account === "Cash" ? (t.inflow - t.outflow) : 0), 160000);
+
+  const totalCollection = rawTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.inflow, 0);
+  const totalVendorPayments = rawTransactions.filter(t => t.type === 'Expense' && t.category !== 'Utilities' && t.category !== 'Rent' && t.category !== 'Salaries').reduce((sum, t) => sum + t.outflow, 0);
+  const totalOfficeExpensesVal = rawTransactions.filter(t => t.type === 'Expense' && (t.category === 'Utilities' || t.category === 'Rent' || t.category === 'Salaries')).reduce((sum, t) => sum + t.outflow, 0);
+  const totalExpenses = totalVendorPayments + totalOfficeExpensesVal;
+  const totalOutstandingVal = vendorAssignments.filter(a => a.paymentStatus !== "paid").reduce((sum, a) => sum + (a.totalAmount - (a.paidAmount || 0)), 0);
+
+  const hotelExpenses = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Hotel').reduce((sum, t) => sum + t.outflow, 0);
+  const transportExpenses = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Transport').reduce((sum, t) => sum + t.outflow, 0);
+  const guideExpenses = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Guide').reduce((sum, t) => sum + t.outflow, 0);
+  const officeExpensesSum = totalOfficeExpensesVal;
+  const otherExpensesSum = totalExpenses - hotelExpenses - transportExpenses - guideExpenses - officeExpensesSum;
+
+  const expensesData = [
+    { name: "Hotel Bookings", value: hotelExpenses, color: "#3B82F6" },
+    { name: "Transport", value: transportExpenses, color: "#10B981" },
+    { name: "Guide & Staff", value: guideExpenses, color: "#8B5CF6" },
+    { name: "Office Expenses", value: officeExpensesSum, color: "#F59E0B" },
+    { name: "Other Expenses", value: otherExpensesSum >= 0 ? otherExpensesSum : 0, color: "#EF4444" }
+  ];
+
+  const horizontalBarsData = [
+    { name: "Accommodation", value: hotelExpenses, color: "#3B82F6" },
+    { name: "Transport", value: transportExpenses, color: "#10B981" },
+    { name: "Guide & Staff", value: guideExpenses, color: "#8B5CF6" },
+    { name: "Office Expenses", value: officeExpensesSum, color: "#F59E0B" },
+    { name: "Other", value: otherExpensesSum >= 0 ? otherExpensesSum : 0, color: "#EF4444" }
+  ];
 
   const bankSummary = [
     { name: "ICICI Bank A/c", amount: iciciBalance, icon: "bank" },
@@ -710,15 +721,15 @@ export default function AccountingPage() {
               <div className="grid grid-cols-3 gap-4 border-t border-slate-100 pt-4 text-center">
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold block uppercase">Collection</span>
-                  <span className="text-sm font-bold text-[#10B981] mt-0.5 block">₹ 12,68,000</span>
+                  <span className="text-sm font-bold text-[#10B981] mt-0.5 block">₹ {totalCollection.toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold block uppercase">Vendor Payments</span>
-                  <span className="text-sm font-bold text-[#EF4444] mt-0.5 block">₹ 7,45,000</span>
+                  <span className="text-sm font-bold text-[#EF4444] mt-0.5 block">₹ {totalVendorPayments.toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold block uppercase">Expenses</span>
-                  <span className="text-sm font-bold text-[#F97316] mt-0.5 block">₹ 1,28,600</span>
+                  <span className="text-sm font-bold text-[#F97316] mt-0.5 block">₹ {totalOfficeExpensesVal.toLocaleString()}</span>
                 </div>
               </div>
             </Card>
@@ -761,7 +772,7 @@ export default function AccountingPage() {
 
               <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-bold text-slate-700">
                 <span>Total Outstanding</span>
-                <span className="text-red-500">₹ 2,53,000</span>
+                <span className="text-red-500">₹ {totalOutstandingVal.toLocaleString()}</span>
               </div>
             </Card>
 
@@ -824,7 +835,7 @@ export default function AccountingPage() {
                 </ResponsiveContainer>
                 <div className="absolute flex flex-col items-center justify-center">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Total</span>
-                  <span className="text-xs font-black text-slate-800">₹1,28,600</span>
+                  <span className="text-xs font-black text-slate-800">₹{totalExpenses.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -892,7 +903,7 @@ export default function AccountingPage() {
 
               <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs font-bold text-slate-700">
                 <span>Total Available Balance</span>
-                <span className="text-emerald-500">₹ 9,36,250</span>
+                <span className="text-emerald-500">₹ {(iciciBalance + hdfcBalance + cashBalance).toLocaleString()}</span>
               </div>
             </Card>
 
@@ -970,10 +981,10 @@ export default function AccountingPage() {
                 
                 <div className="space-y-2">
                   {[
-                    { label: "Total Revenue", val: 2468000, color: "text-slate-800" },
-                    { label: "Total Vendor Payments", val: 1245000, color: "text-red-500" },
-                    { label: "Total Office Expenses", val: 128600, color: "text-red-500" },
-                    { label: "Gross Profit", val: 1194400, color: "text-emerald-500", bold: true },
+                    { label: "Total Revenue", val: totalCollection, color: "text-slate-800" },
+                    { label: "Total Vendor Payments", val: totalVendorPayments, color: "text-red-500" },
+                    { label: "Total Office Expenses", val: totalOfficeExpensesVal, color: "text-red-500" },
+                    { label: "Gross Profit", val: totalCollection - totalVendorPayments - totalOfficeExpensesVal, color: "text-emerald-500", bold: true },
                   ].map((sum, i) => (
                     <div key={i} className="flex justify-between items-center text-xs py-1 font-semibold">
                       <span className={cn("text-slate-500", sum.bold && "text-slate-700 font-bold")}>{sum.label}</span>
@@ -982,7 +993,9 @@ export default function AccountingPage() {
                   ))}
                   <div className="flex justify-between items-center text-xs py-1.5 border-t border-slate-100 font-semibold">
                     <span className="text-slate-500">Profit Margin</span>
-                    <span className="font-extrabold text-slate-800">48.4%</span>
+                    <span className="font-extrabold text-slate-800">
+                      {totalCollection > 0 ? (((totalCollection - totalVendorPayments - totalOfficeExpensesVal) / totalCollection) * 100).toFixed(1) : "0"}%
+                    </span>
                   </div>
                 </div>
               </Card>
@@ -1886,19 +1899,21 @@ export default function AccountingPage() {
 
           {/* Table Summary Footer */}
           <div className="flex flex-col sm:flex-row items-center justify-between border-t pt-4 mt-2 gap-4 text-xs font-bold text-slate-700">
-            <div>Total Transactions: 43</div>
+            <div>Total Transactions: {rawTransactions.length}</div>
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-end">
                 <span className="text-[10px] text-slate-400 font-bold uppercase">Total Income</span>
-                <span className="text-emerald-500 font-black text-sm">₹ 2,40,000</span>
+                <span className="text-emerald-500 font-black text-sm">₹ {rawTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.inflow, 0).toLocaleString()}</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-[10px] text-slate-400 font-bold uppercase">Total Expense</span>
-                <span className="text-red-500 font-black text-sm">₹ 1,64,450</span>
+                <span className="text-red-500 font-black text-sm">₹ {rawTransactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.outflow, 0).toLocaleString()}</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-[10px] text-slate-400 font-bold uppercase">Net Flow</span>
-                <span className="text-emerald-500 font-black text-sm">₹ 75,550</span>
+                <span className={cn("font-black text-sm", (rawTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.inflow, 0) - rawTransactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.outflow, 0)) >= 0 ? "text-emerald-500" : "text-red-500")}>
+                  ₹ {(rawTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.inflow, 0) - rawTransactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.outflow, 0)).toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
