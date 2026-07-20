@@ -576,6 +576,16 @@ export default function AccountingPage() {
   const plSalariesCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Salaries').reduce((sum, t) => sum + t.outflow, 0);
   const plMiscOperatingCost = plOperatingCost - plRentCost - plUtilitiesCost - plSalariesCost;
 
+  // Trips and Refunds helpers for Profit & Loss
+  const sortedTripsByProfit = [...tripProfitability].sort((a, b) => b.profit - a.profit);
+  const topProfitableTrips = sortedTripsByProfit.filter(t => t.profit >= 0).slice(0, 5);
+  const lossMakingTrips = sortedTripsByProfit.filter(t => t.profit < 0);
+
+  const dynamicRefunds = rawTransactions.filter(t => t.category?.toLowerCase() === 'refund');
+  const totalRefundsSum = dynamicRefunds.reduce((sum, t) => sum + t.outflow, 0);
+  const completedRefundsSum = dynamicRefunds.filter(t => t.status?.toLowerCase() === 'approved' || t.particulars?.toLowerCase().includes('completed')).reduce((sum, t) => sum + t.outflow, 0);
+  const pendingRefundsSum = totalRefundsSum - completedRefundsSum;
+
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "transactions", label: "Transactions" },
@@ -2209,11 +2219,8 @@ export default function AccountingPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {[
-                      { m: "Jul 2024", r: "42,18,500", c: "26,74,800", e: "6,72,300", p: "8,71,400", pct: "20.64%" },
-                      { m: "Jun 2024", r: "35,62,400", c: "22,38,900", e: "6,10,200", p: "7,13,300", pct: "20.02%" },
-                      { m: "May 2024", r: "32,48,750", c: "20,15,600", e: "5,80,400", p: "6,52,750", pct: "20.11%" },
-                      { m: "Apr 2024", r: "28,34,600", c: "18,05,300", e: "5,45,100", p: "4,84,200", pct: "17.09%" },
-                      { m: "Mar 2024", r: "25,60,300", c: "16,20,450", e: "4,75,600", p: "4,64,250", pct: "18.14%" }
+                      { m: "Jul 2024", r: plRevenue.toLocaleString("en-IN"), c: plDirectCost.toLocaleString("en-IN"), e: plOperatingCost.toLocaleString("en-IN"), p: plNetProfit.toLocaleString("en-IN"), pct: `${plNetMargin}%` },
+                      { m: "Jun 2024", r: "0", c: "0", e: "0", p: "0", pct: "0%" }
                     ].map((row, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50">
                         <td className="py-2 text-slate-800 font-bold">{row.m}</td>
@@ -2244,21 +2251,21 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {[
-                      { t: "MKA - 05 Jul", r: "12,45,000", c: "7,85,600", p: "4,59,400", pct: "36.90%" },
-                      { t: "Spiti Valley - 07 Jul", r: "9,85,000", c: "6,15,300", p: "3,69,700", pct: "37.51%" },
-                      { t: "Kashmir - 12 Jul", r: "7,25,000", c: "4,20,100", p: "3,04,900", pct: "42.05%" },
-                      { t: "Leh Ladakh - 15 Jul", r: "6,80,000", c: "4,35,200", p: "2,44,800", pct: "36.00%" },
-                      { t: "Goa - 21 Jul", r: "3,95,000", c: "2,35,100", p: "1,59,900", pct: "40.48%" }
-                    ].map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50">
-                        <td className="py-2 text-slate-800 font-bold">{row.t}</td>
-                        <td className="py-2 text-right font-semibold text-slate-700">{row.r}</td>
-                        <td className="py-2 text-right text-slate-550">{row.c}</td>
-                        <td className="py-2 text-right font-bold text-emerald-650">{row.p}</td>
-                        <td className="py-2 text-right font-bold text-emerald-700">{row.pct}</td>
+                    {topProfitableTrips.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-slate-400 italic">No trip profitability data available.</td>
                       </tr>
-                    ))}
+                    ) : (
+                      topProfitableTrips.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="py-2 text-slate-800 font-bold">{row.name}</td>
+                          <td className="py-2 text-right font-semibold text-slate-700">{row.revenue.toLocaleString("en-IN")}</td>
+                          <td className="py-2 text-right text-slate-550">{row.cost.toLocaleString("en-IN")}</td>
+                          <td className="py-2 text-right font-bold text-emerald-650">{row.profit.toLocaleString("en-IN")}</td>
+                          <td className="py-2 text-right font-bold text-emerald-700">{row.pct}%</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -2277,18 +2284,19 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {[
-                      { t: "Manali - 28 Jun", l: "-18,500", r: "Low Occupancy" },
-                      { t: "Tirthan Valley - 30 Jun", l: "-12,300", r: "Extra Transport Cost" },
-                      { t: "Kasol - 01 Jul", l: "-7,450", r: "Hotel Cost Increased" },
-                      { t: "Dharamshala - 02 Jul", l: "-5,800", r: "Last Minute Cancellation" }
-                    ].map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50">
-                        <td className="py-2 text-slate-800 font-bold">{row.t}</td>
-                        <td className="py-2 text-right font-bold text-red-600">{row.l}</td>
-                        <td className="py-2 text-slate-550 text-[10px] pl-3">{row.r}</td>
+                    {lossMakingTrips.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="text-center py-8 text-slate-400 italic">No loss-making departures this period.</td>
                       </tr>
-                    ))}
+                    ) : (
+                      lossMakingTrips.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="py-2 text-slate-800 font-bold">{row.name}</td>
+                          <td className="py-2 text-right font-bold text-red-600">{row.profit.toLocaleString("en-IN")}</td>
+                          <td className="py-2 text-slate-550 text-[10px] pl-3">Operating Under Budget</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -2319,15 +2327,15 @@ export default function AccountingPage() {
               <div className="grid grid-cols-3 gap-2 text-center text-[10.5px] font-bold text-slate-500">
                 <div className="p-2 bg-slate-50 rounded-[4px]">
                   <p className="text-slate-400 text-[8px] uppercase">Total Refunds</p>
-                  <p className="text-slate-800 text-xs font-extrabold mt-1">₹ 1,24,500</p>
+                  <p className="text-slate-800 text-xs font-extrabold mt-1">₹ {totalRefundsSum.toLocaleString("en-IN")}</p>
                 </div>
                 <div className="p-2 bg-emerald-50/50 rounded-[4px]">
                   <p className="text-emerald-700 text-[8px] uppercase">Completed</p>
-                  <p className="text-emerald-700 text-xs font-extrabold mt-1">₹ 98,500</p>
+                  <p className="text-emerald-700 text-xs font-extrabold mt-1">₹ {completedRefundsSum.toLocaleString("en-IN")}</p>
                 </div>
                 <div className="p-2 bg-amber-50/50 rounded-[4px]">
                   <p className="text-amber-700 text-[8px] uppercase">Pending</p>
-                  <p className="text-amber-700 text-xs font-extrabold mt-1">₹ 26,000</p>
+                  <p className="text-amber-700 text-xs font-extrabold mt-1">₹ {pendingRefundsSum.toLocaleString("en-IN")}</p>
                 </div>
               </div>
             </Card>
