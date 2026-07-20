@@ -426,7 +426,7 @@ export default function AccountingPage() {
     amount: a.totalAmount - (a.paidAmount || 0)
   }));
 
-  const tripProfitability = reportsData?.revenuePerTrip?.map((r: any) => {
+  const tripProfitability = reports?.revenuePerTrip?.map((r: any) => {
     const tripVendors = vendorAssignments.filter(v => v.tripRef?.title === r.tripName || v.tripCode === r.tripName);
     const cost = tripVendors.reduce((sum, v) => sum + v.totalAmount, 0);
     const paid = tripVendors.reduce((sum, v) => sum + (v.paidAmount || 0), 0);
