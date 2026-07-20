@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthStore, ensureGuideToken } from "@/store/auth.store";
 import { guideService, Assignment } from "@/services/guide.service";
 import { settingsService } from "@/services/settings.service";
 import { toast } from "@/components/ui/sonner";
@@ -58,6 +58,9 @@ export default function LiveTripOperationsPage() {
       // 1. Fetch settings
       const settingsData = await settingsService.get();
       setSettings(settingsData || {});
+
+      // Get Guide API Auth Token first
+      await ensureGuideToken("9999999999", "admin");
 
       // 2. Fetch assignments
       const assignList = await guideService.getAssignments();
