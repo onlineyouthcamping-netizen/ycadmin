@@ -542,6 +542,29 @@ export default function AccountingPage() {
   const cashInCount = cashTransactions.filter(t => t.type === 'Income').length;
   const cashOutCount = cashTransactions.filter(t => t.type === 'Expense').length;
 
+  // Dynamic Profit & Loss Computations
+  const plRevenue = rawTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.inflow, 0);
+  const plDirectCost = rawTransactions.filter(t => t.type === 'Expense' && t.category !== 'Utilities' && t.category !== 'Rent' && t.category !== 'Salaries').reduce((sum, t) => sum + t.outflow, 0);
+  const plOperatingCost = rawTransactions.filter(t => t.type === 'Expense' && (t.category === 'Utilities' || t.category === 'Rent' || t.category === 'Salaries')).reduce((sum, t) => sum + t.outflow, 0);
+  const plGrossProfit = plRevenue - plDirectCost;
+  const plNetProfit = plGrossProfit - plOperatingCost;
+  const plGrossMargin = plRevenue > 0 ? ((plGrossProfit / plRevenue) * 100).toFixed(2) : '0';
+  const plNetMargin = plRevenue > 0 ? ((plNetProfit / plRevenue) * 100).toFixed(2) : '0';
+
+  // Detailed breakdowns
+  const plBookingRev = rawTransactions.filter(t => t.type === 'Income' && t.category === 'Booking Payment').reduce((sum, t) => sum + t.inflow, 0);
+  const plOtherRev = rawTransactions.filter(t => t.type === 'Income' && t.category !== 'Booking Payment').reduce((sum, t) => sum + t.inflow, 0);
+  
+  const plHotelCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Hotel').reduce((sum, t) => sum + t.outflow, 0);
+  const plTransportCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Transport').reduce((sum, t) => sum + t.outflow, 0);
+  const plGuideCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Guide').reduce((sum, t) => sum + t.outflow, 0);
+  const plMiscDirectCost = plDirectCost - plHotelCost - plTransportCost - plGuideCost;
+
+  const plRentCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Rent').reduce((sum, t) => sum + t.outflow, 0);
+  const plUtilitiesCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Utilities').reduce((sum, t) => sum + t.outflow, 0);
+  const plSalariesCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Salaries').reduce((sum, t) => sum + t.outflow, 0);
+  const plMiscOperatingCost = plOperatingCost - plRentCost - plUtilitiesCost - plSalariesCost;
+
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "transactions", label: "Transactions" },
@@ -976,10 +999,10 @@ export default function AccountingPage() {
           {/* 4 KPI Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Opening Cash Balance", val: 50000, desc: "As on 01 Jul 2024", type: "neutral" },
-              { label: "Total Cash Inflow", val: 240000, desc: "18 Transactions", type: "up" },
-              { label: "Total Cash Outflow", val: 164450, desc: "25 Transactions", type: "down" },
-              { label: "Closing Cash Balance", val: 125550, desc: "As on 03 Jul 2024", type: "blue" },
+              { label: "Opening Cash Balance", val: 160000, desc: "Starting Cash", type: "neutral" },
+              { label: "Total Cash Inflow", val: totalCashIn, desc: `${cashInCount} Transactions`, type: "up" },
+              { label: "Total Cash Outflow", val: totalCashOut, desc: `${cashOutCount} Transactions`, type: "down" },
+              { label: "Closing Cash Balance", val: 160000 + totalCashIn - totalCashOut, desc: `Current Cash`, type: "blue" },
             ].map((card, i) => (
               <Card key={i} className="rounded-[4px] border border-[#E2E8F0] p-4.5 bg-white shadow-sm flex items-center gap-4">
                 <div className={cn(
@@ -1317,12 +1340,12 @@ export default function AccountingPage() {
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0]">
                     {[
-                      { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: "18,42,500.00", rec: "Yesterday", status: "Active" },
-                      { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: "6,82,300.00", rec: "Today", status: "Active" },
-                      { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: "2,48,100.00", rec: "2 Jul 2024", status: "Active" },
-                      { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: "3,12,750.00", rec: "30 Jun 2024", status: "Active" },
-                      { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: "1,25,800.00", rec: "28 Jun 2024", status: "Active" },
-                      { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: "82,500.00", rec: "Today", status: "Active" }
+                      { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: iciciBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "Yesterday", status: "Active" },
+                      { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: hdfcBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "Today", status: "Active" },
+                      { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: (248100).toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "2 Jul 2024", status: "Active" },
+                      { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: (312750).toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "30 Jun 2024", status: "Active" },
+                      { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: (125800).toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "28 Jun 2024", status: "Active" },
+                      { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: cashBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "Today", status: "Active" }
                     ].map((row, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                         <td className="p-3 text-center border-r border-slate-100">
@@ -2006,11 +2029,11 @@ export default function AccountingPage() {
           {/* Metrics Cards Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {[
-              { label: "Total Revenue", val: "42,18,500", trend: "+18.45%", type: "up" },
-              { label: "Total Direct Cost", val: "26,74,800", trend: "+12.32%", type: "up" },
-              { label: "Gross Profit", val: "15,43,700", sub: "Gross Profit Margin 36.62%", type: "neutral" },
-              { label: "Total Operating Expense", val: "6,72,300", trend: "+9.41%", type: "up" },
-              { label: "Net Profit", val: "8,71,400", sub: "Net Profit Margin 20.64%", type: "neutral" }
+              { label: "Total Revenue", val: plRevenue.toLocaleString("en-IN"), trend: "+18.45%", type: "up" },
+              { label: "Total Direct Cost", val: plDirectCost.toLocaleString("en-IN"), trend: "+12.32%", type: "up" },
+              { label: "Gross Profit", val: plGrossProfit.toLocaleString("en-IN"), sub: `Gross Profit Margin ${plGrossMargin}%`, type: "neutral" },
+              { label: "Total Operating Expense", val: plOperatingCost.toLocaleString("en-IN"), trend: "+9.41%", type: "up" },
+              { label: "Net Profit", val: plNetProfit.toLocaleString("en-IN"), sub: `Net Profit Margin ${plNetMargin}%`, type: "neutral" }
             ].map((card, i) => (
               <Card key={i} className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide truncate">{card.label}</div>
@@ -2037,23 +2060,19 @@ export default function AccountingPage() {
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">Income</h3>
                 <div className="mt-3.5 space-y-3 text-[11.5px] font-semibold text-slate-650">
                   {[
-                    { p: "Booking Revenue", a: "28,45,000" },
-                    { p: "Customized Trips", a: "6,25,000" },
-                    { p: "International Tours", a: "4,85,000" },
-                    { p: "School / College Tours", a: "1,95,000" },
-                    { p: "Corporate Tours", a: "65,000" },
-                    { p: "Other Income", a: "3,000" }
+                    { p: "Booking Revenue", a: plBookingRev.toLocaleString("en-IN") },
+                    { p: "Other Income", a: plOtherRev.toLocaleString("en-IN") }
                   ].map((row, idx) => (
                     <div key={idx} className="flex justify-between items-center">
                       <span>{row.p}</span>
-                      <span className="text-slate-800 font-bold">{row.a}</span>
+                      <span className="text-slate-800 font-bold">₹ {row.a}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="flex justify-between items-center border-t pt-3 mt-4 text-xs font-black text-slate-850">
                 <span className="text-emerald-650">Total Income</span>
-                <span className="text-emerald-650">₹ 42,18,500</span>
+                <span className="text-emerald-650">₹ {plRevenue.toLocaleString("en-IN")}</span>
               </div>
             </Card>
 
@@ -2063,27 +2082,21 @@ export default function AccountingPage() {
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">Direct Trip Expenses (Cost of Sales)</h3>
                 <div className="mt-3.5 space-y-3 text-[11.5px] font-semibold text-slate-650">
                   {[
-                    { p: "Hotels", a: "9,45,800" },
-                    { p: "Tempo / Transport", a: "6,28,500" },
-                    { p: "Food", a: "5,12,300" },
-                    { p: "Guide Charges", a: "2,85,000" },
-                    { p: "Activities", a: "1,25,600" },
-                    { p: "Train / Flight Tickets", a: "85,000" },
-                    { p: "Permit Fees", a: "42,600" },
-                    { p: "Entry Tickets", a: "28,500" },
-                    { p: "Vendor Charges", a: "15,500" },
-                    { p: "Misc. Trip Expenses", a: "46,000" }
+                    { p: "Hotels", a: plHotelCost.toLocaleString("en-IN") },
+                    { p: "Tempo / Transport", a: plTransportCost.toLocaleString("en-IN") },
+                    { p: "Guide Charges", a: plGuideCost.toLocaleString("en-IN") },
+                    { p: "Misc. Trip Expenses", a: plMiscDirectCost.toLocaleString("en-IN") }
                   ].map((row, idx) => (
                     <div key={idx} className="flex justify-between items-center">
                       <span>{row.p}</span>
-                      <span className="text-slate-800 font-bold">{row.a}</span>
+                      <span className="text-slate-800 font-bold">₹ {row.a}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="flex justify-between items-center border-t pt-3 mt-4 text-xs font-black text-slate-850">
                 <span className="text-red-500">Total Direct Cost</span>
-                <span className="text-red-500">₹ 26,74,800</span>
+                <span className="text-red-500">₹ {plDirectCost.toLocaleString("en-IN")}</span>
               </div>
             </Card>
 
@@ -2093,31 +2106,21 @@ export default function AccountingPage() {
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">Office & Operating Expenses</h3>
                 <div className="mt-3.5 space-y-3 text-[11.5px] font-semibold text-slate-650">
                   {[
-                    { p: "Salaries", a: "2,35,000" },
-                    { p: "Marketing", a: "1,45,000" },
-                    { p: "Facebook Ads", a: "1,20,000" },
-                    { p: "Office Rent", a: "65,000" },
-                    { p: "Electricity", a: "22,500" },
-                    { p: "Internet", a: "12,500" },
-                    { p: "Software & Subscriptions", a: "18,800" },
-                    { p: "Office Supplies", a: "15,300" },
-                    { p: "Printing & Stationery", a: "8,700" },
-                    { p: "Travel & Conveyance", a: "6,500" },
-                    { p: "Tea & Refreshments", a: "5,000" },
-                    { p: "Repairs & Maintenance", a: "7,000" },
-                    { p: "Insurance", a: "5,000" },
-                    { p: "Miscellaneous", a: "5,000" }
+                    { p: "Salaries", a: plSalariesCost.toLocaleString("en-IN") },
+                    { p: "Office Rent", a: plRentCost.toLocaleString("en-IN") },
+                    { p: "Electricity & Utilities", a: plUtilitiesCost.toLocaleString("en-IN") },
+                    { p: "Miscellaneous", a: plMiscOperatingCost.toLocaleString("en-IN") }
                   ].map((row, idx) => (
                     <div key={idx} className="flex justify-between items-center">
                       <span>{row.p}</span>
-                      <span className="text-slate-800 font-bold">{row.a}</span>
+                      <span className="text-slate-800 font-bold">₹ {row.a}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="flex justify-between items-center border-t pt-3 mt-4 text-xs font-black text-slate-855">
                 <span className="text-amber-600">Total Operating Expenses</span>
-                <span className="text-amber-600">₹ 6,72,300</span>
+                <span className="text-amber-600">₹ {plOperatingCost.toLocaleString("en-IN")}</span>
               </div>
             </Card>
 
@@ -2128,27 +2131,27 @@ export default function AccountingPage() {
                 <div className="space-y-3.5 text-[11px] font-semibold text-slate-650">
                   <div className="flex justify-between items-center">
                     <span>Total Revenue</span>
-                    <span className="font-bold text-slate-800">₹ 42,18,500</span>
+                    <span className="font-bold text-slate-800">₹ {plRevenue.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Less: Total Direct Cost</span>
-                    <span className="font-bold text-slate-800">- ₹ 26,74,800</span>
+                    <span className="font-bold text-slate-850">- ₹ {plDirectCost.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between items-center border-t pt-2.5 font-bold text-blue-600">
                     <span>Gross Profit</span>
-                    <span>₹ 15,43,700</span>
+                    <span>₹ {plGrossProfit.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold pl-2">
                     <span>Less: Operating Expenses</span>
-                    <span>- ₹ 6,72,300</span>
+                    <span>- ₹ {plOperatingCost.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between items-center border-t pt-2.5 font-extrabold text-emerald-650 text-xs">
                     <span>Net Profit</span>
-                    <span>₹ 8,71,400</span>
+                    <span>₹ {plNetProfit.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between items-center text-[10.5px] text-slate-500 font-bold">
                     <span>Net Profit Margin</span>
-                    <span>20.64%</span>
+                    <span>{plNetMargin}%</span>
                   </div>
                 </div>
               </Card>

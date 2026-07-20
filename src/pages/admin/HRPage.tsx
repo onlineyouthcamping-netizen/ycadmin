@@ -237,11 +237,16 @@ export default function HRPage() {
     const onLeave = employees.filter(e => e.attendanceToday === 'On Leave').length;
     const late = employees.filter(e => e.attendanceToday === 'Late').length;
     const pendingLeaves = leaveRequests.filter(r => r.status === 'Submitted').length;
-    const payrollDue = employees.reduce((acc, curr) => acc + curr.salary, 0);
+    const payrollDue = employees.reduce((acc, curr) => acc + (curr.salary || 0), 0);
     const pendingClaims = reimbursements.filter(c => c.status === 'Submitted').length;
+    
+    // Dynamic calculations from state
+    const calculatedIncentives = commissions.filter(c => c.status === 'Approved').reduce((acc, curr) => acc + (curr.commissionAmount || 0), 0);
+    const approvedClaims = reimbursements.filter(c => c.status === 'Approved').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const estimatedCost = payrollDue + calculatedIncentives + approvedClaims;
 
-    return { total, present, absent, onLeave, late, pendingLeaves, payrollDue, pendingClaims };
-  }, [employees, leaveRequests, reimbursements]);
+    return { total, present, absent, onLeave, late, pendingLeaves, payrollDue, pendingClaims, calculatedIncentives, approvedClaims, estimatedCost };
+  }, [employees, leaveRequests, reimbursements, commissions]);
 
   // Handle Employee Check-In
   const handleCheckIn = () => {
@@ -677,15 +682,15 @@ export default function HRPage() {
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500 font-semibold">Calculated Incentives:</span>
-                      <span className="font-extrabold font-mono text-slate-800">₹32,080</span>
+                      <span className="font-extrabold font-mono text-slate-800">₹{stats.calculatedIncentives.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500 font-semibold">Approved Claims:</span>
-                      <span className="font-extrabold font-mono text-slate-800">₹6,350</span>
+                      <span className="font-extrabold font-mono text-slate-800">₹{stats.approvedClaims.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="border-t pt-1.5 flex justify-between text-xs">
                       <span className="text-slate-800 font-bold">Estimated Cost:</span>
-                      <span className="font-extrabold font-mono text-orange-600">₹{(stats.payrollDue + 38430).toLocaleString('en-IN')}</span>
+                      <span className="font-extrabold font-mono text-orange-600">₹{stats.estimatedCost.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </div>
@@ -696,20 +701,19 @@ export default function HRPage() {
                     <Sparkles className="w-4 h-4 text-slate-500" /> Anniversaries & Annoucements
                   </h4>
                   <div className="space-y-2.5">
-                    <div className="flex items-start gap-2.5">
-                      <div className="h-6.5 w-6.5 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center font-bold text-[9px] shrink-0">BD</div>
-                      <div>
-                        <p className="text-xs text-slate-700 font-bold">Suru Sengupta (Sales)</p>
-                        <p className="text-[9px] text-slate-500">Upcoming birthday on August 14th</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <div className="h-6.5 w-6.5 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold text-[9px] shrink-0">WA</div>
-                      <div>
-                        <p className="text-xs text-slate-700 font-bold">Arjun Mehta (Operations)</p>
-                        <p className="text-[9px] text-slate-500">Completing 3 Years Anniversary in 2 days</p>
-                      </div>
-                    </div>
+                    {employees.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No upcoming anniversaries or announcements.</p>
+                    ) : (
+                      employees.slice(0, 3).map((emp, idx) => (
+                        <div key={idx} className="flex items-start gap-2.5">
+                          <div className="h-6.5 w-6.5 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center font-bold text-[9px] shrink-0">BD</div>
+                          <div>
+                            <p className="text-xs text-slate-700 font-bold">{emp.name} ({emp.department})</p>
+                            <p className="text-[9px] text-slate-500">Joined on {emp.joiningDate}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -1557,7 +1561,7 @@ export default function HRPage() {
                 
                 <div className="p-4 bg-slate-50 border rounded space-y-2">
                   <h4 className="font-bold text-slate-700">Monthly Payroll Cost Payouts</h4>
-                  <p className="text-2xl font-black text-slate-900">₹{(stats.payrollDue + 38430).toLocaleString('en-IN')}</p>
+                  <p className="text-2xl font-black text-slate-900">₹{stats.estimatedCost.toLocaleString('en-IN')}</p>
                   <p className="text-[10px] text-slate-500">Calculated sum of basic pay + incentives + claims</p>
                 </div>
 
