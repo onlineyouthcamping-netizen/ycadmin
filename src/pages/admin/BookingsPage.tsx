@@ -16,8 +16,9 @@ import { useAuthStore } from "@/store/auth.store";
 import { trainTicketService } from "@/services/trainTicket.service";
 import EmailComposerDrawer from "@/components/admin/EmailComposerDrawer";
 
-import { TripManager } from @/components/bookings/TripManagerModal;
-import { ConfirmModal } from @/components/bookings/ConfirmModal;
+import { TripManager } from "@/components/bookings/TripManagerModal";
+import { ConfirmModal } from "@/components/bookings/ConfirmModal";
+import { BookingsToolbar } from "@/components/bookings/BookingsToolbar";
 // Booking source helper
 const getBookingMetaData = (booking: Booking) => {
   const salesAdminId = (booking as any).salesAdminId as string | undefined;
@@ -549,13 +550,8 @@ export default function BookingsPage() {
         setShowTrips={setShowTrips}
       />
 
-      )}
-
       {/* MAIN CONTAINER */}
       <div className="zoho-main flex flex-1 overflow-hidden">
-        {/* FILTER PANEL */}
-
-
         {/* CONTENT & TABLE AREA */}
         <div className="zoho-content-left flex-1 flex flex-col overflow-hidden bg-white">
           {/* APPLIED FILTER INDICATOR */}
