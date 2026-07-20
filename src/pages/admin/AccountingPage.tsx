@@ -122,8 +122,8 @@ export default function AccountingPage() {
     notes: ""
   });
 
-  // Office Expenses State
   const [officeExpenses, setOfficeExpenses] = useState<any[]>([]);
+  const [selectedBankIdx, setSelectedBankIdx] = useState(0);
 
   // ── Load entries ──
   const load = useCallback(async () => {
@@ -1362,41 +1362,48 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0]">
-                    {[
-                      { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: iciciBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "Yesterday", status: "Active" },
-                      { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: hdfcBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "Today", status: "Active" },
-                      { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: (248100).toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "2 Jul 2024", status: "Active" },
-                      { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: (312750).toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "30 Jun 2024", status: "Active" },
-                      { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: (125800).toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "28 Jun 2024", status: "Active" },
-                      { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: cashBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 }), rec: "Today", status: "Active" }
-                    ].map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-3 text-center border-r border-slate-100">
-                          <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[9px] uppercase">
-                            {row.name.substring(0, 2)}
-                          </div>
-                        </td>
-                        <td className="p-3 border-r border-slate-100 font-bold text-slate-800">{row.name}</td>
-                        <td className="p-3 border-r border-slate-100 text-slate-650 font-semibold">{row.nick}</td>
-                        <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.num}</td>
-                        <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.holder}</td>
-                        <td className="p-3 border-r border-slate-100 text-slate-500 font-semibold">{row.type}</td>
-                        <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.branch}</td>
-                        <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.ifsc}</td>
-                        <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-650">₹ {row.bal}</td>
-                        <td className="p-3 border-r border-slate-100 text-slate-500 font-medium">{row.rec}</td>
-                        <td className="p-3 border-r border-slate-100">
-                          <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider block w-fit">ACTIVE</span>
-                        </td>
-                        <td className="p-3 text-center">
-                          <div className="flex justify-center items-center gap-1.5">
-                            <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Eye className="w-3.5 h-3.5" /></button>
-                            <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Edit3 className="w-3.5 h-3.5" /></button>
-                            <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Download className="w-3.5 h-3.5" /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      const bankAccountsList = [
+                        { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: iciciBalance, openBal: 585300, rec: "Yesterday", status: "Active" },
+                        { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: hdfcBalance, openBal: 325500, rec: "Today", status: "Active" },
+                        { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: 248100, openBal: 248100, rec: "2 Jul 2024", status: "Active" },
+                        { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: 312750, openBal: 312750, rec: "30 Jun 2024", status: "Active" },
+                        { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: 125800, openBal: 125800, rec: "28 Jun 2024", status: "Active" },
+                        { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: cashBalance, openBal: 160000, rec: "Today", status: "Active" }
+                      ];
+                      return bankAccountsList.map((row, idx) => (
+                        <tr
+                          key={idx}
+                          onClick={() => setSelectedBankIdx(idx)}
+                          className={cn("hover:bg-slate-50/50 transition-colors cursor-pointer", selectedBankIdx === idx && "bg-slate-100/50")}
+                        >
+                          <td className="p-3 text-center border-r border-slate-100">
+                            <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[9px] uppercase">
+                              {row.name.substring(0, 2)}
+                            </div>
+                          </td>
+                          <td className="p-3 border-r border-slate-100 font-bold text-slate-800">{row.name}</td>
+                          <td className="p-3 border-r border-slate-100 text-slate-650 font-semibold">{row.nick}</td>
+                          <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.num}</td>
+                          <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.holder}</td>
+                          <td className="p-3 border-r border-slate-100 text-slate-500 font-semibold">{row.type}</td>
+                          <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">{row.branch}</td>
+                          <td className="p-3 border-r border-slate-100 font-mono text-slate-500">{row.ifsc}</td>
+                          <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-650">₹ {row.bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                          <td className="p-3 border-r border-slate-100 text-slate-500 font-medium">{row.rec}</td>
+                          <td className="p-3 border-r border-slate-100">
+                            <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider block w-fit">ACTIVE</span>
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="flex justify-center items-center gap-1.5">
+                              <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Eye className="w-3.5 h-3.5" /></button>
+                              <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Edit3 className="w-3.5 h-3.5" /></button>
+                              <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Download className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -1415,99 +1422,116 @@ export default function AccountingPage() {
             </div>
 
             {/* Right Side Widgets Sidebar Panel */}
-            <div className="w-full xl:w-80 space-y-6 shrink-0">
-              {/* Bank Details Widget */}
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-red-50 text-red-650 flex items-center justify-center font-bold text-xs uppercase">IC</div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-800 text-[12.5px] leading-tight">ICICI Bank</h4>
-                      <p className="text-[10px] text-slate-450 font-semibold mt-0.5">Operations Account</p>
-                    </div>
-                  </div>
-                  <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.2 rounded-full uppercase tracking-wider">Active</span>
-                </div>
+            {(() => {
+              const bankAccountsList = [
+                { code: "ICICI", name: "ICICI Bank", nick: "Operations Account", num: "****9482", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Main Branch", ifsc: "ICIC000124", bal: iciciBalance, openBal: 585300, rec: "Yesterday", status: "Active" },
+                { code: "HDFC", name: "HDFC Bank", nick: "Customer Collection", num: "****8234", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Gota Branch", ifsc: "HDFC000556", bal: hdfcBalance, openBal: 325500, rec: "Today", status: "Active" },
+                { code: "Axis", name: "Axis Bank", nick: "Vendor Payments", num: "****1872", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Navrangpura", ifsc: "UTIB0001245", bal: 248100, openBal: 248100, rec: "2 Jul 2024", status: "Active" },
+                { code: "SBI", name: "State Bank of India", nick: "Salary Account", num: "****6711", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad CG Road", ifsc: "SBIN0007881", bal: 312750, openBal: 312750, rec: "30 Jun 2024", status: "Active" },
+                { code: "Kotak", name: "Kotak Mahindra Bank", nick: "Tax & Compliance", num: "****3321", holder: "YouthCamping Travel Pvt. Ltd.", type: "Current Account", branch: "Ahmedabad Satellite", ifsc: "KKBK0001752", bal: 125800, openBal: 125800, rec: "28 Jun 2024", status: "Active" },
+                { code: "Cash", name: "Cash In Hand", nick: "Cash Account (Office)", num: "OFFICE CASH", holder: "Office Cash", type: "Cash Account", branch: "Ahmedabad Office", ifsc: "—", bal: cashBalance, openBal: 160000, rec: "Today", status: "Active" }
+              ];
+              const activeBank = bankAccountsList[selectedBankIdx] || bankAccountsList[0];
+              const activeBankDocs = [
+                { name: `${activeBank.code}_PAN_Card.pdf`, size: "1.2 MB", date: "12 May 2024" },
+                { name: `${activeBank.code}_Aadhaar_Card.pdf`, size: "1.1 MB", date: "12 May 2024" },
+                { name: `${activeBank.code}_Cancelled_Cheque.pdf`, size: "0.8 MB", date: "12 May 2024" },
+                { name: `${activeBank.code}_Bank_Agreement.pdf`, size: "1.5 MB", date: "12 May 2024" },
+                { name: `${activeBank.code}_Statement_May.pdf`, size: "2.4 MB", date: "03 Jun 2024" }
+              ];
 
-                <div className="space-y-1 text-slate-600 text-[11px] font-medium font-mono">
-                  <p>Branch Code: ****9482</p>
-                </div>
-
-                <div className="space-y-2 border-t border-slate-100 pt-4 text-[11.5px] font-semibold text-slate-650">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-450 font-semibold">Current Balance</span>
-                    <span className="text-emerald-650 font-extrabold">₹ 18,42,500.00</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-450 font-semibold">Opening Balance</span>
-                    <span className="text-slate-800 font-bold">₹ 10,00,000.00</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-450 font-semibold">Account Type</span>
-                    <span className="text-slate-800 font-bold">Current Account</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-450 font-semibold">Branch</span>
-                    <span className="text-slate-800 font-bold truncate max-w-[150px]">Ahmedabad Main Branch</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-450 font-semibold">IFSC Code</span>
-                    <span className="text-slate-800 font-bold font-mono">ICIC000124</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-450 font-semibold">Currency</span>
-                    <span className="text-slate-800 font-bold">INR</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-450 font-semibold">Last Reconciled</span>
-                    <span className="text-slate-800 font-bold">02 Jul 2024 by Suresh Bhai</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 pt-4 space-y-2">
-                  <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" /> View Ledger
-                  </button>
-                  <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                    <Download className="w-3.5 h-3.5 text-slate-400" /> Import Statement
-                  </button>
-                  <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                    <RefreshCw className="w-3.5 h-3.5 text-slate-400" /> Reconcile Account
-                  </button>
-                  <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                    <Download className="w-3.5 h-3.5 text-slate-400" /> Download Ledger
-                  </button>
-                </div>
-              </Card>
-
-              {/* Documents Checklist Panel */}
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
-                <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="text-xs font-bold text-slate-750 uppercase tracking-wider">Documents (5)</h3>
-                  <button className="text-[10px] font-bold text-blue-600 hover:underline uppercase">View All</button>
-                </div>
-                <div className="space-y-3.5 text-xs font-semibold">
-                  {[
-                    { name: "PAN Card.pdf", size: "1.2 MB", date: "12 May 2024" },
-                    { name: "Aadhaar Card.pdf", size: "1.1 MB", date: "12 May 2024" },
-                    { name: "Cancelled Cheque.pdf", size: "0.8 MB", date: "12 May 2024" },
-                    { name: "Bank Agreement.pdf", size: "1.5 MB", date: "12 May 2024" },
-                    { name: "Bank Statement (May).pdf", size: "2.4 MB", date: "03 Jun 2024" }
-                  ].map((doc, idx) => (
-                    <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-red-500 shrink-0" />
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-700 truncate max-w-[130px]">{doc.name}</span>
-                          <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{doc.date} · {doc.size}</span>
+              return (
+                <div className="w-full xl:w-80 space-y-6 shrink-0">
+                  {/* Bank Details Widget */}
+                  <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-650 flex items-center justify-center font-bold text-xs uppercase">
+                          {activeBank.name.substring(0, 2)}
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-slate-800 text-[12.5px] leading-tight">{activeBank.name}</h4>
+                          <p className="text-[10px] text-slate-455 font-semibold mt-0.5">{activeBank.nick}</p>
                         </div>
                       </div>
-                      <button className="h-7 w-7 text-slate-450 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Download className="w-3 h-3" /></button>
+                      <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.2 rounded-full uppercase tracking-wider">Active</span>
                     </div>
-                  ))}
+
+                    <div className="space-y-1 text-slate-600 text-[11px] font-medium font-mono">
+                      <p>Branch Code: {activeBank.num}</p>
+                    </div>
+
+                    <div className="space-y-2 border-t border-slate-100 pt-4 text-[11.5px] font-semibold text-slate-650">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-450 font-semibold">Current Balance</span>
+                        <span className="text-emerald-650 font-extrabold">₹ {activeBank.bal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-450 font-semibold">Opening Balance</span>
+                        <span className="text-slate-800 font-bold">₹ {activeBank.openBal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-450 font-semibold">Account Type</span>
+                        <span className="text-slate-800 font-bold">{activeBank.type}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-455 font-semibold">Branch</span>
+                        <span className="text-slate-800 font-bold truncate max-w-[150px]">{activeBank.branch}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-450 font-semibold">IFSC Code</span>
+                        <span className="text-slate-800 font-bold font-mono">{activeBank.ifsc}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-450 font-semibold">Currency</span>
+                        <span className="text-slate-800 font-bold">INR</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-450 font-semibold">Last Reconciled</span>
+                        <span className="text-slate-800 font-bold">{activeBank.rec} by Suresh Bhai</span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-4 space-y-2">
+                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
+                        <Building2 className="w-3.5 h-3.5 text-slate-400" /> View Ledger
+                      </button>
+                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
+                        <Download className="w-3.5 h-3.5 text-slate-400" /> Import Statement
+                      </button>
+                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
+                        <RefreshCw className="w-3.5 h-3.5 text-slate-400" /> Reconcile Account
+                      </button>
+                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
+                        <Download className="w-3.5 h-3.5 text-slate-400" /> Download Ledger
+                      </button>
+                    </div>
+                  </Card>
+
+                  {/* Documents Checklist Panel */}
+                  <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <h3 className="text-xs font-bold text-slate-755 uppercase tracking-wider">Documents ({activeBankDocs.length})</h3>
+                      <button className="text-[10px] font-bold text-blue-600 hover:underline uppercase">View All</button>
+                    </div>
+                    <div className="space-y-3.5 text-xs font-semibold">
+                      {activeBankDocs.map((doc, idx) => (
+                        <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="font-bold text-slate-700 truncate max-w-[130px]">{doc.name}</span>
+                              <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{doc.date} · {doc.size}</span>
+                            </div>
+                          </div>
+                          <button className="h-7 w-7 text-slate-450 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"><Download className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
                 </div>
-              </Card>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
