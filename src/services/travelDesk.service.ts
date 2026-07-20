@@ -457,18 +457,6 @@ export const travelDeskService = {
   },
 
   // ── CONTENT MANAGEMENT & APPROVALS (STAGE 4) ──
-  getArticles: async (tripId: string, signal?: AbortSignal): Promise<any[]> => {
-    const res = await api.get(`/travel-desk/${tripId}/articles`, { signal });
-    return res.data.data;
-  },
-  createArticle: async (tripId: string, data: any): Promise<any> => {
-    const res = await api.post(`/travel-desk/${tripId}/articles`, data);
-    return res.data.data;
-  },
-  updateArticle: async (tripId: string, articleId: string, data: any): Promise<any> => {
-    const res = await api.patch(`/travel-desk/${tripId}/articles/${articleId}`, data);
-    return res.data.data;
-  },
   requestArticleChanges: async (tripId: string, articleId: string, comment: string): Promise<any> => {
     const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/request-changes`, { comment });
     return res.data.data;
