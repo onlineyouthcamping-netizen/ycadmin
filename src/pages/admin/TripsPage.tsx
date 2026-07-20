@@ -120,7 +120,7 @@ export default function TripsPage() {
     { key: "title", header: "Trip", render: (t: Trip) => {
       if (!t) return null;
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-[250px]">
           {(t.heroImage || t.images?.[0]) && (
             <img 
               src={t.heroImage || t.images?.[0]} 
@@ -140,17 +140,17 @@ export default function TripsPage() {
     { key: "tripCode", header: "Trip Code", render: (t: Trip) => {
       if (!t) return null;
       return (
-        <span className="font-mono text-xs font-bold text-[#F97316]">
+        <span className="font-mono text-xs font-bold text-[#F97316] whitespace-nowrap">
           {t.tripCode || t.id || "N/A"}
         </span>
       );
     }},
     { key: "category", header: "Category", render: (t: Trip) => (
-      <span className="text-slate-650 font-semibold capitalize">{t?.category?.replace(/-/g, ' ') || "N/A"}</span>
+      <span className="text-slate-650 font-semibold capitalize whitespace-nowrap">{t?.category?.replace(/-/g, ' ') || "N/A"}</span>
     )},
     { key: "price", header: "Price", render: (t: Trip) => {
       const price = Number(t?.price);
-      return <span className="font-bold text-slate-800">₹{isNaN(price) ? '0' : price.toLocaleString()}</span>;
+      return <span className="font-bold text-slate-800 whitespace-nowrap">₹{isNaN(price) ? '0' : price.toLocaleString()}</span>;
     }},
     { key: "order", header: "Order", render: (t: Trip) => (
       <span className="font-bold text-[#F97316]">{t.order || 0}</span>

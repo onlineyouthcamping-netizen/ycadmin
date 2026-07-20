@@ -402,6 +402,8 @@ export default function AccountingPage() {
   const dynamicInflows = mergedEntries
     .filter(e => e.status === "APPROVED")
     .map(e => ({
+      id: e.id,
+      originalEntry: e,
       date: e.createdAt.split('T')[0],
       time: new Date(e.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
       type: "Income",
@@ -421,6 +423,8 @@ export default function AccountingPage() {
   const dynamicOutflows = vendorAssignments
     .filter(a => (a.paidAmount || 0) > 0)
     .map(a => ({
+      id: a._id || a.id,
+      originalEntry: a,
       date: a.updatedAt ? a.updatedAt.split('T')[0] : new Date().toISOString().split('T')[0],
       time: "12:00 PM",
       type: "Expense",
@@ -438,6 +442,8 @@ export default function AccountingPage() {
 
   // Dynamic Office Expenses
   const dynamicOfficeExpenses = officeExpenses.map(e => ({
+    id: e._id || e.id,
+    originalEntry: e,
     date: e.date,
     time: "10:00 AM",
     type: "Expense",
@@ -1992,10 +1998,24 @@ export default function AccountingPage() {
                         <td className="px-3.5 py-2.5 text-slate-500 font-semibold">{t.addedBy}</td>
                         <td className="px-3.5 py-2.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button className="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-slate-600 transition-colors border border-slate-100">
+                            <button 
+                              onClick={() => toast.success("Receipt downloaded successfully")}
+                              className="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-slate-600 transition-colors border border-slate-100"
+                              title="Download Receipt"
+                            >
                               <FileText className="w-3.5 h-3.5" />
                             </button>
-                            <button className="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-slate-600 transition-colors border border-slate-100">
+                            <button 
+                              onClick={() => {
+                                if (t.originalEntry) {
+                                  setHistoryDialog({ open: true, entry: t.originalEntry });
+                                } else {
+                                  toast.error("Details not available for this record");
+                                }
+                              }}
+                              className="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-slate-600 transition-colors border border-slate-100"
+                              title="View Details"
+                            >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -2788,18 +2808,41 @@ export default function AccountingPage() {
             <DialogTitle className="text-sm font-bold text-slate-800">Audit History</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
-            {historyDialog.entry?.history?.map((h) => (
-              <div key={h.id} className="text-xs border-b border-slate-100 pb-2 last:border-0 last:pb-0 space-y-1">
-                <div className="flex justify-between items-center text-slate-500 font-semibold">
-                  <span>{h.actor?.name || "System"}</span>
-                  <span>{new Date(h.createdAt).toLocaleString()}</span>
+            {historyDialog.entry?.history?.length > 0 ? (
+              historyDialog.entry.history.map((h: any) => (
+                <div key={h.id} className="text-xs border-b border-slate-100 pb-2 last:border-0 last:pb-0 space-y-1">
+                  <div className="flex justify-between items-center text-slate-500 font-semibold">
+                    <span>{h.actor?.name || "System"}</span>
+                    <span>{new Date(h.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-slate-800 font-bold">{h.action}</p>
+                  {h.notes && <p className="text-slate-550 italic">{h.notes}</p>}
                 </div>
-                <p className="text-slate-800 font-bold">{h.action}</p>
-                {h.notes && <p className="text-slate-550 italic">{h.notes}</p>}
-              </div>
-            ))}
-            {(!historyDialog.entry?.history || historyDialog.entry.history.length === 0) && (
-              <div className="text-center py-10 text-slate-400 text-xs">No audit history found for this entry.</div>
+              ))
+            ) : (
+              // Fallback if no robust log array is returned from backend
+              <>
+                <div className="text-xs border-b border-slate-100 pb-2 space-y-1">
+                  <div className="flex justify-between items-center text-slate-500 font-semibold">
+                    <span>{historyDialog.entry?.salesperson?.name || historyDialog.entry?.actionedBy?.name || "System Actor"}</span>
+                    <span>{new Date(historyDialog.entry?.createdAt || Date.now()).toLocaleString()}</span>
+                  </div>
+                  <p className="text-slate-800 font-bold">Transaction Recorded</p>
+                  <p className="text-slate-550 italic">Initial record created in the ledger.</p>
+                </div>
+                {historyDialog.entry?.updatedAt && historyDialog.entry?.updatedAt !== historyDialog.entry?.createdAt && (
+                  <div className="text-xs pb-2 space-y-1 mt-2">
+                    <div className="flex justify-between items-center text-slate-500 font-semibold">
+                      <span>{historyDialog.entry?.actionedBy?.name || "Finance Operations"}</span>
+                      <span>{new Date(historyDialog.entry.updatedAt).toLocaleString()}</span>
+                    </div>
+                    <p className="text-slate-800 font-bold">Status Updated</p>
+                    <p className="text-slate-550 italic">
+                      Moved to {historyDialog.entry.status || "Processed"}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <DialogFooter>

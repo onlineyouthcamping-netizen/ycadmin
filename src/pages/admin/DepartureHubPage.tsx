@@ -26,6 +26,7 @@ import DeparturePayments from "@/components/admin/DeparturePayments";
 import DepartureReports from "@/components/admin/DepartureReports";
 import DepartureTasks from "@/components/admin/DepartureTasks";
 import DepartureTicketing from "@/components/admin/DepartureTicketing";
+import StationPaymentCollection from "@/components/admin/StationPaymentCollection";
 import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
@@ -3138,7 +3139,8 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     { id:"tasks",          label:"Tasks",      badge: computedTasks.filter(t => t.status !== "COMPLETED").length },
     { id:"documents",      label:"Documents",  badge: computedDocuments.length },
     { id:"communication",  label:"Communication" },
-    { id:"reports",        label:"Reports" },
+    { id:"reports",          label:"Reports" },
+    { id:"stationpayments",  label:"Station Payments", badge: (() => { try { return 0; } catch { return 0; } })() },
   ];
 
   // CTA label by tab
@@ -3153,7 +3155,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased">
       {hasDateMismatch && (
-        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center gap-2 text-xs font-semibold text-[#B45309] shrink-0">
+        <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-2.5 flex items-center gap-2 text-xs font-semibold text-[#B45309] shrink-0">
           <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
           <span>
             Warning: The departure date (14 Jul 2026) occurs before the creation date (15 Jun 2027) of this departure workspace. Please verify the scheduling.
@@ -3164,7 +3166,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
       <div className="bg-white border-b border-[#E2E8F0] shadow-xs">
         {/* Breadcrumb */}
-        <div className="px-6 pt-3 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+        <div className="px-4 sm:px-6 pt-3 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
           <span className="hover:text-slate-600 cursor-pointer">Departures Hub</span>
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="hover:text-slate-600 cursor-pointer">{tripId}</span>
@@ -3173,7 +3175,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         </div>
 
         {/* Title row */}
-        <div className="px-6 pt-2 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="px-4 sm:px-6 pt-2 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-[4px] bg-[#FFF0E6] flex items-center justify-center text-[#F97316]">
               <Compass className="w-5 h-5" />
@@ -3189,22 +3191,22 @@ const [sharingPref, setSharingPref] = useState<string>("3");
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 relative">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0 relative w-full sm:w-auto mt-3 sm:mt-0">
             <button
               onClick={() => { setEditGuideName(leadGuideName); setEditDepartureOpen(true); }}
-              className="text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 transition-colors"
+              className="text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 sm:py-1.5 transition-colors w-full"
             >
               Edit Departure
             </button>
-            <div className="relative">
+            <div className="relative w-full">
               <button
                 onClick={() => setMoreActionsOpen(!moreActionsOpen)}
-                className="text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 flex items-center gap-1 transition-colors"
+                className="w-full justify-center text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 sm:py-1.5 flex items-center gap-1 transition-colors"
               >
                 More Actions <ChevronDown className="w-3 h-3" />
               </button>
               {moreActionsOpen && (
-                <div className="absolute right-0 mt-1 w-40 bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50 text-left">
+                <div className="absolute right-0 mt-1 w-full sm:w-40 bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50 text-left">
                   <button
                     onClick={() => { handlePrintManifest(); setMoreActionsOpen(false); }}
                     className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
@@ -3251,7 +3253,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   toast.success(`${ctaLabel[activeTab] || "Action"} triggered!`);
                 }
               }}
-              className="text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-4 py-1.5 flex items-center gap-1.5 transition-colors shadow-sm"
+              className="col-span-2 sm:col-span-1 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-4 py-2 sm:py-1.5 flex items-center justify-center gap-1.5 transition-colors shadow-sm w-full"
             >
               <Plus className="w-3.5 h-3.5" />
               {ctaLabel[activeTab] || "Action"}
@@ -3260,16 +3262,16 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         </div>
 
         {/* Meta row */}
-        <div className="px-6 py-2.5 flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-semibold text-slate-500 border-t border-slate-100 mt-2">
+        <div className="px-4 sm:px-6 py-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] font-semibold text-slate-500 border-t border-slate-100 mt-2">
           <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-slate-400" /> {dateAndDurationLabel}</span>
           <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-400" /> {passengerStats.total} / {tripDetails?.maxGroupSize || 30} Participants</span>
           <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-400" /> Lead Guide: {leadGuideName}</span>
           <span className="flex items-center gap-1.5"><Bus className="w-3.5 h-3.5 text-slate-400" /> {transportVehiclesLabel}</span>
-          <span className="ml-auto text-slate-400 hidden lg:block">Created by Suresh Bhai on 15 Jun 2027</span>
+          <span className="w-full sm:w-auto sm:ml-auto text-slate-400">Created by Suresh Bhai on 15 Jun 2027</span>
         </div>
 
         {/* Tab bar */}
-        <div className="px-6 flex gap-0 text-[11.5px] font-semibold overflow-x-auto no-scrollbar border-t border-slate-100">
+        <div className="px-4 sm:px-6 flex gap-0 text-[11.5px] font-semibold overflow-x-auto no-scrollbar border-t border-slate-100">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -5968,6 +5970,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 {/* ──────────────────────── REPORTS ──────────────────────── */}
         {activeTab === "reports" && (
           <DepartureReports
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+          />
+        )}
+        {/* ── STATION PAYMENT COLLECTION ── */}
+        {activeTab === "stationpayments" && (
+          <StationPaymentCollection
             tripId={tripId}
             departureDateStr={departureDateStr}
           />

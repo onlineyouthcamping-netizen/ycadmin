@@ -82,6 +82,7 @@ const StaticWorkspacePage = lazy(() => import("./pages/admin/StaticWorkspacePage
 const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
 const DepartureHubPage = lazy(() => import("./pages/admin/DepartureHubPage.tsx"));
 const MasterDatabasePage = lazy(() => import("./pages/admin/MasterDatabasePage.tsx"));
+const CustomerProfilePage = lazy(() => import("./pages/admin/CustomerProfilePage.tsx"));
 
 import { AdminLayout } from "./components/admin/AdminLayout.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
@@ -214,6 +215,7 @@ const App = () => (
               <Route path="/admin/accounting" element={<AdminRoute requiredPermission="accounting.view"><AccountingPage /></AdminRoute>} />
               <Route path="/admin/operations" element={<AdminRoute requiredPermission="ops.view"><OperationsHubPage /></AdminRoute>} />
               <Route path="/admin/master-database" element={<AdminRoute requiredPermission="settings.view"><MasterDatabasePage /></AdminRoute>} />
+              <Route path="/admin/customers/:id" element={<AdminRoute requiredPermission="customers.timeline.view"><CustomerProfilePage /></AdminRoute>} />
               <Route path="/admin/booking-workspace" element={<AdminRoute requiredPermission="bookings.view"><StaticWorkspacePage src="/booking-workspace.html" title="Booking Workspace" /></AdminRoute>} />
               <Route path="/admin/departure-workspace" element={<AdminRoute requiredPermission="bookings.view"><DepartureHubPage /></AdminRoute>} />
               <Route path="/admin/accounting-workspace" element={<AdminRoute requiredPermission="accounting.view"><StaticWorkspacePage src="/accounting-workspace.html" title="Accounting Workspace" /></AdminRoute>} />

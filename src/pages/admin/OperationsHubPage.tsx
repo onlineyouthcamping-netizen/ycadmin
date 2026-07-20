@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import ReportsConsole from "@/components/admin/ReportsConsole";
 import { useNavigate } from "react-router-dom";
 import {
-  Compass, Calculator, CalendarCheck, CheckSquare, Sparkles, Plus, RefreshCw,
+  Compass, Calculator, Calendar, CalendarCheck, CheckSquare, Sparkles, Plus, RefreshCw,
   TrendingUp, Users, AlertTriangle, Check, X, Copy, Share2, ShieldAlert, CheckCircle2, Trash2, ArrowUpDown, GripVertical,
   ArrowLeft, Phone, Mail, MapPin, Clock, Star, ChevronRight, FileText, Bus, Hotel, MessageSquare, Stethoscope, TicketCheck, Filter, MoreVertical,
   LayoutGrid, Rows3
@@ -181,8 +181,8 @@ export default function OperationsHubPage() {
     const isSide = layoutMode === "side_by_side";
 
     return (
-      <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
+      <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm overflow-hidden">
+        <table className="w-full text-left text-xs border-collapse hidden md:table">
           <thead>
             <tr className="border-b border-[#E2E8F0] bg-slate-50/70 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               <th className="px-4 py-3 w-[15%]">Departure</th>
@@ -276,6 +276,80 @@ export default function OperationsHubPage() {
             })}
           </tbody>
         </table>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden flex flex-col divide-y divide-slate-100 bg-white">
+          {departuresList.map((row, idx) => {
+            const radius = 12;
+            const strokeWidth = 2.5;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (row.readiness / 100) * circumference;
+
+            return (
+              <div key={idx} className="p-4 flex flex-col gap-3 cursor-pointer hover:bg-slate-50/50 transition-colors" onClick={() => {
+                navigate(`/admin/departure-workspace?departureId=${row.tripId}_${row.departureDateStr}&tab=overview`);
+              }}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[#F97316] text-sm">{row.code}</span>
+                      <span className="px-1.5 py-0.5 rounded-[2px] bg-slate-100 text-slate-500 font-bold text-[9px] uppercase">CONFIRMED</span>
+                    </div>
+                    <div className="font-bold text-slate-800 text-[11.5px] mt-1 max-w-[200px] truncate" title={row.trip}>{row.trip}</div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold mt-1">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{row.date} <span className="text-slate-400 font-normal">({row.day})</span></span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    {!isSide && (
+                      <span className={cn("px-2 py-0.5 rounded-[2px] border text-[9px] font-black uppercase tracking-wider", row.statusColor)}>
+                        {row.status}
+                      </span>
+                    )}
+                    {row.readiness === 100 ? (
+                      <div className="w-[28px] h-[28px] rounded-full border-2 border-emerald-500 flex items-center justify-center bg-emerald-50/50 text-emerald-600 font-bold text-[9px] mt-1">
+                        ✓
+                      </div>
+                    ) : (
+                      <div className="relative flex items-center justify-center w-8 h-8 mt-1">
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle cx="16" cy="16" r={radius} stroke="#E2E8F0" strokeWidth={strokeWidth} fill="transparent" />
+                          <circle cx="16" cy="16" r={radius} stroke={row.readinessColor} strokeWidth={strokeWidth} fill="transparent"
+                            strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+                        </svg>
+                        <span className="absolute text-[8px] font-bold text-slate-700">{row.readiness}%</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-[4px] border border-slate-100 mt-1">
+                  <div>
+                    <div className="text-slate-400 font-bold text-[9px] uppercase">Days Left</div>
+                    <div className={cn("font-bold text-[11.5px] mt-0.5", row.daysColor)}>{row.daysLeft}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 font-bold text-[9px] uppercase">Pax</div>
+                    <div className="mt-0.5">
+                      <span className="font-semibold text-slate-700">{row.pax.split(" / ")[0]}</span>
+                      <span className="text-slate-400 text-[10px]">/{row.pax.split(" / ")[1]}</span>
+                    </div>
+                  </div>
+                  {!isSide && (
+                    <div className="col-span-2 mt-1">
+                      <div className="text-slate-400 font-bold text-[9px] uppercase">Outstanding Balance</div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className={cn("font-bold text-sm", row.balanceColor)}>{row.balance}</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">{row.balanceSub}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
