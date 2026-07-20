@@ -123,11 +123,7 @@ export default function AccountingPage() {
   });
 
   // Office Expenses State
-  const [officeExpenses, setOfficeExpenses] = useState<any[]>([
-    { id: "1", category: "Rent & Utilities", amount: 8450, date: "2024-07-03", note: "Electricity Bill Payment", status: "Paid" },
-    { id: "2", category: "Rent", amount: 24000, date: "2024-07-02", note: "Office Rent", status: "Paid" },
-    { id: "3", category: "Fuel", amount: 5000, date: "2024-07-01", note: "Fuel for Tempo (Kashmir 08 Jul)", status: "Paid" },
-  ]);
+  const [officeExpenses, setOfficeExpenses] = useState<any[]>([]);
 
   // ── Load entries ──
   const load = useCallback(async () => {
