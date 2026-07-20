@@ -489,6 +489,59 @@ export default function AccountingPage() {
     groupedTransactions[customHeader].push(t);
   });
 
+  // Dynamic variables for Cash Book tab
+  const cashTransactions = rawTransactions.filter(t => t.account === 'Cash' || t.mode === 'Cash');
+  const groupedCashTransactions: Record<string, typeof finalTransactions> = {};
+  const sortedCashChronological = [...cashTransactions].sort((a, b) => {
+    const timeA = parseDateTime(a.date, a.time);
+    const timeB = parseDateTime(b.date, b.time);
+    return timeA - timeB;
+  });
+  let currentCashBalance = 160000;
+  const computedCashTransactions = sortedCashChronological.map(t => {
+    if (t.type === "Income") {
+      currentCashBalance += t.inflow;
+    } else {
+      currentCashBalance -= t.outflow;
+    }
+    return {
+      ...t,
+      balance: currentCashBalance
+    };
+  });
+  const finalCashTransactions = [...computedCashTransactions].reverse();
+  finalCashTransactions.forEach(t => {
+    const d = new Date(t.date);
+    const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const customHeader = `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()} (${daysOfWeek[d.getDay()]})`;
+    
+    if (!groupedCashTransactions[customHeader]) {
+      groupedCashTransactions[customHeader] = [];
+    }
+    groupedCashTransactions[customHeader].push(t);
+  });
+
+  const cashHandlers: Record<string, { name: string; role: string; cashin: number; cashout: number }> = {};
+  cashTransactions.forEach(t => {
+    const name = t.addedBy || 'System';
+    if (!cashHandlers[name]) {
+      cashHandlers[name] = { name, role: "Staff", cashin: 0, cashout: 0 };
+    }
+    if (t.type === "Income") {
+      cashHandlers[name].cashin += t.inflow;
+    } else {
+      cashHandlers[name].cashout += t.outflow;
+    }
+  });
+  const dynamicCashHandlers = Object.values(cashHandlers);
+
+  const totalCashIn = cashTransactions.reduce((sum, t) => sum + t.inflow, 0);
+  const totalCashOut = cashTransactions.reduce((sum, t) => sum + t.outflow, 0);
+  const netCashMovement = totalCashIn - totalCashOut;
+  const cashInCount = cashTransactions.filter(t => t.type === 'Income').length;
+  const cashOutCount = cashTransactions.filter(t => t.type === 'Expense').length;
+
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "transactions", label: "Transactions" },
@@ -1002,112 +1055,60 @@ export default function AccountingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Mocked Cash book journal matching image details */}
-                  <tr className="bg-slate-50/80 font-bold text-slate-600 border-b border-slate-100">
-                    <td colSpan={11} className="px-3.5 py-2 text-[10px] uppercase tracking-wide">03 Jul 2024 (Wednesday)</td>
-                  </tr>
-                  {[
-                    { datetime: "03 Jul 2024 10:20 AM", type: "Cash In", particulars: "Received from Viraj Patel", sub: "Booking Payment - MKA 05 Jul", ref: "MKA - 05 Jul", cashin: 18000, cashout: 0, bal: 68000, party: "Neeki Sharma", role: "Sales Executive", appBy: "Hemal Patel", appStatus: "Approved", appTime: "03 Jul 10:45 AM" },
-                    { datetime: "03 Jul 2024 11:30 AM", type: "Cash Out", particulars: "Paid to Barpa Cottage", sub: "Hotel Payment - MKA 05 Jul", ref: "MKA - 05 Jul", cashin: 0, cashout: 40000, bal: 28000, party: "Suresh Bhai", role: "Accounts Manager", appBy: "Hemal Patel", appStatus: "Approved", appTime: "03 Jul 11:45 AM" },
-                    { datetime: "03 Jul 2024 12:15 PM", type: "Cash Out", particulars: "Electricity Bill Payment", sub: "Office Expense", ref: "Office", cashin: 0, cashout: 8450, bal: 19550, party: "Neeki Sharma", role: "Sales Executive", appBy: "Hemal Patel", appStatus: "Approved", appTime: "03 Jul 12:30 PM" },
-                    { datetime: "03 Jul 2024 02:20 PM", type: "Cash In", particulars: "Received from Suruchi Shah", sub: "Booking Payment - Spiti 07 Jul", ref: "Spiti Valley - 07 Jul", cashin: 24000, cashout: 0, bal: 43550, party: "Neeki Sharma", role: "Sales Executive", appBy: "Hemal Patel", appStatus: "Approved", appTime: "03 Jul 02:35 PM" },
-                    { datetime: "03 Jul 2024 04:05 PM", type: "Cash Out", particulars: "Paid to Guide (Ramesh)", sub: "Guide Advance - Leh 10 Jul", ref: "Leh Ladakh - 10 Jul", cashin: 0, cashout: 5000, bal: 38550, party: "Parth", role: "Operations", appBy: "Hemal Patel", appStatus: "Approved", appTime: "03 Jul 04:20 PM" }
-                  ].map((row, idx) => (
-                    <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
-                      <td className="px-3.5 py-2.5 text-slate-500 font-medium whitespace-nowrap">{row.datetime}</td>
-                      <td className="px-3.5 py-2.5">
-                        <span className={cn(
-                          "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[2px]",
-                          row.type === "Cash In" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
-                        )}>
-                          {row.type}
-                        </span>
-                      </td>
-                      <td className="px-3.5 py-2.5">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-700">{row.particulars}</span>
-                          <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.sub}</span>
-                        </div>
-                      </td>
-                      <td className="px-3.5 py-2.5 text-slate-500 font-bold">{row.ref}</td>
-                      <td className="px-3.5 py-2.5 text-right font-bold text-emerald-600">{row.cashin > 0 ? row.cashin.toLocaleString() : "—"}</td>
-                      <td className="px-3.5 py-2.5 text-right font-bold text-red-500">{row.cashout > 0 ? row.cashout.toLocaleString() : "—"}</td>
-                      <td className="px-3.5 py-2.5 text-right font-bold text-slate-700">₹ {row.bal.toLocaleString()}</td>
-                      <td className="px-3.5 py-2.5">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-700">{row.party}</span>
-                          <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.role}</span>
-                        </div>
-                      </td>
-                      <td className="px-3.5 py-2.5 text-slate-600 font-semibold">{row.appBy}</td>
-                      <td className="px-3.5 py-2.5">
-                        <div className="flex flex-col">
-                          <span className="text-emerald-600 font-bold">{row.appStatus}</span>
-                          <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.appTime}</span>
-                        </div>
-                      </td>
-                      <td className="px-3.5 py-2.5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button className="p-1 hover:bg-slate-50 rounded text-slate-400 border border-slate-100"><Eye className="w-3.5 h-3.5" /></button>
-                          <button className="p-1 hover:bg-slate-50 rounded text-slate-400 border border-slate-100"><Edit3 className="w-3.5 h-3.5" /></button>
-                        </div>
-                      </td>
+                  {Object.keys(groupedCashTransactions).length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="px-3.5 py-8 text-center text-slate-400 italic">No cash transactions recorded.</td>
                     </tr>
-                  ))}
-
-                  <tr className="bg-slate-50/80 font-bold text-slate-600 border-b border-slate-100">
-                    <td colSpan={11} className="px-3.5 py-2 text-[10px] uppercase tracking-wide">02 Jul 2024 (Tuesday)</td>
-                  </tr>
-                  {[
-                    { datetime: "02 Jul 2024 11:00 AM", type: "Cash In", particulars: "Opening Balance", sub: "As on 02 Jul 2024", ref: "—", cashin: 50000, cashout: 0, bal: 50000, party: "System", role: "—", appBy: "—", appStatus: "—", appTime: "—" },
-                    { datetime: "02 Jul 2024 01:10 PM", type: "Cash Out", particulars: "Paid to Driver (Mahesh)", sub: "Driver Advance - Spiti 07 Jul", ref: "Spiti Valley - 07 Jul", cashin: 0, cashout: 2000, bal: 48000, party: "Parth", role: "Operations", appBy: "Hemal Patel", appStatus: "Approved", appTime: "02 Jul 01:25 PM" },
-                    { datetime: "02 Jul 2024 03:45 PM", type: "Cash Out", particulars: "Tea & Refreshment", sub: "Office Expense", ref: "Office", cashin: 0, cashout: 2005, bal: 47800, party: "Neeki Sharma", role: "Sales Executive", appBy: "Hemal Patel", appStatus: "Approved", appTime: "02 Jul 04:00 PM" }
-                  ].map((row, idx) => (
-                    <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
-                      <td className="px-3.5 py-2.5 text-slate-500 font-medium whitespace-nowrap">{row.datetime}</td>
-                      <td className="px-3.5 py-2.5">
-                        <span className={cn(
-                          "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[2px]",
-                          row.type === "Cash In" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
-                        )}>
-                          {row.type}
-                        </span>
-                      </td>
-                      <td className="px-3.5 py-2.5">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-700">{row.particulars}</span>
-                          <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.sub}</span>
-                        </div>
-                      </td>
-                      <td className="px-3.5 py-2.5 text-slate-500 font-bold">{row.ref}</td>
-                      <td className="px-3.5 py-2.5 text-right font-bold text-emerald-600">{row.cashin > 0 ? row.cashin.toLocaleString() : "—"}</td>
-                      <td className="px-3.5 py-2.5 text-right font-bold text-red-500">{row.cashout > 0 ? row.cashout.toLocaleString() : "—"}</td>
-                      <td className="px-3.5 py-2.5 text-right font-bold text-slate-700">₹ {row.bal.toLocaleString()}</td>
-                      <td className="px-3.5 py-2.5">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-700">{row.party}</span>
-                          <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.role}</span>
-                        </div>
-                      </td>
-                      <td className="px-3.5 py-2.5 text-slate-650 font-semibold">{row.appBy}</td>
-                      <td className="px-3.5 py-2.5">
-                        {row.appStatus !== "—" ? (
-                          <div className="flex flex-col">
-                            <span className="text-emerald-600 font-bold">{row.appStatus}</span>
-                            <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.appTime}</span>
-                          </div>
-                        ) : "—"}
-                      </td>
-                      <td className="px-3.5 py-2.5 text-right">
-                        {row.particulars !== "Opening Balance" && (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button className="p-1 hover:bg-slate-50 rounded text-slate-400 border border-slate-100"><Eye className="w-3.5 h-3.5" /></button>
-                            <button className="p-1 hover:bg-slate-50 rounded text-slate-400 border border-slate-100"><Edit3 className="w-3.5 h-3.5" /></button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  ) : (
+                    Object.keys(groupedCashTransactions).map((dateHeader) => (
+                      <Fragment key={dateHeader}>
+                        <tr className="bg-slate-50/80 font-bold text-slate-600 border-b border-slate-100">
+                          <td colSpan={11} className="px-3.5 py-2 text-[10px] uppercase tracking-wide">{dateHeader}</td>
+                        </tr>
+                        {groupedCashTransactions[dateHeader].map((row, idx) => (
+                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/30 transition-colors">
+                            <td className="px-3.5 py-2.5 text-slate-500 font-medium whitespace-nowrap">{row.date} {row.time || "10:20 AM"}</td>
+                            <td className="px-3.5 py-2.5">
+                              <span className={cn(
+                                "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[2px]",
+                                row.type === "Income" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
+                              )}>
+                                {row.type}
+                              </span>
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-700">{row.particulars}</span>
+                                <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.subParticulars || "Cash Book Entry"}</span>
+                              </div>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-slate-500 font-bold">{row.reference}</td>
+                            <td className="px-3.5 py-2.5 text-right font-bold text-emerald-600">{row.inflow > 0 ? row.inflow.toLocaleString() : "—"}</td>
+                            <td className="px-3.5 py-2.5 text-right font-bold text-red-500">{row.outflow > 0 ? row.outflow.toLocaleString() : "—"}</td>
+                            <td className="px-3.5 py-2.5 text-right font-bold text-slate-700">₹ {row.balance.toLocaleString()}</td>
+                            <td className="px-3.5 py-2.5">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-700">{row.addedBy}</span>
+                                <span className="text-[9px] text-slate-400 font-semibold mt-0.5">Staff</span>
+                              </div>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-slate-660 font-semibold">System</td>
+                            <td className="px-3.5 py-2.5">
+                              <div className="flex flex-col">
+                                <span className="text-emerald-600 font-bold">Approved</span>
+                                <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{row.date}</span>
+                              </div>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button className="p-1 hover:bg-slate-50 rounded text-slate-400 border border-slate-100"><Eye className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </Fragment>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1119,27 +1120,27 @@ export default function AccountingPage() {
             <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Cash Handler Summary <span className="text-slate-400 text-[10px] font-normal normal-case ml-1">(This Period)</span></h3>
               <div className="space-y-4.5">
-                {[
-                  { name: "Neeki Sharma", role: "Sales Executive", cashin: 42000, cashout: 8650 },
-                  { name: "Parth", role: "Operations", cashin: 0, cashout: 7000 },
-                  { name: "Suresh Bhai", role: "Accounts Manager", cashin: 0, cashout: 40000 }
-                ].map((handler, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs font-semibold text-slate-650">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 border flex items-center justify-center font-bold text-slate-600 uppercase text-[10px]">
-                        {handler.name.charAt(0)}
+                {dynamicCashHandlers.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No cash handler data available.</p>
+                ) : (
+                  dynamicCashHandlers.map((handler: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between text-xs font-semibold text-slate-650">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 border flex items-center justify-center font-bold text-slate-600 uppercase text-[10px]">
+                          {handler.name.charAt(0)}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800">{handler.name}</span>
+                          <span className="text-[9px] text-slate-450 font-normal">{handler.role}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{handler.name}</span>
-                        <span className="text-[9px] text-slate-450 font-normal">{handler.role}</span>
+                      <div className="text-right">
+                        <div><span className="text-slate-400 text-[9px]">Cash In:</span> <span className="text-emerald-600 font-bold">₹ {handler.cashin.toLocaleString()}</span></div>
+                        <div className="mt-0.5"><span className="text-slate-400 text-[9px]">Cash Out:</span> <span className="text-red-500 font-bold">₹ {handler.cashout.toLocaleString()}</span></div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div><span className="text-slate-400 text-[9px]">Cash In:</span> <span className="text-emerald-600 font-bold">₹ {handler.cashin.toLocaleString()}</span></div>
-                      <div className="mt-0.5"><span className="text-slate-400 text-[9px]">Cash Out:</span> <span className="text-red-500 font-bold">₹ {handler.cashout.toLocaleString()}</span></div>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </Card>
 
@@ -1150,21 +1151,23 @@ export default function AccountingPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-slate-450">Total Cash In</span>
                   <div className="text-right">
-                    <span className="text-slate-750 font-black">₹ 2,40,000</span>
-                    <span className="text-[9px] text-slate-400 block font-normal mt-0.5">18 Transactions</span>
+                    <span className="text-slate-750 font-black">₹ {totalCashIn.toLocaleString()}</span>
+                    <span className="text-[9px] text-slate-400 block font-normal mt-0.5">{cashInCount} Transactions</span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-450">Total Cash Out</span>
                   <div className="text-right">
-                    <span className="text-slate-750 font-black">₹ 1,64,450</span>
-                    <span className="text-[9px] text-slate-400 block font-normal mt-0.5">25 Transactions</span>
+                    <span className="text-slate-750 font-black">₹ {totalCashOut.toLocaleString()}</span>
+                    <span className="text-[9px] text-slate-400 block font-normal mt-0.5">{cashOutCount} Transactions</span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center border-t pt-3.5">
                   <span className="text-slate-800 font-black">Net Cash Movement</span>
                   <div className="text-right">
-                    <span className="text-emerald-600 font-black text-sm">₹ 75,550</span>
+                    <span className={cn("font-black text-sm", netCashMovement >= 0 ? "text-emerald-600" : "text-red-500")}>
+                      ₹ {netCashMovement.toLocaleString()}
+                    </span>
                     <span className="text-[9px] text-slate-400 block font-normal mt-0.5">(Inflow - Outflow)</span>
                   </div>
                 </div>
@@ -1180,8 +1183,12 @@ export default function AccountingPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Approved
                   </span>
                   <div className="text-right">
-                    <span className="text-slate-750 font-black">38 Transactions</span>
-                    <span className="text-[10px] text-emerald-600 block mt-0.5">₹ 2,12,450</span>
+                    <span className="text-slate-750 font-black">
+                      {entries.filter(e => e.paymentMode === 'CASH' && e.status === 'APPROVED').length} Transactions
+                    </span>
+                    <span className="text-[10px] text-emerald-600 block mt-0.5">
+                      ₹ {entries.filter(e => e.paymentMode === 'CASH' && e.status === 'APPROVED').reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
@@ -1189,8 +1196,12 @@ export default function AccountingPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Pending Approval
                   </span>
                   <div className="text-right">
-                    <span className="text-slate-750 font-black">5 Transactions</span>
-                    <span className="text-[10px] text-amber-500 block mt-0.5">₹ 28,000</span>
+                    <span className="text-slate-750 font-black">
+                      {entries.filter(e => e.paymentMode === 'CASH' && e.status === 'PENDING').length} Transactions
+                    </span>
+                    <span className="text-[10px] text-amber-500 block mt-0.5">
+                      ₹ {entries.filter(e => e.paymentMode === 'CASH' && e.status === 'PENDING').reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
@@ -1198,8 +1209,12 @@ export default function AccountingPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Rejected
                   </span>
                   <div className="text-right">
-                    <span className="text-slate-750 font-black">0 Transactions</span>
-                    <span className="text-[10px] text-red-500 block mt-0.5">₹ 0</span>
+                    <span className="text-slate-750 font-black">
+                      {entries.filter(e => e.paymentMode === 'CASH' && e.status === 'REJECTED').length} Transactions
+                    </span>
+                    <span className="text-[10px] text-red-500 block mt-0.5">
+                      ₹ {entries.filter(e => e.paymentMode === 'CASH' && e.status === 'REJECTED').reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>

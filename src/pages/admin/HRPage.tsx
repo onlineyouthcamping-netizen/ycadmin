@@ -103,13 +103,7 @@ const SHIFT_TIMINGS = {
 };
 
 // Initial Mock Data
-const INITIAL_EMPLOYEES: Employee[] = [
-  { id: "EMP-001", name: "Hemal Patel", department: "Admin", designation: "Founder", reportingManager: "Board", status: "Active", joiningDate: "2020-01-10", phone: "9978567801", email: "hemal@youthcamping.net", attendanceToday: "Present", leaveBalance: 24, payrollStatus: "Paid", salary: 150000, incentives: 0, dob: "1988-04-12", bankDetails: "SBI 10020030040 - IFSC SBIN0000102", taxId: "HMLPS1234A" },
-  { id: "EMP-002", name: "Suresh Chaudhary", department: "Sales", designation: "Sales & Trip Manager", reportingManager: "Hemal Patel", status: "Active", joiningDate: "2022-03-15", phone: "9876543202", email: "suresh@youthcamping.net", attendanceToday: "Present", leaveBalance: 15, payrollStatus: "Paid", salary: 65000, incentives: 15000, dob: "1993-11-20", bankDetails: "HDFC 501004392011 - IFSC HDFC0000120", taxId: "SRHPS5678B" },
-  { id: "EMP-003", name: "Zeel Panchal", department: "Sales", designation: "Sales Executive", reportingManager: "Suresh Chaudhary", status: "Active", joiningDate: "2024-02-01", phone: "9812345603", email: "zeel@youthcamping.net", attendanceToday: "Present", leaveBalance: 12, payrollStatus: "Paid", salary: 28000, incentives: 8000, dob: "1998-06-25", bankDetails: "ICICI 001205099881 - IFSC ICIC0000012", taxId: "ZELPS9012C" },
-  { id: "EMP-004", name: "Vidhi Thummar", department: "Sales", designation: "Sales Executive", reportingManager: "Suresh Chaudhary", status: "Active", joiningDate: "2024-02-15", phone: "8899001104", email: "vidhi@youthcamping.net", attendanceToday: "Late", leaveBalance: 12, payrollStatus: "Paid", salary: 28000, incentives: 9500, dob: "1999-03-19", bankDetails: "AXIS 918010043904 - IFSC UTIB0000084", taxId: "VDHPS3456D" },
-  { id: "EMP-005", name: "Neeki Diyali", department: "Operations", designation: "Operations Manager", reportingManager: "Hemal Patel", status: "Active", joiningDate: "2023-01-15", phone: "7766554405", email: "neeki@youthcamping.net", attendanceToday: "Present", leaveBalance: 14, payrollStatus: "Paid", salary: 55000, incentives: 0, dob: "1994-09-12", bankDetails: "KOTAK 98129005 - IFSC KKBK0000182", taxId: "NEKPS7890E" },
-];
+const INITIAL_EMPLOYEES: Employee[] = [];
 
 const sampleDate = (daysOffset: number) => {
   const d = new Date();
@@ -121,27 +115,13 @@ const sampleMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const INITIAL_ATTENDANCE: AttendanceLog[] = [
-  { id: "ATT-101", employeeId: "EMP-001", employeeName: "Hemal Patel", date: sampleDate(-2), checkIn: "09:15", checkOut: "18:30", hours: 9.25, status: "Present" },
-  { id: "ATT-102", employeeId: "EMP-002", employeeName: "Suresh Chaudhary", date: sampleDate(-2), checkIn: "09:20", checkOut: "18:15", hours: 8.9, status: "Present" },
-  { id: "ATT-103", employeeId: "EMP-003", employeeName: "Zeel Panchal", date: sampleDate(-2), checkIn: "09:25", checkOut: "18:05", hours: 8.6, status: "Present" },
-  { id: "ATT-104", employeeId: "EMP-004", employeeName: "Vidhi Thummar", date: sampleDate(-2), checkIn: "09:55", checkOut: "18:00", hours: 8.0, status: "Late", reason: "Traffic delay on NH-48" },
-  { id: "ATT-105", employeeId: "EMP-005", employeeName: "Neeki Diyali", date: sampleDate(-2), checkIn: "09:28", checkOut: "18:00", hours: 8.5, status: "Present" },
-];
+const INITIAL_ATTENDANCE: AttendanceLog[] = [];
 
-const INITIAL_LEAVES: LeaveRequest[] = [
-  { id: "LV-201", employeeId: "EMP-003", employeeName: "Zeel Panchal", department: "Sales", leaveType: "Casual Leave", startDate: sampleDate(5), endDate: sampleDate(6), duration: 2, status: "Submitted", reason: "Personal work at hometown", handoverNotes: "Vidhi will follow up on active leads." },
-];
+const INITIAL_LEAVES: LeaveRequest[] = [];
 
-const INITIAL_COMMISSIONS: CommissionRecord[] = [
-  { id: "COM-301", employeeId: "EMP-003", employeeName: "Zeel Panchal", bookingId: "BK-4091", tripCode: "MKA-1", bookingValue: 36000, amountReceived: 36000, commissionRule: "3% of fully paid booking", commissionAmount: 1080, status: "Approved", payrollMonth: sampleMonth() },
-  { id: "COM-302", employeeId: "EMP-004", employeeName: "Vidhi Thummar", bookingId: "BK-4092", tripCode: "MKB", bookingValue: 24000, amountReceived: 12000, commissionRule: "2% of advance booking", commissionAmount: 480, status: "Calculated", payrollMonth: sampleMonth() },
-];
+const INITIAL_COMMISSIONS: CommissionRecord[] = [];
 
-const INITIAL_REIMBURSEMENTS: ReimbursementClaim[] = [
-  { id: "REI-501", employeeId: "EMP-002", employeeName: "Suresh Chaudhary", category: "Local Transport", amount: 1550, claimDate: sampleDate(-4), notes: "Cab fare to travel vendor review", status: "Verified" },
-  { id: "REI-502", employeeId: "EMP-005", employeeName: "Neeki Diyali", category: "Emergency", amount: 4800, claimDate: sampleDate(-3), notes: "Emergency campsite purchase during storm", status: "Approved" },
-];
+const INITIAL_REIMBURSEMENTS: ReimbursementClaim[] = [];
 
 export default function HRPage() {
   const { admin } = useAuthStore();
