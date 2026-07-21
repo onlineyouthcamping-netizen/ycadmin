@@ -101,6 +101,7 @@ export interface BookingRow {
   pickupCity?: string;
   salesperson?: string;
   salespersonId?: string;
+  numberOfPersons?: number;
   finalAmount: number;
   previousPaid: number;
   remaining: number;
