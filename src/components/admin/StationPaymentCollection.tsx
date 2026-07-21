@@ -57,6 +57,7 @@ export default function StationPaymentCollection({ tripId, departureDateStr }: P
   const [remarks, setRemarks] = useState("");
   const [utrNumber, setUtrNumber] = useState("");
   const [receivingAccountId, setReceivingAccountId] = useState("");
+  const [customAccountName, setCustomAccountName] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,6 +91,7 @@ export default function StationPaymentCollection({ tripId, departureDateStr }: P
     setRemarks("");
     setUtrNumber("");
     setReceivingAccountId(accounts[0]?.id || "");
+    setCustomAccountName("");
     setDrawerStep("form");
     setDrawerOpen(true);
   };
@@ -106,6 +108,7 @@ export default function StationPaymentCollection({ tripId, departureDateStr }: P
     if (!collectedFrom.trim()) { toast.error("Collected from name is required"); return; }
     if (paymentMode === "UPI" && !utrNumber.trim()) { toast.error("UTR / Transaction ID is required for UPI"); return; }
     if (paymentMode === "UPI" && !receivingAccountId) { toast.error("Select a receiving account"); return; }
+    if (paymentMode === "UPI" && receivingAccountId === "OTHER" && !customAccountName.trim()) { toast.error("Enter custom account name"); return; }
     setDrawerStep("confirm");
   };
 
@@ -120,7 +123,8 @@ export default function StationPaymentCollection({ tripId, departureDateStr }: P
         station, platform, paymentMode, amount: parsedAmount,
         collectedFrom, collectedFromMobile, collectedAt,
         remarks, utrNumber: paymentMode === "UPI" ? utrNumber : undefined,
-        receivingAccountId: paymentMode === "UPI" ? receivingAccountId : undefined
+        receivingAccountId: (paymentMode === "UPI" && receivingAccountId !== "OTHER") ? receivingAccountId : undefined,
+        customAccountName: (paymentMode === "UPI" && receivingAccountId === "OTHER") ? customAccountName : undefined
       });
       setLastCollection(result.data);
       setDrawerStep("success");
@@ -158,7 +162,7 @@ export default function StationPaymentCollection({ tripId, departureDateStr }: P
     return matchSearch && matchMode && matchStatus;
   });
 
-  const activeAccount = accounts.find(a => a.id === receivingAccountId);
+  const activeAccount = receivingAccountId === "OTHER" ? { accountName: customAccountName } : accounts.find(a => a.id === receivingAccountId);
 
   if (loading) return (
     <div className="flex items-center justify-center py-24 text-slate-400">
@@ -573,7 +577,13 @@ export default function StationPaymentCollection({ tripId, departureDateStr }: P
                           {accounts.map(a => (
                             <option key={a.id} value={a.id}>{a.accountName} ({a.ownershipType === "COMPANY" ? "Company" : a.ownershipType === "STAFF" ? `Staff – ${a.accountHolderName}` : "Partner"})</option>
                           ))}
+                          <option value="OTHER">Other (Custom Name)</option>
                         </select>
+                        {receivingAccountId === "OTHER" && (
+                          <div className="mt-2">
+                            <input type="text" value={customAccountName} onChange={e => setCustomAccountName(e.target.value)} placeholder="Enter account name" className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316]" />
+                          </div>
+                        )}
                         {accounts.length === 0 && <p className="text-[10px] text-amber-600 mt-1">No approved accounts. Contact Finance to add accounts.</p>}
                       </div>
                       <div className="bg-amber-50 border border-amber-200 rounded-[4px] p-2.5 text-[10px] text-amber-700 font-semibold flex items-start gap-1.5">
@@ -613,7 +623,7 @@ export default function StationPaymentCollection({ tripId, departureDateStr }: P
             {/* Footer CTA (form step only) */}
             {drawerStep === "form" && (
               <div className="px-5 py-4 border-t border-slate-200 bg-white shrink-0">
-                <button onClick={handleConfirm} disabled={!parsedAmount || parsedAmount > remaining + 0.01 || !station.trim() || !collectedFrom.trim() || (paymentMode === "UPI" && (!utrNumber.trim() || !receivingAccountId))} className="w-full py-3 bg-[#F97316] hover:bg-[#E05E00] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[4px] text-sm font-black transition-colors flex items-center justify-center gap-2">
+                <button onClick={handleConfirm} disabled={!parsedAmount || parsedAmount > remaining + 0.01 || !station.trim() || !collectedFrom.trim() || (paymentMode === "UPI" && (!utrNumber.trim() || !receivingAccountId || (receivingAccountId === "OTHER" && !customAccountName.trim())))} className="w-full py-3 bg-[#F97316] hover:bg-[#E05E00] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[4px] text-sm font-black transition-colors flex items-center justify-center gap-2">
                   Review Collection <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
