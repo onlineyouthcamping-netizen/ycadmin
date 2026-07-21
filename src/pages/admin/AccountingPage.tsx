@@ -435,7 +435,13 @@ export default function AccountingPage() {
       mode: "Bank Transfer",
       inflow: 0,
       outflow: a.paidAmount,
-      category: "Transport",
+      category: typeof a.vendorId === 'object' && a.vendorId.type ?
+        (a.vendorId.type.toUpperCase() === 'HOTEL' ? 'Hotel' :
+         a.vendorId.type.toUpperCase() === 'TRANSPORT' ? 'Transport' :
+         a.vendorId.type.toUpperCase() === 'ACTIVITY' ? 'Activity' :
+         a.vendorId.type.toUpperCase() === 'GUIDE' ? 'Guide' :
+         'Misc Direct Expenses')
+        : "Misc Direct Expenses",
       categoryColor: "bg-green-500",
       addedBy: "System"
     }));
@@ -670,7 +676,8 @@ export default function AccountingPage() {
   const plHotelCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Hotel').reduce((sum, t) => sum + t.outflow, 0);
   const plTransportCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Transport').reduce((sum, t) => sum + t.outflow, 0);
   const plGuideCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Guide').reduce((sum, t) => sum + t.outflow, 0);
-  const plMiscDirectCost = plDirectCost - plHotelCost - plTransportCost - plGuideCost;
+  const plActivityCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Activity').reduce((sum, t) => sum + t.outflow, 0);
+  const plMiscDirectCost = plDirectCost - plHotelCost - plTransportCost - plGuideCost - plActivityCost;
 
   const plRentCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Rent').reduce((sum, t) => sum + t.outflow, 0);
   const plUtilitiesCost = rawTransactions.filter(t => t.type === 'Expense' && t.category === 'Utilities').reduce((sum, t) => sum + t.outflow, 0);
@@ -2230,6 +2237,7 @@ export default function AccountingPage() {
                   {[
                     { p: "Hotels", a: plHotelCost.toLocaleString("en-IN") },
                     { p: "Tempo / Transport", a: plTransportCost.toLocaleString("en-IN") },
+                    { p: "Vendor Activities", a: plActivityCost.toLocaleString("en-IN") },
                     { p: "Guide Charges", a: plGuideCost.toLocaleString("en-IN") },
                     { p: "Misc. Trip Expenses", a: plMiscDirectCost.toLocaleString("en-IN") }
                   ].map((row, idx) => (
