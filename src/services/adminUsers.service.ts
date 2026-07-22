@@ -32,6 +32,21 @@ export const adminUsersService = {
     return response.data;
   },
 
+  getMyProfile: async (): Promise<Admin> => {
+    const response = await api.get("/admin/me");
+    return response.data.data;
+  },
+
+  updateMyProfile: async (data: { phone?: string; avatarUrl?: string; notificationPreferences?: any; uiSettings?: any }): Promise<Admin> => {
+    const response = await api.put("/admin/me", data);
+    return response.data.data;
+  },
+
+  updateMyPassword: async (payload: { currentPassword?: string; newPassword: string }): Promise<{ success: boolean; message: string }> => {
+    const response = await api.put("/admin/me/password", payload);
+    return response.data;
+  },
+
   listAuditLogs: async (): Promise<AuditLog[]> => {
     const response = await api.get("/admin/audit-logs");
     return response.data.data;

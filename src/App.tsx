@@ -41,6 +41,7 @@ const QuestionsPage = lazy(() => import("./pages/admin/QuestionsPage.tsx"));
 const UserManagementPage = lazy(() => import("./pages/admin/UserManagementPage.tsx"));
 const AccessControlPage = lazy(() => import("./pages/admin/AccessControlPage.tsx"));
 const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage.tsx"));
+const ProfilePage = lazy(() => import("./pages/admin/ProfilePage.tsx"));
 const UnauthorizedPage = lazy(() => import("./pages/admin/UnauthorizedPage.tsx"));
 const DynamicFormAdmin = lazy(() => import("./pages/admin/DynamicFormAdmin.tsx"));
 const GuidesDashboardPage = lazy(() => import("./pages/admin/GuidesDashboardPage.tsx"));
@@ -203,6 +204,7 @@ const App = () => (
               <Route path="/admin/company-documents" element={<AdminRoute requiredPermission="settings.view"><CompanyDocumentsPage /></AdminRoute>} />
               <Route path="/admin/automation" element={<AdminRoute requiredPermission="settings.view"><AutomationPage /></AdminRoute>} />
               <Route path="/admin/billing" element={<AdminRoute requiredPermission="settings.view"><BillingPage /></AdminRoute>} />
+              <Route path="/admin/profile" element={<AdminRoute><ProfilePage /></AdminRoute>} />
               <Route path="/admin/users" element={<AdminRoute founderOnly requiredPermission="users.manage"><UserManagementPage /></AdminRoute>} />
               <Route path="/admin/access-control" element={<AdminRoute founderOnly requiredPermission="roles.manage"><AccessControlPage /></AdminRoute>} />
               <Route path="/admin/audit-logs" element={<AdminRoute founderOnly requiredPermission="audit.view"><AuditLogsPage /></AdminRoute>} />

@@ -6,7 +6,12 @@ export interface Admin {
   name: string;
   role: AdminRole;
   isActive: boolean;
-  tokenVersion: number;
+  tokenVersion?: number;
+  phone?: string;
+  avatarUrl?: string;
+  designation?: string;
+  notificationPreferences?: Record<string, boolean>;
+  uiSettings?: Record<string, any>;
   lastLoginAt?: string;
   tenantId?: string;
   createdAt?: string;

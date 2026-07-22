@@ -62,7 +62,9 @@ import {
   Briefcase,
   Megaphone,
   ShieldAlert,
-  Ticket
+  Ticket,
+  Key,
+  ShieldCheck
 } from "lucide-react";
 import { AdminContainer } from "@/components/layout";
 import { hasPermission } from "@/lib/permissions";
@@ -78,6 +80,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import NewBookingModal from "./NewBookingModal";
+import { MyProfileModal } from "./MyProfileModal";
 import { knowledgeService } from "@/services/knowledge.service";
 import { erpService } from "@/services/erp.service";
 
@@ -468,6 +471,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [searchParams] = useSearchParams();
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileModalTab, setProfileModalTab] = useState<"profile" | "password">("profile");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Record<string, { title: string; path: string }[]>>({});
@@ -740,13 +745,98 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     <HelpCircle className="w-4 h-4 text-slate-400 hover:text-slate-700" />
                   </button>
 
-                  <div className="flex items-center gap-2 border-l border-slate-200 pl-3.5 h-7 cursor-pointer hover:opacity-80 transition-all" onClick={() => navigate("/admin/settings")}>
-                    <img src={admin?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
-                    <div className="hidden lg:flex flex-col text-left">
-                      <span className="text-[11px] font-bold text-slate-850 leading-none">{admin?.name || admin?.fullName || "Hetal Patel"}</span>
-                      <span className="text-[8.5px] text-[#74839A] font-bold mt-0.5 leading-none">{admin?.role === "superadmin" ? "Founder" : (admin?.role || "Founder")}</span>
-                    </div>
-                  </div>
+                  {/* Top-Right Profile Avatar Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-2 border-l border-slate-200 pl-3.5 h-7 outline-none hover:opacity-85 transition-all text-left">
+                        <img 
+                          src={admin?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"} 
+                          className="w-7 h-7 rounded-full object-cover border border-slate-200 shadow-xs" 
+                          alt={admin?.name || "User"}
+                        />
+                        <div className="hidden lg:flex flex-col text-left">
+                          <span className="text-[11px] font-bold text-slate-850 leading-none">{admin?.name || (admin as any)?.fullName || "User"}</span>
+                          <span className="text-[8.5px] text-[#74839A] font-bold mt-0.5 leading-none">
+                            {((admin?.email || '').toLowerCase().includes('hemal') || admin?.email === 'hemal.patel@youthcamping.online') ? "Founder" : (admin?.role === "superadmin" ? "Founder" : (admin?.role || "Staff"))}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-3 h-3 text-slate-400 hidden lg:block ml-0.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 p-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50">
+                      <div className="px-2.5 py-2 border-b border-slate-100 mb-1 bg-slate-50/60 rounded-lg">
+                        <p className="text-xs font-bold text-slate-800 truncate">{admin?.name || "User"}</p>
+                        <p className="text-[10px] font-medium text-slate-500 truncate">{admin?.email}</p>
+                        <span className="inline-block mt-1 text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
+                          {((admin?.email || '').toLowerCase().includes('hemal') || admin?.email === 'hemal.patel@youthcamping.online') ? "Founder" : (admin?.role || "Staff")}
+                        </span>
+                      </div>
+
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setProfileModalTab("profile");
+                          setProfileModalOpen(true);
+                        }}
+                        className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                      >
+                        <User className="w-4 h-4 mr-2 text-slate-500" />
+                        My Profile
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem 
+                        onClick={() => navigate("/admin/settings")}
+                        className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                      >
+                        <Settings className="w-4 h-4 mr-2 text-slate-500" />
+                        Settings
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setProfileModalTab("password");
+                          setProfileModalOpen(true);
+                        }}
+                        className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                      >
+                        <Key className="w-4 h-4 mr-2 text-slate-500" />
+                        Change Password
+                      </DropdownMenuItem>
+
+                      {/* Founder Only Extra Menu Options */}
+                      {((admin?.email || '').toLowerCase().includes('hemal') || admin?.email === 'hemal.patel@youthcamping.online') && (
+                        <>
+                          <DropdownMenuSeparator className="my-1 border-slate-100" />
+                          <DropdownMenuItem 
+                            onClick={() => navigate("/admin/users")}
+                            className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                          >
+                            <Users className="w-4 h-4 mr-2 text-orange-600" />
+                            Manage Staff Profiles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => navigate("/admin/access-control")}
+                            className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                          >
+                            <ShieldCheck className="w-4 h-4 mr-2 text-orange-600" />
+                            Roles & Permissions
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      <DropdownMenuSeparator className="my-1 border-slate-100" />
+
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          logout();
+                          navigate("/admin/login");
+                        }}
+                        className="text-xs font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer rounded-md py-1.5"
+                      >
+                        <LogOut className="w-4 h-4 mr-2 text-rose-500" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 {/* Action Buttons */}
@@ -899,6 +989,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
              window.location.reload();
           }
         }}
+      />
+
+      <MyProfileModal 
+        open={profileModalOpen} 
+        onOpenChange={setProfileModalOpen} 
+        defaultTab={profileModalTab} 
       />
     </SidebarProvider>
   );
