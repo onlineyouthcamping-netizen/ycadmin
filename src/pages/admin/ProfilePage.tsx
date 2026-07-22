@@ -104,6 +104,21 @@ export default function ProfilePage() {
   const email = (authAdmin?.email || '').toLowerCase().trim();
   const isFounder = email.includes('hemal') || email === 'hemal.patel@youthcamping.online';
 
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState("profile");
+
+  useEffect(() => {
+    const p = location.pathname;
+    const search = new URLSearchParams(location.search);
+    if (p.includes("change-password") || p.includes("security") || search.get("tab") === "password") {
+      setActiveTab("password");
+    } else if (p.includes("settings") || search.get("tab") === "settings") {
+      setActiveTab("profile");
+    } else {
+      setActiveTab("profile");
+    }
+  }, [location]);
+
   if (isLoading) {
     return (
       <div className="h-96 flex items-center justify-center space-x-2 text-slate-400">

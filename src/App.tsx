@@ -1,12 +1,25 @@
-// Sync trigger for Vercel admin deployment
-import { lazy, Suspense, useEffect } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { DynamicThemeProvider } from "@/components/admin/DynamicThemeProvider";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
+import { Loader2 } from "lucide-react";
+import StaticWorkspacePage from "@/pages/admin/StaticWorkspacePage";
+
+const LoadingUI = () => (
+  <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+    <div className="flex flex-col items-center gap-3">
+      <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+      <p className="text-xs font-semibold text-slate-500">Loading YouthCamping OS...</p>
+    </div>
+  </div>
+);
 
 const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -57,7 +70,7 @@ const HRPage = lazy(() => import("./pages/admin/HRPage.tsx"));
 const EmailTemplatesPage = lazy(() => import("./pages/admin/EmailTemplatesPage.tsx"));
 const PackageBuilderPage = lazy(() => import("./pages/admin/PackageBuilderPage.tsx"));
 
-// Lazy-loaded placeholder pages
+// Placeholder & Module Pages
 const CollectionsPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.CollectionsPage })));
 const PromotionsPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.PromotionsPage })));
 const DistributionPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.DistributionPage })));
@@ -72,41 +85,26 @@ const AssetsPage = lazy(() => import("./pages/admin/marketing/AssetsPage.tsx"));
 
 const CompanyDocumentsPage = lazy(() => import("./pages/admin/CompanyDocumentsPage.tsx"));
 const AutomationPage = lazy(() => import("./pages/admin/AutomationPage.tsx"));
-
-const LiveTripOperationsPage = lazy(() => import("./pages/admin/LiveTripOperationsPage.tsx"));
-const VerificationQueuePage = lazy(() => import("./pages/admin/VerificationQueuePage.tsx"));
-const TrainTemplatesPage = lazy(() => import("./pages/admin/TrainTemplatesPage.tsx"));
-const TicketApprovalsPage = lazy(() => import("./pages/admin/TicketApprovalsPage.tsx"));
-const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
 const OperationsHubPage = lazy(() => import("./pages/admin/OperationsHubPage.tsx"));
-const StaticWorkspacePage = lazy(() => import("./pages/admin/StaticWorkspacePage.tsx"));
-const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
 const DepartureHubPage = lazy(() => import("./pages/admin/DepartureHubPage.tsx"));
+const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
 const MasterDatabasePage = lazy(() => import("./pages/admin/MasterDatabasePage.tsx"));
 const CustomerProfilePage = lazy(() => import("./pages/admin/CustomerProfilePage.tsx"));
-
-import { AdminLayout } from "./components/admin/AdminLayout.tsx";
-import ErrorBoundary from "./components/ErrorBoundary.tsx";
-import { DynamicThemeProvider } from "./components/admin/DynamicThemeProvider.tsx";
+const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
+const VerificationQueuePage = lazy(() => import("./pages/admin/VerificationQueuePage.tsx"));
+const TicketApprovalsPage = lazy(() => import("./pages/admin/TicketApprovalsPage.tsx"));
+const TrainTemplatesPage = lazy(() => import("./pages/admin/TrainTemplatesPage.tsx"));
+const LiveTripOperationsPage = lazy(() => import("./pages/admin/LiveTripOperationsPage.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,              // 1 min default stale time for queries
-      gcTime: 5 * 60_000,             // 5 min cache garbage collection
-      refetchOnWindowFocus: false,    // prevent unwanted refetches on tab switch
-      refetchOnReconnect: false,
       retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 30000,
     },
   },
 });
-
-const LoadingUI = () => (
-  <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-6">
-    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Loading page content...</p>
-  </div>
-);
 
 import { isFounder } from "@/config/permissions.config";
 
@@ -162,11 +160,15 @@ const App = () => (
                 <Route path="/admin/login" element={<Suspense fallback={<LoadingUI />}><LoginPage /></Suspense>} />
                 <Route path="/" element={<AdminRoute requiredPermission="dashboard.view"><DashboardPage /></AdminRoute>} />
                 <Route path="/admin" element={<AdminRoute requiredPermission="dashboard.view"><DashboardPage /></AdminRoute>} />
+
+                {/* Profile & Personal Settings Routes */}
+                <Route path="/admin/profile" element={<AdminRoute><ProfilePage /></AdminRoute>} />
                 <Route path="/admin/my-profile" element={<AdminRoute><ProfilePage /></AdminRoute>} />
                 <Route path="/admin/settings" element={<AdminRoute><ProfilePage /></AdminRoute>} />
+                <Route path="/admin/change-password" element={<AdminRoute><ProfilePage /></AdminRoute>} />
                 <Route path="/admin/security" element={<AdminRoute><ProfilePage /></AdminRoute>} />
-                <Route path="/admin/profile" element={<Navigate to="/admin/my-profile" replace />} />
 
+                {/* Core OS Modules */}
                 <Route path="/admin/trips" element={<AdminRoute requiredPermission="trips.view"><TripsPage /></AdminRoute>} />
                 <Route path="/admin/bookings" element={<AdminRoute requiredPermission="bookings.view"><BookingsPage /></AdminRoute>} />
                 <Route path="/admin/verification-queue" element={<AdminRoute requiredPermission="bookings.view"><VerificationQueuePage /></AdminRoute>} />
@@ -209,9 +211,10 @@ const App = () => (
                 <Route path="/admin/automation" element={<AdminRoute requiredPermission="settings.view"><AutomationPage /></AdminRoute>} />
                 <Route path="/admin/billing" element={<AdminRoute requiredPermission="settings.view"><BillingPage /></AdminRoute>} />
 
-                {/* Founder Only Routes & Backward Compatible Aliases */}
+                {/* Founder Only Routes & Staff Management */}
                 <Route path="/admin/staff-profiles" element={<AdminRoute founderOnly requiredPermission="staff_profiles.view"><UserManagementPage /></AdminRoute>} />
                 <Route path="/admin/staff-profiles/:staffId" element={<AdminRoute founderOnly requiredPermission="staff_profiles.view"><UserManagementPage /></AdminRoute>} />
+                <Route path="/admin/people/staff" element={<AdminRoute founderOnly requiredPermission="staff_profiles.view"><UserManagementPage /></AdminRoute>} />
                 <Route path="/admin/users" element={<Navigate to="/admin/staff-profiles" replace />} />
                 <Route path="/admin/roles-permissions" element={<AdminRoute founderOnly requiredPermission="roles_permissions.manage"><AccessControlPage /></AdminRoute>} />
                 <Route path="/admin/access-control" element={<Navigate to="/admin/roles-permissions" replace />} />
@@ -250,4 +253,5 @@ const App = () => (
     </QueryClientProvider>
   </ErrorBoundary>
 );
+
 export default App;

@@ -39,6 +39,13 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     breadcrumbLabel: "Dashboard"
   },
   {
+    id: "profile",
+    label: "My Profile",
+    path: "/admin/profile",
+    authenticatedOnly: true,
+    breadcrumbLabel: "My Profile"
+  },
+  {
     id: "my-profile",
     label: "My Profile",
     path: "/admin/my-profile",
@@ -46,11 +53,18 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     breadcrumbLabel: "My Profile"
   },
   {
-    id: "settings-personal",
+    id: "settings",
     label: "Settings",
     path: "/admin/settings",
     authenticatedOnly: true,
     breadcrumbLabel: "Settings"
+  },
+  {
+    id: "change-password",
+    label: "Change Password",
+    path: "/admin/change-password",
+    authenticatedOnly: true,
+    breadcrumbLabel: "Change Password"
   },
   {
     id: "security",
@@ -297,6 +311,14 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     founderOnly: true,
     permission: "staff_profiles.view",
     navigation: { visible: true, group: "Administration", iconName: "Users" },
+    breadcrumbLabel: "Administration / Staff Profiles"
+  },
+  {
+    id: "staff-profiles-alt",
+    label: "Manage Staff Profiles",
+    path: "/admin/people/staff",
+    founderOnly: true,
+    permission: "staff_profiles.view",
     breadcrumbLabel: "Administration / Staff Profiles"
   },
   {

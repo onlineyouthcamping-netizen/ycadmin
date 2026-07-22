@@ -2,8 +2,10 @@ import { lazy, LazyExoticComponent, ComponentType } from "react";
 
 export const COMPONENT_REGISTRY: Record<string, LazyExoticComponent<ComponentType<any>>> = {
   "dashboard": lazy(() => import("../pages/admin/DashboardPage.tsx")),
+  "profile": lazy(() => import("../pages/admin/ProfilePage.tsx")),
   "my-profile": lazy(() => import("../pages/admin/ProfilePage.tsx")),
-  "settings-personal": lazy(() => import("../pages/admin/ProfilePage.tsx")),
+  "settings": lazy(() => import("../pages/admin/ProfilePage.tsx")),
+  "change-password": lazy(() => import("../pages/admin/ProfilePage.tsx")),
   "security": lazy(() => import("../pages/admin/ProfilePage.tsx")),
   "inquiries": lazy(() => import("../pages/admin/InquiriesPage.tsx")),
   "package-builder": lazy(() => import("../pages/admin/PackageBuilderPage.tsx")),
@@ -33,6 +35,7 @@ export const COMPONENT_REGISTRY: Record<string, LazyExoticComponent<ComponentTyp
   "blogs": lazy(() => import("../pages/admin/BlogsPage.tsx")),
   "reviews": lazy(() => import("../pages/admin/ReviewsPage.tsx")),
   "staff-profiles": lazy(() => import("../pages/admin/UserManagementPage.tsx")),
+  "staff-profiles-alt": lazy(() => import("../pages/admin/UserManagementPage.tsx")),
   "staff-profile-detail": lazy(() => import("../pages/admin/UserManagementPage.tsx")),
   "roles-permissions": lazy(() => import("../pages/admin/AccessControlPage.tsx")),
   "email-templates": lazy(() => import("../pages/admin/EmailTemplatesPage.tsx")),

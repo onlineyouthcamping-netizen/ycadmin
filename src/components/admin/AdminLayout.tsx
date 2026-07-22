@@ -773,10 +773,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       </div>
 
                       <DropdownMenuItem 
-                        onClick={() => {
-                          setProfileModalTab("profile");
-                          setProfileModalOpen(true);
-                        }}
+                        onClick={() => navigate("/admin/profile")}
                         className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
                       >
                         <User className="w-4 h-4 mr-2 text-slate-500" />
@@ -792,10 +789,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       </DropdownMenuItem>
 
                       <DropdownMenuItem 
-                        onClick={() => {
-                          setProfileModalTab("password");
-                          setProfileModalOpen(true);
-                        }}
+                        onClick={() => navigate("/admin/change-password")}
                         className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
                       >
                         <Key className="w-4 h-4 mr-2 text-slate-500" />
@@ -807,7 +801,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         <>
                           <DropdownMenuSeparator className="my-1 border-slate-100" />
                           <DropdownMenuItem 
-                            onClick={() => navigate("/admin/staff-profiles")}
+                            onClick={() => navigate("/admin/people/staff")}
                             className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
                           >
                             <Users className="w-4 h-4 mr-2 text-orange-600" />
