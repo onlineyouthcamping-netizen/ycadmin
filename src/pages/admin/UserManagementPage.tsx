@@ -18,7 +18,7 @@ import {
   Sliders,
   ShieldCheck,
   Check,
-  ChevronRight
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,6 +61,64 @@ const EXTRA_MODULE_ROLES = [
   { value: 'finance', label: 'Finance Access', desc: 'View payments, GST, payouts & reconciliations' },
   { value: 'BOOKING_VERIFIER', label: 'Booking Verifier Access', desc: 'Verify bookings, manage train ticket queue' }
 ];
+
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  superadmin: [],
+  admin: [
+    'dashboard.view', 'trips.view', 'trips.create', 'trips.edit', 'trips.publish', 'trips.archive',
+    'design.view', 'design.edit', 'bookings.view', 'bookings.create', 'bookings.edit', 'bookings.approve',
+    'bookings.reject', 'payments.view', 'payments.edit', 'inquiries.view', 'inquiries.create', 'inquiries.edit',
+    'quotations.view', 'quotations.create', 'quotations.edit', 'customers.view', 'guides.view', 'guides.manage',
+    'operations.view', 'operations.edit', 'reports.view', 'reports.export', 'settings.view', 'bookings.verify',
+    'tickets.view', 'tickets.create', 'tickets.edit', 'tickets.submit', 'tickets.approve', 'tickets.reopen',
+    'tickets.bulk', 'tickets.templates.manage', 'tickets.alerts.view', 'accounting.view', 'accounting.submit',
+    'accounting.approve', 'ops.view', 'ops.manage', 'ops.allocate', 'ops.checklist', 'emails.view', 'emails.send',
+    'emails.send_bulk', 'emails.manage_templates', 'emails.view_logs', 'vendors.view', 'vendors.create',
+    'vendors.edit', 'vendors.import', 'vendors.activate', 'package.vendor.select', 'ops.vendor.allocate',
+    'ops.vendor.confirm', 'ops.vendor.rate.override', 'station_payments.view', 'station_payments.collect',
+    'station_payments.edit_before_handover', 'station_payments.cancel', 'station_payments.handover',
+    'station_payments.receive', 'station_payments.reconcile', 'station_payments.export', 'station_payments.resend_receipt',
+    'station_payments.manage_accounts', 'station_payments.verify_upi'
+  ],
+  sales: [
+    'dashboard.view', 'trips.view', 'bookings.view', 'bookings.create', 'bookings.edit', 'bookings.approve',
+    'payments.view', 'inquiries.view', 'inquiries.create', 'inquiries.edit', 'quotations.view', 'quotations.create',
+    'quotations.edit', 'tickets.view', 'tickets.create', 'tickets.edit', 'tickets.submit', 'tickets.bulk',
+    'tickets.alerts.view', 'accounting.view', 'accounting.submit', 'emails.view', 'emails.send', 'emails.send_bulk',
+    'emails.view_logs', 'vendors.view', 'package.vendor.select', 'notifications.view_own', 'notifications.mark_read',
+    'activity.view', 'customers.view', 'customers.timeline.view', 'company_documents.view', 'recurring_tasks.view',
+    'station_payments.view'
+  ],
+  operations: [
+    'dashboard.view', 'trips.view', 'bookings.view', 'bookings.edit', 'operations.view', 'operations.edit',
+    'guides.view', 'tickets.view', 'tickets.create', 'tickets.edit', 'tickets.submit', 'tickets.approve',
+    'tickets.reopen', 'tickets.bulk', 'tickets.templates.manage', 'tickets.alerts.view', 'ops.view', 'ops.manage',
+    'ops.allocate', 'ops.checklist', 'emails.view', 'emails.send', 'emails.view_logs', 'vendors.view',
+    'vendors.create', 'vendors.edit', 'vendors.import', 'package.vendor.select', 'ops.vendor.allocate',
+    'ops.vendor.confirm', 'ops.vendor.rate.override', 'notifications.view_own', 'notifications.mark_read',
+    'activity.view', 'company_documents.view', 'recurring_tasks.view', 'recurring_tasks.assign',
+    'station_payments.view', 'station_payments.collect', 'station_payments.edit_before_handover',
+    'station_payments.cancel', 'station_payments.handover', 'station_payments.resend_receipt'
+  ],
+  finance: [
+    'dashboard.view', 'bookings.view', 'bookings.edit', 'payments.view', 'payments.edit', 'reports.view',
+    'reports.export', 'accounting.view', 'accounting.submit', 'accounting.approve', 'emails.view', 'emails.send',
+    'station_payments.view', 'station_payments.receive', 'station_payments.reconcile', 'station_payments.export',
+    'station_payments.manage_accounts', 'station_payments.verify_upi'
+  ],
+  guide: [
+    'trips.view', 'bookings.view', 'operations.view', 'operations.edit', 'guides.view',
+    'station_payments.view', 'station_payments.collect'
+  ],
+  viewer: [
+    'dashboard.view', 'trips.view', 'bookings.view', 'inquiries.view', 'quotations.view', 'reports.view'
+  ],
+  BOOKING_VERIFIER: [
+    'dashboard.view', 'bookings.view', 'bookings.verify', 'tickets.view', 'tickets.create', 'tickets.edit',
+    'tickets.submit', 'tickets.approve', 'tickets.reopen', 'tickets.bulk', 'tickets.templates.manage',
+    'tickets.alerts.view', 'emails.view', 'emails.send', 'emails.view_logs'
+  ]
+};
 
 const PERMISSION_GROUPS = [
   {
@@ -258,8 +316,42 @@ export default function UserManagementPage() {
   const openPermissionModal = (user: Admin) => {
     setPermUser(user);
     setPermRole(user.role);
-    setSelectedCustomPerms(user.customPermissions || []);
+    
+    // If user has existing customPermissions, load them.
+    // Otherwise, pre-tick ALL default permissions of the user's current role dynamically!
+    if (user.customPermissions && Array.isArray(user.customPermissions) && user.customPermissions.length > 0) {
+      setSelectedCustomPerms(user.customPermissions);
+    } else {
+      const defaultPerms = ROLE_PERMISSIONS[user.role] || [];
+      setSelectedCustomPerms([...defaultPerms]);
+    }
     setPermOpen(true);
+  };
+
+  const handleRoleChangeInModal = (newRole: AdminRole) => {
+    setPermRole(newRole);
+    // Dynamically update pre-ticked permissions when Primary Role dropdown changes!
+    const defaultPerms = ROLE_PERMISSIONS[newRole] || [];
+    setSelectedCustomPerms([...defaultPerms]);
+  };
+
+  const resetRoleToDefaultInModal = () => {
+    const defaultPerms = ROLE_PERMISSIONS[permRole] || [];
+    setSelectedCustomPerms([...defaultPerms]);
+    toast.info(`Reset permissions to ${permRole} defaults`);
+  };
+
+  const toggleExtraRoleModule = (roleKey: string) => {
+    const rolePerms = ROLE_PERMISSIONS[roleKey] || [];
+    const isCurrentlyChecked = selectedCustomPerms.includes(roleKey) || rolePerms.every(p => selectedCustomPerms.includes(p));
+    
+    if (isCurrentlyChecked) {
+      // Remove extra role key and its unique permissions
+      setSelectedCustomPerms(prev => prev.filter(k => k !== roleKey && !rolePerms.includes(k)));
+    } else {
+      // Add extra role key and all its permissions
+      setSelectedCustomPerms(prev => Array.from(new Set([...prev, roleKey, ...rolePerms])));
+    }
   };
 
   const toggleCustomPermissionItem = (itemKey: string) => {
@@ -373,7 +465,7 @@ export default function UserManagementPage() {
                           ))}
                           {customPermsCount - extraRolesGranted.length > 0 && (
                             <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold uppercase text-[8.5px] tracking-wider px-1.5 py-0.5 rounded-[4px] border">
-                              + {customPermsCount - extraRolesGranted.length} Perms
+                              {customPermsCount} Active Perms
                             </Badge>
                           )}
                         </div>
@@ -566,26 +658,41 @@ export default function UserManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Manual Role Access Control & Permissions Dialog */}
+      {/* Manual Role Access Control & Dynamic Permissions Dialog */}
       <Dialog open={permOpen} onOpenChange={setPermOpen}>
-        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto rounded-[4px] border border-slate-200 p-5 bg-white">
-          <DialogHeader className="border-b pb-3">
-            <DialogTitle className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-              <ShieldCheck className="w-4.5 h-4.5 text-primary-orange" /> Manual Role Access Control
-            </DialogTitle>
-            <DialogDescription className="text-[11px] text-slate-500 font-medium">
-              Configure primary role & grant manual access overrides (e.g. grant guide or viewer permissions to a finance user) for <span className="font-semibold text-slate-800">{permUser?.name}</span>.
-            </DialogDescription>
+        <DialogContent className="sm:max-w-[680px] max-h-[85vh] overflow-y-auto rounded-[4px] border border-slate-200 p-5 bg-white">
+          <DialogHeader className="border-b pb-3 flex flex-row items-center justify-between">
+            <div>
+              <DialogTitle className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <ShieldCheck className="w-4.5 h-4.5 text-primary-orange" /> Manual Role Access Control
+              </DialogTitle>
+              <DialogDescription className="text-[11px] text-slate-500 font-medium">
+                Permissions for <span className="font-semibold text-slate-800">{permUser?.name}</span> are dynamically pre-ticked based on the selected primary role. You can tick or untick any item manually.
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetRoleToDefaultInModal}
+              className="h-7 text-[10.5px] font-bold text-slate-600 hover:text-primary-orange hover:bg-orange-50 border-slate-200 flex items-center gap-1 shrink-0"
+              title="Reset permissions to role defaults"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset Defaults
+            </Button>
           </DialogHeader>
 
           <form onSubmit={handleSavePermissions} className="space-y-5 py-3">
             {/* Primary Role Selector */}
             <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-[4px] border border-slate-200">
-              <Label htmlFor="perm-role" className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Primary System Role</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="perm-role" className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Primary System Role</Label>
+                <span className="text-[10px] text-slate-400 font-semibold">Changing role updates default ticked permissions</span>
+              </div>
               <select
                 id="perm-role"
                 value={permRole}
-                onChange={(e) => setPermRole(e.target.value as AdminRole)}
+                onChange={(e) => handleRoleChangeInModal(e.target.value as AdminRole)}
                 className="w-full rounded-[4px] h-9 border border-slate-200 px-3 bg-white text-xs font-semibold focus:outline-none focus:border-primary-orange"
               >
                 {ROLES.map((r) => (
@@ -596,22 +703,23 @@ export default function UserManagementPage() {
               </select>
             </div>
 
-            {/* Additional Granted Module Access / Roles */}
+            {/* Additional Granted Module Roles */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Grant Additional Role Modules</Label>
-                <span className="text-[10px] text-slate-400 font-semibold">Select whole role modules to grant extra access</span>
+                <span className="text-[10px] text-slate-400 font-semibold">Select whole role modules to add extra access</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {EXTRA_MODULE_ROLES.map((mod) => {
-                  const isChecked = selectedCustomPerms.includes(mod.value);
+                  const rolePerms = ROLE_PERMISSIONS[mod.value] || [];
+                  const isChecked = selectedCustomPerms.includes(mod.value) || (rolePerms.length > 0 && rolePerms.every(p => selectedCustomPerms.includes(p)));
                   return (
                     <div
                       key={mod.value}
-                      onClick={() => toggleCustomPermissionItem(mod.value)}
+                      onClick={() => toggleExtraRoleModule(mod.value)}
                       className={`p-2.5 rounded-[4px] border cursor-pointer transition-all flex items-start gap-2.5 ${
                         isChecked 
-                          ? 'bg-orange-50/70 border-primary-orange text-slate-800' 
+                          ? 'bg-orange-50/70 border-primary-orange text-slate-800 shadow-sm' 
                           : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
@@ -632,7 +740,10 @@ export default function UserManagementPage() {
 
             {/* Granular Feature Permissions */}
             <div className="space-y-3">
-              <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Granular Permission Overrides</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Granular Feature Permissions</Label>
+                <span className="text-[10px] text-slate-400 font-semibold">{selectedCustomPerms.length} permissions currently active (ticked)</span>
+              </div>
               <div className="space-y-3">
                 {PERMISSION_GROUPS.map((group) => (
                   <div key={group.name} className="border border-slate-200 rounded-[4px] p-3 bg-white space-y-2">
@@ -645,14 +756,18 @@ export default function UserManagementPage() {
                             key={p.key}
                             type="button"
                             onClick={() => toggleCustomPermissionItem(p.key)}
-                            className={`px-2 py-1.5 rounded-[4px] border text-[10.5px] font-semibold text-left flex items-center justify-between transition-colors ${
+                            className={`px-2.5 py-1.5 rounded-[4px] border text-[10.5px] font-semibold text-left flex items-center justify-between transition-all ${
                               isChecked
-                                ? 'bg-orange-50 border-orange-300 text-primary-orange font-bold'
-                                : 'bg-slate-50/60 border-slate-150 text-slate-600 hover:bg-slate-100'
+                                ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800 font-bold shadow-xs'
+                                : 'bg-slate-50/60 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                             }`}
                           >
                             <span className="truncate">{p.label}</span>
-                            {isChecked && <Check className="w-3 h-3 shrink-0 ml-1 text-primary-orange" />}
+                            {isChecked ? (
+                              <Check className="w-3.5 h-3.5 shrink-0 ml-1 text-emerald-600 stroke-[2.5]" />
+                            ) : (
+                              <span className="w-3 h-3 rounded-full border border-slate-300 shrink-0 ml-1 inline-block" />
+                            )}
                           </button>
                         );
                       })}
