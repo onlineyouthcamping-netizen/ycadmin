@@ -362,15 +362,23 @@ function AdminSidebar() {
               return true;
             };
 
-            // Filter subItems based on role permissions
+            // Filter subItems based on role permissions and strict Founder privacy rule
             const visibleSubItems = mod.subItems?.filter(sub => {
+              const urlPath = sub.url.split('?')[0];
+              // Strict Privacy Rule: Staff Profiles / Users & Roles menu is ONLY visible to Founder Hemal Patel
+              if (urlPath === '/admin/users' || urlPath === '/admin/access-control' || urlPath === '/admin/audit-logs') {
+                const email = (admin?.email || '').toLowerCase().trim();
+                const name = (admin?.name || '').toLowerCase().trim();
+                const isFounder = email.includes('hemal') || name.includes('hemal') || email === 'hemal.patel@youthcamping.online';
+                if (!isFounder) return false;
+              }
               if (admin?.role === 'sales') {
                 const salesAllowedUrls = ["/admin/bookings", "/admin/booking-forms", "/admin/inquiries", "/admin/quotations", "/admin/package-builder", "/admin/master-database", "/admin/approvals-hub", "/admin/ticket-approvals"];
-                return salesAllowedUrls.includes(sub.url.split('?')[0]);
+                return salesAllowedUrls.includes(urlPath);
               }
               if (admin?.role === 'guide') {
                 const guideAllowedUrls = ["/admin/live-operations", "/admin/guides-hub"];
-                return guideAllowedUrls.includes(sub.url.split('?')[0]);
+                return guideAllowedUrls.includes(urlPath);
               }
               return true;
             }) || [];

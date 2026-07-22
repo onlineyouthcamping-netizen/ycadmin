@@ -107,7 +107,7 @@ const LoadingUI = () => (
   </div>
 );
 
-function AdminRoute({ children, requiredPermission }: { children: React.ReactNode; requiredPermission?: string }) {
+function AdminRoute({ children, requiredPermission, founderOnly }: { children: React.ReactNode; requiredPermission?: string; founderOnly?: boolean }) {
   const { admin, isAuthenticated, isLoading } = useAuthStore();
 
   if (isLoading) {
@@ -118,7 +118,15 @@ function AdminRoute({ children, requiredPermission }: { children: React.ReactNod
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (requiredPermission && !hasPermission(admin.permissions, requiredPermission, admin.role)) {
+  const email = (admin.email || '').toLowerCase().trim();
+  const name = (admin.name || '').toLowerCase().trim();
+  const isFounder = email.includes('hemal') || name.includes('hemal') || email === 'hemal.patel@youthcamping.online';
+
+  if (founderOnly && !isFounder) {
+    return <Navigate to="/admin/unauthorized" replace />;
+  }
+
+  if (requiredPermission && !hasPermission(admin.permissions || admin.customPermissions, requiredPermission, admin.role)) {
     return <Navigate to="/admin/unauthorized" replace />;
   }
 
@@ -195,9 +203,9 @@ const App = () => (
               <Route path="/admin/company-documents" element={<AdminRoute requiredPermission="settings.view"><CompanyDocumentsPage /></AdminRoute>} />
               <Route path="/admin/automation" element={<AdminRoute requiredPermission="settings.view"><AutomationPage /></AdminRoute>} />
               <Route path="/admin/billing" element={<AdminRoute requiredPermission="settings.view"><BillingPage /></AdminRoute>} />
-              <Route path="/admin/users" element={<AdminRoute requiredPermission="users.manage"><UserManagementPage /></AdminRoute>} />
-              <Route path="/admin/access-control" element={<AdminRoute requiredPermission="roles.manage"><AccessControlPage /></AdminRoute>} />
-              <Route path="/admin/audit-logs" element={<AdminRoute requiredPermission="audit.view"><AuditLogsPage /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute founderOnly requiredPermission="users.manage"><UserManagementPage /></AdminRoute>} />
+              <Route path="/admin/access-control" element={<AdminRoute founderOnly requiredPermission="roles.manage"><AccessControlPage /></AdminRoute>} />
+              <Route path="/admin/audit-logs" element={<AdminRoute founderOnly requiredPermission="audit.view"><AuditLogsPage /></AdminRoute>} />
               <Route path="/admin/unauthorized" element={<AdminRoute><UnauthorizedPage /></AdminRoute>} />
               <Route path="/admin/dynamic-sync" element={<AdminRoute requiredPermission="settings.view"><DynamicFormAdmin /></AdminRoute>} />
               <Route path="/admin/guides-dashboard" element={<AdminRoute requiredPermission="guides.view"><GuidesDashboardPage /></AdminRoute>} />
