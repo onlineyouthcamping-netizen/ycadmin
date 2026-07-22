@@ -12,6 +12,7 @@ export interface Admin {
   createdAt?: string;
   updatedAt?: string;
   permissions?: string[];
+  customPermissions?: string[];
 }
 
 export interface AuditLog {

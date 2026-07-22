@@ -12,8 +12,13 @@ export const adminUsersService = {
     return response.data.data;
   },
 
-  updateAdminRole: async (id: string, role: string): Promise<{ id: string; role: string }> => {
-    const response = await api.put(`/admin/users/${id}/role`, { role });
+  updateAdminRole: async (id: string, role: string, customPermissions?: string[]): Promise<{ id: string; role: string; customPermissions?: string[] }> => {
+    const response = await api.put(`/admin/users/${id}/role`, { role, customPermissions });
+    return response.data.data;
+  },
+
+  updateAdminPermissions: async (id: string, payload: { role?: string; customPermissions?: string[] }): Promise<{ id: string; role: string; customPermissions?: string[] }> => {
+    const response = await api.put(`/admin/users/${id}/permissions`, payload);
     return response.data.data;
   },
 
