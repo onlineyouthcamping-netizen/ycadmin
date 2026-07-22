@@ -102,6 +102,7 @@ export interface BookingRow {
   salesperson?: string;
   salespersonId?: string;
   numberOfPersons?: number;
+  members?: { name: string; phone: string }[];
   finalAmount: number;
   previousPaid: number;
   remaining: number;

@@ -32,9 +32,13 @@
     --ring: 222.2 47.4% 11.2%;
     --radius: 8px; /* Compact 8px radius */
 
-    /* Sidebar - Dark Navy */
-    --sidebar-width: 14.5rem;
-    --sidebar-width-icon: 3.5rem;
+    /* Sidebar & Layout Tokens */
+    --sidebar-width: 240px;
+    --sidebar-width-icon: 72px;
+    --header-height: 64px;
+    --content-padding-desktop: 24px;
+    --content-padding-mobile: 16px;
+
     --sidebar-background: 222.2 47.4% 11.2%; /* Navy */
     --sidebar-foreground: 210 20% 90%;
     --sidebar-primary: 20 100% 50%;
@@ -51,6 +55,7 @@
 
   * {
     @apply border-border;
+    font-style: normal !important;
   }
 
   body {

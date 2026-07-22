@@ -356,12 +356,19 @@ export default function OperationsHubPage() {
 
   const [selectedDeparture, setSelectedDeparture] = useState<any>(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qTripId = params.get("tripId");
+    if (qTripId) {
+      navigate(`/admin/departure-workspace${window.location.search}`, { replace: true });
+    }
+  }, [navigate]);
+
   const handleOpenDeparture = (dep: any) => {
-    setSelectedDeparture(dep);
-    setSelectedTripId(dep.id);
-    setSelectedDepartureDate(dep.departureDate);
-    setOpsView("departure_detail");
-    setActiveTab("overview");
+    const tripId = dep.id || dep.tripId || "";
+    const date = dep.departureDate || "";
+    const query = `?tripId=${encodeURIComponent(tripId)}&date=${encodeURIComponent(date)}&tab=passengers`;
+    navigate(`/admin/departure-workspace${query}`);
   };
   const loadedWorkspaceTabs = useRef(new Set<string>());
   const opsRequestId = useRef(0);

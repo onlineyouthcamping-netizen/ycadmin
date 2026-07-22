@@ -614,7 +614,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
           {/* Top Navbar */}
-          <header className="h-12 flex items-center justify-between border-b border-[#E2E8F0] bg-white px-4 sm:px-6 shrink-0 z-20 sticky top-0">
+          <header className="h-16 flex items-center justify-between border-b border-[#E2E8F0] bg-white px-4 sm:px-6 shrink-0 z-20 sticky top-0">
             <div className="flex items-center gap-3 min-w-0">
                <SidebarTrigger className="text-slate-500 hover:text-slate-800 hover:bg-slate-100 h-8 w-8 rounded-md shrink-0 flex items-center justify-center transition-colors" />
                <div className="h-4 w-px bg-slate-200 hidden md:block" />
@@ -807,14 +807,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         <>
                           <DropdownMenuSeparator className="my-1 border-slate-100" />
                           <DropdownMenuItem 
-                            onClick={() => navigate("/admin/users")}
+                            onClick={() => navigate("/admin/staff-profiles")}
                             className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
                           >
                             <Users className="w-4 h-4 mr-2 text-orange-600" />
                             Manage Staff Profiles
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => navigate("/admin/access-control")}
+                            onClick={() => navigate("/admin/roles-permissions")}
                             className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
                           >
                             <ShieldCheck className="w-4 h-4 mr-2 text-orange-600" />
