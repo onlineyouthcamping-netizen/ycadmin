@@ -53,6 +53,70 @@
     --warning: 38 92% 50%;
   }
 
+  [data-theme='dark'], html.dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    color-scheme: dark;
+  }
+
+  [data-theme='dark'] body, html.dark body {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+  }
+
+  /* Color presets */
+  [data-color='ocean-blue'] {
+    --accent-color: #2563eb;
+    --accent-light: #dbeafe;
+  }
+
+  [data-color='forest-green'] {
+    --accent-color: #16a34a;
+    --accent-light: #dcfce7;
+  }
+
+  [data-color='sunset-orange'] {
+    --accent-color: #ea580c;
+    --accent-light: #fed7aa;
+  }
+
+  [data-color='modern-purple'] {
+    --accent-color: #a855f7;
+    --accent-light: #f3e8ff;
+  }
+
+  /* Font sizes */
+  [data-font-size='small'] {
+    font-size: 12px;
+  }
+
+  [data-font-size='normal'] {
+    font-size: 14px;
+  }
+
+  [data-font-size='large'] {
+    font-size: 16px;
+  }
+
+  /* Table density */
+  [data-density='compact'] table tr, [data-density='compact'] [role="grid"] [role="row"] {
+    height: 38px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+  }
+
+  [data-density='detailed'] table tr, [data-density='detailed'] [role="grid"] [role="row"] {
+    height: 56px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
   * {
     @apply border-border;
     font-style: normal !important;
