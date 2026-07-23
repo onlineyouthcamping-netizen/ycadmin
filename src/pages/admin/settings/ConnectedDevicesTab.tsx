@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Laptop, Smartphone, Monitor, LogOut, RefreshCw, ShieldAlert } from "lucide-react";
+import { Laptop, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SessionTable } from "./components/SessionTable";
 import { LoginSession } from "@/types";
@@ -48,18 +48,18 @@ export function ConnectedDevicesTab() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-5">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <Laptop className="w-4 h-4 text-orange-600" />
-            <h3 className="text-sm font-bold text-slate-900">Connected Devices & Active Sessions</h3>
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Connected Devices & Active Sessions</h3>
           </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={fetchSessions}
-            className="h-8 text-xs font-semibold border-slate-300"
+            className="h-8 text-xs font-semibold border-slate-300 w-full sm:w-auto"
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
             Refresh Sessions
