@@ -10,14 +10,80 @@ export interface Admin {
   phone?: string;
   avatarUrl?: string;
   designation?: string;
-  notificationPreferences?: Record<string, boolean>;
-  uiSettings?: Record<string, any>;
+  notificationPreferences?: NotificationPreferences;
+  uiSettings?: UISettings;
   lastLoginAt?: string;
   tenantId?: string;
   createdAt?: string;
   updatedAt?: string;
   permissions?: string[];
   customPermissions?: string[];
+}
+  dailyDigest?: boolean;
+  bookingAlerts?: boolean;
+  paymentConfirmations?: boolean;
+  departureReminders?: boolean;
+  staffAnnouncements?: boolean;
+  inAppNotifications?: boolean;
+  notificationSound?: boolean;
+  frequency?: 'real-time' | 'hourly' | 'daily';
+  [key: string]: any;
+}
+
+export interface UserPreferences {
+  defaultTripFilter?: string;
+  defaultSort?: string;
+  autoSaveDrafts?: boolean;
+  currency?: string;
+  dateFormat?: string;
+  timeFormat?: string;
+  timezone?: string;
+  dashboardWidgets?: string[];
+  [key: string]: any;
+}
+
+export interface UISettings {
+  theme?: 'light' | 'dark';
+  themePreset?: 'ocean-blue' | 'forest-green' | 'sunset-orange' | 'modern-purple';
+  fontSize?: 'small' | 'normal' | 'large';
+  listView?: 'compact' | 'detailed';
+  location?: string;
+  bio?: string;
+  preferences?: UserPreferences;
+  cookiePreferences?: {
+    essential: boolean;
+    analytics: boolean;
+    marketing: boolean;
+  };
+  [key: string]: any;
+}
+
+export interface LoginSession {
+  id: string;
+  deviceName: string;
+  ipAddress: string;
+  location: string;
+  lastActivityAt: string;
+  isCurrent: boolean;
+}
+
+export interface APIKeyItem {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string;
+  permissions: string[];
+  isExpired: boolean;
+  expiresAt?: string | null;
+  keyPreview: string;
+}
+
+export interface IntegrationItem {
+  service: 'whatsapp' | 'sms' | 'email' | 'payment' | string;
+  status: 'connected' | 'disconnected';
+  provider: string;
+  connectedPhoneNumber?: string;
+  lastTested?: string | null;
 }
 
 export interface AuditLog {

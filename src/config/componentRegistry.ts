@@ -2,11 +2,11 @@ import { lazy, LazyExoticComponent, ComponentType } from "react";
 
 export const COMPONENT_REGISTRY: Record<string, LazyExoticComponent<ComponentType<any>>> = {
   "dashboard": lazy(() => import("../pages/admin/DashboardPage.tsx")),
-  "profile": lazy(() => import("../pages/admin/ProfilePage.tsx")),
-  "my-profile": lazy(() => import("../pages/admin/ProfilePage.tsx")),
-  "settings": lazy(() => import("../pages/admin/ProfilePage.tsx")),
-  "change-password": lazy(() => import("../pages/admin/ProfilePage.tsx")),
-  "security": lazy(() => import("../pages/admin/ProfilePage.tsx")),
+  "profile": lazy(() => import("../pages/admin/SettingsPage.tsx")),
+  "my-profile": lazy(() => import("../pages/admin/SettingsPage.tsx")),
+  "settings": lazy(() => import("../pages/admin/SettingsPage.tsx")),
+  "change-password": lazy(() => import("../pages/admin/SettingsPage.tsx")),
+  "security": lazy(() => import("../pages/admin/SettingsPage.tsx")),
   "inquiries": lazy(() => import("../pages/admin/InquiriesPage.tsx")),
   "package-builder": lazy(() => import("../pages/admin/PackageBuilderPage.tsx")),
   "quotations": lazy(() => import("../pages/admin/QuotationsPage.tsx")),

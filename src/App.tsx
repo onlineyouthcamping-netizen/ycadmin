@@ -162,11 +162,11 @@ const App = () => (
                 <Route path="/admin" element={<AdminRoute requiredPermission="dashboard.view"><DashboardPage /></AdminRoute>} />
 
                 {/* Profile & Personal Settings Routes */}
-                <Route path="/admin/profile" element={<AdminRoute><ProfilePage /></AdminRoute>} />
-                <Route path="/admin/my-profile" element={<AdminRoute><ProfilePage /></AdminRoute>} />
-                <Route path="/admin/settings" element={<AdminRoute><ProfilePage /></AdminRoute>} />
-                <Route path="/admin/change-password" element={<AdminRoute><ProfilePage /></AdminRoute>} />
-                <Route path="/admin/security" element={<AdminRoute><ProfilePage /></AdminRoute>} />
+                <Route path="/admin/profile" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                <Route path="/admin/my-profile" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                <Route path="/admin/change-password" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                <Route path="/admin/security" element={<AdminRoute><SettingsPage /></AdminRoute>} />
 
                 {/* Core OS Modules */}
                 <Route path="/admin/trips" element={<AdminRoute requiredPermission="trips.view"><TripsPage /></AdminRoute>} />
