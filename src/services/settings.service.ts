@@ -34,6 +34,43 @@ export interface ActivityLogItem {
 }
 
 export const settingsService = {
+  // General website / app settings helpers
+  get: async (): Promise<any> => {
+    try {
+      const response = await api.get('/settings');
+      return response.data?.data || response.data || {};
+    } catch {
+      return {};
+    }
+  },
+
+  update: async (payload: any): Promise<any> => {
+    try {
+      const response = await api.put('/settings', payload);
+      return response.data?.data || response.data || {};
+    } catch {
+      return {};
+    }
+  },
+
+  getFooter: async (): Promise<any> => {
+    try {
+      const response = await api.get('/settings/footer');
+      return response.data?.data || response.data || {};
+    } catch {
+      return {};
+    }
+  },
+
+  updateFooter: async (payload: any): Promise<any> => {
+    try {
+      const response = await api.put('/settings/footer', payload);
+      return response.data?.data || response.data || {};
+    } catch {
+      return {};
+    }
+  },
+
   // Get current admin details
   getProfile: async (): Promise<Admin> => {
     const response = await api.get('/admin/me');
