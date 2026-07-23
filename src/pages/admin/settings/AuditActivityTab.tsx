@@ -96,7 +96,8 @@ export function AuditActivityTab() {
         </div>
 
         <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
-          <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs min-w-[600px]">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                 <th className="py-2.5 px-4">Timestamp</th>
@@ -141,6 +142,7 @@ export function AuditActivityTab() {
             </tbody>
           </table>
         </div>
+      </div>
 
         <div className="flex items-center justify-between pt-2 text-xs text-slate-500">
           <span>Showing page {page} of {Math.ceil(totalCount / limit) || 1} ({totalCount} total events)</span>
