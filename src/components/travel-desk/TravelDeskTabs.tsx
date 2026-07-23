@@ -23,7 +23,7 @@ export const TravelDeskTabs: React.FC<TravelDeskTabsProps> = ({ tripId }) => {
   const currentTab = searchParams.get('tab') || 'knowledge';
 
   return (
-    <div className="bg-white px-4 pt-2 border-b border-slate-200 shrink-0">
+    <div className="bg-white px-4 pt-2.5 mt-1 border-b border-[#E2E8F0] shrink-0 font-sans">
       <div className="flex gap-5 overflow-x-auto no-scrollbar">
         {TRAVEL_DESK_TABS.map((tab) => {
           const isActive = currentTab === tab.id;
@@ -32,10 +32,10 @@ export const TravelDeskTabs: React.FC<TravelDeskTabsProps> = ({ tripId }) => {
               key={tab.id}
               to={`/admin/travel-desk?tripId=${tripId}&tab=${tab.id}`}
               className={cn(
-                "pb-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap",
+                "pb-2.5 text-[13px] font-semibold transition-all border-b-2 whitespace-nowrap",
                 isActive 
-                  ? "text-[#FF6B00] border-[#FF6B00]" 
-                  : "text-slate-500 border-transparent hover:text-slate-700 hover:border-slate-300"
+                  ? "text-[#F97316] border-[#F97316] font-bold" 
+                  : "text-[#0A192F] border-transparent hover:text-[#F97316] hover:border-slate-200"
               )}
             >
               {tab.label}

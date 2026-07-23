@@ -59,22 +59,23 @@ export const TravelDeskQuickActions = () => {
   const actions = getActionsForTab(currentTab);
 
   return (
-    <div className="w-[280px] bg-white border-l border-slate-200 shrink-0 flex flex-col h-full overflow-hidden">
-      <div className="p-4 border-b border-slate-100 bg-slate-50">
-        <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Quick Actions</h3>
+    <div className="w-[280px] bg-white border-l border-[#E2E8F0] shrink-0 flex flex-col h-full overflow-hidden font-sans">
+      <div className="p-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+        <h3 className="text-xs font-bold text-[#0A192F] uppercase tracking-wider">Quick Actions</h3>
       </div>
-      <div className="p-4 space-y-2 overflow-y-auto border-b border-slate-100">
+      {/* 10px vertical per item padding */}
+      <div className="p-3 space-y-2 overflow-y-auto border-b border-[#E2E8F0]">
         {actions.map((action, idx) => {
           const Icon = action.icon;
           return (
             <button
               key={idx}
-              className="w-full flex items-center gap-3 p-3 text-left bg-white border border-slate-200 rounded-xl hover:border-[#FF6B00] hover:shadow-sm transition-all group"
+              className="w-full flex items-center gap-3 py-[10px] px-3 text-left bg-white border border-[#E2E8F0] rounded-lg hover:border-[#0A192F] hover:bg-[#F8FAFC] transition-all group cursor-pointer"
             >
-              <div className="bg-slate-50 p-2 rounded-lg group-hover:bg-orange-50 group-hover:text-[#FF6B00] text-slate-500 transition-colors">
+              <div className="bg-[#F8FAFC] p-1.5 rounded-md group-hover:bg-[#0A192F] group-hover:text-white text-[#0A192F] transition-colors">
                 <Icon className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900">{action.label}</span>
+              <span className="text-xs font-semibold text-[#0A192F] group-hover:text-[#0A192F]">{action.label}</span>
             </button>
           );
         })}
@@ -82,11 +83,11 @@ export const TravelDeskQuickActions = () => {
 
       {currentTab === 'knowledge' && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="p-4 flex items-center justify-between">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Recent Updates</h3>
-            <button className="text-[10px] font-bold text-blue-600 hover:text-blue-800">View all</button>
+          <div className="p-3.5 flex items-center justify-between border-b border-[#E2E8F0]">
+            <h3 className="text-[11px] font-bold text-[#0A192F] uppercase tracking-wider">Recent Updates</h3>
+            <button className="text-[11px] font-bold text-[#F97316] hover:underline">View all</button>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
             <RecentUpdatesFeed />
           </div>
         </div>
@@ -110,20 +111,21 @@ const RecentUpdatesFeed = () => {
   }, [tripId]);
 
   if (updates.length === 0) {
-    return <p className="text-xs text-slate-400 text-center py-4">No recent updates.</p>;
+    {/* Left align, #64748B text */}
+    return <p className="text-xs text-[#64748B] text-left py-2 font-normal">No recent updates.</p>;
   }
 
   return (
     <>
       {updates.map(update => (
-        <div key={update.id} className="relative pl-4 border-l border-slate-200 pb-4 last:pb-0">
-          <div className="absolute w-2 h-2 rounded-full bg-slate-300 left-[-4.5px] top-1"></div>
-          <p className="text-[10px] font-bold text-slate-400 mb-0.5">
+        <div key={update.id} className="relative pl-3.5 border-l border-[#E2E8F0] pb-3 last:pb-0">
+          <div className="absolute w-2 h-2 rounded-full bg-[#F97316] left-[-4.5px] top-1"></div>
+          <p className="text-[10px] font-medium text-[#64748B] mb-0.5">
             {new Date(update.publishedAt || new Date()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
           </p>
           <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-semibold text-slate-700 line-clamp-2">{update.title}</p>
-            <span className="shrink-0 text-[8px] font-black bg-red-50 text-red-600 px-1.5 py-0.5 rounded tracking-wider border border-red-100">
+            <p className="text-xs font-semibold text-[#0A192F] line-clamp-2">{update.title}</p>
+            <span className="shrink-0 text-[8px] font-bold bg-orange-50 text-[#F97316] px-1.5 py-0.5 rounded tracking-wider border border-orange-200">
               NEW
             </span>
           </div>
