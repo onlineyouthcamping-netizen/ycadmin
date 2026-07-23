@@ -148,11 +148,12 @@ export function SecurityPasswordTab({ profile, onRefresh }: SecurityPasswordTabP
 
         <div className="flex justify-end pt-2">
           <Button
+            id="settings-tab-save-btn"
             type="submit"
             disabled={isChanging || !newPassword || newPassword !== confirmPassword}
-            className="h-9 px-5 text-xs font-bold uppercase tracking-wider bg-orange-600 hover:bg-orange-700 text-white shadow-xs"
+            className="h-9 px-5 text-xs font-bold uppercase tracking-wider bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xs rounded-lg flex items-center gap-1.5"
           >
-            {isChanging ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+            {isChanging ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1.5" />}
             Update Password
           </Button>
         </div>

@@ -304,11 +304,12 @@ export function UINotificationsTab({ profile, onRefresh }: UINotificationsTabPro
 
       <div className="flex justify-end pt-2">
         <Button
+          id="settings-tab-save-btn"
           type="submit"
           disabled={isSaving}
-          className="w-full sm:w-auto h-10 sm:h-9 px-6 text-xs sm:text-sm font-bold uppercase tracking-wider bg-orange-600 hover:bg-orange-700 text-white shadow-xs"
+          className="w-full sm:w-auto h-10 sm:h-9 px-6 text-xs sm:text-sm font-bold uppercase tracking-wider bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xs rounded-lg flex items-center gap-1.5"
         >
-          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+          {isSaving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Save className="w-4 h-4 mr-1.5" />}
           SAVE UI & NOTIFICATIONS
         </Button>
       </div>

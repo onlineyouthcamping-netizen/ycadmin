@@ -2,13 +2,21 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { 
   Search, Plus, Pencil, Trash2, MapPin, Building2, Car, Compass, Coffee, Users, ChevronDown, 
-  Filter, RotateCw, X, Save, Eye, EyeOff, ChevronRight, ArrowRightLeft, UtensilsCrossed, UserCheck
+  Filter, RotateCw, X, Save, Eye, ChevronRight, ArrowRightLeft, UtensilsCrossed, UserCheck, Copy,
+  MoreVertical, FileText, ShieldAlert
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -74,7 +82,7 @@ interface MasterRecord {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SEED DATA - Comprehensive initial inventory
+   SEED DATA
    ═══════════════════════════════════════════════════════════════ */
 const STATES = [
   "Himachal Pradesh", "Kerala", "Maharashtra", "Goa", "Ladakh", 
@@ -142,18 +150,15 @@ const INITIAL_RECORDS: MasterRecord[] = [
 ];
 
 const CATEGORY_META: { id: CategoryId; label: string; icon: any; color: string }[] = [
-  { id: "destinations", label: "Destinations", icon: MapPin, color: "bg-purple-50 text-purple-600 border-purple-100" },
-  { id: "hotels", label: "Hotels", icon: Building2, color: "bg-blue-50 text-blue-600 border-blue-100" },
-  { id: "vehicles", label: "Vehicles", icon: Car, color: "bg-amber-50 text-amber-600 border-amber-100" },
-  { id: "activities", label: "Activities", icon: Compass, color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
-  { id: "transfers", label: "Transfers", icon: ArrowRightLeft, color: "bg-pink-50 text-pink-600 border-pink-100" },
-  { id: "meals", label: "Meals & Add-ons", icon: UtensilsCrossed, color: "bg-orange-50 text-orange-600 border-orange-100" },
-  { id: "vendors", label: "Vendors", icon: UserCheck, color: "bg-indigo-50 text-indigo-600 border-indigo-100" },
+  { id: "destinations", label: "Destinations", icon: MapPin, color: "bg-purple-50 text-purple-700 border-purple-200" },
+  { id: "hotels", label: "Hotels", icon: Building2, color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { id: "vehicles", label: "Vehicles", icon: Car, color: "bg-amber-50 text-amber-700 border-amber-200" },
+  { id: "activities", label: "Activities", icon: Compass, color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { id: "transfers", label: "Transfers", icon: ArrowRightLeft, color: "bg-pink-50 text-pink-700 border-pink-200" },
+  { id: "meals", label: "Meals & Add-ons", icon: UtensilsCrossed, color: "bg-orange-50 text-orange-700 border-orange-200" },
+  { id: "vendors", label: "Vendors", icon: UserCheck, color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   BLANK FORM TEMPLATES
-   ═══════════════════════════════════════════════════════════════ */
 const blankRecord = (cat: CategoryId): Partial<MasterRecord> => ({
   category: cat, name: "", status: "Active", state: "", city: "",
   ...(cat === "destinations" ? { region: "", cities: "" } : {}),
@@ -165,9 +170,6 @@ const blankRecord = (cat: CategoryId): Partial<MasterRecord> => ({
   ...(cat === "vendors" ? { vendorType: "Hotel", contactPerson: "", contactPhone: "" } : {}),
 });
 
-/* ═══════════════════════════════════════════════════════════════
-   COMPONENT
-   ═══════════════════════════════════════════════════════════════ */
 export default function MasterDatabasePage() {
   const [records, setRecords] = useState<MasterRecord[]>(INITIAL_RECORDS);
   const [activeCategory, setActiveCategory] = useState<CategoryId | "all">("all");
@@ -180,6 +182,7 @@ export default function MasterDatabasePage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<MasterRecord>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [viewRecord, setViewRecord] = useState<MasterRecord | null>(null);
 
   /* ─── Derived ─── */
   const categoryCounts = useMemo(() => {
@@ -193,9 +196,13 @@ export default function MasterDatabasePage() {
       if (activeCategory !== "all" && r.category !== activeCategory) return false;
       if (stateFilter && r.state !== stateFilter) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
-      if (search) {
+      if (search.trim()) {
         const s = search.toLowerCase();
-        return r.name.toLowerCase().includes(s) || r.city.toLowerCase().includes(s) || r.state.toLowerCase().includes(s);
+        const matchesName = r.name.toLowerCase().includes(s);
+        const matchesCity = (r.city || "").toLowerCase().includes(s);
+        const matchesState = (r.state || "").toLowerCase().includes(s);
+        const matchesVendor = (r.vendorName || r.contactPerson || "").toLowerCase().includes(s);
+        if (!matchesName && !matchesCity && !matchesState && !matchesVendor) return false;
       }
       return true;
     });
@@ -217,9 +224,21 @@ export default function MasterDatabasePage() {
     setShowForm(true);
   };
 
+  const handleDuplicate = (record: MasterRecord) => {
+    const now = new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
+    const duplicated: MasterRecord = {
+      ...record,
+      id: genId(),
+      name: `${record.name} (Copy)`,
+      lastUpdated: now,
+      updatedBy: "Admin"
+    };
+    setRecords(prev => [duplicated, ...prev]);
+    toast.success(`Duplicated "${record.name}" successfully!`);
+  };
+
   const handleSave = () => {
     if (!formData.name?.trim()) { toast.error("Name is required"); return; }
-    if (!formData.state?.trim() && formData.category !== "destinations") { toast.error("State is required"); return; }
 
     const now = new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
 
@@ -249,292 +268,31 @@ export default function MasterDatabasePage() {
 
   const updateField = (key: keyof MasterRecord, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
-    // Auto-clear city when state changes
     if (key === "state") setFormData(prev => ({ ...prev, state: value, city: "" }));
   };
 
-  /* ─── Field helper ─── */
+  const clearFilters = () => {
+    setSearch("");
+    setStateFilter("");
+    setStatusFilter("all");
+    setActiveCategory("all");
+  };
+
+  /* ─── Field Helper ─── */
   const Field = ({ label, children, span = 1 }: { label: string; children: React.ReactNode; span?: number }) => (
     <div className={cn("space-y-1", span === 2 && "md:col-span-2")}>
-      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{label}</label>
+      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">{label}</label>
       {children}
     </div>
   );
 
-  const inputCls = "h-8 rounded border-slate-200 text-xs font-semibold text-slate-800 placeholder:text-slate-400 w-full px-2.5";
-  const selectCls = "h-8 rounded border border-slate-200 text-xs font-semibold text-slate-800 w-full px-2 bg-white focus:outline-none";
+  const inputCls = "h-9 rounded-lg border-slate-300 text-xs font-semibold text-[#17233C] placeholder:text-slate-400 w-full px-3 focus-visible:ring-1 focus-visible:ring-[#F97316]";
+  const selectCls = "h-9 rounded-lg border border-slate-300 text-xs font-semibold text-[#17233C] w-full px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer";
 
-  /* ─── Category-specific form fields ─── */
-  const renderCategoryFields = () => {
-    const cat = formData.category;
-    if (!cat) return null;
-
-    const commonLocationFields = cat !== "destinations" ? (
-      <>
-        <Field label="State / Region *">
-          <select value={formData.state || ""} onChange={e => updateField("state", e.target.value)} className={selectCls}>
-            <option value="">Select State</option>
-            {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </Field>
-        <Field label="City">
-          <select value={formData.city || ""} onChange={e => updateField("city", e.target.value)} className={selectCls}>
-            <option value="">Select City</option>
-            {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </Field>
-      </>
-    ) : null;
-
-    switch (cat) {
-      case "destinations":
-        return (
-          <>
-            <Field label="State / Region Name *">
-              <select value={formData.state || ""} onChange={e => { updateField("state", e.target.value); updateField("name", e.target.value); }} className={selectCls}>
-                <option value="">Select State</option>
-                {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </Field>
-            <Field label="Region">
-              <Input value={formData.region || ""} onChange={e => updateField("region", e.target.value)} placeholder="e.g. North India" className={inputCls} />
-            </Field>
-            <Field label="Cities / Areas (comma separated)" span={2}>
-              <Input value={formData.cities || ""} onChange={e => updateField("cities", e.target.value)} placeholder="e.g. Manali, Kasol, Shimla" className={inputCls} />
-            </Field>
-          </>
-        );
-
-      case "hotels":
-        return (
-          <>
-            {commonLocationFields}
-            <Field label="Hotel Category">
-              <select value={formData.hotelCategory || "Standard"} onChange={e => updateField("hotelCategory", e.target.value)} className={selectCls}>
-                {HOTEL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
-            <Field label="Room Type">
-              <select value={formData.roomType || "Standard"} onChange={e => updateField("roomType", e.target.value)} className={selectCls}>
-                {ROOM_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </Field>
-            <Field label="Max People / Room">
-              <Input type="number" value={formData.maxPeople || ""} onChange={e => updateField("maxPeople", parseInt(e.target.value) || 0)} className={inputCls} />
-            </Field>
-            <Field label="Meal Plan">
-              <select value={formData.mealPlan || "EP"} onChange={e => updateField("mealPlan", e.target.value)} className={selectCls}>
-                {MEAL_PLANS.map(m => <option key={m} value={m}>{m} {m === "EP" ? "(Room Only)" : m === "CP" ? "(Breakfast)" : m === "MAP" ? "(B+D)" : "(All Meals)"}</option>)}
-              </select>
-            </Field>
-            <Field label="Base Price / Night (₹)">
-              <Input type="number" value={formData.basePrice || ""} onChange={e => updateField("basePrice", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Weekend Price (₹)">
-              <Input type="number" value={formData.weekendPrice || ""} onChange={e => updateField("weekendPrice", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Peak Season Price (₹)">
-              <Input type="number" value={formData.peakPrice || ""} onChange={e => updateField("peakPrice", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Extra Mattress (₹)">
-              <Input type="number" value={formData.extraMattress || ""} onChange={e => updateField("extraMattress", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Extra Adult (₹)">
-              <Input type="number" value={formData.extraAdult || ""} onChange={e => updateField("extraAdult", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Child with Bed (₹)">
-              <Input type="number" value={formData.childWithBed || ""} onChange={e => updateField("childWithBed", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Child without Bed (₹)">
-              <Input type="number" value={formData.childWithoutBed || ""} onChange={e => updateField("childWithoutBed", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Vendor / Contact" span={2}>
-              <Input value={formData.vendorName || ""} onChange={e => updateField("vendorName", e.target.value)} placeholder="e.g. Blanket Hospitality Pvt Ltd" className={inputCls} />
-            </Field>
-          </>
-        );
-
-      case "vehicles":
-        return (
-          <>
-            {commonLocationFields}
-            <Field label="Vehicle Type">
-              <select value={formData.vehicleType || "Ertiga"} onChange={e => updateField("vehicleType", e.target.value)} className={selectCls}>
-                {VEHICLE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
-              </select>
-            </Field>
-            <Field label="Seating Capacity">
-              <Input type="number" value={formData.seatingCapacity || ""} onChange={e => updateField("seatingCapacity", parseInt(e.target.value) || 0)} className={inputCls} />
-            </Field>
-            <Field label="AC Type">
-              <select value={formData.acType || "AC"} onChange={e => updateField("acType", e.target.value)} className={selectCls}>
-                {AC_TYPES.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </Field>
-            <Field label="Price Type">
-              <select value={formData.priceType || "Per Day"} onChange={e => updateField("priceType", e.target.value)} className={selectCls}>
-                {PRICE_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </Field>
-            <Field label="Price Per Day (₹)">
-              <Input type="number" value={formData.pricePerDay || ""} onChange={e => updateField("pricePerDay", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Price Per KM (₹)">
-              <Input type="number" value={formData.pricePerKm || ""} onChange={e => updateField("pricePerKm", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Min KM / Day">
-              <Input type="number" value={formData.minKmPerDay || ""} onChange={e => updateField("minKmPerDay", parseInt(e.target.value) || 0)} className={inputCls} />
-            </Field>
-            <Field label="Driver Allowance (₹)">
-              <Input type="number" value={formData.driverAllowance || ""} onChange={e => updateField("driverAllowance", parseInt(e.target.value) || 0)} className={inputCls} />
-            </Field>
-            <Field label="Fuel Included">
-              <select value={formData.fuelIncluded ? "Yes" : "No"} onChange={e => updateField("fuelIncluded", e.target.value === "Yes")} className={selectCls}>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </Field>
-            <Field label="Toll & Parking Included">
-              <select value={formData.tollIncluded ? "Yes" : "No"} onChange={e => updateField("tollIncluded", e.target.value === "Yes")} className={selectCls}>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </Field>
-            <Field label="Vendor" span={2}>
-              <Input value={formData.vendorName || ""} onChange={e => updateField("vendorName", e.target.value)} placeholder="Vendor name" className={inputCls} />
-            </Field>
-          </>
-        );
-
-      case "activities":
-        return (
-          <>
-            {commonLocationFields}
-            <Field label="Activity Type">
-              <select value={formData.activityType || "Shared"} onChange={e => updateField("activityType", e.target.value)} className={selectCls}>
-                <option value="Shared">Shared</option>
-                <option value="Private">Private</option>
-              </select>
-            </Field>
-            <Field label="Duration">
-              <Input value={formData.duration || ""} onChange={e => updateField("duration", e.target.value)} placeholder="e.g. 2 hours" className={inputCls} />
-            </Field>
-            <Field label="Adult Rate (₹)">
-              <Input type="number" value={formData.adultRate || ""} onChange={e => updateField("adultRate", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Child Rate (₹)">
-              <Input type="number" value={formData.childRate || ""} onChange={e => updateField("childRate", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-          </>
-        );
-
-      case "transfers":
-        return (
-          <>
-            <Field label="State">
-              <select value={formData.state || ""} onChange={e => updateField("state", e.target.value)} className={selectCls}>
-                <option value="">Select State</option>
-                {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </Field>
-            <Field label="From City">
-              <select value={formData.fromCity || ""} onChange={e => { updateField("fromCity", e.target.value); updateField("city", e.target.value); }} className={selectCls}>
-                <option value="">Select</option>
-                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
-            <Field label="To City">
-              <select value={formData.toCity || ""} onChange={e => updateField("toCity", e.target.value)} className={selectCls}>
-                <option value="">Select</option>
-                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
-            <Field label="Distance (KM)">
-              <Input type="number" value={formData.distanceKm || ""} onChange={e => updateField("distanceKm", parseInt(e.target.value) || 0)} className={inputCls} />
-            </Field>
-            <Field label="Travel Time">
-              <Input value={formData.travelTime || ""} onChange={e => updateField("travelTime", e.target.value)} placeholder="e.g. 4 hrs" className={inputCls} />
-            </Field>
-            <Field label="Fixed Transfer Rate (₹)">
-              <Input type="number" value={formData.transferRate || ""} onChange={e => updateField("transferRate", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-            <Field label="Per KM Rate (₹)">
-              <Input type="number" value={formData.perKmRate || ""} onChange={e => updateField("perKmRate", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-          </>
-        );
-
-      case "meals":
-        return (
-          <>
-            <Field label="State">
-              <select value={formData.state || ""} onChange={e => updateField("state", e.target.value)} className={selectCls}>
-                <option value="">Select State</option>
-                {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </Field>
-            <Field label="City">
-              <Input value={formData.city || ""} onChange={e => updateField("city", e.target.value)} placeholder="e.g. All or Munnar" className={inputCls} />
-            </Field>
-            <Field label="Meal Type">
-              <select value={formData.mealType || "Breakfast"} onChange={e => updateField("mealType", e.target.value)} className={selectCls}>
-                <option value="Breakfast">Breakfast</option>
-                <option value="Lunch">Lunch</option>
-                <option value="Dinner">Dinner</option>
-                <option value="Guide Fee">Local Guide Fee</option>
-                <option value="Entry Ticket">Entry Ticket</option>
-                <option value="Permit">Permit Fee</option>
-                <option value="Custom">Custom Charge</option>
-              </select>
-            </Field>
-            <Field label="Cost (₹)">
-              <Input type="number" value={formData.mealCost || ""} onChange={e => updateField("mealCost", parseInt(e.target.value) || 0)} placeholder="0" className={inputCls} />
-            </Field>
-          </>
-        );
-
-      case "vendors":
-        return (
-          <>
-            <Field label="State">
-              <select value={formData.state || ""} onChange={e => updateField("state", e.target.value)} className={selectCls}>
-                <option value="">Select State</option>
-                {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </Field>
-            <Field label="City">
-              <select value={formData.city || ""} onChange={e => updateField("city", e.target.value)} className={selectCls}>
-                <option value="">Select City</option>
-                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
-            <Field label="Vendor Type">
-              <select value={formData.vendorType || "Hotel"} onChange={e => updateField("vendorType", e.target.value)} className={selectCls}>
-                <option value="Hotel">Hotel Partner</option>
-                <option value="Transport">Transport Partner</option>
-                <option value="Activity">Activity Operator</option>
-                <option value="Meals">Meal Supplier</option>
-                <option value="Guide">Guide Service</option>
-                <option value="Other">Other</option>
-              </select>
-            </Field>
-            <Field label="Contact Person">
-              <Input value={formData.contactPerson || ""} onChange={e => updateField("contactPerson", e.target.value)} placeholder="Full name" className={inputCls} />
-            </Field>
-            <Field label="Contact Phone" span={2}>
-              <Input value={formData.contactPhone || ""} onChange={e => updateField("contactPhone", e.target.value)} placeholder="+91 XXXXX XXXXX" className={inputCls} />
-            </Field>
-          </>
-        );
-
-      default: return null;
-    }
-  };
-
-  /* ─── Category-specific column data for table ─── */
+  /* ─── Extra Columns Details ─── */
   const getExtraColumns = (r: MasterRecord): string => {
     switch (r.category) {
-      case "destinations": return r.cities || "";
+      case "destinations": return r.cities || r.region || "All Cities";
       case "hotels": return `${r.hotelCategory} • ${r.roomType} • ${r.mealPlan} • ₹${(r.basePrice || 0).toLocaleString()}/night`;
       case "vehicles": return `${r.vehicleType} • ${r.seatingCapacity} Seats • ${r.acType} • ₹${(r.pricePerDay || 0).toLocaleString()}/day`;
       case "activities": return `${r.activityType} • ₹${(r.adultRate || 0).toLocaleString()}/adult • ${r.duration}`;
@@ -547,190 +305,315 @@ export default function MasterDatabasePage() {
 
   const categoryLabel = CATEGORY_META.find(c => c.id === formData.category)?.label || "Record";
 
-  /* ═══════════════════════════════════════════════════════════════
-     RENDER
-     ═══════════════════════════════════════════════════════════════ */
   return (
-    <div className="space-y-4 animate-fade-in p-6 bg-[#F5F7FA] min-h-screen -mx-6 -my-6 text-xs text-slate-700 font-sans">
-      
-      {/* ─── Top Header Bar ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 bg-white -mx-6 -mt-6 p-5 border-b border-[#E2E8F0] gap-4 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="h-8.5 w-1 bg-[#E11D48] rounded-r-md"></div>
-          <div>
-            <h1 className="text-base font-bold text-[#1E293B] tracking-tight">Master Database</h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Manage all destination inventory, rates & vendor data</p>
+    <div className="space-y-6">
+      {/* ─── Breadcrumb & Header ─── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200/80 pb-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold mb-1">
+            <span>Admin</span>
+            <span>/</span>
+            <span>Business</span>
+            <span>/</span>
+            <span className="text-slate-700 font-bold">Master Database</span>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17233C] tracking-tight">
+            Master Database
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+            Manage destinations, hotels, vehicles, activities, transfers, meals, and vendors.
+          </p>
         </div>
-        
-        <div className="flex items-center gap-2.5">
-          <Button variant="outline" onClick={() => { setSearch(""); setStateFilter(""); setStatusFilter("all"); setActiveCategory("all"); }} className="h-8 rounded border-slate-200 text-slate-650 hover:bg-slate-50 font-bold uppercase text-[9.5px] flex items-center gap-1.5 cursor-pointer">
+
+        <div className="flex items-center gap-2.5 shrink-0 self-start md:self-auto">
+          <Button 
+            variant="outline" 
+            onClick={clearFilters} 
+            className="h-9 px-3 text-xs font-semibold text-slate-600 border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5"
+          >
             <RotateCw className="w-3.5 h-3.5" /> Reset Filters
           </Button>
-          <Button onClick={() => openAdd()} className="h-8 rounded bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold uppercase text-[9.5px] shadow-sm flex items-center gap-1.5 cursor-pointer">
-            <Plus className="w-3.5 h-3.5" /> Add Inventory <ChevronDown className="w-3 h-3 opacity-80" />
-          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg h-9 px-4 text-xs font-semibold shadow-xs flex items-center gap-1.5">
+                <Plus className="w-4 h-4" /> Add Inventory <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 p-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50">
+              {CATEGORY_META.map(cat => (
+                <DropdownMenuItem key={cat.id} onClick={() => openAdd(cat.id)} className="text-xs font-semibold py-2 cursor-pointer">
+                  <cat.icon className="w-4 h-4 mr-2 text-[#F97316]" /> Add {cat.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* ─── KPI Category Cards ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
-        {CATEGORY_META.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(prev => prev === cat.id ? "all" : cat.id)}
-            className={cn(
-              "rounded border bg-white p-3.5 flex items-center gap-3 shadow-2xs cursor-pointer transition-all text-left",
-              activeCategory === cat.id ? "border-[#E11D48] ring-1 ring-[#E11D48]/20" : "border-slate-200 hover:border-slate-300"
-            )}
-          >
-            <div className={cn("w-8 h-8 rounded border flex items-center justify-center shrink-0", cat.color)}>
-              <cat.icon className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">{cat.label}</p>
-              <p className="text-base font-black text-slate-800 leading-tight">{categoryCounts[cat.id] || 0}</p>
-            </div>
-          </button>
-        ))}
+      {/* ─── Summary KPI Cards (Responsive Grid: 7 wide, 4 medium, 2 mobile) ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+        {CATEGORY_META.map((cat) => {
+          const isActive = activeCategory === cat.id;
+          return (
+            <Card
+              key={cat.id}
+              onClick={() => setActiveCategory(prev => prev === cat.id ? "all" : cat.id)}
+              className={cn(
+                "rounded-[16px] border bg-white p-3.5 shadow-xs cursor-pointer transition-all text-left flex flex-col justify-between space-y-2",
+                isActive ? "border-[#F97316] ring-2 ring-[#F97316]/20 bg-orange-50/30" : "border-slate-200/80 hover:border-slate-300"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{cat.label}</span>
+                <div className={cn("w-7 h-7 rounded-lg border flex items-center justify-center shrink-0", cat.color)}>
+                  <cat.icon className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <p className="text-xl font-extrabold text-[#17233C]">{categoryCounts[cat.id] || 0}</p>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* ─── Quick Add Buttons Row ─── */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {CATEGORY_META.map(cat => (
-          <Button key={cat.id} variant="outline" onClick={() => openAdd(cat.id)} className="h-7 rounded border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-[9px] flex items-center gap-1 cursor-pointer shrink-0">
-            <Plus className="w-3 h-3" /> Add {cat.label.replace("& Add-ons", "")}
-          </Button>
-        ))}
-      </div>
-
-      {/* ─── Filters + Table ─── */}
-      <Card className="rounded border border-[#E2E8F0] bg-white p-5 shadow-2xs space-y-4">
-        
+      {/* ─── Inventory Toolbar & Filter Tabs ─── */}
+      <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs space-y-4">
         {/* Search + Filters Row */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="relative w-full md:w-72">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative w-full lg:w-80">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, city, state..."
-              className="h-8 rounded border-slate-200 pl-8 text-xs font-semibold text-slate-800 placeholder:text-slate-400"
+              placeholder="Search by name, city, state, or vendor..."
+              className="h-9 pl-9 text-xs border-slate-200 rounded-lg text-[#17233C] placeholder:text-slate-400 focus-visible:ring-[#F97316]"
             />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <select value={stateFilter} onChange={e => setStateFilter(e.target.value)} className="h-8 rounded border border-slate-200 text-[10px] font-bold text-slate-600 px-2 bg-white focus:outline-none cursor-pointer">
+          {/* Filters & Total Count */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <select
+              value={stateFilter}
+              onChange={(e) => setStateFilter(e.target.value)}
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+            >
               <option value="">All States</option>
-              {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+              {STATES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} className="h-8 rounded border border-slate-200 text-[10px] font-bold text-slate-600 px-2 bg-white focus:outline-none cursor-pointer">
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+            >
               <option value="all">All Status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
-            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 shrink-0">
-              <Filter className="w-3 h-3" /> {filteredRecords.length} records
+
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1 pl-1">
+              <Filter className="w-3.5 h-3.5 text-slate-400" /> {filteredRecords.length} records
             </span>
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex flex-wrap gap-1 border-b pb-3 border-slate-100">
+        {/* Category Tabs (Horizontally scrollable on mobile without wrapping) */}
+        <div className="flex items-center flex-nowrap overflow-x-auto no-scrollbar gap-1.5 pt-2 border-t border-slate-100">
           <button
+            type="button"
             onClick={() => setActiveCategory("all")}
-            className={cn("px-3 py-1.5 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all",
-              activeCategory === "all" ? "bg-[#E11D48]/10 text-[#E11D48] font-black" : "hover:bg-slate-50 text-slate-600"
+            className={cn(
+              "px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 border",
+              activeCategory === "all"
+                ? "bg-orange-50/70 text-[#F97316] border-orange-200"
+                : "bg-white text-slate-600 border-transparent hover:bg-slate-50"
             )}
-          >All <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[8px] font-bold">{records.length}</span></button>
-          {CATEGORY_META.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(prev => prev === cat.id ? "all" : cat.id)}
-              className={cn("px-3 py-1.5 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all",
-                activeCategory === cat.id ? "bg-[#E11D48]/10 text-[#E11D48] font-black" : "hover:bg-slate-50 text-slate-600"
-              )}
-            >
-              <cat.icon className="w-3 h-3" />
-              {cat.label}
-              <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[8px] font-bold">{categoryCounts[cat.id] || 0}</span>
-            </button>
-          ))}
+          >
+            All
+            <span className="bg-slate-100 text-slate-500 px-1.5 py-0.2 rounded-md text-[10px] font-bold">
+              {records.length}
+            </span>
+          </button>
+
+          {CATEGORY_META.map((cat) => {
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(prev => prev === cat.id ? "all" : cat.id)}
+                className={cn(
+                  "px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 border",
+                  isActive
+                    ? "bg-orange-50/70 text-[#F97316] border-orange-200"
+                    : "bg-white text-slate-600 border-transparent hover:bg-slate-50"
+                )}
+              >
+                <cat.icon className="w-3.5 h-3.5" />
+                {cat.label}
+                <span className="bg-slate-100 text-slate-500 px-1.5 py-0.2 rounded-md text-[10px] font-bold">
+                  {categoryCounts[cat.id] || 0}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Data Table */}
-        <div className="overflow-x-auto border border-slate-150 rounded">
+        {/* ─── DESKTOP DATA TABLE (`hidden md:block`) ─── */}
+        <div className="hidden md:block overflow-x-auto border border-slate-200/80 rounded-xl">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-[#475569] border-b border-slate-150 font-bold uppercase text-[9px] tracking-wider">
-                <th className="px-4 py-2.5 w-10">ID</th>
-                <th className="px-4 py-2.5">Name</th>
-                <th className="px-4 py-2.5">Category</th>
-                <th className="px-4 py-2.5">State / City</th>
-                <th className="px-4 py-2.5">Details</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5">Updated</th>
-                <th className="px-4 py-2.5 text-right">Actions</th>
+              <tr className="bg-slate-50 text-slate-500 border-b border-slate-200/80 font-bold uppercase text-[10px] tracking-wider">
+                <th className="px-4 py-3 w-16">ID</th>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Category</th>
+                <th className="px-4 py-3">State / City</th>
+                <th className="px-4 py-3">Details</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Updated By</th>
+                <th className="px-4 py-3">Updated At</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-[11px] font-medium text-slate-600 bg-white">
+            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700 bg-white">
               {filteredRecords.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400 font-bold">No records found. Try adjusting your filters or add new inventory.</td></tr>
-              ) : filteredRecords.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="px-4 py-2.5 text-[10px] text-slate-400 font-mono">{r.id}</td>
-                  <td className="px-4 py-2.5 font-bold text-[#1E293B] max-w-[200px] truncate">{r.name}</td>
-                  <td className="px-4 py-2.5">
-                    <span className={cn("px-2 py-0.5 rounded border font-bold text-[8px] uppercase", CATEGORY_META.find(c => c.id === r.category)?.color || "bg-slate-100 text-slate-500")}>
-                      {CATEGORY_META.find(c => c.id === r.category)?.label || r.category}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-slate-600 font-semibold">{r.state}{r.city ? ` • ${r.city}` : ""}</td>
-                  <td className="px-4 py-2.5 text-slate-500 max-w-[280px] truncate" title={getExtraColumns(r)}>{getExtraColumns(r)}</td>
-                  <td className="px-4 py-2.5">
-                    <button onClick={() => toggleStatus(r.id)} className="cursor-pointer">
-                      {r.status === "Active" ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 font-bold text-[8px] uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" /> Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 text-red-500 border border-red-100 font-bold text-[8px] uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 block" /> Inactive
-                        </span>
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-4 py-2.5 text-slate-400 text-[10px]">{r.updatedBy}<br />{r.lastUpdated}</td>
-                  <td className="px-4 py-2.5 text-right">
-                    <div className="flex gap-1 justify-end">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(r)} className="h-7 w-7 text-slate-400 hover:text-slate-700 cursor-pointer">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm(r.id)} className="h-7 w-7 text-red-500 hover:bg-red-50 cursor-pointer">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center text-slate-400 font-semibold">
+                    No master database records match your filter criteria.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredRecords.map((r) => {
+                  const catMeta = CATEGORY_META.find(c => c.id === r.category);
+                  return (
+                    <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-4 py-3 text-[10px] text-slate-400 font-mono">{r.id}</td>
+                      <td className="px-4 py-3 font-extrabold text-[#17233C] max-w-[200px] truncate">{r.name}</td>
+                      <td className="px-4 py-3">
+                        <span className={cn("px-2 py-0.5 rounded-md border font-bold text-[9px] uppercase", catMeta?.color || "bg-slate-100 text-slate-500")}>
+                          {catMeta?.label || r.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 font-semibold">
+                        {r.state}{r.city ? ` • ${r.city}` : ""}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 max-w-[260px] truncate" title={getExtraColumns(r)}>
+                        {getExtraColumns(r)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button type="button" onClick={() => toggleStatus(r.id)} className="cursor-pointer">
+                          {r.status === "Active" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[9px] uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" /> Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[9px] uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 block" /> Inactive
+                            </span>
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 font-semibold">{r.updatedBy}</td>
+                      <td className="px-4 py-3 text-slate-400 text-[11px]">{r.lastUpdated}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => setViewRecord(r)} className="h-7 w-7 text-slate-400 hover:text-slate-800 rounded-lg">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDuplicate(r)} className="h-7 w-7 text-slate-400 hover:text-slate-800 rounded-lg">
+                            <Copy className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(r)} className="h-7 w-7 text-slate-400 hover:text-slate-800 rounded-lg">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm(r.id)} className="h-7 w-7 text-rose-500 hover:bg-rose-50 rounded-lg">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* ─── MOBILE STACKED CARDS (`block md:hidden`) ─── */}
+        <div className="block md:hidden space-y-3">
+          {filteredRecords.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-400 font-semibold bg-slate-50 rounded-xl border border-slate-200">
+              No inventory records found matching your filters.
+            </div>
+          ) : (
+            filteredRecords.map((r) => {
+              const catMeta = CATEGORY_META.find(c => c.id === r.category);
+              return (
+                <div key={r.id} className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 font-mono font-bold">{r.id}</span>
+                        <span className={cn("px-2 py-0.2 rounded-md border font-bold text-[8px] uppercase", catMeta?.color)}>
+                          {catMeta?.label || r.category}
+                        </span>
+                      </div>
+                      <h3 className="font-extrabold text-sm text-[#17233C] mt-1">{r.name}</h3>
+                      <p className="text-xs text-slate-500 font-semibold">{r.state}{r.city ? ` • ${r.city}` : ""}</p>
+                    </div>
+
+                    <button type="button" onClick={() => toggleStatus(r.id)}>
+                      {r.status === "Active" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[9px] uppercase">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[9px] uppercase">
+                          Inactive
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-xs text-slate-600 font-medium">
+                    {getExtraColumns(r)}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                    <span className="text-[10px] text-slate-400">Updated: {r.lastUpdated} ({r.updatedBy})</span>
+
+                    <div className="flex items-center gap-1">
+                      <Button variant="outline" size="sm" onClick={() => openEdit(r)} className="h-7 px-2.5 text-xs font-semibold text-slate-700 border-slate-200 rounded-lg">
+                        <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(r.id)} className="h-7 px-2.5 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-lg">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </Card>
 
-      {/* ═══════════════════════════════════════════════════════════════
-         ADD / EDIT MODAL
-         ═══════════════════════════════════════════════════════════════ */}
+      {/* ─── ADD / EDIT DIALOG ─── */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-white rounded-2xl border border-slate-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+            <DialogTitle className="text-base font-extrabold text-[#17233C]">
               {editId ? `Edit ${categoryLabel}` : `Add New ${categoryLabel}`}
             </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Configure inventory details, rates, and operational attributes.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
-            {/* Category selector (only for new) */}
             {!editId && (
               <Field label="Inventory Category *">
                 <select
@@ -743,19 +626,171 @@ export default function MasterDatabasePage() {
               </Field>
             )}
 
-            {/* Name field */}
             {formData.category !== "destinations" && (
               <Field label={`${categoryLabel} Name *`}>
-                <Input value={formData.name || ""} onChange={e => updateField("name", e.target.value)} placeholder={`Enter ${categoryLabel.toLowerCase()} name`} className={inputCls} />
+                <Input 
+                  value={formData.name || ""} 
+                  onChange={e => updateField("name", e.target.value)} 
+                  placeholder={`Enter ${categoryLabel.toLowerCase()} name`} 
+                  className={inputCls} 
+                />
               </Field>
             )}
 
-            {/* Category specific fields in grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {renderCategoryFields()}
+              {/* Category-Specific Dynamic Form Fields */}
+              {formData.category === "destinations" && (
+                <>
+                  <Field label="State / Region Name *">
+                    <select value={formData.state || ""} onChange={e => { updateField("state", e.target.value); updateField("name", e.target.value); }} className={selectCls}>
+                      <option value="">Select State</option>
+                      {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Region">
+                    <Input value={formData.region || ""} onChange={e => updateField("region", e.target.value)} placeholder="e.g. North India" className={inputCls} />
+                  </Field>
+                  <Field label="Cities / Areas (comma separated)" span={2}>
+                    <Input value={formData.cities || ""} onChange={e => updateField("cities", e.target.value)} placeholder="e.g. Manali, Kasol, Shimla" className={inputCls} />
+                  </Field>
+                </>
+              )}
+
+              {formData.category === "hotels" && (
+                <>
+                  <Field label="State / Region *">
+                    <select value={formData.state || ""} onChange={e => updateField("state", e.target.value)} className={selectCls}>
+                      <option value="">Select State</option>
+                      {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="City">
+                    <select value={formData.city || ""} onChange={e => updateField("city", e.target.value)} className={selectCls}>
+                      <option value="">Select City</option>
+                      {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Hotel Category">
+                    <select value={formData.hotelCategory || "Standard"} onChange={e => updateField("hotelCategory", e.target.value)} className={selectCls}>
+                      {HOTEL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Room Type">
+                    <select value={formData.roomType || "Standard"} onChange={e => updateField("roomType", e.target.value)} className={selectCls}>
+                      {ROOM_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Base Price / Night (₹)">
+                    <Input type="number" value={formData.basePrice || ""} onChange={e => updateField("basePrice", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                  <Field label="Meal Plan">
+                    <select value={formData.mealPlan || "EP"} onChange={e => updateField("mealPlan", e.target.value)} className={selectCls}>
+                      {MEAL_PLANS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Vendor / Supplier" span={2}>
+                    <Input value={formData.vendorName || ""} onChange={e => updateField("vendorName", e.target.value)} placeholder="Vendor name" className={inputCls} />
+                  </Field>
+                </>
+              )}
+
+              {formData.category === "vehicles" && (
+                <>
+                  <Field label="State">
+                    <select value={formData.state || ""} onChange={e => updateField("state", e.target.value)} className={selectCls}>
+                      <option value="">Select State</option>
+                      {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="City">
+                    <select value={formData.city || ""} onChange={e => updateField("city", e.target.value)} className={selectCls}>
+                      <option value="">Select City</option>
+                      {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Vehicle Type">
+                    <select value={formData.vehicleType || "Ertiga"} onChange={e => updateField("vehicleType", e.target.value)} className={selectCls}>
+                      {VEHICLE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Seating Capacity">
+                    <Input type="number" value={formData.seatingCapacity || ""} onChange={e => updateField("seatingCapacity", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                  <Field label="Price Per Day (₹)">
+                    <Input type="number" value={formData.pricePerDay || ""} onChange={e => updateField("pricePerDay", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                  <Field label="Price Per KM (₹)">
+                    <Input type="number" value={formData.pricePerKm || ""} onChange={e => updateField("pricePerKm", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                </>
+              )}
+
+              {formData.category === "activities" && (
+                <>
+                  <Field label="State">
+                    <select value={formData.state || ""} onChange={e => updateField("state", e.target.value)} className={selectCls}>
+                      <option value="">Select State</option>
+                      {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="City">
+                    <select value={formData.city || ""} onChange={e => updateField("city", e.target.value)} className={selectCls}>
+                      <option value="">Select City</option>
+                      {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Adult Rate (₹)">
+                    <Input type="number" value={formData.adultRate || ""} onChange={e => updateField("adultRate", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                  <Field label="Duration">
+                    <Input value={formData.duration || ""} onChange={e => updateField("duration", e.target.value)} placeholder="e.g. 2 hrs" className={inputCls} />
+                  </Field>
+                </>
+              )}
+
+              {formData.category === "transfers" && (
+                <>
+                  <Field label="From City">
+                    <Input value={formData.fromCity || ""} onChange={e => updateField("fromCity", e.target.value)} placeholder="Origin city" className={inputCls} />
+                  </Field>
+                  <Field label="To City">
+                    <Input value={formData.toCity || ""} onChange={e => updateField("toCity", e.target.value)} placeholder="Destination city" className={inputCls} />
+                  </Field>
+                  <Field label="Distance (KM)">
+                    <Input type="number" value={formData.distanceKm || ""} onChange={e => updateField("distanceKm", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                  <Field label="Fixed Rate (₹)">
+                    <Input type="number" value={formData.transferRate || ""} onChange={e => updateField("transferRate", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                </>
+              )}
+
+              {formData.category === "meals" && (
+                <>
+                  <Field label="Meal Type">
+                    <Input value={formData.mealType || ""} onChange={e => updateField("mealType", e.target.value)} placeholder="e.g. Breakfast" className={inputCls} />
+                  </Field>
+                  <Field label="Cost (₹)">
+                    <Input type="number" value={formData.mealCost || ""} onChange={e => updateField("mealCost", parseInt(e.target.value) || 0)} className={inputCls} />
+                  </Field>
+                </>
+              )}
+
+              {formData.category === "vendors" && (
+                <>
+                  <Field label="Vendor Type">
+                    <Input value={formData.vendorType || ""} onChange={e => updateField("vendorType", e.target.value)} placeholder="e.g. Hotel / Transport" className={inputCls} />
+                  </Field>
+                  <Field label="Contact Person">
+                    <Input value={formData.contactPerson || ""} onChange={e => updateField("contactPerson", e.target.value)} placeholder="Full name" className={inputCls} />
+                  </Field>
+                  <Field label="Contact Phone" span={2}>
+                    <Input value={formData.contactPhone || ""} onChange={e => updateField("contactPhone", e.target.value)} placeholder="+91 98765 43210" className={inputCls} />
+                  </Field>
+                </>
+              )}
             </div>
 
-            {/* Status */}
             <Field label="Status">
               <select value={formData.status || "Active"} onChange={e => updateField("status", e.target.value)} className={selectCls}>
                 <option value="Active">Active</option>
@@ -763,30 +798,80 @@ export default function MasterDatabasePage() {
               </select>
             </Field>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowForm(false)} className="h-8 rounded text-xs font-bold uppercase cursor-pointer">Cancel</Button>
-              <Button onClick={handleSave} className="h-8 rounded bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold uppercase cursor-pointer flex items-center gap-1.5">
+            <DialogFooter className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="h-8 text-xs font-semibold rounded-lg">
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSave} className="h-8 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1">
                 <Save className="w-3.5 h-3.5" /> {editId ? "Update" : "Save"} {categoryLabel}
               </Button>
-            </div>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* ═══════════════════════════════════════════════════════════════
-         DELETE CONFIRM DIALOG
-         ═══════════════════════════════════════════════════════════════ */}
-      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-        <DialogContent className="max-w-sm">
+      {/* ─── VIEW DETAILS DIALOG ─── */}
+      <Dialog open={!!viewRecord} onOpenChange={() => setViewRecord(null)}>
+        <DialogContent className="max-w-md p-6 bg-white rounded-2xl border border-slate-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800">Confirm Deletion</DialogTitle>
+            <DialogTitle className="text-base font-extrabold text-[#17233C]">{viewRecord?.name}</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Inventory record specs and details.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-xs text-slate-600 font-medium">Are you sure you want to permanently delete <strong>{records.find(r => r.id === deleteConfirm)?.name}</strong>? This action cannot be undone.</p>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="h-8 text-xs font-bold uppercase cursor-pointer">Cancel</Button>
-            <Button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="h-8 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase cursor-pointer">Delete</Button>
-          </div>
+
+          {viewRecord && (
+            <div className="space-y-3 pt-2 text-xs">
+              <div className="flex justify-between py-1.5 border-b">
+                <span className="text-slate-400 font-bold">Category:</span>
+                <span className="font-bold text-slate-800 uppercase">{viewRecord.category}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b">
+                <span className="text-slate-400 font-bold">Location:</span>
+                <span className="font-semibold text-slate-800">{viewRecord.state} {viewRecord.city ? `• ${viewRecord.city}` : ""}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b">
+                <span className="text-slate-400 font-bold">Details:</span>
+                <span className="font-semibold text-slate-800">{getExtraColumns(viewRecord)}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b">
+                <span className="text-slate-400 font-bold">Status:</span>
+                <span className={`font-bold uppercase ${viewRecord.status === "Active" ? "text-emerald-600" : "text-rose-600"}`}>{viewRecord.status}</span>
+              </div>
+              <div className="flex justify-between py-1.5">
+                <span className="text-slate-400 font-bold">Last Updated:</span>
+                <span className="text-slate-600">{viewRecord.lastUpdated} ({viewRecord.updatedBy})</span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-4 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setViewRecord(null)} className="h-8 text-xs font-semibold rounded-lg">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── DELETE CONFIRM DIALOG ─── */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm p-6 bg-white rounded-2xl border border-slate-200 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-extrabold text-rose-600 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5" /> Confirm Permanent Deletion
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-slate-600 font-medium pt-2">
+            Are you sure you want to delete <strong className="text-slate-900">{records.find(r => r.id === deleteConfirm)?.name}</strong>? This inventory item will be permanently removed.
+          </p>
+          <DialogFooter className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setDeleteConfirm(null)} className="h-8 text-xs font-semibold rounded-lg">
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="h-8 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-xs">
+              Delete Record
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

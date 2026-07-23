@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { adminUsersService } from "@/services/adminUsers.service";
 import { Admin, AdminRole } from "@/types";
 import { 
@@ -18,10 +18,22 @@ import {
   Sliders,
   ShieldCheck,
   Check,
-  RotateCcw
+  RotateCcw,
+  Search,
+  Filter,
+  LayoutGrid,
+  List,
+  Edit2,
+  Trash2,
+  UserX,
+  UserCheck,
+  ChevronRight,
+  ChevronDown,
+  Info,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,28 +50,28 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
-const ROLES: { value: AdminRole; label: string; desc: string }[] = [
-  { value: 'superadmin', label: 'Super Admin', desc: 'Full unrestricted system access' },
-  { value: 'admin', label: 'Admin', desc: 'Manage trips, bookings, reports (No users/settings)' },
-  { value: 'sales', label: 'Sales', desc: 'View and manage own bookings, leads and quotes only' },
-  { value: 'operations', label: 'Operations', desc: 'View trip rosters, assign guides and rooms' },
-  { value: 'finance', label: 'Finance', desc: 'View payments, GST, process invoice updates' },
-  { value: 'guide', label: 'Guide', desc: 'Read assigned trips operations, meal preferences' },
-  { value: 'viewer', label: 'Viewer', desc: 'Read-only access to approved system modules' }
-];
-
-const EXTRA_MODULE_ROLES = [
-  { value: 'guide', label: 'Guide Access', desc: 'Assigned trip rosters, itinerary & operational details' },
-  { value: 'viewer', label: 'Viewer Access', desc: 'Read-only access to trips, reports & bookings' },
-  { value: 'operations', label: 'Operations Access', desc: 'Roster management, room & vehicle allocation' },
-  { value: 'sales', label: 'Sales Access', desc: 'Manage leads, quotations, and bookings' },
-  { value: 'finance', label: 'Finance Access', desc: 'View payments, GST, payouts & reconciliations' },
-  { value: 'BOOKING_VERIFIER', label: 'Booking Verifier Access', desc: 'Verify bookings, manage train ticket queue' }
+const ROLES: { value: AdminRole; label: string; desc: string; color: string }[] = [
+  { value: 'superadmin', label: 'Super Admin', desc: 'Full unrestricted system access', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  { value: 'admin', label: 'Admin', desc: 'Manage trips, bookings, reports', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { value: 'sales', label: 'Sales', desc: 'View and manage leads & quotes', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { value: 'operations', label: 'Operations', desc: 'View rosters, assign guides & rooms', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  { value: 'finance', label: 'Finance', desc: 'View payments, GST, process invoices', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { value: 'guide', label: 'Guide', desc: 'Read assigned trips & operations', color: 'bg-orange-50 text-orange-700 border-orange-200' },
+  { value: 'viewer', label: 'Viewer', desc: 'Read-only access to modules', color: 'bg-slate-50 text-slate-700 border-slate-200' }
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -112,11 +124,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
   viewer: [
     'dashboard.view', 'trips.view', 'bookings.view', 'inquiries.view', 'quotations.view', 'reports.view'
-  ],
-  BOOKING_VERIFIER: [
-    'dashboard.view', 'bookings.view', 'bookings.verify', 'tickets.view', 'tickets.create', 'tickets.edit',
-    'tickets.submit', 'tickets.approve', 'tickets.reopen', 'tickets.bulk', 'tickets.templates.manage',
-    'tickets.alerts.view', 'emails.view', 'emails.send', 'emails.view_logs'
   ]
 };
 
@@ -201,6 +208,13 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Search & Filter State
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [loginFilter, setLoginFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+
   // Create user dialog state
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
@@ -215,11 +229,12 @@ export default function UserManagementPage() {
   const [resetPasswordVal, setResetPasswordVal] = useState("");
   const [isResetting, setIsResetting] = useState(false);
 
-  // Permission management modal state
+  // Manage Access Drawer / Sheet state
   const [permOpen, setPermOpen] = useState(false);
   const [permUser, setPermUser] = useState<Admin | null>(null);
   const [permRole, setPermRole] = useState<AdminRole>("admin");
   const [selectedCustomPerms, setSelectedCustomPerms] = useState<string[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [isSavingPerms, setIsSavingPerms] = useState(false);
 
   useEffect(() => {
@@ -239,6 +254,46 @@ export default function UserManagementPage() {
     }
   };
 
+  /* ─── Derived Statistics for KPI Row ─── */
+  const stats = useMemo(() => {
+    const total = users.length;
+    const active = users.filter((u) => u.isActive).length;
+    const pendingInvites = users.filter((u) => !u.lastLoginAt || !u.isActive).length;
+    const superAdmins = users.filter((u) => u.role === "superadmin").length;
+    return { total, active, pendingInvites, superAdmins };
+  }, [users]);
+
+  /* ─── Filtering Logic ─── */
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      // Search
+      if (search.trim()) {
+        const query = search.toLowerCase();
+        const matchesName = (user.name || "").toLowerCase().includes(query);
+        const matchesEmail = (user.email || "").toLowerCase().includes(query);
+        if (!matchesName && !matchesEmail) return false;
+      }
+      // Role Filter
+      if (roleFilter !== "all" && user.role !== roleFilter) return false;
+      // Status Filter
+      if (statusFilter === "active" && !user.isActive) return false;
+      if (statusFilter === "inactive" && user.isActive) return false;
+      // Login Filter
+      if (loginFilter === "recent" && !user.lastLoginAt) return false;
+      if (loginFilter === "never" && user.lastLoginAt) return false;
+
+      return true;
+    });
+  }, [users, search, roleFilter, statusFilter, loginFilter]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setRoleFilter("all");
+    setStatusFilter("all");
+    setLoginFilter("all");
+  };
+
+  /* ─── Handlers ─── */
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newEmail || !newPassword || !newRole) {
@@ -254,7 +309,7 @@ export default function UserManagementPage() {
         password: newPassword,
         role: newRole
       });
-      toast.success("Admin user created successfully");
+      toast.success("Staff profile created successfully");
       setCreateOpen(false);
       setNewName("");
       setNewEmail("");
@@ -269,21 +324,10 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleUpdateRole = async (userId: string, role: AdminRole) => {
-    try {
-      await adminUsersService.updateAdminRole(userId, role);
-      toast.success(`Role updated successfully to ${role}`);
-      fetchUsers();
-    } catch (error: any) {
-      console.error("Failed to update role:", error);
-      toast.error(error.response?.data?.message || "Failed to update role");
-    }
-  };
-
   const handleToggleActive = async (userId: string) => {
     try {
       const res = await adminUsersService.toggleAdminActive(userId);
-      toast.success(`User account is now ${res.isActive ? 'active' : 'inactive'}`);
+      toast.success(`Account is now ${res.isActive ? "active" : "disabled"}`);
       fetchUsers();
     } catch (error: any) {
       console.error("Failed to toggle status:", error);
@@ -313,12 +357,9 @@ export default function UserManagementPage() {
     }
   };
 
-  const openPermissionModal = (user: Admin) => {
+  const openPermissionDrawer = (user: Admin) => {
     setPermUser(user);
     setPermRole(user.role);
-    
-    // If user has existing customPermissions, load them.
-    // Otherwise, pre-tick ALL default permissions of the user's current role dynamically!
     if (user.customPermissions && Array.isArray(user.customPermissions) && user.customPermissions.length > 0) {
       setSelectedCustomPerms(user.customPermissions);
     } else {
@@ -328,37 +369,23 @@ export default function UserManagementPage() {
     setPermOpen(true);
   };
 
-  const handleRoleChangeInModal = (newRole: AdminRole) => {
+  const handleRoleChangeInDrawer = (newRole: AdminRole) => {
     setPermRole(newRole);
-    // Dynamically update pre-ticked permissions when Primary Role dropdown changes!
     const defaultPerms = ROLE_PERMISSIONS[newRole] || [];
     setSelectedCustomPerms([...defaultPerms]);
   };
 
-  const resetRoleToDefaultInModal = () => {
-    const defaultPerms = ROLE_PERMISSIONS[permRole] || [];
-    setSelectedCustomPerms([...defaultPerms]);
-    toast.info(`Reset permissions to ${permRole} defaults`);
-  };
-
-  const toggleExtraRoleModule = (roleKey: string) => {
-    const rolePerms = ROLE_PERMISSIONS[roleKey] || [];
-    const isCurrentlyChecked = selectedCustomPerms.includes(roleKey) || rolePerms.every(p => selectedCustomPerms.includes(p));
-    
-    if (isCurrentlyChecked) {
-      // Remove extra role key and its unique permissions
-      setSelectedCustomPerms(prev => prev.filter(k => k !== roleKey && !rolePerms.includes(k)));
+  const toggleGroupPermissions = (groupKeys: string[], isChecked: boolean) => {
+    if (isChecked) {
+      setSelectedCustomPerms((prev) => Array.from(new Set([...prev, ...groupKeys])));
     } else {
-      // Add extra role key and all its permissions
-      setSelectedCustomPerms(prev => Array.from(new Set([...prev, roleKey, ...rolePerms])));
+      setSelectedCustomPerms((prev) => prev.filter((k) => !groupKeys.includes(k)));
     }
   };
 
-  const toggleCustomPermissionItem = (itemKey: string) => {
-    setSelectedCustomPerms(prev => 
-      prev.includes(itemKey) 
-        ? prev.filter(k => k !== itemKey) 
-        : [...prev, itemKey]
+  const toggleSinglePermission = (itemKey: string) => {
+    setSelectedCustomPerms((prev) =>
+      prev.includes(itemKey) ? prev.filter((k) => k !== itemKey) : [...prev, itemKey]
     );
   };
 
@@ -372,7 +399,7 @@ export default function UserManagementPage() {
         role: permRole,
         customPermissions: selectedCustomPerms
       });
-      toast.success(`Role & Access permissions updated for ${permUser.name}`);
+      toast.success(`Access permissions saved for ${permUser.name}`);
       setPermOpen(false);
       setPermUser(null);
       fetchUsers();
@@ -384,258 +411,597 @@ export default function UserManagementPage() {
     }
   };
 
+  const getRoleColor = (roleName: string) => {
+    const matched = ROLES.find((r) => r.value === roleName);
+    return matched ? matched.color : "bg-slate-50 text-slate-700 border-slate-200";
+  };
+
   if (isLoading) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="h-96 flex items-center justify-center space-x-2 text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin text-[#F97316]" />
+        <span className="text-xs font-semibold">Loading Staff Profiles...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in p-6 bg-[#F4F7FB] min-h-screen -mx-6 -my-6">
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <Users className="w-5 h-5 text-[#F97316]" />
-          <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Admin Accounts & RBAC</h1>
-            <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Manage roles, manual access control, extra permissions, & credentials</p>
+    <div className="space-y-6">
+      {/* ─── Breadcrumb & Header ─── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200/80 pb-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold mb-1">
+            <span>Admin</span>
+            <span>/</span>
+            <span>Administration</span>
+            <span>/</span>
+            <span className="text-slate-700 font-bold">Staff Profiles</span>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17233C] tracking-tight">
+            Staff Profiles
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+            Manage team members, roles, permissions, and account access.
+          </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm">
+
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg h-9 px-4 text-xs font-semibold shadow-xs flex items-center gap-1.5 shrink-0 self-start md:self-auto"
+        >
           <Plus className="w-4 h-4" /> Create User
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
-        {users.map((user) => {
-          const customPermsCount = user.customPermissions?.length || 0;
-          const extraRolesGranted = (user.customPermissions || []).filter(p => EXTRA_MODULE_ROLES.some(r => r.value === p));
-          
-          return (
-            <Card key={user.id} className="rounded-[4px] border border-[#E2E8F0] hover:border-primary-orange/30 transition-all shadow-none bg-white">
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-[4px] flex items-center justify-center shrink-0 ${user.role === 'superadmin' ? 'bg-rose-50 text-rose-600' : 'bg-orange-50 text-primary-orange'}`}>
-                      {user.role === 'superadmin' ? <Shield className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-sm text-slate-800">{user.name}</h3>
-                        {!user.isActive && (
-                          <Badge variant="destructive" className="font-bold text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] bg-red-50 text-red-600 border border-red-200">
-                            Inactive
+      {/* ─── Compact KPI Row (4 Cards) ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Users</p>
+            <p className="text-xl font-extrabold text-[#17233C]">{stats.total}</p>
+          </div>
+        </Card>
+
+        <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <UserCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Users</p>
+            <p className="text-xl font-extrabold text-emerald-600">{stats.active}</p>
+          </div>
+        </Card>
+
+        <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <UserX className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pending / Inactive</p>
+            <p className="text-xl font-extrabold text-amber-600">{stats.pendingInvites}</p>
+          </div>
+        </Card>
+
+        <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Super Admins</p>
+            <p className="text-xl font-extrabold text-rose-600">{stats.superAdmins}</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* ─── Inventory Toolbar & Filters ─── */}
+      <Card className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative w-full lg:w-80">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or email..."
+              className="h-9 pl-9 text-xs border-slate-200 rounded-lg text-[#17233C] placeholder:text-slate-400 focus-visible:ring-[#F97316]"
+            />
+          </div>
+
+          {/* Filter Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+            >
+              <option value="all">All Roles</option>
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active Accounts</option>
+              <option value="inactive">Inactive / Disabled</option>
+            </select>
+
+            <select
+              value={loginFilter}
+              onChange={(e) => setLoginFilter(e.target.value)}
+              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#F97316] cursor-pointer"
+            >
+              <option value="all">All Login Times</option>
+              <option value="recent">Logged In Recently</option>
+              <option value="never">Never Logged In</option>
+            </select>
+
+            {(search || roleFilter !== "all" || statusFilter !== "all" || loginFilter !== "all") && (
+              <Button
+                variant="ghost"
+                onClick={clearFilters}
+                className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg flex items-center gap-1"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Clear Filters
+              </Button>
+            )}
+          </div>
+
+          {/* View Toggle & Result Count */}
+          <div className="flex items-center justify-between lg:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            <span className="text-xs font-bold text-slate-400">
+              Showing {filteredUsers.length} staff member{filteredUsers.length !== 1 ? "s" : ""}
+            </span>
+
+            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`p-1.5 rounded-md text-slate-600 transition-all ${
+                  viewMode === "list" ? "bg-white text-[#F97316] shadow-xs font-bold" : "hover:text-slate-900"
+                }`}
+                title="List View"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-md text-slate-600 transition-all ${
+                  viewMode === "grid" ? "bg-white text-[#F97316] shadow-xs font-bold" : "hover:text-slate-900"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── DESKTOP DATA TABLE (`hidden md:block`) ─── */}
+        {viewMode === "list" ? (
+          <div className="hidden md:block overflow-x-auto border border-slate-200/80 rounded-xl">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 border-b border-slate-200/80 font-bold uppercase text-[10px] tracking-wider">
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Primary Role</th>
+                  <th className="px-4 py-3">Custom Permissions</th>
+                  <th className="px-4 py-3">Account Status</th>
+                  <th className="px-4 py-3">Last Login</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700 bg-white">
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-slate-400 font-semibold">
+                      No staff members match the selected criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((user) => {
+                    const customPermsCount = user.customPermissions?.length || 0;
+                    return (
+                      <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="px-4 py-3 font-semibold">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                              user.role === 'superadmin' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-[#F97316]'
+                            }`}>
+                              {user.avatarUrl ? (
+                                <img src={user.avatarUrl} className="w-full h-full rounded-full object-cover" alt={user.name} />
+                              ) : (
+                                (user.name || "U").substring(0, 2).toUpperCase()
+                              )}
+                            </div>
+                            <span className="text-[#17233C] font-bold text-xs">{user.name}</span>
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3 text-slate-500 font-medium">{user.email}</td>
+
+                        <td className="px-4 py-3">
+                          <Badge className={`${getRoleColor(user.role)} font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md border`}>
+                            {user.role}
                           </Badge>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                            <Sliders className="w-3 h-3 text-slate-400" />
+                            {customPermsCount > 0 ? `${customPermsCount} Custom` : "Role Default"}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {user.isActive ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[9px] uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" /> Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[9px] uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 block" /> Inactive
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3 text-slate-400 text-[11px]">
+                          {user.lastLoginAt
+                            ? new Date(user.lastLoginAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+                            : "Never Logged In"}
+                        </td>
+
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPermissionDrawer(user)}
+                              className="h-8 px-2.5 text-xs font-semibold text-slate-700 border-slate-200 hover:bg-orange-50 hover:text-[#F97316] hover:border-orange-200 rounded-lg flex items-center gap-1"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" /> Manage Access
+                            </Button>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-800 rounded-lg">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 p-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50">
+                                <DropdownMenuItem onClick={() => openPermissionDrawer(user)} className="text-xs font-semibold py-1.5 cursor-pointer">
+                                  <Edit2 className="w-3.5 h-3.5 mr-2 text-slate-500" /> Edit Role & Access
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem onClick={() => { setSelectedUser(user); setResetOpen(true); }} className="text-xs font-semibold py-1.5 cursor-pointer">
+                                  <Key className="w-3.5 h-3.5 mr-2 text-slate-500" /> Reset Password
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator className="my-1 border-slate-100" />
+
+                                <DropdownMenuItem onClick={() => handleToggleActive(user.id)} className="text-xs font-semibold py-1.5 cursor-pointer">
+                                  {user.isActive ? (
+                                    <>
+                                      <UserX className="w-3.5 h-3.5 mr-2 text-amber-600" /> Disable Account
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Enable Account
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
+        {/* ─── MOBILE CARDS / GRID VIEW (`block md:hidden` or Grid Toggle) ─── */}
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${viewMode === "list" ? "md:hidden" : ""}`}>
+          {filteredUsers.length === 0 ? (
+            <div className="col-span-full p-8 text-center text-xs text-slate-400 font-semibold bg-slate-50 rounded-xl border border-slate-200">
+              No staff profiles found.
+            </div>
+          ) : (
+            filteredUsers.map((user) => {
+              const customPermsCount = user.customPermissions?.length || 0;
+              return (
+                <div key={user.id} className="bg-white rounded-[16px] border border-slate-200/80 p-4 shadow-xs space-y-3.5">
+                  {/* Top Card Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                        user.role === 'superadmin' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-[#F97316]'
+                      }`}>
+                        {user.avatarUrl ? (
+                          <img src={user.avatarUrl} className="w-full h-full rounded-full object-cover" alt={user.name} />
+                        ) : (
+                          (user.name || "U").substring(0, 2).toUpperCase()
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">{user.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-6 md:gap-8">
-                    {/* Role & Access Badges */}
-                    <div className="text-left md:text-right">
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Primary Role</p>
-                      <div className="flex flex-wrap items-center md:justify-end gap-1">
-                        <Badge className={`
-                          ${user.role === 'superadmin' ? 'bg-rose-50 text-rose-700 border-rose-200' : 
-                            user.role === 'admin' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                            user.role === 'sales' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                            user.role === 'operations' ? 'bg-violet-50 text-violet-700 border-violet-200' : 
-                            user.role === 'finance' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                            user.role === 'guide' ? 'bg-orange-50 text-orange-700 border-orange-200' : 
-                            'bg-slate-50 text-slate-700 border-slate-200'} 
-                          font-bold uppercase text-[9px] tracking-wider px-2 py-0.5 rounded-[4px] border
-                        `}>
-                          {user.role}
-                        </Badge>
+                      <div className="min-w-0">
+                        <h3 className="font-extrabold text-sm text-[#17233C] truncate">{user.name}</h3>
+                        <p className="text-xs text-slate-500 font-medium truncate">{user.email}</p>
                       </div>
                     </div>
-
-                    {/* Granted Custom Access Badges */}
-                    {(extraRolesGranted.length > 0 || customPermsCount > 0) && (
-                      <div className="text-left md:text-right">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Custom Access Granted</p>
-                        <div className="flex flex-wrap items-center md:justify-end gap-1">
-                          {extraRolesGranted.map(roleKey => (
-                            <Badge key={roleKey} className="bg-purple-50 text-purple-700 border-purple-200 font-bold uppercase text-[8.5px] tracking-wider px-1.5 py-0.5 rounded-[4px] border">
-                              + {roleKey}
-                            </Badge>
-                          ))}
-                          {customPermsCount - extraRolesGranted.length > 0 && (
-                            <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold uppercase text-[8.5px] tracking-wider px-1.5 py-0.5 rounded-[4px] border">
-                              {customPermsCount} Active Perms
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="text-left md:text-right">
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Last Login</p>
-                      <p className="text-xs font-semibold text-slate-700 flex items-center md:justify-end gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}
-                      </p>
-                    </div>
-
-                    <div className="hidden md:block w-px h-8 bg-slate-100" />
-
-                    {/* Manage Access Button */}
-                    <Button
-                      onClick={() => openPermissionModal(user)}
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs font-semibold rounded-[4px] border-slate-200 text-slate-700 hover:bg-orange-50 hover:text-primary-orange hover:border-orange-300 flex items-center gap-1.5"
-                    >
-                      <Sliders className="w-3.5 h-3.5 text-primary-orange" /> Manage Access
-                    </Button>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-[4px] h-8 w-8 hover:bg-slate-50 border border-slate-100">
-                          <MoreVertical className="w-4 h-4 text-slate-500" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-800 rounded-lg shrink-0">
+                          <MoreVertical className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56 rounded-[4px] border border-slate-200 p-1 shadow-sm bg-white z-50">
-                        <DropdownMenuLabel className="text-[9px] font-bold uppercase tracking-wider text-slate-400 p-2">Account Actions</DropdownMenuLabel>
-                        
-                        {/* Manage Permissions */}
-                        <DropdownMenuItem 
-                          onClick={() => openPermissionModal(user)}
-                          className="rounded-[4px] p-2 cursor-pointer text-slate-700 hover:bg-slate-50"
-                        >
-                          <ShieldCheck className="w-4 h-4 mr-2 text-primary-orange" />
-                          <span className="text-xs font-semibold">Custom Access & Roles</span>
+                      <DropdownMenuContent align="end" className="w-48 p-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50">
+                        <DropdownMenuItem onClick={() => openPermissionDrawer(user)} className="text-xs font-semibold py-1.5 cursor-pointer">
+                          <Edit2 className="w-3.5 h-3.5 mr-2 text-slate-500" /> Edit Role & Access
                         </DropdownMenuItem>
-
-                        {/* Toggle active status */}
-                        <DropdownMenuItem 
-                          onClick={() => handleToggleActive(user.id)}
-                          className={`rounded-[4px] p-2 cursor-pointer ${user.isActive ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
-                          disabled={user.id === 'root_admin_bypass'}
-                        >
-                          {user.isActive ? (
-                            <>
-                              <XCircle className="w-4 h-4 mr-2" />
-                              <span className="text-xs font-semibold">Deactivate User</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-4 h-4 mr-2" />
-                              <span className="text-xs font-semibold">Reactivate User</span>
-                            </>
-                          )}
+                        <DropdownMenuItem onClick={() => { setSelectedUser(user); setResetOpen(true); }} className="text-xs font-semibold py-1.5 cursor-pointer">
+                          <Key className="w-3.5 h-3.5 mr-2 text-slate-500" /> Reset Password
                         </DropdownMenuItem>
-
-                        {/* Reset password */}
-                        <DropdownMenuItem 
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setResetOpen(true);
-                          }}
-                          className="rounded-[4px] p-2 cursor-pointer text-slate-700 hover:bg-slate-50"
-                          disabled={user.id === 'root_admin_bypass'}
-                        >
-                          <Key className="w-4 h-4 mr-2 text-slate-450" />
-                          <span className="text-xs font-semibold">Reset Password</span>
-                        </DropdownMenuItem>
-
                         <DropdownMenuSeparator className="my-1 border-slate-100" />
-                        <DropdownMenuLabel className="text-[9px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1.5">Quick Primary Role</DropdownMenuLabel>
-                        
-                        {ROLES.filter(r => r.value !== user.role).map((roleObj) => (
-                          <DropdownMenuItem
-                            key={roleObj.value}
-                            onClick={() => handleUpdateRole(user.id, roleObj.value)}
-                            className="rounded-[4px] px-2 py-1.5 cursor-pointer text-xs text-slate-700 hover:bg-slate-50 font-medium"
-                            disabled={user.id === 'root_admin_bypass'}
-                          >
-                            <span>{roleObj.label}</span>
-                          </DropdownMenuItem>
-                        ))}
+                        <DropdownMenuItem onClick={() => handleToggleActive(user.id)} className="text-xs font-semibold py-1.5 cursor-pointer">
+                          {user.isActive ? "Disable Account" : "Enable Account"}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+
+                  {/* Badges Grid */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+                    <Badge className={`${getRoleColor(user.role)} font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md border`}>
+                      {user.role}
+                    </Badge>
+
+                    {user.isActive ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[9px] uppercase">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" /> Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[9px] uppercase">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 block" /> Inactive
+                      </span>
+                    )}
+
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                      <Sliders className="w-3 h-3 text-slate-400" />
+                      {customPermsCount > 0 ? `${customPermsCount} Custom Perms` : "Role Default"}
+                    </span>
+                  </div>
+
+                  {/* Card Bottom Meta */}
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                    <span>Last login:</span>
+                    <span className="font-semibold text-slate-600">
+                      {user.lastLoginAt
+                        ? new Date(user.lastLoginAt).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                        : "Never"}
+                    </span>
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => openPermissionDrawer(user)}
+                      className="w-full h-8 text-xs font-semibold text-[#F97316] border-orange-200 bg-orange-50/50 hover:bg-orange-100/50 rounded-lg flex items-center justify-center gap-1.5"
+                    >
+                      <ShieldCheck className="w-4 h-4" /> Manage Access
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              );
+            })
+          )}
+        </div>
+      </Card>
 
-        {users.length === 0 && (
-          <div className="h-48 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50 rounded-[4px] border border-dashed border-slate-200">
-            <Users className="w-8 h-8 text-slate-350" />
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No users found</p>
+      {/* ─── MANAGE ACCESS DRAWER (`Sheet` - Slide-over Desktop, Fullscreen Mobile) ─── */}
+      <Sheet open={permOpen} onOpenChange={setPermOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl p-0 bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full overflow-hidden">
+          {/* Drawer Header */}
+          <div className="p-6 border-b border-slate-100 bg-slate-50/70 shrink-0">
+            <SheetTitle className="text-lg font-extrabold text-[#17233C] flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#F97316]" />
+              Manage Access & Permissions
+            </SheetTitle>
+            <SheetDescription className="text-xs text-slate-500 font-medium mt-1">
+              Configure primary role and custom module-level access for <strong className="text-slate-800">{permUser?.name}</strong> ({permUser?.email}).
+            </SheetDescription>
           </div>
-        )}
-      </div>
 
-      {/* Create User Dialog */}
+          {/* Drawer Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Primary Role Selector */}
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+              <Label className="text-xs font-extrabold text-[#17233C] uppercase tracking-wider block">
+                Primary System Role
+              </Label>
+              <select
+                value={permRole}
+                onChange={(e) => handleRoleChangeInDrawer(e.target.value as AdminRole)}
+                className="h-10 w-full rounded-lg border border-slate-300 text-xs font-bold text-slate-800 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-[#F97316] cursor-pointer"
+              >
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label} — {r.desc}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-500 font-medium">
+                Changing primary role resets pre-ticked permissions to role defaults.
+              </p>
+            </div>
+
+            {/* Module Permission Groups */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                  Module-Level Custom Permissions
+                </h3>
+                <span className="text-[11px] font-bold text-slate-400">
+                  {selectedCustomPerms.length} selected
+                </span>
+              </div>
+
+              {PERMISSION_GROUPS.map((group) => {
+                const groupKeys = group.permissions.map((p) => p.key);
+                const allGroupChecked = groupKeys.every((k) => selectedCustomPerms.includes(k));
+                const isCollapsed = collapsedGroups[group.name];
+
+                return (
+                  <div key={group.name} className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-2xs">
+                    {/* Group Header */}
+                    <div className="bg-slate-50/80 p-3.5 flex items-center justify-between border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={allGroupChecked}
+                          onCheckedChange={(checked) => toggleGroupPermissions(groupKeys, !!checked)}
+                          id={`group-${group.name}`}
+                        />
+                        <label
+                          htmlFor={`group-${group.name}`}
+                          className="text-xs font-bold text-[#17233C] cursor-pointer"
+                        >
+                          {group.name}
+                        </label>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCollapsedGroups((prev) => ({ ...prev, [group.name]: !prev[group.name] }))
+                        }
+                        className="text-slate-400 hover:text-slate-700 p-1"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform ${isCollapsed ? "-rotate-90" : ""}`} />
+                      </button>
+                    </div>
+
+                    {/* Group Items */}
+                    {!isCollapsed && (
+                      <div className="p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white">
+                        {group.permissions.map((item) => {
+                          const isChecked = selectedCustomPerms.includes(item.key);
+                          const isRoleDefault = (ROLE_PERMISSIONS[permRole] || []).includes(item.key);
+
+                          return (
+                            <div
+                              key={item.key}
+                              onClick={() => toggleSinglePermission(item.key)}
+                              className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center justify-between cursor-pointer transition-all ${
+                                isChecked
+                                  ? "border-orange-300 bg-orange-50/40 text-slate-900"
+                                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Checkbox checked={isChecked} onCheckedChange={() => {}} />
+                                <span className="truncate">{item.label}</span>
+                              </div>
+                              {isRoleDefault && (
+                                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Drawer Footer */}
+          <div className="p-4 border-t border-slate-200 bg-white flex items-center justify-end gap-3 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPermOpen(false)}
+              className="h-9 px-4 text-xs font-semibold border-slate-200 rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSavePermissions}
+              disabled={isSavingPerms}
+              className="h-9 px-5 bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold text-xs rounded-lg shadow-xs flex items-center gap-1.5"
+            >
+              {isSavingPerms ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Save Access Changes
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* ─── CREATE USER DIALOG ─── */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-[420px] rounded-[4px] border border-slate-200 p-5 bg-white">
-          <DialogHeader className="border-b pb-3">
-            <DialogTitle className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-              <UserPlus className="w-4 h-4 text-primary-orange" /> Create Admin Account
-            </DialogTitle>
-            <DialogDescription className="text-[11px] text-slate-400 font-medium">
-              Fill in credentials and choose an initial role mapping.
+        <DialogContent className="max-w-md p-6 bg-white rounded-2xl border border-slate-200 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-extrabold text-[#17233C]">Create New Staff User</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Provision account credentials and assign a primary system role.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreateUser} className="space-y-3 py-3">
-            <div className="space-y-1">
-              <Label htmlFor="name" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Full Name</Label>
+          <form onSubmit={handleCreateUser} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">Full Name</Label>
               <Input
-                id="name"
+                placeholder="e.g. Rahul Sharma"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="John Doe"
-                className="rounded-[4px] h-8.5 border-slate-200 text-xs font-medium"
-                required
+                className="h-9 text-xs border-slate-300"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="admin@youthcamping.in"
-                  className="rounded-[4px] h-8.5 border-slate-200 pl-8.5 text-xs font-medium"
-                  required
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">Email Address</Label>
+              <Input
+                type="email"
+                placeholder="rahul@youthcamping.online"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                className="h-9 text-xs border-slate-300"
+              />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="rounded-[4px] h-8.5 border-slate-200 pl-8.5 text-xs font-medium"
-                  required
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">Temporary Password</Label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="h-9 text-xs border-slate-300"
+              />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="role" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">System Role</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">Primary Role</Label>
               <select
-                id="role"
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value as AdminRole)}
-                className="w-full rounded-[4px] h-8.5 border border-slate-200 px-2.5 bg-white text-xs font-semibold focus:outline-none focus:border-primary-orange"
+                className="h-9 w-full rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 px-3 bg-white focus:outline-none"
               >
                 {ROLES.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -645,191 +1011,46 @@ export default function UserManagementPage() {
               </select>
             </div>
 
-            <DialogFooter className="pt-3 border-t gap-2 flex justify-end">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} className="rounded-[4px] text-xs font-semibold h-8.5">
+            <DialogFooter className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} className="h-8 text-xs font-semibold rounded-lg">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isCreating} className="rounded-[4px] text-xs font-semibold h-8.5 bg-primary-orange hover:bg-primary-orange/90 text-white">
-                {isCreating && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                Create Account
+              <Button type="submit" disabled={isCreating} className="h-8 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold rounded-lg shadow-xs">
+                {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Create Staff Profile"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Manual Role Access Control & Dynamic Permissions Dialog */}
-      <Dialog open={permOpen} onOpenChange={setPermOpen}>
-        <DialogContent className="sm:max-w-[680px] max-h-[85vh] overflow-y-auto rounded-[4px] border border-slate-200 p-5 bg-white">
-          <DialogHeader className="border-b pb-3 flex flex-row items-center justify-between">
-            <div>
-              <DialogTitle className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                <ShieldCheck className="w-4.5 h-4.5 text-primary-orange" /> Manual Role Access Control
-              </DialogTitle>
-              <DialogDescription className="text-[11px] text-slate-500 font-medium">
-                Permissions for <span className="font-semibold text-slate-800">{permUser?.name}</span> are dynamically pre-ticked based on the selected primary role. You can tick or untick any item manually.
-              </DialogDescription>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={resetRoleToDefaultInModal}
-              className="h-7 text-[10.5px] font-bold text-slate-600 hover:text-primary-orange hover:bg-orange-50 border-slate-200 flex items-center gap-1 shrink-0"
-              title="Reset permissions to role defaults"
-            >
-              <RotateCcw className="w-3 h-3" /> Reset Defaults
-            </Button>
-          </DialogHeader>
-
-          <form onSubmit={handleSavePermissions} className="space-y-5 py-3">
-            {/* Primary Role Selector */}
-            <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-[4px] border border-slate-200">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="perm-role" className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Primary System Role</Label>
-                <span className="text-[10px] text-slate-400 font-semibold">Changing role updates default ticked permissions</span>
-              </div>
-              <select
-                id="perm-role"
-                value={permRole}
-                onChange={(e) => handleRoleChangeInModal(e.target.value as AdminRole)}
-                className="w-full rounded-[4px] h-9 border border-slate-200 px-3 bg-white text-xs font-semibold focus:outline-none focus:border-primary-orange"
-              >
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label} - {r.desc}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Additional Granted Module Roles */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Grant Additional Role Modules</Label>
-                <span className="text-[10px] text-slate-400 font-semibold">Select whole role modules to add extra access</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {EXTRA_MODULE_ROLES.map((mod) => {
-                  const rolePerms = ROLE_PERMISSIONS[mod.value] || [];
-                  const isChecked = selectedCustomPerms.includes(mod.value) || (rolePerms.length > 0 && rolePerms.every(p => selectedCustomPerms.includes(p)));
-                  return (
-                    <div
-                      key={mod.value}
-                      onClick={() => toggleExtraRoleModule(mod.value)}
-                      className={`p-2.5 rounded-[4px] border cursor-pointer transition-all flex items-start gap-2.5 ${
-                        isChecked 
-                          ? 'bg-orange-50/70 border-primary-orange text-slate-800 shadow-sm' 
-                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border ${
-                        isChecked ? 'bg-primary-orange border-primary-orange text-white' : 'border-slate-300 bg-white'
-                      }`}>
-                        {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">{mod.label}</p>
-                        <p className="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">{mod.desc}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Granular Feature Permissions */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Granular Feature Permissions</Label>
-                <span className="text-[10px] text-slate-400 font-semibold">{selectedCustomPerms.length} permissions currently active (ticked)</span>
-              </div>
-              <div className="space-y-3">
-                {PERMISSION_GROUPS.map((group) => (
-                  <div key={group.name} className="border border-slate-200 rounded-[4px] p-3 bg-white space-y-2">
-                    <h4 className="text-xs font-bold text-slate-700">{group.name}</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                      {group.permissions.map((p) => {
-                        const isChecked = selectedCustomPerms.includes(p.key);
-                        return (
-                          <button
-                            key={p.key}
-                            type="button"
-                            onClick={() => toggleCustomPermissionItem(p.key)}
-                            className={`px-2.5 py-1.5 rounded-[4px] border text-[10.5px] font-semibold text-left flex items-center justify-between transition-all ${
-                              isChecked
-                                ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800 font-bold shadow-xs'
-                                : 'bg-slate-50/60 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                            }`}
-                          >
-                            <span className="truncate">{p.label}</span>
-                            {isChecked ? (
-                              <Check className="w-3.5 h-3.5 shrink-0 ml-1 text-emerald-600 stroke-[2.5]" />
-                            ) : (
-                              <span className="w-3 h-3 rounded-full border border-slate-300 shrink-0 ml-1 inline-block" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <DialogFooter className="pt-3 border-t gap-2 flex justify-end">
-              <Button type="button" variant="outline" onClick={() => setPermOpen(false)} className="rounded-[4px] text-xs font-semibold h-8.5">
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSavingPerms} className="rounded-[4px] text-xs font-semibold h-8.5 bg-primary-orange hover:bg-primary-orange/90 text-white">
-                {isSavingPerms && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                Save Access Permissions
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reset Password Dialog */}
+      {/* ─── RESET PASSWORD DIALOG ─── */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-        <DialogContent className="sm:max-w-[360px] rounded-[4px] border border-slate-200 p-5 bg-white">
-          <DialogHeader className="border-b pb-3">
-            <DialogTitle className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-              <Key className="w-4 h-4 text-rose-500" /> Reset Password
-            </DialogTitle>
-            <DialogDescription className="text-[11px] text-slate-400 font-medium">
-              Enter a new password for <span className="font-semibold text-slate-900">{selectedUser?.name}</span>.
+        <DialogContent className="max-w-sm p-6 bg-white rounded-2xl border border-slate-200 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-extrabold text-[#17233C]">Reset Password</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Enter a new password for <strong className="text-slate-800">{selectedUser?.name}</strong>.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleResetPassword} className="space-y-3 py-3">
-            <div className="space-y-1">
-              <Label htmlFor="new-password" className="text-[10px] font-bold uppercase tracking-wider text-slate-500">New Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={resetPasswordVal}
-                  onChange={(e) => setResetPasswordVal(e.target.value)}
-                  placeholder="••••••••"
-                  className="rounded-[4px] h-8.5 border-slate-200 pl-8.5 text-xs font-medium"
-                  required
-                />
-              </div>
+          <form onSubmit={handleResetPassword} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">New Password</Label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={resetPasswordVal}
+                onChange={(e) => setResetPasswordVal(e.target.value)}
+                className="h-9 text-xs border-slate-300"
+              />
             </div>
 
-            <DialogFooter className="pt-3 border-t gap-2 flex justify-end">
-              <Button type="button" variant="outline" onClick={() => {
-                setResetOpen(false);
-                setSelectedUser(null);
-                setResetPasswordVal("");
-              }} className="rounded-[4px] text-xs font-semibold h-8.5">
+            <DialogFooter className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setResetOpen(false)} className="h-8 text-xs font-semibold rounded-lg">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isResetting} className="bg-rose-55 hover:bg-rose-600 rounded-[4px] text-xs font-semibold h-8.5 text-white">
-                {isResetting && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                Reset Password
+              <Button type="submit" disabled={isResetting} className="h-8 bg-[#F97316] hover:bg-[#EA580C] text-white text-xs font-semibold rounded-lg shadow-xs">
+                {isResetting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Update Password"}
               </Button>
             </DialogFooter>
           </form>

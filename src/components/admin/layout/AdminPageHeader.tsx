@@ -8,7 +8,7 @@ interface AdminPageHeaderProps {
   showBreadcrumbs?: boolean;
 }
 
-export function AdminPageHeader({ title, description, actions, showBreadcrumbs = true }: AdminPageHeaderProps) {
+export function AdminPageHeader({ title, description, actions, showBreadcrumbs = false }: AdminPageHeaderProps) {
   return (
     <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200/80 pb-4">
       <div className="space-y-1 min-w-0">

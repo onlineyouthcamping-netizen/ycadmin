@@ -204,7 +204,7 @@ export default function ThemePage() {
   return (
     <div className="space-y-6 pb-24 max-w-[1800px] mx-auto">
       {/* Top Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-100 sticky top-0 z-40 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div className="space-y-0.5">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Design Control Center</h1>
           <p className="text-sm text-slate-500">Configure your website's look and feel in real-time.</p>

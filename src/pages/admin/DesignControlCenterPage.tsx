@@ -203,8 +203,8 @@ export default function DesignControlCenterPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F8F9FA] text-[#333333]">
-      {/* Sticky Top Action Bar */}
-      <div className="sticky top-0 z-40 flex items-center justify-between px-6 py-3.5 bg-white border-b border-[#E2E8F0] shadow-sm">
+      {/* Top Action Bar */}
+      <div className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-[#E2E8F0] mb-4 rounded-xl shadow-xs">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"

@@ -98,29 +98,33 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4 pb-12 select-none px-4 py-3 bg-[#F4F7FB] min-h-screen text-[#162B45] font-sans antialiased">
       
-      {/* ─── PAGE HEADER ─── */}
-      <div className="flex items-center justify-between pb-1.5">
-        <div className="space-y-1">
-          <h1 className="text-[19px] font-[600] text-[#162B45] tracking-tight leading-none">
-            {greeting}, {admin?.name || stats?.adminName || "Hemal"}
-          </h1>
-          <p className="text-[#74839A] text-[11px] font-[500] leading-none">{currentDateString}</p>
+      {/* ─── SUB-HEADER BAR (40px HEIGHT, DATE ON LEFT, VIEW CONTROLS ON RIGHT) ─── */}
+      <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] h-[40px] px-5 flex items-center justify-between font-sans -mx-4 -mt-3 mb-3">
+        <div className="text-[12px] font-normal text-[#64748B]">
+          {currentDateString}
         </div>
         
-        {/* Date Selector Dropdown */}
-        <div className="flex items-center gap-2 bg-white border border-[#E3EAF2] rounded-lg px-2 py-1 text-[11px] font-[600] text-[#162B45] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-slate-50 transition-all">
-          <Calendar className="w-3.5 h-3.5 text-[#74839A] ml-1.5" />
-          <select 
-            value={dateFilter} 
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-transparent border-0 outline-none pr-6 cursor-pointer text-[#162B45] font-semibold text-[11px] -mr-4"
-          >
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
+        <div className="flex items-center gap-2">
+          {/* View Dropdown */}
+          <div className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-[6px] px-3 py-1 text-[12px] font-medium text-[#0A192F] cursor-pointer hover:bg-slate-50 transition-colors">
+            <span>Founder View (Dense)</span>
+            <ChevronDown className="w-3 h-3 text-[#64748B]" />
+          </div>
+
+          <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[6px] px-2 py-1 text-[11px] font-semibold text-[#0A192F]">
+            <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
+            <select 
+              value={dateFilter} 
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="bg-transparent border-0 outline-none cursor-pointer text-[#0A192F] font-medium text-[11px]"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="year">This Year</option>
+            </select>
+          </div>
         </div>
       </div>
 
