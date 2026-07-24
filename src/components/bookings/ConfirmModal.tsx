@@ -47,17 +47,18 @@ export function ConfirmModal({ booking, trips, onClose, onDone }: { booking: Boo
         trainTicketStatus: trainStatus
       });
       
+      // Auto create or update train tickets for passengers in this booking with the selected status
       const passengersList = booking.passengers && Array.isArray(booking.passengers) ? booking.passengers : [];
       if (passengersList.length > 0) {
         await Promise.all(
-          passengersList.map(p => 
-            trainTicketService.createTicket(booking.bookingId, {
+          passengersList.map(async (p: any) => {
+            return trainTicketService.createTicket(booking.bookingId, {
               travelerName: p.name,
               ticketStatus: trainStatus,
               sourceStation: booking.pickupCity || "Ahmedabad",
               destinationStation: "Jalandhar"
-            })
-          )
+            });
+          })
         );
       } else {
         await trainTicketService.createTicket(booking.bookingId, {

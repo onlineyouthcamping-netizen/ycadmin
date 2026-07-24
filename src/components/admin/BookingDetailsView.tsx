@@ -884,27 +884,35 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         trainTicketStatus: confirmTrainStatus
       });
 
-      // Auto create train tickets for passengers in this booking with the selected status
+      // Auto create or update train tickets for passengers in this booking with the selected status
       const passengersList = booking.passengers && Array.isArray(booking.passengers) ? booking.passengers : [];
       if (passengersList.length > 0) {
         await Promise.all(
-          passengersList.map(p => 
-            trainTicketService.createTicket(booking.bookingId, {
+          passengersList.map(async (p: any) => {
+            const existing = tickets.find(t => t.travelerName === p.name);
+            if (existing) {
+              return trainTicketService.updateTicket(existing.id, { ticketStatus: confirmTrainStatus });
+            }
+            return trainTicketService.createTicket(booking.bookingId, {
               travelerName: p.name,
               ticketStatus: confirmTrainStatus,
               sourceStation: booking.pickupCity || "Ahmedabad",
               destinationStation: "Jalandhar"
-            })
-          )
+            });
+          })
         );
       } else {
-        // Fallback for main guest
-        await trainTicketService.createTicket(booking.bookingId, {
-          travelerName: booking.fullName,
-          ticketStatus: confirmTrainStatus,
-          sourceStation: booking.pickupCity || "Ahmedabad",
-          destinationStation: "Jalandhar"
-        });
+        const existing = tickets.find(t => t.travelerName === booking.fullName);
+        if (existing) {
+          await trainTicketService.updateTicket(existing.id, { ticketStatus: confirmTrainStatus });
+        } else {
+          await trainTicketService.createTicket(booking.bookingId, {
+            travelerName: booking.fullName,
+            ticketStatus: confirmTrainStatus,
+            sourceStation: booking.pickupCity || "Ahmedabad",
+            destinationStation: "Jalandhar"
+          });
+        }
       }
 
       toast.success("Booking confirmed successfully!");
@@ -1492,18 +1500,25 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       `}} />
 
       {/* ─── Workspace Header ─── */}
-      <div className="border-b border-zinc-200 px-6 py-4 flex items-center justify-between gap-6 bg-white sticky top-0 z-30">
-        <div className="flex items-center gap-4 min-w-0">
-          <button onClick={onBack} className="text-slate-400 hover:text-slate-900 text-lg pr-2 border-r">← Back</button>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-455 uppercase font-black tracking-wider">Booking ID</span>
-            <span className="font-bold text-slate-800 text-sm font-mono">{booking.bookingId}</span>
+      <div className="border-b border-zinc-200 px-4 py-3 md:px-6 md:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6 bg-white sticky top-0 z-30 font-sans">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={onBack} className="text-slate-400 hover:text-slate-900 text-sm font-bold pr-2 border-r border-slate-200">← Back</button>
+            <div className="flex flex-col">
+              <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Booking ID</span>
+              <span className="font-bold text-slate-800 text-xs sm:text-sm font-mono">{booking.bookingId}</span>
+            </div>
           </div>
+          <span className={cn("sm:hidden px-2 py-0.5 rounded-full text-[9px] font-bold uppercase", 
+            booking.status === "confirmed" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-amber-50 text-amber-600 border border-amber-200"
+          )}>
+            {booking.status === "confirmed" ? "Confirmed" : flowStatus}
+          </span>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-slate-855 text-sm">{booking.tripName || fullTrip?.tripName || "Trip"}</div>
-          <div className="text-slate-400 text-xs mt-0.5">
+        <div className="flex-1 min-w-0 w-full sm:w-auto">
+          <div className="font-bold text-slate-900 text-sm sm:text-base truncate">{booking.tripName || fullTrip?.tripName || "Trip"}</div>
+          <div className="text-slate-500 text-xs mt-0.5 font-medium">
             {booking.departureDate 
               ? `${safeFormatDate(booking.departureDate, { day: '2-digit', month: 'short' })} to ${(() => {
                   const durationStr = fullTrip?.duration || "";
@@ -1515,19 +1530,19 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-3 shrink-0">
           <div className="text-right">
             <div className="font-bold text-slate-800 text-xs">{booking.fullName || booking.name}</div>
             <div className="text-slate-400 font-mono text-[11px] mt-0.5">{booking.mobile || booking.phone || "—"}</div>
           </div>
           <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase", 
-            booking.status === "confirmed" ? "bg-emerald-50 text-emerald-600 border border-emerald-250/40" : "bg-amber-50 text-amber-600 border border-amber-250/40"
+            booking.status === "confirmed" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-amber-50 text-amber-600 border border-amber-200"
           )}>
             {booking.status === "confirmed" ? "Confirmed" : flowStatus}
           </span>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
           <button 
             onClick={() => {
               setPayAmount(booking.remainingAmount.toString());
@@ -1536,11 +1551,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
               setPayComments("");
               setShowCreatePayment(true);
             }} 
-            className="bg-[#F5760E] hover:opacity-90 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all"
+            className="bg-[#F5760E] hover:opacity-90 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs"
           >
             + Add Payment
           </button>
-          <button onClick={() => setShowCreateTask(true)} className="bg-white border border-slate-300 text-slate-700 font-semibold text-xs px-4 py-2 rounded-lg hover:bg-slate-50 transition-all">
+          <button onClick={() => setShowCreateTask(true)} className="bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-all">
             Assign Task
           </button>
           {booking.status !== 'cancelled' && (
@@ -1552,12 +1567,12 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 setCancelRefundMode("UPI");
                 setShowCancelModal(true);
               }}
-              className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold text-xs px-4 py-2 rounded-lg transition-all"
+              className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold text-xs px-3.5 py-1.5 rounded-lg transition-all"
             >
               Cancel Booking
             </button>
           )}
-          <button onClick={() => setIsComposerOpen(true)} className="bg-white border border-slate-300 text-slate-700 font-semibold text-xs px-4 py-2 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-1.5">
+          <button onClick={() => setIsComposerOpen(true)} className="bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-1.5">
             <Mail className="h-3.5 w-3.5 text-slate-500" />
             Send Email
           </button>
@@ -1729,12 +1744,12 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       </div>
 
       {/* ─── Main Content Split Layout ─── */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
         {/* Left Column - scrollable */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
 
           {/* Tab Strip */}
-          <div className="border-b border-slate-200 bg-white flex gap-6 overflow-x-auto sticky top-0 z-10 -mx-6 px-6">
+          <div className="border-b border-slate-200 bg-white flex gap-4 md:gap-6 overflow-x-auto no-scrollbar sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6">
             {[
               { id: "overview", label: "Overview" },
               { id: "passengers", label: "Passengers" },
@@ -3144,7 +3159,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         </div>
 
         {/* Right Column Sidebar - scrollable */}
-        <div className="w-[340px] border-l border-slate-150 p-6 overflow-y-auto flex-shrink-0 space-y-4">
+        <div className="w-full lg:w-[340px] border-t lg:border-t-0 lg:border-l border-slate-200 p-4 md:p-6 overflow-y-auto flex-shrink-0 space-y-4 font-sans">
           {/* Customer Main Info Card */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4 text-xs">
             {isEditingCustomer ? (
