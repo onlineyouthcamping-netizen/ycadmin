@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { 
   X, Download, ZoomIn, ZoomOut, 
-  FileText, RefreshCw, AlertCircle, RotateCw
+  FileText, RefreshCw, AlertCircle, RotateCw, ChevronLeft, ChevronRight
 } from 'lucide-react';
+
+// Configure pdfjs worker for react-pdf
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export interface DocumentViewerProps {
   document: {
@@ -27,6 +33,8 @@ export interface DocumentViewerProps {
 }
 
 export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, isOpen, onClose }) => {
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState<number>(1);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [rotation, setRotation] = useState<number>(0);
   const [hasError, setHasError] = useState<boolean>(false);
@@ -39,7 +47,6 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, isOpen
   // Determine file type
   const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext);
   const isPdf = ext === 'pdf';
-  const isDocx = ['docx', 'doc'].includes(ext);
 
   // Construct absolute file URL
   const rawUrl = document.fileUrl || '';
@@ -53,6 +60,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, isOpen
   const handleReset = () => {
     setZoomLevel(100);
     setRotation(0);
+    setPageNumber(1);
+    setHasError(false);
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setPageNumber(1);
     setHasError(false);
   };
 
@@ -65,7 +79,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, isOpen
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 sm:p-6 font-sans">
+    <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs z-50 flex items-center justify-center p-4 sm:p-6 font-sans">
       <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* ─── Header ─── */}
@@ -89,6 +103,32 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, isOpen
 
           {/* Controls Bar */}
           <div className="flex items-center gap-2">
+            {/* PDF Page Controls */}
+            {isPdf && numPages && !hasError && (
+              <div className="flex items-center bg-slate-200/70 rounded-lg p-1 text-slate-700 text-xs gap-1">
+                <button
+                  onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
+                  disabled={pageNumber <= 1}
+                  className="p-1 hover:bg-white rounded transition-colors disabled:opacity-30"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="px-1.5 font-bold font-mono text-[11px] whitespace-nowrap">
+                  {pageNumber} / {numPages}
+                </span>
+                <button
+                  onClick={() => setPageNumber(prev => Math.min(prev + 1, numPages))}
+                  disabled={pageNumber >= numPages}
+                  className="p-1 hover:bg-white rounded transition-colors disabled:opacity-30"
+                  title="Next Page"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Zoom Controls */}
             {(isImage || isPdf) && !hasError && (
               <div className="hidden sm:flex items-center bg-slate-200/70 rounded-lg p-1 text-slate-700 text-xs">
                 <button
@@ -145,9 +185,9 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, isOpen
           {hasError ? (
             <div className="bg-white rounded-xl p-8 max-w-sm text-center space-y-3 shadow-lg">
               <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
-              <h3 className="text-sm font-bold text-slate-800">File Preview Not Available</h3>
+              <h3 className="text-sm font-bold text-slate-800">Preview Not Available</h3>
               <p className="text-xs text-slate-500 font-medium">
-                Unable to render preview for this file type or connection failed. Click download below to view.
+                Unable to render preview for this file type or connection failed. Click download to view.
               </p>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <button
@@ -169,31 +209,53 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, isOpen
             </div>
           ) : isImage ? (
             <div className="transition-all duration-200 max-w-full max-h-full flex items-center justify-center">
-              <img
-                src={fullFileUrl}
-                alt={fileName}
-                onError={() => setHasError(true)}
-                style={{
-                  transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
-                  maxHeight: '65vh',
-                  objectFit: 'contain'
-                }}
-                className="rounded shadow-lg transition-transform duration-200"
-              />
+              <Zoom>
+                <img
+                  src={fullFileUrl}
+                  alt={fileName}
+                  onError={() => setHasError(true)}
+                  style={{
+                    transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                    maxHeight: '65vh',
+                    objectFit: 'contain'
+                  }}
+                  className="rounded shadow-lg transition-transform duration-200 cursor-zoom-in"
+                />
+              </Zoom>
             </div>
           ) : isPdf ? (
-            <iframe
-              src={`${fullFileUrl}#toolbar=1&navpanes=0`}
-              title={fileName}
-              onError={() => setHasError(true)}
-              className="w-full h-[65vh] rounded border-0 bg-white"
-            />
+            <div className="w-full h-full flex flex-col items-center justify-center overflow-auto">
+              <Document
+                file={fullFileUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={() => setHasError(true)}
+                loading={
+                  <div className="text-white text-xs font-bold flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#F97316]" />
+                    Loading PDF pages...
+                  </div>
+                }
+                error={
+                  <iframe
+                    src={`${fullFileUrl}#toolbar=1`}
+                    title={fileName}
+                    className="w-full h-[65vh] rounded border-0 bg-white"
+                  />
+                }
+              >
+                <Page
+                  pageNumber={pageNumber}
+                  scale={zoomLevel / 100}
+                  className="shadow-2xl rounded overflow-hidden"
+                />
+              </Document>
+            </div>
           ) : (
             <div className="bg-white rounded-xl p-8 max-w-sm text-center space-y-3 shadow-lg">
               <FileText className="w-12 h-12 text-[#F97316] mx-auto" />
               <h3 className="text-sm font-bold text-slate-800">{fileName}</h3>
               <p className="text-xs text-slate-500 font-medium">
-                {isDocx ? 'DOCX preview is not directly embeddable. Click below to download and view in Word.' : 'Click below to download and open file.'}
+                Preview not available for this file type. Click below to download and view.
               </p>
               <a
                 href={fullFileUrl}
