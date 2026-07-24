@@ -8,9 +8,10 @@ interface TravelDeskTripSidebarProps {
   activeTripId?: string;
   isLoading: boolean;
   onFeedClick: () => void;
+  onAddTripClick?: () => void;
 }
 
-export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({ trips, activeTripId, isLoading, onFeedClick }) => {
+export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({ trips, activeTripId, isLoading, onFeedClick, onAddTripClick }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get('tab') || 'knowledge';
   
@@ -35,7 +36,12 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({ tr
   return (
     <div className="w-80 bg-white border-r border-[#E2E8F0] flex flex-col h-full overflow-hidden shrink-0 font-sans">
       <div className="p-4 border-b border-[#E2E8F0] space-y-3 shrink-0">
-        <h3 className="text-sm font-bold text-[#0A192F] uppercase tracking-wider">My Trips</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-[#0A192F] uppercase tracking-wider">My Trips</h3>
+          <span className="text-[10px] font-semibold text-[#64748B] bg-[#F8FAFC] px-2 py-0.5 rounded border border-[#E2E8F0]">
+            {filteredTrips.length} Destinations
+          </span>
+        </div>
         
         {/* TAB FILTER (DOMESTIC: Orange #F97316, INTERNATIONAL: Navy #0A192F) */}
         <div className="flex gap-4 border-b border-[#E2E8F0]">
@@ -71,14 +77,26 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({ tr
           <Search className="absolute right-3 top-2.5 text-[#64748B] w-3.5 h-3.5" />
         </div>
 
-        {/* ACTIVATE BUTTON (Navy #0A192F bg) */}
-        <button
-          onClick={onFeedClick}
-          className="w-full flex items-center justify-center gap-1.5 bg-[#0A192F] text-white py-2 rounded-lg font-bold text-xs hover:bg-[#112240] transition-colors shadow-xs cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Activate Master Trip
-        </button>
+        {/* ACTION BUTTONS: MANUALLY ADD DESTINATION & ACTIVATE MASTER */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={onAddTripClick}
+            className="flex items-center justify-center gap-1 bg-[#F97316] hover:bg-[#ea580c] text-white py-2 px-2 rounded-lg font-bold text-[11px] transition-colors shadow-xs cursor-pointer truncate"
+            title="Manually Add Destination Trip"
+          >
+            <Plus className="w-3 h-3" />
+            + New Trip
+          </button>
+
+          <button
+            onClick={onFeedClick}
+            className="flex items-center justify-center gap-1 bg-[#0A192F] text-white py-2 px-2 rounded-lg font-bold text-[11px] hover:bg-[#112240] transition-colors shadow-xs cursor-pointer truncate"
+            title="Activate Existing Master Trip"
+          >
+            <Compass className="w-3 h-3 text-[#F97316]" />
+            Activate
+          </button>
+        </div>
       </div>
 
       {/* 8px Spacing Between Trip List Items */}

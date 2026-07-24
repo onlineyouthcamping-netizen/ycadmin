@@ -10,6 +10,7 @@ import { TravelDeskTabs } from "@/components/travel-desk/TravelDeskTabs";
 import { TravelDeskTripSidebar } from "@/components/travel-desk/TravelDeskTripSidebar";
 import { TravelDeskQuickActions } from "@/components/travel-desk/TravelDeskQuickActions";
 import { FeedTripsDrawer } from "@/components/travel-desk/FeedTripsDrawer";
+import { TravelDeskCreateTripModal } from "@/components/travel-desk/TravelDeskCreateTripModal";
 import { TravelDeskLoadingState, TravelDeskErrorState, TravelDeskEmptyState, TravelDeskActivationState } from "@/components/travel-desk/TravelDeskStateComponents";
 import { TravelDeskKnowledgeHub } from "@/components/travel-desk/TravelDeskKnowledgeHub";
 import { TravelDeskDepartures } from "@/components/travel-desk/TravelDeskDepartures";
@@ -40,8 +41,9 @@ export default function TravelDeskPage() {
   const [isMainLoading, setIsMainLoading] = useState(false);
   const [mainError, setMainError] = useState<string | null>(null);
 
-  // Drawer State
+  // Modal & Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // AbortController ref
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -191,6 +193,7 @@ export default function TravelDeskPage() {
           activeTripId={tripId || undefined} 
           isLoading={isSidebarLoading}
           onFeedClick={() => setIsDrawerOpen(true)}
+          onAddTripClick={() => setIsCreateModalOpen(true)}
         />
 
         {/* CENTER CONTENT */}
@@ -263,6 +266,17 @@ export default function TravelDeskPage() {
         activeTripIds={trips.map(t => t.id)}
         onActivated={async (newTripId) => {
           // Refresh trips and navigate to new trip
+          const loadedTrips = await travelDeskService.getTravelDeskTrips();
+          setTrips(loadedTrips || []);
+          setSearchParams({ tripId: newTripId, tab: 'knowledge' });
+        }}
+      />
+
+      {/* CREATE NEW DESTINATION TRIP MODAL */}
+      <TravelDeskCreateTripModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onTripCreated={async (newTripId) => {
           const loadedTrips = await travelDeskService.getTravelDeskTrips();
           setTrips(loadedTrips || []);
           setSearchParams({ tripId: newTripId, tab: 'knowledge' });
