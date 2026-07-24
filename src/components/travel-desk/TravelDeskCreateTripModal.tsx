@@ -42,8 +42,15 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
     setIsSubmitting(true);
     try {
       // 1. Create Trip Master Record
+      const cleanSlug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+
       const newTrip = await tripsService.create({
         title: title.trim(),
+        slug: cleanSlug,
+        description: overview.trim() || `${title} expedition exploring ${location}.`,
         shortName: code.trim() || title.slice(0, 4).toUpperCase() + "-1",
         category,
         tripType: category.toLowerCase().includes("international") ? "international" : "domestic",
