@@ -61,9 +61,7 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
         maxGroupSize: 30,
         startEnd,
         heroImage: DEFAULT_HERO_IMAGE,
-        overview: overview.trim() || `${title} expedition exploring ${location}.`,
-        status: "ACTIVE",
-        features: ["Certified Guide", "Meals Included", "Transport", "Stay Accommodations"]
+        status: "ACTIVE"
       } as any);
 
       toast.success(`Destination "${title}" created successfully!`);
