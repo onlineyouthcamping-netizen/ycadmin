@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Plus, Compass, MapPin, Calendar, Users, DollarSign, Image, Sparkles } from "lucide-react";
+import { X, Plus, Compass, MapPin, Calendar, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,13 +14,7 @@ interface TravelDeskCreateTripModalProps {
   onTripCreated: (tripId: string) => void;
 }
 
-const PRESET_HERO_IMAGES = [
-  { name: "Himalayas / Mountain", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80" },
-  { name: "Beach / Coastal", url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80" },
-  { name: "Desert / Dunes", url: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80" },
-  { name: "Forest / Nature", url: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80" },
-  { name: "International / City", url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80" }
-];
+const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80";
 
 export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps> = ({
   isOpen,
@@ -29,17 +23,13 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form Fields
+  // Form Fields (Cleaned up: Hero Image, Duration, Starting Price, and Max Group Size removed)
   const [title, setTitle] = useState("");
   const [code, setCode] = useState("");
   const [category, setCategory] = useState("Domestic");
   const [location, setLocation] = useState("");
-  const [duration, setDuration] = useState("6 Days / 5 Nights");
-  const [price, setPrice] = useState("14999");
   const [difficulty, setDifficulty] = useState("Easy to Moderate");
-  const [maxGroupSize, setMaxGroupSize] = useState("30");
   const [startEnd, setStartEnd] = useState("Mar - Oct");
-  const [heroImage, setHeroImage] = useState(PRESET_HERO_IMAGES[0].url);
   const [overview, setOverview] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,12 +48,12 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
         category,
         tripType: category.toLowerCase().includes("international") ? "international" : "domestic",
         location: location.trim(),
-        duration: duration.trim(),
-        price: parseFloat(price) || 14999,
+        duration: "5 Days / 4 Nights",
+        price: 14999,
         difficulty,
-        maxGroupSize: parseInt(maxGroupSize) || 30,
+        maxGroupSize: 30,
         startEnd,
-        heroImage,
+        heroImage: DEFAULT_HERO_IMAGE,
         overview: overview.trim() || `${title} expedition exploring ${location}.`,
         status: "ACTIVE",
         features: ["Certified Guide", "Meals Included", "Transport", "Stay Accommodations"]
@@ -97,7 +87,7 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl p-0 bg-white rounded-xl overflow-hidden border border-[#E2E8F0] shadow-xl font-sans">
+      <DialogContent className="max-w-md p-0 bg-white rounded-xl overflow-hidden border border-[#E2E8F0] shadow-xl font-sans">
         
         {/* Header */}
         <div className="bg-[#0A192F] px-6 py-4 text-white flex items-center justify-between">
@@ -110,7 +100,7 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
                 Add New Destination Trip
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-300">
-                Manually register a destination & initialize its Travel Desk workspace
+                Register a destination & initialize its Travel Desk workspace
               </DialogDescription>
             </div>
           </div>
@@ -172,40 +162,6 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
             </div>
           </div>
 
-          {/* Duration, Price & Group Size */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Duration</label>
-              <Input
-                placeholder="e.g. 7 Days / 6 Nights"
-                value={duration}
-                onChange={e => setDuration(e.target.value)}
-                className="h-9 text-xs border-[#E2E8F0] text-[#0A192F]"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Starting Price (₹)</label>
-              <Input
-                type="number"
-                placeholder="14999"
-                value={price}
-                onChange={e => setPrice(e.target.value)}
-                className="h-9 text-xs border-[#E2E8F0] font-mono text-[#0A192F]"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Max Group Size</label>
-              <Input
-                placeholder="30 Pax"
-                value={maxGroupSize}
-                onChange={e => setMaxGroupSize(e.target.value)}
-                className="h-9 text-xs border-[#E2E8F0] text-[#0A192F]"
-              />
-            </div>
-          </div>
-
           {/* Difficulty & Season */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -230,36 +186,6 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
                 onChange={e => setStartEnd(e.target.value)}
                 className="h-9 text-xs border-[#E2E8F0] text-[#0A192F]"
               />
-            </div>
-          </div>
-
-          {/* Banner Image URL & Presets */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-[#0A192F]">Hero Banner Image URL</label>
-            <Input
-              placeholder="https://images.unsplash.com/..."
-              value={heroImage}
-              onChange={e => setHeroImage(e.target.value)}
-              className="h-9 text-xs border-[#E2E8F0] text-[#0A192F] font-mono"
-            />
-
-            {/* Presets */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
-              <span className="text-[10px] font-semibold text-[#64748B] shrink-0">Presets:</span>
-              {PRESET_HERO_IMAGES.map((preset, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setHeroImage(preset.url)}
-                  className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-all shrink-0 ${
-                    heroImage === preset.url
-                      ? "bg-[#0A192F] text-white border-[#0A192F]"
-                      : "bg-[#F8FAFC] text-[#0A192F] border-[#E2E8F0] hover:border-[#0A192F]"
-                  }`}
-                >
-                  {preset.name}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -288,7 +214,7 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-9 bg-[#0A192F] hover:bg-[#112240] text-white text-xs font-bold px-5 rounded-md flex items-center gap-1.5"
+              className="h-9 bg-[#0A192F] hover:bg-[#112240] text-white text-xs font-bold px-5 rounded-md flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#F97316]" />
               {isSubmitting ? "Creating & Initializing..." : "Create & Open Workspace"}
