@@ -37,7 +37,7 @@ export const settingsService = {
   // General website / app settings helpers
   get: async (): Promise<any> => {
     try {
-      const response = await api.get('/settings');
+      const response = await api.get('/settings/public');
       return response.data?.data || response.data || {};
     } catch {
       return {};
