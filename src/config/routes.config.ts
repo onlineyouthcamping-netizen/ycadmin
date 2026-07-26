@@ -268,6 +268,22 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     navigation: { visible: true, group: "Business", iconName: "Globe" },
     breadcrumbLabel: "Business / Website Control"
   },
+  {
+    id: "page-builder",
+    label: "Page Builder",
+    path: "/admin/page-builder",
+    permission: "settings.view",
+    navigation: { visible: true, group: "Business", iconName: "Layout" },
+    breadcrumbLabel: "Business / Page Builder"
+  },
+  {
+    id: "pages",
+    label: "Website Pages",
+    path: "/admin/pages",
+    permission: "settings.view",
+    navigation: { visible: false, group: "Business", iconName: "FileText" },
+    breadcrumbLabel: "Business / Website Pages"
+  },
 
   // Marketing Module
   {

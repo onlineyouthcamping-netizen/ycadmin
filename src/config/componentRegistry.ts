@@ -30,6 +30,8 @@ export const COMPONENT_REGISTRY: Record<string, LazyExoticComponent<ComponentTyp
   "trips": lazy(() => import("../pages/admin/TripsPage.tsx")),
   "master-database": lazy(() => import("../pages/admin/MasterDatabasePage.tsx")),
   "website": lazy(() => import("../pages/admin/WebsiteControlCenterPage.tsx")),
+  "page-builder": lazy(() => import("../pages/admin/PageBuilderPage.tsx")),
+  "pages": lazy(() => import("../pages/admin/PagesPage.tsx")),
   "marketing-overview": lazy(() => import("../pages/admin/marketing/MarketingOverviewPage.tsx")),
   "content-studio": lazy(() => import("../pages/admin/marketing/ContentStudioPage.tsx")),
   "blogs": lazy(() => import("../pages/admin/BlogsPage.tsx")),

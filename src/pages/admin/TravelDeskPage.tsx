@@ -215,7 +215,8 @@ export default function TravelDeskPage() {
               <TravelDeskHeader 
                 trip={activeTrip} 
                 readinessScore={workspace.readinessScore} 
-                departures={departures} 
+                departures={departures}
+                onTripUpdated={(updatedTrip) => setActiveTrip(updatedTrip)}
               />
               
               <TravelDeskTabs tripId={tripId!} />

@@ -1,214 +1,308 @@
+import { useState } from "react";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area
-} from "recharts";
-import { 
-  LayoutGrid, Star, Share2, BarChart3, CreditCard, Users, 
-  Construction, ArrowUpRight, Target, Zap, TrendingUp,
-  Download, Filter, Calendar
+  LayoutGrid, Star, Share2, Users, 
+  ArrowUpRight, Target, TrendingUp,
+  Download, Filter, Calendar, Plus, Sparkles,
+  Search, CheckCircle2, AlertCircle, Clock, Copy, Shield,
+  CreditCard, Tag, RefreshCw, ChevronRight, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 
-const SAMPLE_DATA = [
-  { name: 'Mon', val: 4000 }, { name: 'Tue', val: 3000 },
-  { name: 'Wed', val: 5000 }, { name: 'Thu', val: 2780 },
-  { name: 'Fri', val: 1890 }, { name: 'Sat', val: 2390 },
-  { name: 'Sun', val: 3490 },
-];
+// ─── COLLECTIONS PAGE ───
+export function CollectionsPage() {
+  const [collections] = useState([
+    { id: "1", title: "Himalayan Expeditions", count: 12, slug: "himalayan-expeditions", status: "Active", banner: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600" },
+    { id: "2", title: "Weekend Getaways & Treks", count: 8, slug: "weekend-getaways", status: "Active", banner: "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=600" },
+    { id: "3", title: "Spiti & Ladakh Circuit", count: 6, slug: "spiti-ladakh", status: "Active", banner: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600" },
+    { id: "4", title: "South India Coastal & Hills", count: 5, slug: "south-india", status: "Active", banner: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600" },
+  ]);
 
-export default function PlaceholderPage({ title, description, icon: Icon }: { title: string, description: string, icon: any }) {
   return (
-    <div className="space-y-10 animate-fade-in">
-       <div className="flex items-center justify-between">
-          <div className="space-y-1">
-             <h1 className="text-3xl font-black uppercase tracking-tight">{title}</h1>
-             <p className="text-muted-foreground font-medium text-sm">{description}</p>
+    <div className="space-y-6 p-6 sm:p-8 bg-slate-50/50 min-h-screen font-sans">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+            <LayoutGrid className="w-5 h-5" />
           </div>
-          <div className="flex gap-3">
-             <Button variant="outline" className="rounded-xl h-11 px-6 font-black uppercase text-[10px] tracking-widest opacity-50 cursor-not-allowed">
-               <Download className="w-4 h-4 mr-2" /> Export
-             </Button>
-             <Button className="rounded-xl h-11 px-6 font-black uppercase text-[10px] tracking-widest bg-black text-white hover:bg-black/90">
-               Request Early Access
-             </Button>
+          <div>
+            <h1 className="text-xl font-extrabold text-[#0B1528] tracking-tight">Trip Collections & Categories</h1>
+            <p className="text-xs font-semibold text-slate-500">Group travel itineraries into curated collections for public web discovery</p>
           </div>
-       </div>
+        </div>
+        <Button onClick={() => toast.success("New Collection modal ready")} className="h-10 px-5 rounded-xl font-extrabold text-xs bg-[#D4541A] hover:bg-[#c24813] text-white flex items-center gap-2 cursor-pointer shadow-md">
+          <Plus className="w-4 h-4" /> Create Collection
+        </Button>
+      </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => (
-             <Card key={i} className="rounded-[32px] border-2 border-border/50 bg-white/50 overflow-hidden group">
-                <CardContent className="p-8 space-y-4">
-                   <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
-                      <Zap className="w-6 h-6 text-muted-foreground opacity-40" />
-                   </div>
-                   <div className="h-4 w-1/2 bg-muted rounded-full animate-pulse" />
-                   <div className="h-8 w-3/4 bg-muted/40 rounded-full animate-pulse" />
-                </CardContent>
-             </Card>
-          ))}
-       </div>
+      {/* Metric summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Collections</p>
+          <p className="text-2xl font-black text-[#0B1528] mt-1">4 Active</p>
+        </div>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Grouped Trips</p>
+          <p className="text-2xl font-black text-emerald-600 mt-1">31 Expeditions</p>
+        </div>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Homepage Showcase</p>
+          <p className="text-2xl font-black text-[#D4541A] mt-1">Enabled</p>
+        </div>
+      </div>
 
-       <div className="bg-white border-2 border-dashed border-border rounded-[48px] p-20 flex flex-col items-center justify-center text-center space-y-8 min-h-[400px]">
-          <div className="w-24 h-24 bg-primary/5 rounded-[40px] flex items-center justify-center text-primary relative">
-             <div className="absolute inset-0 bg-primary/10 rounded-[40px] animate-ping opacity-20" />
-             <Icon className="w-10 h-10 relative z-10" />
+      {/* Grid of collections */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {collections.map(c => (
+          <div key={c.id} className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group">
+            <div className="h-36 relative overflow-hidden">
+              <img src={c.banner} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-black text-emerald-700">
+                {c.status}
+              </div>
+            </div>
+            <div className="p-5 space-y-3">
+              <h3 className="font-extrabold text-[#0B1528] text-sm leading-tight">{c.title}</h3>
+              <p className="text-xs font-semibold text-slate-500">{c.count} Trips Linked</p>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[10.5px] font-mono text-slate-400">/{c.slug}</span>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs font-bold text-[#D4541A] hover:bg-orange-50">
+                  Manage <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-             <h2 className="text-xl font-black uppercase tracking-tight">Module Integration Pending</h2>
-             <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">This professional administrative module is currently being optimized for high-volume data processing.</p>
-          </div>
-       </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-export const CollectionsPage = () => <PlaceholderPage title="Collections" description="Organize your trips into curated categories for better discoverability." icon={LayoutGrid} />;
-export const PromotionsPage = () => <PlaceholderPage title="Promotions" description="Manage discount codes and seasonal campaign triggers." icon={Star} />;
-export const DistributionPage = () => <PlaceholderPage title="Distribution" description="Connect with OTAs and external travel marketplaces." icon={Share2} />;
-export const CustomersPage = () => <PlaceholderPage title="Customers" description="Manage your global customer database and loyalty tiers." icon={Users} />;
+// ─── PROMOTIONS & DISCOUNT CODES PAGE ───
+export function PromotionsPage() {
+  const [coupons] = useState([
+    { code: "SUMMER2026", discount: "15% OFF", minBooking: "₹10,000", maxDiscount: "₹2,000", used: 42, status: "Active", expires: "31 Aug 2026" },
+    { code: "EARLYBIRD", discount: "₹1,000 FLAT", minBooking: "₹12,000", maxDiscount: "₹1,000", used: 89, status: "Active", expires: "15 Sep 2026" },
+    { code: "GROUPTREK", discount: "10% OFF", minBooking: "₹25,000", maxDiscount: "₹3,500", used: 18, status: "Active", expires: "31 Dec 2026" },
+    { code: "FLAT500", discount: "₹500 FLAT", minBooking: "₹5,000", maxDiscount: "₹500", used: 124, status: "Expired", expires: "01 Jul 2026" },
+  ]);
 
-export const ReportsPage = () => (
-  <div className="space-y-10 animate-fade-in pb-20">
-     <div className="flex items-center justify-between">
-        <div className="space-y-1">
-           <h1 className="text-3xl font-black uppercase tracking-tight">Reports & Analytics</h1>
-           <p className="text-muted-foreground font-medium text-sm">Deep-dive into revenue analytics and customer behavior.</p>
+  return (
+    <div className="space-y-6 p-6 sm:p-8 bg-slate-50/50 min-h-screen font-sans">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+            <Tag className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-[#0B1528] tracking-tight">Promotions & Coupons</h1>
+            <p className="text-xs font-semibold text-slate-500">Manage promotional coupon codes, group discounts, and seasonal offers</p>
+          </div>
         </div>
-        <div className="flex gap-3">
-           <Button variant="outline" className="rounded-xl h-11 px-6 font-black uppercase text-[10px] tracking-widest border-2">
-             <Calendar className="w-4 h-4 mr-2" /> Last 30 Days
-           </Button>
-           <Button className="rounded-xl h-11 px-6 font-black uppercase text-[10px] tracking-widest bg-black text-white">
-             <Download className="w-4 h-4 mr-2" /> Download Full Audit
-           </Button>
+        <Button onClick={() => toast.success("New Coupon dialog ready")} className="h-10 px-5 rounded-xl font-extrabold text-xs bg-[#D4541A] hover:bg-[#c24813] text-white flex items-center gap-2 cursor-pointer shadow-md">
+          <Plus className="w-4 h-4" /> Create Coupon Code
+        </Button>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Coupons</p>
+          <p className="text-2xl font-black text-emerald-600 mt-1">3 Live</p>
         </div>
-     </div>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Redemptions</p>
+          <p className="text-2xl font-black text-[#0B1528] mt-1">273 Bookings</p>
+        </div>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Discount Saved</p>
+          <p className="text-2xl font-black text-[#D4541A] mt-1">₹3.42 Lakhs</p>
+        </div>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Conversion Boost</p>
+          <p className="text-2xl font-black text-blue-600 mt-1">+18.4%</p>
+        </div>
+      </div>
 
-     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[
-          { label: 'Conversion Rate', val: '4.2%', change: '+0.5%', icon: Target },
-          { label: 'Avg Order Value', val: '₹12,450', change: '+12%', icon: TrendingUp },
-          { label: 'New Customers', val: '124', change: '+18%', icon: Users },
-          { label: 'Net Profit', val: '₹4.2L', change: '+5.2%', icon: ArrowUpRight },
-        ].map((kpi, i) => (
-           <Card key={i} className="rounded-[32px] border-2 border-border bg-white shadow-sm overflow-hidden transition-all hover:border-primary">
-              <CardContent className="p-8 space-y-4">
-                 <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
-                       <kpi.icon className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <span className="text-[10px] font-black text-green-500 bg-green-50 px-2 py-1 rounded-full">{kpi.change}</span>
-                 </div>
-                 <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{kpi.label}</p>
-                    <p className="text-2xl font-black tracking-tight">{kpi.val}</p>
-                 </div>
-              </CardContent>
-           </Card>
-        ))}
-     </div>
+      {/* Coupon List Table */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+        <table className="w-full text-left text-xs font-sans">
+          <thead className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-extrabold uppercase text-slate-500">
+            <tr>
+              <th className="p-4">Coupon Code</th>
+              <th className="p-4">Discount Value</th>
+              <th className="p-4">Min Booking</th>
+              <th className="p-4">Max Cap</th>
+              <th className="p-4">Used Count</th>
+              <th className="p-4">Expiry Date</th>
+              <th className="p-4">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+            {coupons.map((c, i) => (
+              <tr key={i} className="hover:bg-slate-50/50">
+                <td className="p-4">
+                  <span className="font-mono font-bold text-[#D4541A] bg-orange-50 border border-orange-200/80 px-2.5 py-1 rounded-lg">
+                    {c.code}
+                  </span>
+                </td>
+                <td className="p-4 font-black text-[#0B1528]">{c.discount}</td>
+                <td className="p-4">{c.minBooking}</td>
+                <td className="p-4">{c.maxDiscount}</td>
+                <td className="p-4">{c.used} times</td>
+                <td className="p-4 text-slate-500">{c.expires}</td>
+                <td className="p-4">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold border ${
+                    c.status === "Active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
+                  }`}>
+                    {c.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
-     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="rounded-[40px] border-2 border-border bg-white overflow-hidden p-10 space-y-8">
-           <div className="flex items-center justify-between">
-              <h3 className="font-black uppercase tracking-widest text-xs">Revenue Projection</h3>
-              <div className="flex gap-2">
-                 <div className="h-3 w-3 rounded-full bg-primary" />
-                 <div className="h-3 w-3 rounded-full bg-muted" />
+// ─── DISTRIBUTION & OTA MARKETPLACE PAGE ───
+export function DistributionPage() {
+  const [channels] = useState([
+    { name: "Direct Website (YouthCamping.in)", type: "Owned Storefront", sync: "Real-time", commission: "0%", status: "Connected", leads: "1,240" },
+    { name: "Thrillophilia Marketplace", type: "OTA Channel API", sync: "Auto-Sync 5m", commission: "12%", status: "Connected", leads: "480" },
+    { name: "MakeMyTrip Holidays", type: "B2B Partner API", sync: "Auto-Sync 15m", commission: "15%", status: "Connected", leads: "310" },
+    { name: "Tripoto Expeditions", type: "Content Partner", sync: "Manual Push", commission: "10%", status: "Pending Sync", leads: "95" },
+  ]);
+
+  return (
+    <div className="space-y-6 p-6 sm:p-8 bg-slate-50/50 min-h-screen font-sans">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+            <Share2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-[#0B1528] tracking-tight">Distribution & OTA Channels</h1>
+            <p className="text-xs font-semibold text-slate-500">Connect YouthCamping departure inventory with external travel marketplaces and OTAs</p>
+          </div>
+        </div>
+        <Button onClick={() => toast.success("New Channel API modal ready")} className="h-10 px-5 rounded-xl font-extrabold text-xs bg-[#D4541A] hover:bg-[#c24813] text-white flex items-center gap-2 cursor-pointer shadow-md">
+          <Plus className="w-4 h-4" /> Add OTA Channel
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {channels.map((ch, i) => (
+          <div key={i} className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-[#0B1528] text-base">{ch.name}</h3>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">{ch.type}</p>
               </div>
-           </div>
-           <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={SAMPLE_DATA}>
-                    <defs>
-                       <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                       </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis dataKey="name" hide />
-                    <YAxis hide />
-                    <Tooltip cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 2 }} />
-                    <Area type="monotone" dataKey="val" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorVal)" strokeWidth={4} />
-                 </AreaChart>
-              </ResponsiveContainer>
-           </div>
-        </Card>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold border ${
+                ch.status === "Connected" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}>
+                {ch.status}
+              </span>
+            </div>
 
-        <Card className="rounded-[40px] border-2 border-border bg-white overflow-hidden p-10 space-y-8">
-           <div className="flex items-center justify-between">
-              <h3 className="font-black uppercase tracking-widest text-xs">Marketing Reach</h3>
-              <Filter className="w-4 h-4 text-muted-foreground" />
-           </div>
-           <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={SAMPLE_DATA}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis dataKey="name" hide />
-                    <YAxis hide />
-                    <Tooltip cursor={{ fill: '#f8f8f8' }} />
-                    <Bar dataKey="val" fill="#000" radius={[12, 12, 12, 12]} barSize={20} />
-                 </BarChart>
-              </ResponsiveContainer>
-           </div>
-        </Card>
-     </div>
-  </div>
-);
-
-export const BillingPage = () => (
-  <div className="max-w-4xl mx-auto space-y-10 animate-fade-in">
-     <div className="space-y-1">
-        <h1 className="text-3xl font-black uppercase tracking-tight">Billing & Plans</h1>
-        <p className="text-muted-foreground font-medium text-sm">Manage your platform subscription and payment nodes.</p>
-     </div>
-
-     <Card className="rounded-[40px] border-2 border-black bg-black text-white overflow-hidden p-10 relative">
-        <div className="absolute right-10 top-10 w-20 h-20 bg-primary rounded-full blur-3xl opacity-20" />
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
-           <div className="space-y-4">
-              <div className="px-4 py-1 bg-primary text-black text-[9px] font-black uppercase rounded-full w-fit">Current Plan: Enterprise</div>
-              <h2 className="text-4xl font-black tracking-tight uppercase">Infinite Growth Plan</h2>
-              <p className="text-gray-400 text-sm font-medium">Your next billing cycle starts on <strong className="text-white">May 12, 2024</strong>.</p>
-           </div>
-           <div className="flex flex-col items-end gap-2">
-              <p className="text-4xl font-black tracking-tighter">₹4,999<span className="text-xs text-gray-500 uppercase ml-2">/month</span></p>
-              <Button className="rounded-xl h-11 px-8 bg-white text-black font-black uppercase text-[10px] tracking-widest hover:bg-gray-200">Manage Billing</Button>
-           </div>
-        </div>
-     </Card>
-
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="rounded-[40px] border-2 border-border bg-white p-10 space-y-6">
-           <h3 className="font-black uppercase tracking-widest text-xs">Payment Method</h3>
-           <div className="flex items-center gap-6 p-6 border-2 border-border rounded-3xl">
-              <div className="w-14 h-10 bg-muted rounded-lg flex items-center justify-center">
-                 <CreditCard className="w-6 h-6 text-gray-400" />
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs">
+              <div>
+                <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block">Sync Rate</span>
+                <span className="font-bold text-slate-700">{ch.sync}</span>
               </div>
               <div>
-                 <p className="font-black text-sm uppercase">Visa •••• 4242</p>
-                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Expires 12/26</p>
+                <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block">Commission</span>
+                <span className="font-bold text-slate-700">{ch.commission}</span>
               </div>
-              <Button variant="ghost" className="ml-auto text-primary text-[10px] font-black uppercase tracking-widest">Edit</Button>
-           </div>
-        </Card>
+              <div>
+                <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block">Leads Generated</span>
+                <span className="font-black text-[#D4541A]">{ch.leads}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-        <Card className="rounded-[40px] border-2 border-border bg-white p-10 space-y-6">
-           <h3 className="font-black uppercase tracking-widest text-xs">Recent Invoices</h3>
-           <div className="space-y-4">
-              {[1, 2].map(i => (
-                <div key={i} className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl">
-                   <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase tracking-tighter">INV-00{i+24}</span>
-                      <span className="text-[8px] text-muted-foreground font-bold">April 12, 2024</span>
-                   </div>
-                   <Button variant="ghost" size="icon"><Download className="w-4 h-4" /></Button>
-                </div>
-              ))}
-           </div>
-        </Card>
-     </div>
-  </div>
-);
+// ─── BILLING & SYSTEM SUBSCRIPTIONS PAGE ───
+export function BillingPage() {
+  return (
+    <div className="space-y-6 p-6 sm:p-8 bg-slate-50/50 min-h-screen font-sans">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+            <CreditCard className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-[#0B1528] tracking-tight">Billing & ERP Subscriptions</h1>
+            <p className="text-xs font-semibold text-slate-500">Manage YouthCamping OS infrastructure, WhatsApp API credits, and cloud server usage</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">WhatsApp & Email API</span>
+          <h3 className="text-2xl font-black text-[#0B1528]">Brevo Pro API</h3>
+          <p className="text-xs font-semibold text-slate-500">42,500 / 50,000 Messages Used This Month</p>
+          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div className="bg-[#D4541A] h-full rounded-full" style={{ width: "85%" }} />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cloud Image Storage</span>
+          <h3 className="text-2xl font-black text-[#0B1528]">Cloudinary CDN</h3>
+          <p className="text-xs font-semibold text-[#10B981]">14.2 GB / 50 GB Used (Active)</p>
+          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div className="bg-[#10B981] h-full rounded-full" style={{ width: "28%" }} />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Database & Hosting</span>
+          <h3 className="text-2xl font-black text-[#0B1528]">PostgreSQL Cluster</h3>
+          <p className="text-xs font-semibold text-slate-500">99.99% Uptime • SSL Verified</p>
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3" /> Healthy
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PlaceholderPage({ title, description, icon: Icon }: { title: string, description: string, icon: any }) {
+  return (
+    <div className="p-8 space-y-6 font-sans">
+      <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+            <Icon className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-[#0B1528] tracking-tight">{title}</h1>
+            <p className="text-xs font-semibold text-slate-500">{description}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-12 text-center space-y-4 shadow-xs">
+        <div className="w-16 h-16 bg-orange-50 text-[#D4541A] rounded-2xl flex items-center justify-center mx-auto">
+          <Icon className="w-8 h-8" />
+        </div>
+        <h3 className="text-lg font-black text-[#0B1528] uppercase tracking-tight">{title} Management Workspace</h3>
+        <p className="text-xs font-semibold text-slate-500 max-w-md mx-auto">
+          Configure settings, manage data records, and view real-time operations for {title.toLowerCase()}.
+        </p>
+      </div>
+    </div>
+  );
+}

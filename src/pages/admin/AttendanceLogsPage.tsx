@@ -59,7 +59,7 @@ export default function AttendanceLogsPage() {
   const getSelfieUrl = (path: string | null) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    const baseUrl = (import.meta.env.VITE_GUIDE_API_URL || "http://localhost:5000/api").replace("/api", "");
+    const baseUrl = (import.meta.env.VITE_GUIDE_API_URL || "http://localhost:3001/api").replace("/api", "");
     return baseUrl + (path.startsWith("/") ? "" : "/") + path;
   };
 

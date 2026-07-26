@@ -39,7 +39,7 @@ const IS_DEVELOPMENT = import.meta.env.DEV;
 
 // Resolve default configuration based on environment
 const defaultApiUrl = IS_DEVELOPMENT ? "http://localhost:3001" : "https://api.youthcamping.online";
-const defaultGuideApiUrl = IS_DEVELOPMENT ? "http://localhost:5000" : "https://api.youthcamping.online";
+const defaultGuideApiUrl = IS_DEVELOPMENT ? "http://localhost:3001" : "https://api.youthcamping.online";
 
 const rawApiUrl = import.meta.env.VITE_API_URL;
 const rawGuideApiUrl = import.meta.env.VITE_GUIDE_API_URL;

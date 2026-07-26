@@ -240,9 +240,9 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
             </div>
             {!compact && (
               <div>
-                <p className="text-xs font-bold">Drag & drop your {multiple ? 'images' : 'image'} here</p>
+                <p className="text-xs font-bold">Drag & drop your {multiple ? 'photos & videos' : 'photo or video'} here</p>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                  JPG, PNG, WEBP • Max 10MB
+                  JPG, PNG, WEBP, MP4, WEBM, MOV • Max 50MB
                 </p>
               </div>
             )}
@@ -265,7 +265,7 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
         <div className={`flex w-full gap-2 items-center justify-center ${compact ? 'mt-0' : 'mt-2'}`}>
           <Input 
             type="file" 
-            accept="image/png, image/jpeg, image/webp" 
+            accept="image/*,video/mp4,video/webm,video/quicktime,video/*" 
             multiple={multiple}
             onChange={handleFileChange} 
             className="hidden" 
@@ -286,3 +286,5 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
     </div>
   );
 }
+
+export default ImageUpload;

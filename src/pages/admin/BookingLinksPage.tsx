@@ -337,44 +337,56 @@ export default function BookingLinksPage() {
               <p className="text-xs font-bold text-[#74839A] uppercase tracking-wider">No Trips Found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTrips.map(trip => {
                 const upcomingCount = trip.availableDates?.length || 6;
                 const activeLinksCount = links.filter(f => f.tripName.toLowerCase() === trip.title.toLowerCase()).length;
                 const rawNext = trip.availableDates?.[0];
                 const nextDeparture = typeof rawNext === 'string' ? rawNext : rawNext?.date || getUpcomingDefaultDates()[0];
+                const img = trip.heroImage || trip.images?.[0] || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400";
 
                 return (
                   <div
                     key={trip.id}
-                    className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 space-y-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-[#F97316]/50 transition-all flex flex-col justify-between"
+                    className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs hover:border-[#D4541A]/50 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
                   >
-                    <div>
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-bold text-[12px] text-[#162B45] line-clamp-2 max-w-[200px] leading-tight" title={trip.title}>
-                          {trip.title}
-                        </h3>
-                        <span className="text-[9px] font-extrabold uppercase text-[#74839A] bg-slate-50 border border-[#E3EAF2] px-1.5 py-0.5 rounded">
-                          {trip.id.substring(0, 4).toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      <div className="mt-2.5 space-y-1 text-[10px] text-[#74839A] font-semibold">
-                        <p>{upcomingCount} upcoming departures · {Math.max(1, upcomingCount - 2)} open for booking</p>
-                        <p className="text-[#16A34A]">{activeLinksCount} active booking links</p>
-                        <p className="text-[#162B45]">Next departure: {formatDate(nextDeparture)}</p>
+                    <div className="flex items-start gap-3">
+                      <img 
+                        src={img} 
+                        alt={trip.title} 
+                        className="h-12 w-16 rounded-xl object-cover border border-slate-200/80 shrink-0 group-hover:scale-105 transition-transform" 
+                      />
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="flex items-start justify-between gap-1">
+                          <h3 className="font-extrabold text-xs text-[#0B1528] leading-tight truncate" title={trip.title}>
+                            {trip.title}
+                          </h3>
+                          <span className="font-mono text-[9.5px] font-black text-[#D4541A] bg-orange-50 border border-orange-200/60 px-1.5 py-0.5 rounded-md shrink-0">
+                            {trip.tripCode || trip.id.substring(0, 4).toUpperCase()}
+                          </span>
+                        </div>
+                        
+                        <p className="text-[11px] text-slate-500 font-semibold truncate">
+                          {upcomingCount} departures · Next: {formatDate(nextDeparture)}
+                        </p>
                       </div>
                     </div>
 
-                    <Button
-                      onClick={() => {
-                        setSelectedTrip(trip);
-                        setWorkflowPage("departures");
-                      }}
-                      className="w-full mt-3 h-8 bg-slate-50 border border-[#E3EAF2] hover:bg-slate-100 text-[#162B45] text-[10.5px] font-bold rounded-md flex items-center justify-center gap-1"
-                    >
-                      View Departure Dates <ChevronRight className="w-3 h-3 text-[#74839A]" />
-                    </Button>
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10.5px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                        {activeLinksCount} active links
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTrip(trip);
+                          setWorkflowPage("departures");
+                        }}
+                        className="h-8 px-3 bg-slate-100 hover:bg-[#D4541A] hover:text-white text-[#0B1528] text-xs font-bold rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                      >
+                        View Dates <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}

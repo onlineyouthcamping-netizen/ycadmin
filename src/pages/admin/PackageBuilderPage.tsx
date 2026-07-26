@@ -643,59 +643,75 @@ export default function PackageBuilderPage() {
   };
 
   const DESTINATIONS = [
-    { name: "Kerala", icon: MapPin, borderColor: "border-red-500 hover:border-red-600 bg-white" },
-    { name: "Himachal Pradesh", icon: Compass, borderColor: "border-blue-500 hover:border-blue-600 bg-white" },
-    { name: "Goa", icon: Coffee, borderColor: "border-amber-400 hover:border-amber-500 bg-white" },
-    { name: "Ladakh", icon: Compass, borderColor: "border-teal-500 hover:border-teal-600 bg-white" },
-    { name: "Rajasthan", icon: Compass, borderColor: "border-orange-500 hover:border-orange-600 bg-white" },
-    { name: "Uttarakhand", icon: Compass, borderColor: "border-emerald-500 hover:border-emerald-600 bg-white" },
-    { name: "Kashmir", icon: Compass, borderColor: "border-purple-500 hover:border-purple-600 bg-white" }
+    { name: "Kerala", tag: "Backwaters & Tea Hills", cities: "Kochi, Munnar, Thekkady, Alleppey, Varkala", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&q=80" },
+    { name: "Himachal Pradesh", tag: "High Pass Valleys", cities: "Manali, Kasol, Shimla, Dharamshala, Spiti", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80" },
+    { name: "Goa", tag: "Coastal Beaches & Heritage", cities: "North Goa, South Goa, Panaji, Calangute", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80" },
+    { name: "Ladakh", tag: "Cold Desert Expeditions", cities: "Leh, Nubra Valley, Pangong, Kargil", img: "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?w=600&q=80" },
+    { name: "Rajasthan", tag: "Forts & Royal Palaces", cities: "Jaipur, Udaipur, Jodhpur, Jaisalmer", img: "https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=600&q=80" },
+    { name: "Uttarakhand", tag: "Holy Rivers & Trekking", cities: "Rishikesh, Mussoorie, Nainital, Dehradun", img: "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=600&q=80" },
+    { name: "Kashmir", tag: "Paradise Alpine Valleys", cities: "Srinagar, Gulmarg, Pahalgam, Sonmarg", img: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=600&q=80" }
   ];
 
   if (!selectedDestination) {
     return (
-      <div className="space-y-6 animate-fade-in p-6 bg-[#F8FAFC] min-h-screen text-slate-700 font-sans">
-        <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 bg-white -mx-6 -mt-6 p-5 border-b border-[#E2E8F0] gap-4 shadow-sm">
+      <div className="space-y-6 animate-fade-in p-6 sm:p-8 bg-slate-50/50 min-h-screen text-slate-700 font-sans">
+        {/* Top Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => navigate(-1)} 
-              className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer"
+              className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
             >
-              <ArrowLeft className="w-4 h-4 text-slate-655" />
+              <ArrowLeft className="w-4 h-4 text-slate-700" />
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight">Select Package Destination</h1>
+                <h1 className="text-xl font-extrabold text-[#0B1528] tracking-tight">Package & Custom Itinerary Builder</h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-orange-50 text-[#D4541A] border border-orange-200/60 text-[10.5px] font-extrabold uppercase tracking-wider">
+                  Select Region
+                </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-wider">Choose a destination region to launch the day-wise itinerary builder</p>
+              <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                Choose a destination region to launch day-wise hotel, transport, and sightseeing planning
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
-          {DESTINATIONS.map((dest) => {
-            const Icon = dest.icon;
-            return (
-              <Card 
-                key={dest.name} 
-                onClick={() => handleSelectDestination(dest.name)}
-                className={cn(
-                  "flex items-center gap-4 p-4 bg-white rounded-lg border-2 cursor-pointer shadow-sm hover:shadow-md hover:scale-102 transition-all duration-200 select-none",
-                  dest.borderColor
-                )}
-              >
-                <div className="w-12 h-12 rounded-lg border border-slate-100 flex items-center justify-center bg-slate-50/50 shrink-0">
-                  <Icon className="w-5 h-5 text-slate-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 leading-none mb-1">{dest.name}</h3>
-                  <p className="text-[10px] text-slate-400 font-medium truncate leading-tight">
-                    {STATE_CITIES[dest.name]?.slice(0, 4).join(", ")}
-                  </p>
-                </div>
-              </Card>
-            );
-          })}
+        {/* Destination Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {DESTINATIONS.map((dest) => (
+            <div 
+              key={dest.name} 
+              onClick={() => handleSelectDestination(dest.name)}
+              className="group relative h-56 rounded-2xl overflow-hidden border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-[#D4541A] cursor-pointer transition-all duration-300 select-none flex flex-col justify-between p-5"
+            >
+              {/* Background Image */}
+              <img 
+                src={dest.img} 
+                alt={dest.name} 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B1528] via-[#0B1528]/50 to-transparent z-10" />
+
+              {/* Top Tag */}
+              <div className="relative z-20 flex justify-between items-start">
+                <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-[#D4541A] font-extrabold text-[10px] uppercase tracking-wider shadow-xs">
+                  {dest.tag}
+                </span>
+              </div>
+
+              {/* Bottom Info */}
+              <div className="relative z-20 space-y-1">
+                <h3 className="text-lg font-black text-white uppercase tracking-tight group-hover:text-amber-300 transition-colors">
+                  {dest.name}
+                </h3>
+                <p className="text-[11px] font-medium text-slate-300 truncate">
+                  {dest.cities}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

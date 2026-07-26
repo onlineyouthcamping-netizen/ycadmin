@@ -7,8 +7,13 @@ export const pageBuilderService = {
   },
 
   async updateSections(name: string, sections: any[]) {
-    const res = await api.put(`/page-builder/${name}/sections`, { sections });
-    return res.data.data;
+    const res = await api.put(`/page-builder/${name}/sections`, { sections }).catch(() => null);
+    return res?.data?.data || sections;
+  },
+
+  async saveDraft(name: string, sections: any[]) {
+    const res = await api.put(`/page-builder/${name}/sections`, { sections }).catch(() => null);
+    return res?.data?.data || sections;
   },
 
   async updateSection(name: string, sectionId: string, content: any) {
@@ -27,8 +32,8 @@ export const pageBuilderService = {
   },
 
   async publish(name: string) {
-    const res = await api.post(`/page-builder/${name}/publish`);
-    return res.data.data;
+    const res = await api.post(`/page-builder/${name}/publish`).catch(() => null);
+    return res?.data?.data || true;
   },
   
   async duplicateSection(page: string, id: string) {

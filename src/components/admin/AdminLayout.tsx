@@ -269,30 +269,26 @@ function AdminSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-[#E2E8F0] shadow-xs">
-      <SidebarContent className="scrollbar-hide flex flex-col h-full bg-[#0F172A] text-[#94A3B8] font-sans">
-        {/* Brand / Logo */}
+    <Sidebar collapsible="icon" className="border-r border-[#1E293B] shadow-lg">
+      <SidebarContent className="scrollbar-hide flex flex-col h-full bg-[#0B1329] text-slate-400 font-sans">
+        {/* Brand / Logo Header */}
         <div className={cn(
-          "flex items-center gap-2.5 border-b border-[#1E293B] shrink-0 h-14 px-4 bg-[#0F172A]",
+          "flex items-center justify-between border-b border-[#1E293B] shrink-0 h-16 px-4 bg-[#0B1329]",
           collapsed && "justify-center px-0"
         )}>
-          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden p-0.5">
-            <img src="/brand/logo.png" className="w-full h-full object-contain" alt="YouthCamping Logo" />
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-white text-[13.5px] tracking-tight leading-none">
-                YouthCamping
-              </span>
-              <span className="text-[7px] text-[#94A3B8] font-bold mt-1.5 tracking-[0.08em] uppercase leading-none">
-                ONE TRIP AT A TIME
-              </span>
+          {!collapsed ? (
+            <div className="flex items-center gap-2 py-1">
+              <img src="/logo.png" className="h-8 max-h-9 w-auto object-contain filter brightness-110" alt="YouthCamping Full Logo" />
+            </div>
+          ) : (
+            <div className="h-9 w-9 rounded-xl bg-[#0B1329] border border-[#1E293B] flex items-center justify-center p-1.5 shadow-sm">
+              <img src="/logo.png" className="w-full h-full object-contain" alt="YouthCamping Logo" />
             </div>
           )}
         </div>
 
-        {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto no-scrollbar py-3 px-2 space-y-1">
+        {/* Navigation Items List */}
+        <div className="flex-1 overflow-y-auto no-scrollbar py-3.5 px-2.5 space-y-1">
           {sidebarModules.map((mod) => {
             // Role and permission-based visibility checks
             if (admin) {
@@ -325,14 +321,8 @@ function AdminSidebar() {
                   if (currentTab) {
                     return urlTab === currentTab;
                   } else {
-                    // Match default tab if no tab parameter in active URL
-                    if (urlPath === '/admin/accounting') {
-                      return urlTab === 'overview';
-                    }
-                    if (urlPath === '/admin/hr') {
-                      return urlTab === 'dashboard';
-                    }
-                    // Fallback to first tab sibling in list
+                    if (urlPath === '/admin/accounting') return urlTab === 'overview';
+                    if (urlPath === '/admin/hr') return urlTab === 'dashboard';
                     const firstTabSubItem = mod.subItems?.find(sub => sub.url.startsWith(urlPath + '?tab='));
                     if (firstTabSubItem) {
                       const firstTab = new URLSearchParams(firstTabSubItem.url.split('?')[1]).get('tab');
@@ -341,17 +331,12 @@ function AdminSidebar() {
                   }
                 }
                 
-                // General query param checks
                 for (const [key, val] of urlParams.entries()) {
-                  if (searchParams.get(key) !== val) {
-                    return false;
-                  }
+                  if (searchParams.get(key) !== val) return false;
                 }
                 return true;
               }
               
-              // If the sub-item has no query params, but the current url has tab parameter,
-              // check if any of the other sub-items under the same path matches the current tab.
               if (currentTab) {
                 const hasSiblingWithThisTab = mod.subItems?.some(sub => {
                   const [subPath, subSearch] = sub.url.split('?');
@@ -365,10 +350,8 @@ function AdminSidebar() {
               return true;
             };
 
-            // Filter subItems based on role permissions and strict Founder privacy rule
             const visibleSubItems = mod.subItems?.filter(sub => {
               const urlPath = sub.url.split('?')[0];
-              // Strict Privacy Rule: Staff Profiles / Users & Roles menu is ONLY visible to Founder Hemal Patel
               if (urlPath === '/admin/users' || urlPath === '/admin/access-control' || urlPath === '/admin/audit-logs') {
                 const email = (admin?.email || '').toLowerCase().trim();
                 const name = (admin?.name || '').toLowerCase().trim();
@@ -399,48 +382,48 @@ function AdminSidebar() {
                 <button
                   onClick={() => handleModuleClick(mod)}
                   className={cn(
-                    "flex items-center w-full h-[36px] rounded px-2.5 transition-colors relative text-left text-[11.5px] font-semibold tracking-tight",
+                    "flex items-center w-full h-[40px] rounded-xl px-3 transition-all relative text-left text-xs font-semibold tracking-tight cursor-pointer",
                     isModuleActive 
-                      ? "text-[#FFFFFF] bg-white/5 font-bold" 
-                      : "text-[#94A3B8] hover:text-[#FFFFFF] hover:bg-white/5"
+                      ? "text-white bg-gradient-to-r from-orange-500/15 via-orange-500/10 to-transparent border border-orange-500/25 shadow-xs font-bold" 
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                   )}
                 >
                   {isModuleActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] bg-[#FF6B00] rounded-r" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3.5px] h-5 bg-gradient-to-b from-[#FF6B00] to-orange-600 rounded-r-full shadow-xs" />
                   )}
                   <mod.icon className={cn(
-                    "h-4 w-4 shrink-0 transition-colors mr-2.5",
-                    isModuleActive ? "text-[#FF6B00]" : "opacity-80"
+                    "h-4 w-4 shrink-0 transition-colors mr-3",
+                    isModuleActive ? "text-[#FF6B00]" : "text-slate-400"
                   )} />
                   {!collapsed && <span className="flex-1 truncate">{mod.title}</span>}
                   
-                  {/* Chevron logic */}
                   {!collapsed && hasSub && (
-                    isExpanded ? <ChevronDown className="h-3 w-3 opacity-80 ml-auto" /> : <ChevronRight className="h-3 w-3 opacity-80 ml-auto" />
+                    isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-slate-400 ml-auto" /> : <ChevronRight className="h-3.5 w-3.5 text-slate-500 ml-auto" />
                   )}
                 </button>
 
                 {/* Sub-items block */}
                 {!collapsed && hasSub && isExpanded && (
-                  <div className="pl-4 pr-1 py-1 flex flex-col gap-0.5 border-l border-white/5 ml-4.5 mt-0.5">
+                  <div className="pl-4 pr-1 py-1 flex flex-col gap-0.5 border-l-2 border-slate-800 ml-5 mt-0.5 space-y-0.5">
                     {visibleSubItems.map((sub) => {
                       const active = isSubActive(sub.url);
                       return (
                         <NavLink
-                          key={sub.url}
+                          key={`${sub.title}-${sub.url}`}
                           to={sub.url}
                           onClick={() => {
                             if (isMobile) setOpenMobile(false);
                           }}
                           className={cn(
-                            "text-[10.5px] font-medium py-1.5 px-2.5 rounded transition-colors block truncate",
+                            "text-xs font-medium py-2 px-3 rounded-lg transition-all flex items-center justify-between truncate cursor-pointer",
                             active 
-                              ? "text-[#FF6B00] bg-white/5 font-semibold" 
-                              : "text-[#94A3B8] hover:text-[#FFFFFF] hover:bg-white/5"
+                              ? "text-[#FF6B00] bg-orange-500/10 font-bold border border-orange-500/20 shadow-xs" 
+                              : "text-slate-400 hover:text-white hover:bg-slate-800/40"
                           )}
                           activeClassName=""
                         >
-                          {sub.title}
+                          <span className="truncate">{sub.title}</span>
+                          {active && <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0" />}
                         </NavLink>
                       );
                     })}
@@ -451,12 +434,32 @@ function AdminSidebar() {
           })}
         </div>
 
-        {/* Logout (pinned to bottom, compact) */}
-        <div className="p-3 border-t border-white/5 bg-[#0B1329]">
-          <Button variant="ghost" size={collapsed ? "icon" : "default"} onClick={handleLogout}
-            className="w-full text-white/40 hover:text-rose-400 hover:bg-white/5 justify-start h-8 rounded px-2.5">
-            <LogOut className="h-4 w-4 mr-2.5 text-[#94A3B8]" />
-            {!collapsed && <span className="text-[11.5px] font-semibold tracking-tight text-[#94A3B8]">Logout System</span>}
+        {/* Footer / Profile & Logout Card */}
+        <div className="p-3 border-t border-slate-800 bg-[#070D1C] space-y-2">
+          {!collapsed && admin && (
+            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-900/80 border border-slate-800/80">
+              <div className="w-7 h-7 rounded-lg bg-[#FF6B00] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                {admin.name ? admin.name.charAt(0).toUpperCase() : "A"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-extrabold text-white truncate leading-tight">
+                  {admin.name || "Admin Operator"}
+                </p>
+                <p className="text-[10px] font-semibold text-[#FF6B00] capitalize truncate">
+                  {admin.role || "Operator"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <Button
+            variant="ghost"
+            size={collapsed ? "icon" : "default"}
+            onClick={handleLogout}
+            className="w-full text-slate-400 hover:text-red-400 hover:bg-red-500/10 justify-start h-9 rounded-xl px-2.5 transition-colors cursor-pointer"
+          >
+            <LogOut className="h-4 w-4 mr-2.5 text-slate-400" />
+            {!collapsed && <span className="text-xs font-extrabold tracking-tight">Logout System</span>}
           </Button>
         </div>
       </SidebarContent>
