@@ -100,6 +100,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   const [confirmSendTicket, setConfirmSendTicket] = useState(false);
   const [confirmTicketFile, setConfirmTicketFile] = useState<string | null>(null);
   const [confirmTicketFileName, setConfirmTicketFileName] = useState<string | null>(null);
+  const [confirmTicketFilesList, setConfirmTicketFilesList] = useState<Array<{ name: string; content: string }>>([]);
+  const [revertingLoading, setRevertingLoading] = useState(false);
 
   // Manual payment recording inline form
   const [showAddPaymentInline, setShowAddPaymentInline] = useState(false);
@@ -918,7 +920,18 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       toast.success("Booking confirmed successfully!");
       setIsConfirming(false);
       try {
-        await bookingsService.sendEmail(booking.id, 'confirmation', undefined, confirmSendTicket, confirmTicketFile, confirmTicketFileName);
+        const singleFile = confirmTicketFilesList[0]?.content || confirmTicketFile;
+        const singleFileName = confirmTicketFilesList[0]?.name || confirmTicketFileName;
+        await bookingsService.sendEmail(
+          booking.id, 
+          'confirmation', 
+          undefined, 
+          confirmSendTicket, 
+          singleFile, 
+          singleFileName, 
+          confirmTrainStatus,
+          confirmTicketFilesList
+        );
         toast.success("Confirmation email sent to guest!");
       } catch (err) {
         toast.error("Booking confirmed, but email notification failed");
@@ -928,6 +941,27 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       toast.error("Failed to confirm booking");
     } finally {
       setConfirmingLoading(false);
+    }
+  };
+
+  const handleRevertConfirmation = async () => {
+    if (!canManageBooking) return toast.error("Not authorized to modify this booking");
+    if (!window.confirm("Are you sure you want to revert this confirmed booking back to Pending Payment status?")) {
+      return;
+    }
+    setRevertingLoading(true);
+    try {
+      await bookingsService.update(booking.id, {
+        status: 'pending_payment',
+        paymentStatus: 'Pending',
+        trainTicketStatus: 'PENDING'
+      });
+      toast.success("Booking confirmation reverted back to Pending Payment!");
+      onRefresh();
+    } catch (err: any) {
+      toast.error(`Failed to revert booking: ${err.message || 'Server error'}`);
+    } finally {
+      setRevertingLoading(false);
     }
   };
 
@@ -1465,7 +1499,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
 
   return (
-    <div className="h-screen flex flex-col bg-white text-[#1a1a1a] font-sans antialiased overflow-hidden">
+    <div className="min-h-full flex flex-col bg-white text-[#1a1a1a] font-sans antialiased">
       <style dangerouslySetInnerHTML={{ __html: `
         .workspace-kpi-strip {
             background: #fff;
@@ -1558,6 +1592,15 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           <button onClick={() => setShowCreateTask(true)} className="bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-all">
             Assign Task
           </button>
+          {(booking.status === 'confirmed' || flowStatus === 'Confirmed') && (
+            <button 
+              onClick={handleRevertConfirmation}
+              disabled={revertingLoading}
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs"
+            >
+              {revertingLoading ? "Reverting..." : "Revert Confirmation"}
+            </button>
+          )}
           {booking.status !== 'cancelled' && (
             <button 
               onClick={() => {
@@ -1580,7 +1623,21 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       </div>
 
       {/* Inline alerts */}
-      {flowStatus !== 'Confirmed' && (
+      {flowStatus === 'Confirmed' || booking.status === 'confirmed' ? (
+        <div className="mx-6 mt-4 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-xs text-emerald-800 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded uppercase leading-none">CONFIRMED</span>
+            <span className="font-semibold">This booking is confirmed.</span>
+          </div>
+          <button 
+            onClick={handleRevertConfirmation}
+            disabled={revertingLoading}
+            className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all shrink-0 cursor-pointer shadow-2xs"
+          >
+            {revertingLoading ? "Reverting..." : "Revert Confirmation"}
+          </button>
+        </div>
+      ) : (
         <div className="mx-6 mt-4 bg-[#fffbea] border border-[#fce588] rounded-xl px-4 py-3 text-xs text-slate-700 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="bg-[#f0ad4e] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase leading-none">{flowStatus}</span>
@@ -1671,32 +1728,50 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 </label>
               </div>
               {confirmSendTicket && (
-                <div className="space-y-1 pl-5">
-                  <label className="block text-[9px] font-bold uppercase text-slate-500">Attach Train Ticket File (Optional)</label>
+                <div className="space-y-1.5 pl-5">
+                  <label className="block text-[9px] font-bold uppercase text-slate-600">Attach Train Tickets / Voucher Files (Multiple Supported)</label>
                   <input 
                     type="file" 
+                    multiple
                     accept=".pdf,image/*"
                     onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setConfirmTicketFileName(file.name);
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const base64Str = reader.result as string;
-                          // Extract pure base64 code omitting format headers
-                          const base64Data = base64Str.split(',')[1] || base64Str;
-                          setConfirmTicketFile(base64Data);
-                        };
-                        reader.readAsDataURL(file);
-                      } else {
-                        setConfirmTicketFile(null);
-                        setConfirmTicketFileName(null);
+                      const files = Array.from(e.target.files || []);
+                      if (files.length > 0) {
+                        files.forEach(file => {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const base64Str = reader.result as string;
+                            const base64Data = base64Str.split(',')[1] || base64Str;
+                            setConfirmTicketFilesList(prev => {
+                              if (prev.some(f => f.name === file.name)) return prev;
+                              return [...prev, { name: file.name, content: base64Data }];
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        });
                       }
                     }}
                     className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"
                   />
-                  {confirmTicketFileName && (
-                    <p className="text-[10px] text-slate-500 font-medium font-mono">Selected: {confirmTicketFileName}</p>
+                  {confirmTicketFilesList.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <p className="text-[10px] text-emerald-800 font-extrabold">Attached Files ({confirmTicketFilesList.length}):</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {confirmTicketFilesList.map((f, fIdx) => (
+                          <div key={fIdx} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-mono font-bold text-slate-700 shadow-2xs">
+                            <span className="truncate max-w-[200px]">{f.name}</span>
+                            <button 
+                              type="button" 
+                              onClick={() => setConfirmTicketFilesList(prev => prev.filter((_, i) => i !== fIdx))}
+                              className="text-slate-400 hover:text-rose-600 font-black cursor-pointer"
+                              title="Remove file"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -1744,7 +1819,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       </div>
 
       {/* ─── Main Content Split Layout ─── */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto min-h-0">
         {/* Left Column - scrollable */}
         <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
 

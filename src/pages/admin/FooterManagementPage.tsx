@@ -55,7 +55,7 @@ export default function FooterManagementPage() {
     email: "",
     website: "",
     copyright: "",
-    logoUrl: "",
+    logoUrl: "/footer-logo.png",
     showSocial: true,
     showAddress: true,
     showContact: true,
@@ -75,7 +75,7 @@ export default function FooterManagementPage() {
           email: "",
           website: "",
           copyright: "",
-          logoUrl: "",
+          logoUrl: "/footer-logo.png",
           showSocial: true,
           showAddress: true,
           showContact: true,
@@ -476,9 +476,25 @@ export default function FooterManagementPage() {
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Website URL</Label>
                   <Input value={footerConfig.website} onChange={(e) => handleFieldChange('website', e.target.value)} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9" placeholder="youthcamping.in" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Footer Logo URL</Label>
-                  <Input value={footerConfig.logoUrl} onChange={(e) => handleFieldChange('logoUrl', e.target.value)} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9" placeholder="/logo-stacked.png" />
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                    Footer White Logo URL
+                  </Label>
+                  <Input 
+                    value={footerConfig.logoUrl || "/footer-logo.png"} 
+                    onChange={(e) => handleFieldChange('logoUrl', e.target.value)} 
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] bg-white h-9" 
+                    placeholder="/footer-logo.png" 
+                  />
+                  {/* White Logo Dark Card Preview */}
+                  <div className="p-3 bg-[#0B1528] rounded-xl border border-slate-800 flex items-center justify-between mt-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Logo Preview</span>
+                    <img 
+                      src={footerConfig.logoUrl || "/footer-logo.png"} 
+                      alt="Footer White Logo" 
+                      className="h-10 w-auto object-contain"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Copyright Text</Label>

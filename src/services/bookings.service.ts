@@ -107,8 +107,17 @@ export const bookingsService = {
 
   // ── EMAILS ──
 
-  async sendEmail(bookingId: string, type: 'confirmation' | 'payment' | 'reminder' | 'cancellation' | 'invoice', amount?: number, includeTicket?: boolean, ticketFile?: string | null, ticketFileName?: string | null): Promise<void> {
-    console.log("📡 [bookingsService] Sending email request:", { bookingId, type, amount, includeTicket, ticketFileName });
+  async sendEmail(
+    bookingId: string, 
+    type: 'confirmation' | 'payment' | 'reminder' | 'cancellation' | 'invoice', 
+    amount?: number, 
+    includeTicket?: boolean, 
+    ticketFile?: string | null, 
+    ticketFileName?: string | null, 
+    trainTicketStatus?: string,
+    ticketFiles?: Array<{ name: string; content: string }>
+  ): Promise<void> {
+    console.log("📡 [bookingsService] Sending email request:", { bookingId, type, amount, includeTicket, ticketFileName, trainTicketStatus, filesCount: ticketFiles?.length });
     if (type === 'invoice' && amount === undefined) {
       throw new Error("Amount is required for invoice emails");
     }
@@ -118,7 +127,9 @@ export const bookingsService = {
       amount,
       includeTicket,
       ticketFile,
-      ticketFileName
+      ticketFileName,
+      ticketFiles,
+      trainTicketStatus
     });
   },
 

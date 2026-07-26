@@ -273,16 +273,20 @@ function AdminSidebar() {
       <SidebarContent className="scrollbar-hide flex flex-col h-full bg-[#0B1329] text-slate-400 font-sans">
         {/* Brand / Logo Header */}
         <div className={cn(
-          "flex items-center justify-between border-b border-[#1E293B] shrink-0 h-16 px-4 bg-[#0B1329]",
+          "flex items-center justify-start border-b border-[#1E293B] shrink-0 h-16 px-3 bg-[#0B1329] overflow-hidden",
           collapsed && "justify-center px-0"
         )}>
           {!collapsed ? (
-            <div className="flex items-center gap-2 py-1">
-              <img src="/logo.png" className="h-8 max-h-9 w-auto object-contain filter brightness-110" alt="YouthCamping Full Logo" />
+            <div className="flex items-center gap-2 py-0.5 w-full overflow-hidden">
+              <img 
+                src="/footer-logo.png" 
+                className="h-14 sm:h-16 max-h-16 w-auto object-contain scale-150 sm:scale-175 origin-left transition-transform duration-200" 
+                alt="YouthCamping White Logo" 
+              />
             </div>
           ) : (
-            <div className="h-9 w-9 rounded-xl bg-[#0B1329] border border-[#1E293B] flex items-center justify-center p-1.5 shadow-sm">
-              <img src="/logo.png" className="w-full h-full object-contain" alt="YouthCamping Logo" />
+            <div className="h-11 w-11 rounded-xl bg-[#0B1329] border border-[#1E293B] flex items-center justify-center p-0.5 shadow-sm overflow-hidden">
+              <img src="/footer-logo.png" className="w-full h-full object-contain scale-135" alt="YouthCamping Logo" />
             </div>
           )}
         </div>
@@ -822,8 +826,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1 flex overflow-hidden">
              {/* Main Content Area */}
-             <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 no-scrollbar">
-                <div className="w-full h-full">
+             <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
+                <div className="w-full min-h-full">
                    {children}
                 </div>
              </main>

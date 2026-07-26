@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -674,18 +675,50 @@ export function HeroSectionEditor({
         </div>
       </div>
 
-      {/* 7. Month Filter List */}
-      <div className="space-y-1.5">
-        <Label className="text-xs font-bold text-[#1A2332] uppercase tracking-wider block">
-          Month Filter Labels (Comma Separated)
-        </Label>
-        <Input
-          type="text"
-          value={monthsArray.join(", ")}
-          onChange={(e) => handleMonthsChange(e.target.value)}
-          placeholder="All, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Apr"
-          className="h-10 text-xs font-semibold rounded-xl border-[#e5e7eb] focus:border-[#D97854]"
-        />
+      {/* 7. Automatic Dynamic Month Filter */}
+      <div className="space-y-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-extrabold text-[#1A2332] uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#D97854]" />
+            Month Filter Mode
+          </Label>
+          <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase">
+            AUTO DYNAMIC
+          </span>
+        </div>
+
+        <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed">
+          Month filter pills on the website are now <strong>100% automatic</strong>. Past months (like May/Jun) are automatically removed as months end, and upcoming months auto-advance starting from the current month ({new Date().toLocaleString('default', { month: 'short', year: 'numeric' })}).
+        </p>
+
+        {/* Live Auto Months Preview Pills */}
+        <div className="space-y-1 pt-1">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Live Active Months Preview</span>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {(function() {
+              const curDate = new Date();
+              const curMonth = curDate.getMonth();
+              const curYear = curDate.getFullYear();
+              const shortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+              const preview = ["All"];
+              for (let i = 0; i < 12; i++) {
+                const d = new Date(curYear, curMonth + i, 1);
+                preview.push(shortNames[d.getMonth()]);
+              }
+              return preview.map((lbl, idx) => (
+                <span 
+                  key={idx} 
+                  className={cn(
+                    "text-[10.5px] font-bold px-2.5 py-1 rounded-full border transition-all",
+                    idx === 0 ? "bg-[#1A2332] text-white border-[#1A2332]" : "bg-white text-slate-700 border-slate-200"
+                  )}
+                >
+                  {lbl}
+                </span>
+              ));
+            })()}
+          </div>
+        </div>
       </div>
 
       {/* Reset Button */}
