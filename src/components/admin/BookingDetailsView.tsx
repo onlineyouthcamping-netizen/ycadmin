@@ -2997,9 +2997,9 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       bookingItems
                         .filter(item => item.qty > 0 || item.rate < 0)
                         .map((item, index) => {
-                          const isRoom = item.name.toLowerCase().includes("sharing");
+                          const isRoom = item.name.toLowerCase().includes("sharing") || item.name.toLowerCase().includes("accommodation");
                           const isDiscount = item.name.toLowerCase().includes("discount") || item.rate < 0;
-                          const badgeText = isDiscount ? "Manual" : "Per-Pax";
+                          const badgeText = isDiscount ? "Discount" : (item.category === "transport" || item.name.toLowerCase().includes("transport") ? "Transport" : (item.category === "accommodation" || isRoom ? "Accommodation" : "Per-Pax"));
                           
                           const absRate = Math.abs(item.rate);
                           const absAmt = Math.abs(item.rate * item.qty);
@@ -3013,16 +3013,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                             maximumFractionDigits: 2
                           });
 
-                          let displayName = item.name;
-                          if (!item.name.startsWith("Pickup:") && (item.name.toLowerCase().includes("train") || item.name.toLowerCase().includes("sleeper"))) {
-                            const is3ac = (item.name.toLowerCase().includes("3ac") || 
-                                          item.name.toLowerCase().includes("3-tier") || 
-                                          item.name.toLowerCase().includes("3 tier") || 
-                                          item.name.toLowerCase().includes("ac")) && 
-                                          !(item.name.toLowerCase().includes("non ac") || 
-                                          item.name.toLowerCase().includes("non-ac"));
-                            displayName = `Pickup: ${(booking.pickupCity || 'AHMEDABAD').toUpperCase()}, Drop: ${(fullTrip?.location || 'GANDHINAGAR').toUpperCase()} ${is3ac ? '3TIER AC' : 'Non AC'} Sleeper`;
-                          }
+                          const displayName = item.name;
 
                           return (
                             <tr key={item.id || index} className="hover:bg-slate-50/30 transition-colors duration-150">
