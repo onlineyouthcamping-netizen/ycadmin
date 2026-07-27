@@ -647,9 +647,6 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
               if (vPrice > 0) variantBasePrice = vPrice;
             }
           }
-          if (booking.adjustedPrice && booking.adjustedPrice > 0) {
-            variantBasePrice = booking.adjustedPrice;
-          }
 
           const pickupLabel = booking.pickupCity ? `Pickup: ${booking.pickupCity.toUpperCase()}` : '';
           const dropLabel = res?.title ? `, Drop: ${res.title.toUpperCase()}` : '';
