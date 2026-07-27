@@ -58,6 +58,6 @@ export function getUpcomingDefaultDates(count = 6, startDaysFromNow = 7): string
 }
 
 export function computeGst(basePrice: number, discount: number, gstRate: number): number {
-  const rawGst = (basePrice - discount) * gstRate;
-  return Math.round(rawGst * 100) / 100;
+  const rawGst = Math.max(0, basePrice - discount) * gstRate;
+  return Math.round(rawGst);
 }

@@ -381,17 +381,18 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     const otherDiscounts = active.filter(item => item.rate < 0 && !gstDiscounts.includes(item));
     const base = active.filter(item => item.rate >= 0);
     
-    const baseP = base.reduce((acc, item) => acc + (item.rate * item.qty), 0);
+    const packageSubtotal = base.reduce((acc, item) => acc + (item.rate * item.qty), 0);
     const baseDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
     const gstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
     
-    const gstA = computeGst(baseP, baseDiscount, gstRate);
-    const finalT = (baseP - baseDiscount) - gstDiscount + gstA;
-    const totalW = baseP + gstA;
+    const packageTotal = Math.max(0, packageSubtotal - baseDiscount);
+    const gstA = Math.round(packageTotal * gstRate);
+    const finalT = Math.max(0, packageTotal + gstA - gstDiscount);
+    const totalW = packageTotal + gstA;
 
     return {
       previewItems: items,
-      previewBasePrice: baseP,
+      previewBasePrice: packageTotal,
       previewGstDiscount: gstDiscount,
       previewGstAmount: gstA,
       previewTotalWithGST: totalW,
@@ -581,7 +582,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         return false;
       };
 
-      const routeStr = bookingObj.pickupCity ? ` (${bookingObj.pickupCity}→Himachal)` : '';
+      const routeStr = bookingObj.pickupCity ? ` (${bookingObj.pickupCity} to ${bookingObj.pickupCity})` : '';
       const items: any[] = [];
       const paxCount = (personsList && personsList.length > 0) ? personsList.length : (bookingObj.numberOfTravelers || 1);
       
@@ -649,7 +650,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           personId: pp.p.id || `p-${pp.idx}`,
           category: 'transport',
           variantName: pp.trainLabel,
-          name: `Transport - ${pp.trainLabel}${routeStr} [${pp.personName}]`,
+          name: `${pp.trainLabel}${routeStr} [${pp.personName}]`,
           rate: adjustedTransRate,
           qty: 1
         });
@@ -659,7 +660,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           personId: pp.p.id || `p-${pp.idx}`,
           category: 'accommodation',
           variantName: pp.roomLabel,
-          name: `Accommodation - Room ${pp.idx + 1}: ${pp.roomLabel} [${pp.personName}]`,
+          name: `${pp.roomLabel} [${pp.personName}]`,
           rate: accomRate,
           qty: 1
         });
@@ -744,46 +745,48 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
 
   const syncBookingDataWithPassengers = async (updatedPassengers: any[], extraFields: any = {}) => {
-    const newQty = updatedPassengers.length;
-    
-    // 1. Get current bookingItems or generate defaults
-    // Re-generate per-person line items whenever passenger list changes
-    const currentItems = generatePerPersonBookingItems(booking, updatedPassengers, fullTrip);
+    try {
+      const newQty = (updatedPassengers && Array.isArray(updatedPassengers)) ? updatedPassengers.length : 1;
+      
+      const currentItems = generatePerPersonBookingItems(booking, updatedPassengers || [], fullTrip);
 
-    // Recalculate totals
-    const activeItems = currentItems.filter(item => item.qty > 0 || item.rate < 0);
-    const gstDiscounts = activeItems.filter(item => item.name.toLowerCase().includes("gst") && item.rate < 0);
-    const otherDiscounts = activeItems.filter(item => item.rate < 0 && !gstDiscounts.includes(item));
-    const baseItems = activeItems.filter(item => item.rate >= 0);
+      const activeItems = (currentItems || []).filter((item: any) => item && (item.qty > 0 || item.rate < 0));
+      const gstDiscounts = activeItems.filter((item: any) => item.name && item.name.toLowerCase().includes("gst") && item.rate < 0);
+      const otherDiscounts = activeItems.filter((item: any) => item.rate < 0 && !gstDiscounts.includes(item));
+      const baseItems = activeItems.filter((item: any) => item.rate >= 0);
 
-    const calculatedBase = baseItems.reduce((acc, item) => acc + (item.rate * item.qty), 0);
-    const calculatedDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
-    const calculatedGstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
+      const calculatedBase = baseItems.reduce((acc: number, item: any) => acc + ((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
+      const calculatedDiscount = otherDiscounts.reduce((acc: number, item: any) => acc + Math.abs((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
+      const calculatedGstDiscount = gstDiscounts.reduce((acc: number, item: any) => acc + Math.abs((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
 
-    const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
-    const calculatedGst = computeGst(calculatedBase, calculatedDiscount, gstRate);
+      const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
+      const packageTotal = Math.max(0, calculatedBase - calculatedDiscount);
+      const calculatedGst = Math.round(packageTotal * gstRate);
+      const totalAmount = Math.max(0, packageTotal + calculatedGst - calculatedGstDiscount);
+      const totalPaymentsPaid = (Array.isArray(paymentsList) ? paymentsList : []).reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0);
+      const remainingAmount = totalAmount - totalPaymentsPaid;
 
-    const totalAmount = calculatedBase - calculatedDiscount - calculatedGstDiscount + calculatedGst;
-    const totalPaymentsPaid = paymentsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-    const remainingAmount = totalAmount - totalPaymentsPaid;
+      const meta = getSafeMeta(booking);
+      const newMeta = {
+        ...meta,
+        bookingItems: currentItems
+      };
 
-    const meta = getSafeMeta(booking);
-    const newMeta = {
-      ...meta,
-      bookingItems: currentItems
-    };
-
-    await bookingsService.update(booking.id, {
-      passengers: updatedPassengers,
-      numberOfTravelers: newQty,
-      baseAmount: calculatedBase,
-      gstAmount: calculatedGst,
-      totalAmount,
-      remainingAmount,
-      sourceMeta: newMeta,
-      advancePaid: totalPaymentsPaid,
-      ...extraFields
-    });
+      await bookingsService.update(booking.id, {
+        passengers: updatedPassengers,
+        numberOfTravelers: newQty,
+        baseAmount: calculatedBase,
+        gstAmount: calculatedGst,
+        totalAmount,
+        remainingAmount,
+        sourceMeta: newMeta,
+        advancePaid: totalPaymentsPaid,
+        ...extraFields
+      });
+    } catch (err: any) {
+      console.error("Failed to sync booking data with passengers:", err);
+      throw err;
+    }
   };
 
   const canManageBooking = (() => {
@@ -1094,9 +1097,9 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       const calculatedGstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
 
       const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
-      const calculatedGst = computeGst(calculatedBase, calculatedDiscount, gstRate);
-
-      const totalAmount = calculatedBase - calculatedDiscount - calculatedGstDiscount + calculatedGst;
+      const packageTotal = Math.max(0, calculatedBase - calculatedDiscount);
+      const calculatedGst = Math.round(packageTotal * gstRate);
+      const totalAmount = Math.max(0, packageTotal + calculatedGst - calculatedGstDiscount);
       const totalPaymentsPaid = paymentsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
       const remainingAmount = totalAmount - totalPaymentsPaid;
       
@@ -2747,74 +2750,112 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {bookingItems
-                        .filter(item => item.qty > 0 || item.rate < 0)
-                        .map((item, index) => {
+                      {(() => {
+                        // Aggregate items into clean group rows for edit view
+                        const groupMap = new Map<string, { key: string; name: string; category?: string; rate: number; qty: number; originalIds: string[] }>();
+
+                        bookingItems.filter(item => item.qty > 0 || item.rate < 0).forEach((item) => {
+                          const cleanName = (item.name || '')
+                            .replace(/\s*\[.*?\]$/, '')
+                            .replace(/→Himachal/g, '')
+                            .trim() || 'Package Item';
+                          const key = `${cleanName}__${item.rate}`;
+
+                          if (groupMap.has(key)) {
+                            const existing = groupMap.get(key)!;
+                            existing.qty += (item.qty || 1);
+                            existing.originalIds.push(item.id);
+                          } else {
+                            groupMap.set(key, {
+                              key,
+                              name: cleanName,
+                              category: item.category,
+                              rate: item.rate || 0,
+                              qty: item.qty || 1,
+                              originalIds: [item.id]
+                            });
+                          }
+                        });
+
+                        return Array.from(groupMap.values()).map((row) => {
+                          const isDiscount = row.rate < 0 || row.category === 'discounts';
+                          const absAmt = Math.abs(row.rate * row.qty);
+
                           return (
-                            <tr key={item.id || index} className="hover:bg-slate-50/30 transition-colors duration-150">
-                              <td className="px-5 py-3.5">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <Input
-                                      type="text"
-                                      value={item.name}
-                                      onChange={e => {
-                                        const updated = bookingItems.map(x => x.id === item.id ? { ...x, name: e.target.value } : x);
-                                        setBookingItems(updated);
-                                      }}
-                                      className="h-8 text-xs font-bold text-slate-800 border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-400 w-full"
-                                    />
-                                  </div>
-                                {item.name.toLowerCase().includes("nonac") && (
-                                  <p className="text-[10px] text-slate-400">Get Non-AC Sleeper Train Tickets for Upward & Return journey</p>
-                                )}
-                                {item.name.toLowerCase().includes("3ac") && (
-                                  <p className="text-[10px] text-slate-400">Get 3-Tier AC Train Tickets for Upward & Return journey</p>
-                                )}
+                            <tr key={row.key} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-5 py-3">
+                                <Input
+                                  type="text"
+                                  value={row.name}
+                                  onChange={e => {
+                                    const newName = e.target.value;
+                                    const updated = bookingItems.map(x => 
+                                      row.originalIds.includes(x.id) ? { ...x, name: newName } : x
+                                    );
+                                    setBookingItems(updated);
+                                  }}
+                                  className="h-8 text-xs font-semibold text-slate-800 border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-400 w-full bg-white rounded-lg"
+                                />
+                              </td>
+                              <td className="px-5 py-3">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-slate-400 font-mono text-xs">₹</span>
+                                  <Input 
+                                    type="number"
+                                    value={row.rate}
+                                    onChange={e => {
+                                      const val = parseFloat(e.target.value);
+                                      const newRate = isNaN(val) ? 0 : val;
+                                      const updated = bookingItems.map(x => 
+                                        row.originalIds.includes(x.id) ? { ...x, rate: newRate } : x
+                                      );
+                                      setBookingItems(updated);
+                                    }}
+                                    className="h-8 text-xs w-28 font-mono font-semibold border-slate-200 text-slate-800 focus-visible:ring-1 focus-visible:ring-slate-400 bg-white rounded-lg"
+                                  />
+                                </div>
+                              </td>
+                              <td className="px-5 py-3">
+                                <Input 
+                                  type="number"
+                                  value={row.qty}
+                                  onChange={e => {
+                                    const newQty = parseInt(e.target.value) || 0;
+                                    if (row.originalIds.length === 1) {
+                                      const updated = bookingItems.map(x => x.id === row.originalIds[0] ? { ...x, qty: newQty } : x);
+                                      setBookingItems(updated);
+                                    } else {
+                                      const updated = bookingItems.map(x => {
+                                        if (x.id === row.originalIds[0]) return { ...x, qty: newQty };
+                                        if (row.originalIds.includes(x.id)) return { ...x, qty: 0 };
+                                        return x;
+                                      });
+                                      setBookingItems(updated.filter(x => x.qty > 0 || x.rate < 0));
+                                    }
+                                  }}
+                                  className="h-8 text-xs w-16 font-mono font-semibold border-slate-200 text-center focus-visible:ring-1 focus-visible:ring-slate-400 bg-white rounded-lg"
+                                />
+                              </td>
+                              <td className="px-5 py-3 text-right font-bold font-mono text-[12px] text-slate-900">
+                                {(isDiscount ? "- " : "") + "₹ " + absAmt.toLocaleString('en-IN')}
+                              </td>
+                              <td className="px-3 py-3 text-center">
                                 <button 
                                   type="button" 
                                   onClick={() => {
-                                    const updated = bookingItems.filter(x => x.id !== item.id);
-                                    setBookingItems(updated);
+                                    setBookingItems(bookingItems.filter(x => !row.originalIds.includes(x.id)));
                                     toast.success("Item removed");
                                   }} 
-                                  className="text-[10px] text-rose-500 font-bold hover:text-rose-700 hover:underline transition-colors mt-1 block"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                  title="Remove Item"
                                 >
-                                  Remove item
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
-                              </div>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-slate-400 font-mono text-xs">₹</span>
-                                <Input 
-                                  type="number"
-                                  value={item.rate}
-                                  onChange={e => {
-                                    const updated = bookingItems.map(x => x.id === item.id ? { ...x, rate: parseFloat(e.target.value) || 0 } : x);
-                                    setBookingItems(updated);
-                                  }}
-                                  className="h-8 text-xs w-24 font-mono font-semibold border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-400"
-                                />
-                              </div>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <Input 
-                                type="number"
-                                value={item.qty}
-                                onChange={e => {
-                                  const updated = bookingItems.map(x => x.id === item.id ? { ...x, qty: parseInt(e.target.value) || 0 } : x);
-                                  setBookingItems(updated);
-                                }}
-                                className="h-8 text-xs w-16 font-mono font-semibold border-slate-200 text-center focus-visible:ring-1 focus-visible:ring-slate-400"
-                              />
-                            </td>
-                            <td className="px-5 py-3.5 text-right font-bold font-mono text-[12px] text-slate-800">
-                              ₹ {(item.rate * item.qty).toLocaleString('en-IN')}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              </td>
+                            </tr>
+                          );
+                        });
+                      })()}
 
                       {/* Custom item input line */}
                       <tr className="bg-slate-50/20">
@@ -3028,7 +3069,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
               </div>
             ) : (
-              /* ─── STATIC VIEW (DEFAULT) ─── */
+              /* ─── STATIC VIEW (DEFAULT: GROUP-WISE ACCOUNTING) ─── */
               <div className="p-0 bg-white">
                 {(() => {
                   const activeItems = bookingItems.filter(item => item.qty > 0 || item.rate < 0);
@@ -3036,104 +3077,117 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                      return <div className="p-6 text-center text-slate-500 italic">No booking items recorded.</div>;
                   }
 
-                  const grouped = activeItems.reduce((acc: any, item: any) => {
-                    const pid = item.personId || 'shared';
-                    if (!acc[pid]) acc[pid] = [];
-                    acc[pid].push(item);
-                    return acc;
-                  }, {});
-                  
-                  let grandTotal = 0;
+                  // Aggregate per-person items into Group-wise rows
+                  const groupMap = new Map<string, { key: string; name: string; category?: string; rate: number; qty: number }>();
+
+                  activeItems.forEach((item: any) => {
+                    const cleanName = (item.name || '')
+                      .replace(/\s*\[.*?\]$/, '')
+                      .replace(/^Transport\s*-\s*/i, '')
+                      .replace(/^Accommodation\s*-\s*Room\s*\d+:\s*/i, '')
+                      .replace(/^Accommodation\s*-\s*/i, '')
+                      .replace(/\([^)]*→.*?\)/g, (match: string) => {
+                        const city = booking.pickupCity || match.replace(/[()]/g, '').split('→')[0].trim() || 'Ahmedabad';
+                        return `(${city} to ${city})`;
+                      })
+                      .replace(/→Himachal/g, ' to Ahmedabad')
+                      .trim() || 'Booking Option';
+
+                    const key = `${cleanName}__${item.rate}`;
+
+                    if (groupMap.has(key)) {
+                      const existing = groupMap.get(key)!;
+                      existing.qty += (item.qty || 1);
+                    } else {
+                      groupMap.set(key, {
+                        key,
+                        name: cleanName,
+                        category: item.category,
+                        rate: item.rate || 0,
+                        qty: item.qty || 1
+                      });
+                    }
+                  });
+
+                  const groupRows = Array.from(groupMap.values());
+
+                  const baseItems = groupRows.filter(r => r.rate >= 0 && r.category !== 'discounts');
+                  const discountItems = groupRows.filter(r => r.rate < 0 || r.category === 'discounts');
+
+                  const gstDiscounts = discountItems.filter(r => r.name.toLowerCase().includes('gst'));
+                  const regularDiscounts = discountItems.filter(r => !r.name.toLowerCase().includes('gst'));
+
+                  const subtotal = baseItems.reduce((acc, r) => acc + (r.rate * r.qty), 0);
+                  const regularDiscountTotal = regularDiscounts.reduce((acc, r) => acc + Math.abs(r.rate * r.qty), 0);
+                  const gstDiscountTotal = gstDiscounts.reduce((acc, r) => acc + Math.abs(r.rate * r.qty), 0);
+
+                  const packageTotal = Math.max(0, subtotal - regularDiscountTotal);
+                  const gstAmount = Math.round(packageTotal * (gstRate || 0.05));
+                  const grandTotal = Math.max(0, packageTotal + gstAmount - gstDiscountTotal);
 
                   return (
                     <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 bg-slate-100/70 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                            <th className="px-5 py-3">Description</th>
-                            <th className="px-5 py-3 text-right w-28">Rate</th>
-                            <th className="px-5 py-3 text-right w-20">Qty</th>
-                            <th className="px-5 py-3 text-right w-36">Amount</th>
+                          <tr className="border-b border-slate-200 bg-slate-100/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th className="px-5 py-3">DESCRIPTION</th>
+                            <th className="px-5 py-3 text-right w-36">RATE</th>
+                            <th className="px-5 py-3 text-center w-24">QTY</th>
+                            <th className="px-5 py-3 text-right w-40">AMOUNT</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
-                          {Object.entries(grouped).map(([pid, items]: [string, any], pIndex) => {
-                            let personName = "Traveler";
-                            const firstItem = items[0];
-                            if (firstItem && firstItem.name) {
-                              const nameMatch = firstItem.name.match(/\[(.*?)\]$/);
-                              if (nameMatch && nameMatch[1]) {
-                                 personName = nameMatch[1];
-                              }
-                            }
-
-                            let subtotal = 0;
-                            let discountAmount = 0;
-                            items.forEach((item: any) => {
-                               if (item.category === 'discounts' || item.rate < 0) {
-                                 discountAmount += item.rate * item.qty;
-                               } else {
-                                 subtotal += item.rate * item.qty;
-                               }
-                            });
-                            
-                            const subtotalAfterDiscount = subtotal + discountAmount;
-                            const personGst = Math.round(subtotalAfterDiscount * gstRate);
-                            const personTotal = subtotalAfterDiscount + personGst;
-                            
-                            grandTotal += personTotal;
+                        <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                          {groupRows.map((row) => {
+                            const isDiscount = row.rate < 0 || row.category === 'discounts';
+                            const absRate = Math.abs(row.rate);
+                            const absAmt = Math.abs(row.rate * row.qty);
 
                             return (
-                              <React.Fragment key={pid}>
-                                {/* Person Section Header Row */}
-                                <tr className="bg-slate-100/90 border-t border-b border-slate-200">
-                                  <td colSpan={4} className="px-5 py-2.5 font-bold text-slate-800 uppercase tracking-wider text-[11px]">
-                                    PERSON {pIndex + 1}: {personName}
-                                  </td>
-                                </tr>
-
-                                {/* Line Items */}
-                                {items.map((item: any, idx: number) => {
-                                  const isDiscount = item.category === 'discounts' || item.rate < 0;
-                                  const absRate = Math.abs(item.rate);
-                                  const absAmt = Math.abs(item.rate * item.qty);
-                                  const cleanName = item.name.replace(/\s*\[.*?\]$/, '');
-
-                                  return (
-                                    <tr key={item.id || idx} className="hover:bg-slate-50/50 transition-colors">
-                                      <td className="px-5 py-3 font-normal text-slate-800">{cleanName}</td>
-                                      <td className="px-5 py-3 text-right font-mono text-slate-700">{(isDiscount ? "- " : "") + absRate.toLocaleString('en-IN')}</td>
-                                      <td className="px-5 py-3 text-right font-mono text-slate-700">{item.qty}</td>
-                                      <td className="px-5 py-3 text-right font-mono font-semibold text-slate-900">{(isDiscount ? "- " : "") + absAmt.toLocaleString('en-IN')}</td>
-                                    </tr>
-                                  );
-                                })}
-
-                                {/* Subtotal & GST */}
-                                <tr className="bg-slate-50/40 border-t border-slate-100">
-                                  <td colSpan={3} className="px-5 py-2 text-right font-medium text-slate-500">Subtotal</td>
-                                  <td className="px-5 py-2 text-right font-mono font-medium text-slate-700">{subtotalAfterDiscount.toLocaleString('en-IN')}</td>
-                                </tr>
-                                {personGst > 0 && (
-                                  <tr className="bg-slate-50/40">
-                                    <td colSpan={3} className="px-5 py-2 text-right font-medium text-slate-500">GST @ {Math.round(gstRate * 100)}%</td>
-                                    <td className="px-5 py-2 text-right font-mono font-medium text-slate-700">{personGst.toLocaleString('en-IN')}</td>
-                                  </tr>
-                                )}
-                                <tr className="bg-amber-50/20 border-b-2 border-slate-200">
-                                  <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-slate-800 text-xs">Person Total</td>
-                                  <td className="px-5 py-2.5 text-right font-mono font-bold text-[#F5760E] text-xs">{personTotal.toLocaleString('en-IN')}</td>
-                                </tr>
-                              </React.Fragment>
+                              <tr key={row.key} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-5 py-3.5 font-semibold text-slate-800 text-xs">
+                                  {row.name}
+                                </td>
+                                <td className="px-5 py-3.5 text-right font-mono text-slate-700">
+                                  {(isDiscount ? "- " : "") + "₹ " + absRate.toLocaleString('en-IN')}
+                                </td>
+                                <td className="px-5 py-3.5 text-center font-mono font-semibold text-slate-700">
+                                  {row.qty}
+                                </td>
+                                <td className="px-5 py-3.5 text-right font-mono font-bold text-slate-900">
+                                  {(isDiscount ? "- " : "") + "₹ " + absAmt.toLocaleString('en-IN')}
+                                </td>
+                              </tr>
                             );
                           })}
+
+                          {/* Subtotal & GST Summary Rows */}
+                          <tr className="bg-slate-50/60 border-t border-slate-100">
+                            <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Package Total</td>
+                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {Math.round(packageTotal).toLocaleString('en-IN')}</td>
+                          </tr>
+                          {regularDiscountTotal > 0 && (
+                            <tr className="bg-slate-50/60">
+                              <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider">Regular Discounts</td>
+                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-600">- ₹ {Math.round(regularDiscountTotal).toLocaleString('en-IN')}</td>
+                            </tr>
+                          )}
+                          <tr className="bg-slate-50/60">
+                            <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">GST ({Math.round((gstRate || 0.05) * 100)}%)</td>
+                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {gstAmount.toLocaleString('en-IN')}</td>
+                          </tr>
+                          {gstDiscountTotal > 0 && (
+                            <tr className="bg-slate-50/60">
+                              <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider">GST Discount</td>
+                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-600">- ₹ {Math.round(gstDiscountTotal).toLocaleString('en-IN')}</td>
+                            </tr>
+                          )}
                         </tbody>
                         <tfoot>
-                          <tr className="bg-slate-900 text-white font-bold">
-                            <td colSpan={3} className="px-5 py-4 text-left font-bold uppercase tracking-[0.1em] text-xs text-slate-300">
-                              Grand Total
+                          <tr className="bg-slate-900 text-white">
+                            <td colSpan={3} className="px-5 py-4 text-left font-extrabold uppercase tracking-[0.1em] text-xs text-slate-300">
+                              GRAND TOTAL
                             </td>
-                            <td className="px-5 py-4 text-right font-mono font-black text-xl text-white">
+                            <td className="px-5 py-4 text-right font-mono font-black text-xl text-emerald-400">
                               ₹ {grandTotal.toLocaleString('en-IN')}
                             </td>
                           </tr>
