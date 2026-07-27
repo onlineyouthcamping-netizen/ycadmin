@@ -701,15 +701,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         const res = await tripsService.getById(booking.tripId);
         setFullTrip(res);
         
-        const isOldBundledFormat = (meta.bookingItems && Array.isArray(meta.bookingItems)) ? meta.bookingItems.some((item: any) => 
-          (item.qty > 1 && (booking.numberOfTravelers || 1) > 1) || 
-          (!String(item.name || '').startsWith('Transport - ') && 
-           !String(item.name || '').startsWith('Accommodation - ') && 
-           !String(item.name || '').startsWith('Discount') &&
-           !String(item.name || '').startsWith('GST Discount'))
-        ) : true; // Enforce generation for empty or missing meta items
-
-        if (meta.bookingItems && Array.isArray(meta.bookingItems) && meta.bookingItems.length > 0 && !isOldBundledFormat) {
+        if (meta.bookingItems && Array.isArray(meta.bookingItems) && meta.bookingItems.length > 0) {
           setBookingItems(meta.bookingItems);
         } else {
           let persons: any[] = [];
