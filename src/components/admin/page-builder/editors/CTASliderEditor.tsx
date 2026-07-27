@@ -80,13 +80,15 @@ export function CTASliderEditor({
         <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-zinc-900 h-[240px] flex items-center justify-center shadow-md">
           {activeMedia ? (
             isYouTube(activeMedia) ? (
-              <iframe
-                className="w-full h-full object-cover pointer-events-none"
-                src={`https://www.youtube.com/embed/${getYouTubeId(activeMedia)}?autoplay=1&mute=1&loop=1&playlist=${getYouTubeId(activeMedia)}&controls=0&showinfo=0&rel=0`}
-                frameBorder="0"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
+              <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none rounded-inherit">
+                <iframe
+                  className="absolute top-1/2 left-1/2 w-[250%] h-[250%] max-w-none -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  src={`https://www.youtube.com/embed/${getYouTubeId(activeMedia)}?autoplay=1&mute=1&loop=1&playlist=${getYouTubeId(activeMedia)}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1`}
+                  frameBorder="0"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                />
+              </div>
             ) : isVideo(activeMedia) ? (
               <video
                 src={activeMedia}

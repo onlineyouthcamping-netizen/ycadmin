@@ -84,8 +84,8 @@ export function SectionList({
       case "cta_slider":
       case "cta_banner":
       case "cinematic_banner":
-        return "Media Banner Slider";
       case "vibe":
+        return "Media Banner Slider";
       case "recent_photos":
       case "photo_grid":
         return "Recent Photos From Our Trips";

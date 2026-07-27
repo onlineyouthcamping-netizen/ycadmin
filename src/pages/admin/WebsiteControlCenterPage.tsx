@@ -66,9 +66,9 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     color: "bg-orange-50 text-[#D4541A] border-orange-100",
   },
   {
-    id: "vibe",
+    id: "cta_slider",
     name: "Media Banner Slider",
-    badge: "MEDIA VIBE",
+    badge: "CTA SLIDER",
     description: "Auto-playing video clips and photo slideshow banner.",
     icon: Sparkles,
     color: "bg-amber-50 text-amber-600 border-amber-100",
