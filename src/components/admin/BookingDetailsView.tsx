@@ -621,46 +621,112 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             return false;
           };
 
-          // Find matching indices
-          let selectedTravelIdx = -1;
-          if (booking.trainClass) {
-            selectedTravelIdx = travOpts.findIndex((opt: any) => matchTrainClass(opt.label, booking.trainClass));
-          }
-          if (selectedTravelIdx === -1) {
-            selectedTravelIdx = 0; // fallback to first travel option
-          }
-
-          let selectedRoomIdx = -1;
-          if (booking.roomType) {
-            selectedRoomIdx = roomOpts.findIndex((opt: any) => matchRoomType(opt.label, booking.roomType));
-          }
-          if (selectedRoomIdx === -1) {
-            selectedRoomIdx = roomOpts.findIndex((opt: any) => opt.priceDelta === 0);
-            if (selectedRoomIdx === -1) selectedRoomIdx = 0;
-          }
-
+          // Build per-passenger line items from individual selections
+          const persons: any[] = meta?.persons || booking.passengers?.persons || [];
           const defaultItems: any[] = [];
-          const baseRate = itemRate > 0 ? itemRate : (res?.price || 11999);
-          
-          travOpts.forEach((opt: any, idx: number) => {
-            const isSelected = idx === selectedTravelIdx;
-            defaultItems.push({
-              id: opt.label.replace(/\s+/g, '_').toLowerCase(),
-              name: opt.label,
-              rate: parseFloat((baseRate + (opt.priceDelta || 0)).toFixed(2)),
-              qty: isSelected ? (booking.numberOfTravelers || 1) : 0
-            });
-          });
 
-          roomOpts.forEach((opt: any, idx: number) => {
-            const isSelected = idx === selectedRoomIdx;
-            defaultItems.push({
-              id: opt.label.replace(/\s+/g, '_').toLowerCase(),
-              name: opt.label,
-              rate: opt.priceDelta || 0,
-              qty: isSelected ? (booking.numberOfTravelers || 1) : 0
+          // Resolve variant-specific base price for the customer's pickup city
+          let variantBasePrice = res?.price || 21499;
+          if (booking.pickupCity && res?.variants && Array.isArray(res.variants)) {
+            const cityNorm = booking.pickupCity.toLowerCase().trim();
+            const vMatch = res.variants.find((v: any) => {
+              const loc = String(v.location || v.cityName || v.name || v.variantName || v.city || '').toLowerCase().trim();
+              return loc === cityNorm || loc.includes(cityNorm) || cityNorm.includes(loc);
             });
-          });
+            if (vMatch) {
+              const vPrice = parseFloat(vMatch.discountedPrice) || parseFloat(vMatch.originalPrice) || 0;
+              if (vPrice > 0) variantBasePrice = vPrice;
+            }
+          }
+          if (booking.adjustedPrice && booking.adjustedPrice > 0) {
+            variantBasePrice = booking.adjustedPrice;
+          }
+
+          const pickupLabel = booking.pickupCity ? `Pickup: ${booking.pickupCity.toUpperCase()}` : '';
+          const dropLabel = res?.title ? `, Drop: ${res.title.toUpperCase()}` : '';
+
+          if (persons.length > 0) {
+            // Group passengers by their unique travel + room combination
+            const comboMap = new Map<string, { trainLabel: string; roomLabel: string; trainDelta: number; roomDelta: number; count: number }>();
+
+            persons.forEach((p: any) => {
+              const pTrain = p.trainOption || p.trainClass || booking.trainClass || 'Sleeper';
+              const pRoom = p.roomSharing || p.roomType || booking.roomType || 'Triple Sharing';
+
+              // Find travel option delta
+              const tMatch = travOpts.find((opt: any) => matchTrainClass(opt.label, pTrain));
+              const trainDelta = tMatch ? (tMatch.priceDelta || 0) : 0;
+              const trainLabel = tMatch?.label || pTrain;
+
+              // Find room option delta
+              const rMatch = roomOpts.find((opt: any) => matchRoomType(opt.label, pRoom));
+              const roomDelta = rMatch ? (rMatch.priceDelta || 0) : 0;
+              const roomLabel = rMatch?.label || pRoom;
+
+              const key = `${trainLabel}||${roomLabel}`;
+              const existing = comboMap.get(key);
+              if (existing) {
+                existing.count += 1;
+              } else {
+                comboMap.set(key, { trainLabel, roomLabel, trainDelta, roomDelta, count: 1 });
+              }
+            });
+
+            // Create line items per unique combo
+            comboMap.forEach((combo) => {
+              const mainRate = variantBasePrice + combo.trainDelta;
+              const itemName = `${pickupLabel}${dropLabel} ${combo.trainLabel}`.trim() || "Package Cost";
+
+              defaultItems.push({
+                id: itemName.replace(/\s+/g, '_').toLowerCase(),
+                name: itemName,
+                rate: mainRate,
+                qty: combo.count
+              });
+
+              // Room upgrade line (only if non-zero delta)
+              if (combo.roomDelta !== 0) {
+                defaultItems.push({
+                  id: combo.roomLabel.replace(/\s+/g, '_').toLowerCase(),
+                  name: combo.roomLabel,
+                  rate: combo.roomDelta,
+                  qty: combo.count
+                });
+              }
+            });
+          } else {
+            // Fallback: no per-passenger data, use booking-level fields
+            let fbTravelIdx = booking.trainClass
+              ? travOpts.findIndex((opt: any) => matchTrainClass(opt.label, booking.trainClass))
+              : -1;
+            if (fbTravelIdx === -1) fbTravelIdx = 0;
+            let fbRoomIdx = booking.roomType
+              ? roomOpts.findIndex((opt: any) => matchRoomType(opt.label, booking.roomType))
+              : -1;
+            if (fbRoomIdx === -1) fbRoomIdx = roomOpts.findIndex((opt: any) => opt.priceDelta === 0);
+            if (fbRoomIdx === -1) fbRoomIdx = 0;
+            const travelOpt = fbTravelIdx > -1 ? travOpts[fbTravelIdx] : null;
+            const roomOpt = fbRoomIdx > -1 ? roomOpts[fbRoomIdx] : null;
+            const trainLabel = travelOpt?.label || booking.trainClass || '';
+            const travelName = `${pickupLabel}${dropLabel} ${trainLabel}`.trim() || "Package Cost";
+            const travelDelta = travelOpt?.priceDelta || 0;
+
+            defaultItems.push({
+              id: travelName.replace(/\s+/g, '_').toLowerCase(),
+              name: travelName,
+              rate: variantBasePrice + travelDelta,
+              qty: booking.numberOfTravelers || 1
+            });
+
+            if (roomOpt && roomOpt.priceDelta && roomOpt.priceDelta !== 0) {
+              defaultItems.push({
+                id: roomOpt.label.replace(/\s+/g, '_').toLowerCase(),
+                name: roomOpt.label,
+                rate: roomOpt.priceDelta,
+                qty: booking.numberOfTravelers || 1
+              });
+            }
+          }
           
           setBookingItems(defaultItems);
         }
@@ -3396,8 +3462,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           {/* Internal Note Card */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3 text-xs">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Internal Note</div>
-            <div className="bg-[#fafafa] border border-slate-200/80 rounded-lg p-3 text-slate-655 italic leading-relaxed">
-              {booking.adminNotes || "Customer prefers morning departures. Has medical requirements - mild asthma."}
+            <div className="bg-[#fafafa] border border-slate-200/80 rounded-lg p-3 text-slate-700 leading-relaxed font-medium">
+              {booking.adminNotes || booking.notes || (booking as any).sourceBookingLink?.internalNote || <span className="text-slate-400 italic">No internal note attached to this booking</span>}
             </div>
           </div>
 
