@@ -552,41 +552,28 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     setConfirmAdvance(booking.advancePaid?.toString() || "");
 
     const generatePerPersonBookingItems = (bookingObj: any, personsList: any[], resObj: any): any[] => {
-      const travOpts = resObj?.travelOptions || [
-        { label: "Sleeper Class Train", priceDelta: 0 },
-        { label: "3AC Class Train", priceDelta: 3000 }
-      ];
-      const roomOpts = resObj?.roomOptions || [
-        { label: "Quad Sharing", priceDelta: 0 },
-        { label: "Double Sharing", priceDelta: 1999 }
-      ];
+      const travOpts = resObj?.travelOptions || [];
+      const roomOpts = resObj?.roomOptions || [];
+      const gstRate = (resObj?.gstPercentage ?? 5) / 100;
 
-      const matchTrainClass = (optLabel: string, trainClass: string) => {
-        if (!optLabel || !trainClass) return false;
-        const label = optLabel.toLowerCase().trim();
-        const cls = trainClass.toLowerCase().trim();
-        if (label.includes(cls) || cls.includes(label)) return true;
-        const clsIsNonAc = cls.includes("non ac") || cls.includes("non-ac");
-        const labelIsNonAc = label.includes("non ac") || label.includes("non-ac");
-        if (cls.includes("sleeper") || cls === "sl") {
-          if (!cls.includes("ac") || clsIsNonAc) {
-            return label.includes("sleeper") || label.includes("sl");
-          }
+      const matchTrainClass = (label: string, train: string) => {
+        if (!label || !train) return false;
+        label = label.toLowerCase().trim();
+        train = train.toLowerCase().trim();
+        if (label === train) return true;
+        if (train.includes('3ac') || train.includes('3-tier') || train.includes('3c')) {
+          if (train.includes('non ac') || train.includes('non-ac')) return false;
+          return label.includes('3ac') || label.includes('3-tier');
         }
-        if (cls.includes("3ac") || cls.includes("3-tier") || cls.includes("ac") || cls.includes("3c") || cls.includes("3-tier ac train")) {
-          if (clsIsNonAc) {
-            return labelIsNonAc;
-          } else {
-            return (label.includes("3ac") || label.includes("3-tier") || label.includes("ac") || label.includes("3c")) && !labelIsNonAc;
-          }
-        }
+        if (train.includes('sleeper')) return label.includes('sleeper');
         return false;
       };
 
-      const matchRoomType = (optLabel: string, roomType: string) => {
-        if (!optLabel || !roomType) return false;
-        const label = optLabel.toLowerCase();
-        const room = roomType.toLowerCase();
+      const matchRoomType = (label: string, room: string) => {
+        if (!label || !room) return false;
+        label = label.toLowerCase().trim();
+        room = room.toLowerCase().trim();
+        if (label === room) return true;
         if (label.includes(room) || room.includes(label)) return true;
         if (room.includes("double") || room.includes("couple")) return label.includes("double") || label.includes("couple");
         if (room.includes("triple")) return label.includes("triple");
@@ -594,28 +581,17 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         return false;
       };
 
-      // Use the booking's stored adjustedPrice (exact per-person variant price from booking form)
-      // Only fall back to trip data if adjustedPrice is not available
-      let variantBasePrice = 0;
-      if (bookingObj.adjustedPrice && bookingObj.adjustedPrice > 0) {
-        variantBasePrice = bookingObj.adjustedPrice;
-      } else if (bookingObj.pickupCity && resObj?.variants && Array.isArray(resObj.variants)) {
-        const cityNorm = bookingObj.pickupCity.toLowerCase().trim();
-        const vMatch = resObj.variants.find((v: any) => {
-          const loc = String(v.location || v.cityName || v.name || v.variantName || v.city || '').toLowerCase().trim();
-          return loc === cityNorm || loc.includes(cityNorm) || cityNorm.includes(loc);
-        });
-        if (vMatch) {
-          const vPrice = parseFloat(vMatch.discountedPrice) || parseFloat(vMatch.originalPrice) || 0;
-          if (vPrice > 0) variantBasePrice = vPrice;
-        }
-        if (variantBasePrice === 0) variantBasePrice = resObj?.price || 21499;
-      } else {
-        variantBasePrice = resObj?.price || 21499;
-      }
-
       const routeStr = bookingObj.pickupCity ? ` (${bookingObj.pickupCity}→Himachal)` : '';
       const items: any[] = [];
+      const paxCount = (personsList && personsList.length > 0) ? personsList.length : (bookingObj.numberOfTravelers || 1);
+      
+      const totalAmount = bookingObj.totalAmount || 0;
+      const discount = bookingObj.discount || 0;
+      const subtotal = totalAmount / (1 + gstRate);
+      const totalBaseRequired = subtotal + discount;
+
+      let sumOfDeltas = 0;
+      const processedPersons: any[] = [];
 
       if (personsList && personsList.length > 0) {
         personsList.forEach((p: any, idx: number) => {
@@ -631,68 +607,72 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           const roomDelta = rMatch ? (rMatch.priceDelta || 0) : 0;
           const roomLabel = rMatch?.label || pRoom;
 
-          items.push({
-            id: `transport-${p.id || idx}-${idx}`,
-            personId: p.id || `p-${idx}`,
-            category: 'transport',
-            variantName: trainLabel,
-            name: `Transport - ${trainLabel}${routeStr} [${personName}]`,
-            rate: variantBasePrice + trainDelta,
-            qty: 1
-          });
-
-          items.push({
-            id: `accom-${p.id || idx}-${idx}`,
-            personId: p.id || `p-${idx}`,
-            category: 'accommodation',
-            variantName: roomLabel,
-            name: `Accommodation - Room ${idx + 1}: ${roomLabel} [${personName}]`,
-            rate: roomDelta,
-            qty: 1
-          });
+          sumOfDeltas += trainDelta + roomDelta;
+          processedPersons.push({ p, idx, trainLabel, roomLabel, trainDelta, roomDelta, personName });
         });
       } else {
-        const paxCount = bookingObj.numberOfTravelers || 1;
         const personName = bookingObj.fullName || bookingObj.name || "Lead Passenger";
-        const trainLabel = bookingObj.trainClass || 'Sleeper';
-        const roomLabel = bookingObj.roomType || 'Triple Sharing';
-        const tMatch = travOpts.find((opt: any) => matchTrainClass(opt.label, trainLabel));
-        const rMatch = roomOpts.find((opt: any) => matchRoomType(opt.label, roomLabel));
+        const pTrain = bookingObj.trainClass || 'Sleeper';
+        const pRoom = bookingObj.roomType || 'Triple Sharing';
+        
+        const tMatch = travOpts.find((opt: any) => matchTrainClass(opt.label, pTrain));
         const trainDelta = tMatch ? (tMatch.priceDelta || 0) : 0;
+        const trainLabel = tMatch?.label || pTrain;
+
+        const rMatch = roomOpts.find((opt: any) => matchRoomType(opt.label, pRoom));
         const roomDelta = rMatch ? (rMatch.priceDelta || 0) : 0;
+        const roomLabel = rMatch?.label || pRoom;
 
         for (let idx = 0; idx < paxCount; idx++) {
           const nameSuffix = paxCount > 1 ? `${personName} ${idx + 1}` : personName;
-          items.push({
-            id: `transport-fb-${idx}`,
-            personId: `fb-${idx}`,
-            category: 'transport',
-            variantName: trainLabel,
-            name: `Transport - ${trainLabel}${routeStr} [${nameSuffix}]`,
-            rate: variantBasePrice + trainDelta,
-            qty: 1
-          });
-
-          items.push({
-            id: `accom-fb-${idx}`,
-            personId: `fb-${idx}`,
-            category: 'accommodation',
-            variantName: roomLabel,
-            name: `Accommodation - Room ${idx + 1}: ${roomLabel} [${nameSuffix}]`,
-            rate: roomDelta,
-            qty: 1
-          });
+          sumOfDeltas += trainDelta + roomDelta;
+          processedPersons.push({ p: { id: `fb-${idx}` }, idx, trainLabel, roomLabel, trainDelta, roomDelta, personName: nameSuffix });
         }
       }
 
-      if (bookingObj.discount && bookingObj.discount > 0) {
+      const variantBasePrice = (totalBaseRequired - sumOfDeltas) / paxCount;
+      let runningSum = 0;
+
+      processedPersons.forEach((pp, index) => {
+        const transRate = Math.round(variantBasePrice + pp.trainDelta);
+        const accomRate = Math.round(pp.roomDelta);
+        
+        let adjustedTransRate = transRate;
+        if (index === processedPersons.length - 1) {
+           adjustedTransRate = Math.round(totalBaseRequired) - runningSum - accomRate;
+        } else {
+           runningSum += transRate + accomRate;
+        }
+
+        items.push({
+          id: `transport-${pp.p.id || pp.idx}-${pp.idx}`,
+          personId: pp.p.id || `p-${pp.idx}`,
+          category: 'transport',
+          variantName: pp.trainLabel,
+          name: `Transport - ${pp.trainLabel}${routeStr} [${pp.personName}]`,
+          rate: adjustedTransRate,
+          qty: 1
+        });
+
+        items.push({
+          id: `accom-${pp.p.id || pp.idx}-${pp.idx}`,
+          personId: pp.p.id || `p-${pp.idx}`,
+          category: 'accommodation',
+          variantName: pp.roomLabel,
+          name: `Accommodation - Room ${pp.idx + 1}: ${pp.roomLabel} [${pp.personName}]`,
+          rate: accomRate,
+          qty: 1
+        });
+      });
+
+      if (discount > 0) {
         items.push({
           id: `discount-${Date.now()}`,
           personId: null,
           category: 'discounts',
-          variantName: bookingObj.discountReason || 'GST Discount',
-          name: `GST Discount (${bookingObj.discountReason || 'Promo / Early Bird'})`,
-          rate: -Math.abs(bookingObj.discount),
+          variantName: bookingObj.discountReason || 'Discount',
+          name: `Discount (${bookingObj.discountReason || 'Promo / Early Bird'})`,
+          rate: -Math.abs(discount),
           qty: 1
         });
       }
@@ -710,8 +690,9 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           (item.qty > 1 && (booking.numberOfTravelers || 1) > 1) || 
           (!String(item.name || '').startsWith('Transport - ') && 
            !String(item.name || '').startsWith('Accommodation - ') && 
+           !String(item.name || '').startsWith('Discount') &&
            !String(item.name || '').startsWith('GST Discount'))
-        ) : false;
+        ) : true; // Enforce generation for empty or missing meta items
 
         if (meta.bookingItems && Array.isArray(meta.bookingItems) && meta.bookingItems.length > 0 && !isOldBundledFormat) {
           setBookingItems(meta.bookingItems);
@@ -3040,28 +3021,12 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                         })
                     ) : (
                       <tr className="hover:bg-slate-50/30 transition-colors duration-150">
-                        <td className="px-6 py-4 font-normal text-slate-800">
-                          <span className="bg-[#808080] text-white font-semibold px-1.5 py-0.5 rounded-[3px] text-[10px] mr-2.5 inline-block leading-none">
-                            Per-Pax
-                          </span>
-                          Pickup: {(booking.pickupCity || 'AHMEDABAD').toUpperCase()}, Drop: {(fullTrip?.location || 'GANDHINAGAR').toUpperCase()} {(((booking.trainClass === '3AC' || booking.trainClass?.includes('3AC') || booking.trainClass?.toLowerCase().includes('3-tier') || booking.trainClass?.toLowerCase().includes('3c') || booking.trainClass?.toLowerCase().includes('ac')) && !(booking.trainClass?.toLowerCase().includes('non ac') || booking.trainClass?.toLowerCase().includes('non-ac'))) ? '3TIER AC' : 'Non AC')} Sleeper
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono text-slate-700">
-                          {itemRate.toLocaleString('en-IN', {
-                            minimumFractionDigits: itemRate % 1 === 0 ? 0 : 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono text-slate-700">{qty}</td>
-                        <td className="px-6 py-4 text-right font-semibold font-mono text-slate-900">
-                          {packageAmt.toLocaleString('en-IN', {
-                            minimumFractionDigits: packageAmt % 1 === 0 ? 0 : 2,
-                            maximumFractionDigits: 2
-                          })}
+                        <td colSpan={4} className="px-6 py-4 text-center font-normal text-slate-500 italic">
+                          No booking items recorded.
                         </td>
                       </tr>
                     )}
-                    {gstAmount > 0 && (
+                    {bookingItems.length > 0 && gstAmount > 0 && (
                       <tr className="hover:bg-slate-50/30 transition-colors duration-150">
                         <td className="px-6 py-4 font-normal text-slate-800">
                           GST (Reg no. 24CRFPP3172G1ZT) @ {Math.round(gstRate * 100)}%
