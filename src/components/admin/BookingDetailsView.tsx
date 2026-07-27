@@ -2657,9 +2657,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 </button>
                 <button 
                   onClick={() => {
-                    const regenerated = generatePerPersonBookingItems(booking, passengers, fullTrip);
+                    const regenerated = (meta.bookingItems && meta.bookingItems.length > 0)
+                      ? meta.bookingItems
+                      : generatePerPersonBookingItems(booking, passengers, fullTrip);
                     setBookingItems(regenerated);
-                    toast.success("Regenerated per-person line items");
+                    toast.success("Restored per-person line items");
                   }}
                   className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 px-2.5 py-1 rounded transition-all shadow-sm"
                   title="Reset to 1 Transport & 1 Accommodation line item per passenger"
