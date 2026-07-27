@@ -666,14 +666,28 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       });
 
       if (discount > 0) {
-        items.push({
-          id: `discount-${Date.now()}`,
-          personId: null,
-          category: 'discounts',
-          variantName: bookingObj.discountReason || 'Discount',
-          name: `Discount (${bookingObj.discountReason || 'Promo / Early Bird'})`,
-          rate: -Math.abs(discount),
-          qty: 1
+        const perPaxDiscount = discount / paxCount;
+        let runningDiscountSum = 0;
+        
+        processedPersons.forEach((pp, index) => {
+          let adjustedDiscount = Math.round(perPaxDiscount);
+          if (index === processedPersons.length - 1) {
+             adjustedDiscount = Math.round(discount) - runningDiscountSum;
+          } else {
+             runningDiscountSum += adjustedDiscount;
+          }
+          
+          if (adjustedDiscount > 0) {
+            items.push({
+              id: `discount-${pp.p.id || pp.idx}-${pp.idx}`,
+              personId: pp.p.id || `p-${pp.idx}`,
+              category: 'discounts',
+              variantName: bookingObj.discountReason || 'Discount',
+              name: `Discount (${bookingObj.discountReason || 'Promo / Early Bird'}) [${pp.personName}]`,
+              rate: -Math.abs(adjustedDiscount),
+              qty: 1
+            });
+          }
         });
       }
 
@@ -2973,89 +2987,108 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             ) : (
               /* ─── STATIC VIEW (DEFAULT) ─── */
               <div className="p-0 bg-white">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700">
-                      <th className="px-6 py-3 text-left">Description</th>
-                      <th className="px-6 py-3 w-28 text-right">Rate</th>
-                      <th className="px-6 py-3 w-20 text-right">Qty</th>
-                      <th className="px-6 py-3 w-36 text-right">Amt</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {bookingItems.length > 0 ? (
-                      bookingItems
-                        .filter(item => item.qty > 0 || item.rate < 0)
-                        .map((item, index) => {
-                          const isRoom = item.name.toLowerCase().includes("sharing") || item.name.toLowerCase().includes("accommodation");
-                          const isDiscount = item.name.toLowerCase().includes("discount") || item.rate < 0;
-                          const badgeText = isDiscount ? "Discount" : (item.category === "transport" || item.name.toLowerCase().includes("transport") ? "Transport" : (item.category === "accommodation" || isRoom ? "Accommodation" : "Per-Pax"));
-                          
-                          const absRate = Math.abs(item.rate);
-                          const absAmt = Math.abs(item.rate * item.qty);
-                          
-                          const rateFormatted = (isDiscount ? "- " : "") + absRate.toLocaleString('en-IN', {
-                            minimumFractionDigits: absRate % 1 === 0 ? 0 : 2,
-                            maximumFractionDigits: 2
-                          });
-                          const amtFormatted = (isDiscount ? "- " : "") + absAmt.toLocaleString('en-IN', {
-                            minimumFractionDigits: absAmt % 1 === 0 ? 0 : 2,
-                            maximumFractionDigits: 2
-                          });
+                {(() => {
+                  const activeItems = bookingItems.filter(item => item.qty > 0 || item.rate < 0);
+                  if (activeItems.length === 0) {
+                     return <div className="p-6 text-center text-slate-500 italic">No booking items recorded.</div>;
+                  }
 
-                          const displayName = item.name;
+                  const grouped = activeItems.reduce((acc: any, item: any) => {
+                    const pid = item.personId || 'shared';
+                    if (!acc[pid]) acc[pid] = [];
+                    acc[pid].push(item);
+                    return acc;
+                  }, {});
+                  
+                  let grandTotal = 0;
 
-                          return (
-                            <tr key={item.id || index} className="hover:bg-slate-50/30 transition-colors duration-150">
-                              <td className="px-6 py-4 font-normal text-slate-800">
-                                <span className="bg-[#808080] text-white font-semibold px-1.5 py-0.5 rounded-[3px] text-[10px] mr-2.5 inline-block leading-none">
-                                  {badgeText}
-                                </span>
-                                {displayName}
-                              </td>
-                              <td className="px-6 py-4 text-right font-mono text-slate-700">{rateFormatted}</td>
-                              <td className="px-6 py-4 text-right font-mono text-slate-700">{item.qty}</td>
-                              <td className="px-6 py-4 text-right font-semibold font-mono text-slate-900">{amtFormatted}</td>
-                            </tr>
-                          );
-                        })
-                    ) : (
-                      <tr className="hover:bg-slate-50/30 transition-colors duration-150">
-                        <td colSpan={4} className="px-6 py-4 text-center font-normal text-slate-500 italic">
-                          No booking items recorded.
-                        </td>
-                      </tr>
-                    )}
-                    {bookingItems.length > 0 && gstAmount > 0 && (
-                      <tr className="hover:bg-slate-50/30 transition-colors duration-150">
-                        <td className="px-6 py-4 font-normal text-slate-800">
-                          GST (Reg no. 24CRFPP3172G1ZT) @ {Math.round(gstRate * 100)}%
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono text-slate-700">
-                          {gstAmount.toLocaleString('en-IN', {
-                            minimumFractionDigits: gstAmount % 1 === 0 ? 0 : 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono text-slate-700">1</td>
-                        <td className="px-6 py-4 text-right font-semibold font-mono text-slate-900">
-                          {gstAmount.toLocaleString('en-IN', {
-                            minimumFractionDigits: gstAmount % 1 === 0 ? 0 : 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </td>
-                      </tr>
-                    )}
-                    <tr className="border-t border-slate-200 bg-white">
-                      <td colSpan={3} className="px-6 py-5 text-left font-bold text-slate-800 text-lg">
-                        Total
-                      </td>
-                      <td className="px-6 py-5 text-right font-bold text-slate-900 text-lg">
-                        ₹ {(bookingItems.length > 0 && Math.abs(calculatedTotal - booking.totalAmount) > 1 ? calculatedTotal : booking.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                  return (
+                    <div className="space-y-6 pt-2">
+                      {Object.entries(grouped).map(([pid, items]: [string, any], pIndex) => {
+                        let personName = "Traveler";
+                        const firstItem = items[0];
+                        if (firstItem && firstItem.name) {
+                          const nameMatch = firstItem.name.match(/\[(.*?)\]$/);
+                          if (nameMatch && nameMatch[1]) {
+                             personName = nameMatch[1];
+                          }
+                        }
+
+                        let subtotal = 0;
+                        let discountAmount = 0;
+                        items.forEach((item: any) => {
+                           if (item.category === 'discounts' || item.rate < 0) {
+                             discountAmount += item.rate * item.qty;
+                           } else {
+                             subtotal += item.rate * item.qty;
+                           }
+                        });
+                        
+                        const subtotalAfterDiscount = subtotal + discountAmount;
+                        const personGst = Math.round(subtotalAfterDiscount * gstRate);
+                        const personTotal = subtotalAfterDiscount + personGst;
+                        
+                        grandTotal += personTotal;
+
+                        return (
+                          <div key={pid} className="border border-slate-200 rounded-lg overflow-hidden">
+                            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                              <h4 className="font-bold text-slate-800 uppercase tracking-wide text-[11px]">
+                                PERSON {pIndex + 1}: {personName}
+                              </h4>
+                            </div>
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="border-b border-slate-100 text-[10px] text-slate-500 uppercase tracking-wider bg-white">
+                                  <th className="px-4 py-2.5 font-semibold">Description</th>
+                                  <th className="px-4 py-2.5 text-right font-semibold w-24">Rate</th>
+                                  <th className="px-4 py-2.5 text-right font-semibold w-16">Qty</th>
+                                  <th className="px-4 py-2.5 text-right font-semibold w-28">Amount</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-50 text-slate-700 bg-white">
+                                {items.map((item: any, idx: number) => {
+                                  const isDiscount = item.category === 'discounts' || item.rate < 0;
+                                  const absRate = Math.abs(item.rate);
+                                  const absAmt = Math.abs(item.rate * item.qty);
+                                  const cleanName = item.name.replace(/\s*\[.*?\]$/, '');
+
+                                  return (
+                                    <tr key={item.id || idx}>
+                                      <td className="px-4 py-3">{cleanName}</td>
+                                      <td className="px-4 py-3 text-right font-mono">{(isDiscount ? "- " : "") + absRate.toLocaleString('en-IN')}</td>
+                                      <td className="px-4 py-3 text-right font-mono">{item.qty}</td>
+                                      <td className="px-4 py-3 text-right font-mono">{(isDiscount ? "- " : "") + absAmt.toLocaleString('en-IN')}</td>
+                                    </tr>
+                                  );
+                                })}
+                                <tr className="bg-slate-50/50 border-t border-slate-100">
+                                  <td colSpan={3} className="px-4 py-2.5 text-right font-medium text-slate-500">Subtotal</td>
+                                  <td className="px-4 py-2.5 text-right font-mono font-medium text-slate-700">{subtotalAfterDiscount.toLocaleString('en-IN')}</td>
+                                </tr>
+                                {personGst > 0 && (
+                                  <tr className="bg-slate-50/50">
+                                    <td colSpan={3} className="px-4 py-2.5 text-right font-medium text-slate-500">GST @ {Math.round(gstRate * 100)}%</td>
+                                    <td className="px-4 py-2.5 text-right font-mono font-medium text-slate-700">{personGst.toLocaleString('en-IN')}</td>
+                                  </tr>
+                                )}
+                                <tr className="bg-[#f8f9fa] border-t border-slate-200">
+                                  <td colSpan={3} className="px-4 py-3 text-right font-bold text-slate-800 text-[13px]">Person Total</td>
+                                  <td className="px-4 py-3 text-right font-mono font-bold text-[#F5760E] text-[13px]">{personTotal.toLocaleString('en-IN')}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+
+                      <div className="flex justify-between items-center px-5 py-4 bg-slate-900 rounded-lg text-white mt-6 shadow-md border border-slate-800">
+                        <span className="font-bold uppercase tracking-[0.1em] text-xs text-slate-300">Grand Total</span>
+                        <span className="font-mono font-black text-xl text-white">₹ {grandTotal.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
