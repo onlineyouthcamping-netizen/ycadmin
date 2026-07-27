@@ -60,6 +60,13 @@ export function CTASliderEditor({
   };
 
   const isVideo = (url: string) => url && (/\.(mp4|webm|mov|ogg)$/i.test(url) || url.includes('/video/'));
+  const isYouTube = (url: string) => url && /youtube\.com|youtu\.be/.test(url);
+  const getYouTubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
   return (
     <div className="space-y-6 font-sans">
@@ -72,7 +79,15 @@ export function CTASliderEditor({
 
         <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-zinc-900 h-[240px] flex items-center justify-center shadow-md">
           {activeMedia ? (
-            isVideo(activeMedia) ? (
+            isYouTube(activeMedia) ? (
+              <iframe
+                className="w-full h-full object-cover pointer-events-none"
+                src={`https://www.youtube.com/embed/${getYouTubeId(activeMedia)}?autoplay=1&mute=1&loop=1&playlist=${getYouTubeId(activeMedia)}&controls=0&showinfo=0&rel=0`}
+                frameBorder="0"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            ) : isVideo(activeMedia) ? (
               <video
                 src={activeMedia}
                 autoPlay
@@ -97,8 +112,8 @@ export function CTASliderEditor({
 
           {/* Overlay Badge */}
           <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10.5px] font-bold flex items-center gap-1.5 border border-white/10">
-            {isVideo(activeMedia) ? <Video className="w-3.5 h-3.5 text-[#D4541A]" /> : <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />}
-            <span>{isVideo(activeMedia) ? "Video Background" : "Photo Banner"}</span>
+            {isVideo(activeMedia) || isYouTube(activeMedia) ? <Video className="w-3.5 h-3.5 text-[#D4541A]" /> : <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />}
+            <span>{isVideo(activeMedia) || isYouTube(activeMedia) ? "Video Background" : "Photo Banner"}</span>
           </div>
         </div>
       </div>
@@ -128,15 +143,19 @@ export function CTASliderEditor({
             >
               <div className="flex items-center gap-3 min-w-0">
                 <GripVertical className="w-4 h-4 text-slate-300 shrink-0" />
-                {isVideo(url) ? (
+                {isYouTube(url) ? (
+                  <div className="w-14 h-10 rounded-lg bg-zinc-800 flex items-center justify-center border border-slate-200 shrink-0">
+                    <Video className="w-5 h-5 text-slate-400" />
+                  </div>
+                ) : isVideo(url) ? (
                   <video src={url} muted className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
                 ) : (
                   <img src={url} alt={`Media ${idx + 1}`} className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
                 )}
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-[#0B1528] truncate flex items-center gap-1.5">
-                    {isVideo(url) ? <Video className="w-3.5 h-3.5 text-[#D4541A]" /> : <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />}
-                    <span>{isVideo(url) ? "Video" : "Photo"} {idx + 1} {idx === 0 && "(Active)"}</span>
+                    {isVideo(url) || isYouTube(url) ? <Video className="w-3.5 h-3.5 text-[#D4541A]" /> : <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />}
+                    <span>{isVideo(url) || isYouTube(url) ? "Video" : "Photo"} {idx + 1} {idx === 0 && "(Active)"}</span>
                   </p>
                   <p className="text-[10.5px] font-mono text-slate-400 truncate max-w-xs">{url}</p>
                 </div>
