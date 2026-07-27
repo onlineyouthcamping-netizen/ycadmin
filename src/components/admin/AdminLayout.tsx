@@ -646,13 +646,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-4 shrink-0">
                {/* Search Input (320px width, 36px height, Darker #64748B Placeholder & Navy #0A192F ⌘K Badge) */}
                <div className="relative hidden md:block cursor-pointer" onClick={() => setIsSearchOpen(true)}>
-                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none" />
-                   <Input 
+                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none z-10" />
+                   <input 
                      readOnly
                      placeholder="Search anything... (Press Ctrl+K)" 
-                     className="h-[36px] w-[320px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] text-[13px] font-normal text-[#0A192F] placeholder:text-[#64748B] focus-visible:ring-[#F97316] pl-10 pr-14 shadow-none cursor-pointer"
+                     style={{ paddingLeft: "38px" }}
+                     className="h-[36px] w-[320px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] text-[13px] font-normal text-[#0A192F] placeholder:text-[#64748B] focus:outline-none focus:border-[#F97316] !pl-[38px] pr-14 shadow-none cursor-pointer"
                    />
-                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white bg-[#0A192F] px-1.5 py-0.5 rounded-[4px] tracking-normal font-sans pointer-events-none">
+                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white bg-[#0A192F] px-1.5 py-0.5 rounded-[4px] tracking-normal font-sans pointer-events-none z-10">
                      ⌘K
                    </span>
                </div>
