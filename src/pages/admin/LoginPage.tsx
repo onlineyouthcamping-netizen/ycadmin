@@ -86,9 +86,7 @@ export default function LoginPage() {
           
           {/* Logo Bar */}
           <div className="flex items-center gap-2 mb-6">
-            <span className="font-bold text-slate-800 text-base tracking-tight select-none">
-              Youth<span className="text-[#FF5400]">Camping</span>
-            </span>
+            <img src="/logo.png" alt="YouthCamping Logo" className="h-8 w-auto object-contain" />
             <span className="text-[8px] bg-slate-100 text-slate-400 font-mono px-1 rounded">PORTAL</span>
           </div>
 
