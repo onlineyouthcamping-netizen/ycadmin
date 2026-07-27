@@ -882,8 +882,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             return trainTicketService.createTicket(booking.bookingId, {
               travelerName: p.name,
               ticketStatus: confirmTrainStatus,
-              sourceStation: booking.pickupCity || "Ahmedabad",
-              destinationStation: "Jalandhar"
+              sourceStation: booking.pickupCity || "Delhi",
+              destinationStation: fullTrip?.title || "Destination"
             });
           })
         );
@@ -895,8 +895,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           await trainTicketService.createTicket(booking.bookingId, {
             travelerName: booking.fullName,
             ticketStatus: confirmTrainStatus,
-            sourceStation: booking.pickupCity || "Ahmedabad",
-            destinationStation: "Jalandhar"
+            sourceStation: booking.pickupCity || "Delhi",
+            destinationStation: fullTrip?.title || "Destination"
           });
         }
       }
@@ -1791,7 +1791,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         <div className="workspace-kpi-card" onClick={() => setAdminActiveTab("passengers")}>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Passengers</div>
           <div className="text-base font-bold text-slate-800">{qty}</div>
-          <div className="text-[11px] text-slate-500 font-medium">Confirmed</div>
+          <div className="text-[11px] text-emerald-600 font-semibold">{passengers.length >= qty ? "Confirmed" : `${passengers.length}/${qty} Added`}</div>
         </div>
         <div className="workspace-kpi-card">
           <div className="text-[10px] uppercase font-semibold text-slate-400">Departure</div>
@@ -1800,17 +1800,21 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         </div>
         <div className="workspace-kpi-card" onClick={() => setAdminActiveTab("operations")}>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Operations</div>
-          <div className="text-base font-bold text-slate-800">2/6</div>
+          <div className="text-base font-bold text-slate-800">{passengers.length || qty}/{qty}</div>
           <div className="text-[11px] text-emerald-600 font-semibold">Booked</div>
         </div>
         <div className="workspace-kpi-card" onClick={() => setAdminActiveTab("ticketing")}>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Ticketing</div>
-          <div className="text-base font-bold text-slate-800">{booking.ticketStatus === "ISSUED" ? "1" : "0"}</div>
-          <div className="text-[11px] text-amber-600 font-semibold">Pending</div>
+          <div className="text-base font-bold text-slate-800">
+            {tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length}
+          </div>
+          <div className="text-[11px] text-amber-600 font-semibold">
+            {tickets.some((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING") ? "Pending Approval" : (booking.ticketStatus || "Issued")}
+          </div>
         </div>
         <div className="workspace-kpi-card" onClick={() => setAdminActiveTab("operations")}>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Tasks</div>
-          <div className="text-base font-bold text-slate-800">{tasks.length}</div>
+          <div className="text-base font-bold text-slate-800">{tasks.filter((t: any) => t.status !== "completed").length}</div>
           <div className="text-[11px] text-slate-500 font-medium">Open</div>
         </div>
       </div>
@@ -1863,10 +1867,24 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       <span className="font-semibold">Outstanding Balance: ₹{booking.remainingAmount.toLocaleString('en-IN')} due</span>
                     </div>
                   )}
-                  <div className="bg-[#fffbea] border-l-4 border-[#f5760e] rounded-r-lg px-4 py-3 text-xs text-slate-700 flex items-center gap-2.5 shadow-sm">
-                    <span className="text-base">🎫</span>
-                    <span className="font-semibold">1 Ticket pending approval</span>
-                  </div>
+                  {(booking.trainTicketStatus === "PENDING" || tickets.some((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING")) && (
+                    <div className="bg-[#fffbea] border-l-4 border-[#f5760e] rounded-r-lg px-4 py-3 text-xs text-slate-700 flex items-center gap-2.5 shadow-sm">
+                      <span className="text-base">🎫</span>
+                      <span className="font-semibold">Train ticket verification pending approval</span>
+                    </div>
+                  )}
+                  {passengers.length < (booking.numberOfTravelers || 1) && (
+                    <div className="bg-[#fffbea] border-l-4 border-[#f5760e] rounded-r-lg px-4 py-3 text-xs text-slate-700 flex items-center gap-2.5 shadow-sm">
+                      <span className="text-base">👥</span>
+                      <span className="font-semibold">Passenger Details Incomplete: {passengers.length} of {booking.numberOfTravelers || 1} travelers added</span>
+                    </div>
+                  )}
+                  {booking.remainingAmount <= 0 && booking.trainTicketStatus !== "PENDING" && !tickets.some((t: any) => t.ticketStatus === "PENDING") && passengers.length >= (booking.numberOfTravelers || 1) && (
+                    <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-r-lg px-4 py-3 text-xs text-emerald-800 flex items-center gap-2.5 shadow-xs">
+                      <span className="text-base">✓</span>
+                      <span className="font-semibold">All operational requirements and payments are up to date!</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1881,8 +1899,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                     <div className="text-sm font-bold text-slate-800 mt-1">{booking.trainClass || "Sleeper Train"}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Upgrade</div>
-                    <div className="text-sm font-bold text-[#F5760E] mt-1">3AC Available</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Room Sharing</div>
+                    <div className="text-sm font-bold text-[#F5760E] mt-1">{booking.roomType || (passengers[0]?.roomSharing) || "Triple Sharing"}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between gap-2">
@@ -1901,12 +1919,19 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       )}
                     </div>
                     <div className="text-sm font-bold text-slate-800 mt-1">
-                      {safeFormatDate(booking.departureDate, { day: '2-digit', month: 'short', year: 'numeric' }, "27 Jul 2026")}
+                      {safeFormatDate(booking.departureDate, { day: '2-digit', month: 'short', year: 'numeric' }, "—")}
                     </div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration</div>
-                    <div className="text-sm font-bold text-slate-800 mt-1">{fullTrip?.duration || 10} Days</div>
+                    <div className="text-sm font-bold text-slate-800 mt-1">
+                      {(() => {
+                        if (!fullTrip?.duration) return "10 Days";
+                        const raw = String(fullTrip.duration).trim();
+                        if (raw.toLowerCase().includes("day") || raw.toLowerCase().includes("night")) return raw;
+                        return `${raw} Days`;
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1933,10 +1958,10 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                         </td>
                         <td className="px-4 py-3">
                           {booking.departureDate 
-                            ? safeFormatDate(new Date(booking.departureDate).getTime() + (fullTrip?.duration || 10)*24*60*60*1000, { day: '2-digit', month: 'short', year: 'numeric' })
+                            ? safeFormatDate(new Date(booking.departureDate).getTime() + (Number(fullTrip?.duration) || 10)*24*60*60*1000, { day: '2-digit', month: 'short', year: 'numeric' })
                             : "—"}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-slate-800">Sales Admin</td>
+                        <td className="px-4 py-3 font-semibold text-slate-800">{booking.createdByName || (booking as any).assignedSalesPerson?.name || "System"}</td>
                         <td className="px-4 py-3">{safeFormatDate(booking.updatedAt || booking.createdAt, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       </tr>
                     </tbody>
@@ -2006,13 +2031,13 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       if (ticket) {
                         if (ticket.ticketStatus === "RAC") {
                           return {
-                            label: `${ticket.sourceStation || "Ahmedabad"} (RAC)`,
+                            label: `${ticket.sourceStation || booking.pickupCity || "Train"} (RAC)`,
                             colorClass: 'bg-amber-50 text-amber-700 border-amber-200'
                           };
                         }
                         if (ticket.ticketStatus === "WAITLISTED") {
                           return {
-                            label: `${ticket.sourceStation || "Ahmedabad"} (WL)`,
+                            label: `${ticket.sourceStation || booking.pickupCity || "Train"} (WL)`,
                             colorClass: 'bg-amber-50 text-amber-700 border-amber-200'
                           };
                         }
@@ -2870,11 +2895,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                           ))}
                           {(!fullTrip?.travelOptions || fullTrip.travelOptions.length === 0) && (
                             <>
-                              <SelectItem value={JSON.stringify({ label: "Ahmedabad/Gandhinagar NonAC Sleeper Train", priceDelta: 0 })} className="text-xs">
-                                Ahmedabad/Gandhinagar NonAC Sleeper Train
+                              <SelectItem value={JSON.stringify({ label: "Non-AC Sleeper Train Option", priceDelta: 0 })} className="text-xs">
+                                Non-AC Sleeper Train Option
                               </SelectItem>
-                              <SelectItem value={JSON.stringify({ label: "Ahmedabad/Gandhinagar 3AC Train", priceDelta: 3000 })} className="text-xs">
-                                Ahmedabad/Gandhinagar 3AC Train
+                              <SelectItem value={JSON.stringify({ label: "3-Tier AC Train Option", priceDelta: 3000 })} className="text-xs">
+                                3-Tier AC Train Option
                               </SelectItem>
                             </>
                           )}
@@ -3320,11 +3345,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 </h2>
                 <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[11px] mt-1.5">
                   <span>📞</span>
-                  <span>{booking.mobile || booking.phone || "+91 9978567823"}</span>
+                  <span>{booking.mobile || booking.phone || "—"}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
                   <span>✉️</span>
-                  <span>{booking.email || "sureshchaudhary310@gmail.com"}</span>
+                  <span>{booking.email || "—"}</span>
                 </div>
                 <button 
                   onClick={handleViewCustomerTimeline}
@@ -3338,15 +3363,15 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             <div className="border-t border-slate-100 pt-4 space-y-3">
               <div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lead Source</div>
-                <div className="font-semibold text-slate-700 mt-0.5">{booking.leadSource || "Website Booking"}</div>
+                <div className="font-semibold text-slate-700 mt-0.5">{booking.leadSource || booking.source || "Website Booking"}</div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Booking Executive</div>
-                <div className="font-semibold text-slate-700 mt-0.5">Sales Admin Master</div>
+                <div className="font-semibold text-slate-700 mt-0.5">{(booking as any).assignedSalesPerson?.name || (booking as any).salesPersonName || "Web Direct"}</div>
               </div>
               <div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pickup City</div>
-                <div className="font-semibold text-slate-700 mt-0.5">{booking.pickupCity || "Ahmedabad"}</div>
+                <div className="font-semibold text-slate-700 mt-0.5">{booking.pickupCity || "Direct Join / N/A"}</div>
               </div>
             </div>
           </div>
@@ -3411,7 +3436,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           <div className="p-5 space-y-3.5 text-xs text-slate-700">
             <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-[10.5px]">
               <span className="font-bold text-slate-500 uppercase mr-1">Passenger Option:</span>
-              <span className="font-medium">{booking.trainClass} Sleeper, Pickup/Drop: {booking.pickupCity || 'AHMEDABAD'}</span>
+              <span className="font-medium">{booking.trainClass || 'Standard'} Sleeper, Pickup/Drop: {booking.pickupCity || 'Direct Join / Main Pickup'}</span>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
