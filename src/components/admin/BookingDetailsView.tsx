@@ -1825,29 +1825,37 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
 
           {/* Tab Strip */}
-          <div className="border-b border-slate-200 bg-white flex gap-4 md:gap-6 overflow-x-auto no-scrollbar sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6">
+          <div className="border-b border-slate-200 bg-white flex gap-3 md:gap-4 overflow-x-auto no-scrollbar sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6 shadow-2xs">
             {[
-              { id: "overview", label: "Overview" },
-              { id: "passengers", label: "Passengers" },
-              { id: "payments", label: "Payments" },
-              { id: "operations", label: "Operations" },
-              { id: "ticketing", label: "Ticketing" },
-              { id: "accounting", label: "Accounting" },
-              { id: "files", label: "Files & Notes" },
-              { id: "emails", label: "Email Logs" },
-              { id: "activity", label: "Activity" }
+              { id: "overview", label: "Overview", badge: null },
+              { id: "passengers", label: "Passengers", badge: passengers.length ? `${passengers.length}` : `${qty}` },
+              { id: "payments", label: "Payments", badge: booking.remainingAmount > 0 ? `Due ₹${Math.round(booking.remainingAmount/1000)}k` : "Paid" },
+              { id: "operations", label: "Operations", badge: tasks.length ? `${tasks.length} tasks` : null },
+              { id: "ticketing", label: "Ticketing", badge: tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length ? `${tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length} pending` : null },
+              { id: "accounting", label: "Accounting", badge: null },
+              { id: "files", label: "Files & Notes", badge: null },
+              { id: "emails", label: "Email Logs", badge: emailLogs.length ? `${emailLogs.length}` : null },
+              { id: "activity", label: "Activity", badge: activityLogs.length ? `${activityLogs.length}` : null }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setAdminActiveTab(tab.id)}
                 className={cn(
-                  "py-2.5 text-[12px] font-bold border-b-2 transition-all whitespace-nowrap",
+                  "py-2.5 px-1 text-[12px] font-bold border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5",
                   adminActiveTab === tab.id 
                     ? "border-[#F5760E] text-[#F5760E]" 
                     : "border-transparent text-slate-500 hover:text-slate-900"
                 )}
               >
-                {tab.label}
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span className={cn(
+                    "text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold leading-none",
+                    adminActiveTab === tab.id ? "bg-[#F5760E]/10 text-[#F5760E]" : "bg-slate-100 text-slate-600"
+                  )}>
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -1974,27 +1982,31 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           {/* === PASSENGERS TAB === */}
           {adminActiveTab === "passengers" && (
             <div className="space-y-4">
-{/* Card 4: Passenger Manifest */}
-          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-200 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-xs">Passengers</h3>
-              {canManageBooking && !isExpired ? (
-                <button 
-                  onClick={() => {
-                    setEditingPassenger(null);
-                    setNewPassenger({ firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food" });
-                    setShowAddPassenger(true);
-                  }}
-                  className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[10px] uppercase px-3 py-1 rounded transition-all shadow-sm"
-                >
-                  + Add passengers
-                </button>
-              ) : (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                  Passengers locked
-                </span>
-              )}
-            </div>
+              <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+                <div className="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Passengers Manifest</h3>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono">
+                      {passengers.length} of {qty} travelers
+                    </span>
+                  </div>
+                  {canManageBooking && !isExpired ? (
+                    <button 
+                      onClick={() => {
+                        setEditingPassenger(null);
+                        setNewPassenger({ firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food", salutation: "Mr." });
+                        setShowAddPassenger(true);
+                      }}
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1"
+                    >
+                      + Add Passenger
+                    </button>
+                  ) : (
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      Passengers locked
+                    </span>
+                  )}
+                </div>
 
             <div className="p-0 overflow-x-auto no-scrollbar">
                <table className="w-full text-left text-xs table-striped min-w-[700px]">
@@ -2228,27 +2240,33 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           {/* === PAYMENTS TAB === */}
           {adminActiveTab === "payments" && (
             <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-200 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <h3 className="font-bold text-slate-800 text-xs">Payments</h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 uppercase font-mono">
-                  Balance ₹ {booking.remainingAmount.toLocaleString('en-IN')}
-                </span>
-              </div>
-              <button 
-                onClick={() => {
-                  setPayAmount(booking.remainingAmount.toString());
-                  setPaymentSource('collected');
-                  setPayMode("UPI");
-                  setPayComments("");
-                  setShowCreatePayment(true);
-                }}
-                className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[10px] uppercase px-3 py-1 rounded transition-all shadow-sm"
-              >
-                + Payment
-              </button>
-            </div>
+              <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+                <div className="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Payment History & Transactions</h3>
+                    {booking.remainingAmount > 0 ? (
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 uppercase font-mono">
+                        Balance Due ₹{booking.remainingAmount.toLocaleString('en-IN')}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-mono">
+                        Fully Paid
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setPayAmount(booking.remainingAmount.toString());
+                      setPaymentSource('collected');
+                      setPayMode("UPI");
+                      setPayComments("");
+                      setShowCreatePayment(true);
+                    }}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1"
+                  >
+                    + Record Payment
+                  </button>
+                </div>
 
             {/* Inline Payment Submission block */}
             {showAddPaymentInline && (
