@@ -464,21 +464,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
     // Initialize passengers
     let passengersList: any[] = [];
-    
-    // Add main guest
-    passengersList.push({
-      id: 'main',
-      name: booking.fullName || booking.name || "Guest",
-      phone: booking.mobile || booking.phone || "Not specified",
-      email: booking.email || "Not specified",
-      gender: booking.gender || "Male",
-      age: booking.age || 20,
-      type: `${booking.trainClass || 'Sleeper'} Train`,
-      status: 'Form complete',
-      foodPreference: booking.foodPreference || "Normal Food",
-      roomSharing: booking.roomSharing || "Double"
-    });
-    
+    let parsedPersons: any[] = [];
     if (booking.passengers) {
       let parsed: any = null;
       if (typeof booking.passengers === 'string') {
@@ -486,47 +472,53 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       } else {
         parsed = booking.passengers;
       }
-      
-      const persons = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) 
-        ? (parsed.persons || parsed.passengers || null) 
-        : null;
-      if (Array.isArray(persons)) {
-        persons.forEach((p: any, idx: number) => {
-          if (p.name && p.name.toLowerCase() !== (booking.fullName || "").toLowerCase()) {
-            passengersList.push({
-              id: `co-${idx}`,
-              name: p.name,
-              phone: p.phone || "Not specified",
-              email: p.email || "Not specified",
-              gender: p.gender || "Male",
-              age: p.age || 20,
-              type: p.type || `${booking.trainClass || 'Sleeper'} Train`,
-              status: p.status || 'Form complete',
-              foodPreference: p.foodPreference || "Normal Food",
-              roomSharing: p.roomSharing || "Double",
-              idProof: p.idProof
-            });
-          }
-        });
-      } else if (Array.isArray(parsed)) {
-        parsed.forEach((p: any, idx: number) => {
-          if (p.name && p.name.toLowerCase() !== (booking.fullName || "").toLowerCase()) {
-            passengersList.push({
-              id: p.id || `p-${idx}`,
-              name: p.name,
-              phone: p.phone || "Not specified",
-              email: p.email || "Not specified",
-              gender: p.gender || "Male",
-              age: p.age || 20,
-              type: p.type || `${booking.trainClass || 'Sleeper'} Train`,
-              status: p.status || 'Form complete',
-              foodPreference: p.foodPreference || "Normal Food",
-              roomSharing: p.roomSharing || "Double",
-              idProof: p.idProof
-            });
-          }
-        });
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsedPersons = parsed;
+      } else if (parsed && typeof parsed === 'object') {
+        if (Array.isArray(parsed.persons) && parsed.persons.length > 0) {
+          parsedPersons = parsed.persons;
+        } else if (Array.isArray(parsed.passengers) && parsed.passengers.length > 0) {
+          parsedPersons = parsed.passengers;
+        }
       }
+    }
+
+    if (parsedPersons.length > 0) {
+      parsedPersons.forEach((p: any, idx: number) => {
+        const pTrain = p.trainOption || p.trainClass || booking.trainClass || 'Sleeper';
+        const pRoom = p.roomSharing || p.roomType || booking.roomType || 'Triple Sharing';
+        passengersList.push({
+          id: p.id || (idx === 0 ? 'main' : `p-${idx}`),
+          name: p.name || (idx === 0 ? booking.fullName || booking.name || "Guest" : `Traveler ${idx + 1}`),
+          phone: p.phone || (idx === 0 ? booking.mobile || booking.phone : "") || "Not specified",
+          email: p.email || (idx === 0 ? booking.email : "") || "Not specified",
+          gender: p.gender || (idx === 0 ? booking.gender : "Male") || "Male",
+          age: p.age || (idx === 0 ? booking.age : 20) || 20,
+          type: p.type || `${pTrain} Train`,
+          trainOption: pTrain,
+          status: p.status || 'Form complete',
+          foodPreference: p.foodPreference || (idx === 0 ? booking.foodPreference : "Normal Food") || "Normal Food",
+          roomSharing: pRoom,
+          idProof: p.idProof
+        });
+      });
+    } else {
+      // Add main guest fallback when no individual persons payload exists
+      const defaultTrain = booking.trainClass || 'Sleeper';
+      const defaultRoom = booking.roomType || booking.roomSharing || 'Triple Sharing';
+      passengersList.push({
+        id: 'main',
+        name: booking.fullName || booking.name || "Guest",
+        phone: booking.mobile || booking.phone || "Not specified",
+        email: booking.email || "Not specified",
+        gender: booking.gender || "Male",
+        age: booking.age || 20,
+        type: `${defaultTrain} Train`,
+        trainOption: defaultTrain,
+        status: 'Form complete',
+        foodPreference: booking.foodPreference || "Normal Food",
+        roomSharing: defaultRoom
+      });
     }
     
     // Pad passengers to match expected passenger count in header (booking.numberOfTravelers)
@@ -622,7 +614,24 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           };
 
           // Build per-passenger line items from individual selections
-          const persons: any[] = meta?.persons || booking.passengers?.persons || [];
+          let persons: any[] = [];
+          if (meta?.persons && Array.isArray(meta.persons) && meta.persons.length > 0) {
+            persons = meta.persons;
+          } else if (booking.passengers) {
+            let parsed: any = booking.passengers;
+            if (typeof parsed === 'string') {
+              try { parsed = JSON.parse(parsed); } catch (e) {}
+            }
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              persons = parsed;
+            } else if (parsed && typeof parsed === 'object') {
+              if (Array.isArray(parsed.persons) && parsed.persons.length > 0) {
+                persons = parsed.persons;
+              } else if (Array.isArray(parsed.passengers) && parsed.passengers.length > 0) {
+                persons = parsed.passengers;
+              }
+            }
+          }
           const defaultItems: any[] = [];
 
           // Resolve variant-specific base price for the customer's pickup city
@@ -2272,7 +2281,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
                         {/* Room Sharing */}
                         <td className="px-4 py-3 font-medium text-slate-700">
-                          {getRoomSharingLabel(booking.roomType)}
+                          {getRoomSharingLabel(p.roomSharing || p.roomType || booking.roomType)}
                         </td>
 
                         {/* Food Preference */}
