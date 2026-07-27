@@ -594,8 +594,12 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         return false;
       };
 
-      let variantBasePrice = resObj?.price || 21499;
-      if (bookingObj.pickupCity && resObj?.variants && Array.isArray(resObj.variants)) {
+      // Use the booking's stored adjustedPrice (exact per-person variant price from booking form)
+      // Only fall back to trip data if adjustedPrice is not available
+      let variantBasePrice = 0;
+      if (bookingObj.adjustedPrice && bookingObj.adjustedPrice > 0) {
+        variantBasePrice = bookingObj.adjustedPrice;
+      } else if (bookingObj.pickupCity && resObj?.variants && Array.isArray(resObj.variants)) {
         const cityNorm = bookingObj.pickupCity.toLowerCase().trim();
         const vMatch = resObj.variants.find((v: any) => {
           const loc = String(v.location || v.cityName || v.name || v.variantName || v.city || '').toLowerCase().trim();
@@ -605,6 +609,9 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           const vPrice = parseFloat(vMatch.discountedPrice) || parseFloat(vMatch.originalPrice) || 0;
           if (vPrice > 0) variantBasePrice = vPrice;
         }
+        if (variantBasePrice === 0) variantBasePrice = resObj?.price || 21499;
+      } else {
+        variantBasePrice = resObj?.price || 21499;
       }
 
       const routeStr = bookingObj.pickupCity ? ` (${bookingObj.pickupCity}→Himachal)` : '';
