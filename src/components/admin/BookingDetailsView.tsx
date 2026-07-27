@@ -3046,50 +3046,53 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                   let grandTotal = 0;
 
                   return (
-                    <div className="space-y-6 pt-2">
-                      {Object.entries(grouped).map(([pid, items]: [string, any], pIndex) => {
-                        let personName = "Traveler";
-                        const firstItem = items[0];
-                        if (firstItem && firstItem.name) {
-                          const nameMatch = firstItem.name.match(/\[(.*?)\]$/);
-                          if (nameMatch && nameMatch[1]) {
-                             personName = nameMatch[1];
-                          }
-                        }
+                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 bg-slate-100/70 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th className="px-5 py-3">Description</th>
+                            <th className="px-5 py-3 text-right w-28">Rate</th>
+                            <th className="px-5 py-3 text-right w-20">Qty</th>
+                            <th className="px-5 py-3 text-right w-36">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {Object.entries(grouped).map(([pid, items]: [string, any], pIndex) => {
+                            let personName = "Traveler";
+                            const firstItem = items[0];
+                            if (firstItem && firstItem.name) {
+                              const nameMatch = firstItem.name.match(/\[(.*?)\]$/);
+                              if (nameMatch && nameMatch[1]) {
+                                 personName = nameMatch[1];
+                              }
+                            }
 
-                        let subtotal = 0;
-                        let discountAmount = 0;
-                        items.forEach((item: any) => {
-                           if (item.category === 'discounts' || item.rate < 0) {
-                             discountAmount += item.rate * item.qty;
-                           } else {
-                             subtotal += item.rate * item.qty;
-                           }
-                        });
-                        
-                        const subtotalAfterDiscount = subtotal + discountAmount;
-                        const personGst = Math.round(subtotalAfterDiscount * gstRate);
-                        const personTotal = subtotalAfterDiscount + personGst;
-                        
-                        grandTotal += personTotal;
+                            let subtotal = 0;
+                            let discountAmount = 0;
+                            items.forEach((item: any) => {
+                               if (item.category === 'discounts' || item.rate < 0) {
+                                 discountAmount += item.rate * item.qty;
+                               } else {
+                                 subtotal += item.rate * item.qty;
+                               }
+                            });
+                            
+                            const subtotalAfterDiscount = subtotal + discountAmount;
+                            const personGst = Math.round(subtotalAfterDiscount * gstRate);
+                            const personTotal = subtotalAfterDiscount + personGst;
+                            
+                            grandTotal += personTotal;
 
-                        return (
-                          <div key={pid} className="border border-slate-200 rounded-lg overflow-hidden">
-                            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-                              <h4 className="font-bold text-slate-800 uppercase tracking-wide text-[11px]">
-                                PERSON {pIndex + 1}: {personName}
-                              </h4>
-                            </div>
-                            <table className="w-full text-left text-xs border-collapse">
-                              <thead>
-                                <tr className="border-b border-slate-100 text-[10px] text-slate-500 uppercase tracking-wider bg-white">
-                                  <th className="px-4 py-2.5 font-semibold">Description</th>
-                                  <th className="px-4 py-2.5 text-right font-semibold w-24">Rate</th>
-                                  <th className="px-4 py-2.5 text-right font-semibold w-16">Qty</th>
-                                  <th className="px-4 py-2.5 text-right font-semibold w-28">Amount</th>
+                            return (
+                              <React.Fragment key={pid}>
+                                {/* Person Section Header Row */}
+                                <tr className="bg-slate-100/90 border-t border-b border-slate-200">
+                                  <td colSpan={4} className="px-5 py-2.5 font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                    PERSON {pIndex + 1}: {personName}
+                                  </td>
                                 </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-50 text-slate-700 bg-white">
+
+                                {/* Line Items */}
                                 {items.map((item: any, idx: number) => {
                                   const isDiscount = item.category === 'discounts' || item.rate < 0;
                                   const absRate = Math.abs(item.rate);
@@ -3097,38 +3100,45 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                                   const cleanName = item.name.replace(/\s*\[.*?\]$/, '');
 
                                   return (
-                                    <tr key={item.id || idx}>
-                                      <td className="px-4 py-3">{cleanName}</td>
-                                      <td className="px-4 py-3 text-right font-mono">{(isDiscount ? "- " : "") + absRate.toLocaleString('en-IN')}</td>
-                                      <td className="px-4 py-3 text-right font-mono">{item.qty}</td>
-                                      <td className="px-4 py-3 text-right font-mono">{(isDiscount ? "- " : "") + absAmt.toLocaleString('en-IN')}</td>
+                                    <tr key={item.id || idx} className="hover:bg-slate-50/50 transition-colors">
+                                      <td className="px-5 py-3 font-normal text-slate-800">{cleanName}</td>
+                                      <td className="px-5 py-3 text-right font-mono text-slate-700">{(isDiscount ? "- " : "") + absRate.toLocaleString('en-IN')}</td>
+                                      <td className="px-5 py-3 text-right font-mono text-slate-700">{item.qty}</td>
+                                      <td className="px-5 py-3 text-right font-mono font-semibold text-slate-900">{(isDiscount ? "- " : "") + absAmt.toLocaleString('en-IN')}</td>
                                     </tr>
                                   );
                                 })}
-                                <tr className="bg-slate-50/50 border-t border-slate-100">
-                                  <td colSpan={3} className="px-4 py-2.5 text-right font-medium text-slate-500">Subtotal</td>
-                                  <td className="px-4 py-2.5 text-right font-mono font-medium text-slate-700">{subtotalAfterDiscount.toLocaleString('en-IN')}</td>
+
+                                {/* Subtotal & GST */}
+                                <tr className="bg-slate-50/40 border-t border-slate-100">
+                                  <td colSpan={3} className="px-5 py-2 text-right font-medium text-slate-500">Subtotal</td>
+                                  <td className="px-5 py-2 text-right font-mono font-medium text-slate-700">{subtotalAfterDiscount.toLocaleString('en-IN')}</td>
                                 </tr>
                                 {personGst > 0 && (
-                                  <tr className="bg-slate-50/50">
-                                    <td colSpan={3} className="px-4 py-2.5 text-right font-medium text-slate-500">GST @ {Math.round(gstRate * 100)}%</td>
-                                    <td className="px-4 py-2.5 text-right font-mono font-medium text-slate-700">{personGst.toLocaleString('en-IN')}</td>
+                                  <tr className="bg-slate-50/40">
+                                    <td colSpan={3} className="px-5 py-2 text-right font-medium text-slate-500">GST @ {Math.round(gstRate * 100)}%</td>
+                                    <td className="px-5 py-2 text-right font-mono font-medium text-slate-700">{personGst.toLocaleString('en-IN')}</td>
                                   </tr>
                                 )}
-                                <tr className="bg-[#f8f9fa] border-t border-slate-200">
-                                  <td colSpan={3} className="px-4 py-3 text-right font-bold text-slate-800 text-[13px]">Person Total</td>
-                                  <td className="px-4 py-3 text-right font-mono font-bold text-[#F5760E] text-[13px]">{personTotal.toLocaleString('en-IN')}</td>
+                                <tr className="bg-amber-50/20 border-b-2 border-slate-200">
+                                  <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-slate-800 text-xs">Person Total</td>
+                                  <td className="px-5 py-2.5 text-right font-mono font-bold text-[#F5760E] text-xs">{personTotal.toLocaleString('en-IN')}</td>
                                 </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        );
-                      })}
-
-                      <div className="flex justify-between items-center px-5 py-4 bg-slate-900 rounded-lg text-white mt-6 shadow-md border border-slate-800">
-                        <span className="font-bold uppercase tracking-[0.1em] text-xs text-slate-300">Grand Total</span>
-                        <span className="font-mono font-black text-xl text-white">₹ {grandTotal.toLocaleString('en-IN')}</span>
-                      </div>
+                              </React.Fragment>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-slate-900 text-white font-bold">
+                            <td colSpan={3} className="px-5 py-4 text-left font-bold uppercase tracking-[0.1em] text-xs text-slate-300">
+                              Grand Total
+                            </td>
+                            <td className="px-5 py-4 text-right font-mono font-black text-xl text-white">
+                              ₹ {grandTotal.toLocaleString('en-IN')}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
                     </div>
                   );
                 })()}
