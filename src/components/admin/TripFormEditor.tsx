@@ -421,77 +421,77 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
         <div className="col-span-12 md:col-span-9 xl:col-span-9.5 bg-white border border-slate-200 rounded-lg p-8 shadow-sm min-h-[70vh]">
           
           {/* OVERVIEW TAB CONTENT */}
-          <TabsContent value="overview" className="mt-0 space-y-6">
-            <div className="bg-[#fffbea] border border-[#fce588] rounded p-4 text-xs text-slate-700 leading-normal flex items-start gap-2.5 shadow-sm">
-              <span className="bg-red-500 text-white font-bold px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider mt-0.5">New</span>
-              <div>
-                You can now set a <strong>payment deadline</strong> for each tour &mdash; such as 20 days before departure &mdash; by which full payment must be made. Before the deadline, customers can choose to pay either the minimum deposit or the full amount to confirm their booking. <a href="#" className="text-primary font-bold hover:underline ml-1">Set a payment deadline for this tour &rarr;</a>
-              </div>
+          <TabsContent value="overview" className="mt-0 space-y-6 animate-fade-in">
+            {/* Minimal Banner */}
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-transparent rounded-xl border border-orange-100">
+              <div className="bg-[#FF5400] text-white font-black px-2 py-1 rounded text-[8px] uppercase tracking-widest shrink-0 shadow-sm">Tip</div>
+              <p className="text-[11px] text-slate-600 font-medium">You can now set a <strong>payment deadline</strong> for each tour. <a href="#" className="text-[#FF5400] font-bold hover:underline">Configure deadlines &rarr;</a></p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="bg-slate-800 text-white font-mono font-bold px-2 py-0.5 rounded text-[10px] uppercase">
-                  {form.shortName || form.id || "BKTH"}
-                </span>
-                <h3 className="text-base font-bold text-slate-900">{form.title || "Untitled Trip"}</h3>
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+              {/* Header */}
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded uppercase tracking-widest">
+                    {form.shortName || form.id || "BKTH"}
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#FF5400] flex items-center gap-1">
+                    <Globe className="w-3 h-3" /> INR / Asia/Kolkata
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">{form.title || "Untitled Trip"}</h3>
               </div>
               
-              <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider pb-3 border-b flex items-center gap-1.5">
-                <span>✔️ INR / Asia/Kolkata</span>
+              {/* Quick Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-slate-100">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Advertised Price</span>
+                  <div className="text-lg font-black text-slate-800">₹{Number(form.price || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Min/Max Capacity</span>
+                  <div className="text-xs font-bold text-slate-600 pt-1">
+                    {form.minGroupSize || 1} to {form.maxGroupSize || 30} pax
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Booking Lead Time</span>
+                  <div className="text-xs font-bold text-slate-600 pt-1">Last moment allowed</div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Min Deposit</span>
+                  <div className="text-xs font-bold text-slate-600 pt-1">100% upfront</div>
+                </div>
               </div>
-              
-              <div className="space-y-3.5 pt-2">
-                <h4 className="text-xs font-bold text-slate-700">Departure calendar overview</h4>
+
+              {/* Calendar Section */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Departure Calendar Overview</h4>
+                  <span className="text-[10px] font-bold text-[#FF5400] bg-orange-50 px-2 py-0.5 rounded">{form.availableDates?.length || 0} Scheduled</span>
+                </div>
                 
-                <div className="border border-slate-200 rounded p-3 bg-slate-50/50">
-                  <div className="grid grid-cols-7 gap-1 text-center font-bold text-slate-400 text-[10px] mb-2 uppercase border-b pb-1.5">
-                    <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                <div className="bg-slate-50/50 rounded-xl border border-slate-100 p-1">
+                  <div className="grid grid-cols-7 gap-1 text-center font-black text-slate-300 text-[9px] py-2 uppercase tracking-widest border-b border-slate-100/50 mx-2">
+                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
                   </div>
                   
-                  <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 no-scrollbar text-xs">
+                  <div className="space-y-1 max-h-[140px] overflow-y-auto no-scrollbar p-2">
                     {form.availableDates?.length > 0 ? (
                       form.availableDates.map((dateObj: any, idx: number) => {
                         const d = typeof dateObj === 'string' ? new Date(dateObj) : new Date(dateObj.date);
                         return (
-                          <div key={idx} className="flex items-center justify-between bg-white border border-slate-200/80 px-3 py-1.5 rounded shadow-sm">
-                            <span className="font-semibold text-slate-700">{d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100 text-[10px] font-bold">
-                              Capacity: {dateObj.capacity || 20}
+                          <div key={idx} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-100/50 hover:border-slate-200 transition-colors">
+                            <span className="font-bold text-xs text-slate-700">{d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            <span className="text-[10px] font-black tracking-wide bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase">
+                              Cap: {dateObj.capacity || 20}
                             </span>
                           </div>
                         );
                       })
                     ) : (
-                      <p className="text-center text-slate-400 italic py-4 text-[11px]">No departure dates scheduled yet.</p>
+                      <p className="text-center text-slate-400 italic py-6 text-[11px] font-medium">No departure dates scheduled yet.</p>
                     )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
-                <div className="space-y-3 bg-slate-50/40 p-4 border border-slate-200/60 rounded">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Advertised Price</span>
-                  <span className="text-lg font-bold text-slate-800">₹{Number(form.price || 0).toLocaleString('en-IN')}</span>
-                  <p className="text-[9px] text-slate-400">For display alone &mdash; not used directly by booking form</p>
-                </div>
-                
-                <div className="space-y-3 bg-slate-50/40 p-4 border border-slate-200/60 rounded text-xs leading-normal">
-                  <div className="space-y-0.5">
-                    <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Minimum Passengers</p>
-                    <p className="text-slate-700 font-medium">Will operate with even 1 passenger</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Maximum Passengers</p>
-                    <p className="text-slate-700 font-medium">Record booking in inquiry mode, if more than {form.maxGroupSize || 20} passengers</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Booking Lead Time</p>
-                    <p className="text-slate-700 font-medium">Bookings allowed till last moment</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Minimum Deposit Amount</p>
-                    <p className="text-slate-700 font-medium">100% of total booking amount</p>
                   </div>
                 </div>
               </div>
