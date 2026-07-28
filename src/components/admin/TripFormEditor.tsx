@@ -308,6 +308,20 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
     }
   };
 
+  const updateDayPhotoTitle = (dayIndex: number, photoIndex: number, newTitle: string) => {
+    const updated = [...form.itinerary];
+    const photos = [...(updated[dayIndex].photos || [])];
+    const rawPhoto = photos[photoIndex] || "";
+    const [url] = rawPhoto.split('|');
+    if (newTitle.trim()) {
+      photos[photoIndex] = `${url}|${newTitle.trim()}`;
+    } else {
+      photos[photoIndex] = url;
+    }
+    updated[dayIndex] = { ...updated[dayIndex], photos };
+    setForm({ ...form, itinerary: updated });
+  };
+
   const addFaq = () => setForm({ ...form, faqs: [...form.faqs, emptyFaq()] });
   const updateFaq = (index: number, field: keyof FAQ, value: string) => {
     const updated = [...form.faqs];
@@ -1830,19 +1844,41 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                     </div>
                   </div>
 
-                  {/* Photos */}
+                  {/* Photos & Captions */}
                   <div className="pt-3">
-                    <div className="flex flex-wrap gap-2 items-center">
+                    <Label className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5 block">
+                      Day Photos &amp; Captions
+                    </Label>
+                    <div className="flex flex-wrap gap-2.5 items-center">
                       {day.photos?.map((p: string, pIdx: number) => {
-                        const [url] = p.split('|');
+                        const parts = p.split('|');
+                        const url = parts[0];
+                        const photoName = parts.slice(1).join('|') || "";
                         return (
-                          <div key={pIdx} className="relative group/photo w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0">
-                             <img src={formatUrl(url)} className="w-full h-full object-cover" />
-                             <button type="button" onClick={() => removeDayPhoto(idx, pIdx)} className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity"><Trash2 className="h-3 w-3" /></button>
+                          <div key={pIdx} className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-1.5 pr-2.5 shadow-2xs group/photo">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-white relative">
+                              <img src={formatUrl(url)} className="w-full h-full object-cover" alt={photoName || "Day Photo"} />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                              <Input 
+                                value={photoName} 
+                                placeholder="Photo name / title..." 
+                                onChange={(e) => updateDayPhotoTitle(idx, pIdx, e.target.value)}
+                                className="h-6 text-[10px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white w-32 sm:w-44 px-2"
+                              />
+                            </div>
+                            <button 
+                              type="button" 
+                              onClick={() => removeDayPhoto(idx, pIdx)} 
+                              className="text-slate-400 hover:text-rose-600 p-1 rounded-md transition-colors shrink-0"
+                              title="Delete photo"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           </div>
-                        )
+                        );
                       })}
-                      <div className="w-20">
+                      <div className="w-20 h-11 shrink-0">
                         <ImageUpload compact multiple onUpload={url => updateDay(idx, "photos", [...(day.photos || []), url])} />
                       </div>
                     </div>
