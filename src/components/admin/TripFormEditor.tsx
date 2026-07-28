@@ -308,13 +308,19 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
     }
   };
 
-  const updateDayPhotoTitle = (dayIndex: number, photoIndex: number, newTitle: string) => {
+  const updateDayPhoto = (dayIndex: number, photoIndex: number, newTitle?: string, newTag?: string) => {
     const updated = [...form.itinerary];
     const photos = [...(updated[dayIndex].photos || [])];
     const rawPhoto = photos[photoIndex] || "";
-    const [url] = rawPhoto.split('|');
-    if (newTitle.trim()) {
-      photos[photoIndex] = `${url}|${newTitle.trim()}`;
+    const parts = rawPhoto.split('|');
+    const url = parts[0];
+    const title = newTitle !== undefined ? newTitle : (parts[1] || "");
+    const tag = newTag !== undefined ? newTag : (parts[2] || "none");
+    
+    if (tag && tag !== "none") {
+      photos[photoIndex] = `${url}|${title}|${tag}`;
+    } else if (title) {
+      photos[photoIndex] = `${url}|${title}`;
     } else {
       photos[photoIndex] = url;
     }
@@ -1853,19 +1859,29 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                       {day.photos?.map((p: string, pIdx: number) => {
                         const parts = p.split('|');
                         const url = parts[0];
-                        const photoName = parts.slice(1).join('|') || "";
+                        const photoName = parts[1] || "";
+                        const photoTag = parts[2] || "none";
                         return (
                           <div key={pIdx} className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-1.5 pr-2.5 shadow-2xs group/photo">
-                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-white relative">
+                            <div className="w-11 h-11 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-white relative">
                               <img src={formatUrl(url)} className="w-full h-full object-cover" alt={photoName || "Day Photo"} />
                             </div>
-                            <div className="flex flex-col gap-0.5">
+                            <div className="flex flex-col gap-1">
                               <Input 
                                 value={photoName} 
                                 placeholder="Photo name / title..." 
-                                onChange={(e) => updateDayPhotoTitle(idx, pIdx, e.target.value)}
-                                className="h-6 text-[10px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white w-32 sm:w-44 px-2"
+                                onChange={(e) => updateDayPhoto(idx, pIdx, e.target.value, photoTag)}
+                                className="h-5 text-[10px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white w-28 sm:w-36 px-2"
                               />
+                              <select 
+                                value={photoTag} 
+                                onChange={(e) => updateDayPhoto(idx, pIdx, photoName, e.target.value)}
+                                className="h-5 text-[9px] font-bold border border-slate-200 rounded bg-white px-1 text-slate-700 focus:outline-none focus:border-[#FF6B00]"
+                              >
+                                <option value="none">No Badge (Nothing)</option>
+                                <option value="included">✅ Included</option>
+                                <option value="self-paid">🪙 Self Paid</option>
+                              </select>
                             </div>
                             <button 
                               type="button" 
