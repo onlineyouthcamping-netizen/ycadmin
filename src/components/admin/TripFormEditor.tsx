@@ -201,13 +201,19 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
           }));
         }
 
-        if (clean.gallery) {
-          clean.gallery = clean.gallery.map((img: any, i: number) => ({
-            url: typeof img === 'string' ? img : img.url,
-            alt: img.alt || "",
-            order: Number(img.order || i)
-          }));
-        }
+        const rawGallery = (clean.gallery && clean.gallery.length > 0) 
+          ? clean.gallery 
+          : (clean.highlights && clean.highlights.length > 0) 
+            ? clean.highlights 
+            : (clean.images && clean.images.length > 0) 
+              ? clean.images 
+              : [];
+
+        clean.gallery = rawGallery.map((img: any, i: number) => ({
+          url: typeof img === 'string' ? img : (img.url || img.image || img.img || img.src || img.path || ""),
+          alt: typeof img === 'string' ? "" : (img.alt || img.name || img.title || ""),
+          order: Number(img.order || i)
+        })).filter((img: any) => img.url);
 
         if (clean.accommodations) {
           clean.accommodations = clean.accommodations.map((acc: any) => ({
