@@ -183,9 +183,9 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={`relative flex flex-col items-center justify-center transition-all ${
-          compact ? "p-2 gap-1" : "p-6 gap-4"
-        } rounded-2xl border-2 border-dashed ${
-          isDragging ? "border-primary bg-primary/10 scale-[1.02]" : "border-primary/20 bg-muted/50 hover:bg-muted"
+          compact ? "p-2 gap-1" : "p-6 gap-3"
+        } rounded-lg border-2 border-dashed ${
+          isDragging ? "border-[#FF5400] bg-[#FF5400]/5 scale-[1.02]" : "border-slate-200 bg-slate-50 hover:bg-slate-100"
         }`}
       >
         {value && !multiple ? (
@@ -235,13 +235,13 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
           </div>
         ) : (
           <div className="text-center space-y-2">
-            <div className={`${compact ? 'w-6 h-6' : 'w-12 h-12'} bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary`}>
-              <Upload className={`${compact ? 'w-3 h-3' : 'w-5 h-5'}`} />
+            <div className={`${compact ? 'w-6 h-6' : 'w-10 h-10'} bg-white border border-slate-200 rounded-full flex items-center justify-center mx-auto text-slate-500 shadow-sm`}>
+              <Upload className={`${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
             </div>
             {!compact && (
-              <div>
-                <p className="text-xs font-bold">Drag & drop your {multiple ? 'photos & videos' : 'photo or video'} here</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-700">Drag & drop your {multiple ? 'photos & videos' : 'photo or video'} here</p>
+                <p className="text-[10px] text-slate-400 font-medium">
                   JPG, PNG, WEBP, MP4, WEBM, MOV • Max 50MB
                 </p>
               </div>
@@ -274,8 +274,8 @@ export function ImageUpload({ onUpload, onMultipleUpload, label, value, multiple
           />
           <Label 
             htmlFor={`file-upload-${id}`}
-            className={`flex items-center justify-center rounded-xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest cursor-pointer hover:opacity-90 shadow-lg shadow-primary/20 transition-all ${
-              compact ? 'px-2 h-6' : 'px-6 h-10'
+            className={`flex items-center justify-center rounded border border-slate-200 bg-white text-slate-700 text-xs font-medium cursor-pointer hover:bg-slate-50 shadow-sm transition-all ${
+              compact ? 'px-2 h-7 text-[10px]' : 'px-4 h-8'
             }`}
           >
             {compact ? 'Add' : 'Browse Files'}

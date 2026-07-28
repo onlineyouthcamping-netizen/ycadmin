@@ -102,8 +102,8 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
   const [saving, setSaving] = useState(false);
   const [customFields, setCustomFields] = useState([]);
   const [globalAttractions, setGlobalAttractions] = useState<Attraction[]>([]);
-  const [calMonth, setCalMonth] = useState(4); // May (0-indexed)
-  const [calYear, setCalYear] = useState(2026);
+  const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
   
   const [newHighlight, setNewHighlight] = useState("");
   const [newCityName, setNewCityName] = useState("");
@@ -158,6 +158,7 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
         activities: (editing as any).activities || [],
         accommodations: (editing as any).accommodations || [],
         reviews: (editing as any).reviews || [],
+        departurePriceOverrides: (editing as any).departurePriceOverrides || [],
         reels: (editing as any).reels || [],
         seo: {
           ...defaultForm.seo,
@@ -397,27 +398,27 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
         
         {/* LEFT TAB BAR */}
         <div className="col-span-12 md:col-span-3 xl:col-span-2.5">
-          <TabsList className="flex flex-col h-auto w-full bg-white border border-slate-200 rounded-md shadow-sm p-1 space-y-0.5">
-            <TabsTrigger value="overview" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">OVERVIEW</TabsTrigger>
-            <TabsTrigger value="details" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">BASIC DETAILS</TabsTrigger>
-            <TabsTrigger value="pricing" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">PRICES & RATES</TabsTrigger>
-            <TabsTrigger value="dates" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">CALENDAR</TabsTrigger>
-            <TabsTrigger value="policies" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">SETTINGS</TabsTrigger>
-            <TabsTrigger value="itinerary" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">DETAILED ITINERARY</TabsTrigger>
-            <TabsTrigger value="custom" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">EXTRA BOOKING FIELDS</TabsTrigger>
-            <TabsTrigger value="addons" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">ADDONS & CROSS-SELLS</TabsTrigger>
-            <TabsTrigger value="email" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">E-MAIL NOTIFICATIONS</TabsTrigger>
-            <TabsTrigger value="pdf" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">
-              PDF SETTINGS <span className="ml-1 bg-red-500 text-white text-[8px] px-1 py-0.5 rounded font-black">NEW</span>
+          <TabsList className="flex flex-col h-auto w-full bg-transparent p-0 space-y-1">
+            <TabsTrigger value="overview" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">OVERVIEW</TabsTrigger>
+            <TabsTrigger value="details" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">BASIC DETAILS</TabsTrigger>
+            <TabsTrigger value="pricing" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">PRICES & RATES</TabsTrigger>
+            <TabsTrigger value="dates" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">CALENDAR</TabsTrigger>
+            <TabsTrigger value="policies" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">SETTINGS</TabsTrigger>
+            <TabsTrigger value="itinerary" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">DETAILED ITINERARY</TabsTrigger>
+            <TabsTrigger value="custom" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">EXTRA BOOKING FIELDS</TabsTrigger>
+            <TabsTrigger value="addons" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">ADDONS & CROSS-SELLS</TabsTrigger>
+            <TabsTrigger value="email" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">E-MAIL NOTIFICATIONS</TabsTrigger>
+            <TabsTrigger value="pdf" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">
+              PDF SETTINGS
             </TabsTrigger>
-            <TabsTrigger value="multicity" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">LOCATION</TabsTrigger>
-            <TabsTrigger value="advanced" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">ADVANCED SETTINGS</TabsTrigger>
-            <TabsTrigger value="experimental" className="w-full justify-start py-2.5 px-3 text-left text-xs font-semibold text-slate-650 rounded hover:bg-slate-50/50 hover:text-slate-800 transition-all data-[state=active]:bg-[#ffcb05] data-[state=active]:text-slate-900 data-[state=active]:font-bold data-[state=active]:border-l-[3px] data-[state=active]:border-[#FF5400]">EXPERIMENTAL</TabsTrigger>
+            <TabsTrigger value="multicity" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">LOCATION</TabsTrigger>
+            <TabsTrigger value="advanced" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">ADVANCED SETTINGS</TabsTrigger>
+            <TabsTrigger value="experimental" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#D4541A] data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-slate-200">EXPERIMENTAL</TabsTrigger>
           </TabsList>
         </div>
 
         {/* MIDDLE CONTENT PANEL */}
-        <div className="col-span-12 md:col-span-6 xl:col-span-6.5 bg-white border border-slate-200 rounded p-6 shadow-sm min-h-[70vh]">
+        <div className="col-span-12 md:col-span-9 xl:col-span-9.5 bg-white border border-slate-200 rounded-lg p-8 shadow-sm min-h-[70vh]">
           
           {/* OVERVIEW TAB CONTENT */}
           <TabsContent value="overview" className="mt-0 space-y-6">
@@ -497,48 +498,16 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
             </div>
           </TabsContent>
 
-            <TabsContent value="details" className="mt-0 space-y-8 animate-fade-in">
-             {/* ─── Shared/Private trip selection ─── */}
-             <div className="space-y-3 bg-slate-50/50 p-4 border border-slate-200 rounded-xl shadow-sm">
-               <Label className="text-xs font-semibold text-slate-800">Shared / private trip? *</Label>
-               <div className="flex gap-6 mt-1">
-                 <label className="flex items-start gap-2.5 cursor-pointer">
-                   <input 
-                     type="radio" 
-                     name="sharedPrivate" 
-                     checked={form.tripType !== "private"} 
-                     onChange={() => setForm({ ...form, tripType: "shared" })}
-                     className="mt-1 accent-[#FF5400] h-3.5 w-3.5" 
-                   />
-                   <div>
-                     <span className="text-xs font-semibold text-slate-850">Shared trip</span>
-                     <p className="text-[10px] text-slate-400 mt-0.5 leading-normal">This is for someone who is willing to share the trip with other participants.</p>
-                   </div>
-                 </label>
-                 <label className="flex items-start gap-2.5 cursor-pointer">
-                   <input 
-                     type="radio" 
-                     name="sharedPrivate" 
-                     checked={form.tripType === "private"} 
-                     onChange={() => setForm({ ...form, tripType: "private" })}
-                     className="mt-1 accent-[#FF5400] h-3.5 w-3.5" 
-                   />
-                   <div>
-                     <span className="text-xs font-semibold text-slate-855">Private trip</span>
-                     <p className="text-[10px] text-slate-400 mt-0.5 leading-normal">This is exclusively for someone who does not wish to share their trip with other participants.</p>
-                   </div>
-                 </label>
-               </div>
-             </div>
-
+            <TabsContent value="details" className="mt-0 space-y-6 animate-fade-in">
              {/* ─── Basic Details Fields ─── */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title" className="text-xs font-semibold text-slate-800">Trip Name *</Label>
-                  <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value, slug: slugify(e.target.value) })} className="h-9 text-xs rounded border-slate-250 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400]" />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Trip Name</Label>
+                  <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value, slug: slugify(e.target.value) })} className="h-8 text-sm font-bold border-0 border-b border-transparent hover:border-slate-200 focus-visible:border-[#FF5400] focus-visible:ring-0 rounded-none px-0 shadow-none bg-transparent" placeholder="Enter trip name..." />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tripCode" className="text-xs font-semibold text-slate-800">Trip Code *</Label>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="tripCode" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Trip Code</Label>
                   <Input 
                     id="tripCode" 
                     value={form.shortName || form.id || ""} 
@@ -546,133 +515,114 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                       const val = e.target.value.toUpperCase();
                       setForm({ ...form, id: val, shortName: val, tripCode: val });
                     }} 
-                    placeholder="e.g. BKTH" 
+                    placeholder="e.g. MKA-1" 
                     autoComplete="off"
-                    className="h-9 text-xs rounded border-slate-250 font-bold uppercase focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400]" 
+                    className="h-8 text-sm font-bold uppercase border-0 border-b border-transparent hover:border-slate-200 focus-visible:border-[#FF5400] focus-visible:ring-0 rounded-none px-0 shadow-none bg-transparent text-[#FF5400]" 
                   />
                 </div>
-             </div>
 
-             {/* Duration, Min/Max participants, Display Order */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 {/* Duration */}
-                 <div className="space-y-2 min-w-0">
-                   <Label className="text-xs font-semibold text-slate-800">Duration *</Label>
-                   <div className="space-y-2">
-                     <Select defaultValue="nights-days">
-                       <SelectTrigger className="w-full h-9 text-xs border-slate-250 focus:ring-[#FF5400] focus:border-[#FF5400] bg-white">
-                         <SelectValue placeholder="Nights/Days Format" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="nights-days">Nights/Days Format</SelectItem>
-                       </SelectContent>
-                     </Select>
-                     {(() => {
-                       const durationStr = String(form.duration || "");
-                       const nightsMatch = durationStr.match(/(\d+)\s*(?:Nights?|N)/i);
-                       const daysMatch = durationStr.match(/(\d+)\s*(?:Days?|D)/i);
-                       const nightsVal = nightsMatch ? nightsMatch[1] : "";
-                       const daysVal = daysMatch ? daysMatch[1] : "";
-                       const updateDuration = (n: string, d: string) => {
-                         setForm({ ...form, duration: `${n} Nights / ${d} Days` });
-                       };
-                       return (
-                         <div className="flex gap-2 items-center bg-slate-50/50 p-1.5 rounded-lg border border-slate-200 w-fit">
-                           <Input 
-                             type="number" 
-                             value={nightsVal} 
-                             onChange={(e) => updateDuration(e.target.value, daysVal)} 
-                             className="h-8 w-12 text-center text-xs border-slate-250 bg-white focus-visible:ring-[#FF5400] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-                           />
-                           <span className="text-xs font-medium text-slate-600">Nights</span>
-                           <span className="text-slate-300">/</span>
-                           <Input 
-                             type="number" 
-                             value={daysVal} 
-                             onChange={(e) => updateDuration(nightsVal, e.target.value)} 
-                             className="h-8 w-12 text-center text-xs border-slate-250 bg-white focus-visible:ring-[#FF5400] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-                           />
-                           <span className="text-xs font-medium text-slate-600">Days</span>
-                         </div>
-                       );
-                     })()}
-                   </div>
-                 </div>
- 
-                 {/* Min/Max Participants */}
-                 <div className="space-y-2 min-w-0">
-                   <Label className="text-xs font-semibold text-slate-800">Set minimum and maximum participants *</Label>
-                   <div className="flex gap-2 items-center">
-                     <span className="text-xs text-slate-400">MIN</span>
-                     <Input 
-                       type="number" 
-                       value={form.minGroupSize || 1} 
-                       onChange={(e) => setForm({ ...form, minGroupSize: Number(e.target.value) })} 
-                       className="h-9 w-16 text-center text-xs border-slate-250 focus-visible:ring-[#FF5400]" 
-                     />
-                     <span className="text-slate-400">—</span>
-                     <span className="text-xs text-slate-400">MAX</span>
-                     <Input 
-                       type="number" 
-                       value={form.maxGroupSize || 30} 
-                       onChange={(e) => setForm({ ...form, maxGroupSize: Number(e.target.value) })} 
-                       className="h-9 w-16 text-center text-xs border-slate-250 focus-visible:ring-[#FF5400]" 
-                     />
-                   </div>
-                 </div>
-             </div>
+                {/* Duration */}
+                <div className="space-y-1.5 min-w-0">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Duration</Label>
+                  <div className="h-8 flex items-center">
+                    {(() => {
+                      const durationStr = String(form.duration || "");
+                      const nightsMatch = durationStr.match(/(\d+)\s*(?:Nights?|N)/i);
+                      const daysMatch = durationStr.match(/(\d+)\s*(?:Days?|D)/i);
+                      const nightsVal = nightsMatch ? nightsMatch[1] : "";
+                      const daysVal = daysMatch ? daysMatch[1] : "";
+                      const updateDuration = (n: string, d: string) => {
+                        setForm({ ...form, duration: `${n} Nights / ${d} Days` });
+                      };
+                      return (
+                        <div className="flex gap-1 items-center">
+                          <Input 
+                            type="number" 
+                            value={nightsVal} 
+                            placeholder="0"
+                            onChange={(e) => updateDuration(e.target.value, daysVal)} 
+                            className="h-7 w-10 p-0 text-center text-sm font-bold border-0 bg-slate-50 hover:bg-slate-100 focus-visible:ring-0 rounded-md shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                          />
+                          <span className="text-[11px] font-black uppercase tracking-wide text-slate-400 px-1">Nights</span>
+                          <span className="text-slate-300 mx-1">/</span>
+                          <Input 
+                            type="number" 
+                            value={daysVal} 
+                            placeholder="0"
+                            onChange={(e) => updateDuration(nightsVal, e.target.value)} 
+                            className="h-7 w-10 p-0 text-center text-sm font-bold border-0 bg-slate-50 hover:bg-slate-100 focus-visible:ring-0 rounded-md shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                          />
+                          <span className="text-[11px] font-black uppercase tracking-wide text-slate-400 px-1">Days</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Min/Max Participants */}
+                <div className="space-y-1.5 min-w-0">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Participants (Min - Max)</Label>
+                  <div className="h-8 flex gap-1 items-center">
+                    <span className="text-[10px] font-black text-slate-400 pr-1">MIN</span>
+                    <Input 
+                      type="number" 
+                      value={form.minGroupSize || 1} 
+                      onChange={(e) => setForm({ ...form, minGroupSize: Number(e.target.value) })} 
+                      className="h-7 w-12 p-0 text-center text-sm font-bold border-0 bg-slate-50 hover:bg-slate-100 focus-visible:ring-0 rounded-md shadow-none" 
+                    />
+                    <span className="text-slate-300 mx-1">—</span>
+                    <span className="text-[10px] font-black text-slate-400 pr-1">MAX</span>
+                    <Input 
+                      type="number" 
+                      value={form.maxGroupSize || 30} 
+                      onChange={(e) => setForm({ ...form, maxGroupSize: Number(e.target.value) })} 
+                      className="h-7 w-12 p-0 text-center text-sm font-bold border-0 bg-slate-50 hover:bg-slate-100 focus-visible:ring-0 rounded-md shadow-none" 
+                    />
+                  </div>
+                </div>
+
                 {/* Category Collection */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-slate-800">Add trip to collections *</Label>
-                  <Select value={form.category?.toLowerCase()} onValueChange={(val) => setForm({ ...form, category: val })}>
-                    <SelectTrigger className="h-9 text-xs border-slate-250 focus:ring-[#FF5400] focus:border-[#FF5400] bg-white">
-                      <SelectValue placeholder="Select collection..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map(c => (
-                        <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.category && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded text-xs font-medium text-slate-700 border">
-                        {form.category.charAt(0).toUpperCase() + form.category.slice(1)}
-                        <button 
-                          type="button" 
-                          onClick={() => setForm({ ...form, category: "" })} 
-                          className="text-red-500 font-bold ml-1 hover:text-red-700 text-sm leading-none"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-1.5">
+                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Collection</Label>
+                 <div className="h-8 flex items-center">
+                   <Select value={form.category?.toLowerCase()} onValueChange={(val) => setForm({ ...form, category: val })}>
+                     <SelectTrigger className="h-7 w-auto min-w-[140px] px-3 text-[11px] font-black uppercase tracking-wide border-0 bg-slate-50 hover:bg-slate-100 focus:ring-0 rounded-md shadow-none whitespace-nowrap text-[#FF5400]">
+                       <SelectValue placeholder="Select..." />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {CATEGORIES.map(c => (
+                         <SelectItem key={c} value={c.toLowerCase()} className="text-xs font-bold">{c}</SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
                 </div>
 
                 {/* Display Order */}
-                <div className="space-y-2">
-                  <Label htmlFor="order" className="text-xs font-semibold text-slate-805">Display Order</Label>
-                  <Input 
-                    id="order" 
-                    type="number"
-                    value={form.order || 0} 
-                    onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} 
-                    className="h-9 text-xs rounded border-slate-250 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400]" 
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="order" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Display Order</Label>
+                  <div className="h-8 flex items-center">
+                    <Input 
+                      id="order" 
+                      type="number"
+                      value={form.order || 0} 
+                      onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} 
+                      className="h-7 w-16 p-0 text-center text-sm font-bold border-0 bg-slate-50 hover:bg-slate-100 focus-visible:ring-0 rounded-md shadow-none" 
+                    />
+                  </div>
                 </div>
              </div>
 
              {/* Overview Rich Text Editor */}
-             <div className="space-y-2">
-                <Label className="text-xs font-semibold text-slate-800">Overview</Label>
-                <RichTextEditor 
-                  content={form.description || ""} 
-                  onChange={(content) => setForm({ ...form, description: content })} 
-                  placeholder="Join us for an unforgettable adventure..."
-                />
+             <div className="space-y-2 pt-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Overview Details</Label>
+                <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm [&_.ql-toolbar]:border-0 [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-slate-100 [&_.ql-container]:border-0">
+                  <RichTextEditor 
+                    content={form.description || ""} 
+                    onChange={(content) => setForm({ ...form, description: content })} 
+                    placeholder="Join us for an unforgettable adventure..."
+                  />
+                </div>
              </div>
 
              {/* Inclusions & Exclusions */}
@@ -680,32 +630,38 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Inclusions & Exclusions</h4>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-3">
-                   <Label className="text-[10px] font-black uppercase tracking-widest text-green-600">Inclusions</Label>
+                   <Label className="text-xs font-semibold text-slate-800">Inclusions</Label>
                    <div className="flex gap-2">
-                     <Input value={newInclusion} onChange={(e) => setNewInclusion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addToList("inclusions", newInclusion, setNewInclusion)} className="h-9 text-xs border-slate-250 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400]" />
-                     <Button size="sm" onClick={() => addToList("inclusions", newInclusion, setNewInclusion)} className="h-9 px-3 bg-slate-900 hover:bg-slate-800 text-white"><Plus className="h-4 w-4" /></Button>
+                     <Input placeholder="Add inclusion..." value={newInclusion} onChange={(e) => setNewInclusion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addToList("inclusions", newInclusion, setNewInclusion)} className="h-8 text-xs rounded border-slate-200 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400]" />
+                     <Button variant="outline" size="sm" onClick={() => addToList("inclusions", newInclusion, setNewInclusion)} className="h-8 px-3 rounded border-slate-200 text-slate-600 hover:bg-slate-50"><Plus className="h-3 w-3" /></Button>
                    </div>
                    <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
                      {form.inclusions?.map((item: string, i: number) => (
-                       <div key={i} className="flex items-center justify-between p-2 bg-green-50/30 rounded border border-green-100 text-[10px]">
-                         <span className="font-bold text-green-800">{item}</span>
-                         <X className="h-3 w-3 text-green-400 cursor-pointer hover:text-red-500" onClick={() => removeFromList("inclusions", i)} />
+                       <div key={i} className="flex items-center justify-between p-2 bg-white rounded border border-slate-200 text-xs shadow-sm">
+                         <div className="flex items-center gap-2">
+                           <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                           <span className="font-medium text-slate-700">{item}</span>
+                         </div>
+                         <X className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-red-500" onClick={() => removeFromList("inclusions", i)} />
                        </div>
                      ))}
                    </div>
                  </div>
 
                  <div className="space-y-3">
-                   <Label className="text-[10px] font-black uppercase tracking-widest text-red-600">Exclusions</Label>
+                   <Label className="text-xs font-semibold text-slate-800">Exclusions</Label>
                    <div className="flex gap-2">
-                     <Input value={newExclusion} onChange={(e) => setNewExclusion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addToList("exclusions", newExclusion, setNewExclusion)} className="h-9 text-xs border-slate-250 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400]" />
-                     <Button size="sm" variant="destructive" onClick={() => addToList("exclusions", newExclusion, setNewExclusion)} className="h-9 px-3"><Plus className="h-4 w-4" /></Button>
+                     <Input placeholder="Add exclusion..." value={newExclusion} onChange={(e) => setNewExclusion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addToList("exclusions", newExclusion, setNewExclusion)} className="h-8 text-xs rounded border-slate-200 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400]" />
+                     <Button variant="outline" size="sm" onClick={() => addToList("exclusions", newExclusion, setNewExclusion)} className="h-8 px-3 rounded border-slate-200 text-slate-600 hover:bg-slate-50"><Plus className="h-3 w-3" /></Button>
                    </div>
                    <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
                      {form.exclusions?.map((item: string, i: number) => (
-                       <div key={i} className="flex items-center justify-between p-2 bg-red-50/30 rounded border border-red-100 text-[10px]">
-                         <span className="font-bold text-red-800">{item}</span>
-                         <X className="h-3 w-3 text-red-400 cursor-pointer hover:text-red-500" onClick={() => removeFromList("exclusions", i)} />
+                       <div key={i} className="flex items-center justify-between p-2 bg-white rounded border border-slate-200 text-xs shadow-sm">
+                         <div className="flex items-center gap-2">
+                           <XCircle className="h-3.5 w-3.5 text-red-500" />
+                           <span className="font-medium text-slate-700">{item}</span>
+                         </div>
+                   <X className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-red-500" onClick={() => removeFromList("exclusions", i)} />
                        </div>
                      ))}
                    </div>
@@ -715,33 +671,28 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
 
              {/* Highlights */}
              <div className="pt-6 border-t space-y-4">
-               <div className="flex items-center justify-between">
-                 <Label className="text-xs font-semibold text-slate-800">Trip Highlights</Label>
-                 <Button variant="outline" size="sm" onClick={() => setForm({ ...form, highlights: [...(form.highlights || []), { name: "", image: "", description: "" }] })} className="h-8 text-[10px] font-black uppercase rounded-xl">
-                   <Plus className="h-3 w-3 mr-1" />Add Highlight
-                 </Button>
-               </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Trip Highlights</Label>
+                  <Button variant="outline" size="sm" onClick={() => setForm({ ...form, highlights: [...(form.highlights || []), { name: "", image: "", description: "" }] })} className="h-7 text-[9px] font-black uppercase border-dashed rounded-xl text-slate-500 hover:text-slate-800">
+                    <Plus className="h-3 w-3 mr-1.5" />Add Highlight
+                  </Button>
+                </div>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[350px] overflow-y-auto pr-1">
                  {form.highlights?.map((h: any, i: number) => {
                    const isStr = typeof h === "string";
                    const item = isStr ? { name: h, image: "", description: "" } : h;
                    return (
-                     <div key={i} className="border bg-muted/20 rounded-2xl p-4 space-y-3 relative group">
-                       <Button 
-                         variant="ghost" 
-                         size="icon" 
-                         className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover:opacity-100" 
-                         onClick={() => {
-                           const updated = form.highlights.filter((_: any, idx: number) => idx !== i);
-                           setForm({ ...form, highlights: updated });
-                         }}
-                       >
-                         <X className="h-3.5 w-3.5" />
-                       </Button>
-                       <div className="flex gap-4">
-                         <div className="w-20 shrink-0">
-                           <ImageUpload 
-                             value={item.image || ""}
+                      <div key={i} className="group relative bg-white border border-slate-200 rounded-2xl p-3 flex gap-3 shadow-sm hover:border-slate-300 transition-all">
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => {
+                            const updated = form.highlights.filter((_: any, idx: number) => idx !== i);
+                            setForm({ ...form, highlights: updated });
+                          }}><X className="h-3.5 w-3.5" /></Button>
+                        </div>
+                        <div className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border bg-slate-50">
+                          <ImageUpload 
+                            compact
+                            value={item.image || ""}
                              onUpload={(url) => {
                                const updated = [...form.highlights];
                                const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
@@ -751,35 +702,34 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                              }}
                            />
                          </div>
-                         <div className="flex-1 space-y-2">
-                           <Input 
-                             value={item.name || ""} 
-                             placeholder="Highlight Name" 
-                             onChange={(e) => {
-                               const updated = [...form.highlights];
-                               const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
-                               currentItem.name = e.target.value;
-                               currentItem.slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-                               updated[i] = currentItem;
-                               setForm({ ...form, highlights: updated });
-                             }} 
-                             className="h-8 text-xs font-semibold" 
-                           />
-                           <Input 
-                             value={item.description || ""} 
-                             placeholder="Description (Optional)" 
-                             onChange={(e) => {
-                               const updated = [...form.highlights];
-                               const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
-                               currentItem.description = e.target.value;
-                               updated[i] = currentItem;
-                               setForm({ ...form, highlights: updated });
-                             }} 
-                             className="h-8 text-[11px]" 
-                           />
-                         </div>
+                         <div className="flex-1 space-y-1">
+                            <Input 
+                              value={item.name || ""} 
+                              placeholder="Title" 
+                              onChange={(e) => {
+                                const updated = [...form.highlights];
+                                const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
+                                currentItem.name = e.target.value;
+                                currentItem.slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                                updated[i] = currentItem;
+                                setForm({ ...form, highlights: updated });
+                              }} 
+                              className="h-6 text-xs font-bold border-0 px-0 focus-visible:ring-0 shadow-none bg-transparent" 
+                            />
+                            <Input 
+                              value={item.description || ""} 
+                              placeholder="Short description..." 
+                              onChange={(e) => {
+                                const updated = [...form.highlights];
+                                const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
+                                currentItem.description = e.target.value;
+                                updated[i] = currentItem;
+                                setForm({ ...form, highlights: updated });
+                              }} 
+                              className="h-5 text-[10px] border-0 px-0 focus-visible:ring-0 text-slate-500 shadow-none bg-transparent" 
+                            />
+                          </div>
                        </div>
-                     </div>
                    );
                  })}
                </div>
@@ -1173,12 +1123,17 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
               </div>
               <div className="space-y-4">
                 {form.variants?.map((v:any, i:number) => (
-                   <div key={i} className="border bg-muted/20 rounded-2xl p-4 space-y-3 relative group">
-                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover:opacity-100" onClick={() => setForm({ ...form, variants: form.variants.filter((_:any, idx:number) => idx !== i) })}><Trash2 className="h-3 w-3" /></Button>
+                   <div key={i} className="group relative bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition-all space-y-3">
+                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                       <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => setForm({ ...form, variants: form.variants.filter((_:any, idx:number) => idx !== i) })}>
+                         <Trash2 className="h-3.5 w-3.5" />
+                       </Button>
+                     </div>
                      
                      <div className="flex gap-4">
-                       <div className="w-24 shrink-0">
+                       <div className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border bg-slate-50">
                          <ImageUpload 
+                           compact
                            value={v.image}
                            onUpload={(url) => {
                              const updated = [...form.variants];
@@ -1188,15 +1143,15 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                          />
                        </div>
                        
-                       <div className="flex-1 space-y-3">
+                       <div className="flex-1 space-y-2">
                          <div className="grid grid-cols-2 gap-3">
-                           <Input value={v.location} placeholder="Location (e.g. Delhi)" onChange={(e) => { const updated = [...form.variants]; updated[i].location = e.target.value; setForm({ ...form, variants: updated }); }} className="h-9 text-xs" />
-                           <Input value={v.duration} placeholder="Duration (e.g. 5D/4N)" onChange={(e) => { const updated = [...form.variants]; updated[i].duration = e.target.value; setForm({ ...form, variants: updated }); }} className="h-9 text-xs" />
+                           <Input value={v.location} placeholder="Location (e.g. Delhi)" onChange={(e) => { const updated = [...form.variants]; updated[i].location = e.target.value; setForm({ ...form, variants: updated }); }} className="h-8 text-xs font-semibold shadow-none border-slate-200" />
+                           <Input value={v.duration} placeholder="Duration (e.g. 5D/4N)" onChange={(e) => { const updated = [...form.variants]; updated[i].duration = e.target.value; setForm({ ...form, variants: updated }); }} className="h-8 text-xs font-semibold shadow-none border-slate-200" />
                          </div>
                          <div className="grid grid-cols-3 gap-3">
-                            <Input type="number" value={v.originalPrice} placeholder="Orig. Price" onChange={(e) => { const updated = [...form.variants]; updated[i].originalPrice = Number(e.target.value); setForm({ ...form, variants: updated }); }} className="h-9 text-xs" />
-                            <Input type="number" value={v.discountedPrice} placeholder="Disc. Price" onChange={(e) => { const updated = [...form.variants]; updated[i].discountedPrice = Number(e.target.value); setForm({ ...form, variants: updated }); }} className="h-9 text-xs" />
-                            <Input type="number" value={v.skipDays || 0} placeholder="Skip Days" onChange={(e) => { const updated = [...form.variants]; updated[i].skipDays = Number(e.target.value); setForm({ ...form, variants: updated }); }} className="h-9 text-xs" />
+                            <Input type="number" value={v.originalPrice} placeholder="Orig. Price" onChange={(e) => { const updated = [...form.variants]; updated[i].originalPrice = Number(e.target.value); setForm({ ...form, variants: updated }); }} className="h-8 text-xs shadow-none border-slate-200" />
+                            <Input type="number" value={v.discountedPrice} placeholder="Disc. Price" onChange={(e) => { const updated = [...form.variants]; updated[i].discountedPrice = Number(e.target.value); setForm({ ...form, variants: updated }); }} className="h-8 text-xs shadow-none border-slate-200" />
+                            <Input type="number" value={v.skipDays || 0} placeholder="Skip Days" onChange={(e) => { const updated = [...form.variants]; updated[i].skipDays = Number(e.target.value); setForm({ ...form, variants: updated }); }} className="h-8 text-xs shadow-none border-slate-200" />
                           </div>
                           <div className="flex items-center gap-2 pt-1">
                              <input 
@@ -1276,6 +1231,80 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                      </div>
                    ))}
                 </div>
+              </div>
+
+              {/* Departure Date Overrides Section */}
+              <div className="pt-6 border-t space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-xs font-black uppercase tracking-widest text-[#FF5400] flex items-center gap-2">
+                      Departure Date Pricing Overrides
+                    </Label>
+                    <p className="text-[10px] text-slate-500 mt-1">Set peak pricing for specific dates without creating duplicate trips.</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setForm({ ...form, departurePriceOverrides: [...(form.departurePriceOverrides || []), { departureDate: "", overrideType: "EXTRA_CHARGE", amount: 0, reason: "", isActive: true }] })} className="h-7 text-[9px] font-black uppercase">Add Override</Button>
+                </div>
+                
+                {(form.departurePriceOverrides?.length > 0) && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-12 gap-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-[9px] font-black uppercase text-slate-500 tracking-wider">
+                      <div className="col-span-3">Departure Date</div>
+                      <div className="col-span-3">Override Type</div>
+                      <div className="col-span-2">Amount (₹)</div>
+                      <div className="col-span-3">Reason / Note</div>
+                      <div className="col-span-1 text-center">Status</div>
+                    </div>
+                    {(form.departurePriceOverrides || []).map((override: any, i: number) => (
+                      <div key={i} className={`grid grid-cols-12 gap-3 items-center p-3 rounded-xl border transition-all ${override.isActive ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-slate-100 opacity-60'}`}>
+                        <div className="col-span-3">
+                          <Input type="date" value={override.departureDate} onChange={(e) => {
+                            const updated = [...form.departurePriceOverrides]; updated[i].departureDate = e.target.value; setForm({ ...form, departurePriceOverrides: updated });
+                          }} className="h-8 text-xs font-semibold shadow-none border-slate-200" />
+                        </div>
+                        <div className="col-span-3">
+                          <select 
+                            value={override.overrideType} 
+                            onChange={(e) => {
+                              const updated = [...form.departurePriceOverrides]; updated[i].overrideType = e.target.value; setForm({ ...form, departurePriceOverrides: updated });
+                            }}
+                            className="w-full h-8 px-2 py-1 text-xs font-medium border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                          >
+                            <option value="EXTRA_CHARGE">Extra Charge (+)</option>
+                            <option value="FIXED_PRICE">Fixed Price (=)</option>
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <Input type="number" min="0" value={override.amount} onChange={(e) => {
+                            const updated = [...form.departurePriceOverrides]; updated[i].amount = Number(e.target.value); setForm({ ...form, departurePriceOverrides: updated });
+                          }} className="h-8 text-xs shadow-none border-slate-200" placeholder="e.g. 1500" />
+                        </div>
+                        <div className="col-span-3">
+                          <Input value={override.reason || ""} onChange={(e) => {
+                            const updated = [...form.departurePriceOverrides]; updated[i].reason = e.target.value; setForm({ ...form, departurePriceOverrides: updated });
+                          }} className="h-8 text-xs shadow-none border-slate-200" placeholder="e.g. Christmas Eve" />
+                        </div>
+                        <div className="col-span-1 flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...form.departurePriceOverrides]; updated[i].isActive = !updated[i].isActive; setForm({ ...form, departurePriceOverrides: updated });
+                            }}
+                            className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${override.isActive ? 'bg-green-500' : 'bg-slate-300'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${override.isActive ? 'translate-x-3' : 'translate-x-0'}`} />
+                          </button>
+                          
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 rounded-full ml-1" onClick={() => {
+                            const updated = form.departurePriceOverrides.filter((_:any, idx:number) => idx !== i);
+                            setForm({ ...form, departurePriceOverrides: updated });
+                          }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="pt-6 border-t space-y-4">
@@ -1538,39 +1567,39 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                 };
 
                 return (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between bg-slate-50 p-3 border rounded shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Active Calendar View:</span>
-                        <h4 className="text-xs font-black text-[#FF5400] uppercase tracking-wider">{monthNames[calMonth]} {calYear}</h4>
+                  <div className="space-y-6">
+                    <div className="border border-slate-200 rounded-3xl bg-white p-6 shadow-sm">
+                      <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Active Calendar View:</span>
+                          <h4 className="text-[11px] font-black text-[#FF5400] uppercase tracking-widest">{monthNames[calMonth]} {calYear}</h4>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" size="sm" disabled={calYear < new Date().getFullYear() || (calYear === new Date().getFullYear() && calMonth <= new Date().getMonth())} className="h-8 px-4 rounded-xl text-[10px] font-bold bg-white disabled:opacity-50" onClick={() => {
+                            if (calMonth === 0) {
+                              setCalMonth(11);
+                              setCalYear(y => y - 1);
+                            } else {
+                              setCalMonth(m => m - 1);
+                            }
+                          }}>&larr; Prev</Button>
+                          <Button type="button" variant="outline" size="sm" className="h-8 px-4 rounded-xl text-[10px] font-bold bg-white" onClick={() => {
+                            if (calMonth === 11) {
+                              setCalMonth(0);
+                              setCalYear(y => y + 1);
+                            } else {
+                              setCalMonth(m => m + 1);
+                            }
+                          }}>Next &rarr;</Button>
+                        </div>
                       </div>
-                      <div className="flex gap-1.5">
-                        <Button type="button" variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold bg-white" onClick={() => {
-                          if (calMonth === 0) {
-                            setCalMonth(11);
-                            setCalYear(y => y - 1);
-                          } else {
-                            setCalMonth(m => m - 1);
-                          }
-                        }}>&larr; Prev</Button>
-                        <Button type="button" variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold bg-white" onClick={() => {
-                          if (calMonth === 11) {
-                            setCalMonth(0);
-                            setCalYear(y => y + 1);
-                          } else {
-                            setCalMonth(m => m + 1);
-                          }
-                        }}>Next &rarr;</Button>
-                      </div>
-                    </div>
 
-                    <div className="border border-slate-200 rounded-xl bg-white p-5 shadow-sm">
-                      <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-black text-slate-400 uppercase border-b pb-2 mb-3">
+                      <div className="grid grid-cols-7 gap-4 text-center text-[10px] font-black text-slate-300 uppercase pb-4">
                         <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
                       </div>
-                      <div className="grid grid-cols-7 gap-2.5">
+                      <div className="grid grid-cols-7 gap-3">
                         {Array.from({ length: startOffset }).map((_, idx) => (
-                          <div key={`empty-${idx}`} className="aspect-square bg-slate-50/10 border border-transparent" />
+                          <div key={`empty-${idx}`} className="aspect-square bg-transparent" />
                         ))}
                         
                         {Array.from({ length: daysInMonth }).map((_, idx) => {
@@ -1581,251 +1610,272 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                             return dStr === formattedDate;
                           });
                           
+                          const activeOverride = form.departurePriceOverrides?.find((o: any) => o.departureDate === formattedDate && o.isActive);
+                          
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const isPastDate = new Date(calYear, calMonth, dayNum) < today;
+                          
                           return (
                             <button
                               key={dayNum}
                               type="button"
+                              disabled={isPastDate}
                               onClick={() => handleDateClick(dayNum)}
                               className={cn(
-                                "aspect-square rounded-lg flex flex-col items-center justify-center text-xs font-bold transition-all border relative",
+                                "aspect-square rounded-2xl flex flex-col items-center justify-center text-[13px] font-bold transition-all border relative",
+                                isPastDate ? "opacity-30 cursor-not-allowed bg-slate-50 border-transparent text-slate-400" :
                                 isScheduled 
-                                  ? "bg-amber-100 text-amber-800 border-amber-300 font-extrabold shadow-sm hover:bg-amber-200" 
-                                  : "bg-white text-slate-700 border-slate-150 hover:border-[#FF5400]/50"
+                                  ? (activeOverride ? "bg-red-50 text-red-600 border-red-200 font-black shadow-sm hover:bg-red-100" : "bg-[#FF5400]/5 text-[#FF5400] border-[#FF5400]/20 font-black shadow-sm hover:bg-[#FF5400]/10") 
+                                  : "bg-white text-slate-700 border-slate-100 shadow-sm hover:border-slate-300 hover:shadow-md"
                               )}
                             >
                               <span>{dayNum}</span>
-                              {isScheduled && <span className="w-1.5 h-1.5 bg-[#FF5400] rounded-full absolute bottom-1.5" />}
+                              {isScheduled && activeOverride ? (
+                                <span className="w-1 h-1 bg-red-500 rounded-full absolute bottom-2" />
+                              ) : isScheduled ? (
+                                <span className="w-1 h-1 bg-[#FF5400] rounded-full absolute bottom-2" />
+                              ) : null}
                             </button>
                           );
                         })}
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-4 text-center font-medium italic">💡 Click any calendar cell above to toggle departure scheduling for that date.</p>
+                      <p className="text-[10px] text-slate-400 mt-8 text-center font-medium flex items-center justify-center gap-1">
+                        <span className="text-amber-400">💡</span> Click any calendar cell above to toggle departure scheduling for that date.
+                      </p>
                     </div>
                   </div>
                 );
               })()}
 
               {/* Bulk generate and date list */}
-              <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Bulk Generate Dates</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black opacity-50">Start Date</Label>
-                    <Input type="date" value={repeatStartDate} onChange={(e) => setRepeatStartDate(e.target.value)} className="h-9 text-xs rounded-xl bg-white" />
+              <div className="border border-slate-200 rounded-3xl bg-white p-6 shadow-sm space-y-6 mt-6">
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">Bulk Generate Dates</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold opacity-50 tracking-widest">Start Date</Label>
+                    <Input type="date" value={repeatStartDate} onChange={(e) => setRepeatStartDate(e.target.value)} className="h-10 text-xs rounded-xl border-slate-200 shadow-none" />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black opacity-50">Frequency</Label>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold opacity-50 tracking-widest">Frequency</Label>
                     <Select value={repeatFreq} onValueChange={setRepeatFreq}>
-                      <SelectTrigger className="h-9 text-xs rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-10 text-xs rounded-xl border-slate-200 shadow-none"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="weekly">Weekly</SelectItem>
                         <SelectItem value="monthly">Monthly</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <div className="flex items-end gap-4">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-[9px] uppercase font-black opacity-50">Repeat Count</Label>
-                    <Input type="number" value={repeatCount} onChange={(e) => setRepeatCount(Number(e.target.value))} className="h-9 text-xs rounded-xl bg-white" />
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold opacity-50 tracking-widest">Repeat Count</Label>
+                    <Input type="number" value={repeatCount} onChange={(e) => setRepeatCount(Number(e.target.value))} className="h-10 text-xs rounded-xl border-slate-200 shadow-none" />
                   </div>
-                  <Button variant="secondary" className="h-9 text-[10px] font-black uppercase rounded-xl bg-slate-900 text-white hover:bg-slate-800" onClick={generateRepeatDates}>Generate</Button>
+                  <div className="flex items-end">
+                    <Button variant="default" className="w-full h-10 text-[11px] font-black uppercase rounded-xl bg-slate-900 text-white hover:bg-slate-800 tracking-wider shadow-none" onClick={generateRepeatDates}>Generate</Button>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest opacity-50">Configured Departure Dates</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {form.availableDates?.map((d: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded-xl border text-[10px] font-bold">
-                      {typeof d === 'string' ? new Date(d).toLocaleDateString() : new Date(d.date || d).toLocaleDateString()}
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:bg-destructive/5 rounded-full" onClick={() => {
-                        const updated = form.availableDates.filter((_:any, idx:number) => idx !== i);
-                        setForm({ ...form, availableDates: updated });
-                      }}><X className="h-3 w-3" /></Button>
+              <div className="pt-6 border-t mt-8">
+                {(() => {
+                  if (!form.availableDates || form.availableDates.length === 0) {
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-center gap-4">
+                          <div className="h-px w-12 bg-primary/30 relative"><div className="w-1 h-3 bg-primary absolute -top-1.5 left-0" /><div className="w-1 h-3 bg-primary absolute -top-1.5 right-0" /></div>
+                          <h3 className="text-base font-bold uppercase tracking-widest text-slate-800">Group Departure Dates</h3>
+                          <div className="h-px w-12 bg-primary/30 relative"><div className="w-1 h-3 bg-primary absolute -top-1.5 left-0" /><div className="w-1 h-3 bg-primary absolute -top-1.5 right-0" /></div>
+                        </div>
+                        <p className="text-center text-[10px] font-medium opacity-50 italic">No dates configured</p>
+                      </div>
+                    );
+                  }
+
+                  // Group by year and month
+                  const grouped: Record<number, Record<number, number[]>> = {};
+                  form.availableDates.forEach((d: any) => {
+                    const dStr = typeof d === 'string' ? d : (d.date || d);
+                    if (!dStr) return;
+                    const parts = dStr.split('-');
+                    if (parts.length === 3) {
+                      const year = parseInt(parts[0]);
+                      const month = parseInt(parts[1]) - 1;
+                      const day = parseInt(parts[2]);
+                      if (!grouped[year]) grouped[year] = {};
+                      if (!grouped[year][month]) grouped[year][month] = [];
+                      if (!grouped[year][month].includes(day)) {
+                        grouped[year][month].push(day);
+                      }
+                    }
+                  });
+
+                  const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                  const years = Object.keys(grouped).map(Number).sort((a, b) => a - b);
+
+                  return (
+                    <div className="flex flex-col gap-6 w-full pb-8">
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="h-px w-12 bg-primary/80 relative"><div className="w-1 h-2 bg-primary absolute -top-1 left-0" /><div className="w-1 h-2 bg-primary absolute -top-1 right-0" /></div>
+                        <h3 className="text-base font-bold uppercase tracking-widest text-slate-800">Group Departure Dates</h3>
+                        <div className="h-px w-12 bg-primary/80 relative"><div className="w-1 h-2 bg-primary absolute -top-1 left-0" /><div className="w-1 h-2 bg-primary absolute -top-1 right-0" /></div>
+                      </div>
+                      
+                      <div className="flex gap-8 max-w-2xl mx-auto w-full flex-col md:flex-row relative">
+                        {/* Vertical divider on desktop */}
+                        {years.length > 1 && (
+                          <div className="hidden md:block absolute left-1/2 top-8 bottom-4 w-px bg-slate-300 -translate-x-1/2" />
+                        )}
+                        
+                        {years.map(year => (
+                          <div key={year} className="flex-1 space-y-4">
+                            <h4 className="flex items-center justify-center md:justify-start gap-2 text-lg font-black text-slate-800">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-800" /> {year}
+                            </h4>
+                            <div className="space-y-2">
+                              {Object.keys(grouped[year]).map(Number).sort((a, b) => a - b).map(month => (
+                                <div key={month} className="flex gap-4 items-center bg-white border border-slate-300 rounded-xl px-4 py-2.5 shadow-sm transition-all hover:border-slate-400">
+                                  <div className="shrink-0 flex items-center justify-center">
+                                    <CalendarDays className="w-6 h-6 text-slate-800 stroke-[2.5]" />
+                                  </div>
+                                  <div className="flex-1 flex items-baseline gap-2 flex-wrap">
+                                    <span className="text-sm font-bold text-[#FF5400] w-9">{monthNames[month]}</span>
+                                    <span className="text-[13px] font-semibold text-slate-800">
+                                      {grouped[year][month].sort((a, b) => a - b).map(day => String(day).padStart(2, '0')).join(', ')}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                  {form.availableDates?.length === 0 && <p className="col-span-full text-center py-8 text-[10px] font-medium opacity-50 italic">No dates selected</p>}
-                </div>
+                  );
+                })()}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="itinerary">
-            <div className="space-y-4 pt-4">
+            <div className="space-y-0 pt-4 border-l-2 border-slate-100 ml-3">
               {form.itinerary?.map((day:any, idx:number) => (
-                <div key={idx} className="border bg-muted/10 p-4 rounded-2xl space-y-3 relative group">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black uppercase tracking-widest text-primary">Day {day.day}</Label>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100" onClick={() => removeDay(idx)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                  </div>
-                   <Input value={day.title} placeholder="Title (e.g. Arrival in Manali)" onChange={(e) => updateDay(idx, "title", e.target.value)} className="h-9 text-xs font-bold" />
-                  <Textarea value={day.description} placeholder="What will happen today?" onChange={(e) => updateDay(idx, "description", e.target.value)} className="text-xs min-h-[80px]" />
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-[9px] uppercase opacity-60 font-bold block mb-0.5">Stay Option</Label>
-                      <select
-                        value={day.stay === "Night Journey" ? "journey" : "stay"}
-                        onChange={(e) => {
-                          const val = e.target.value === "journey" ? "Night Journey" : "Stay Included";
-                          updateDay(idx, "stay", val);
-                          if (e.target.value === "journey") {
-                            updateDay(idx, "location", "—");
-                          }
-                        }}
-                        className="w-full h-8 text-[11px] border border-slate-200 rounded px-2 bg-white font-semibold text-slate-800 focus:outline-none"
-                      >
-                        <option value="stay">Stay Included</option>
-                        <option value="journey">Night Journey</option>
-                      </select>
-                    </div>
-
-                    {day.stay !== "Night Journey" ? (
-                      <div className="space-y-1 col-span-2">
-                        <Label className="text-[9px] uppercase opacity-60 font-bold block mb-0.5">Location</Label>
+                <div key={idx} className="group relative pl-6 pb-8">
+                  <div className="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-white border-2 border-slate-300 group-hover:border-[#FF5400] transition-colors" />
+                  
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FF5400] shrink-0 pt-0.5">Day {day.day}</span>
                         <Input 
-                          value={day.location || ""} 
-                          placeholder="Location (e.g. Shimla)" 
-                          onChange={(e) => updateDay(idx, "location", e.target.value)} 
-                          className="h-8 text-xs font-semibold" 
+                          value={day.title} 
+                          placeholder="Headline (e.g. Arrival in Manali)" 
+                          onChange={(e) => updateDay(idx, "title", e.target.value)} 
+                          className="h-7 text-sm font-extrabold border-transparent px-0 bg-transparent focus-visible:bg-slate-50 focus-visible:ring-0 focus-visible:border-slate-200 shadow-none" 
                         />
                       </div>
-                    ) : (
-                      <div className="space-y-1 col-span-2 flex flex-col justify-end">
-                        <span className="text-[10px] text-slate-400 font-semibold italic pb-2">No hotel required for Night Journey</span>
-                      </div>
-                    )}
+                      <Textarea 
+                        value={day.description} 
+                        placeholder="Write the day's details..." 
+                        onChange={(e) => updateDay(idx, "description", e.target.value)} 
+                        className="text-xs min-h-[40px] border-transparent px-0 bg-transparent focus-visible:bg-slate-50 focus-visible:ring-0 focus-visible:border-slate-200 shadow-none resize-y" 
+                      />
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-destructive hover:bg-destructive/10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeDay(idx)}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <Input value={day.meals} placeholder="Meals (e.g. B, D)" onChange={(e) => updateDay(idx, "meals", e.target.value)} className="h-8 text-[10px]" />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t">
-                    <div className="space-y-2">
-                      <Label className="text-[9px] uppercase opacity-50 font-black tracking-widest">Uploaded Photos</Label>
-                      <div className="flex gap-3 overflow-x-auto pb-2 min-h-[96px] bg-slate-50/50 p-2.5 rounded-xl border border-dashed border-slate-200">
-                        {day.photos?.map((p: string, pIdx: number) => {
-                          const [url, caption = ""] = p.split('|');
-                          return (
-                            <div key={pIdx} className="relative group shrink-0 w-20 flex flex-col items-center">
-                              <div className="relative w-20 h-20 rounded-xl overflow-hidden border bg-white shadow-sm transition-all hover:border-primary/50">
-                                <img src={formatUrl(url)} className="w-full h-full object-cover" />
-                                <button 
-                                  type="button"
-                                  className="absolute top-1 right-1 bg-destructive text-white rounded-full p-0.5 shadow hover:bg-destructive/90 transition-all z-10"
-                                  onClick={() => removeDayPhoto(idx, pIdx)}
-                                >
-                                  <X className="h-2.5 w-2.5" />
-                                </button>
-                              </div>
-                              <Input 
-                                value={caption}
-                                placeholder="Photo Name"
-                                onChange={(e) => {
-                                  const newCaption = e.target.value.replace(/\|/g, ""); // prevent breaking split
-                                  const newPhotos = [...(day.photos || [])];
-                                  newPhotos[pIdx] = newCaption ? `${url}|${newCaption}` : url;
-                                  updateDay(idx, "photos", newPhotos);
-                                }}
-                                className="h-6 text-[9px] px-1 py-0.5 rounded-lg border border-slate-200 w-full text-center mt-1 focus-visible:ring-primary focus-visible:border-primary bg-white font-medium"
-                              />
-                            </div>
-                          );
-                        })}
-                        {(!day.photos || day.photos.length === 0) && (
-                          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-4">
-                            <ImageIcon className="w-6 h-6 opacity-30 mb-1" />
-                            <p className="text-[9px] font-bold uppercase tracking-wider opacity-50">No photos uploaded</p>
-                          </div>
-                        )}
-                      </div>
+
+                  {/* Quick Options Row */}
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-lg p-1 pr-2">
+                      <select value={day.stay === "Night Journey" ? "journey" : "stay"} onChange={(e) => {
+                          const val = e.target.value === "journey" ? "Night Journey" : "Stay Included";
+                          updateDay(idx, "stay", val);
+                          if (e.target.value === "journey") updateDay(idx, "location", "—");
+                        }} className="h-6 text-[10px] font-bold bg-transparent focus:outline-none cursor-pointer text-slate-600">
+                        <option value="stay">🏨 Stay</option>
+                        <option value="journey">🚌 Night Journey</option>
+                      </select>
+                      {day.stay !== "Night Journey" && (
+                        <>
+                          <div className="w-px h-3 bg-slate-200 mx-1" />
+                          <Input value={day.location || ""} placeholder="Location..." onChange={(e) => updateDay(idx, "location", e.target.value)} className="h-6 text-[10px] font-bold border-0 p-0 w-24 bg-transparent focus-visible:ring-0 shadow-none" />
+                        </>
+                      )}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-[9px] uppercase opacity-50 font-black tracking-widest">Add Photos</Label>
-                      <ImageUpload 
-                        multiple
-                        onUpload={url => updateDay(idx, "photos", [...(day.photos || []), url])} 
-                      />
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-lg p-1 px-2">
+                      <span className="text-[10px] font-bold text-slate-500">🍽️ Meals:</span>
+                      <Input value={day.meals} placeholder="e.g. B, D" onChange={(e) => updateDay(idx, "meals", e.target.value)} className="h-6 text-[10px] font-bold border-0 p-0 w-16 bg-transparent focus-visible:ring-0 shadow-none uppercase" />
+                    </div>
+                  </div>
+
+                  {/* Photos */}
+                  <div className="pt-3">
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {day.photos?.map((p: string, pIdx: number) => {
+                        const [url] = p.split('|');
+                        return (
+                          <div key={pIdx} className="relative group/photo w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+                             <img src={formatUrl(url)} className="w-full h-full object-cover" />
+                             <button type="button" onClick={() => removeDayPhoto(idx, pIdx)} className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-opacity"><Trash2 className="h-3 w-3" /></button>
+                          </div>
+                        )
+                      })}
+                      <div className="w-20">
+                        <ImageUpload compact multiple onUpload={url => updateDay(idx, "photos", [...(day.photos || []), url])} />
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
-              <Button onClick={addDay} className="w-full h-12 border-dashed rounded-2xl" variant="outline"><Plus className="h-4 w-4 mr-2" />Add Day to Itinerary</Button>
+              
+              <div className="relative pl-6 pb-2">
+                <div className="absolute -left-[7px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-slate-50 border-2 border-slate-200" />
+                <Button onClick={addDay} className="h-8 rounded-lg text-xs border-dashed" variant="outline"><Plus className="h-3 w-3 mr-2" />Add Day</Button>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="highlights">
-            <div className="space-y-6 pt-4">
-              {/* Highlights */}
-              <div className="pt-6 border-t space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-slate-800">Trip Highlights</Label>
-                  <Button variant="outline" size="sm" onClick={() => setForm({ ...form, highlights: [...(form.highlights || []), { name: "", image: "", description: "" }] })} className="h-8 text-[10px] font-black uppercase rounded-xl">
-                    <Plus className="h-3 w-3 mr-1" />Add Highlight
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[350px] overflow-y-auto pr-1">
-                  {form.highlights?.map((h: any, i: number) => {
-                    const isStr = typeof h === "string";
-                    const item = isStr ? { name: h, image: "", description: "" } : h;
-                    return (
-                      <div key={i} className="border bg-muted/20 rounded-2xl p-4 space-y-3 relative group">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover:opacity-100" 
-                          onClick={() => {
-                            const updated = form.highlights.filter((_: any, idx: number) => idx !== i);
-                            setForm({ ...form, highlights: updated });
-                          }}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                        <div className="flex gap-4">
-                          <div className="w-20 shrink-0">
-                            <ImageUpload 
-                              value={item.image || ""}
-                              onUpload={(url) => {
-                                const updated = [...form.highlights];
-                                const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
-                                currentItem.image = url;
-                                updated[i] = currentItem;
-                                setForm({ ...form, highlights: updated });
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1 space-y-2">
-                            <Input 
-                              value={item.name || ""} 
-                              placeholder="Highlight Name" 
-                              onChange={(e) => {
-                                const updated = [...form.highlights];
-                                const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
-                                currentItem.name = e.target.value;
-                                currentItem.slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-                                updated[i] = currentItem;
-                                setForm({ ...form, highlights: updated });
-                              }} 
-                              className="h-8 text-xs font-semibold" 
-                            />
-                            <Input 
-                              value={item.description || ""} 
-                              placeholder="Description (Optional)" 
-                              onChange={(e) => {
-                                const updated = [...form.highlights];
-                                const currentItem = typeof updated[i] === "string" ? { name: updated[i], image: "", description: "" } : { ...updated[i] };
-                                currentItem.description = e.target.value;
-                                updated[i] = currentItem;
-                                setForm({ ...form, highlights: updated });
-                              }} 
-                              className="h-8 text-[11px]" 
-                            />
-                          </div>
-                        </div>
+            <div className="pt-6 border-t space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Trip Highlights</Label>
+                <Button variant="outline" size="sm" onClick={() => setForm({ ...form, highlights: [...(form.highlights || []), { name: "", image: "", description: "" }] })} className="h-7 text-[9px] font-black uppercase border-dashed rounded-xl">
+                  <Plus className="h-3 w-3 mr-1.5" />Add Highlight
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {form.highlights?.map((h: any, i: number) => {
+                  const item = typeof h === "string" ? { name: h, image: "", description: "" } : h;
+                  return (
+                    <div key={i} className="group relative bg-white border border-slate-200 rounded-2xl p-3 flex gap-3 shadow-sm hover:border-primary/30 transition-all">
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => {
+                          const updated = form.highlights.filter((_: any, idx: number) => idx !== i);
+                          setForm({ ...form, highlights: updated });
+                        }}><X className="h-3.5 w-3.5" /></Button>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border bg-slate-50">
+                        <ImageUpload compact value={item.image || ""} onUpload={(url) => {
+                          const updated = [...form.highlights];
+                          updated[i] = { ...item, image: url };
+                          setForm({ ...form, highlights: updated });
+                        }} />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <Input value={item.name || ""} placeholder="Title" onChange={(e) => {
+                          const updated = [...form.highlights];
+                          updated[i] = { ...item, name: e.target.value };
+                          setForm({ ...form, highlights: updated });
+                        }} className="h-6 text-xs font-bold border-0 px-0 focus-visible:ring-0" />
+                        <Input value={item.description || ""} placeholder="Short description..." onChange={(e) => {
+                          const updated = [...form.highlights];
+                          updated[i] = { ...item, description: e.target.value };
+                          setForm({ ...form, highlights: updated });
+                        }} className="h-5 text-[10px] border-0 px-0 focus-visible:ring-0 text-slate-500" />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </TabsContent>
@@ -2877,53 +2927,6 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
               </Accordion>
             </div>
           </TabsContent>
-        </div>
-
-        {/* RIGHT COLUMN (HELP SIDEBAR) */}
-        <div className="col-span-12 md:col-span-3 xl:col-span-3 space-y-4 sticky top-[80px] self-start">
-          <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-800 text-[13px] border-b pb-2">Need help?</h3>
-            
-            {/* Knowledge Base */}
-            <div className="space-y-3">
-              <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center p-4">
-                <div className="h-10 w-10 rounded-full bg-yellow-400 flex items-center justify-center text-white font-bold text-base absolute -top-2 -right-2 shadow-sm border border-white">
-                  📖
-                </div>
-                <div className="py-6 flex flex-col items-center">
-                  <div className="h-10 w-16 bg-white border rounded shadow-sm flex items-center justify-center text-slate-400 font-bold">
-                    📝 KB
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-1 text-center">
-                <p className="font-bold text-slate-805 text-xs">Knowledge Base</p>
-                <p className="text-[10px] text-slate-400 leading-normal">Self-help tutorial with answers to commonly asked questions.</p>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-100 my-4" />
-
-            {/* Android Promo */}
-            <div className="space-y-3 flex flex-col items-center">
-              <div className="bg-slate-800 text-white rounded px-4 py-2 flex items-center gap-2 max-w-[180px] justify-center cursor-pointer hover:bg-slate-700 transition-colors shadow-sm">
-                <span className="text-xl">🤖</span>
-                <div className="text-left leading-none">
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Android App on</span>
-                  <p className="text-xs font-bold font-mono">Google Play</p>
-                </div>
-              </div>
-              <p className="text-[10px] text-slate-400 text-center leading-normal">Take your business with you on the move.</p>
-            </div>
-
-            <div className="border-t border-slate-100 my-4" />
-
-            {/* Sand in Goa footer */}
-            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium">
-              <span>🏖️</span>
-              <span>Built with ❤️ and sand in Goa!</span>
-            </div>
-          </div>
         </div>
 
       </div>

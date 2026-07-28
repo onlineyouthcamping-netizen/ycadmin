@@ -205,6 +205,13 @@ export interface Trip {
     roomSharing?: string;
   };
   addons: TripAddon[];
+  departurePriceOverrides?: {
+    departureDate: string;
+    overrideType: string;
+    amount: number;
+    isActive: boolean;
+    reason?: string;
+  }[];
   attractions?: { name: string; image: string; slug: string; description?: string }[];
   activities?: { name: string; image: string; slug: string; description?: string }[];
   accommodations?: { 
