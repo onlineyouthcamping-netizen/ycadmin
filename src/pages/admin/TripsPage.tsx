@@ -344,100 +344,84 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="p-6 sm:p-8 bg-slate-50/30 min-h-screen font-sans">
-      {/* ─── Top Header Bar ─── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-orange-50 border border-orange-100 p-2.5 rounded-xl shrink-0">
-            <Compass className="w-5 h-5 text-[#FF5400]" />
+    <div className="p-6 bg-[#FAFAFA] min-h-screen font-sans text-slate-900">
+      {/* ─── Page Header & Key Actions ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">Expeditions</h1>
+            <span className="bg-orange-50 text-[#FF5400] text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider">Catalog OS</span>
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              Trip Expeditions & Catalog
-            </h1>
-            <p className="text-[11px] font-medium text-slate-500 mt-0.5">
-              Manage itineraries, prices, variants, vendor allocations, and public website displays
-            </p>
-          </div>
+          <p className="text-xs text-slate-500 mt-0.5">Manage itineraries, dynamic pricing, variants & distribution.</p>
         </div>
 
-        {/* Header Actions */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
           <Button 
             variant="outline"
             onClick={() => setSortModalOpen(true)} 
-            className="h-9 px-4 rounded-lg font-bold text-xs border-orange-200 text-[#FF5400] hover:bg-orange-50 hover:text-[#FF5400] flex items-center gap-2 shadow-sm"
+            className="h-8 px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
           >
-            <GripVertical className="w-3.5 h-3.5" /> Reorder Catalog
+            <GripVertical className="w-3.5 h-3.5 text-slate-400" /> Reorder
           </Button>
           <Button 
             variant="outline"
             onClick={handleShuffle} 
-            className="h-9 px-4 rounded-lg font-bold text-xs border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-2 shadow-sm"
+            className="h-8 px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
           >
-            <Shuffle className="w-3.5 h-3.5" /> Shuffle Display
+            <Shuffle className="w-3.5 h-3.5 text-slate-400" /> Shuffle
           </Button>
           <Button 
             onClick={openCreate} 
-            className="h-9 px-5 rounded-lg font-bold text-xs bg-[#FF5400] hover:bg-[#e64a00] text-white flex items-center gap-2 shadow-sm shadow-orange-500/20"
+            className="h-8 px-3.5 rounded-lg text-xs font-bold bg-[#FF5400] hover:bg-[#e04a00] text-white shadow-xs gap-1.5"
           >
-            <Plus className="w-4 h-4" /> Create New Trip
+            <Plus className="w-3.5 h-3.5" /> New Expedition
           </Button>
         </div>
       </div>
 
-      {/* ─── Metric Summary Cards Bar ─── */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Expeditions</p>
-          <div className="flex items-end justify-between">
-            <p className="text-3xl font-black text-slate-800">{metrics.total}</p>
-            <span className="text-[9px] font-bold tracking-widest text-slate-500 uppercase bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Catalog</span>
+      {/* ─── Compact Metrics Strip ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total</span>
+            <span className="text-xl font-black text-slate-900 mt-0.5 block">{metrics.total}</span>
           </div>
+          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs">ALL</div>
         </div>
-        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Live Published</p>
-          <div className="flex items-end justify-between">
-            <p className="text-3xl font-black text-emerald-600">{metrics.published}</p>
-            <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
-              <CheckCircle2 className="w-2.5 h-2.5" /> Active
-            </span>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Published</span>
+            <span className="text-xl font-black text-emerald-600 mt-0.5 block">{metrics.published}</span>
           </div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">LIVE</div>
         </div>
-        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Draft & Hidden</p>
-          <div className="flex items-end justify-between">
-            <p className="text-3xl font-black text-[#FF5400]">{metrics.draft}</p>
-            <span className="text-[9px] font-bold tracking-widest text-[#FF5400] uppercase bg-orange-50 px-2 py-0.5 rounded border border-orange-100">Unpublished</span>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Drafts</span>
+            <span className="text-xl font-black text-amber-600 mt-0.5 block">{metrics.draft}</span>
           </div>
+          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 font-bold text-xs">DEV</div>
         </div>
-        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Categories</p>
-          <div className="flex items-end justify-between">
-            <p className="text-3xl font-black text-[#FF5400]">{metrics.categories}</p>
-            <span className="text-[9px] font-bold tracking-widest text-[#FF5400] uppercase bg-orange-50 px-2 py-0.5 rounded border border-orange-100">Diverse</span>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Categories</span>
+            <span className="text-xl font-black text-[#FF5400] mt-0.5 block">{metrics.categories}</span>
           </div>
+          <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF5400] font-bold text-xs">CAT</div>
         </div>
       </div>
 
-      {/* ─── Automation Notice Banner ─── */}
-      <div className="bg-gradient-to-r from-orange-50 to-orange-50/30 rounded-xl p-4 flex items-center gap-4 mb-6 border border-orange-100 shadow-sm">
-        <div className="bg-[#FF5400] p-1.5 rounded-lg shrink-0 shadow-sm">
-          <Sparkles className="w-4 h-4 text-white" />
-        </div>
-        <div className="text-[11px] text-slate-600 font-medium">
-          <span className="font-bold text-slate-900 block text-xs mb-0.5">Automatic Payment & Booking Link Engine Active</span>
-          Trip prices, available departure dates, and variants configured here are automatically synchronized with WhatsApp payment links, quotation generators, and customer booking forms.
-        </div>
-      </div>
-
-      {/* ─── Main Table Container ─── */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden mb-6">
-        {/* Category & Status Filter Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-slate-100">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none bg-slate-50/80 p-1 rounded-xl border border-slate-200/60">
+      {/* ─── Compact Controls Bar & Data Table Container ─── */}
+      <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden">
+        {/* Controls Bar */}
+        <div className="p-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
             {[
-              { id: "all", label: "All Trips" },
+              { id: "all", label: "All Catalog" },
               { id: "backpacking", label: "Backpacking" },
               { id: "roadtrip", label: "Road Trips" },
               { id: "international", label: "International" },
@@ -447,10 +431,10 @@ export default function TripsPage() {
                 type="button"
                 onClick={() => setCategoryTab(tab.id)}
                 className={cn(
-                  "px-4 py-1.5 text-[11px] font-bold transition-all rounded-lg whitespace-nowrap",
+                  "px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap",
                   categoryTab === tab.id
-                    ? "bg-[#FF5400] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white hover:shadow-sm"
+                    ? "bg-white text-[#FF5400] shadow-2xs border border-slate-200/80"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/60"
                 )}
               >
                 {tab.label}
@@ -458,12 +442,23 @@ export default function TripsPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 pr-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS:</span>
+          {/* Filters & Status */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter trips..."
+                className="h-8 pl-8 pr-3 text-xs bg-white border border-slate-200/80 rounded-md outline-none focus:border-[#FF5400] w-48 transition-all"
+              />
+            </div>
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs font-bold bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1.5 text-slate-700 outline-none cursor-pointer focus:border-slate-300 shadow-sm"
+              className="h-8 text-xs font-semibold bg-white border border-slate-200/80 rounded-md px-2.5 text-slate-700 outline-none cursor-pointer focus:border-[#FF5400]"
             >
               <option value="all">All Statuses</option>
               <option value="published">Published</option>
@@ -473,15 +468,15 @@ export default function TripsPage() {
         </div>
 
         {/* Data Table */}
-        <div className="p-4">
+        <div className="p-2">
           <DataTable
             columns={columns} 
             data={filtered} 
             loading={loading}
             searchKey="title" 
-            searchPlaceholder="Search trip by title, location, or trip code..."
-            emptyMessage="No trips found matching criteria" 
-            emptyIcon={<Search className="h-8 w-8 text-slate-300" />}
+            searchPlaceholder="Search trips..."
+            emptyMessage="No expeditions found" 
+            emptyIcon={<Search className="h-6 w-6 text-slate-300" />}
           />
         </div>
       </div>
