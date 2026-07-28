@@ -2480,28 +2480,28 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                                        setForm({ ...form, accommodations: updated });
                                     }}
                                   />
-                                  <div className="space-y-6 pt-4">
+                                  <div className="space-y-4 pt-4 border-t border-slate-100">
                                      {['Exterior', 'Interior', 'Premium Room', 'Bathroom', 'Swimming Pool', 'Dining'].map(cat => (
-                                       <div key={cat} className="space-y-3">
+                                       <div key={cat} className="space-y-2">
                                           <div className="flex items-center justify-between">
-                                             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">{cat}</Label>
-                                             <ImageUpload 
-                                               multiple
-                                               label={`Upload ${cat}`}
-                                               onUpload={urls => {
-                                                  const updated = [...form.accommodations];
-                                                  const newImgs = (Array.isArray(urls) ? urls : [urls]).map(url => ({ url, category: cat }));
-                                                  updated[i].gallery = [...(updated[i].gallery || []), ...newImgs];
-                                                  setForm({ ...form, accommodations: updated });
-                                               }}
-                                             />
+                                             <Label className="text-[10px] font-black uppercase tracking-wider text-slate-500">{cat} Photos</Label>
                                           </div>
-                                          <div className="grid grid-cols-4 gap-3 p-4 bg-zinc-50 rounded-2xl border border-dashed">
+                                          <ImageUpload 
+                                            compact
+                                            multiple
+                                            onUpload={urls => {
+                                               const updated = [...form.accommodations];
+                                               const newImgs = (Array.isArray(urls) ? urls : [urls]).map(url => ({ url, category: cat }));
+                                               updated[i].gallery = [...(updated[i].gallery || []), ...newImgs];
+                                               setForm({ ...form, accommodations: updated });
+                                            }}
+                                          />
+                                          <div className="grid grid-cols-4 gap-2 p-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                              {(item.gallery || []).filter((img: any) => img.category === cat).map((img: any, gidx: number) => {
                                                const absoluteIndex = item.gallery.findIndex((g:any) => g === img);
                                                return (
-                                                 <div key={gidx} className="relative aspect-square rounded-xl overflow-hidden border bg-white group">
-                                                    <img src={img.url} className="w-full h-full object-cover" />
+                                                 <div key={gidx} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-white group">
+                                                    <img src={formatUrl(typeof img === 'string' ? img : img.url)} className="w-full h-full object-cover" />
                                                     <button 
                                                       type="button"
                                                       onClick={() => {
@@ -2509,7 +2509,7 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                                                         updated[i].gallery = updated[i].gallery.filter((_:any, idx:number) => idx !== absoluteIndex);
                                                         setForm({ ...form, accommodations: updated });
                                                       }} 
-                                                      className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
+                                                      className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
                                                     >
                                                       <X className="w-2.5 h-2.5" />
                                                     </button>
@@ -2517,8 +2517,8 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                                                );
                                              })}
                                              {(!item.gallery || item.gallery.filter((img: any) => img.category === cat).length === 0) && (
-                                               <div className="col-span-full py-4 text-center">
-                                                  <p className="text-[9px] font-bold text-zinc-300 uppercase italic">No {cat} photos</p>
+                                               <div className="col-span-full py-2 text-center">
+                                                  <p className="text-[9px] font-bold text-slate-400 uppercase italic">No {cat} photos</p>
                                                </div>
                                              )}
                                           </div>
@@ -2779,23 +2779,30 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                       
                       <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar pb-10">
                         {(form.reviews || []).map((rev: any, idx: number) => (
-                          <div key={idx} className="bg-white border border-zinc-100 rounded-[40px] p-6 relative group transition-all hover:shadow-xl hover:border-[#FF5400]/20">
-                             {!rev.userName || !rev.comment ? (
-                               <div className="absolute top-4 left-8 bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-amber-200 animate-pulse">
-                                  Incomplete - Fill name & comment to save
-                               </div>
-                             ) : null}
-                             <button 
-                               type="button"
-                               onClick={() => {
-                                 const updated = [...form.reviews];
-                                 updated.splice(idx, 1);
-                                 setForm({ ...form, reviews: updated });
-                               }}
-                               className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-2 shadow-xl opacity-0 group-hover:opacity-100 transition-all z-10"
-                             >
-                               <Trash2 className="w-3.5 h-3.5" />
-                             </button>
+                          <div key={idx} className="bg-white border border-slate-200/80 rounded-2xl p-5 relative group shadow-2xs space-y-4">
+                             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                <div className="flex items-center gap-2">
+                                   <span className="text-xs font-bold text-slate-800">Review #{idx + 1}</span>
+                                   {(!rev.userName || !rev.comment) && (
+                                      <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200">
+                                         Fill name &amp; comment to save
+                                      </span>
+                                   )}
+                                </div>
+                                <Button 
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const updated = [...form.reviews];
+                                    updated.splice(idx, 1);
+                                    setForm({ ...form, reviews: updated });
+                                  }}
+                                  className="h-7 w-7 text-rose-600 hover:bg-rose-50 rounded-lg"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                             </div>
 
                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 {/* Left side: Basic Info */}

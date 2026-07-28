@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Loader2, Image as ImageIcon, X, RefreshCw, CheckCircle } from "lucide-react";
+import { Upload, Loader2, Image as ImageIcon, X, RefreshCw } from "lucide-react";
 import api from "@/services/api";
 import { ENV } from "@/config/environment";
 import { toast } from "sonner";
@@ -80,7 +80,7 @@ export function ImageUpload({
           } else {
             res.data.urls.forEach((url: string) => onUpload(url));
           }
-          toast.success("Files uploaded successfully");
+          toast.success("Uploaded successfully");
         } else {
           toast.error("Upload failed: " + (res.data.message || "Unknown error"));
         }
@@ -169,7 +169,7 @@ export function ImageUpload({
   const displayUrl = formatUrl(value);
 
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("space-y-1.5 w-full", className)}>
       {label && !compact && (
         <Label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
           {label}
@@ -192,69 +192,87 @@ export function ImageUpload({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={cn(
-          "relative flex flex-col items-center justify-center transition-all rounded-xl border-2 border-dashed select-none",
-          compact ? "p-2 gap-1 min-h-[72px]" : "p-5 gap-3 min-h-[140px]",
+          "relative flex flex-col items-center justify-center transition-all rounded-xl border-2 border-dashed select-none overflow-hidden",
+          compact ? "p-1 min-h-[64px] h-full" : "p-5 gap-3 min-h-[130px]",
           isDragging 
             ? "border-[#FF6B00] bg-[#FF6B00]/5 scale-[1.01]" 
             : "border-slate-200/80 bg-slate-50/60 hover:bg-slate-100/60 hover:border-slate-300"
         )}
       >
         {value && !multiple ? (
-          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-950/5 border border-slate-200">
+          <div className={cn(
+            "relative w-full rounded-lg overflow-hidden bg-slate-900/5 border border-slate-200 group/preview",
+            compact ? "h-full min-h-[56px] aspect-square" : "aspect-video"
+          )}>
             {!imgError ? (
               <img 
                 src={displayUrl} 
-                className="w-full h-full object-contain" 
+                className="w-full h-full object-cover" 
                 alt="Uploaded preview"
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-4 text-center">
-                <ImageIcon className="w-6 h-6 mb-1 opacity-40" />
-                <p className="text-[10px] font-bold uppercase opacity-60">Image failed to load</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-2 text-center">
+                <ImageIcon className={cn(compact ? "w-4 h-4" : "w-6 h-6")} />
+                {!compact && <p className="text-[10px] font-bold uppercase opacity-60">Failed to load</p>}
               </div>
             )}
             
-            {/* Control buttons */}
-            <div className="absolute top-2 right-2 flex gap-1.5 z-10">
+            {/* Control overlay buttons */}
+            <div className={cn(
+              "absolute flex gap-1 z-10 transition-opacity",
+              compact ? "top-0.5 right-0.5" : "top-2 right-2"
+            )}>
+              {!compact && (
+                <Button 
+                  type="button"
+                  variant="secondary" 
+                  size="icon" 
+                  className="w-6 h-6 rounded-full shadow-md bg-white/90 hover:bg-white text-slate-700 p-0"
+                  title="Replace image"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReplace();
+                  }}
+                >
+                  <RefreshCw className="w-3 h-3" />
+                </Button>
+              )}
               <Button 
-                variant="secondary" 
-                size="icon" 
-                className="w-7 h-7 rounded-full shadow-md bg-white/90 hover:bg-white text-slate-700"
-                title="Replace image"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleReplace();
-                }}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </Button>
-              <Button 
+                type="button"
                 variant="destructive" 
                 size="icon" 
-                className="w-7 h-7 rounded-full shadow-md bg-rose-600 hover:bg-rose-700 text-white"
+                className={cn(
+                  "rounded-full shadow-md bg-rose-600 hover:bg-rose-700 text-white p-0 flex items-center justify-center",
+                  compact ? "w-4 h-4" : "w-6 h-6"
+                )}
                 title="Remove image"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleRemove();
                 }}
               >
-                <X className="w-3.5 h-3.5" />
+                <X className={cn(compact ? "w-2.5 h-2.5" : "w-3.5 h-3.5")} />
               </Button>
             </div>
           </div>
         ) : (
-          <div className="text-center space-y-1.5">
+          <div 
+            onClick={compact ? handleReplace : undefined}
+            className={cn("text-center cursor-pointer space-y-1", compact && "py-1 px-0.5")}
+          >
             <div className={cn(
               "bg-white border border-slate-200 rounded-full flex items-center justify-center mx-auto text-slate-500 shadow-2xs",
-              compact ? "w-6 h-6" : "w-10 h-10"
+              compact ? "w-5 h-5" : "w-9 h-9"
             )}>
-              <Upload className={cn(compact ? "w-3 h-3" : "w-4 h-4 text-[#FF6B00]")} />
+              <Upload className={cn(compact ? "w-2.5 h-2.5 text-[#FF6B00]" : "w-4 h-4 text-[#FF6B00]")} />
             </div>
-            {!compact && (
+            {compact ? (
+              <p className="text-[9px] font-extrabold text-slate-600 uppercase tracking-tight">Add Photo</p>
+            ) : (
               <div className="space-y-0.5">
                 <p className="text-xs font-bold text-slate-800">
-                  Drag &amp; drop {multiple ? 'photos' : 'photo'} here, or <span className="text-[#FF6B00] underline cursor-pointer" onClick={handleReplace}>browse</span>
+                  Drag &amp; drop {multiple ? 'photos' : 'photo'} here, or <span className="text-[#FF6B00] underline" onClick={handleReplace}>browse</span>
                 </p>
                 <p className="text-[10px] text-slate-400 font-medium">
                   JPG, PNG, WEBP &middot; Max 50MB
@@ -265,20 +283,19 @@ export function ImageUpload({
         )}
 
         {uploading && (
-          <div className="absolute inset-0 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center rounded-xl z-20 p-4 space-y-2">
-            <Loader2 className="w-6 h-6 text-[#FF6B00] animate-spin" />
-            <div className="w-full max-w-[160px] h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+          <div className="absolute inset-0 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center rounded-xl z-20 p-2 space-y-1">
+            <Loader2 className="w-4 h-4 text-[#FF6B00] animate-spin" />
+            <div className="w-full max-w-[120px] h-1 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
               <div 
                 className="h-full bg-[#FF6B00] transition-all duration-200 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">{progress}% Uploading</p>
           </div>
         )}
 
-        {(!value || multiple) && (
-          <div className={cn("flex w-full gap-2 items-center justify-center", compact ? "mt-0" : "mt-1")}>
+        {!compact && (!value || multiple) && (
+          <div className="flex w-full gap-2 items-center justify-center mt-1">
             <Input 
               type="file" 
               accept={accept} 
@@ -290,12 +307,9 @@ export function ImageUpload({
             />
             <Label 
               htmlFor={`file-upload-${id}`}
-              className={cn(
-                "flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-bold cursor-pointer hover:bg-slate-50 shadow-2xs transition-all",
-                compact ? "px-2 h-6 text-[10px]" : "px-3.5 h-8"
-              )}
+              className="flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-bold cursor-pointer hover:bg-slate-50 shadow-2xs px-3.5 h-8 transition-all"
             >
-              {compact ? 'Add Photo' : 'Choose File'}
+              Choose File
             </Label>
           </div>
         )}
