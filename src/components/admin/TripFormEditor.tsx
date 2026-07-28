@@ -1865,36 +1865,52 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                   <Plus className="h-3 w-3 mr-1.5" />Add Highlight
                 </Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {form.highlights?.map((h: any, i: number) => {
                   const item = typeof h === "string" ? { name: h, image: "", description: "" } : h;
                   return (
-                    <div key={i} className="group relative bg-white border border-slate-200 rounded-2xl p-3 flex gap-3 shadow-sm hover:border-primary/30 transition-all">
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => {
-                          const updated = form.highlights.filter((_: any, idx: number) => idx !== i);
-                          setForm({ ...form, highlights: updated });
-                        }}><X className="h-3.5 w-3.5" /></Button>
-                      </div>
-                      <div className="w-16 h-16 shrink-0 rounded-xl overflow-hidden border bg-slate-50">
+                    <div key={i} className="group relative bg-white border border-slate-200/80 rounded-xl p-3 flex items-center gap-3.5 shadow-2xs hover:border-[#FF6B00]/40 transition-all">
+                      <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
                         <ImageUpload compact value={item.image || ""} onUpload={(url) => {
                           const updated = [...form.highlights];
                           updated[i] = { ...item, image: url };
                           setForm({ ...form, highlights: updated });
                         }} />
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <Input value={item.name || ""} placeholder="Title" onChange={(e) => {
-                          const updated = [...form.highlights];
-                          updated[i] = { ...item, name: e.target.value };
-                          setForm({ ...form, highlights: updated });
-                        }} className="h-6 text-xs font-bold border-0 px-0 focus-visible:ring-0" />
-                        <Input value={item.description || ""} placeholder="Short description..." onChange={(e) => {
-                          const updated = [...form.highlights];
-                          updated[i] = { ...item, description: e.target.value };
-                          setForm({ ...form, highlights: updated });
-                        }} className="h-5 text-[10px] border-0 px-0 focus-visible:ring-0 text-slate-500" />
+                      <div className="flex-1 min-w-0 space-y-1 pr-6">
+                        <Input 
+                          value={item.name || ""} 
+                          placeholder="Highlight Title" 
+                          onChange={(e) => {
+                            const updated = [...form.highlights];
+                            updated[i] = { ...item, name: e.target.value };
+                            setForm({ ...form, highlights: updated });
+                          }} 
+                          className="h-7 text-xs font-bold text-slate-900 border-slate-200 focus:border-[#FF6B00]" 
+                        />
+                        <Input 
+                          value={item.description || ""} 
+                          placeholder="Short description..." 
+                          onChange={(e) => {
+                            const updated = [...form.highlights];
+                            updated[i] = { ...item, description: e.target.value };
+                            setForm({ ...form, highlights: updated });
+                          }} 
+                          className="h-7 text-[11px] font-medium border-slate-200 text-slate-600 focus:border-[#FF6B00]" 
+                        />
                       </div>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-2.5 right-2.5 h-6 w-6 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" 
+                        onClick={() => {
+                          const updated = form.highlights.filter((_: any, idx: number) => idx !== i);
+                          setForm({ ...form, highlights: updated });
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   );
                 })}
