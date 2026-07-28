@@ -836,17 +836,49 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                   />
                 </div>
 
-                <div className="space-y-3">
-                  <Label className="text-xs font-semibold text-slate-700">Trip Cover Images (Shown on Details Page Grid)</Label>
-                  <div className="grid grid-cols-4 gap-3">
-                    {[0, 1, 2, 3].map((slot) => {
-                      const currentUrl = (form.images || [])[slot] || "";
+                <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <Label className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
+                        Trip Cover Images (Shown on Card Auto-Slider & Details Grid)
+                      </Label>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Upload or paste URLs for cover photos. These photos auto-slide on homepage trip cards!
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const updated = [...(form.images || [])];
+                        updated.push("");
+                        setForm({ ...form, images: updated });
+                      }}
+                      className="h-8 text-xs font-bold text-[#FF5400] border-[#FF5400]/30 hover:bg-[#FF5400]/10 gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Cover Photo Slot
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                    {((form.images && form.images.length > 0) ? form.images : ["", "", "", ""]).map((currentUrl, slot) => {
                       return (
-                        <div key={slot} className="space-y-2">
+                        <div key={slot} className="space-y-2 p-2.5 bg-white rounded-lg border border-slate-200 shadow-sm relative group">
                           {currentUrl ? (
-                            <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-150 border group">
+                            <div className="relative aspect-video rounded-md overflow-hidden bg-zinc-900 border group/img">
                               <img src={formatUrl(currentUrl)} className="w-full h-full object-cover" alt="" />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 transition-all">
+                              
+                              {/* ACTION BUTTONS OVERLAY */}
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-2 transition-all">
+                                <Label
+                                  htmlFor={`cover-upload-replace-${slot}`}
+                                  className="bg-white/90 hover:bg-white text-zinc-900 text-[10px] font-bold px-2.5 py-1.5 rounded cursor-pointer flex items-center gap-1 shadow-md"
+                                >
+                                  <Upload className="w-3 h-3 text-[#FF5400]" />
+                                  Replace
+                                </Label>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -854,52 +886,98 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                                     updated.splice(slot, 1);
                                     setForm({ ...form, images: updated });
                                   }}
-                                  className="bg-destructive text-white text-[9px] px-2 py-1 rounded uppercase font-bold hover:bg-destructive/80"
+                                  className="bg-destructive hover:bg-destructive/90 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1 shadow-md"
                                 >
-                                  Remove
+                                  <Trash2 className="w-3 h-3" />
+                                  Delete
                                 </button>
                               </div>
+
+                              {/* TOP RIGHT QUICK REMOVE CROSS */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...(form.images || [])];
+                                  updated.splice(slot, 1);
+                                  setForm({ ...form, images: updated });
+                                }}
+                                className="absolute top-1.5 right-1.5 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                                title="Remove photo"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
                             </div>
                           ) : (
                             <div>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                id={`cover-upload-details-${slot}`}
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const fd = new FormData();
-                                  fd.append("image", file);
-                                  try {
-                                    const res = await api.post("/upload/single", fd, { headers: { "Content-Type": "multipart/form-data" } });
-                                    if (res.data.success) {
-                                      const updated = [...(form.images || [])];
-                                      while (updated.length <= slot) updated.push("");
-                                      updated[slot] = res.data.url;
-                                      setForm({ ...form, images: updated });
-                                    }
-                                  } catch (err) { console.error(err); }
-                                  e.target.value = '';
-                                }}
-                              />
-                              <Label htmlFor={`cover-upload-details-${slot}`} className="flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed border-zinc-200 bg-zinc-50 cursor-pointer hover:bg-zinc-100 transition-all">
-                                <Upload className="w-4 h-4 text-zinc-400 mb-1" />
-                                <span className="text-[9px] text-zinc-400 font-bold uppercase">Add</span>
+                              <Label
+                                htmlFor={`cover-upload-details-${slot}`}
+                                className="flex flex-col items-center justify-center aspect-video rounded-md border-2 border-dashed border-zinc-300 bg-zinc-50 cursor-pointer hover:bg-orange-50/50 hover:border-[#FF5400]/50 transition-all"
+                              >
+                                <Upload className="w-5 h-5 text-zinc-400 group-hover:text-[#FF5400] mb-1" />
+                                <span className="text-[10px] text-zinc-500 font-bold uppercase">Upload Photo {slot + 1}</span>
                               </Label>
                             </div>
                           )}
+
+                          {/* HIDDEN INPUT FOR REPLACEMENT */}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            id={`cover-upload-replace-${slot}`}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const fd = new FormData();
+                              fd.append("image", file);
+                              try {
+                                const res = await api.post("/upload/single", fd, { headers: { "Content-Type": "multipart/form-data" } });
+                                if (res.data.success) {
+                                  const updated = [...(form.images || [])];
+                                  while (updated.length <= slot) updated.push("");
+                                  updated[slot] = res.data.url;
+                                  setForm({ ...form, images: updated });
+                                }
+                              } catch (err) { console.error(err); }
+                              e.target.value = '';
+                            }}
+                          />
+
+                          {/* HIDDEN INPUT FOR ADD NEW */}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            id={`cover-upload-details-${slot}`}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const fd = new FormData();
+                              fd.append("image", file);
+                              try {
+                                const res = await api.post("/upload/single", fd, { headers: { "Content-Type": "multipart/form-data" } });
+                                if (res.data.success) {
+                                  const updated = [...(form.images || [])];
+                                  while (updated.length <= slot) updated.push("");
+                                  updated[slot] = res.data.url;
+                                  setForm({ ...form, images: updated });
+                                }
+                              } catch (err) { console.error(err); }
+                              e.target.value = '';
+                            }}
+                          />
+
+                          {/* URL INPUT FIELD */}
                           <Input
                             value={currentUrl}
-                            placeholder="Or paste URL..."
+                            placeholder="Or paste photo URL..."
                             onChange={(e) => {
                               const updated = [...(form.images || [])];
                               while (updated.length <= slot) updated.push("");
                               updated[slot] = e.target.value;
                               setForm({ ...form, images: updated });
                             }}
-                            className="h-7 text-[9px] bg-zinc-50 border-zinc-250 focus-visible:ring-[#FF5400]"
+                            className="h-8 text-[10px] bg-white border-zinc-250 focus-visible:ring-[#FF5400]"
                           />
                         </div>
                       );
