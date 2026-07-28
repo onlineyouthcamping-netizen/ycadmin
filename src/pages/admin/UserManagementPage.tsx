@@ -229,6 +229,10 @@ export default function UserManagementPage() {
   const [resetPasswordVal, setResetPasswordVal] = useState("");
   const [isResetting, setIsResetting] = useState(false);
 
+  // Permanent Delete Dialog state
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<Admin | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Manage Access Drawer / Sheet state
   const [permOpen, setPermOpen] = useState(false);
   const [permUser, setPermUser] = useState<Admin | null>(null);
@@ -354,6 +358,22 @@ export default function UserManagementPage() {
       toast.error(error.response?.data?.message || "Failed to reset password");
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteConfirmUser) return;
+    try {
+      setIsDeleting(true);
+      await adminUsersService.deleteAdmin(deleteConfirmUser.id);
+      toast.success(`Profile for ${deleteConfirmUser.name || deleteConfirmUser.email} deleted permanently`);
+      setDeleteConfirmUser(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Failed to delete user profile:", error);
+      toast.error(error.response?.data?.message || "Failed to delete user profile");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -699,6 +719,15 @@ export default function UserManagementPage() {
                                     </>
                                   )}
                                 </DropdownMenuItem>
+
+                                <DropdownMenuSeparator className="my-1 border-slate-100" />
+
+                                <DropdownMenuItem 
+                                  onClick={() => setDeleteConfirmUser(user)} 
+                                  className="text-xs font-semibold py-1.5 cursor-pointer text-rose-600 focus:bg-rose-50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" /> Permanently Delete
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -757,6 +786,13 @@ export default function UserManagementPage() {
                         <DropdownMenuSeparator className="my-1 border-slate-100" />
                         <DropdownMenuItem onClick={() => handleToggleActive(user.id)} className="text-xs font-semibold py-1.5 cursor-pointer">
                           {user.isActive ? "Disable Account" : "Enable Account"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="my-1 border-slate-100" />
+                        <DropdownMenuItem 
+                          onClick={() => setDeleteConfirmUser(user)} 
+                          className="text-xs font-semibold py-1.5 cursor-pointer text-rose-600 focus:bg-rose-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" /> Permanently Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1054,6 +1090,36 @@ export default function UserManagementPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── PERMANENT DELETE DIALOG ─── */}
+      <Dialog open={!!deleteConfirmUser} onOpenChange={(open) => !open && setDeleteConfirmUser(null)}>
+        <DialogContent className="max-w-md p-6 bg-white rounded-2xl border border-slate-200 shadow-xl">
+          <DialogHeader className="space-y-2">
+            <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-1">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <DialogTitle className="text-base font-extrabold text-[#17233C]">Permanently Delete Profile</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 leading-relaxed">
+              Are you sure you want to permanently delete the profile for <strong className="text-slate-800">{deleteConfirmUser?.name}</strong> ({deleteConfirmUser?.email})? This action is permanent and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2 mt-4">
+            <Button type="button" variant="outline" onClick={() => setDeleteConfirmUser(null)} disabled={isDeleting} className="h-8 text-xs font-semibold rounded-lg">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleDeleteUser} 
+              disabled={isDeleting} 
+              className="h-8 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5"
+            >
+              {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              Delete Permanently
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

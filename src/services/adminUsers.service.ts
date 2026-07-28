@@ -32,6 +32,11 @@ export const adminUsersService = {
     return response.data;
   },
 
+  deleteAdmin: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete(`/admin/users/${id}`);
+    return response.data;
+  },
+
   getMyProfile: async (): Promise<Admin> => {
     const response = await api.get("/admin/me");
     return response.data.data;

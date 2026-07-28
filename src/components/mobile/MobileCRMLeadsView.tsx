@@ -41,7 +41,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
         tripName: inq.tripName || inq.destination || "Trip Inquiry",
         status: (inq.status || "NEW").toUpperCase() as any,
         priority: (inq.priority || "MEDIUM").toUpperCase() as any,
-        lastContact: inq.updatedAt ? new Date(inq.updatedAt).toLocaleDateString('en-IN', { day: '2-[#1E293B]digit', month: 'short' }) : "Recent"
+        lastContact: inq.updatedAt ? new Date(inq.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "Recent"
       }))
     : fallbackLeads;
 
