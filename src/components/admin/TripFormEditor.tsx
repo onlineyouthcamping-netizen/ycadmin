@@ -99,6 +99,15 @@ interface TripFormEditorProps {
 }
 
 export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEditorProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
+
+  const handleTabChange = (newTab: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", newTab);
+    setSearchParams(next, { replace: true });
+  };
+
   const [form, setForm] = useState<any>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [customFields, setCustomFields] = useState([]);
@@ -250,6 +259,15 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
       };
 
       const cleanData = normalize(form);
+      if (cleanData.gallery && cleanData.gallery.length > 0) {
+        cleanData.highlights = cleanData.gallery.map((g: any) => ({
+          name: g.alt || "Trip Glimpse",
+          image: typeof g === 'string' ? g : (g.url || g.image || g.img || ""),
+          url: typeof g === 'string' ? g : (g.url || g.image || g.img || ""),
+          description: ""
+        }));
+      }
+
       // Remove UI-only or unsupported fields to prevent Prisma validation errors
       delete cleanData.emailNotifications;
       delete cleanData.pdfSettings;

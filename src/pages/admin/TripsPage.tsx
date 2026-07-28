@@ -51,13 +51,13 @@ export default function TripsPage() {
       setIsEditingMode(true);
       setEditing(null);
     } else if (editParam) {
+      setIsEditingMode(true);
       const found = trips.find((t) => 
         String(t.id) === String(editParam) || 
         String((t as any)._id) === String(editParam) || 
         String((t as any).slug) === String(editParam) || 
         String(t.tripCode || (t as any).code) === String(editParam)
       );
-      setIsEditingMode(true);
       if (found) {
         setEditing(found);
       }
@@ -71,7 +71,7 @@ export default function TripsPage() {
       setIsEditingMode(false);
       setEditing(null);
     }
-  }, [editParam, isNewParam, trips]);
+  }, [editParam, isNewParam]);
 
   const load = useCallback(async () => {
     if (!cachedTripsList) setLoading(true);
