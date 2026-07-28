@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { tripsService } from "@/services/trips.service";
 import { DataTable } from "@/components/admin/DataTable";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 let cachedTripsList: Trip[] | null = null;
 
 export default function TripsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [trips, setTrips] = useState<Trip[]>(cachedTripsList || []);
   const [loading, setLoading] = useState(!cachedTripsList);
   const [isEditingMode, setIsEditingMode] = useState(false);
@@ -40,6 +42,36 @@ export default function TripsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [vendorTrip, setVendorTrip] = useState<Trip | null>(null);
   const [sortModalOpen, setSortModalOpen] = useState(false);
+
+  const editParam = searchParams.get("edit");
+  const isNewParam = searchParams.get("new") === "true";
+
+  useEffect(() => {
+    if (isNewParam) {
+      setIsEditingMode(true);
+      setEditing(null);
+    } else if (editParam) {
+      const found = trips.find((t) => 
+        String(t.id) === String(editParam) || 
+        String((t as any)._id) === String(editParam) || 
+        String((t as any).slug) === String(editParam) || 
+        String(t.tripCode || (t as any).code) === String(editParam)
+      );
+      setIsEditingMode(true);
+      if (found) {
+        setEditing(found);
+      }
+      tripsService.getById(editParam).then(fullTrip => {
+        if (fullTrip) {
+          setEditing(fullTrip);
+          setIsEditingMode(true);
+        }
+      }).catch(() => {});
+    } else {
+      setIsEditingMode(false);
+      setEditing(null);
+    }
+  }, [editParam, isNewParam, trips]);
 
   const load = useCallback(async () => {
     if (!cachedTripsList) setLoading(true);
@@ -57,6 +89,19 @@ export default function TripsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => {
+    setSearchParams({ new: "true", tab: "overview" });
+  };
+
+  const openEdit = (t: Trip) => {
+    const identifier = t.id || (t as any)._id || (t as any).slug || t.tripCode || "trip";
+    setSearchParams({ edit: String(identifier), tab: searchParams.get("tab") || "overview" });
+  };
+
+  const closeEditor = () => {
+    setSearchParams({});
+  };
 
   // Quick Metrics Stats
   const metrics = useMemo(() => {
@@ -96,16 +141,6 @@ export default function TripsPage() {
     });
   }, [trips, statusFilter, categoryTab, searchQuery]);
 
-  const openCreate = () => { setEditing(null); setIsEditingMode(true); };
-  const openEdit = (t: Trip) => { 
-    if (!t?.id) return;
-    setEditing(t);
-    setIsEditingMode(true); 
-    tripsService.getById(t.id).then(fullTrip => {
-      if (fullTrip) setEditing(fullTrip);
-    }).catch(() => {});
-  };
-
   const handleSave = async (data: TripFormData, editingId?: string) => {
     const payload = {
       ...data,
@@ -126,8 +161,7 @@ export default function TripsPage() {
         toast.success("New trip created");
       }
       load();
-      setIsEditingMode(false);
-      setEditing(null);
+      closeEditor();
     } catch (error: any) {
       console.error("❌ SAVE ERROR:", error);
       const msg = error.response?.data?.message || "Failed to save trip";
@@ -335,10 +369,7 @@ export default function TripsPage() {
       <TripFormEditor
         editing={editing}
         onSave={handleSave}
-        onCancel={() => {
-          setIsEditingMode(false);
-          setEditing(null);
-        }}
+        onCancel={closeEditor}
       />
     );
   }

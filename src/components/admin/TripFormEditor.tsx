@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -383,7 +384,7 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
   );
 
   return (
-    <Tabs defaultValue="overview" className="w-full min-h-screen bg-slate-50/50">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full min-h-screen bg-slate-50/50">
       {/* ─── STICKY HEADER ─── */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
