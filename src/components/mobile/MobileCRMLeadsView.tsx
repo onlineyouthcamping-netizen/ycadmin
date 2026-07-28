@@ -12,24 +12,40 @@ interface LeadItem {
   lastContact: string;
 }
 
-export const MobileCRMLeadsView: React.FC = () => {
+interface MobileCRMLeadsViewProps {
+  inquiries?: any[];
+  onSelectInquiry?: (inquiry: any) => void;
+  onUpdateStatus?: (id: string, status: string) => void;
+}
+
+export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
+  inquiries = [],
+  onSelectInquiry,
+  onUpdateStatus,
+}) => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
 
-  const [leads, setLeads] = useState<LeadItem[]>([
+  const fallbackLeads: LeadItem[] = [
     { id: "L1", name: "Ankit Sharma", phone: "+91 9876543210", tripName: "Manali Kasol Trip", status: "INTERESTED", priority: "HIGH", lastContact: "2 hours ago" },
     { id: "L2", name: "Neha Gupta", phone: "+91 9812345678", tripName: "Kedarnath Trek", status: "FOLLOWUP", priority: "HIGH", lastContact: "Yesterday" },
     { id: "L3", name: "Rohan Mehta", phone: "+91 9765432109", tripName: "Spiti Road Trip", status: "NEW", priority: "MEDIUM", lastContact: "Just now" },
     { id: "L4", name: "Karan Johar", phone: "+91 9654321098", tripName: "Kerala Backpacking", status: "CONTACTED", priority: "LOW", lastContact: "3 days ago" },
-  ]);
+  ];
 
-  const updateLeadStatus = (id: string, newStatus: LeadItem["status"]) => {
-    setLeads((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, status: newStatus } : l))
-    );
-  };
+  const leadsList: LeadItem[] = inquiries.length > 0
+    ? inquiries.map((inq: any) => ({
+        id: inq.id,
+        name: inq.customerName || inq.name || "Lead",
+        phone: inq.customerPhone || inq.phone || "",
+        tripName: inq.tripName || inq.destination || "Trip Inquiry",
+        status: (inq.status || "NEW").toUpperCase() as any,
+        priority: (inq.priority || "MEDIUM").toUpperCase() as any,
+        lastContact: inq.updatedAt ? new Date(inq.updatedAt).toLocaleDateString('en-IN', { day: '2-[#1E293B]digit', month: 'short' }) : "Recent"
+      }))
+    : fallbackLeads;
 
-  const filtered = leads.filter((l) => {
+  const filtered = leadsList.filter((l) => {
     const matchesSearch =
       l.name.toLowerCase().includes(search.toLowerCase()) ||
       l.phone.includes(search) ||

@@ -20,14 +20,30 @@ import { TripManager } from "@/components/bookings/TripManagerModal";
 import { ConfirmModal } from "@/components/bookings/ConfirmModal";
 import { BookingsToolbar } from "@/components/bookings/BookingsToolbar";
 import { MobileBookingsView } from "@/components/mobile/MobileBookingsView";
-// Booking source helper
-const getBookingMetaData = (booking: Booking) => {
+
+// Booking source helper with Sales Executive name resolution
+const getBookingMetaData = (booking: Booking, adminMap?: Record<string, string>) => {
+  if (!booking) return { bookedBy: "Website / Direct", source: "Website / Inquiry" };
   const salesAdminId = (booking as any).salesAdminId as string | undefined;
+  const salesAdminObj = (booking as any).salesAdmin as { id?: string; name?: string; fullName?: string; email?: string } | undefined;
   const link = (booking as any).sourceBookingLink as
     | { tokenPrefix?: string | null; id?: string | null; shareUrl?: string | null }
     | undefined;
 
-  let bookedBy = salesAdminId ? `Sales ${salesAdminId}` : "Website / Unknown";
+  let bookedBy = "Website / Direct";
+
+  if (salesAdminObj?.name) {
+    bookedBy = salesAdminObj.name;
+  } else if (salesAdminObj?.fullName) {
+    bookedBy = salesAdminObj.fullName;
+  } else if ((booking as any).salesAdminName) {
+    bookedBy = (booking as any).salesAdminName;
+  } else if (salesAdminId && adminMap && adminMap[salesAdminId]) {
+    bookedBy = adminMap[salesAdminId];
+  } else if (salesAdminId) {
+    bookedBy = salesAdminId.startsWith("cm") || salesAdminId.length > 20 ? "Sales Executive" : salesAdminId;
+  }
+
   let source = link?.tokenPrefix ? `Booking Link #${link.tokenPrefix}` : "Website / Inquiry";
 
   const notesLower = ((booking.notes as any) || "").toString().toLowerCase() + " " + ((booking.adminNotes as any) || "").toString().toLowerCase();
