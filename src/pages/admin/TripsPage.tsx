@@ -223,20 +223,50 @@ export default function TripsPage() {
       render: (t: Trip) => {
         const price = Number(t?.price);
         return (
-          <span className="font-medium text-sm text-slate-900">
-            ₹{isNaN(price) ? '0' : price.toLocaleString()}
-          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-sm text-slate-900">
+              ₹{isNaN(price) ? '0' : price.toLocaleString()}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium tracking-wide">per traveler</span>
+          </div>
         );
       }
+    },
+    {
+      key: "order",
+      header: "Order",
+      render: (t: Trip) => (
+        <span className="text-xs font-black text-[#FF5400]">
+          #{t?.order || 0}
+        </span>
+      )
     },
     { 
       key: "duration", 
       header: "Duration", 
       render: (t: Trip) => (
-        <span className="text-xs text-slate-600">
+        <span className="text-xs text-slate-700 font-medium">
           {t?.duration || "N/A"}
         </span>
       )
+    },
+    {
+      key: "itinerary",
+      header: "Itinerary",
+      render: (t: Trip) => {
+        const durationStr = String(t?.duration || "");
+        const daysMatch = durationStr.match(/(\d+)\s*(?:Days?|D)/i);
+        const daysVal = daysMatch ? daysMatch[1] : "N/A";
+        return (
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-md w-fit">
+            <CalendarDays className="w-3.5 h-3.5 text-[#FF5400]" />
+            <div className="flex flex-col leading-none">
+              <span className="text-[10px] font-bold text-slate-700">{daysVal}</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Days</span>
+            </div>
+          </div>
+        );
+      }
     },
     { 
       key: "status", 
@@ -248,13 +278,14 @@ export default function TripsPage() {
           <button 
             type="button" 
             onClick={() => toggleStatus(t)} 
-            className="cursor-pointer group flex items-center gap-1.5"
+            className={cn(
+              "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors",
+              isPub ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100" : "bg-orange-50 text-[#FF5400] border-orange-100 hover:bg-orange-100"
+            )}
             title="Click to toggle status"
           >
-            <span className={cn("w-2 h-2 rounded-full", isPub ? "bg-emerald-500" : "bg-slate-300")} />
-            <span className="text-xs text-slate-600 capitalize group-hover:text-slate-900 transition-colors">
-              {t.status}
-            </span>
+            <span className={cn("w-1.5 h-1.5 rounded-full", isPub ? "bg-emerald-500" : "bg-[#FF5400]")} />
+            {isPub ? "ACTIVE" : "DRAFT"}
           </button>
         );
       }
@@ -313,16 +344,21 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="p-6 sm:p-8 bg-white min-h-screen font-sans">
+    <div className="p-6 sm:p-8 bg-slate-50/30 min-h-screen font-sans">
       {/* ─── Top Header Bar ─── */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Trips
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage your catalog, itineraries, and pricing.
-          </p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-orange-50 border border-orange-100 p-2.5 rounded-xl shrink-0">
+            <Compass className="w-5 h-5 text-[#FF5400]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              Trip Expeditions & Catalog
+            </h1>
+            <p className="text-[11px] font-medium text-slate-500 mt-0.5">
+              Manage itineraries, prices, variants, vendor allocations, and public website displays
+            </p>
+          </div>
         </div>
 
         {/* Header Actions */}
@@ -330,62 +366,78 @@ export default function TripsPage() {
           <Button 
             variant="outline"
             onClick={() => setSortModalOpen(true)} 
-            className="h-8 px-3 rounded-md text-xs border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+            className="h-9 px-4 rounded-lg font-bold text-xs border-orange-200 text-[#FF5400] hover:bg-orange-50 hover:text-[#FF5400] flex items-center gap-2 shadow-sm"
           >
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" /> Reorder
+            <GripVertical className="w-3.5 h-3.5" /> Reorder Catalog
           </Button>
           <Button 
             variant="outline"
             onClick={handleShuffle} 
-            className="h-8 px-3 rounded-md text-xs border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+            className="h-9 px-4 rounded-lg font-bold text-xs border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-2 shadow-sm"
           >
-            <Shuffle className="w-3.5 h-3.5 text-slate-400" /> Shuffle
+            <Shuffle className="w-3.5 h-3.5" /> Shuffle Display
           </Button>
           <Button 
             onClick={openCreate} 
-            className="h-8 px-4 rounded-md font-medium text-xs bg-[#D4541A] hover:bg-[#c24813] text-white flex items-center gap-2"
+            className="h-9 px-5 rounded-lg font-bold text-xs bg-[#FF5400] hover:bg-[#e64a00] text-white flex items-center gap-2 shadow-sm shadow-orange-500/20"
           >
-            <Plus className="w-3.5 h-3.5" /> New Trip
+            <Plus className="w-4 h-4" /> Create New Trip
           </Button>
         </div>
       </div>
 
       {/* ─── Metric Summary Cards Bar ─── */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <div>
-          <p className="text-xs font-medium text-slate-500 mb-1">Total Trips</p>
-          <p className="text-xl font-semibold text-slate-900">{metrics.total}</p>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Expeditions</p>
+          <div className="flex items-end justify-between">
+            <p className="text-3xl font-black text-slate-800">{metrics.total}</p>
+            <span className="text-[9px] font-bold tracking-widest text-slate-500 uppercase bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Catalog</span>
+          </div>
         </div>
-        <div>
-          <p className="text-xs font-medium text-slate-500 mb-1">Published</p>
-          <p className="text-xl font-semibold text-slate-900">{metrics.published}</p>
+        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Live Published</p>
+          <div className="flex items-end justify-between">
+            <p className="text-3xl font-black text-emerald-600">{metrics.published}</p>
+            <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+              <CheckCircle2 className="w-2.5 h-2.5" /> Active
+            </span>
+          </div>
         </div>
-        <div>
-          <p className="text-xs font-medium text-slate-500 mb-1">Drafts</p>
-          <p className="text-xl font-semibold text-slate-900">{metrics.draft}</p>
+        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Draft & Hidden</p>
+          <div className="flex items-end justify-between">
+            <p className="text-3xl font-black text-[#FF5400]">{metrics.draft}</p>
+            <span className="text-[9px] font-bold tracking-widest text-[#FF5400] uppercase bg-orange-50 px-2 py-0.5 rounded border border-orange-100">Unpublished</span>
+          </div>
         </div>
-        <div>
-          <p className="text-xs font-medium text-slate-500 mb-1">Categories</p>
-          <p className="text-xl font-semibold text-slate-900">{metrics.categories}</p>
+        <div className="bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm flex flex-col justify-between h-24 relative overflow-hidden">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Categories</p>
+          <div className="flex items-end justify-between">
+            <p className="text-3xl font-black text-[#FF5400]">{metrics.categories}</p>
+            <span className="text-[9px] font-bold tracking-widest text-[#FF5400] uppercase bg-orange-50 px-2 py-0.5 rounded border border-orange-100">Diverse</span>
+          </div>
         </div>
       </div>
 
       {/* ─── Automation Notice Banner ─── */}
-      <div className="bg-slate-50/80 rounded-md p-3 flex items-start gap-3 mb-8 border border-slate-100">
-        <Sparkles className="w-4 h-4 text-[#D4541A] shrink-0 mt-0.5" />
-        <div className="text-xs text-slate-600 leading-relaxed">
-          <span className="font-semibold text-slate-900">Automation Active: </span>
+      <div className="bg-gradient-to-r from-orange-50 to-orange-50/30 rounded-xl p-4 flex items-center gap-4 mb-6 border border-orange-100 shadow-sm">
+        <div className="bg-[#FF5400] p-1.5 rounded-lg shrink-0 shadow-sm">
+          <Sparkles className="w-4 h-4 text-white" />
+        </div>
+        <div className="text-[11px] text-slate-600 font-medium">
+          <span className="font-bold text-slate-900 block text-xs mb-0.5">Automatic Payment & Booking Link Engine Active</span>
           Trip prices, available departure dates, and variants configured here are automatically synchronized with WhatsApp payment links, quotation generators, and customer booking forms.
         </div>
       </div>
 
       {/* ─── Main Table Container ─── */}
-      <div className="space-y-4">
+      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden mb-6">
         {/* Category & Status Filter Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
-          <div className="flex items-center gap-6 overflow-x-auto scrollbar-none">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-slate-100">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none bg-slate-50/80 p-1 rounded-xl border border-slate-200/60">
             {[
-              { id: "all", label: "All" },
+              { id: "all", label: "All Trips" },
               { id: "backpacking", label: "Backpacking" },
               { id: "roadtrip", label: "Road Trips" },
               { id: "international", label: "International" },
@@ -395,10 +447,10 @@ export default function TripsPage() {
                 type="button"
                 onClick={() => setCategoryTab(tab.id)}
                 className={cn(
-                  "pb-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
+                  "px-4 py-1.5 text-[11px] font-bold transition-all rounded-lg whitespace-nowrap",
                   categoryTab === tab.id
-                    ? "border-[#D4541A] text-slate-900"
-                    : "border-transparent text-slate-500 hover:text-slate-800"
+                    ? "bg-[#FF5400] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white hover:shadow-sm"
                 )}
               >
                 {tab.label}
@@ -406,12 +458,12 @@ export default function TripsPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 pb-2">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-2 pr-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs font-medium bg-transparent text-slate-700 outline-none cursor-pointer"
+              className="text-xs font-bold bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1.5 text-slate-700 outline-none cursor-pointer focus:border-slate-300 shadow-sm"
             >
               <option value="all">All Statuses</option>
               <option value="published">Published</option>
@@ -421,15 +473,17 @@ export default function TripsPage() {
         </div>
 
         {/* Data Table */}
-        <DataTable
-          columns={columns} 
-          data={filtered} 
-          loading={loading}
-          searchKey="title" 
-          searchPlaceholder="Search trips..."
-          emptyMessage="No trips found matching criteria" 
-          emptyIcon={<Search className="h-8 w-8 text-slate-300" />}
-        />
+        <div className="p-4">
+          <DataTable
+            columns={columns} 
+            data={filtered} 
+            loading={loading}
+            searchKey="title" 
+            searchPlaceholder="Search trip by title, location, or trip code..."
+            emptyMessage="No trips found matching criteria" 
+            emptyIcon={<Search className="h-8 w-8 text-slate-300" />}
+          />
+        </div>
       </div>
 
       {/* Vendor Allocation Drawer Modal */}
