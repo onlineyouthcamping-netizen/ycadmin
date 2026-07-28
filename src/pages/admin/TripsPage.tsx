@@ -352,7 +352,7 @@ export default function TripsPage() {
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">Expeditions</h1>
             <span className="bg-orange-50 text-[#FF5400] text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider">Catalog OS</span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">Manage itineraries, dynamic pricing, variants & distribution.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Manage itineraries, pricing, variants & website display.</p>
         </div>
 
         <div className="flex items-center gap-2">
