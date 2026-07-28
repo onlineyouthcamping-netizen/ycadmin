@@ -35,11 +35,10 @@ const SettingsPage = lazy(() => import("./pages/admin/SettingsPage.tsx"));
 const FooterManagementPage = lazy(() => import("./pages/admin/FooterManagementPage.tsx"));
 const PagesPage = lazy(() => import("./pages/admin/PagesPage.tsx"));
 const PageEditorPage = lazy(() => import("./pages/admin/PageEditorPage.tsx"));
-const ThemePage = lazy(() => import("./pages/admin/ThemePage.tsx"));
-const DesignControlCenterPage = lazy(() => import("./pages/admin/DesignControlCenterPage.tsx"));
 const SeoCenterPage = lazy(() => import("./pages/admin/SeoCenterPage.tsx"));
 const InquiryFormPage = lazy(() => import("./pages/admin/InquiryFormPage.tsx"));
 const WebsiteControlCenterPage = lazy(() => import("./pages/admin/WebsiteControlCenterPage.tsx"));
+const WebsiteEditorPage = lazy(() => import("./pages/admin/WebsiteEditorPage.tsx"));
 const ApprovalsHubPage = lazy(() => import("./pages/admin/ApprovalsHubPage.tsx"));
 const PageBuilderPage = lazy(() => import("./pages/admin/PageBuilderPage.tsx"));
 const PreviewPage = lazy(() => import("./pages/admin/PreviewPage.tsx"));
@@ -187,6 +186,7 @@ const App = () => (
                 <Route path="/admin/seo" element={<AdminRoute requiredPermission="seo.view"><SeoCenterPage /></AdminRoute>} />
                 <Route path="/admin/inquiry-form" element={<AdminRoute requiredPermission="inquiries.view"><InquiryFormPage /></AdminRoute>} />
                 <Route path="/admin/website" element={<AdminRoute requiredPermission="settings.view"><WebsiteControlCenterPage /></AdminRoute>} />
+                <Route path="/admin/website/editor/:slug" element={<AdminRoute requiredPermission="settings.view"><WebsiteEditorPage /></AdminRoute>} />
                 <Route path="/admin/page-builder" element={<AdminRoute requiredPermission="settings.view"><PageBuilderPage /></AdminRoute>} />
                 <Route path="/admin/package-builder" element={<AdminRoute requiredPermission="quotations.view"><PackageBuilderPage /></AdminRoute>} />
                 <Route path="/admin/preview" element={<AdminRoute requiredPermission="settings.view"><PreviewPage /></AdminRoute>} />
