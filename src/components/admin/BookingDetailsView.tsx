@@ -1011,7 +1011,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       const remaining = Number(booking.remainingAmount || 0);
       try {
         await bookingsService.update(booking.id, {
-          notes: booking.notes ? `${booking.notes}\n[Collect at Venue: ₹${remaining.toLocaleString('en-IN')}]` : `[Collect at Venue: ₹${remaining.toLocaleString('en-IN')}]`,
+          notes: booking.notes ? `${booking.notes}\n[Collect at Venue: ₹${(remaining || 0).toLocaleString('en-IN')}]` : `[Collect at Venue: ₹${(remaining || 0).toLocaleString('en-IN')}]`,
           // Preserve the actual remaining amount so outstanding reports remain correct.
           // A dedicated venueCollectionAmount flag is stored for staff to know what to collect.
           venueCollectionAmount: remaining,
@@ -1313,9 +1313,9 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 <div class="total-row"><span class="lbl">Subtotal</span><span class="val">&#8377;${basePrice.toLocaleString('en-IN')}</span></div>
                 <div class="total-row"><span class="lbl">GST @ ${Math.round(gstRate * 100)}%</span><span class="val">&#8377;${gstAmount.toLocaleString('en-IN')}</span></div>
                 ${gstDiscount > 0 ? `<div class="total-row"><span class="lbl" style="color:#e11d48">GST Discount</span><span class="val" style="color:#e11d48">&minus;&#8377;${gstDiscount.toLocaleString('en-IN')}</span></div>` : ''}
-                <div class="total-row"><span class="lbl">Total Amount</span><span class="val">&#8377;${booking.totalAmount.toLocaleString('en-IN')}</span></div>
-                <div class="total-row"><span class="lbl">Advance Paid</span><span class="val" style="color:#059669">&minus;&#8377;${booking.advancePaid.toLocaleString('en-IN')}</span></div>
-                <div class="total-row grand"><span class="lbl">Balance Due</span><span class="val">&#8377;${booking.remainingAmount.toLocaleString('en-IN')}</span></div>
+                <div class="total-row"><span class="lbl">Total Amount</span><span class="val">&#8377;${(booking.totalAmount || 0).toLocaleString('en-IN')}</span></div>
+                <div class="total-row"><span class="lbl">Advance Paid</span><span class="val" style="color:#059669">&minus;&#8377;${(booking.advancePaid || 0).toLocaleString('en-IN')}</span></div>
+                <div class="total-row grand"><span class="lbl">Balance Due</span><span class="val">&#8377;${(booking.remainingAmount || 0).toLocaleString('en-IN')}</span></div>
               </div>
             </div>
             <div class="footer">
@@ -1639,7 +1639,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         <div className="workspace-kpi-card" onClick={() => setAdminActiveTab("payments")}>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Payment</div>
           <div className="text-base font-bold text-slate-800">₹{(booking.totalAmount || 0).toLocaleString('en-IN')}</div>
-          <div className="text-[11px] text-slate-500 font-medium">Due ₹{booking.remainingAmount.toLocaleString('en-IN')}</div>
+          <div className="text-[11px] text-slate-500 font-medium">Due ₹{(booking.remainingAmount || 0).toLocaleString('en-IN')}</div>
         </div>
         <div className="workspace-kpi-card" onClick={() => setAdminActiveTab("passengers")}>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Passengers</div>
@@ -1725,7 +1725,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                   {booking.remainingAmount > 0 && (
                     <div className="bg-[#fffbea] border-l-4 border-[#f5760e] rounded-r-lg px-4 py-3 text-xs text-slate-700 flex items-center gap-2.5 shadow-sm">
                       <span className="text-base">💰</span>
-                      <span className="font-semibold">Outstanding Balance: ₹{booking.remainingAmount.toLocaleString('en-IN')} due</span>
+                      <span className="font-semibold">Outstanding Balance: ₹{(booking.remainingAmount || 0).toLocaleString('en-IN')} due</span>
                     </div>
                   )}
                   {(booking.trainTicketStatus === "PENDING" || tickets.some((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING")) && (
@@ -2099,7 +2099,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                     <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Payment History & Transactions</h3>
                     {booking.remainingAmount > 0 ? (
                       <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 uppercase font-mono">
-                        Balance Due ₹{booking.remainingAmount.toLocaleString('en-IN')}
+                        Balance Due ₹{(booking.remainingAmount || 0).toLocaleString('en-IN')}
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-mono">
@@ -2337,7 +2337,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                           <td className="px-4 py-3 text-slate-400 font-mono">
                             {safeFormatDate(booking.updatedAt, { day: '2-digit', month: 'short' })}
                           </td>
-                          <td className="px-4 py-3 text-right font-bold font-mono text-red-650">₹ {booking.remainingAmount.toLocaleString('en-IN')}</td>
+                          <td className="px-4 py-3 text-right font-bold font-mono text-red-650">₹ {(booking.remainingAmount || 0).toLocaleString('en-IN')}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -3602,7 +3602,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             {paymentSource === 'venue' && (
               <div className="p-3 bg-amber-50 border border-amber-150 rounded text-[#b38515] animate-fade-in">
                 <p className="font-semibold mb-0.5">Venue Collection Directive:</p>
-                <p>Saving this will mark the remaining balance amount <strong>₹ {booking.remainingAmount.toLocaleString('en-IN')}</strong> to be collected directly from the customer at the trip venue.</p>
+                <p>Saving this will mark the remaining balance amount <strong>₹ {(booking.remainingAmount || 0).toLocaleString('en-IN')}</strong> to be collected directly from the customer at the trip venue.</p>
               </div>
             )}
 

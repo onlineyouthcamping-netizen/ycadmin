@@ -344,9 +344,9 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="p-6 bg-[#FAFAFA] min-h-screen font-sans text-slate-900">
+    <div className="p-3 sm:p-6 bg-[#FAFAFA] min-h-screen font-sans text-slate-900">
       {/* ─── Page Header & Key Actions ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">Expeditions</h1>
@@ -355,24 +355,24 @@ export default function TripsPage() {
           <p className="text-xs text-slate-500 mt-0.5">Manage itineraries, pricing, variants & website display.</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <Button 
             variant="outline"
             onClick={() => setSortModalOpen(true)} 
-            className="h-8 px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
+            className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
           >
             <GripVertical className="w-3.5 h-3.5 text-slate-400" /> Reorder
           </Button>
           <Button 
             variant="outline"
             onClick={handleShuffle} 
-            className="h-8 px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
+            className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
           >
             <Shuffle className="w-3.5 h-3.5 text-slate-400" /> Shuffle
           </Button>
           <Button 
             onClick={openCreate} 
-            className="h-8 px-3.5 rounded-lg text-xs font-bold bg-[#FF5400] hover:bg-[#e04a00] text-white shadow-xs gap-1.5"
+            className="h-8 px-3 sm:px-3.5 rounded-lg text-xs font-bold bg-[#FF5400] hover:bg-[#e04a00] text-white shadow-xs gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" /> New Expedition
           </Button>
