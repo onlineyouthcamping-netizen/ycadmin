@@ -425,14 +425,25 @@ export interface DashboardStats {
 
 export type TripFormData = Omit<Trip, "id" | "createdAt" | "updatedAt">;
 
+export interface BlogHighlight {
+  title: string;
+  desc: string;
+}
+
 export interface Blog {
   id: string;
   title: string;
   slug: string;
+  category?: string;
+  intro?: string;
   author: string;
   authorImage?: string;
+  authorRole?: string;
   content: string;
   image: string;
+  gallery?: string[];
+  highlights?: BlogHighlight[];
+  tips?: string[];
   readTime: string;
   hasVideo: boolean;
   status: "draft" | "published";

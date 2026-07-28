@@ -465,11 +465,11 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
               <TabsTrigger value="details" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">BASIC DETAILS</TabsTrigger>
               <TabsTrigger value="pricing" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">PRICES & RATES</TabsTrigger>
               <TabsTrigger value="dates" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">CALENDAR</TabsTrigger>
-              <TabsTrigger value="policies" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">SETTINGS</TabsTrigger>
-              <TabsTrigger value="itinerary" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">DETAILED ITINERARY</TabsTrigger>
               <TabsTrigger value="glimpses" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">TRIP GLIMPSES</TabsTrigger>
-              <TabsTrigger value="custom" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">EXTRA FIELDS</TabsTrigger>
-              <TabsTrigger value="addons" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">ADDONS</TabsTrigger>
+              <TabsTrigger value="stay" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">STAY &amp; ACCOMMODATIONS</TabsTrigger>
+              <TabsTrigger value="faqs" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">FAQS &amp; QUESTIONS</TabsTrigger>
+              <TabsTrigger value="reviews" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">REVIEWS &amp; TESTIMONIALS</TabsTrigger>
+              <TabsTrigger value="policies" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">POLICIES &amp; POPUP DETAILS</TabsTrigger>
               <TabsTrigger value="email" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">E-MAIL</TabsTrigger>
               <TabsTrigger value="pdf" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">PDF SETTINGS</TabsTrigger>
               <TabsTrigger value="multicity" className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs">LOCATION</TabsTrigger>
@@ -485,11 +485,12 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
               <TabsTrigger value="details" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">BASIC DETAILS</TabsTrigger>
               <TabsTrigger value="pricing" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">PRICES & RATES</TabsTrigger>
               <TabsTrigger value="dates" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">CALENDAR</TabsTrigger>
-              <TabsTrigger value="policies" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">SETTINGS</TabsTrigger>
               <TabsTrigger value="itinerary" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">DETAILED ITINERARY</TabsTrigger>
               <TabsTrigger value="glimpses" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">TRIP GLIMPSES &amp; GALLERY</TabsTrigger>
-              <TabsTrigger value="custom" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">EXTRA BOOKING FIELDS</TabsTrigger>
-              <TabsTrigger value="addons" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">ADDONS & CROSS-SELLS</TabsTrigger>
+              <TabsTrigger value="stay" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-[#FF5400] transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">STAY &amp; ACCOMMODATIONS</TabsTrigger>
+              <TabsTrigger value="faqs" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-[#FF5400] transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">FAQS &amp; QUESTIONS</TabsTrigger>
+              <TabsTrigger value="reviews" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-[#FF5400] transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">REVIEWS &amp; TESTIMONIALS</TabsTrigger>
+              <TabsTrigger value="policies" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">POLICIES &amp; POPUP DETAILS</TabsTrigger>
               <TabsTrigger value="email" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">E-MAIL NOTIFICATIONS</TabsTrigger>
               <TabsTrigger value="pdf" className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200">
                 PDF SETTINGS
@@ -1429,30 +1430,6 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                     <Input value={form.bookingFormLabels?.roomSharing || ""} onChange={(e) => setForm({ ...form, bookingFormLabels: { ...form.bookingFormLabels, roomSharing: e.target.value } })} placeholder="e.g. Room Sharing Option" className="rounded-xl h-10" />
                   </div>
                 </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="addons">
-            <div className="space-y-6 pt-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-black uppercase tracking-widest opacity-50">Trip Add-ons</Label>
-                <Button variant="outline" size="sm" onClick={() => setForm({ ...form, addons: [...(form.addons || []), { name: "", rate: 0, description: "", minQuantity: 1, maxQuantity: 99 }] })} className="rounded-xl h-8 text-[10px] font-black uppercase">
-                  <Plus className="h-3 w-3 mr-1" />Add Add-on
-                </Button>
-              </div>
-              <div className="space-y-4">
-                {form.addons?.map((addon:any, i:number) => (
-                  <div key={i} className="border bg-muted/20 rounded-2xl p-4 space-y-3 relative group">
-                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover:opacity-100" onClick={() => setForm({ ...form, addons: form.addons.filter((_:any, idx:number) => idx !== i) })}><Trash2 className="h-3 w-3" /></Button>
-                    <Input value={addon.name} placeholder="Add-on Name (e.g. Rafting)" onChange={(e) => { const updated = [...form.addons]; updated[i].name = e.target.value; setForm({ ...form, addons: updated }); }} className="h-9 text-xs font-bold" />
-                    <div className="grid grid-cols-3 gap-3">
-                      <Input type="number" value={addon.rate} placeholder="Rate" onChange={(e) => { const updated = [...form.addons]; updated[i].rate = Number(e.target.value); setForm({ ...form, addons: updated }); }} className="h-9 text-xs" />
-                      <Input type="number" value={addon.minQuantity} placeholder="Min" onChange={(e) => { const updated = [...form.addons]; updated[i].minQuantity = Number(e.target.value); setForm({ ...form, addons: updated }); }} className="h-9 text-xs" />
-                      <Input type="number" value={addon.maxQuantity} placeholder="Max" onChange={(e) => { const updated = [...form.addons]; updated[i].maxQuantity = Number(e.target.value); setForm({ ...form, addons: updated }); }} className="h-9 text-xs" />
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </TabsContent>
@@ -2506,38 +2483,46 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
             </div>
           </TabsContent>
 
-          <TabsContent value="custom">
+          <TabsContent value="reviews">
             <div className="space-y-6 pt-4">
-               {customFields.length === 0 ? (
-                 <div className="text-center py-20 opacity-30 border-2 border-dashed rounded-[32px]">
-                   <p className="text-xs font-black uppercase tracking-widest">No custom sections defined</p>
-                 </div>
-               ) : (
-                 <div className="space-y-6">
-                   {customFields.map((field: any, idx: number) => {
-                     const existing = (form.customSections || []).find((s:any) => s.label === field.label);
-                     return (
-                       <div key={idx} className="space-y-2">
-                         <Label className="text-[10px] font-black uppercase tracking-widest opacity-50 flex items-center gap-2">
-                           <FileText className="w-3 h-3 text-primary" /> {field.label}
-                         </Label>
-                         <Textarea 
-                           value={existing?.content || ""} 
-                           onChange={(e) => {
-                             const sections = [...(form.customSections || [])];
-                             const sIdx = sections.findIndex((s:any) => s.label === field.label);
-                             if (sIdx > -1) sections[sIdx].content = e.target.value;
-                             else sections.push({ label: field.label, content: e.target.value });
-                             setForm({ ...form, customSections: sections });
-                           }}
-                           placeholder={`Enter info for ${field.label}...`}
-                           className="rounded-2xl text-xs font-medium min-h-[120px]"
-                         />
-                       </div>
-                     );
-                   })}
-                 </div>
-               )}
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl border border-slate-700 shadow-md">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-extrabold tracking-tight">Customer Reviews &amp; Testimonials Hub</h3>
+                      <span className="bg-[#FF5400] text-white font-extrabold text-[9px] px-2.5 py-0.5 rounded-full uppercase">
+                        Global + Tripwise
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                      Reviews on YouthCamping are managed in the central <strong>Reviews Hub</strong>. You can create customer reviews, assign ratings, set featured status, and map reviews directly to <span className="text-[#FF5400] font-bold">{form.title || "this trip"}</span>.
+                    </p>
+                  </div>
+                  <a
+                    href="/admin/reviews"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 bg-[#FF5400] hover:bg-[#d44500] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all shrink-0"
+                  >
+                    Open Reviews Manager <Globe className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-xl">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">1. Create Review</h4>
+                  <p className="text-[11px] text-slate-500 mt-1">Add traveler name, city, avatar, star rating (1-5), and written story.</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-xl">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">2. Link to Trip</h4>
+                  <p className="text-[11px] text-slate-500 mt-1">Select <strong>{form.title || "Trip Name"}</strong> in the Trip dropdown to display it here.</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-xl">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">3. Feature on Web</h4>
+                  <p className="text-[11px] text-slate-500 mt-1">Toggle <strong>Is Featured</strong> to publish on website trip detail page instantly.</p>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
