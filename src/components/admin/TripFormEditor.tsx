@@ -151,8 +151,23 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
     };
 
     if (editing) {
+      const rawGallery = (editing.gallery && editing.gallery.length > 0)
+        ? editing.gallery
+        : (editing.highlights && editing.highlights.length > 0)
+          ? editing.highlights
+          : (editing.images && editing.images.length > 0)
+            ? editing.images
+            : [];
+
+      const initialGallery = rawGallery.map((img: any, i: number) => ({
+        url: typeof img === 'string' ? img : (img.url || img.image || img.img || img.src || img.path || ""),
+        alt: typeof img === 'string' ? "" : (img.alt || img.name || img.title || ""),
+        order: Number(img.order || i)
+      })).filter((img: any) => img.url);
+
       setForm({
         ...editing,
+        gallery: initialGallery,
         itinerary: ensureArray(editing.itinerary),
         highlights: editing.highlights || [],
         inclusions: editing.inclusions || [],
