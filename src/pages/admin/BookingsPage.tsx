@@ -19,6 +19,7 @@ import EmailComposerDrawer from "@/components/admin/EmailComposerDrawer";
 import { TripManager } from "@/components/bookings/TripManagerModal";
 import { ConfirmModal } from "@/components/bookings/ConfirmModal";
 import { BookingsToolbar } from "@/components/bookings/BookingsToolbar";
+import { MobileBookingsView } from "@/components/mobile/MobileBookingsView";
 // Booking source helper
 const getBookingMetaData = (booking: Booking) => {
   const salesAdminId = (booking as any).salesAdminId as string | undefined;
@@ -554,6 +555,16 @@ export default function BookingsPage() {
       <div className="zoho-main flex flex-1 overflow-hidden">
         {/* CONTENT & TABLE AREA */}
         <div className="zoho-content-left flex-1 flex flex-col overflow-hidden bg-white">
+          {/* MOBILE BOOKINGS VIEW (<768px) */}
+          <div className="block md:hidden p-3">
+            <MobileBookingsView 
+              onSelectBooking={(b) => setDetailsTarget(b)}
+              onCollectPayment={(b) => setDetailsTarget(b)}
+            />
+          </div>
+
+          {/* DESKTOP CONTENT & TABLE (>=768px) */}
+          <div className="hidden md:flex flex-col flex-1 overflow-hidden">
           {/* APPLIED FILTER INDICATOR */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex-shrink-0">
             <div className="flex items-center gap-1.5">
@@ -903,6 +914,7 @@ export default function BookingsPage() {
             <button className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer" onClick={() => handleBulkAction('assign_task')}>Assign Task</button>
             <button className="h-8 px-3 rounded border border-white/20 bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer" onClick={() => handleBulkAction('mark_complete')}>Mark Complete</button>
             <button className="h-8 px-3 rounded border border-indigo-400/40 bg-indigo-650 hover:bg-indigo-600 text-white font-bold text-xs transition-colors cursor-pointer" onClick={() => setIsBulkEmailOpen(true)}>Send Email</button>
+          </div>
           </div>
         </div>
       </div>

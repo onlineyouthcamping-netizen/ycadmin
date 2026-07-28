@@ -28,6 +28,7 @@ import DepartureTasks from "@/components/admin/DepartureTasks";
 import DepartureTicketing from "@/components/admin/DepartureTicketing";
 import StationPaymentCollection from "@/components/admin/StationPaymentCollection";
 import VendorImportWizard from "@/components/admin/VendorImportWizard";
+import { MobileDepartureWorkspace } from "@/components/mobile/MobileDepartureWorkspace";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
   DropdownMenu, 
@@ -3148,6 +3149,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased">
+      {/* ─── MOBILE DEPARTURE WORKSPACE (<768px) ─── */}
+      <div className="block md:hidden p-3">
+        <MobileDepartureWorkspace />
+      </div>
+
+      {/* ─── DESKTOP DEPARTURE HUB (>=768px) ─── */}
+      <div className="hidden md:flex flex-col flex-1 overflow-hidden">
 
 
       {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
@@ -6647,6 +6655,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         );
       })()}
 
+      </div>
       </div>
     </div>
   );

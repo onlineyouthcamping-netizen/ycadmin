@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import EmailComposerDrawer from "@/components/admin/EmailComposerDrawer";
 import EmailLogsTimeline from "@/components/admin/EmailLogsTimeline";
+import { MobileCRMLeadsView } from "@/components/mobile/MobileCRMLeadsView";
 
 const STATUS_TABS = [
   { key: "all", label: "All Inquiries" },
@@ -170,7 +171,14 @@ export default function InquiriesPage() {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-[#F7F8FA] min-h-screen -mx-3 -my-3 sm:-mx-6 sm:-my-6 font-sans text-[#172033]">
+    <div className="flex-1 flex overflow-hidden bg-[#F7F8FA] min-h-screen -mx-3 -my-3 sm:-mx-6 sm:-my-6 font-sans text-[#172033] p-3 md:p-0">
+      {/* ─── MOBILE LEADS VIEW (<768px) ─── */}
+      <div className="block md:hidden w-full">
+        <MobileCRMLeadsView />
+      </div>
+
+      {/* ─── DESKTOP CRM VIEW (>=768px) ─── */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
       {/* LEFT COLUMN: Main List & Filters Workspace */}
       <div className="flex-1 flex flex-col overflow-y-auto p-6 space-y-4 no-scrollbar">
         
@@ -500,6 +508,7 @@ export default function InquiriesPage() {
           load();
         }}
       />
+      </div>
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { announcementsService, Announcement } from "@/services/announcements.ser
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MobileDashboardView } from "@/components/mobile/MobileDashboardView";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -98,6 +99,17 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4 pb-12 select-none px-4 py-3 bg-[#F4F7FB] min-h-screen text-[#162B45] font-sans antialiased">
       
+      {/* ─── MOBILE DASHBOARD VIEW (<768px) ─── */}
+      <div className="block md:hidden">
+        <MobileDashboardView 
+          onOpenNewBooking={() => {}} 
+          onOpenSearch={() => {}} 
+        />
+      </div>
+
+      {/* ─── DESKTOP DASHBOARD VIEW (>=768px) ─── */}
+      <div className="hidden md:block space-y-4">
+
       {/* ─── SUB-HEADER BAR (40px HEIGHT, DATE ON LEFT, VIEW CONTROLS ON RIGHT) ─── */}
       <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] h-[40px] px-5 flex items-center justify-between font-sans -mx-4 -mt-3 mb-3">
         <div className="text-[12px] font-normal text-[#64748B]">
@@ -712,6 +724,7 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

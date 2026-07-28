@@ -471,6 +471,10 @@ function AdminSidebar() {
   );
 }
 
+import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
+import { MobileQuickActionFab } from "@/components/mobile/MobileQuickActionFab";
+import { MobileNavigationDrawer } from "@/components/mobile/MobileNavigationDrawer";
+
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { admin, isAuthenticated, isLoading, checkAuth } = useAuthStore();
   const location = useLocation();
@@ -481,6 +485,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [profileModalTab, setProfileModalTab] = useState<"profile" | "password">("profile");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Record<string, { title: string; path: string }[]>>({});
   const [isSearching, setIsSearching] = useState(false);
@@ -827,7 +832,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1 flex overflow-hidden">
              {/* Main Content Area */}
-             <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
+             <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 pb-20 md:pb-6">
                 <div className="w-full min-h-full">
                    {children}
                 </div>
@@ -969,6 +974,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         open={profileModalOpen} 
         onOpenChange={setProfileModalOpen} 
         defaultTab={profileModalTab} 
+      />
+
+      {/* ─── Mobile Navigation & Quick Actions ─── */}
+      <MobileBottomNav onOpenDrawer={() => setIsMobileDrawerOpen(true)} />
+      <MobileQuickActionFab 
+        onOpenNewBooking={() => setBookingModalOpen(true)} 
+        onOpenGlobalSearch={() => setIsSearchOpen(true)} 
+      />
+      <MobileNavigationDrawer 
+        open={isMobileDrawerOpen} 
+        onOpenChange={setIsMobileDrawerOpen} 
       />
     </SidebarProvider>
   );
