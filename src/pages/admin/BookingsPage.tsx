@@ -158,7 +158,7 @@ export default function BookingsPage() {
   }, []);
 
   useEffect(() => {
-    if (currentAdmin && (currentAdmin.role === "admin" || currentAdmin.role === "superadmin")) {
+    if (currentAdmin) {
       if (cachedSalesOptions) setSalesOptions(cachedSalesOptions);
       adminUsersService.listAdmins()
         .then((users) => {
