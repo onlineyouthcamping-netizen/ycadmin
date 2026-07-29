@@ -1,3 +1,6 @@
+import AboutTripCmsEditor from "@/components/admin/trips/AboutTripCmsEditor";
+import VariantsManager from "@/components/admin/trips/VariantsManager";
+import ModernTripCalendar from "@/components/admin/trips/ModernTripCalendar";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
