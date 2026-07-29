@@ -1,3 +1,6 @@
+import DocumentManager from "@/components/admin/DocumentManager";
+import { getPaymentReceivedColorClass, getPaymentReceivedColorHex } from "@/utils/paymentUtils";
+import { normalizePassenger, normalizeBookingPassengers } from "@/utils/passengerUtils";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { 
   Calendar, Users, Pencil, Trash2, Plus, ArrowLeft, Check, X, 
@@ -1975,8 +1978,18 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                         <td className="px-4 py-3 font-bold text-slate-800">
                           {p.name || "N/A"}
                         </td>
-                        <td className="px-4 py-3 font-mono">{p.age}</td>
-                        <td className="px-4 py-3">{p.gender}</td>
+                        {(() => {
+                            const normP = normalizePassenger(booking, p, idx);
+                            return (
+                              <>
+                                <td className="px-4 py-3 font-mono font-bold text-slate-800">
+                                  {normP.age !== null ? `${normP.age}y` : "N/A"}
+                                  {normP.dob && <span className="block text-[9px] text-slate-400 font-normal">DOB: {normP.dob}</span>}
+                                </td>
+                                <td className="px-4 py-3 font-medium text-slate-700">{normP.genderFull}</td>
+                              </>
+                            );
+                          })()}
                         <td className="px-4 py-3 font-mono text-slate-500 truncate max-w-[120px]">{p.email || 'N/A'}</td>
                         
                         {/* Documents */}
@@ -2458,9 +2471,22 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between text-[9px] text-slate-400 font-medium">
-                      <span>By <b>{task.assignedBy?.name}</b> &rarr; <b>{task.assignedTo?.name}</b></span>
-                      {task.dueDate && <span>Due: {safeFormatDate(task.dueDate)}</span>}
+                    <div className="text-[9.5px] text-slate-500 space-y-0.5 border-t border-slate-100/80 pt-1.5 font-sans">
+                      <div className="flex justify-between items-center text-slate-600 font-medium">
+                        <span>Created: <b className="text-slate-800">{task.createdAt ? safeFormatDateTime(task.createdAt) : "N/A"}</b> by <b className="text-slate-800">{task.assignedBy?.name || task.assignedByAdmin?.name || "System"}</b></span>
+                        <span>Assigned to: <b className="text-slate-800">{task.assignedTo?.name || task.assignedToAdmin?.name || "Unassigned"}</b></span>
+                      </div>
+                      {task.updatedAt && task.updatedAt !== task.createdAt && (
+                        <div className="text-[9px] text-slate-400">
+                          Last edited: {safeFormatDateTime(task.updatedAt)} {task.lastEditedBy ? `by ${task.lastEditedBy}` : ""}
+                        </div>
+                      )}
+                      {task.completedAt && (
+                        <div className="text-[9px] text-emerald-600 font-bold">
+                          Completed: {safeFormatDateTime(task.completedAt)} {task.completedBy ? `by ${task.completedBy}` : ""}
+                        </div>
+                      )}
+                      {task.dueDate && <div className="text-[9px] text-amber-600 font-medium">Due: {safeFormatDate(task.dueDate)}</div>}
                     </div>
 
                     {task.status !== 'COMPLETED' && (

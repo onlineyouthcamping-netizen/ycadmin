@@ -1,3 +1,4 @@
+import { normalizePassenger } from "@/utils/passengerUtils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -2914,8 +2915,8 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       const leadPassenger = {
         name: leadName,
-        age: b.age || 24,
-        gender: b.gender || "Male",
+        age: normalizePassenger(b, null, 0).age || b.age || 24,
+        gender: normalizePassenger(b, null, 0).genderFull,
         phone: b.phone || b.mobile || "—",
         email: b.email || "—",
         pickupPoint: b.pickupCity || "Ahmedabad",
@@ -2938,8 +2939,8 @@ const [sharingPref, setSharingPref] = useState<string>("3");
           const coRoomInfo = personsRoomDetails[p.name] || {};
           personsList.push({
             name: p.name,
-            age: p.age || 24,
-            gender: p.gender || "Male",
+            age: normalizePassenger(b, p, idx).age || p.age || 24,
+            gender: normalizePassenger(b, p, idx).genderFull,
             phone: p.phone || b.phone || "—",
             email: p.email || "—",
             pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",

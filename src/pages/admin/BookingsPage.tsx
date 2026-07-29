@@ -1,3 +1,5 @@
+import { getPaymentReceivedColorClass } from "@/utils/paymentUtils";
+import { normalizePassenger } from "@/utils/passengerUtils";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Search, Copy, Trash2, CheckCircle, Clock, Filter, X, Link2, Users, ChevronDown, Edit, Pencil, FileDown, RotateCw, ChevronLeft, ChevronRight, CreditCard, FileText, ClipboardList, Bookmark, Ticket, Train, CheckSquare, MessageSquare, HelpCircle, Wallet, Compass, AlertCircle, CheckCircle2, ShieldAlert } from "lucide-react";
@@ -741,7 +743,7 @@ export default function BookingsPage() {
                           )} onClick={e => e.stopPropagation()} />
                           <td className="p-2.5 border-r border-slate-150 font-bold text-slate-800 truncate" title={b.fullName}>{b.fullName}</td>
                           <td className="p-2.5 border-r border-slate-150 font-mono text-slate-500 truncate" title={b.mobile}>{b.mobile}</td>
-                          <td className="p-2.5 border-r border-slate-150 text-center font-medium text-slate-650">{b.age ? `${b.age}y` : 'N/A'} / {b.gender ? (b.gender.toLowerCase() === 'male' ? 'M' : b.gender.toLowerCase() === 'female' ? 'F' : 'U') : 'U'}</td>
+                          <td className="p-2.5 border-r border-slate-150 text-center font-medium text-slate-650">{normalizePassenger(b).formattedAgeGender}</td>
                           <td className="p-2.5 border-r border-slate-150 font-bold text-slate-700 truncate" title={b.tripName || b.tripId}>{b.tripId}</td>
                           <td className="p-2.5 border-r border-slate-150 text-slate-600 font-medium">{safeFormatDate(b.departureDate, { day: '2-digit', month: 'short' }, 'No Dep')}</td>
                           <td className="p-2.5 border-r border-slate-150 text-slate-550 font-medium text-center">{days}d</td>
@@ -749,7 +751,7 @@ export default function BookingsPage() {
                           <td className="p-2.5 border-r border-slate-150 text-slate-600 truncate" title={meta.bookedBy}>{meta.bookedBy}</td>
                           <td className="p-2.5 border-r border-slate-150 text-slate-550 font-medium">{b.trainClass || 'Sleeper'}</td>
                           <td className="p-2.5 border-r border-slate-150 text-right pr-4 font-mono font-bold text-red-650">₹{Number(b.remainingAmount || 0).toLocaleString('en-IN')}</td>
-                          <td className="p-2.5 border-r border-slate-150 text-right pr-4 font-mono font-bold text-[#12B76A]">₹{Number(b.advancePaid || 0).toLocaleString('en-IN')}</td>
+                          <td className={cn("p-2.5 border-r border-slate-150 text-right pr-4 font-mono", getPaymentReceivedColorClass(b.status, b.paymentStatus))}>₹{Number(b.advancePaid || 0).toLocaleString('en-IN')}</td>
                           <td className="p-2.5 border-r border-slate-150 text-center">
                             <div className="flex items-center gap-1.5 justify-center">
                               <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
