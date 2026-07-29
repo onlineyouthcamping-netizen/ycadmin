@@ -37,7 +37,7 @@ export function ImageUpload({
   multiple = false,
   className,
   compact = false,
-  accept = "image/png, image/jpeg, image/webp, image/gif, video/mp4, video/webm, video/quicktime, video/*, .mp4, .webm, .mov"
+  accept = "image/*,video/*,.mp4,.webm,.mov,.m4v,.MP4,.MOV"
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);

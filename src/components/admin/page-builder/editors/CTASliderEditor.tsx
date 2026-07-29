@@ -132,7 +132,7 @@ export function CTASliderEditor({
         <ImageUpload
           label="DROP VIDEOS OR PHOTOS HERE"
           multiple={true}
-          accept="image/*,video/*,.mp4,.webm,.mov,.ogg"
+          accept="image/*,video/*,.mp4,.webm,.mov,.m4v,.MP4,.MOV"
           onUpload={addMedia}
           onMultipleUpload={addMultipleMedia}
         />
