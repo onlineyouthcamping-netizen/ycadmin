@@ -31,9 +31,9 @@ export function VideoUpload({ onUpload, label, value, className }: VideoUploadPr
     if (!files || files.length === 0) return;
     const file = files[0];
     
-    // Check file size (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      alert("File size exceeds 50MB limit");
+    // Check file size (max 100MB)
+    if (file.size > 100 * 1024 * 1024) {
+      alert("File size exceeds 100MB limit");
       return;
     }
 

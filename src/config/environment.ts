@@ -58,7 +58,7 @@ const API_BASE_URL = normalizeUrl(rawApiUrl, defaultApiUrl);
 const GUIDE_API_BASE_URL = normalizeUrl(rawGuideApiUrl, defaultGuideApiUrl);
 const API_TIMEOUT_MS = parseTimeout(import.meta.env.VITE_API_TIMEOUT_MS, 30000);
 const DOCUMENT_MAX_BYTES = parseMaxBytes(import.meta.env.VITE_DOCUMENT_MAX_MB, 10);
-const IMAGE_MAX_BYTES = parseMaxBytes(import.meta.env.VITE_IMAGE_MAX_MB, 5);
+const IMAGE_MAX_BYTES = parseMaxBytes(import.meta.env.VITE_IMAGE_MAX_MB, 100);
 
 export const ENV = Object.freeze({
   API_BASE_URL,
