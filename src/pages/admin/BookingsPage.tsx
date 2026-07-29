@@ -674,12 +674,12 @@ export default function BookingsPage() {
                       const meta = getBookingMetaData(b);
 
                       const role = (currentAdmin?.role || 'admin').toLowerCase();
-                      const showPayment = ['admin', 'superadmin', 'senior', 'sales', 'accounts'].includes(role);
-                      const showPassengers = ['admin', 'superadmin', 'senior', 'sales', 'operations'].includes(role);
-                      const showDocuments = ['admin', 'superadmin', 'senior', 'operations', 'accounts'].includes(role);
-                      const showTicketing = ['admin', 'superadmin', 'senior', 'sales', 'operations'].includes(role);
-                      const showOperations = ['admin', 'superadmin', 'senior', 'operations'].includes(role);
-                      const showChecklist = ['admin', 'superadmin', 'senior', 'operations'].includes(role);
+                      const showPayment = true;
+                      const showPassengers = true;
+                      const showDocuments = true;
+                      const showTicketing = true;
+                      const showOperations = true;
+                      const showChecklist = true;
                       const showNotes = true;
 
                       let paymentDot: 'red' | 'amber' | undefined = undefined;

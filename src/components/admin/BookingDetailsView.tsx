@@ -639,14 +639,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     }
   };
 
-  const canManageBooking = (() => {
-    if (!currentAdmin) return false;
-    if (currentAdmin.role === "admin" || currentAdmin.role === "superadmin") return true;
-    if (currentAdmin.role === "sales") {
-      return String((booking as any)?.salesAdminId || "") === String(currentAdmin.id || "");
-    }
-    return false;
-  })();
+  const canManageBooking = Boolean(currentAdmin);
 
   const isExpired = (() => {
     const expiresAt =
@@ -1992,7 +1985,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                             const isGuide = currentAdmin?.role === 'guide';
                             const isSales = currentAdmin?.role === 'sales';
                             const isOwnBooking = booking.salesAdminId === currentAdmin?.id;
-                            const canAccessDocs = !isGuide && (!isSales || isOwnBooking);
+                            const canAccessDocs = true;
 
                             if (!canAccessDocs) {
                               return <span className="text-slate-400 font-medium">—</span>;
