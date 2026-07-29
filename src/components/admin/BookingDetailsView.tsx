@@ -1657,9 +1657,20 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           <div className="text-base font-bold text-slate-800">
             {tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length}
           </div>
-          <div className="text-[11px] text-amber-600 font-semibold">
-            {tickets.some((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING") ? "Pending Approval" : (booking.ticketStatus || "Issued")}
-          </div>
+          {(() => {
+            const depT = tickets.filter((t: any) => t.journeyType !== "RETURN");
+            const retT = tickets.filter((t: any) => t.journeyType === "RETURN");
+            const depConf = depT.filter((t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED").length;
+            const depWl = depT.filter((t: any) => (t.ticketStatus || "").toUpperCase() === "WAITLISTED").length;
+            const retConf = retT.filter((t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED").length;
+
+            return (
+              <div className="text-[10px] text-slate-600 font-medium space-y-0.5 mt-0.5">
+                <div>Dep: <b className="text-emerald-600">{depConf} Conf</b>{depWl > 0 ? `, ${depWl} WL` : ""}</div>
+                <div>Ret: <b className="text-blue-600">{retConf} Conf</b></div>
+              </div>
+            );
+          })()}
         </div>
         <div className="workspace-kpi-card" onClick={() => setAdminActiveTab("operations")}>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Tasks</div>
@@ -1979,7 +1990,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                           {p.name || "N/A"}
                         </td>
                         {(() => {
-                            const normP = normalizePassenger(booking, p, idx);
+                            const normP = normalizePassenger(booking, p, index);
                             return (
                               <>
                                 <td className="px-4 py-3 font-mono font-bold text-slate-800">

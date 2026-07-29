@@ -135,7 +135,7 @@ export const bookingsService = {
 
   async getEmailLogs(bookingId: string): Promise<any[]> {
     const res = await api.get(`/emails/logs/${bookingId}`);
-    return res.data;
+    return res.data.data || (Array.isArray(res.data) ? res.data : []);
   },
 
   async getActivityLogs(bookingId: string): Promise<any[]> {
