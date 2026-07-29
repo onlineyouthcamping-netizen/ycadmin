@@ -37,7 +37,7 @@ export function ImageUpload({
   multiple = false,
   className,
   compact = false,
-  accept = "image/png, image/jpeg, image/webp"
+  accept = "image/png, image/jpeg, image/webp, image/gif, video/mp4, video/webm, video/quicktime, video/*, .mp4, .webm, .mov"
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -280,7 +280,7 @@ export function ImageUpload({
                   Drag &amp; drop {multiple ? 'photos' : 'photo'} here, or <span className="text-[#FF6B00] underline" onClick={handleReplace}>browse</span>
                 </p>
                 <p className="text-[10px] text-slate-400 font-medium">
-                  JPG, PNG, WEBP &middot; Max 50MB
+                  JPG, PNG, WEBP, MP4, WEBM, MOV &middot; Max 100MB
                 </p>
               </div>
             )}
