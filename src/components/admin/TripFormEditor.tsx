@@ -2722,137 +2722,146 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
 
                </div>
           </TabsContent>
-          <TabsContent value="experimental">
+
+          <TabsContent value="stay">
             <div className="space-y-6 pt-4">
-              <Accordion type="single" collapsible className="w-full">
-                {/* Stay / Accommodations Strategy */}
-                <AccordionItem value="stay">
-                  <AccordionTrigger className="text-xs font-bold uppercase">Stay / Accommodations Strategy</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-6 pt-4">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs font-black uppercase tracking-widest opacity-50">Accommodation Strategy</Label>
-                        <Button variant="outline" type="button" size="sm" onClick={() => setForm({ ...form, accommodations: [...(form.accommodations || []), { name: "", location: "", nights: "", type: "", starRating: "", roomType: "", meals: "", image: "", gallery: [] }] })} className="rounded-xl h-8 text-[10px] font-black uppercase">
-                          <Plus className="h-3 w-3 mr-1" />Define Stay
-                        </Button>
-                      </div>
-                      <div className="space-y-6">
-                        {(form.accommodations || []).map((item: any, i: number) => (
-                          <div key={i} className="border bg-muted/20 rounded-[32px] p-6 space-y-6 relative group transition-all hover:bg-muted/30">
-                            <Button variant="ghost" size="icon" type="button" className="absolute top-4 right-4 h-8 w-8 text-destructive opacity-0 group-hover:opacity-100" onClick={() => setForm({ ...form, accommodations: form.accommodations.filter((_:any, idx:number) => idx !== i) })}><Trash2 className="h-4 w-4" /></Button>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                               <div className="space-y-4">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Stay & Accommodations Strategy</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">Define the hotels, camps, and stays for each leg of this trip.</p>
+                </div>
+                <Button variant="outline" type="button" size="sm" onClick={() => setForm({ ...form, accommodations: [...(form.accommodations || []), { name: "", location: "", nights: "", type: "", starRating: "", roomType: "", meals: "", image: "", gallery: [] }] })} className="rounded-xl h-8 text-[10px] font-black uppercase border-dashed">
+                  <Plus className="h-3 w-3 mr-1.5" />Define Stay
+                </Button>
+              </div>
+
+              {(form.accommodations || []).length === 0 && (
+                <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No Stays Defined Yet</p>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Click "Define Stay" to add accommodation details for this trip.</p>
+                </div>
+              )}
+
+              <div className="space-y-5">
+                {(form.accommodations || []).map((item: any, i: number) => (
+                  <div key={i} className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 space-y-5 shadow-2xs hover:border-[#FF6B00]/30 transition-all">
+                    <Button variant="ghost" size="icon" type="button" className="absolute top-3 right-3 h-7 w-7 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setForm({ ...form, accommodations: form.accommodations.filter((_:any, idx:number) => idx !== i) })}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       <div className="space-y-4">
+                          <ImageUpload 
+                            label="Primary Visual"
+                            value={item.image} 
+                            onUpload={url => {
+                               const updated = [...form.accommodations];
+                               updated[i].image = url;
+                               setForm({ ...form, accommodations: updated });
+                            }}
+                          />
+                          <div className="space-y-4 pt-4 border-t border-slate-100">
+                             {['Exterior', 'Interior', 'Premium Room', 'Bathroom', 'Swimming Pool', 'Dining'].map(cat => (
+                               <div key={cat} className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                     <Label className="text-[10px] font-black uppercase tracking-wider text-slate-500">{cat} Photos</Label>
+                                  </div>
                                   <ImageUpload 
-                                    label="Primary Visual"
-                                    value={item.image} 
-                                    onUpload={url => {
+                                    compact
+                                    multiple
+                                    onUpload={urls => {
                                        const updated = [...form.accommodations];
-                                       updated[i].image = url;
+                                       const newImgs = (Array.isArray(urls) ? urls : [urls]).map(url => ({ url, category: cat }));
+                                       updated[i].gallery = [...(updated[i].gallery || []), ...newImgs];
                                        setForm({ ...form, accommodations: updated });
                                     }}
                                   />
-                                  <div className="space-y-4 pt-4 border-t border-slate-100">
-                                     {['Exterior', 'Interior', 'Premium Room', 'Bathroom', 'Swimming Pool', 'Dining'].map(cat => (
-                                       <div key={cat} className="space-y-2">
-                                          <div className="flex items-center justify-between">
-                                             <Label className="text-[10px] font-black uppercase tracking-wider text-slate-500">{cat} Photos</Label>
-                                          </div>
-                                          <ImageUpload 
-                                            compact
-                                            multiple
-                                            onUpload={urls => {
-                                               const updated = [...form.accommodations];
-                                               const newImgs = (Array.isArray(urls) ? urls : [urls]).map(url => ({ url, category: cat }));
-                                               updated[i].gallery = [...(updated[i].gallery || []), ...newImgs];
-                                               setForm({ ...form, accommodations: updated });
-                                            }}
-                                          />
-                                          <div className="grid grid-cols-4 gap-2 p-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                             {(item.gallery || []).filter((img: any) => img.category === cat).map((img: any, gidx: number) => {
-                                               const absoluteIndex = item.gallery.findIndex((g:any) => g === img);
-                                               return (
-                                                 <div key={gidx} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-white group">
-                                                    <img src={formatUrl(typeof img === 'string' ? img : img.url)} className="w-full h-full object-cover" />
-                                                    <button 
-                                                      type="button"
-                                                      onClick={() => {
-                                                        const updated = [...form.accommodations];
-                                                        updated[i].gallery = updated[i].gallery.filter((_:any, idx:number) => idx !== absoluteIndex);
-                                                        setForm({ ...form, accommodations: updated });
-                                                      }} 
-                                                      className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
-                                                    >
-                                                      <X className="w-2.5 h-2.5" />
-                                                    </button>
-                                                 </div>
-                                               );
-                                             })}
-                                             {(!item.gallery || item.gallery.filter((img: any) => img.category === cat).length === 0) && (
-                                               <div className="col-span-full py-2 text-center">
-                                                  <p className="text-[9px] font-bold text-slate-400 uppercase italic">No {cat} photos</p>
-                                               </div>
-                                             )}
-                                          </div>
+                                  <div className="grid grid-cols-4 gap-2 p-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                     {(item.gallery || []).filter((img: any) => img.category === cat).map((img: any, gidx: number) => {
+                                       const absoluteIndex = item.gallery.findIndex((g:any) => g === img);
+                                       return (
+                                         <div key={gidx} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-white group">
+                                            <img src={formatUrl(typeof img === 'string' ? img : img.url)} className="w-full h-full object-cover" />
+                                            <button 
+                                              type="button"
+                                              onClick={() => {
+                                                const updated = [...form.accommodations];
+                                                updated[i].gallery = updated[i].gallery.filter((_:any, idx:number) => idx !== absoluteIndex);
+                                                setForm({ ...form, accommodations: updated });
+                                              }} 
+                                              className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
+                                            >
+                                              <X className="w-2.5 h-2.5" />
+                                            </button>
+                                         </div>
+                                       );
+                                     })}
+                                     {(!item.gallery || item.gallery.filter((img: any) => img.category === cat).length === 0) && (
+                                       <div className="col-span-full py-2 text-center">
+                                          <p className="text-[9px] font-bold text-slate-400 uppercase italic">No {cat} photos</p>
                                        </div>
-                                     ))}
+                                     )}
                                   </div>
                                </div>
-
-                               <div className="md:col-span-2 space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Nights in Location</Label>
-                                        <Input value={item.nights} placeholder="e.g. 2 Nights in Havelock" onChange={(e) => {
-                                           const updated = [...form.accommodations];
-                                           updated[i].nights = e.target.value;
-                                           setForm({ ...form, accommodations: updated });
-                                        }} className="rounded-xl h-10 text-xs font-bold" />
-                                     </div>
-                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Property Name</Label>
-                                        <Input value={item.name} placeholder="e.g. Sandy Waves Resort" onChange={(e) => {
-                                           const updated = [...form.accommodations];
-                                           updated[i].name = e.target.value;
-                                           setForm({ ...form, accommodations: updated });
-                                        }} className="rounded-xl h-10 text-xs font-bold" />
-                                     </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-3 gap-4">
-                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Star Rating / Type</Label>
-                                        <Input value={item.starRating} placeholder="e.g. 4 Star Resort" onChange={(e) => {
-                                           const updated = [...form.accommodations];
-                                           updated[i].starRating = e.target.value;
-                                           setForm({ ...form, accommodations: updated });
-                                        }} className="rounded-xl h-10 text-xs" />
-                                     </div>
-                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Room Category</Label>
-                                        <Input value={item.roomType} placeholder="e.g. Premium Room" onChange={(e) => {
-                                           const updated = [...form.accommodations];
-                                           updated[i].roomType = e.target.value;
-                                           setForm({ ...form, accommodations: updated });
-                                        }} className="rounded-xl h-10 text-xs" />
-                                     </div>
-                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Inclusions (Meals)</Label>
-                                        <Input value={item.meals} placeholder="e.g. Breakfast" onChange={(e) => {
-                                           const updated = [...form.accommodations];
-                                           updated[i].meals = e.target.value;
-                                           setForm({ ...form, accommodations: updated });
-                                        }} className="rounded-xl h-10 text-xs" />
-                                     </div>
-                                  </div>
-                               </div>
-                            </div>
+                             ))}
                           </div>
-                        ))}
-                      </div>
+                       </div>
+
+                       <div className="md:col-span-2 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nights in Location</Label>
+                                <Input value={item.nights} placeholder="e.g. 2 Nights in Havelock" onChange={(e) => {
+                                   const updated = [...form.accommodations];
+                                   updated[i].nights = e.target.value;
+                                   setForm({ ...form, accommodations: updated });
+                                }} className="rounded-xl h-9 text-xs font-bold" />
+                             </div>
+                             <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Property Name</Label>
+                                <Input value={item.name} placeholder="e.g. Sandy Waves Resort" onChange={(e) => {
+                                   const updated = [...form.accommodations];
+                                   updated[i].name = e.target.value;
+                                   setForm({ ...form, accommodations: updated });
+                                }} className="rounded-xl h-9 text-xs font-bold" />
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4">
+                             <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Star Rating / Type</Label>
+                                <Input value={item.starRating} placeholder="e.g. 4 Star Resort" onChange={(e) => {
+                                   const updated = [...form.accommodations];
+                                   updated[i].starRating = e.target.value;
+                                   setForm({ ...form, accommodations: updated });
+                                }} className="rounded-xl h-9 text-xs" />
+                             </div>
+                             <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Room Category</Label>
+                                <Input value={item.roomType} placeholder="e.g. Premium Room" onChange={(e) => {
+                                   const updated = [...form.accommodations];
+                                   updated[i].roomType = e.target.value;
+                                   setForm({ ...form, accommodations: updated });
+                                }} className="rounded-xl h-9 text-xs" />
+                             </div>
+                             <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inclusions (Meals)</Label>
+                                <Input value={item.meals} placeholder="e.g. Breakfast" onChange={(e) => {
+                                   const updated = [...form.accommodations];
+                                   updated[i].meals = e.target.value;
+                                   setForm({ ...form, accommodations: updated });
+                                }} className="rounded-xl h-9 text-xs" />
+                             </div>
+                          </div>
+                       </div>
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="experimental">
+            <div className="space-y-6 pt-4">
+              <Accordion type="single" collapsible className="w-full">
 
                 {/* Activities */}
                 <AccordionItem value="activities">
