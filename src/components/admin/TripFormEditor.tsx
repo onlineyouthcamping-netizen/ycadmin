@@ -2724,134 +2724,145 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
           </TabsContent>
 
           <TabsContent value="stay">
-            <div className="space-y-6 pt-4">
+            <div className="space-y-5 pt-4">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Stay & Accommodations Strategy</h3>
+                  <h3 className="text-sm font-bold text-slate-900">Stay & Accommodations</h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">Define the hotels, camps, and stays for each leg of this trip.</p>
                 </div>
                 <Button variant="outline" type="button" size="sm" onClick={() => setForm({ ...form, accommodations: [...(form.accommodations || []), { name: "", location: "", nights: "", type: "", starRating: "", roomType: "", meals: "", image: "", gallery: [] }] })} className="rounded-xl h-8 text-[10px] font-black uppercase border-dashed">
-                  <Plus className="h-3 w-3 mr-1.5" />Define Stay
+                  <Plus className="h-3 w-3 mr-1.5" />Add Property
                 </Button>
               </div>
 
               {(form.accommodations || []).length === 0 && (
                 <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No Stays Defined Yet</p>
-                  <p className="text-[10px] text-slate-400 font-medium mt-1">Click "Define Stay" to add accommodation details for this trip.</p>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Click "Add Property" to add accommodation details for this trip.</p>
                 </div>
               )}
 
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {(form.accommodations || []).map((item: any, i: number) => (
-                  <div key={i} className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 space-y-5 shadow-2xs hover:border-[#FF6B00]/30 transition-all">
-                    <Button variant="ghost" size="icon" type="button" className="absolute top-3 right-3 h-7 w-7 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setForm({ ...form, accommodations: form.accommodations.filter((_:any, idx:number) => idx !== i) })}><Trash2 className="h-3.5 w-3.5" /></Button>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                       <div className="space-y-4">
-                          <ImageUpload 
-                            label="Primary Visual"
-                            value={item.image} 
-                            onUpload={url => {
-                               const updated = [...form.accommodations];
-                               updated[i].image = url;
-                               setForm({ ...form, accommodations: updated });
+                  <div key={i} className="group relative bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs hover:border-[#FF6B00]/30 transition-all">
+                    {/* Header row: thumbnail + property details */}
+                    <div className="flex gap-4 p-4 pb-3">
+                      {/* Small thumbnail */}
+                      <div className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0 relative">
+                        {item.image ? (
+                          <>
+                            <img src={formatUrl(item.image)} className="w-full h-full object-cover" alt="" />
+                            <button type="button" onClick={() => { const updated = [...form.accommodations]; updated[i].image = ""; setForm({ ...form, accommodations: updated }); }} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-all"><X className="w-2.5 h-2.5" /></button>
+                          </>
+                        ) : (
+                          <ImageUpload compact onUpload={url => { const updated = [...form.accommodations]; updated[i].image = url; setForm({ ...form, accommodations: updated }); }} />
+                        )}
+                      </div>
+
+                      {/* Property info grid */}
+                      <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 min-w-0">
+                        <div className="space-y-0.5">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Property Name</Label>
+                          <Input value={item.name || ""} placeholder="e.g. Sandy Waves Resort" onChange={(e) => { const updated = [...form.accommodations]; updated[i].name = e.target.value; setForm({ ...form, accommodations: updated }); }} className="h-7 text-[11px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Nights</Label>
+                          <Input value={item.nights || ""} placeholder="e.g. 2" onChange={(e) => { const updated = [...form.accommodations]; updated[i].nights = e.target.value; setForm({ ...form, accommodations: updated }); }} className="h-7 text-[11px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Star Rating / Type</Label>
+                          <Input value={item.starRating || ""} placeholder="e.g. 4 Star" onChange={(e) => { const updated = [...form.accommodations]; updated[i].starRating = e.target.value; setForm({ ...form, accommodations: updated }); }} className="h-7 text-[11px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Room Category</Label>
+                          <Input value={item.roomType || ""} placeholder="e.g. Premium Room" onChange={(e) => { const updated = [...form.accommodations]; updated[i].roomType = e.target.value; setForm({ ...form, accommodations: updated }); }} className="h-7 text-[11px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Meals Included</Label>
+                          <Input value={item.meals || ""} placeholder="e.g. Breakfast, Dinner" onChange={(e) => { const updated = [...form.accommodations]; updated[i].meals = e.target.value; setForm({ ...form, accommodations: updated }); }} className="h-7 text-[11px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Location</Label>
+                          <Input value={item.location || ""} placeholder="e.g. Havelock Island" onChange={(e) => { const updated = [...form.accommodations]; updated[i].location = e.target.value; setForm({ ...form, accommodations: updated }); }} className="h-7 text-[11px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" />
+                        </div>
+                      </div>
+
+                      {/* Delete button */}
+                      <button type="button" onClick={() => setForm({ ...form, accommodations: form.accommodations.filter((_:any, idx:number) => idx !== i) })} className="self-start text-slate-300 hover:text-rose-500 p-1 rounded transition-colors shrink-0" title="Remove property">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Gallery section */}
+                    <div className="border-t border-slate-100 px-4 py-3 bg-slate-50/50">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Gallery Photos ({(item.gallery || []).length})</Label>
+                        <div className="w-24">
+                          <ImageUpload
+                            compact
+                            multiple
+                            onMultipleUpload={(urls: string[]) => {
+                              const updated = [...form.accommodations];
+                              const newImgs = urls.map(url => ({ url, category: "Interior" }));
+                              updated[i].gallery = [...(updated[i].gallery || []), ...newImgs];
+                              setForm({ ...form, accommodations: updated });
+                            }}
+                            onUpload={(url: string) => {
+                              const updated = [...form.accommodations];
+                              updated[i].gallery = [...(updated[i].gallery || []), { url, category: "Interior" }];
+                              setForm({ ...form, accommodations: updated });
                             }}
                           />
-                          <div className="space-y-4 pt-4 border-t border-slate-100">
-                             {['Exterior', 'Interior', 'Premium Room', 'Bathroom', 'Swimming Pool', 'Dining'].map(cat => (
-                               <div key={cat} className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                     <Label className="text-[10px] font-black uppercase tracking-wider text-slate-500">{cat} Photos</Label>
-                                  </div>
-                                  <ImageUpload 
-                                    compact
-                                    multiple
-                                    onUpload={urls => {
-                                       const updated = [...form.accommodations];
-                                       const newImgs = (Array.isArray(urls) ? urls : [urls]).map(url => ({ url, category: cat }));
-                                       updated[i].gallery = [...(updated[i].gallery || []), ...newImgs];
-                                       setForm({ ...form, accommodations: updated });
-                                    }}
-                                  />
-                                  <div className="grid grid-cols-4 gap-2 p-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                     {(item.gallery || []).filter((img: any) => img.category === cat).map((img: any, gidx: number) => {
-                                       const absoluteIndex = item.gallery.findIndex((g:any) => g === img);
-                                       return (
-                                         <div key={gidx} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-white group">
-                                            <img src={formatUrl(typeof img === 'string' ? img : img.url)} className="w-full h-full object-cover" />
-                                            <button 
-                                              type="button"
-                                              onClick={() => {
-                                                const updated = [...form.accommodations];
-                                                updated[i].gallery = updated[i].gallery.filter((_:any, idx:number) => idx !== absoluteIndex);
-                                                setForm({ ...form, accommodations: updated });
-                                              }} 
-                                              className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
-                                            >
-                                              <X className="w-2.5 h-2.5" />
-                                            </button>
-                                         </div>
-                                       );
-                                     })}
-                                     {(!item.gallery || item.gallery.filter((img: any) => img.category === cat).length === 0) && (
-                                       <div className="col-span-full py-2 text-center">
-                                          <p className="text-[9px] font-bold text-slate-400 uppercase italic">No {cat} photos</p>
-                                       </div>
-                                     )}
-                                  </div>
-                               </div>
-                             ))}
-                          </div>
-                       </div>
+                        </div>
+                      </div>
 
-                       <div className="md:col-span-2 space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nights in Location</Label>
-                                <Input value={item.nights} placeholder="e.g. 2 Nights in Havelock" onChange={(e) => {
-                                   const updated = [...form.accommodations];
-                                   updated[i].nights = e.target.value;
-                                   setForm({ ...form, accommodations: updated });
-                                }} className="rounded-xl h-9 text-xs font-bold" />
-                             </div>
-                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Property Name</Label>
-                                <Input value={item.name} placeholder="e.g. Sandy Waves Resort" onChange={(e) => {
-                                   const updated = [...form.accommodations];
-                                   updated[i].name = e.target.value;
-                                   setForm({ ...form, accommodations: updated });
-                                }} className="rounded-xl h-9 text-xs font-bold" />
-                             </div>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-4">
-                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Star Rating / Type</Label>
-                                <Input value={item.starRating} placeholder="e.g. 4 Star Resort" onChange={(e) => {
-                                   const updated = [...form.accommodations];
-                                   updated[i].starRating = e.target.value;
-                                   setForm({ ...form, accommodations: updated });
-                                }} className="rounded-xl h-9 text-xs" />
-                             </div>
-                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Room Category</Label>
-                                <Input value={item.roomType} placeholder="e.g. Premium Room" onChange={(e) => {
-                                   const updated = [...form.accommodations];
-                                   updated[i].roomType = e.target.value;
-                                   setForm({ ...form, accommodations: updated });
-                                }} className="rounded-xl h-9 text-xs" />
-                             </div>
-                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inclusions (Meals)</Label>
-                                <Input value={item.meals} placeholder="e.g. Breakfast" onChange={(e) => {
-                                   const updated = [...form.accommodations];
-                                   updated[i].meals = e.target.value;
-                                   setForm({ ...form, accommodations: updated });
-                                }} className="rounded-xl h-9 text-xs" />
-                             </div>
-                          </div>
-                       </div>
+                      {(item.gallery || []).length > 0 ? (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                          {(item.gallery || []).map((img: any, gidx: number) => (
+                            <div key={gidx} className="relative rounded-lg overflow-hidden border border-slate-200 bg-white group/photo">
+                              <div className="aspect-square">
+                                <img src={formatUrl(typeof img === 'string' ? img : img.url)} className="w-full h-full object-cover" alt="" />
+                              </div>
+                              {/* Category selector overlay at bottom */}
+                              <select
+                                value={img.category || "Interior"}
+                                onChange={(e) => {
+                                  const updated = [...form.accommodations];
+                                  const gal = [...(updated[i].gallery || [])];
+                                  gal[gidx] = { ...(typeof gal[gidx] === 'string' ? { url: gal[gidx] } : gal[gidx]), category: e.target.value };
+                                  updated[i].gallery = gal;
+                                  setForm({ ...form, accommodations: updated });
+                                }}
+                                className="w-full text-[8px] font-bold text-slate-600 bg-slate-50 border-t border-slate-200 px-1.5 py-1 focus:outline-none focus:bg-white cursor-pointer"
+                              >
+                                <option value="Exterior">Exterior</option>
+                                <option value="Interior">Interior / Rooms</option>
+                                <option value="Premium Room">Premium Room</option>
+                                <option value="Bathroom">Bathroom</option>
+                                <option value="Swimming Pool">Swimming Pool</option>
+                                <option value="Dining">Dining Area</option>
+                                <option value="Property & Views">Property & Views</option>
+                              </select>
+                              {/* Delete */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...form.accommodations];
+                                  updated[i].gallery = updated[i].gallery.filter((_:any, idx:number) => idx !== gidx);
+                                  setForm({ ...form, accommodations: updated });
+                                }}
+                                className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-all shadow-sm"
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-6 text-center border border-dashed border-slate-200 rounded-lg bg-white">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">No gallery photos yet — upload above</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
