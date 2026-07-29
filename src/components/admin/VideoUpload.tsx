@@ -108,7 +108,7 @@ export function VideoUpload({ onUpload, label, value, className }: VideoUploadPr
       <Input 
         ref={fileInputRef}
         type="file" 
-        accept="video/*,.mp4,.webm,.mov,.m4v,.MP4,.MOV" 
+        accept="*" 
         onChange={handleFileChange} 
         className="hidden" 
         id={`video-replace-${id}`}
@@ -188,7 +188,7 @@ export function VideoUpload({ onUpload, label, value, className }: VideoUploadPr
         <div className="flex w-full gap-2 items-center justify-center mt-2">
           <Input 
             type="file" 
-            accept="video/*,.mp4,.webm,.mov,.m4v,.MP4,.MOV" 
+            accept="*" 
             onChange={handleFileChange} 
             className="hidden" 
             id={`video-upload-${id}`} 
