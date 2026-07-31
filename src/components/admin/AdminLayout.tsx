@@ -266,7 +266,7 @@ function AdminSidebar() {
 
   const handleLogout = () => {
     logout();
-    navigate("/admin/login");
+    window.location.href = "/admin/login";
   };
 
   return (
@@ -863,13 +863,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       <DropdownMenuSeparator className="my-1 border-slate-100" />
 
                       <DropdownMenuItem 
-                        onClick={() => {
-                          logout();
-                          navigate("/admin/login");
-                        }}
-                        className="text-xs font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer rounded-md py-1.5"
+                        onSelect={() => handleLogout()}
+                        onClick={() => handleLogout()}
+                        className="text-xs font-bold text-white bg-[#F97316] hover:bg-[#EA580C] focus:bg-[#EA580C] focus:text-white cursor-pointer rounded-lg py-2 px-3 mt-1.5 flex items-center justify-center shadow-xs transition-all"
                       >
-                        <LogOut className="w-4 h-4 mr-2 text-rose-500" />
+                        <LogOut className="w-4 h-4 mr-2 text-white" />
                         Logout
                       </DropdownMenuItem>
                     </DropdownMenuContent>

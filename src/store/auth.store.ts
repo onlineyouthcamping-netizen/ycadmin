@@ -149,6 +149,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem("token");
     localStorage.removeItem("guide_access_token");
     localStorage.removeItem("guide_token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("admin");
+    sessionStorage.clear();
     guideLoginPromise = null;
     set({ admin: null, isAuthenticated: false, isLoading: false });
   },
