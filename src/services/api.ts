@@ -18,10 +18,19 @@ api.interceptors.request.use((config) => {
     config.url = `/${config.url}`;
   }
 
-  // Fallback to localStorage 'token' for legacy and dev environments
-  const token = localStorage.getItem('token');
-  if (token && token !== 'undefined' && token !== 'null') {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Token injection with Axios 1.x compatibility and sanitization
+  const rawToken = localStorage.getItem('token');
+  if (rawToken && rawToken !== 'undefined' && rawToken !== 'null') {
+    let cleanToken = rawToken.trim().replace(/^["'\\]+|["'\\]+$/g, '');
+    if (cleanToken.startsWith('Bearer ')) {
+      cleanToken = cleanToken.slice(7).trim();
+    }
+    const bearerValue = `Bearer ${cleanToken}`;
+    if (config.headers && typeof (config.headers as any).set === 'function') {
+      (config.headers as any).set('Authorization', bearerValue);
+    } else if (config.headers) {
+      (config.headers as any)['Authorization'] = bearerValue;
+    }
     adminRedirectInProgress = false;
   }
 
