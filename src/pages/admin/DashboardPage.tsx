@@ -1,12 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Calendar, Users, Building, Briefcase, BarChart2, Plus, 
-  ChevronDown, HelpCircle, Wallet, Compass, AlertCircle, CheckCircle2, 
-  ShieldAlert, Clock, ArrowUpRight, MessageSquare, UserCheck, Milestone,
-  TrendingUp, Landmark, Check, X, Bookmark, Ticket, Info, CheckCircle
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Calendar, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { dashboardService } from "@/services/dashboard.service";
 import { ticketApprovalService } from "@/services/ticketApproval.service";
@@ -18,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogD
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MobileDashboardView } from "@/components/mobile/MobileDashboardView";
+import { DASHBOARD_WIDGET_REGISTRY } from "@/config/dashboardWidgetRegistry";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -34,16 +30,19 @@ export default function DashboardPage() {
 
   const [dateFilter, setDateFilter] = useState("all");
 
-  const [currentDateString, setCurrentDateString] = useState(() => {
+  const [currentDateString] = useState(() => {
     return new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
   });
 
-  const greeting = (() => {
-    const hr = new Date().getHours();
-    if (hr < 12) return "Good Morning";
-    if (hr < 17) return "Good Afternoon";
-    return "Good Evening";
-  })();
+  const userPerms = (admin as any)?.permissions || (admin as any)?.customPermissions || [];
+  const userRole = admin?.role;
+
+  // Filter widgets strictly by user permissions and sort by order
+  const visibleWidgets = useMemo(() => {
+    return DASHBOARD_WIDGET_REGISTRY
+      .filter((w) => !w.permission || hasPermission(userPerms, w.permission, userRole))
+      .sort((a, b) => a.order - b.order);
+  }, [userPerms, userRole]);
 
   const fetchAnnouncements = async () => {
     try {
@@ -111,540 +110,60 @@ export default function DashboardPage() {
       {/* ─── DESKTOP DASHBOARD VIEW (>=768px) ─── */}
       <div className="hidden md:block space-y-4">
 
-      {/* ─── SUB-HEADER BAR (40px HEIGHT, DATE ON LEFT, VIEW CONTROLS ON RIGHT) ─── */}
-      <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] h-[40px] px-5 flex items-center justify-between font-sans -mx-4 -mt-3 mb-3">
-        <div className="text-[12px] font-normal text-[#64748B]">
-          {currentDateString}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* View Dropdown */}
-          <div className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-[6px] px-3 py-1 text-[12px] font-medium text-[#0A192F] cursor-pointer hover:bg-slate-50 transition-colors">
-            <span>Founder View (Dense)</span>
-            <ChevronDown className="w-3 h-3 text-[#64748B]" />
-          </div>
-
-          <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[6px] px-2 py-1 text-[11px] font-semibold text-[#0A192F]">
-            <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
-            <select 
-              value={dateFilter} 
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="bg-transparent border-0 outline-none cursor-pointer text-[#0A192F] font-medium text-[11px]"
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="year">This Year</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── ROW 1: 6 KPI CARDS ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-        
-        {/* Card 1: Gross Revenue */}
-        <div 
-          onClick={() => navigate("/admin/accounting?tab=overview")}
-          className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 h-[108px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all"
-        >
-          <div className="flex items-start justify-between">
-            <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Total Revenue</span>
-            <div className="w-[26px] h-[26px] rounded bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <span className="font-bold text-xs">₹</span>
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-              {loading ? "Loading..." : `₹ ${(stats?.totalRevenue || 0).toLocaleString('en-IN')}`}
-            </h3>
-            <p className="text-[9.5px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-              ▲ Gross <span className="text-[#74839A] font-medium">all-time</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Card 2: Revenue This Month */}
-        <div 
-          onClick={() => navigate("/admin/accounting?tab=profit_loss")}
-          className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 h-[108px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all"
-        >
-          <div className="flex items-start justify-between">
-            <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Monthly Revenue</span>
-            <div className="w-[26px] h-[26px] rounded bg-blue-50 flex items-center justify-center text-blue-600">
-              <Calendar className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-              {loading ? "Loading..." : `₹ ${(stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue || stats?.totalRevenue || 0).toLocaleString('en-IN')}`}
-            </h3>
-            <p className="text-[9.5px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-              ▲ Active <span className="text-[#74839A] font-medium">this month</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Card 3: Pending Payments */}
-        <div 
-          onClick={() => navigate("/admin/accounting?tab=payments")}
-          className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 h-[108px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all"
-        >
-          <div className="flex items-start justify-between">
-            <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Pending Customers</span>
-            <div className="w-[26px] h-[26px] rounded bg-amber-50 flex items-center justify-center text-amber-600">
-              <Users className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-              {loading ? "Loading..." : `₹ ${(stats?.pendingPayments || 0).toLocaleString('en-IN')}`}
-            </h3>
-            <p className="text-[9.5px] font-semibold text-[#74839A] flex items-center gap-0.5 mt-1">
-              {loading ? "..." : stats?.totalBookings || 0} <span className="text-[#74839A] font-medium">bookings</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Card 4: Pending Vendors */}
-        <div 
-          onClick={() => navigate("/admin/accounting?tab=vendor_payments")}
-          className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 h-[108px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all"
-        >
-          <div className="flex items-start justify-between">
-            <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Pending Vendors</span>
-            <div className="w-[26px] h-[26px] rounded bg-rose-50 flex items-center justify-center text-rose-600">
-              <Building className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-              {loading ? "Loading..." : `₹ ${(stats?.pendingVendorsCost || 0).toLocaleString('en-IN')}`}
-            </h3>
-            <p className="text-[9.5px] font-semibold text-[#74839A] flex items-center gap-0.5 mt-1">
-              {loading ? "..." : stats?.pendingVendorsCount || 0} <span className="text-[#74839A] font-medium">vendors</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Card 5: Trips Running Now */}
-        <div 
-          onClick={() => navigate("/admin/live-operations")}
-          className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 h-[108px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all"
-        >
-          <div className="flex items-start justify-between">
-            <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Trips Running</span>
-            <div className="w-[26px] h-[26px] rounded bg-indigo-50 flex items-center justify-center text-indigo-600">
-              <Briefcase className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-              {loading ? "..." : stats?.totalTrips || 0}
-            </h3>
-            <p className="text-[9.5px] font-semibold text-[#74839A] flex items-center gap-0.5 mt-1">
-              Active <span className="text-[#74839A] font-medium">itineraries</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Card 6: Bookings This Month */}
-        <div 
-          onClick={() => navigate("/admin/bookings")}
-          className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 h-[108px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all"
-        >
-          <div className="flex items-start justify-between">
-            <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Bookings Month</span>
-            <div className="w-[26px] h-[26px] rounded bg-teal-50 flex items-center justify-center text-teal-600">
-              <BarChart2 className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-              {loading ? "..." : stats?.totalBookings || 0}
-            </h3>
-            <p className="text-[9.5px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-              ▲ Overall <span className="text-[#74839A] font-medium">reservations</span>
-            </p>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ─── ROW 2: MAIN OPERATIONAL AREA (4 + 4 + 4 COLUMNS) ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        
-        {/* Card 1: Needs Your Attention (4 cols) */}
-        <div className="col-span-1 lg:col-span-4 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Needs Your Attention</span>
-            <span onClick={() => navigate("/admin/approvals-hub")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
-          </div>
-          <div className="p-3.5 flex-1 space-y-2">
-            {(stats?.attentionItems || [
-              { label: "Payments waiting verification", count: 8, color: "bg-[#E23D4D]", urgent: true, path: "/admin/approvals-hub" },
-              { label: "Aadhaar pending", count: 16, color: "bg-[#D97706]", path: "/admin/approvals-hub" },
-              { label: "Hotels pending confirmation", count: 5, color: "bg-[#D97706]", path: "/admin/departure-workspace" },
-              { label: "Vendors with payments due today", count: 3, color: "bg-[#E23D4D]", urgent: true, path: "/admin/accounting-workspace" },
-              { label: "Rooming pending", count: 12, color: "bg-[#D97706]", path: "/admin/departure-workspace" },
-              { label: "Customer complaints", count: 2, color: "bg-[#E23D4D]", urgent: true, path: "/admin/departure-workspace" },
-              { label: "Tasks pending > 24 hours", count: 14, color: "bg-[#E23D4D]", urgent: true, path: "/admin/departure-workspace" },
-              { label: "Missing train tickets", count: 6, color: "bg-[#E23D4D]", urgent: true, path: "/admin/approvals-hub" },
-              { label: "Missing tempo confirmation", count: 4, color: "bg-[#D97706]", path: "/admin/departure-workspace" }
-            ]).map((item, idx) => (
-              <div key={idx} onClick={() => navigate(item.path)} className="flex items-center justify-between min-h-[22px] text-[12px] hover:bg-[#F8FAFD] px-1 rounded transition-colors cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <div className={cn("w-1.5 h-1.5 rounded-full", item.color)} />
-                  <span className="font-semibold text-[#162B45]">{item.label}</span>
-                </div>
-                <span className={cn("font-bold text-[11px]", item.urgent ? "text-[#E23D4D]" : "text-[#74839A]")}>{item.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card 2: Trips Running Now (4 cols) */}
-        <div className="col-span-1 lg:col-span-4 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Trips Running Now</span>
-            <span onClick={() => navigate("/admin/departure-workspace")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
-          </div>
-          <div className="p-3.5 flex-1 space-y-3.5">
-            {(!stats?.tripsRunningNow || stats.tripsRunningNow.length === 0) ? (
-              <p className="text-xs text-[#74839A] italic text-center py-4">No active trips running today.</p>
-            ) : (
-              stats.tripsRunningNow.map((trip: any, idx: number) => (
-                <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
-                  <div className="space-y-0.5">
-                    <p className="text-[12px] font-bold text-[#162B45]">{trip.code}</p>
-                    <p className="text-[10px] text-[#74839A] font-medium leading-none">{trip.name}</p>
-                  </div>
-                  <div className="text-right space-y-0.5">
-                    <p className="text-[10.5px] font-semibold text-[#162B45] flex items-center justify-end gap-1">👤 {trip.size}</p>
-                    <p className="text-[9.5px] text-emerald-600 font-bold leading-none">📍 {trip.stay}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Card 3: Trips Departing Next 7 Days (4 cols) */}
-        <div className="col-span-1 lg:col-span-4 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Trips Departing Next 7 Days</span>
-            <span onClick={() => navigate("/admin/operations")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
-          </div>
-          <div className="p-3.5 flex-1 space-y-3.5">
-            {(!stats?.tripsDepartingNext7Days || stats.tripsDepartingNext7Days.length === 0) ? (
-              <p className="text-xs text-[#74839A] italic text-center py-4">No departures in the next 7 days.</p>
-            ) : (
-              stats.tripsDepartingNext7Days.map((trip: any, idx: number) => (
-                <div key={idx} onClick={() => navigate("/admin/operations")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
-                  <div className="space-y-0.5">
-                    <p className="text-[12px] font-bold text-[#162B45]">{trip.name}</p>
-                    <p className="text-[10px] text-[#74839A] font-semibold leading-none">{trip.date}</p>
-                  </div>
-                  <span className={cn(
-                    "text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
-                    trip.status === "full" 
-                      ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200" 
-                      : "bg-[#EFF6FF] text-[#2563EB] border-blue-200"
-                  )}>
-                    {trip.count} Booked
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* ─── ROW 3: METRICS & WORKFLOWS (3 + 3 + 3 + 3 COLUMNS) ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
-        
-        {/* Card 1: Today's Schedule (3 cols) */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Today's Schedule</span>
-            <span onClick={() => navigate("/admin/departure-workspace")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View Full</span>
-          </div>
-          <div className="p-3.5 flex-1 space-y-3">
-            {(!stats?.todaysSchedule || stats.todaysSchedule.length === 0) ? (
-              <p className="text-xs text-[#74839A] italic text-center py-4">No tasks or departures scheduled today.</p>
-            ) : (
-              stats.todaysSchedule.map((sched: any, idx: number) => (
-                <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex gap-2 items-start min-h-[30px] cursor-pointer hover:bg-slate-50/55 p-0.5 rounded transition-colors">
-                  <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#74839A] w-[54px] shrink-0 mt-0.5">{sched.time}</span>
-                  <div className="flex items-start gap-1.5">
-                    <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", sched.color)} />
-                    <span className="text-[12px] font-semibold text-[#162B45] leading-tight truncate max-w-[130px]">{sched.label}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Card 2: My Approval Queue (3 cols) */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">My Approval Queue</span>
-            <span onClick={() => navigate("/admin/approvals-hub")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">Go to Center</span>
-          </div>
-          <div className="p-3.5 flex-1 space-y-3">
-            {[
-              { label: "Payment Approvals", count: 5, color: "text-[#D97706] bg-[#FFF7E6] border-[#FFD580]", urgent: true, path: "/admin/approvals-hub" },
-              { label: "Vendor Bills", count: 2, color: "text-[#E23D4D] bg-[#FFF1F3] border-[#FFCCD3]", urgent: true, path: "/admin/approvals-hub" },
-              { label: "Ticket Approvals", count: ticketPendingCount, color: "text-[#F97316] bg-[#FFF7E6] border-[#FFD580]", urgent: ticketPendingCount > 0, path: "/admin/ticket-approvals" },
-              { label: "Refund Requests", count: 1, color: "text-[#2563EB] bg-[#EFF6FF] border-[#B8D4FF]", path: "/admin/approvals-hub" },
-              { label: "Expense Claims", count: 3, color: "text-teal-600 bg-teal-50 border-teal-200", path: "/admin/approvals-hub" }
-            ].map((appr: any, idx) => (
-              <div key={idx} onClick={() => navigate(appr.path)} className="flex items-center justify-between min-h-[30px] text-[12px] cursor-pointer hover:bg-slate-50/50 p-0.5 rounded transition-colors">
-                <span className="font-semibold text-[#162B45]">{appr.label}</span>
-                <span className={cn("font-bold text-[10px] px-2 py-0.5 rounded border", appr.color)}>
-                  {appr.count} Pending
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card 3: Cash Flow Overview (3 cols) */}
-        {hasPermission((admin as any)?.permissions || (admin as any)?.customPermissions, 'accounting.view', admin?.role) && (
-          <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-            <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-              <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Cash Flow Overview</span>
-              <span onClick={() => navigate("/admin/accounting-workspace")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">Details</span>
-            </div>
-            <div className="p-3.5 flex-1 flex flex-col justify-between">
-              
-              <div onClick={() => navigate("/admin/accounting-workspace")} className="bg-[#ECFDF3] p-2 rounded border border-emerald-100 flex items-center justify-between cursor-pointer hover:bg-emerald-50/80 transition-colors">
-                <div>
-                  <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">Collection Today</p>
-                  <p className="text-[13px] font-bold text-[#16A34A]">₹ {(stats?.cashFlow?.collectionToday || 0).toLocaleString('en-IN')}</p>
-                </div>
-                <span className="text-[#16A34A] text-xs">📈</span>
-              </div>
-
-              <div onClick={() => navigate("/admin/accounting-workspace")} className="bg-[#FFF1F3] p-2 rounded border border-rose-100 flex items-center justify-between mt-1 cursor-pointer hover:bg-rose-50/80 transition-colors">
-                <div>
-                  <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">Payments Today</p>
-                  <p className="text-[13px] font-bold text-[#E23D4D]">₹ {(stats?.cashFlow?.paymentsToday || 0).toLocaleString('en-IN')}</p>
-                </div>
-                <span className="text-[#E23D4D] text-xs">📉</span>
-              </div>
-
-              <div className="border-t border-[#E3EAF2] pt-2 mt-2 flex items-center justify-between text-[11px] font-bold">
-                <span className="text-[#74839A] uppercase tracking-wider">Net Cash Inflow:</span>
-                <span className={cn("font-extrabold text-[12px]", (stats?.cashFlow?.netCashInflow || 0) >= 0 ? "text-[#16A34A]" : "text-[#E23D4D]")}>
-                  ₹ {(stats?.cashFlow?.netCashInflow || 0).toLocaleString('en-IN')}
-                </span>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {/* Card 4: Announcements (3 cols) */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Announcements</span>
-            <div className="flex items-center gap-2">
-              {hasPermission((admin as any)?.permissions || (admin as any)?.customPermissions, 'settings.view', admin?.role) && (
-                <button 
-                  onClick={() => setShowAddAnnouncement(true)}
-                  className="text-[10px] font-bold text-[#F97316] bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-0.5 rounded transition-all"
-                >
-                  + Add
-                </button>
-              )}
-              <span onClick={() => setShowAllAnnouncements(true)} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
-            </div>
-          </div>
-          <div className="p-3.5 flex-1 space-y-3 text-[12px] overflow-y-auto max-h-[160px] no-scrollbar">
-            {loadingAnnouncements ? (
-              <p className="text-[11px] text-[#74839A] italic">Loading announcements...</p>
-            ) : announcements.length === 0 ? (
-              <p className="text-[11px] text-[#74839A] italic text-center py-2">No announcements posted.</p>
-            ) : (
-              announcements.slice(0, 5).map((ann) => (
-                <div key={ann.id} className="space-y-0.5 pb-1 border-b border-[#E3EAF2]/30 last:border-0">
-                  <p className="font-bold text-[#162B45] leading-tight">{ann.title}</p>
-                  <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-                    By {ann.author} • {(() => {
-                      const diffMs = new Date().getTime() - new Date(ann.createdAt).getTime();
-                      const diffMins = Math.floor(diffMs / (1000 * 60));
-                      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                      if (diffMins < 1) return 'just now';
-                      if (diffMins < 60) return `${diffMins}m ago`;
-                      if (diffHrs < 24) return `${diffHrs}h ago`;
-                      return `${diffDays}d ago`;
-                    })()}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* ─── ROW 4: DATA & TEAM METRICS (3 + 3 + 3 + 3 COLUMNS) ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
-        
-        {/* Card 1: Today's Tasks (3 cols) */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Today's Tasks</span>
-            <span onClick={() => navigate("/admin/bookings")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
+        {/* ─── SUB-HEADER BAR ─── */}
+        <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] h-[40px] px-5 flex items-center justify-between font-sans -mx-4 -mt-3 mb-3">
+          <div className="text-[12px] font-normal text-[#64748B]">
+            {currentDateString}
           </div>
           
-          <div className="p-3.5 flex-1 flex items-center gap-4">
-            {/* Minimal Radial Progress */}
-            {(() => {
-              const total = stats?.tasksTotal ?? 0;
-              const completed = stats?.tasksCompleted ?? 0;
-              const pending = stats?.tasksPending ?? 0;
-              const overdue = stats?.tasksOverdue ?? 0;
-              const circumference = 2 * Math.PI * 26; // ~163.36
-              const pct = total > 0 ? (completed / total) : 0;
-              const offset = circumference - (pct * circumference);
-              return (
-                <>
-                  <div className="relative w-[60px] h-[60px] flex items-center justify-center shrink-0">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="30" cy="30" r="26" className="stroke-slate-100" strokeWidth="4" fill="transparent" />
-                      <circle cx="30" cy="30" r="26" className="stroke-emerald-500" strokeWidth="4" fill="transparent"
-                        strokeDasharray={circumference.toString()} strokeDashoffset={offset.toString()} />
-                    </svg>
-                    <div className="absolute flex flex-col items-center">
-                      <span className="text-[12px] font-extrabold text-[#162B45]">{total}</span>
-                      <span className="text-[8px] text-[#74839A] font-bold uppercase mt-0.5">Tasks</span>
-                    </div>
-                  </div>
-                  
-                  {/* Stats legend */}
-                  <div className="space-y-1 text-[11px] flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#74839A] font-medium">Completed</span>
-                      <span className="font-bold text-[#16A34A]">{completed}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#74839A] font-medium">Pending</span>
-                      <span className="font-bold text-[#D97706]">{pending}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#74839A] font-medium">Overdue</span>
-                      <span className="font-bold text-[#E23D4D]">{overdue}</span>
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Card 2: Employee Status (3 cols) */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Employee Status</span>
-            <span onClick={() => navigate("/admin/hr")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
-          </div>
-          
-          <div className="p-3.5 flex-1 grid grid-cols-2 gap-3 text-[11px]">
-            <div className="space-y-1.5">
-              <p className="text-[8px] font-bold text-[#16A34A] uppercase tracking-wider">
-                Online Now ({stats?.employeeStatus?.online?.length ?? 6})
-              </p>
-              <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto no-scrollbar">
-                {(stats?.employeeStatus?.online || ['Suresh', 'Vidhi', 'Zeel', 'Parth', 'Neeki', 'Vibhuti']).map((name, i) => (
-                  <span key={i} onClick={() => navigate("/admin/hr")} className="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-pointer hover:bg-emerald-100 transition-colors">
-                    {name}
-                  </span>
-                ))}
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-[6px] px-3 py-1 text-[12px] font-medium text-[#0A192F] cursor-pointer hover:bg-slate-50 transition-colors">
+              <span className="uppercase font-bold text-[10px] text-orange-600">{userRole ? `${userRole} VIEW` : "OPERATOR VIEW"}</span>
+              <ChevronDown className="w-3 h-3 text-[#64748B]" />
             </div>
 
-            <div className="space-y-1.5">
-              <p className="text-[8px] font-bold text-[#D97706] uppercase tracking-wider">
-                On Leave ({stats?.employeeStatus?.offline?.length ?? 2})
-              </p>
-              <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto no-scrollbar">
-                {(stats?.employeeStatus?.offline || ['Sachin', 'Jatin']).map((name, i) => (
-                  <span key={i} onClick={() => navigate("/admin/hr")} className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 cursor-pointer hover:bg-amber-100 transition-colors">
-                    {name}
-                  </span>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[6px] px-2 py-1 text-[11px] font-semibold text-[#0A192F]">
+              <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
+              <select 
+                value={dateFilter} 
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="bg-transparent border-0 outline-none cursor-pointer text-[#0A192F] font-medium text-[11px]"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+              </select>
             </div>
           </div>
         </div>
 
-        {/* Card 3: Employee Workload (3 cols) */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Employee Workload</span>
-            <span onClick={() => navigate("/admin/hr")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
-          </div>
-          
-          <div className="p-3.5 flex-1 space-y-2 text-[11px]">
-            {(stats?.employeeWorkload || [
-              { name: "Suresh Bhai", state: "Normal", pct: 70, color: "bg-[#16A34A]" },
-              { name: "Vidhi", state: "High", pct: 78, color: "bg-[#D97706]" },
-              { name: "Zeel", state: "High", pct: 75, color: "bg-[#D97706]" },
-              { name: "Parth", state: "Available", pct: 50, color: "bg-[#2563EB]" },
-              { name: "Neeki", state: "Normal", pct: 60, color: "bg-[#16A34A]" }
-            ]).map((emp, i) => (
-              <div key={i} onClick={() => navigate("/admin/hr")} className="space-y-0.5 cursor-pointer hover:bg-slate-50/50 p-0.5 rounded transition-colors">
-                <div className="flex items-center justify-between font-semibold leading-none">
-                  <span className="text-[#162B45] text-[11px]">{emp.name}</span>
-                  <span className="text-[#74839A] text-[9.5px] uppercase tracking-wider font-extrabold">{emp.state} ({emp.pct}%)</span>
-                </div>
-                <div className="w-full h-1 bg-[#E3EAF2] rounded-full overflow-hidden">
-                  <div className={cn("h-full rounded-full", emp.color)} style={{ width: `${emp.pct}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card 4: Recent Activity (3 cols) */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-3 bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden">
-          <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-            <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Recent Bookings</span>
-            <span onClick={() => navigate("/admin/bookings")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
-          </div>
-          
-          <div className="p-3.5 flex-1 space-y-2.5 overflow-y-auto max-h-[160px] no-scrollbar text-[12px]">
-            {loading ? (
-              <p className="text-[11px] text-[#74839A] italic">Loading transactions...</p>
-            ) : (!stats?.recentBookings || stats.recentBookings.length === 0) ? (
-              <p className="text-[11px] text-[#74839A] italic">No recent transactions found.</p>
-            ) : (
-              stats.recentBookings.map((b) => (
-                <div key={b.id} onClick={() => navigate("/admin/bookings")} className="flex gap-2 items-start leading-tight cursor-pointer hover:bg-slate-50/50 p-1 rounded transition-colors">
-                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-blue-500" />
-                  <div className="space-y-0.5">
-                    <p className="font-semibold text-[#162B45] leading-none">
-                      {b.userName} – {b.tripTitle}
-                    </p>
-                    <p className="text-[9px] text-[#74839A] font-semibold leading-none mt-0.5">
-                      ₹{Number(b.amount || 0).toLocaleString('en-IN')} · <span className="uppercase text-[8px] font-extrabold text-slate-500">{b.status}</span>
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+        {/* ─── DYNAMIC PERMISSION-BASED WIDGET GRID ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {visibleWidgets.map((widget) => (
+            <div key={widget.id} className={cn("flex flex-col", widget.colSpanDesktop)}>
+              {widget.render({
+                stats,
+                loading,
+                ticketPendingCount,
+                announcements,
+                loadingAnnouncements,
+                admin,
+                userPerms,
+                userRole,
+                navigate,
+                setShowAddAnnouncement,
+                setShowAllAnnouncements,
+                hasPermission,
+              })}
+            </div>
+          ))}
         </div>
 
       </div>
 
-      {/* DIALOG: CREATE ANNOUNCEMENT */}
+      {/* ─── DIALOG: CREATE ANNOUNCEMENT ─── */}
       <Dialog open={showAddAnnouncement} onOpenChange={setShowAddAnnouncement}>
         <DialogContent className="sm:max-w-[425px] bg-white p-6 rounded-xl shadow-lg border border-slate-200">
           <DialogHeader>
@@ -687,7 +206,8 @@ export default function DashboardPage() {
           </form>
         </DialogContent>
       </Dialog>
-      {/* DIALOG: ALL ANNOUNCEMENTS */}
+
+      {/* ─── DIALOG: ALL ANNOUNCEMENTS ─── */}
       <Dialog open={showAllAnnouncements} onOpenChange={setShowAllAnnouncements}>
         <DialogContent className="sm:max-w-[500px] bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex flex-col max-h-[80vh]">
           <DialogHeader>
@@ -727,7 +247,6 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   );
 }
