@@ -56,11 +56,10 @@ api.interceptors.response.use(
     if (status === 401 && !axios.isCancel(err)) {
       const isLoginRequest = url?.includes("/admin/login") || url?.includes("/login");
       const isIdentityCheck = url?.includes("/admin/me");
-      const code = err.response?.data?.code;
 
-      // Only evict stored token if the primary identity check fails or token is explicitly expired/invalid
-      if (!isLoginRequest && (isIdentityCheck || code === 'TOKEN_EXPIRED' || code === 'INVALID_TOKEN' || code === 'TOKEN_REVOKED')) {
-        console.warn(`[AUTH] Session invalidated by response (${url}, code: ${code}). Clearing token.`);
+      // Only evict stored token if the primary identity check (/admin/me) fails with 401
+      if (!isLoginRequest && isIdentityCheck) {
+        console.warn(`[AUTH] Primary identity check (/admin/me) failed (401). Clearing token.`);
         localStorage.removeItem('token');
       }
     }
