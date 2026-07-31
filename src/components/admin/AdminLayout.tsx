@@ -68,7 +68,7 @@ import {
   Sliders
 } from "lucide-react";
 import { AdminContainer } from "@/components/layout";
-import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
+import { hasPermission } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -316,11 +316,10 @@ function AdminSidebar() {
               const isSuperAdmin = role === 'superadmin' || role === 'admin';
               if (isSuperAdmin) return true;
 
-              // Determine effective permissions (union of role defaults, token permissions, and custom permissions)
-              const defaultPerms = ROLE_PERMISSIONS[role] || [];
+              // Determine effective permissions (union of token permissions, and custom permissions)
               const customPerms = Array.isArray(admin.customPermissions) ? admin.customPermissions : [];
               const tokenPerms = Array.isArray((admin as any).permissions) ? (admin as any).permissions : [];
-              const effectivePerms = Array.from(new Set([...defaultPerms, ...customPerms, ...tokenPerms]));
+              const effectivePerms = Array.from(new Set([...customPerms, ...tokenPerms]));
 
               if (urlPath === '/admin/operations') {
                 console.log('🔒 Permission Audit [/admin/operations]:', {

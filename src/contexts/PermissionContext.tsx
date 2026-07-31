@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { rbacService, UserAccessDetails } from '@/services/rbac.service';
-import { ROLE_PERMISSIONS } from '@/lib/permissions';
 
 interface PermissionContextType {
   userPermissions: string[];
@@ -37,10 +36,9 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setUserPermissions(accessDetails.effectivePermissions || []);
     } catch (err) {
       // Fallback permission calculation from AuthContext currentAdmin role
-      const roleName = (currentAdmin?.role || 'viewer').toLowerCase();
-      const defaultPerms = ROLE_PERMISSIONS[roleName] || [];
+      const tokenPerms = Array.isArray((currentAdmin as any)?.permissions) ? (currentAdmin as any).permissions : [];
       const custom = (currentAdmin as any)?.customPermissions || [];
-      const unionSet = new Set([...defaultPerms, ...custom]);
+      const unionSet = new Set([...tokenPerms, ...custom]);
       setUserPermissions(Array.from(unionSet));
     } finally {
       setIsLoading(false);
