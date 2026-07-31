@@ -107,7 +107,7 @@ const queryClient = new QueryClient({
   },
 });
 
-import { isFounder } from "@/config/permissions.config";
+import { isFounder, ROLE_PERMISSIONS } from "@/config/permissions.config";
 
 function AdminRoute({ children, requiredPermission, founderOnly }: { children: React.ReactNode; requiredPermission?: string; founderOnly?: boolean }) {
   const { admin, isAuthenticated, isLoading } = useAuthStore();
