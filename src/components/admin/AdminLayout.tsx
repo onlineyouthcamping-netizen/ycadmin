@@ -312,33 +312,33 @@ function AdminSidebar() {
                 if (!isFounder) return false;
               }
 
-              // Determine effective permissions (custom permissions override role defaults)
-              let effectivePerms: string[] = [];
-              if (admin.customPermissions && Array.isArray(admin.customPermissions) && admin.customPermissions.length > 0) {
-                effectivePerms = admin.customPermissions;
-              } else {
-                effectivePerms = ROLE_PERMISSIONS[role] || [];
-              }
+              const isSuperAdmin = role === 'superadmin' || role === 'admin';
+              if (isSuperAdmin) return true;
+
+              // Determine effective permissions (union of role defaults and custom permissions)
+              const defaultPerms = ROLE_PERMISSIONS[role] || [];
+              const customPerms = Array.isArray(admin.customPermissions) ? admin.customPermissions : [];
+              const effectivePerms = Array.from(new Set([...defaultPerms, ...customPerms]));
 
               // URL to permission mappings
               const urlPermissionMap: Record<string, string[]> = {
                 "/admin": ["dashboard.view"],
-                "/admin/inquiries": ["inquiries.view"],
-                "/admin/package-builder": ["quotations.create", "trips.view"],
+                "/admin/inquiries": ["inquiries.view", "leads.view"],
+                "/admin/package-builder": ["quotations.create", "trips.view", "packages.view"],
                 "/admin/quotations": ["quotations.view"],
                 "/admin/booking-forms": ["bookings.create", "bookings.view"],
                 "/admin/bookings": ["bookings.view"],
-                "/admin/operations": ["operations.view", "ops.view"],
-                "/admin/vendors": ["vendors.view", "ops.view"],
-                "/admin/guides-hub": ["guides.view", "ops.view"],
-                "/admin/company-documents": ["company_documents.view", "operations.view", "hr.view"],
+                "/admin/operations": ["operations.view", "ops.view", "trips.view"],
+                "/admin/vendors": ["vendors.view", "ops.view", "operations.view"],
+                "/admin/guides-hub": ["guides.view", "ops.view", "operations.view"],
+                "/admin/company-documents": ["company_documents.view", "operations.view", "documents.view", "hr.view"],
                 "/admin/reports": ["reports.view"],
                 "/admin/approvals-hub": ["bookings.verify", "tickets.approve", "payments.view", "accounting.view", "bookings.view"],
                 "/admin/ticket-approvals": ["tickets.approve", "tickets.view"],
-                "/admin/accounting": ["accounting.view", "payments.view"],
+                "/admin/accounting": ["accounting.view", "payments.view", "finance.view"],
                 "/admin/travel-desk": ["tickets.view", "bookings.view", "operations.view"],
                 "/admin/hr": ["hr.view", "users.view", "recurring_tasks.view"],
-                "/admin/attendance-logs": ["hr.view"],
+                "/admin/attendance-logs": ["hr.view", "guide.attendance"],
                 "/admin/payroll": ["hr.view", "accounting.view"],
                 "/admin/trips": ["trips.view"],
                 "/admin/master-database": ["masterdatabase.view", "trips.view", "bookings.view"],
@@ -347,7 +347,9 @@ function AdminSidebar() {
                 "/admin/blogs": ["blogs.view", "marketing.view"],
                 "/admin/reviews": ["reviews.view", "marketing.view"],
                 "/admin/users": ["users.view", "users.manage"],
-                "/admin/access-control": ["roles.manage", "users.manage"],
+                "/admin/roles": ["users.permissions", "roles.manage"],
+                "/admin/permission-matrix": ["users.permissions", "roles.manage"],
+                "/admin/access-control": ["roles.manage", "users.manage", "users.permissions"],
                 "/admin/email-templates": ["emails.manage_templates"],
                 "/admin/automation": ["settings.view"],
                 "/admin/audit-logs": ["audit.view"]
@@ -356,16 +358,6 @@ function AdminSidebar() {
               const required = urlPermissionMap[urlPath];
               if (required) {
                 return required.some(p => effectivePerms.includes(p));
-              }
-
-              // Default role fallbacks if not mapped
-              if (role === 'sales') {
-                const salesAllowedUrls = ["/admin/bookings", "/admin/booking-forms", "/admin/inquiries", "/admin/quotations", "/admin/package-builder", "/admin/master-database", "/admin/approvals-hub", "/admin/ticket-approvals"];
-                return salesAllowedUrls.includes(urlPath);
-              }
-              if (role === 'guide') {
-                const guideAllowedUrls = ["/admin/operations", "/admin/guides-hub"];
-                return guideAllowedUrls.includes(urlPath);
               }
 
               return true;
