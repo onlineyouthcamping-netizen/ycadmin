@@ -64,7 +64,8 @@ import {
   ShieldAlert,
   Ticket,
   Key,
-  ShieldCheck
+  ShieldCheck,
+  Sliders
 } from "lucide-react";
 import { AdminContainer } from "@/components/layout";
 import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
