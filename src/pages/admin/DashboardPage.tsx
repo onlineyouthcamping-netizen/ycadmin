@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { dashboardService } from "@/services/dashboard.service";
 import { ticketApprovalService } from "@/services/ticketApproval.service";
 import { useAuthStore } from "@/store/auth.store";
+import { hasPermission } from "@/lib/permissions";
 import type { DashboardStats } from "@/types";
 import { announcementsService, Announcement } from "@/services/announcements.service";
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
