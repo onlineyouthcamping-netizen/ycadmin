@@ -52,6 +52,8 @@ const AIItineraryGeneratorPage = lazy(() => import("./pages/admin/AIItineraryGen
 const QuestionsPage = lazy(() => import("./pages/admin/QuestionsPage.tsx"));
 const UserManagementPage = lazy(() => import("./pages/admin/UserManagementPage.tsx"));
 const AccessControlPage = lazy(() => import("./pages/admin/AccessControlPage.tsx"));
+const RolesPage = lazy(() => import("./pages/admin/RolesPage.tsx"));
+const PermissionMatrixPage = lazy(() => import("./pages/admin/PermissionMatrixPage.tsx"));
 const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage.tsx"));
 const ProfilePage = lazy(() => import("./pages/admin/ProfilePage.tsx"));
 const UnauthorizedPage = lazy(() => import("./pages/admin/UnauthorizedPage.tsx"));
@@ -217,7 +219,11 @@ const App = () => (
                 <Route path="/admin/people/staff" element={<AdminRoute founderOnly requiredPermission="staff_profiles.view"><UserManagementPage /></AdminRoute>} />
                 <Route path="/admin/users" element={<Navigate to="/admin/staff-profiles" replace />} />
                 <Route path="/admin/roles-permissions" element={<AdminRoute founderOnly requiredPermission="roles_permissions.manage"><AccessControlPage /></AdminRoute>} />
-                <Route path="/admin/access-control" element={<Navigate to="/admin/roles-permissions" replace />} />
+                <Route path="/admin/roles" element={<AdminRoute requiredPermission="users.permissions"><RolesPage /></AdminRoute>} />
+                <Route path="/admin/permission-matrix" element={<AdminRoute requiredPermission="users.permissions"><PermissionMatrixPage /></AdminRoute>} />
+                <Route path="/admin/access-control/roles" element={<AdminRoute requiredPermission="users.permissions"><RolesPage /></AdminRoute>} />
+                <Route path="/admin/access-control/matrix" element={<AdminRoute requiredPermission="users.permissions"><PermissionMatrixPage /></AdminRoute>} />
+                <Route path="/admin/access-control" element={<Navigate to="/admin/roles" replace />} />
 
                 <Route path="/admin/audit-logs" element={<AdminRoute founderOnly requiredPermission="audit.view"><AuditLogsPage /></AdminRoute>} />
                 <Route path="/admin/unauthorized" element={<AdminRoute><UnauthorizedPage /></AdminRoute>} />

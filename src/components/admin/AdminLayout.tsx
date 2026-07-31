@@ -841,11 +841,18 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                             Manage Staff Profiles
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => navigate("/admin/roles-permissions")}
+                            onClick={() => navigate("/admin/roles")}
                             className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
                           >
                             <ShieldCheck className="w-4 h-4 mr-2 text-orange-600" />
-                            Roles & Permissions
+                            Roles & Custom Roles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => navigate("/admin/permission-matrix")}
+                            className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                          >
+                            <Sliders className="w-4 h-4 mr-2 text-orange-600" />
+                            Permission Matrix
                           </DropdownMenuItem>
                         </>
                       )}
