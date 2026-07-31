@@ -126,7 +126,13 @@ function AdminRoute({ children, requiredPermission, founderOnly }: { children: R
     return <Navigate to="/admin/unauthorized" replace />;
   }
 
-  if (requiredPermission && !hasPermission(admin.permissions || admin.customPermissions, requiredPermission, admin.role)) {
+  const userRole = (admin.role || '').toLowerCase();
+  const defaultRolePerms = ROLE_PERMISSIONS[userRole] || [];
+  const customPerms = Array.isArray(admin.customPermissions) ? admin.customPermissions : [];
+  const tokenPerms = Array.isArray(admin.permissions) ? admin.permissions : [];
+  const combinedPerms = Array.from(new Set([...defaultRolePerms, ...tokenPerms, ...customPerms]));
+
+  if (requiredPermission && !hasPermission(combinedPerms, requiredPermission, admin.role)) {
     return <Navigate to="/admin/unauthorized" replace />;
   }
 
