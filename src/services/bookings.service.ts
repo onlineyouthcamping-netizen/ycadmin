@@ -175,15 +175,17 @@ export const bookingsService = {
     return res.data.data;
   },
 
-  async downloadDocument(bookingId: string, passengerId: string): Promise<Blob> {
-    const res = await api.get(`/bookings/${bookingId}/passengers/${passengerId}/document`, {
+  async downloadDocument(bookingId: string, passengerId: string, docId?: string): Promise<Blob> {
+    const url = docId ? `/bookings/${bookingId}/documents/${docId}` : `/bookings/${bookingId}/passengers/${passengerId}/document`;
+    const res = await api.get(url, {
       responseType: "blob"
     });
     return res.data;
   },
 
-  async deleteDocument(bookingId: string, passengerId: string): Promise<any> {
-    const res = await api.delete(`/bookings/${bookingId}/passengers/${passengerId}/document`);
+  async deleteDocument(bookingId: string, passengerId: string, docId?: string): Promise<any> {
+    const url = docId ? `/bookings/${bookingId}/documents/${docId}` : `/bookings/${bookingId}/passengers/${passengerId}/document`;
+    const res = await api.delete(url);
     return res.data;
   }
 };

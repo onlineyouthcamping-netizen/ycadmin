@@ -67,7 +67,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { AdminContainer } from "@/components/layout";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -129,12 +129,12 @@ const sidebarModules: SidebarModule[] = [
     icon: ClipboardCheck,
     hasSubItems: true,
     subItems: [
-      { title: "Booking Verification", url: "/admin/approvals-hub" },
+      { title: "Booking Verification", url: "/admin/approvals-hub?tab=booking-verification" },
       { title: "Ticket Approvals", url: "/admin/ticket-approvals" },
-      { title: "Payment Approvals", url: "/admin/approvals-hub" },
-      { title: "Vendor Bills", url: "/admin/approvals-hub" },
-      { title: "Refund Requests", url: "/admin/approvals-hub" },
-      { title: "Expense Claims", url: "/admin/approvals-hub" }
+      { title: "Payment Approvals", url: "/admin/approvals-hub?tab=payment-approvals" },
+      { title: "Vendor Bills", url: "/admin/approvals-hub?tab=vendor-bills" },
+      { title: "Refund Requests", url: "/admin/approvals-hub?tab=refund-requests" },
+      { title: "Expense Claims", url: "/admin/approvals-hub?tab=expense-claims" }
     ]
   },
   {
@@ -294,19 +294,83 @@ function AdminSidebar() {
         {/* Navigation Items List */}
         <div className="flex-1 overflow-y-auto no-scrollbar py-3.5 px-2.5 space-y-1">
           {sidebarModules.map((mod) => {
-            // Role and permission-based visibility checks
-            if (admin) {
-              if (admin.role === 'sales') {
-                const salesAllowedGroup = ["Dashboard", "Sales", "Inquiries", "Quotations", "Business", "Master Database", "Approval Center"];
-                if (!salesAllowedGroup.includes(mod.title)) return null;
-              }
-              if (admin.role === 'guide') {
-                if (mod.title !== "Dashboard" && mod.title !== "Operations") return null;
-              }
-            }
-
             const hasSub = mod.hasSubItems;
             
+            // Helper function to check if user has access to a given sub-item or module URL
+            const hasUserAccessToUrl = (subUrl: string) => {
+              if (!admin) return false;
+              const role = (admin.role || '').toLowerCase();
+              if (role === 'superadmin' || role === 'admin') return true;
+
+              const urlPath = subUrl.split('?')[0];
+
+              // Check founder-only administrative sub-items
+              if (urlPath === '/admin/users' || urlPath === '/admin/access-control' || urlPath === '/admin/audit-logs') {
+                const email = (admin.email || '').toLowerCase().trim();
+                const name = (admin.name || '').toLowerCase().trim();
+                const isFounder = email.includes('hemal') || name.includes('hemal') || email === 'hemal.patel@youthcamping.online';
+                if (!isFounder) return false;
+              }
+
+              // Determine effective permissions (custom permissions override role defaults)
+              let effectivePerms: string[] = [];
+              if (admin.customPermissions && Array.isArray(admin.customPermissions) && admin.customPermissions.length > 0) {
+                effectivePerms = admin.customPermissions;
+              } else {
+                effectivePerms = ROLE_PERMISSIONS[role] || [];
+              }
+
+              // URL to permission mappings
+              const urlPermissionMap: Record<string, string[]> = {
+                "/admin": ["dashboard.view"],
+                "/admin/inquiries": ["inquiries.view"],
+                "/admin/package-builder": ["quotations.create", "trips.view"],
+                "/admin/quotations": ["quotations.view"],
+                "/admin/booking-forms": ["bookings.create", "bookings.view"],
+                "/admin/bookings": ["bookings.view"],
+                "/admin/operations": ["operations.view", "ops.view"],
+                "/admin/vendors": ["vendors.view", "ops.view"],
+                "/admin/guides-hub": ["guides.view", "ops.view"],
+                "/admin/company-documents": ["company_documents.view", "operations.view", "hr.view"],
+                "/admin/reports": ["reports.view"],
+                "/admin/approvals-hub": ["bookings.verify", "tickets.approve", "payments.view", "accounting.view", "bookings.view"],
+                "/admin/ticket-approvals": ["tickets.approve", "tickets.view"],
+                "/admin/accounting": ["accounting.view", "payments.view"],
+                "/admin/travel-desk": ["tickets.view", "bookings.view", "operations.view"],
+                "/admin/hr": ["hr.view", "users.view", "recurring_tasks.view"],
+                "/admin/attendance-logs": ["hr.view"],
+                "/admin/payroll": ["hr.view", "accounting.view"],
+                "/admin/trips": ["trips.view"],
+                "/admin/master-database": ["masterdatabase.view", "trips.view", "bookings.view"],
+                "/admin/website": ["design.view", "pagebuilder.view", "settings.view"],
+                "/admin/marketing/overview": ["marketing.view", "reports.view"],
+                "/admin/blogs": ["blogs.view", "marketing.view"],
+                "/admin/reviews": ["reviews.view", "marketing.view"],
+                "/admin/users": ["users.view", "users.manage"],
+                "/admin/access-control": ["roles.manage", "users.manage"],
+                "/admin/email-templates": ["emails.manage_templates"],
+                "/admin/automation": ["settings.view"],
+                "/admin/audit-logs": ["audit.view"]
+              };
+
+              const required = urlPermissionMap[urlPath];
+              if (required) {
+                return required.some(p => effectivePerms.includes(p));
+              }
+
+              // Default role fallbacks if not mapped
+              if (role === 'sales') {
+                const salesAllowedUrls = ["/admin/bookings", "/admin/booking-forms", "/admin/inquiries", "/admin/quotations", "/admin/package-builder", "/admin/master-database", "/admin/approvals-hub", "/admin/ticket-approvals"];
+                return salesAllowedUrls.includes(urlPath);
+              }
+              if (role === 'guide') {
+                const guideAllowedUrls = ["/admin/operations", "/admin/guides-hub"];
+                return guideAllowedUrls.includes(urlPath);
+              }
+
+              return true;
+            };
+
             // Check if any sub-item is active
             const isSubActive = (url: string) => {
               const [urlPath, urlSearch] = url.split('?');
@@ -354,26 +418,10 @@ function AdminSidebar() {
               return true;
             };
 
-            const visibleSubItems = mod.subItems?.filter(sub => {
-              const urlPath = sub.url.split('?')[0];
-              if (urlPath === '/admin/users' || urlPath === '/admin/access-control' || urlPath === '/admin/audit-logs') {
-                const email = (admin?.email || '').toLowerCase().trim();
-                const name = (admin?.name || '').toLowerCase().trim();
-                const isFounder = email.includes('hemal') || name.includes('hemal') || email === 'hemal.patel@youthcamping.online';
-                if (!isFounder) return false;
-              }
-              if (admin?.role === 'sales') {
-                const salesAllowedUrls = ["/admin/bookings", "/admin/booking-forms", "/admin/inquiries", "/admin/quotations", "/admin/package-builder", "/admin/master-database", "/admin/approvals-hub", "/admin/ticket-approvals"];
-                return salesAllowedUrls.includes(urlPath);
-              }
-              if (admin?.role === 'guide') {
-                const guideAllowedUrls = ["/admin/live-operations", "/admin/guides-hub"];
-                return guideAllowedUrls.includes(urlPath);
-              }
-              return true;
-            }) || [];
+            const visibleSubItems = mod.subItems?.filter(sub => hasUserAccessToUrl(sub.url)) || [];
 
             if (hasSub && visibleSubItems.length === 0) return null;
+            if (!hasSub && mod.url && !hasUserAccessToUrl(mod.url)) return null;
 
             const isAnySubActive = hasSub && visibleSubItems.some(sub => isSubActive(sub.url));
             const isDirectActive = !hasSub && mod.url && (location.pathname === mod.url || (mod.url !== "/admin" && location.pathname.startsWith(mod.url)));

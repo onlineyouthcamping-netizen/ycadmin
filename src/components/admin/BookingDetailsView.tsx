@@ -1054,10 +1054,10 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     }
   };
 
-  const handleViewDoc = async (passengerId: string, fileName: string) => {
+  const handleViewDoc = async (passengerId: string, fileName: string, docId?: string) => {
     try {
-      toast.loading("Loading document...", { id: `view-${passengerId}` });
-      const blob = await bookingsService.downloadDocument(booking.id, passengerId);
+      toast.loading("Loading document...", { id: `view-${docId || passengerId}` });
+      const blob = await bookingsService.downloadDocument(booking.id, passengerId, docId);
       const url = window.URL.createObjectURL(blob);
       
       // Open in new tab
@@ -1069,23 +1069,23 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         a.download = fileName;
         a.click();
       }
-      toast.success("Document loaded", { id: `view-${passengerId}` });
+      toast.success("Document loaded", { id: `view-${docId || passengerId}` });
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load document", { id: `view-${passengerId}` });
+      toast.error("Failed to load document", { id: `view-${docId || passengerId}` });
     }
   };
 
-  const handleRemoveDoc = async (passengerId: string) => {
+  const handleRemoveDoc = async (passengerId: string, docId?: string) => {
     if (!confirm("Are you sure you want to remove this document?")) return;
     try {
-      toast.loading("Removing document...", { id: `remove-doc-${passengerId}` });
-      await bookingsService.deleteDocument(booking.id, passengerId);
-      toast.success("Document removed successfully", { id: `remove-doc-${passengerId}` });
+      toast.loading("Removing document...", { id: `remove-doc-${docId || passengerId}` });
+      await bookingsService.deleteDocument(booking.id, passengerId, docId);
+      toast.success("Document removed successfully", { id: `remove-doc-${docId || passengerId}` });
       onRefresh();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to remove document", { id: `remove-doc-${passengerId}` });
+      toast.error("Failed to remove document", { id: `remove-doc-${docId || passengerId}` });
     }
   };
 
@@ -2015,10 +2015,12 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                               return <span className="text-slate-400 font-medium">—</span>;
                             }
 
-                            const passengerDoc = (booking as any).documents?.find((d: any) => d.passengerId === p.id);
+                            const passengerDocs = ((booking as any).documents || []).filter((d: any) => 
+                              String(d.passengerId) === String(p.id) || (normIdx === 0 && (!d.passengerId || d.passengerId === 'primary'))
+                            );
 
                             return (
-                              <div className="flex flex-col gap-1 items-start">
+                              <div className="flex flex-col gap-1.5 items-start min-w-[120px]">
                                 <input
                                   type="file"
                                   id={`doc-file-${p.id}`}
@@ -2026,46 +2028,43 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                                   accept=".jpg,.jpeg,.png,.pdf"
                                   onChange={(e) => handleFileChange(e, p.id)}
                                 />
-                                {passengerDoc ? (
-                                  <div className="flex flex-col gap-1 items-start">
-                                    <span className="text-[10px] text-slate-500 font-medium truncate max-w-[120px]" title={passengerDoc.originalFileName}>
-                                      📄 {passengerDoc.originalFileName}
-                                    </span>
-                                    <div className="flex gap-1.5 items-center">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleViewDoc(p.id, passengerDoc.originalFileName)}
-                                        className="text-[10px] text-blue-600 hover:text-blue-800 font-bold uppercase transition-colors"
-                                      >
-                                        View
-                                      </button>
-                                      <span className="text-slate-300 text-[10px]">|</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => document.getElementById(`doc-file-${p.id}`)?.click()}
-                                        className="text-[10px] text-slate-500 hover:text-slate-700 font-bold uppercase transition-colors"
-                                      >
-                                        Replace
-                                      </button>
-                                      <span className="text-slate-300 text-[10px]">|</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveDoc(p.id)}
-                                        className="text-[10px] text-rose-600 hover:text-rose-800 font-bold uppercase transition-colors"
-                                      >
-                                        Remove
-                                      </button>
-                                    </div>
+
+                                {passengerDocs.length > 0 && (
+                                  <div className="flex flex-col gap-1.5 items-start w-full">
+                                    {passengerDocs.map((doc: any) => (
+                                      <div key={doc.id} className="flex flex-col gap-0.5 items-start bg-slate-50 border border-slate-200 p-1.5 rounded-md w-full">
+                                        <span className="text-[10px] text-slate-700 font-bold truncate max-w-[130px]" title={doc.originalFileName}>
+                                          📄 {doc.originalFileName}
+                                        </span>
+                                        <div className="flex gap-1.5 items-center">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleViewDoc(p.id, doc.originalFileName, doc.id)}
+                                            className="text-[9px] text-blue-600 hover:text-blue-800 font-bold uppercase transition-colors"
+                                          >
+                                            View
+                                          </button>
+                                          <span className="text-slate-300 text-[9px]">|</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveDoc(p.id, doc.id)}
+                                            className="text-[9px] text-rose-600 hover:text-rose-800 font-bold uppercase transition-colors"
+                                          >
+                                            Remove
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => document.getElementById(`doc-file-${p.id}`)?.click()}
-                                    className="text-[10px] bg-slate-900 hover:bg-slate-800 text-white font-bold py-1 px-2.5 rounded transition-all shadow-sm uppercase tracking-wider"
-                                  >
-                                    Add Document
-                                  </button>
                                 )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => document.getElementById(`doc-file-${p.id}`)?.click()}
+                                  className="text-[9px] bg-slate-900 hover:bg-slate-800 text-white font-bold py-1 px-2 rounded transition-all shadow-xs uppercase tracking-wider"
+                                >
+                                  + Add Document
+                                </button>
                               </div>
                             );
                           })()}

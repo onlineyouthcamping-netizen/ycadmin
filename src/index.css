@@ -6,10 +6,16 @@
 
 @layer base {
   :root {
+    /* Brand Color Palette */
+    --color-primary-orange: #FF4D00;
+    --color-navy: #0A2463;
+    --color-text-charcoal: #2D3748;
+    --color-white: #FFFFFF;
+
     /* Premium Minimalist Palette */
-    --primary-hex: #0F172A; /* Dark Navy */
+    --primary-hex: #0A2463; /* Dark Navy Backgrounds */
     --background-hex: #FFFFFF;
-    --foreground-hex: #0F172A;
+    --foreground-hex: #2D3748; /* Charcoal Text */
     
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
