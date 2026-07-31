@@ -79,6 +79,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     console.log("🚀 Attempting login for:", email);
     try {
       const auth = await authService.login(email, password);
+      if (!auth || !auth.token || auth.token === "undefined" || auth.token === "null") {
+        throw new Error("Invalid response from server: Missing authentication token.");
+      }
       localStorage.setItem("token", auth.token);
       set({ admin: auth.admin, isAuthenticated: true, isLoading: false });
     } catch (err) {
@@ -93,7 +96,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     console.log("🚀 Attempting guide login for phone:", phone);
     try {
       const guideAuth = await guideService.login(phone, 'guide');
-      if (guideAuth && guideAuth.token) {
+      if (guideAuth && guideAuth.token && looksLikeJwt(guideAuth.token)) {
         localStorage.setItem("guide_access_token", guideAuth.token);
       }
       set({
@@ -128,7 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = localStorage.getItem("token");
     const guideToken = localStorage.getItem("guide_access_token");
     
-    const hasValidToken = token && token.trim() !== ""; // Admin tokens might be structured or session strings
+    const hasValidToken = token && token.trim() !== "" && token !== "undefined" && token !== "null" && looksLikeJwt(token);
     const hasValidGuideToken = looksLikeJwt(guideToken);
 
     console.log("🔐 [AUTH STORE TRACE] checkAuth() called:", {

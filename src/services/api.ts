@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
 
   // Fallback to localStorage 'token' for legacy and dev environments
   const token = localStorage.getItem('token');
-  if (token) {
+  if (token && token !== 'undefined' && token !== 'null') {
     config.headers.Authorization = `Bearer ${token}`;
     adminRedirectInProgress = false;
   }
