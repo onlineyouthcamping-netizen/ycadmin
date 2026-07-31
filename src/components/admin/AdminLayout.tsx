@@ -322,6 +322,16 @@ function AdminSidebar() {
               const tokenPerms = Array.isArray((admin as any).permissions) ? (admin as any).permissions : [];
               const effectivePerms = Array.from(new Set([...defaultPerms, ...customPerms, ...tokenPerms]));
 
+              if (urlPath === '/admin/operations') {
+                console.log('🔒 Permission Audit [/admin/operations]:', {
+                  user: admin.email,
+                  role,
+                  hasOpsView: effectivePerms.includes('operations.view') || effectivePerms.includes('ops.view'),
+                  customPermsCount: customPerms.length,
+                  effectivePermsCount: effectivePerms.length
+                });
+              }
+
               // URL to permission mappings
               const urlPermissionMap: Record<string, string[]> = {
                 "/admin": ["dashboard.view"],
