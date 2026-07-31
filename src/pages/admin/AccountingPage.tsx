@@ -343,7 +343,7 @@ export default function AccountingPage() {
     }
   };
 
-  const canApprove = user?.role && ["superadmin", "admin", "finance"].includes(user.role);
+  const canApprove = hasPermission((user as any)?.permissions || (user as any)?.customPermissions, "accounting.approve", user?.role);
 
   // Filtered lists
   const filteredVendors = vendorAssignments.filter(a => {

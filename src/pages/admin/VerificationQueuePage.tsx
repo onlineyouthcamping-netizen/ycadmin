@@ -68,7 +68,7 @@ export default function VerificationQueuePage() {
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
-  const canVerify = admin?.role && ["superadmin", "admin", "BOOKING_VERIFIER", "operations"].includes(admin.role);
+  const canVerify = hasPermission((admin as any)?.permissions || (admin as any)?.customPermissions, "bookings.verify", admin?.role);
 
   const loadQueue = useCallback(async () => {
     setLoading(true);

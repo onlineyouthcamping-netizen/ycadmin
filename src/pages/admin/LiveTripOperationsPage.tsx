@@ -71,11 +71,8 @@ export default function LiveTripOperationsPage() {
     }
   };
 
-  // Check Permissions for current user
-  const isSales = admin?.role === "sales";
-  const allowedEmails = settings?.allowedSalesEmails || [];
-  const isAllowedSales = isSales && allowedEmails.includes(admin?.email);
-  const hasAccess = admin?.role === "admin" || admin?.role === "superadmin" || isAllowedSales;
+  const hasAccess = hasPermission((admin as any)?.permissions || (admin as any)?.customPermissions, "ops.view", admin?.role);
+  const isSales = !hasAccess;
 
   // Load dynamic operations timeline and statistics based on filters
   useEffect(() => {

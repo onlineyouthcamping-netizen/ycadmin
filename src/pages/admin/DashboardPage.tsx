@@ -450,7 +450,7 @@ export default function DashboardPage() {
           <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
             <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Announcements</span>
             <div className="flex items-center gap-2">
-              {(admin?.role === 'admin' || admin?.role === 'superadmin') && (
+              {hasPermission((admin as any)?.permissions || (admin as any)?.customPermissions, 'settings.view', admin?.role) && (
                 <button 
                   onClick={() => setShowAddAnnouncement(true)}
                   className="text-[10px] font-bold text-[#F97316] bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-0.5 rounded transition-all"

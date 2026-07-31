@@ -21,16 +21,22 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
     return <>{fallback}</>;
   }
 
-  // 1. If permission is specified, check via the new permission system
+  const combinedPerms = Array.from(new Set([
+    ...(admin.permissions || []),
+    ...((admin as any).customPermissions || [])
+  ]));
+
+  // 1. If permission is specified, check via the permission system
   if (permission) {
-    const isAllowed = hasPermission(admin.permissions, permission, admin.role);
+    const isAllowed = hasPermission(combinedPerms, permission, admin.role);
     if (!isAllowed) return <>{fallback}</>;
   }
 
-  // 2. If allowedRoles is specified, fallback check role list
+  // 2. If allowedRoles is specified, check permission or fallback role match
   if (allowedRoles && allowedRoles.length > 0) {
+    const isSuperAdmin = admin.role?.toLowerCase() === "superadmin" || admin.role?.toLowerCase() === "admin";
     const roleMatch = allowedRoles.map(r => r.toLowerCase()).includes(admin.role.toLowerCase());
-    if (!roleMatch && admin.role.toLowerCase() !== "superadmin") {
+    if (!roleMatch && !isSuperAdmin && combinedPerms.length === 0) {
       return <>{fallback}</>;
     }
   }

@@ -33,7 +33,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
   const location = useLocation();
   const { admin, logout } = useAuthStore();
 
-  const isFounder = (admin?.email || "").toLowerCase().includes("hemal") || admin?.role === "superadmin";
+  const isFounder = (admin?.email || "").toLowerCase().includes("hemal") || admin?.role === "superadmin" || admin?.role === "admin";
 
   const modules = [
     { title: "Dashboard", url: "/admin", icon: BarChart3 },

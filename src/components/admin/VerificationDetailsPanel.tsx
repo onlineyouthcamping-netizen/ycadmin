@@ -129,8 +129,8 @@ export default function VerificationDetailsPanel({
   const [cancelReason, setCancelReason] = useState("");
   const [cancelRefund, setCancelRefund] = useState("0");
 
-  const canPerformActions = admin?.role && ["superadmin", "admin", "operations", "BOOKING_VERIFIER"].includes(admin.role);
-  const isSales = admin?.role === "sales";
+  const canPerformActions = hasPermission((admin as any)?.permissions || (admin as any)?.customPermissions, "bookings.verify", admin?.role);
+  const isSales = !canPerformActions;
 
   useEffect(() => {
     if (open && bookingId) {
