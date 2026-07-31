@@ -48,22 +48,25 @@ api.interceptors.response.use(
     return res;
   },
   (err) => {
-    if (TRACE_REQUESTS) {
-      const config = err.config as any;
-      if (config?._reqId) {
-        const duration = Date.now() - (config._startTime || Date.now());
-        const isCancelled = axios.isCancel(err);
-        console.log(`[TRACE][${isCancelled ? 'CANCELLED' : 'FAILED'}] ID: ${config._reqId} | Duration: ${duration}ms | Status: ${err.response?.status || 'ERR'}`);
-      }
+    const status = err.response?.status;
+    const url = err.config?.url;
+
+    if (status === 401 || status === 403) {
+      console.error(`🔐 [API TRACE] HTTP ${status} from ${url}:`, {
+        message: err.response?.data?.message || err.message,
+        url,
+        stack: new Error(`HTTP ${status} Trace`).stack
+      });
     }
 
     // 401 Handling: Session expired or unauthorized
-    if (err.response?.status === 401 && !axios.isCancel(err)) {
-      const isLoginRequest = err.config?.url?.includes("/admin/login") || err.config?.url?.includes("/login");
+    if (status === 401 && !axios.isCancel(err)) {
+      const isLoginRequest = url?.includes("/admin/login") || url?.includes("/login");
       const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes("/admin/login");
 
       if (!isLoginRequest && !isAlreadyOnLoginPage) {
-        console.warn("🔐 Session expired - Clearing token and redirecting");
+        console.warn(`🔐 [API TRACE] 401 Session Revoked for ${url} - Redirecting to /admin/login`);
+        console.trace("🔐 [API TRACE] 401 Logout Stack");
         localStorage.removeItem('token');
         
         if (!adminRedirectInProgress) {

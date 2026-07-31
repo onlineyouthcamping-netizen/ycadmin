@@ -116,6 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
+    console.error("🔐 [AUTH STORE TRACE] logout() invoked!", { stack: new Error("logout trace").stack });
     localStorage.removeItem("token");
     localStorage.removeItem("guide_access_token");
     localStorage.removeItem("guide_token");
@@ -129,8 +130,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     const hasValidToken = token && token.trim() !== ""; // Admin tokens might be structured or session strings
     const hasValidGuideToken = looksLikeJwt(guideToken);
+
+    console.log("🔐 [AUTH STORE TRACE] checkAuth() called:", {
+      hasValidToken,
+      hasValidGuideToken,
+      tokenLength: token?.length,
+      currentAdmin: get().admin?.email
+    });
     
     if (!hasValidToken && !hasValidGuideToken) {
+      console.warn("🔐 [AUTH STORE TRACE] checkAuth() - No valid tokens in localStorage. Clearing auth state.");
       localStorage.removeItem("token");
       localStorage.removeItem("guide_access_token");
       localStorage.removeItem("guide_token");
