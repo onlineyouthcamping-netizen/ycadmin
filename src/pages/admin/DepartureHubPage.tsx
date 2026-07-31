@@ -2145,6 +2145,41 @@ export default function DepartureHubPage() {
     return [];
   }, [tripVendors, departureDateStr]);
 
+  const computedTeamContacts = useMemo(() => {
+    const list: Array<{ name: string; role: string; phone: string }> = [];
+    computedGuides.forEach((g: any) => {
+      list.push({
+        name: g.name || "Assigned Guide",
+        role: g.role || "Guide",
+        phone: g.phone || "—"
+      });
+    });
+    computedTransport.forEach((t: any) => {
+      list.push({
+        name: t.vendor || t.name || "Transport Driver",
+        role: `${t.type || 'Vehicle'} (${t.plate || ''})`.trim(),
+        phone: t.phone || "—"
+      });
+    });
+    return list;
+  }, [computedGuides, computedTransport]);
+
+  const computedTopTasks = useMemo(() => {
+    if (checklistTasks.length > 0) {
+      return checklistTasks.slice(0, 4).map((t: any) => ({
+        title: t.task || t.title || "Pending Task",
+        priority: t.priority ? (t.priority.charAt(0).toUpperCase() + t.priority.slice(1).toLowerCase()) : "Medium",
+        date: t.dueDate || "On Departure"
+      }));
+    }
+    return [
+      { title: "Verify passenger ID proofs & documentation", priority: "High", date: "Before Departure" },
+      { title: "Confirm vehicle & driver assignments", priority: "Medium", date: "1 Day Before" },
+      { title: "Finalize hotel vouchers & room allocation", priority: "High", date: "2 Days Before" },
+      { title: "Send pre-trip briefing & WhatsApp update", priority: "Low", date: "Departure Day" },
+    ];
+  }, [checklistTasks]);
+
   const handlePrintVendorReceipt = (row: any) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -3416,29 +3451,19 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     <button onClick={() => setActiveTab("itinerary")} className="text-[10px] font-bold text-blue-600 hover:underline">View full itinerary</button>
                   </div>
                   <div className="divide-y divide-slate-100">
-                    {[
-                      { day: "Day 1", date: "05 Jul", desc: "Ahmedabad → Chandigarh (Overnight Journey)", status: "ON TIME" },
-                      { day: "Day 2", date: "06 Jul", desc: "Chandigarh → Manali", status: "ON TIME" },
-                      { day: "Day 3", date: "07 Jul", desc: "Manali Local Sightseeing", status: "ON TIME" },
-                      { day: "Day 4", date: "08 Jul", desc: "Manali → Kasol", status: "ON TIME" },
-                      { day: "Day 5", date: "09 Jul", desc: "Kasol → Kullu → Manikaran", status: "ON TIME" },
-                      { day: "Day 6", date: "10 Jul", desc: "Kasol → Amritsar", status: "ON TIME" },
-                      { day: "Day 7", date: "11 Jul", desc: "Amritsar Sightseeing", status: "ON TIME" },
-                      { day: "Day 8", date: "12 Jul", desc: "Amritsar → Delhi (Overnight Journey)", status: "ON TIME" },
-                      { day: "Day 9", date: "13 Jul", desc: "Delhi → Ahmedabad", status: "ON TIME" },
-                    ].map((row, idx) => (
+                    {computedItinerary.map((row: any, idx: number) => (
                       <div key={idx} className="py-2 flex items-center justify-between gap-3 text-[11px] font-semibold text-slate-700">
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-500 px-1.5 py-0.5 rounded-[4px]">{row.day}</span>
-                          <span className="text-[10px] font-bold text-slate-400">{row.date}</span>
+                          <span className="text-[10px] font-bold text-slate-400">{row.date ? row.date.split(" ").slice(0, 2).join(" ") : "TBD"}</span>
                         </div>
-                        <p className="truncate flex-1 font-medium text-slate-600 text-left">{row.desc}</p>
-                        <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1 py-0.5 rounded-[3px] shrink-0 uppercase tracking-wider">{row.status}</span>
+                        <p className="truncate flex-1 font-medium text-slate-600 text-left">{row.plan || row.sub || "Day Plan"}</p>
+                        <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1 py-0.5 rounded-[3px] shrink-0 uppercase tracking-wider">{row.status || "ON TIME"}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <button onClick={() => toast.info("Itinerary plans")} className="text-[10px] font-black text-blue-600 hover:underline mt-4 text-left">View full itinerary & day plans</button>
+                <button onClick={() => setActiveTab("itinerary")} className="text-[10px] font-black text-blue-600 hover:underline mt-4 text-left">View full itinerary & day plans</button>
               </div>
 
               {/* Column 3: Quick Actions + Team Contacts */}
@@ -3448,12 +3473,12 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2.5 mb-3">Quick Actions</h3>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { label: "Add Expense", icon: <Sliders className="w-4 h-4 text-slate-500" />, action: () => toast.success("Add expense") },
-                      { label: "Add Payment", icon: <CreditCard className="w-4 h-4 text-[#F97316]" />, action: () => toast.success("Add payment") },
-                      { label: "Add Task", icon: <CheckSquare className="w-4 h-4 text-blue-600" />, action: () => toast.success("Add task") },
-                      { label: "Upload Document", icon: <Folder className="w-4 h-4 text-purple-600" />, action: () => toast.success("Upload document") },
-                      { label: "Send Message", icon: <MessageSquare className="w-4 h-4 text-emerald-600" />, action: () => toast.success("Send message") },
-                      { label: "Download Report", icon: <Download className="w-4 h-4 text-slate-500" />, action: () => toast.success("Download report") },
+                      { label: "Add Expense", icon: <Sliders className="w-4 h-4 text-slate-500" />, action: () => setActiveTab("payments") },
+                      { label: "Add Payment", icon: <CreditCard className="w-4 h-4 text-[#F97316]" />, action: () => setActiveTab("payments") },
+                      { label: "Add Task", icon: <CheckSquare className="w-4 h-4 text-blue-600" />, action: () => setActiveTab("tasks") },
+                      { label: "Upload Document", icon: <Folder className="w-4 h-4 text-purple-600" />, action: () => setActiveTab("documents") },
+                      { label: "Send Message", icon: <MessageSquare className="w-4 h-4 text-emerald-600" />, action: () => setActiveTab("communication") },
+                      { label: "Download Report", icon: <Download className="w-4 h-4 text-slate-500" />, action: () => setActiveTab("reports") },
                     ].map((act, idx) => (
                       <button key={idx} onClick={act.action} className="flex flex-col items-center justify-center p-2.5 border border-slate-100 hover:bg-slate-50 rounded-[6px] transition-colors gap-2 text-center h-[72px] bg-white">
                         {act.icon}
@@ -3467,29 +3492,28 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
                     <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider">Team & Contacts</h3>
-                    <button onClick={() => toast.info("View contacts")} className="text-[10px] font-bold text-blue-600 hover:underline">View all contacts</button>
+                    <button onClick={() => setActiveTab("guides")} className="text-[10px] font-bold text-blue-600 hover:underline">View all contacts</button>
                   </div>
                   <div className="space-y-3">
-                    {[
-                      { name: "Dikshu Sharma", role: "Guide", phone: "+91 98765 43210" },
-                      { name: "Suresh Kumar", role: "Trip Captain", phone: "+91 98765 56789" },
-                      { name: "Driver 1 - Ramesh", role: "Tempo 1", phone: "+91 98765 11111" },
-                      { name: "Driver 2 - Pawan", role: "Tempo 2", phone: "+91 98765 22222" },
-                    ].map((c, idx) => (
-                      <div key={idx} className="flex items-center justify-between gap-2 text-[11px]">
-                        <div className="flex items-center gap-2">
-                          <Avatar initials={c.name.split(" ").map(n=>n[0]).join("")} className="bg-slate-700 w-6 h-6 text-[8px]" />
-                          <div>
-                            <p className="font-bold text-slate-800">{c.name}</p>
-                            <p className="text-[9px] text-slate-400 font-semibold">{c.role}</p>
+                    {computedTeamContacts.length > 0 ? (
+                      computedTeamContacts.map((c, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-2 text-[11px]">
+                          <div className="flex items-center gap-2">
+                            <Avatar initials={c.name.split(" ").map(n=>n[0]).join("")} className="bg-slate-700 w-6 h-6 text-[8px]" />
+                            <div>
+                              <p className="font-bold text-slate-800">{c.name}</p>
+                              <p className="text-[9px] text-slate-400 font-semibold">{c.role}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-slate-500 text-[10px]">{c.phone}</span>
+                            <PhoneCall className="w-3.5 h-3.5 text-blue-500 hover:opacity-85 cursor-pointer shrink-0" />
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-slate-500 text-[10px]">{c.phone}</span>
-                          <PhoneCall className="w-3.5 h-3.5 text-blue-500 hover:opacity-85 cursor-pointer shrink-0" />
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-[11px] text-slate-400 italic py-1">No team members assigned yet.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -3505,12 +3529,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     <button onClick={() => setActiveTab("tasks")} className="text-[10px] font-bold text-blue-600 hover:underline">View all tasks</button>
                   </div>
                   <div className="space-y-3">
-                    {[
-                      { title: "Collect balance from 18 participants", priority: "High", date: "02 Jul 2027" },
-                      { title: "Guide briefing & kit handover", priority: "Medium", date: "04 Jul 2027" },
-                      { title: "WhatsApp group final message", priority: "Medium", date: "04 Jul 2027" },
-                      { title: "Emergency contacts sharing", priority: "Low", date: "04 Jul 2027" },
-                    ].map((task, idx) => (
+                    {computedTopTasks.map((task: any, idx: number) => (
                       <div key={idx} className="flex items-center justify-between gap-3 text-[11px] font-semibold">
                         <div className="flex items-center gap-2 min-w-0">
                           <Circle className="w-3.5 h-3.5 text-slate-300 shrink-0" />
