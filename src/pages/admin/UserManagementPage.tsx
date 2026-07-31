@@ -186,6 +186,7 @@ const PERMISSION_GROUPS = [
     name: "📑 Bookings & Customers",
     permissions: [
       { key: 'bookings.view', label: 'View Bookings' },
+      { key: 'bookings.view_all', label: 'View All Company Bookings' },
       { key: 'bookings.create', label: 'Create Bookings' },
       { key: 'bookings.edit', label: 'Edit Bookings' },
       { key: 'bookings.verify', label: 'Verify Bookings' },
