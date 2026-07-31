@@ -141,24 +141,27 @@ export default function DashboardPage() {
 
         {/* ─── DYNAMIC PERMISSION-BASED WIDGET GRID ─── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {visibleWidgets.map((widget) => (
-            <div key={widget.id} className={cn("flex flex-col", widget.colSpanDesktop)}>
-              {widget.render({
-                stats,
-                loading,
-                ticketPendingCount,
-                announcements,
-                loadingAnnouncements,
-                admin,
-                userPerms,
-                userRole,
-                navigate,
-                setShowAddAnnouncement,
-                setShowAllAnnouncements,
-                hasPermission,
-              })}
-            </div>
-          ))}
+          {visibleWidgets.map((widget) => {
+            const WidgetComponent = widget.component;
+            return (
+              <div key={widget.id} className={cn("flex flex-col", widget.colSpanDesktop)}>
+                <WidgetComponent
+                  stats={stats}
+                  loading={loading}
+                  ticketPendingCount={ticketPendingCount}
+                  announcements={announcements}
+                  loadingAnnouncements={loadingAnnouncements}
+                  admin={admin}
+                  userPerms={userPerms}
+                  userRole={userRole}
+                  navigate={navigate}
+                  setShowAddAnnouncement={setShowAddAnnouncement}
+                  setShowAllAnnouncements={setShowAllAnnouncements}
+                  hasPermission={hasPermission}
+                />
+              </div>
+            );
+          })}
         </div>
 
       </div>
