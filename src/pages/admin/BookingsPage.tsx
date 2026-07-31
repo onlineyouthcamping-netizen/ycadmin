@@ -168,7 +168,7 @@ export default function BookingsPage() {
           cachedSalesOptions = ids;
           setSalesOptions(ids);
         })
-        .catch((err) => console.error("Failed to load sales options:", err));
+        .catch(() => setSalesOptions([]));
     } else if (currentAdmin && currentAdmin.role === "sales") {
       setSalesOptions([currentAdmin.id]);
     }

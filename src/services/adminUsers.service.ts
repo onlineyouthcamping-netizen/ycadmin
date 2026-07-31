@@ -10,10 +10,9 @@ export const adminUsersService = {
   getSalesExecutives: async (): Promise<Array<{ id: string; name: string; email: string; role: string }>> => {
     try {
       const response = await api.get("/admin/users/sales-executives");
-      return response.data.data;
+      return response.data?.data || [];
     } catch (e) {
-      const response = await api.get("/admin/users");
-      return response.data.data;
+      return [];
     }
   },
 
