@@ -123,13 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ admin: null, isAuthenticated: false });
   },
 
-  checkAuth: async (force = false) => {
-    const currentState = get();
-    if (!force && currentState.isAuthenticated && currentState.admin) {
-      set({ isLoading: false });
-      return;
-    }
-
+  checkAuth: async (_force = false) => {
     const token = localStorage.getItem("token");
     const guideToken = localStorage.getItem("guide_access_token");
     
