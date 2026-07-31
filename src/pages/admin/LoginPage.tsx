@@ -19,8 +19,15 @@ export default function LoginPage() {
   const [notification, setNotification] = useState<string | null>(null);
   const [forgotEmail, setForgotEmail] = useState("");
 
-  const { login, loginAsGuide } = useAuthStore();
+  const { admin, isAuthenticated, login, loginAsGuide } = useAuthStore();
   const navigate = useNavigate();
+
+  // Auto-redirect if user is already authenticated
+  useEffect(() => {
+    if (isAuthenticated && admin) {
+      navigate("/admin", { replace: true });
+    }
+  }, [isAuthenticated, admin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
