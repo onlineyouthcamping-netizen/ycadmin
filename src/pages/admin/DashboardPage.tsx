@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogD
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MobileDashboardView } from "@/components/mobile/MobileDashboardView";
-import { DASHBOARD_WIDGET_REGISTRY } from "@/config/dashboardWidgetRegistry";
+import { DASHBOARD_WIDGET_REGISTRY, DashboardCategory, CATEGORY_LABELS } from "@/config/dashboardWidgetRegistry";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
@@ -37,12 +37,32 @@ export default function DashboardPage() {
   const userPerms = (admin as any)?.permissions || (admin as any)?.customPermissions || [];
   const userRole = admin?.role;
 
-  // Filter widgets strictly by user permissions and sort by order
+  // Filter widgets strictly by module permissions
   const visibleWidgets = useMemo(() => {
     return DASHBOARD_WIDGET_REGISTRY
       .filter((w) => !w.permission || hasPermission(userPerms, w.permission, userRole))
       .sort((a, b) => a.order - b.order);
   }, [userPerms, userRole]);
+
+  // Group visible widgets into category buckets
+  const categoryOrder: DashboardCategory[] = ['kpi', 'operations', 'finance', 'approval', 'team', 'general'];
+  
+  const widgetsByCategory = useMemo(() => {
+    const map: Record<DashboardCategory, typeof visibleWidgets> = {
+      kpi: [],
+      operations: [],
+      finance: [],
+      approval: [],
+      team: [],
+      general: []
+    };
+    visibleWidgets.forEach(w => {
+      if (map[w.category]) {
+        map[w.category].push(w);
+      }
+    });
+    return map;
+  }, [visibleWidgets]);
 
   const fetchAnnouncements = async () => {
     try {
@@ -97,7 +117,7 @@ export default function DashboardPage() {
   }, [dateFilter]);
 
   return (
-    <div className="space-y-4 pb-12 select-none px-4 py-3 bg-[#F4F7FB] min-h-screen text-[#162B45] font-sans antialiased">
+    <div className="space-y-6 pb-12 select-none px-4 py-3 bg-[#F4F7FB] min-h-screen text-[#162B45] font-sans antialiased">
       
       {/* ─── MOBILE DASHBOARD VIEW (<768px) ─── */}
       <div className="block md:hidden">
@@ -108,7 +128,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── DESKTOP DASHBOARD VIEW (>=768px) ─── */}
-      <div className="hidden md:block space-y-4">
+      <div className="hidden md:block space-y-6">
 
         {/* ─── SUB-HEADER BAR ─── */}
         <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] h-[40px] px-5 flex items-center justify-between font-sans -mx-4 -mt-3 mb-3">
@@ -139,30 +159,54 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ─── DYNAMIC PERMISSION-BASED WIDGET GRID ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {visibleWidgets.map((widget) => {
-            const WidgetComponent = widget.component;
-            return (
-              <div key={widget.id} className={cn("flex flex-col", widget.colSpanDesktop)}>
-                <WidgetComponent
-                  stats={stats}
-                  loading={loading}
-                  ticketPendingCount={ticketPendingCount}
-                  announcements={announcements}
-                  loadingAnnouncements={loadingAnnouncements}
-                  admin={admin}
-                  userPerms={userPerms}
-                  userRole={userRole}
-                  navigate={navigate}
-                  setShowAddAnnouncement={setShowAddAnnouncement}
-                  setShowAllAnnouncements={setShowAllAnnouncements}
-                  hasPermission={hasPermission}
-                />
+        {/* ─── DYNAMIC CATEGORIZED WIDGET SECTIONS ─── */}
+        {categoryOrder.map((cat) => {
+          const catWidgets = widgetsByCategory[cat];
+          // If no widgets in this category have permission, the ENTIRE SECTION DISAPPEARS!
+          if (!catWidgets || catWidgets.length === 0) return null;
+
+          const info = CATEGORY_LABELS[cat];
+
+          return (
+            <section key={cat} className="space-y-3">
+              {/* Render Section Header for Non-KPI Categories */}
+              {cat !== 'kpi' && (
+                <div className="pt-2 pb-1 border-b border-slate-200/80 flex items-center justify-between">
+                  <h2 className="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    {info.title}
+                  </h2>
+                  <span className="text-[10px] text-slate-400 font-semibold">{info.subtitle}</span>
+                </div>
+              )}
+
+              {/* Grid of Widgets inside Category */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                {catWidgets.map((widget) => {
+                  const WidgetComponent = widget.component;
+                  return (
+                    <div key={widget.id} className={cn("flex flex-col", widget.colSpanDesktop)}>
+                      <WidgetComponent
+                        stats={stats}
+                        loading={loading}
+                        ticketPendingCount={ticketPendingCount}
+                        announcements={announcements}
+                        loadingAnnouncements={loadingAnnouncements}
+                        admin={admin}
+                        userPerms={userPerms}
+                        userRole={userRole}
+                        navigate={navigate}
+                        setShowAddAnnouncement={setShowAddAnnouncement}
+                        setShowAllAnnouncements={setShowAllAnnouncements}
+                        hasPermission={hasPermission}
+                      />
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            </section>
+          );
+        })}
 
       </div>
 

@@ -1,5 +1,20 @@
 // Frontend Role-Permission mapping mirroring the backend rules
 
+export const PERMISSIONS = {
+  DASHBOARD_VIEW: 'dashboard.view',
+  BOOKINGS_VIEW: 'bookings.view',
+  BOOKINGS_VERIFY: 'bookings.verify',
+  ACCOUNTING_VIEW: 'accounting.view',
+  USERS_VIEW: 'users.view',
+  TASKS_VIEW: 'tasks.view',
+  VENDORS_VIEW: 'vendors.view',
+  TRIPS_VIEW: 'trips.view',
+  OPS_VIEW: 'ops.view',
+  ANNOUNCEMENTS_VIEW: 'announcements.view',
+  SETTINGS_VIEW: 'settings.view',
+  REPORTS_VIEW: 'reports.view'
+} as const;
+
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   superadmin: [
     'dashboard.view', 'trips.view', 'trips.create', 'trips.edit', 'trips.publish',
