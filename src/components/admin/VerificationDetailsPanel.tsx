@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { trainTicketService, type TrainTicket, type TrainTemplate } from "@/services/trainTicket.service";
 import { useAuthStore } from "@/store/auth.store";
+import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import TrainTicketsPanel from "./TrainTicketsPanel";
 import { bookingsService } from "@/services/bookings.service";

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
+import { hasPermission } from "@/lib/permissions";
 import { accountingService, type AccountingEntry } from "@/services/accounting.service";
 import { tripsService } from "@/services/trips.service";
 import { bookingsService } from "@/services/bookings.service";

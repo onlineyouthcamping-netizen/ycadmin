@@ -11,6 +11,7 @@ import { bookingVerificationService } from "@/services/bookingVerification.servi
 import { trainTicketService } from "@/services/trainTicket.service";
 import { bookingsService } from "@/services/bookings.service";
 import { useAuthStore } from "@/store/auth.store";
+import { hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
 import { cn, safeFormatDate } from "@/lib/utils";
 import VerificationDetailsPanel from "@/components/admin/VerificationDetailsPanel";

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAuthStore, ensureGuideToken } from "@/store/auth.store";
+import { hasPermission } from "@/lib/permissions";
 import { guideService, Assignment } from "@/services/guide.service";
 import { settingsService } from "@/services/settings.service";
 import { toast } from "@/components/ui/sonner";
