@@ -589,3 +589,31 @@ export interface CompactTrip {
   destination?: string | null;
   availableDates?: string[];
 }
+
+export interface AuditLog {
+  id: string;
+  tenantId?: string;
+  actorUserId?: string | null;
+  actor?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    avatar?: string;
+  };
+  action: string;
+  module?: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  entityName?: string | null;
+  beforeData?: any;
+  afterData?: any;
+  ipAddress?: string | null;
+  location?: string | null;
+  userAgent?: string | null;
+  device?: string | null;
+  browser?: string | null;
+  os?: string | null;
+  severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  createdAt: string;
+}
