@@ -107,7 +107,7 @@ const queryClient = new QueryClient({
   },
 });
 
-import { isFounder, ROLE_PERMISSIONS } from "@/config/permissions.config";
+import { isFounder } from "@/config/permissions.config";
 
 function AdminRoute({ children, requiredPermission, founderOnly }: { children: React.ReactNode; requiredPermission?: string; founderOnly?: boolean }) {
   const { admin, isAuthenticated, isLoading } = useAuthStore();
@@ -126,11 +126,9 @@ function AdminRoute({ children, requiredPermission, founderOnly }: { children: R
     return <Navigate to="/admin/unauthorized" replace />;
   }
 
-  const userRole = (admin.role || '').toLowerCase();
-  const defaultRolePerms = ROLE_PERMISSIONS[userRole] || [];
   const customPerms = Array.isArray(admin.customPermissions) ? admin.customPermissions : [];
   const tokenPerms = Array.isArray(admin.permissions) ? admin.permissions : [];
-  const combinedPerms = Array.from(new Set([...defaultRolePerms, ...tokenPerms, ...customPerms]));
+  const combinedPerms = Array.from(new Set([...tokenPerms, ...customPerms]));
 
   if (requiredPermission && !hasPermission(combinedPerms, requiredPermission, admin.role)) {
     return <Navigate to="/admin/unauthorized" replace />;
