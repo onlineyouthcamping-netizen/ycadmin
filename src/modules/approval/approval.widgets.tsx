@@ -32,10 +32,10 @@ export const approvalWidgets: DashboardWidget[] = [
   {
     id: "approval-queue",
     title: "My Approval Queue",
-    category: "approval",
+    category: "management",
     permission: PERMISSIONS.BOOKINGS_VERIFY,
     order: 60,
-    colSpanDesktop: "col-span-12 sm:col-span-6 lg:col-span-4",
+    colSpanDesktop: "col-span-12 md:col-span-6 lg:col-span-3",
     component: ApprovalQueueWidget,
   },
 ];

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, ChevronDown } from "lucide-react";
+import { Calendar, ChevronDown, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 import { dashboardService } from "@/services/dashboard.service";
 import { ticketApprovalService } from "@/services/ticketApproval.service";
@@ -44,17 +44,15 @@ export default function DashboardPage() {
       .sort((a, b) => a.order - b.order);
   }, [userPerms, userRole]);
 
-  // Group visible widgets into category buckets
-  const categoryOrder: DashboardCategory[] = ['kpi', 'operations', 'finance', 'approval', 'team', 'general'];
+  // Group visible widgets into balanced category buckets
+  const categoryOrder: DashboardCategory[] = ['kpi', 'operations', 'management', 'team'];
   
   const widgetsByCategory = useMemo(() => {
     const map: Record<DashboardCategory, typeof visibleWidgets> = {
       kpi: [],
       operations: [],
-      finance: [],
-      approval: [],
-      team: [],
-      general: []
+      management: [],
+      team: []
     };
     visibleWidgets.forEach(w => {
       if (map[w.category]) {
@@ -142,7 +140,7 @@ export default function DashboardPage() {
               <ChevronDown className="w-3 h-3 text-[#64748B]" />
             </div>
 
-            <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[6px] px-2 py-1 text-[11px] font-semibold text-[#0A192F]">
+            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[6px] px-2 py-1 text-[11px] font-semibold text-[#0A192F]">
               <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
               <select 
                 value={dateFilter} 
@@ -215,7 +213,8 @@ export default function DashboardPage() {
         <DialogContent className="sm:max-w-[425px] bg-white p-6 rounded-xl shadow-lg border border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              📢 Publish Announcement
+              <Megaphone className="w-4 h-4 text-orange-500" />
+              Publish Announcement
             </DialogTitle>
             <DialogDescription className="text-[11px] text-slate-400">
               Post an update or announcement to the admin dashboard.
@@ -259,7 +258,8 @@ export default function DashboardPage() {
         <DialogContent className="sm:max-w-[500px] bg-white p-6 rounded-xl shadow-lg border border-slate-200 flex flex-col max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              📢 All Announcements ({announcements.length})
+              <Megaphone className="w-4 h-4 text-orange-500" />
+              All Announcements ({announcements.length})
             </DialogTitle>
             <DialogDescription className="text-[11px] text-slate-400">
               List of updates and announcements published to the company.

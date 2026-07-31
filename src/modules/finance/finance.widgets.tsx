@@ -1,4 +1,5 @@
 import React from "react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
 import type { DashboardWidget, DashboardWidgetContextProps } from "@/config/dashboardWidgetRegistry";
 
@@ -15,7 +16,7 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({ 
           <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">Collection Today</p>
           <p className="text-[13px] font-bold text-[#16A34A]">₹ {(stats?.cashFlow?.collectionToday || 0).toLocaleString('en-IN')}</p>
         </div>
-        <span className="text-[#16A34A] text-xs">📈</span>
+        <TrendingUp className="w-3.5 h-3.5 text-[#16A34A]" />
       </div>
 
       <div onClick={() => navigate("/admin/accounting-workspace")} className="bg-[#FFF1F3] p-2 rounded border border-rose-100 flex items-center justify-between mt-1 cursor-pointer hover:bg-rose-50/80 transition-colors">
@@ -23,7 +24,7 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({ 
           <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">Payments Today</p>
           <p className="text-[13px] font-bold text-[#E23D4D]">₹ {(stats?.cashFlow?.paymentsToday || 0).toLocaleString('en-IN')}</p>
         </div>
-        <span className="text-[#E23D4D] text-xs">📉</span>
+        <TrendingDown className="w-3.5 h-3.5 text-[#E23D4D]" />
       </div>
 
       <div className="border-t border-[#E3EAF2] pt-2 mt-2 flex items-center justify-between text-[11px] font-bold">
@@ -40,10 +41,10 @@ export const financeWidgets: DashboardWidget[] = [
   {
     id: "cash-flow-overview",
     title: "Cash Flow Overview",
-    category: "finance",
+    category: "management",
     permission: PERMISSIONS.ACCOUNTING_VIEW,
     order: 70,
-    colSpanDesktop: "col-span-12 sm:col-span-6 lg:col-span-4",
+    colSpanDesktop: "col-span-12 md:col-span-6 lg:col-span-3",
     component: CashFlowOverviewWidget,
   },
 ];

@@ -1,4 +1,5 @@
 import React from "react";
+import { BarChart2, Users, Building, Briefcase, Calendar, DollarSign } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
 import type { DashboardWidget, DashboardWidgetContextProps } from "@/config/dashboardWidgetRegistry";
 
@@ -11,7 +12,7 @@ export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({ stats,
     <div className="flex items-start justify-between">
       <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Total Revenue</span>
       <div className="w-[26px] h-[26px] rounded bg-emerald-50 flex items-center justify-center text-emerald-600">
-        <span className="text-xs font-bold">₹</span>
+        <DollarSign className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
@@ -34,7 +35,7 @@ export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({ stat
     <div className="flex items-start justify-between">
       <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Monthly Revenue</span>
       <div className="w-[26px] h-[26px] rounded bg-blue-50 flex items-center justify-center text-blue-600">
-        <span className="text-xs font-bold">📊</span>
+        <BarChart2 className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
@@ -57,7 +58,7 @@ export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({ st
     <div className="flex items-start justify-between">
       <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Pending Customers</span>
       <div className="w-[26px] h-[26px] rounded bg-amber-50 flex items-center justify-center text-amber-600">
-        <span className="text-xs font-bold">👥</span>
+        <Users className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
@@ -80,7 +81,7 @@ export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({ stat
     <div className="flex items-start justify-between">
       <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Pending Vendors</span>
       <div className="w-[26px] h-[26px] rounded bg-rose-50 flex items-center justify-center text-rose-600">
-        <span className="text-xs font-bold">🏢</span>
+        <Building className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
@@ -103,7 +104,7 @@ export const TripsRunningCard: React.FC<DashboardWidgetContextProps> = ({ stats,
     <div className="flex items-start justify-between">
       <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Trips Running</span>
       <div className="w-[26px] h-[26px] rounded bg-indigo-50 flex items-center justify-center text-indigo-600">
-        <span className="text-xs font-bold">🎒</span>
+        <Briefcase className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
@@ -126,7 +127,7 @@ export const BookingsMonthCard: React.FC<DashboardWidgetContextProps> = ({ stats
     <div className="flex items-start justify-between">
       <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Bookings Month</span>
       <div className="w-[26px] h-[26px] rounded bg-teal-50 flex items-center justify-center text-teal-600">
-        <span className="text-xs font-bold">📅</span>
+        <Calendar className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">

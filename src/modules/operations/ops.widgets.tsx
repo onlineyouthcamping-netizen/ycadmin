@@ -1,4 +1,5 @@
 import React from "react";
+import { User, MapPin } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
 import type { DashboardWidget, DashboardWidgetContextProps } from "@/config/dashboardWidgetRegistry";
 
@@ -51,8 +52,12 @@ export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({ s
               <p className="text-[10px] text-[#74839A] font-medium leading-none">{trip.name}</p>
             </div>
             <div className="text-right space-y-0.5">
-              <p className="text-[10.5px] font-semibold text-[#162B45] flex items-center justify-end gap-1">👤 {trip.size}</p>
-              <p className="text-[9.5px] text-emerald-600 font-bold leading-none">📍 {trip.stay}</p>
+              <p className="text-[10.5px] font-semibold text-[#162B45] flex items-center justify-end gap-1">
+                <User className="w-3 h-3 text-[#74839A]" /> {trip.size}
+              </p>
+              <p className="text-[9.5px] text-emerald-600 font-bold leading-none flex items-center justify-end gap-0.5">
+                <MapPin className="w-3 h-3 text-emerald-600" /> {trip.stay}
+              </p>
             </div>
           </div>
         ))
@@ -144,10 +149,10 @@ export const opsWidgets: DashboardWidget[] = [
   {
     id: "todays-schedule",
     title: "Today's Schedule",
-    category: "operations",
+    category: "management",
     permission: PERMISSIONS.OPS_VIEW,
     order: 50,
-    colSpanDesktop: "col-span-12 sm:col-span-6 lg:col-span-4",
+    colSpanDesktop: "col-span-12 md:col-span-6 lg:col-span-3",
     component: TodaysScheduleWidget,
   },
 ];

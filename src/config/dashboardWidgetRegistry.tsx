@@ -21,7 +21,7 @@ export interface DashboardWidgetContextProps {
   hasPermission: (perms: any, required: string, role?: string) => boolean;
 }
 
-export type DashboardCategory = 'kpi' | 'operations' | 'finance' | 'approval' | 'team' | 'general';
+export type DashboardCategory = 'kpi' | 'operations' | 'management' | 'team';
 
 export interface DashboardWidget {
   id: string;
@@ -36,10 +36,8 @@ export interface DashboardWidget {
 export const CATEGORY_LABELS: Record<DashboardCategory, { title: string; subtitle: string }> = {
   kpi: { title: "KPI Summary", subtitle: "Key performance indicators and business metrics" },
   operations: { title: "Operational Workspace", subtitle: "Active departures, itinerary schedules, and urgent alerts" },
-  finance: { title: "Finance & Cash Flow", subtitle: "Daily cash movements, collections, and vendor payables" },
-  approval: { title: "Approvals & Verification", subtitle: "Pending verifications and ticket issuance queue" },
-  team: { title: "Team & Workforce", subtitle: "Employee presence and task workload meters" },
-  general: { title: "General Updates & Activity", subtitle: "Recent bookings, tasks progress, and announcements" }
+  management: { title: "Management & Cash Flow", subtitle: "Schedule, approvals, daily cash flow, and announcements" },
+  team: { title: "Team & Workforce Activity", subtitle: "Employee status, task workload meters, and recent bookings" }
 };
 
 // ─────────────────────────────────────────────────────────────
