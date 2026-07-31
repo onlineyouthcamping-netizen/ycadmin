@@ -316,10 +316,11 @@ function AdminSidebar() {
               const isSuperAdmin = role === 'superadmin' || role === 'admin';
               if (isSuperAdmin) return true;
 
-              // Determine effective permissions (union of role defaults and custom permissions)
+              // Determine effective permissions (union of role defaults, token permissions, and custom permissions)
               const defaultPerms = ROLE_PERMISSIONS[role] || [];
               const customPerms = Array.isArray(admin.customPermissions) ? admin.customPermissions : [];
-              const effectivePerms = Array.from(new Set([...defaultPerms, ...customPerms]));
+              const tokenPerms = Array.isArray((admin as any).permissions) ? (admin as any).permissions : [];
+              const effectivePerms = Array.from(new Set([...defaultPerms, ...customPerms, ...tokenPerms]));
 
               // URL to permission mappings
               const urlPermissionMap: Record<string, string[]> = {
