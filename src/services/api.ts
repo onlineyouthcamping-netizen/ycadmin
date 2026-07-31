@@ -52,28 +52,14 @@ api.interceptors.response.use(
     const status = err.response?.status;
     const url = err.config?.url;
 
-    if (status === 401 || status === 403) {
-      console.error(`🔐 [API TRACE] HTTP ${status} from ${url}:`, {
-        message: err.response?.data?.message || err.message,
-        url,
-        stack: new Error(`HTTP ${status} Trace`).stack
-      });
-    }
-
     // 401 Handling: Session expired or unauthorized
     if (status === 401 && !axios.isCancel(err)) {
       const isLoginRequest = url?.includes("/admin/login") || url?.includes("/login");
-      const isAlreadyOnLoginPage = typeof window !== 'undefined' && window.location.pathname.includes("/admin/login");
 
-      if (!isLoginRequest && !isAlreadyOnLoginPage) {
-        console.warn(`🔐 [API TRACE] 401 Session Revoked for ${url} - Redirecting to /admin/login`);
-        console.trace("🔐 [API TRACE] 401 Logout Stack");
+      if (!isLoginRequest) {
+        // Just clear the token here. The auth store and React Router will
+        // handle the graceful redirect to /admin/login without a hard reload.
         localStorage.removeItem('token');
-        
-        if (!adminRedirectInProgress) {
-          adminRedirectInProgress = true;
-          window.location.href = '/admin/login';
-        }
       }
     }
     return Promise.reject(err);
