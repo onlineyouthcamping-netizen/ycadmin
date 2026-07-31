@@ -7,6 +7,16 @@ export const adminUsersService = {
     return response.data.data;
   },
 
+  getSalesExecutives: async (): Promise<Array<{ id: string; name: string; email: string; role: string }>> => {
+    try {
+      const response = await api.get("/admin/users/sales-executives");
+      return response.data.data;
+    } catch (e) {
+      const response = await api.get("/admin/users");
+      return response.data.data;
+    }
+  },
+
   createAdmin: async (adminData: any): Promise<Admin> => {
     const response = await api.post("/admin/users", adminData);
     return response.data.data;

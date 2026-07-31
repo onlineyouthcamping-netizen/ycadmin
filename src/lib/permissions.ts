@@ -81,6 +81,13 @@ export function hasPermission(
   }
 
   if (role?.toLowerCase() === "superadmin") return true;
+
+  if (role) {
+    const normalizedRole = role.toLowerCase();
+    const roleSet = ROLE_PERMISSIONS_SETS[normalizedRole];
+    if (roleSet && roleSet.has(required)) return true;
+  }
+
   if (!permissionsOrRole) return false;
   return permissionsOrRole.includes(required);
 }

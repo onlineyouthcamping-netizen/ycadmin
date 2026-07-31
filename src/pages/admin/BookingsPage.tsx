@@ -162,7 +162,7 @@ export default function BookingsPage() {
   useEffect(() => {
     if (currentAdmin) {
       if (cachedSalesOptions) setSalesOptions(cachedSalesOptions);
-      adminUsersService.listAdmins()
+      adminUsersService.getSalesExecutives()
         .then((users) => {
           const ids = users.map((u: any) => u.id || u.username || u.email).filter(Boolean);
           cachedSalesOptions = ids;
