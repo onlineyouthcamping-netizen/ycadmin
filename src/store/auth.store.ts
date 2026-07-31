@@ -4,20 +4,12 @@ import { authService } from "@/services/auth.service";
 import { guideService } from "@/services/guide.service";
 
 /**
- * Structural JWT check — verifies the token has 3 dot-separated parts
- * and can be base64-decoded. Does NOT check expiry.
+ * Structural JWT check — verifies the token has 3 dot-separated parts.
+ * Does NOT decode or check expiry.
  */
 function isStructurallyValidJwt(value: string | null | undefined): boolean {
   if (!value) return false;
-  const parts = value.split(".");
-  if (parts.length !== 3) return false;
-  try {
-    // Verify the payload is valid base64-encoded JSON
-    JSON.parse(atob(parts[1]));
-    return true;
-  } catch {
-    return false;
-  }
+  return value.split(".").length === 3;
 }
 
 /**
@@ -29,7 +21,16 @@ function isJwtExpired(value: string | null | undefined, bufferMs = 60000): boole
   try {
     const parts = value.split(".");
     if (parts.length !== 3) return true;
-    const payload = JSON.parse(atob(parts[1]));
+    
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    base64 = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    
+    // Properly decode UTF-8 to prevent JSON.parse from crashing on emojis/non-ASCII
+    const jsonString = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    const payload = JSON.parse(jsonString);
     if (payload && typeof payload.exp === "number") {
       return payload.exp * 1000 <= Date.now() + bufferMs;
     }
