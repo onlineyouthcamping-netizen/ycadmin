@@ -157,7 +157,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = localStorage.getItem("token");
     const guideToken = localStorage.getItem("guide_access_token");
 
-    const hasAdminToken = isValidTokenString(token) && isStructurallyValidJwt(token);
+    const hasAdminToken = isValidTokenString(token) && isStructurallyValidJwt(token) && !isJwtExpired(token);
     const hasGuideToken = isValidTokenString(guideToken) && isStructurallyValidJwt(guideToken) && !isJwtExpired(guideToken);
 
     // No tokens at all — clear state immediately, no loading needed
