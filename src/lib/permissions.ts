@@ -24,7 +24,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports.view', 'reports.export', 'settings.view', 'hr.view',
     'tickets.view', 'tickets.create', 'tickets.edit', 'tickets.submit', 'tickets.approve',
     'tickets.reopen', 'tickets.bulk', 'tickets.templates.manage', 'tickets.alerts.view',
-    'accounting.view', 'accounting.edit', 'emails.manage_templates'
+    'emails.manage_templates'
   ],
 
   sales: [

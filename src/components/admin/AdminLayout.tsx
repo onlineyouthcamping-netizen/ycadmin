@@ -301,7 +301,7 @@ function AdminSidebar() {
             const hasUserAccessToUrl = (subUrl: string) => {
               if (!admin) return false;
               const role = (admin.role || '').toLowerCase();
-              if (role === 'superadmin' || role === 'admin') return true;
+              if (role === 'superadmin') return true;
 
               const urlPath = subUrl.split('?')[0];
 
@@ -313,7 +313,7 @@ function AdminSidebar() {
                 if (!isFounder) return false;
               }
 
-              const isSuperAdmin = role === 'superadmin' || role === 'admin';
+              const isSuperAdmin = role === 'superadmin';
               if (isSuperAdmin) return true;
 
               // Determine effective permissions (union of token permissions, and custom permissions)
