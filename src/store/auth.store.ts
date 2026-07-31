@@ -138,7 +138,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    set({ isLoading: true });
+    const currentAdmin = get().admin;
+    if (!currentAdmin) {
+      set({ isLoading: true });
+    }
 
     // Case 1: Guide login session
     if (hasValidGuideToken && !hasValidToken) {
@@ -169,10 +172,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const admin = await authService.getMe();
       set({ admin, isAuthenticated: true, isLoading: false });
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ Auth check failed:", err);
-      localStorage.removeItem("token");
-      set({ admin: null, isAuthenticated: false, isLoading: false });
+      if (err?.response?.status === 401) {
+        localStorage.removeItem("token");
+        set({ admin: null, isAuthenticated: false, isLoading: false });
+      } else {
+        set({ isLoading: false });
+      }
     }
   },
 }));
