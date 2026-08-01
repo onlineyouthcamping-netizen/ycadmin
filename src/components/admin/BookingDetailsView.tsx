@@ -1388,10 +1388,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           <div className="text-slate-500 text-xs mt-0.5 font-medium">
             {booking.departureDate 
               ? `${safeFormatDate(booking.departureDate, { day: '2-digit', month: 'short' })} to ${(() => {
-                  const durationStr = fullTrip?.duration || "";
+                  const durationStr = fullTrip?.duration || booking.duration || "";
                   const daysMatch = durationStr.match(/(\d+)\s*[Dd]ay/);
-                  const durationDays = daysMatch ? parseInt(daysMatch[1], 10) : (durationStr ? 10 : 10);
-                  return safeFormatDate(new Date(booking.departureDate).getTime() + durationDays*24*60*60*1000, { day: '2-digit', month: 'short', year: 'numeric' });
+                  const durationDays = daysMatch ? parseInt(daysMatch[1], 10) : 11;
+                  const returnDaysOffset = Math.max(0, durationDays - 1);
+                  return safeFormatDate(new Date(booking.departureDate).getTime() + returnDaysOffset * 24 * 60 * 60 * 1000, { day: '2-digit', month: 'short', year: 'numeric' });
                 })()}`
               : '—'}
           </div>
@@ -1826,7 +1827,13 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                         </td>
                         <td className="px-4 py-3">
                           {booking.departureDate 
-                            ? safeFormatDate(new Date(booking.departureDate).getTime() + (Number(fullTrip?.duration) || 10)*24*60*60*1000, { day: '2-digit', month: 'short', year: 'numeric' })
+                            ? (() => {
+                                const durationStr = fullTrip?.duration || booking.duration || "";
+                                const daysMatch = durationStr.match(/(\d+)\s*[Dd]ay/);
+                                const durationDays = daysMatch ? parseInt(daysMatch[1], 10) : 11;
+                                const returnDaysOffset = Math.max(0, durationDays - 1);
+                                return safeFormatDate(new Date(booking.departureDate).getTime() + returnDaysOffset * 24 * 60 * 60 * 1000, { day: '2-digit', month: 'short', year: 'numeric' });
+                              })()
                             : "—"}
                         </td>
                         <td className="px-4 py-3 font-semibold text-slate-800">{booking.createdByName || (booking as any).assignedSalesPerson?.name || "System"}</td>
