@@ -359,6 +359,7 @@ export default function DepartureHubPage() {
         return clean;
       };
 
+      const normLeadName = normalizeCompareName(leadName);
       const paxList = Array.isArray(passengersObj?.persons) ? passengersObj.persons : (Array.isArray(passengersObj) ? passengersObj : []);
       const filteredCoPax = paxList.filter((p: any) => normalizeCompareName(p?.name || '') !== normLeadName);
       const passengerCount = filteredCoPax.length + 1;
@@ -2938,6 +2939,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       const leadName = b.fullName || b.name;
       const leadRoomInfo = personsRoomDetails[leadName] || {};
+      const normLeadName = normalizeCompareName(leadName);
       const paxList = Array.isArray(passengersObj?.persons) ? passengersObj.persons : (Array.isArray(passengersObj) ? passengersObj : []);
       const filteredCoPax = paxList.filter((p: any) => normalizeCompareName(p?.name || '') !== normLeadName);
       const passengerCount = filteredCoPax.length + 1;
