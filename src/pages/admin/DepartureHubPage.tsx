@@ -1910,31 +1910,45 @@ export default function DepartureHubPage() {
   };
 
   const computedItinerary = useMemo(() => {
+    const isSpiti = tripId.toLowerCase().includes("spt") || tripId.toLowerCase().includes("spiti");
+
     const baseItin = (tripDetails?.itinerary && tripDetails.itinerary.length > 0) 
-      ? tripDetails.itinerary.map((it: any) => ({
-          day: `Day ${it.day}`,
-          plan: it.title || it.location,
-          sub: it.description || "",
-          stay: it.stay || "—",
-          stayType: it.stay && it.stay !== "—" ? "Standard Stay" : "",
-          stayBadge: it.stay && it.stay !== "—" ? "STANDARD" : "",
-          travel: "Local / Transfer",
-          travelSub: "Planned Transfer",
-          meals: it.meals || "—",
-          activities: Array.isArray(it.activities) ? it.activities.join(" ") : it.activities || "—",
-          status: "ON TIME"
-        }))
-      : (tripId.toLowerCase().includes("spt") ? MOCK_SPITI_ITINERARY : [
-          { day: "Day 1", plan: "Ahmedabad → Chandigarh", sub: "Overnight Journey by Volvo", stay: "—", stayType: "", travel: "Volvo Bus", travelSub: "Departure: 08:00 PM", meals: "—", activities: "—", status: "ON TIME" },
-          { day: "Day 2", plan: "Chandigarh → Manali", sub: "Enroute Sightseeing", stay: "Manali", stayType: "Hotel Mountain View", stayBadge: "DELUXE", travel: "280 KM", travelSub: "7-8 Hrs", meals: "Breakfast Dinner", activities: "Hadimba Temple Mall Road Visit", status: "ON TIME" },
-          { day: "Day 3", plan: "Manali Local Sightseeing", sub: "Solang Valley & Rohtang Pass (if open)", stay: "Manali", stayType: "Hotel Mountain View", stayBadge: "DELUXE", travel: "Local", travelSub: "70 KM", meals: "Breakfast Dinner", activities: "Solang Valley Rohtang Pass", status: "ON TIME" },
-          { day: "Day 4", plan: "Manali → Kasol", sub: "Scenic Drive", stay: "Kasol", stayType: "Riverside Camp", stayBadge: "CAMP", travel: "80 KM", travelSub: "3-4 Hrs", meals: "Breakfast Dinner", activities: "Parvati Valley Kasol Market", status: "ON TIME" },
-          { day: "Day 5", plan: "Kasol → Kullu → Manikaran", sub: "Hot Springs Visit", stay: "Kasol", stayType: "Riverside Camp", stayBadge: "CAMP", travel: "60 KM", travelSub: "2-3 Hrs", meals: "Breakfast Dinner", activities: "Manikaran Sahib Hot Springs", status: "ON TIME" },
-          { day: "Day 6", plan: "Kasol → Amritsar", sub: "Overnight Journey by Volvo", stay: "—", stayType: "", travel: "Volvo Bus", travelSub: "Departure: 08:00 PM", meals: "Breakfast", activities: "—", status: "ON TIME" },
-          { day: "Day 7", plan: "Amritsar Sightseeing", sub: "Heritage & Wagah Border", stay: "Amritsar", stayType: "Hotel Grand Amritsar", stayBadge: "DELUXE", travel: "Local", travelSub: "60 KM", meals: "Breakfast Dinner", activities: "Golden Temple Wagah Border", status: "ON TIME" },
-          { day: "Day 8", plan: "Amritsar → Delhi", sub: "Overnight Journey by Train", stay: "—", stayType: "", travel: "Shatabdi Express", travelSub: "Departure: 07:00 PM", meals: "Breakfast", activities: "—", status: "ON TIME" },
-          { day: "Day 9", plan: "Delhi → Ahmedabad", sub: "Arrival in Ahmedabad", stay: "—", stayType: "", travel: "Flight", travelSub: "Arrival: 06:30 AM", meals: "—", activities: "—", status: "ON TIME" },
-        ]);
+      ? tripDetails.itinerary.map((it: any, idx: number) => {
+          const stayName = it.stay && it.stay !== "—" ? it.stay : (it.location || "");
+          const mealsName = it.meals && it.meals !== "—" ? it.meals : "Breakfast & Dinner";
+          const actName = Array.isArray(it.activities) 
+            ? (it.activities.length > 0 ? it.activities.join(" • ") : (it.title || it.location || ""))
+            : (it.activities && it.activities !== "—" ? it.activities : (it.title || it.location || ""));
+          const travelName = it.travel || it.distance || (it.location ? `Transfer / ${it.location}` : "Local Transfer");
+          const travelSubName = it.travelSub || it.drivingHours || "Planned Transfer";
+
+          return {
+            rawIdx: idx,
+            day: `Day ${it.day || idx + 1}`,
+            plan: it.title || it.location || `Day ${it.day || idx + 1}`,
+            sub: it.description || "",
+            stay: stayName || "—",
+            stayType: stayName && stayName !== "—" ? (it.stayType || "Standard Stay") : "",
+            stayBadge: stayName && stayName !== "—" ? (it.stayBadge || "STANDARD") : "",
+            travel: travelName,
+            travelSub: travelSubName,
+            distance: travelName,
+            meals: mealsName || "—",
+            activities: actName || "—",
+            status: "ON TIME"
+          };
+        })
+      : (isSpiti ? MOCK_SPITI_ITINERARY : [
+          { day: "Day 1", rawIdx: 0, plan: "Ahmedabad → Chandigarh", sub: "Overnight Journey by Volvo", stay: "—", stayType: "", travel: "Volvo Bus", travelSub: "Departure: 08:00 PM", distance: "550 KM", meals: "—", activities: "Overnight Bus Journey", status: "ON TIME" },
+          { day: "Day 2", rawIdx: 1, plan: "Chandigarh → Manali", sub: "Enroute Sightseeing", stay: "Manali", stayType: "Hotel Mountain View", stayBadge: "DELUXE", travel: "280 KM", travelSub: "7-8 Hrs", distance: "280 KM", meals: "Breakfast, Dinner", activities: "Hadimba Temple, Mall Road Visit", status: "ON TIME" },
+          { day: "Day 3", rawIdx: 2, plan: "Manali Local Sightseeing", sub: "Solang Valley & Rohtang Pass", stay: "Manali", stayType: "Hotel Mountain View", stayBadge: "DELUXE", travel: "Local / 70 KM", travelSub: "3-4 Hrs", distance: "70 KM", meals: "Breakfast, Dinner", activities: "Solang Valley, Rohtang Pass", status: "ON TIME" },
+          { day: "Day 4", rawIdx: 3, plan: "Manali → Kasol", sub: "Scenic Drive & River Point", stay: "Kasol", stayType: "Riverside Camp", stayBadge: "CAMP", travel: "80 KM", travelSub: "3-4 Hrs", distance: "80 KM", meals: "Breakfast, Dinner", activities: "Parvati Valley, Kasol Market", status: "ON TIME" },
+          { day: "Day 5", rawIdx: 4, plan: "Kasol → Kullu → Manikaran", sub: "Hot Springs Visit", stay: "Kasol", stayType: "Riverside Camp", stayBadge: "CAMP", travel: "60 KM", travelSub: "2-3 Hrs", distance: "60 KM", meals: "Breakfast, Dinner", activities: "Manikaran Sahib, Hot Springs", status: "ON TIME" },
+          { day: "Day 6", rawIdx: 5, plan: "Kasol → Amritsar", sub: "Overnight Journey by Volvo", stay: "—", stayType: "", travel: "Volvo Bus", travelSub: "Departure: 08:00 PM", distance: "350 KM", meals: "Breakfast", activities: "Overnight Bus Journey", status: "ON TIME" },
+          { day: "Day 7", rawIdx: 6, plan: "Amritsar Sightseeing", sub: "Heritage & Wagah Border", stay: "Amritsar", stayType: "Hotel Grand Amritsar", stayBadge: "DELUXE", travel: "Local", travelSub: "60 KM", distance: "60 KM", meals: "Breakfast, Dinner", activities: "Golden Temple, Wagah Border", status: "ON TIME" },
+          { day: "Day 8", rawIdx: 7, plan: "Amritsar → Delhi", sub: "Overnight Journey by Train", stay: "—", stayType: "", travel: "Shatabdi Express", travelSub: "Departure: 07:00 PM", distance: "450 KM", meals: "Breakfast", activities: "Train Journey", status: "ON TIME" },
+          { day: "Day 9", rawIdx: 8, plan: "Delhi → Ahmedabad", sub: "Arrival in Ahmedabad", stay: "—", stayType: "", travel: "Flight", travelSub: "Arrival: 06:30 AM", distance: "Flight", meals: "Breakfast", activities: "Arrival Home", status: "ON TIME" },
+        ]).map((item: any, idx: number) => ({ ...item, rawIdx: idx, distance: item.distance || item.travel || "Local" }));
 
     return baseItin.map((item: any, idx: number) => {
       const { wd, date } = getDayDateAndWd(departureDateStr, idx);
