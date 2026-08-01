@@ -3157,7 +3157,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             <BookingAttachmentsTab
               bookingId={booking.id}
               booking={booking}
-              userRole={(admin as any)?.role || "admin"}
+              userRole={(currentAdmin as any)?.role || "admin"}
             />
           )}
 
