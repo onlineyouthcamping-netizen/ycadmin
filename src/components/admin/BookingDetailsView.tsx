@@ -1695,7 +1695,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
               { id: "operations", label: "Operations", badge: tasks.length ? `${tasks.length} tasks` : null },
               { id: "ticketing", label: "Ticketing", badge: tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length ? `${tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length} pending` : null },
               { id: "accounting", label: "Accounting", badge: null },
-              { id: "files", label: "Files & Notes", badge: null },
+              { id: "files", label: "Notes", badge: null },
               { id: "attachments", label: "📎 Attachments", badge: null },
               { id: "emails", label: "Email Logs", badge: emailLogs.length ? `${emailLogs.length}` : null },
               { id: "activity", label: "Activity", badge: activityLogs.length ? `${activityLogs.length}` : null }
@@ -3093,7 +3093,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
           {/* === FILES TAB === */}
           {adminActiveTab === "files" && (
             <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
-              <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider pb-2 border-b">Files & Notes</h4>
+              <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider pb-2 border-b">Customer & Office Notes</h4>
               
               {/* Customer Booking Notes / Special Requests */}
               <div className="space-y-2">
