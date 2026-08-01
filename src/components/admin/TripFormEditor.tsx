@@ -2788,6 +2788,20 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                           <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Location</Label>
                           <Input value={item.location || ""} placeholder="e.g. Havelock Island" onChange={(e) => { const updated = [...form.accommodations]; updated[i].location = e.target.value; setForm({ ...form, accommodations: updated }); }} className="h-7 text-[11px] font-bold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" />
                         </div>
+                        <div className="col-span-2 md:col-span-3 space-y-0.5 mt-1">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-amber-600">Key Stay Highlights / Amenities (Comma Separated)</Label>
+                          <Input 
+                            value={Array.isArray(item.amenities) ? item.amenities.join(", ") : (item.amenities || "")} 
+                            placeholder="e.g. Air Conditioning, Free Wi-Fi, Swimming Pool, Mountain View, Buffet Breakfast" 
+                            onChange={(e) => { 
+                              const updated = [...form.accommodations]; 
+                              const val = e.target.value;
+                              updated[i].amenities = val ? val.split(",").map(s => s.trim()).filter(Boolean) : []; 
+                              setForm({ ...form, accommodations: updated }); 
+                            }} 
+                            className="h-7 text-[11px] font-bold border-amber-200 focus:border-[#FF6B00] bg-amber-50/30 px-2 rounded-lg" 
+                          />
+                        </div>
                       </div>
 
                       {/* Delete button */}

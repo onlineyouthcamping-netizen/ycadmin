@@ -1433,10 +1433,10 @@ export default function TripFormModal({ open, onOpenChange, editing, onSave }: T
                              <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Room Category</Label>
                                 <Input value={item.roomType} placeholder="e.g. Premium Room" onChange={(e) => {
-                                   const updated = [...form.accommodations];
-                                   updated[i].roomType = e.target.value;
-                                   setForm({ ...form, accommodations: updated });
-                                }} className="rounded-xl h-10 text-xs" />
+                                    const updated = [...form.accommodations];
+                                    updated[i].roomType = e.target.value;
+                                    setForm({ ...form, accommodations: updated });
+                                 }} className="rounded-xl h-10 text-xs" />
                              </div>
                              <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Inclusions (Meals)</Label>
@@ -1446,6 +1446,21 @@ export default function TripFormModal({ open, onOpenChange, editing, onSave }: T
                                    setForm({ ...form, accommodations: updated });
                                 }} className="rounded-xl h-10 text-xs" />
                              </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-amber-600">Key Stay Highlights / Amenities (Comma Separated)</Label>
+                             <Input 
+                                value={Array.isArray(item.amenities) ? item.amenities.join(", ") : (item.amenities || "")} 
+                                placeholder="e.g. Air Conditioning, Free Wi-Fi, Swimming Pool, Mountain View, Buffet Breakfast" 
+                                onChange={(e) => {
+                                   const updated = [...form.accommodations];
+                                   const val = e.target.value;
+                                   updated[i].amenities = val ? val.split(",").map(s => s.trim()).filter(Boolean) : [];
+                                   setForm({ ...form, accommodations: updated });
+                                }} 
+                                className="rounded-xl h-10 text-xs border-amber-200 bg-amber-50/20" 
+                             />
                           </div>
                        </div>
                     </div>
