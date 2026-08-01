@@ -1462,6 +1462,52 @@ export default function TripFormModal({ open, onOpenChange, editing, onSave }: T
                                 className="rounded-xl h-10 text-xs border-amber-200 bg-amber-50/20" 
                              />
                           </div>
+
+                          {/* Food & Meals Menu Breakdown */}
+                          <div className="space-y-2 pt-2 border-t border-zinc-100">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00]">Food & Meals Menu Breakdown</Label>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="space-y-1">
+                                   <Label className="text-[9px] font-bold uppercase text-zinc-500">Breakfast Menu</Label>
+                                   <Input 
+                                      value={item.mealsBreakdown?.breakfast || ""} 
+                                      placeholder="e.g. Paratha, Poori & Baji, Tea" 
+                                      onChange={(e) => {
+                                         const updated = [...form.accommodations];
+                                         updated[i].mealsBreakdown = { ...(updated[i].mealsBreakdown || {}), breakfast: e.target.value };
+                                         setForm({ ...form, accommodations: updated });
+                                      }} 
+                                      className="rounded-xl h-9 text-xs" 
+                                   />
+                                </div>
+                                <div className="space-y-1">
+                                   <Label className="text-[9px] font-bold uppercase text-zinc-500">Lunch Menu</Label>
+                                   <Input 
+                                      value={item.mealsBreakdown?.lunch || ""} 
+                                      placeholder="e.g. Rajma Rice, Dal, Aloo Mattar" 
+                                      onChange={(e) => {
+                                         const updated = [...form.accommodations];
+                                         updated[i].mealsBreakdown = { ...(updated[i].mealsBreakdown || {}), lunch: e.target.value };
+                                         setForm({ ...form, accommodations: updated });
+                                      }} 
+                                      className="rounded-xl h-9 text-xs" 
+                                   />
+                                </div>
+                                <div className="space-y-1">
+                                   <Label className="text-[9px] font-bold uppercase text-zinc-500">Dinner Menu</Label>
+                                   <Input 
+                                      value={item.mealsBreakdown?.dinner || ""} 
+                                      placeholder="e.g. Paneer Dish, Dal, Rice, Roti" 
+                                      onChange={(e) => {
+                                         const updated = [...form.accommodations];
+                                         updated[i].mealsBreakdown = { ...(updated[i].mealsBreakdown || {}), dinner: e.target.value };
+                                         setForm({ ...form, accommodations: updated });
+                                      }} 
+                                      className="rounded-xl h-9 text-xs" 
+                                   />
+                                </div>
+                             </div>
+                          </div>
                        </div>
                     </div>
                   </div>

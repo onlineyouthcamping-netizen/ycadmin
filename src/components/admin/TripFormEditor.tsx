@@ -2802,6 +2802,52 @@ export default function TripFormEditor({ editing, onSave, onCancel }: TripFormEd
                             className="h-7 text-[11px] font-bold border-amber-200 focus:border-[#FF6B00] bg-amber-50/30 px-2 rounded-lg" 
                           />
                         </div>
+                        
+                        {/* Food & Meals Breakdown */}
+                        <div className="col-span-2 md:col-span-3 space-y-1.5 mt-2 pt-2 border-t border-slate-200/80">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-[#FF6B00]">Food & Meals Menu Breakdown</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <div className="space-y-0.5">
+                              <Label className="text-[8px] font-bold uppercase text-slate-500">Breakfast Menu</Label>
+                              <Input 
+                                value={item.mealsBreakdown?.breakfast || ""} 
+                                placeholder="e.g. Stuffed Paratha, Poori & Baji, Tea" 
+                                onChange={(e) => { 
+                                  const updated = [...form.accommodations]; 
+                                  updated[i].mealsBreakdown = { ...(updated[i].mealsBreakdown || {}), breakfast: e.target.value }; 
+                                  setForm({ ...form, accommodations: updated }); 
+                                }} 
+                                className="h-7 text-[11px] font-semibold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" 
+                              />
+                            </div>
+                            <div className="space-y-0.5">
+                              <Label className="text-[8px] font-bold uppercase text-slate-500">Lunch Menu</Label>
+                              <Input 
+                                value={item.mealsBreakdown?.lunch || ""} 
+                                placeholder="e.g. Rajma Rice, Dal, Aloo Mattar, Roti" 
+                                onChange={(e) => { 
+                                  const updated = [...form.accommodations]; 
+                                  updated[i].mealsBreakdown = { ...(updated[i].mealsBreakdown || {}), lunch: e.target.value }; 
+                                  setForm({ ...form, accommodations: updated }); 
+                                }} 
+                                className="h-7 text-[11px] font-semibold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" 
+                              />
+                            </div>
+                            <div className="space-y-0.5">
+                              <Label className="text-[8px] font-bold uppercase text-slate-500">Dinner Menu</Label>
+                              <Input 
+                                value={item.mealsBreakdown?.dinner || ""} 
+                                placeholder="e.g. Paneer Dish, Dal, Rice, Roti, Dessert" 
+                                onChange={(e) => { 
+                                  const updated = [...form.accommodations]; 
+                                  updated[i].mealsBreakdown = { ...(updated[i].mealsBreakdown || {}), dinner: e.target.value }; 
+                                  setForm({ ...form, accommodations: updated }); 
+                                }} 
+                                className="h-7 text-[11px] font-semibold border-slate-200 focus:border-[#FF6B00] bg-white px-2 rounded-lg" 
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Delete button */}
