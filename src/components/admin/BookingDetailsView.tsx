@@ -28,6 +28,7 @@ import { trainTicketService } from "@/services/trainTicket.service";
 import EmailComposerDrawer from "./EmailComposerDrawer";
 import EmailLogsTimeline from "./EmailLogsTimeline";
 import { erpService } from "@/services/erp.service";
+import BookingAttachmentsTab from "./BookingAttachmentsTab";
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -1695,6 +1696,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
               { id: "ticketing", label: "Ticketing", badge: tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length ? `${tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length} pending` : null },
               { id: "accounting", label: "Accounting", badge: null },
               { id: "files", label: "Files & Notes", badge: null },
+              { id: "attachments", label: "📎 Attachments", badge: null },
               { id: "emails", label: "Email Logs", badge: emailLogs.length ? `${emailLogs.length}` : null },
               { id: "activity", label: "Activity", badge: activityLogs.length ? `${activityLogs.length}` : null }
             ].map(tab => (
@@ -3148,6 +3150,15 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-150 whitespace-pre-wrap">{booking.adminNotes || "No office notes recorded."}</p>
               </div>
             </div>
+          )}
+
+          {/* === ATTACHMENTS TAB === */}
+          {adminActiveTab === "attachments" && (
+            <BookingAttachmentsTab
+              bookingId={booking.id}
+              booking={booking}
+              userRole={(admin as any)?.role || "admin"}
+            />
           )}
 
           {/* === EMAILS TAB === */}
