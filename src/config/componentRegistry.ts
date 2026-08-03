@@ -15,7 +15,7 @@ export const COMPONENT_REGISTRY: Record<string, LazyExoticComponent<ComponentTyp
   "bookings": lazy(() => import("../pages/admin/BookingsPage.tsx")),
   "operations": lazy(() => import("../pages/admin/OperationsHubPage.tsx")),
   "departure-workspace": lazy(() => import("../pages/admin/DepartureHubPage.tsx")),
-  "vendors": lazy(() => import("../pages/admin/VendorsPage.tsx")),
+  "vendors": lazy(() => import("../pages/admin/VendorDirectoryPage.tsx")),
   "vendor-directory": lazy(() => import("../pages/admin/VendorDirectoryPage.tsx")),
   "guides-hub": lazy(() => import("../pages/admin/GuideOperationsCenterPage.tsx")),
   "company-documents-ops": lazy(() => import("../pages/admin/CompanyDocumentsPage.tsx")),

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { calculateReadinessScore } from "@/utils/readinessUtils";
 import ReportsConsole from "@/components/admin/ReportsConsole";
 import { useNavigate } from "react-router-dom";
 import {
@@ -120,7 +121,11 @@ export default function OperationsHubPage() {
         const dd = String(depDate.getDate()).padStart(2, '0');
         const code = `${cleanCode}-${mm}${dd}`;
         
-        const readiness = cap > 0 ? Math.min(100, Math.round((booked / cap) * 100)) : 0;
+        const readiness = calculateReadinessScore({
+          stats: { totalParticipants: booked, totalRevenue: 1, customerOutstanding: 0 },
+          vendors: [],
+          fleet: []
+        });
         let status = "PLANNING";
         let statusColor = "bg-amber-50 text-amber-700 border-amber-100";
         let readinessColor = "#F59E0B";
@@ -147,7 +152,9 @@ export default function OperationsHubPage() {
           day: weekday,
           daysLeft: daysLeftStr,
           daysColor,
-          pax: `${booked} / ${cap}`,
+          participantCount: booked,
+          capacity: cap,
+          pax: String(booked),
           balance: balanceFormatted,
           balanceSub,
           balanceColor,
@@ -225,8 +232,7 @@ export default function OperationsHubPage() {
                     <span className={cn("font-bold text-[11px]", row.daysColor)}>{row.daysLeft}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="font-semibold text-slate-700">{row.pax.split(" / ")[0]}</span>
-                    <span className="text-slate-400 text-[10px]">/{row.pax.split(" / ")[1]}</span>
+                    <span className="font-semibold text-slate-700">{row.participantCount ?? row.pax ?? 0}</span>
                   </td>
                   {!isSide && (
                     <td className="px-5 py-3.5">
@@ -332,8 +338,7 @@ export default function OperationsHubPage() {
                   <div>
                     <div className="text-slate-400 font-bold text-[9px] uppercase">Pax</div>
                     <div className="mt-0.5">
-                      <span className="font-semibold text-slate-700">{row.pax.split(" / ")[0]}</span>
-                      <span className="text-slate-400 text-[10px]">/{row.pax.split(" / ")[1]}</span>
+                      <span className="font-semibold text-slate-700">{row.participantCount ?? row.pax ?? 0}</span>
                     </div>
                   </div>
                   {!isSide && (

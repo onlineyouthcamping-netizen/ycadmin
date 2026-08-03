@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { 
   Plus, Search, Calendar, Clock, DollarSign, Award, FileText, 
   CheckCircle, AlertCircle, Users, Settings, Trash2, ArrowUpRight, 
   BarChart2, ShieldAlert, Check, X, ClipboardList, Briefcase, 
   FileSpreadsheet, Lock, UserCheck, Milestone, CalendarDays, ShieldCheck,
-  TrendingUp, FileSignature, Landmark, Receipt, Sparkles
+  TrendingUp, FileSignature, Landmark, Receipt, Sparkles, CheckSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -102,8 +103,219 @@ const SHIFT_TIMINGS = {
   gracePeriod: "09:45"
 };
 
-// Initial Mock Data
-const INITIAL_EMPLOYEES: Employee[] = [];
+// Initial Mock Data matching YouthCamping OS Team Roster
+const INITIAL_EMPLOYEES: Employee[] = [
+  {
+    id: "YC-EMP-001",
+    name: "Rakesh Sharma",
+    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    department: "Operations",
+    designation: "Operations Manager",
+    reportingManager: "Hemal Patel (Founder)",
+    status: "Active",
+    joiningDate: "2023-01-12",
+    phone: "+91 98765 43210",
+    email: "rakesh@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 12,
+    payrollStatus: "Paid",
+    salary: 60000,
+    incentives: 5000,
+    dob: "1995-06-15",
+    bankDetails: "**** 4567 HDFC Bank",
+    taxId: "ABCDE1234F"
+  },
+  {
+    id: "YC-EMP-002",
+    name: "Mehul Patel",
+    department: "Sales",
+    designation: "Sales Executive",
+    reportingManager: "Abhay Sharma",
+    status: "Active",
+    joiningDate: "2023-02-18",
+    phone: "+91 98765 43211",
+    email: "mehul@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 14,
+    payrollStatus: "Paid",
+    salary: 35000,
+    incentives: 8000,
+    dob: "1997-03-20",
+    bankDetails: "**** 1122 ICICI Bank",
+    taxId: "BGHYT9876K"
+  },
+  {
+    id: "YC-EMP-003",
+    name: "Rahul Verma",
+    department: "Sales",
+    designation: "Travel Consultant",
+    reportingManager: "Abhay Sharma",
+    status: "Active",
+    joiningDate: "2023-03-05",
+    phone: "+91 98765 43212",
+    email: "rahul@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 10,
+    payrollStatus: "Paid",
+    salary: 38000,
+    incentives: 10000,
+    dob: "1996-08-11",
+    bankDetails: "**** 3344 SBI Bank",
+    taxId: "LKJH09876P"
+  },
+  {
+    id: "YC-EMP-004",
+    name: "Amit Singh",
+    department: "Operations",
+    designation: "Trip Coordinator",
+    reportingManager: "Rakesh Sharma",
+    status: "Active",
+    joiningDate: "2023-03-20",
+    phone: "+91 98765 43213",
+    email: "amit@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 15,
+    payrollStatus: "Paid",
+    salary: 32000,
+    incentives: 3000,
+    dob: "1998-11-04",
+    bankDetails: "**** 5566 Axis Bank",
+    taxId: "ZXCVB5432Q"
+  },
+  {
+    id: "YC-EMP-005",
+    name: "Neha Kapoor",
+    department: "Accounts",
+    designation: "Finance Executive",
+    reportingManager: "Hemal Patel (Founder)",
+    status: "Active",
+    joiningDate: "2023-04-01",
+    phone: "+91 98765 43214",
+    email: "neha@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 18,
+    payrollStatus: "Paid",
+    salary: 45000,
+    incentives: 0,
+    dob: "1994-09-25",
+    bankDetails: "**** 7788 Kotak Bank",
+    taxId: "POIUY6789R"
+  },
+  {
+    id: "YC-EMP-006",
+    name: "Vikas Kumar",
+    department: "Accounts",
+    designation: "Accountant",
+    reportingManager: "Neha Kapoor",
+    status: "Active",
+    joiningDate: "2023-04-15",
+    phone: "+91 98765 43215",
+    email: "vikas@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 16,
+    payrollStatus: "Paid",
+    salary: 30000,
+    incentives: 0,
+    dob: "1997-12-10",
+    bankDetails: "**** 9900 PNB Bank",
+    taxId: "MNBVC2345T"
+  },
+  {
+    id: "YC-EMP-007",
+    name: "Priya Mehta",
+    department: "Admin",
+    designation: "Marketing Executive",
+    reportingManager: "Hemal Patel (Founder)",
+    status: "On Leave",
+    joiningDate: "2023-05-10",
+    phone: "+91 98765 43216",
+    email: "priya@youthcamping.com",
+    attendanceToday: "On Leave",
+    leaveBalance: 8,
+    payrollStatus: "Paid",
+    salary: 40000,
+    incentives: 4000,
+    dob: "1996-01-30",
+    bankDetails: "**** 1234 HDFC Bank",
+    taxId: "QWERT8765Y"
+  },
+  {
+    id: "YC-EMP-008",
+    name: "Zeel Panchal",
+    department: "Operations",
+    designation: "Operations Executive",
+    reportingManager: "Rakesh Sharma",
+    status: "Active",
+    joiningDate: "2023-05-22",
+    phone: "+91 98765 43217",
+    email: "zeel@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 25,
+    payrollStatus: "Paid",
+    salary: 32000,
+    incentives: 2500,
+    dob: "1998-07-14",
+    bankDetails: "**** 4321 ICICI Bank",
+    taxId: "ASDFG3456U"
+  },
+  {
+    id: "YC-EMP-009",
+    name: "Suresh Bhai",
+    department: "Operations",
+    designation: "Senior Operations Manager",
+    reportingManager: "Hemal Patel (Founder)",
+    status: "Active",
+    joiningDate: "2023-06-01",
+    phone: "+91 98765 43218",
+    email: "suresh@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 19.5,
+    payrollStatus: "Paid",
+    salary: 55000,
+    incentives: 6000,
+    dob: "1990-04-18",
+    bankDetails: "**** 8765 Bank of Baroda",
+    taxId: "GHJKL6543V"
+  },
+  {
+    id: "YC-EMP-010",
+    name: "Neeki Patel",
+    department: "Sales",
+    designation: "Customer Support Executive",
+    reportingManager: "Abhay Sharma",
+    status: "Active",
+    joiningDate: "2023-06-15",
+    phone: "+91 98765 43219",
+    email: "neeki@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 26,
+    payrollStatus: "Paid",
+    salary: 30000,
+    incentives: 3500,
+    dob: "1999-10-05",
+    bankDetails: "**** 5678 SBI Bank",
+    taxId: "YUIOP9876W"
+  },
+  {
+    id: "YC-EMP-011",
+    name: "Vidhi Patel",
+    department: "Operations",
+    designation: "Travel Desk Coordinator",
+    reportingManager: "Rakesh Sharma",
+    status: "Active",
+    joiningDate: "2023-07-01",
+    phone: "+91 98765 43220",
+    email: "vidhi@youthcamping.com",
+    attendanceToday: "Present",
+    leaveBalance: 28.5,
+    payrollStatus: "Paid",
+    salary: 33000,
+    incentives: 4000,
+    dob: "1997-08-22",
+    bankDetails: "**** 9876 Axis Bank",
+    taxId: "HJKLU1234Z"
+  }
+];
 
 const sampleDate = (daysOffset: number) => {
   const d = new Date();
@@ -117,7 +329,60 @@ const sampleMonth = () => {
 
 const INITIAL_ATTENDANCE: AttendanceLog[] = [];
 
-const INITIAL_LEAVES: LeaveRequest[] = [];
+const INITIAL_LEAVES: LeaveRequest[] = [
+  {
+    id: "LV-001",
+    employeeId: "YC-EMP-008",
+    employeeName: "Zeel Panchal",
+    department: "Operations",
+    leaveType: "Casual Leave",
+    startDate: "2026-07-10",
+    endDate: "2026-07-15",
+    duration: 5,
+    status: "HR Approved",
+    reason: "Personal family function in Gujarat",
+    handoverNotes: "Operations handed over to Suresh Bhai for Spiti batch"
+  },
+  {
+    id: "LV-002",
+    employeeId: "YC-EMP-009",
+    employeeName: "Suresh Bhai",
+    department: "Operations",
+    leaveType: "Earned Leave",
+    startDate: "2026-06-18",
+    endDate: "2026-06-25",
+    duration: 7,
+    status: "HR Approved",
+    reason: "Manali Trip On-Field Operations Leave",
+    handoverNotes: "Trip execution managed on ground"
+  },
+  {
+    id: "LV-003",
+    employeeId: "YC-EMP-010",
+    employeeName: "Neeki Patel",
+    department: "Sales",
+    leaveType: "Casual Leave",
+    startDate: "2026-07-20",
+    endDate: "2026-07-24",
+    duration: 4,
+    status: "HR Approved",
+    reason: "Medical checkup & rest",
+    handoverNotes: "Leads reassigned to Rahul Verma"
+  },
+  {
+    id: "LV-004",
+    employeeId: "YC-EMP-011",
+    employeeName: "Vidhi Patel",
+    department: "Operations",
+    leaveType: "Earned Leave",
+    startDate: "2026-07-02",
+    endDate: "2026-07-08",
+    duration: 6,
+    status: "HR Approved",
+    reason: "Personal trip",
+    handoverNotes: "Ticket queues handled by Amit Singh"
+  }
+];
 
 const INITIAL_COMMISSIONS: CommissionRecord[] = [];
 
@@ -133,10 +398,21 @@ export default function HRPage() {
   const isAccounts = ['finance', 'accounts'].includes(currentRole);
   const isAdmin = ['admin', 'superadmin', 'founder'].includes(currentRole);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   // States
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'employees' | 'attendance' | 'leaves' | 'payroll' | 'incentives' | 'reimbursements' | 'holidays' | 'performance' | 'mistakes' | 'reports' | 'settings'>(
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'employees' | 'attendance' | 'leaves' | 'tasks' | 'payroll' | 'incentives' | 'reimbursements' | 'holidays' | 'performance' | 'mistakes' | 'reports' | 'settings'>(
     isEmployeeOnly ? 'attendance' : 'dashboard'
   );
+
+  useEffect(() => {
+    if (tabParam) {
+      if (tabParam === "staff" || tabParam === "employees") setActiveTab("employees");
+      else if (tabParam === "leaves" || tabParam === "leave") setActiveTab("leaves");
+      else if (tabParam === "tasks" || tabParam === "task") setActiveTab("tasks");
+    }
+  }, [tabParam]);
 
   const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>(INITIAL_ATTENDANCE);
@@ -553,6 +829,10 @@ export default function HRPage() {
 
           <div className={cn("hr-nav-item", activeTab === 'leaves' && "active")} onClick={() => setActiveTab('leaves')}>
             <CalendarDays className="w-4 h-4 mr-2.5" /> Leave Management
+          </div>
+
+          <div className={cn("hr-nav-item", activeTab === 'tasks' && "active")} onClick={() => setActiveTab('tasks')}>
+            <CheckSquare className="w-4 h-4 mr-2.5" /> Daily Tasks & Logs
           </div>
 
           <div className={cn("hr-nav-item", activeTab === 'payroll' && "active")} onClick={() => setActiveTab('payroll')}>
@@ -1104,6 +1384,82 @@ export default function HRPage() {
           {activeTab === 'leaves' && (
             <div className="space-y-6">
               
+              {/* YouthCamping Leave Policy Card */}
+              <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-white border border-orange-200 rounded-[6px] p-5 shadow-xs">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">📌</span>
+                  <h3 className="font-black text-sm text-slate-900 uppercase tracking-tight">YouthCamping Leave Policy</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-700 font-medium">
+                  <div className="space-y-3 bg-white/90 p-4 rounded-[6px] border border-orange-100 shadow-2xs">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#F97316] font-black shrink-0 text-xs mt-0.5">1.</span>
+                      <p className="leading-relaxed">Every employee is eligible for <strong className="font-black text-slate-900">1 weekly off</strong>, flexible and not fixed on Sunday.</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#F97316] font-black shrink-0 text-xs mt-0.5">2.</span>
+                      <p className="leading-relaxed">Leaves should be informed and approved <strong className="font-black text-slate-900">in advance</strong> whenever possible.</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#F97316] font-black shrink-0 text-xs mt-0.5">3.</span>
+                      <p className="leading-relaxed">In case of emergency, inform reporting manager <strong className="font-black text-slate-900">as early as possible</strong>.</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#F97316] font-black shrink-0 text-xs mt-0.5">4.</span>
+                      <p className="leading-relaxed"><strong className="font-black text-slate-900">Half-day leave = 0.5 day</strong> and <strong className="font-black text-slate-900">Full-day leave = 1 day</strong>.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3 bg-white/90 p-4 rounded-[6px] border border-orange-100 shadow-2xs">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#F97316] font-black shrink-0 text-xs mt-0.5">5.</span>
+                      <p className="leading-relaxed">Approval depends on workload & business requirements. During peak season, leave may be postponed if necessary.</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#F97316] font-black shrink-0 text-xs mt-0.5">6.</span>
+                      <p className="leading-relaxed">Repeated unplanned or last-minute leaves may affect performance evaluation.</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[#F97316] font-black shrink-0 text-xs mt-0.5">7.</span>
+                      <p className="leading-relaxed">Everyone is requested to plan leaves responsibly so team operations continue smoothly.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Leave Summary Card (1 Dec – 31 Jul) */}
+              <div className="bg-white border border-slate-200 rounded-[6px] p-4 shadow-xs">
+                <div className="flex items-center justify-between border-b pb-3 mb-3">
+                  <div>
+                    <h3 className="font-black text-xs text-slate-900 uppercase tracking-tight">Current Leave Summary (1 Dec – 31 Jul)</h3>
+                    <p className="text-[10px] text-slate-500 font-medium">Logged leave count per employee across team operations</p>
+                  </div>
+                  <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full border border-orange-200">FY 2025–26 Cycle</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-[4px] hover:border-orange-300 transition-colors">
+                    <div className="text-[10px] font-extrabold text-slate-400 uppercase">Zeel Panchal</div>
+                    <div className="text-lg font-black text-slate-900 mt-0.5">25 Days</div>
+                    <div className="text-[9.5px] font-semibold text-emerald-600 mt-1">Operations Executive</div>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-[4px] hover:border-orange-300 transition-colors">
+                    <div className="text-[10px] font-extrabold text-slate-400 uppercase">Suresh Bhai</div>
+                    <div className="text-lg font-black text-slate-900 mt-0.5">19.5 Days</div>
+                    <div className="text-[9.5px] font-semibold text-amber-600 mt-1">till 30 Jun (Manali & July pending)</div>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-[4px] hover:border-orange-300 transition-colors">
+                    <div className="text-[10px] font-extrabold text-slate-400 uppercase">Neeki Patel</div>
+                    <div className="text-lg font-black text-slate-900 mt-0.5">26 Days</div>
+                    <div className="text-[9.5px] font-semibold text-blue-600 mt-1">Customer Support</div>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-[4px] hover:border-orange-300 transition-colors">
+                    <div className="text-[10px] font-extrabold text-slate-400 uppercase">Vidhi Patel</div>
+                    <div className="text-lg font-black text-slate-900 mt-0.5">28.5 Days</div>
+                    <div className="text-[9.5px] font-semibold text-purple-600 mt-1">Travel Desk Coordinator</div>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-white border border-slate-200 rounded shadow-sm p-4 space-y-4">
                 <div className="flex items-center justify-between border-b pb-3">
                   <h3 className="font-extrabold text-[12px] text-slate-800 font-bold">Leave Requests</h3>
@@ -1191,6 +1547,264 @@ export default function HRPage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB: TASKS WORKSPACE */}
+          {activeTab === 'tasks' && (
+            <div className="space-y-6">
+              
+              {/* Header Tabs */}
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3 bg-white p-4 rounded-[6px] shadow-xs">
+                <div className="flex items-center gap-6">
+                  <button className="text-xs font-black text-[#F97316] border-b-2 border-[#F97316] pb-1 flex items-center gap-1.5 cursor-pointer">
+                    <ClipboardList className="w-4 h-4" /> Daily Logs
+                  </button>
+                  <button className="text-xs font-bold text-slate-500 hover:text-slate-800 pb-1 flex items-center gap-1.5 cursor-pointer">
+                    <Calendar className="w-4 h-4" /> Weekly Tasks
+                  </button>
+                  <button className="text-xs font-bold text-slate-500 hover:text-slate-800 pb-1 flex items-center gap-1.5 cursor-pointer">
+                    <FileText className="w-4 h-4" /> Templates
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search anything... (Press Ctrl+K)"
+                    className="h-8 border border-slate-200 rounded-[4px] px-3 text-xs bg-slate-50 w-56 font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Main Grid: Daily Time Log (Left) & Weekly Tasks (Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Left Column (7 cols): Daily Time Log */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="bg-white border border-slate-200 rounded-[6px] p-5 shadow-xs space-y-5">
+                    
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-black text-sm text-slate-900">Daily Time Log</h3>
+                        <p className="text-[10.5px] font-medium text-slate-500">Log your daily work details & manager handover notes</p>
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded text-xs font-bold text-slate-700">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500" /> Today, 03 Aug 2026
+                      </div>
+                    </div>
+
+                    {/* Check-In / Check-Out KPI Cards */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-emerald-50/60 border border-emerald-200 p-3 rounded-[4px]">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase">
+                          <CheckCircle className="w-3.5 h-3.5" /> Check In
+                        </div>
+                        <div className="text-base font-black text-slate-900 mt-1">09:15 AM</div>
+                        <div className="text-[9.5px] font-semibold text-emerald-600">Auto captured</div>
+                      </div>
+
+                      <div className="bg-amber-50/60 border border-amber-200 p-3 rounded-[4px]">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-700 uppercase">
+                          <Clock className="w-3.5 h-3.5" /> Check Out
+                        </div>
+                        <div className="text-base font-black text-slate-900 mt-1">06:45 PM</div>
+                        <div className="text-[9.5px] font-semibold text-amber-600">Auto captured</div>
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-200 p-3 rounded-[4px]">
+                        <div className="text-[10px] font-black text-slate-400 uppercase">Total Work Hours</div>
+                        <div className="text-base font-black text-slate-900 mt-1">9h 30m</div>
+                        <div className="text-[9.5px] font-semibold text-slate-500">Standard Shift</div>
+                      </div>
+                    </div>
+
+                    {/* Today's Work Checklist */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-800 uppercase block tracking-wider">Today's Work (Select all tasks worked on)</label>
+                      <div className="space-y-2 bg-slate-50 p-3 rounded border border-slate-200 text-xs font-semibold text-slate-700">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Followed up with 18 pending leads</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Confirmed 12 hotel bookings for Spiti batch</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Collected pending payment from 5 customers</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Coordinated with vendor for vehicle availability</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Created and sent travel vouchers to team</span>
+                        </label>
+                        <button onClick={() => toast.info("Add Custom Work Item")} className="text-[11px] font-black text-[#F97316] hover:underline flex items-center gap-1 mt-1">
+                          <Plus className="w-3.5 h-3.5" /> Add custom work
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Issues Faced (Optional) */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black text-slate-800 uppercase block tracking-wider">Issues Faced (Optional)</label>
+                      <textarea
+                        rows={2}
+                        defaultValue="Hotel prices increased in Manali. Vendor delayed in sharing documents."
+                        className="w-full border border-slate-200 rounded p-2 text-xs font-medium text-slate-700 bg-slate-50 focus:bg-white outline-none"
+                      />
+                    </div>
+
+                    {/* Tomorrow's Plan */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-800 uppercase block tracking-wider">Tomorrow's Plan</label>
+                      <div className="space-y-2 bg-slate-50 p-3 rounded border border-slate-200 text-xs font-semibold text-slate-700">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Confirm remaining Spiti hotels</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Send payment reminder to pending customers</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                          <span>Prepare welcome kit list</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Needs Manager Approval Toggle */}
+                    <div className="bg-amber-50/70 border border-amber-200 p-3 rounded flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-black text-slate-800">Needs Manager Approval?</div>
+                        <div className="text-[10px] text-slate-500 font-medium">If any part of your work requires manager approval, please mark it.</div>
+                      </div>
+                      <input type="checkbox" className="h-5 w-5 rounded text-[#F97316] accent-[#F97316] cursor-pointer" />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                      <button onClick={() => toast.info("Draft Saved!")} className="px-4 py-2 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50">
+                        Save Draft
+                      </button>
+                      <button onClick={() => toast.success("Daily Work Log Submitted Successfully!")} className="px-5 py-2 bg-[#F97316] hover:bg-orange-600 text-white rounded text-xs font-bold shadow-xs">
+                        Submit Log
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Right Column (5 cols): Weekly Tasks & Templates */}
+                <div className="lg:col-span-5 space-y-4">
+                  
+                  {/* Weekly Tasks Card */}
+                  <div className="bg-white border border-slate-200 rounded-[6px] p-5 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-black text-sm text-slate-900">Weekly Tasks</h3>
+                        <p className="text-[10.5px] font-medium text-slate-500">Your tasks for this week (29 Jul – 2 Aug 2026)</p>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded">
+                        29 Jul – 2 Aug 2026
+                      </div>
+                    </div>
+
+                    {/* Operations Tasks */}
+                    <div className="space-y-2">
+                      <div className="text-[10.5px] font-black text-[#F97316] uppercase tracking-wider flex items-center gap-1">
+                        <Briefcase className="w-3.5 h-3.5" /> Operations
+                      </div>
+                      <div className="space-y-1.5 pl-2 text-xs font-semibold text-slate-700">
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                            <span>Confirm Spiti Hotels</span>
+                          </label>
+                          <span className="text-[9.5px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Tue, 29 Jul 🚩</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                            <span>Collect Pending Payments</span>
+                          </label>
+                          <span className="text-[9.5px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Wed, 30 Jul 🚩</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                            <span>Update Driver Documents</span>
+                          </label>
+                          <span className="text-[9.5px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Fri, 1 Aug 🚩</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sales Tasks */}
+                    <div className="space-y-2 pt-2">
+                      <div className="text-[10.5px] font-black text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5" /> Sales
+                      </div>
+                      <div className="space-y-1.5 pl-2 text-xs font-semibold text-slate-700">
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                            <span>Follow up with Rahul - Payment</span>
+                          </label>
+                          <span className="text-[9.5px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Tue, 29 Jul 🚩</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" defaultChecked className="h-4 w-4 rounded text-[#F97316] accent-[#F97316]" />
+                            <span className="line-through text-slate-400">Update Lead Status</span>
+                          </label>
+                          <span className="text-[9.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Mon, 28 Jul ✅</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 text-center border-t border-slate-100">
+                      <button onClick={() => toast.info("Opening all weekly tasks")} className="text-xs font-black text-blue-600 hover:underline">
+                        View All Tasks →
+                      </button>
+                    </div>
+
+                  </div>
+
+                  {/* Task Templates Card */}
+                  <div className="bg-white border border-slate-200 rounded-[6px] p-5 shadow-xs space-y-4">
+                    <div className="border-b border-slate-100 pb-2">
+                      <h3 className="font-black text-sm text-slate-900">Task Templates</h3>
+                      <p className="text-[10.5px] font-medium text-slate-500">Use templates to quickly create structured workflows</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2.5">
+                      <div className="bg-slate-50 border border-slate-200 p-3 rounded hover:border-orange-300 transition-colors">
+                        <div className="text-xs font-bold text-slate-900">Departure Checklist</div>
+                        <div className="text-[10px] text-slate-500 font-medium mt-0.5">• Confirm Hotels • Confirm Vehicles • Driver Documents • Traveller List</div>
+                        <button onClick={() => toast.success("Departure Checklist Template Applied!")} className="text-[10.5px] font-black text-[#F97316] hover:underline mt-2 flex items-center gap-1">
+                          Use Template →
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-200 p-3 rounded hover:border-orange-300 transition-colors">
+                        <div className="text-xs font-bold text-slate-900">New Booking Checklist</div>
+                        <div className="text-[10px] text-slate-500 font-medium mt-0.5">• Verify Payment • Generate Voucher • Allocate Room • Send Confirmation</div>
+                        <button onClick={() => toast.success("New Booking Checklist Template Applied!")} className="text-[10.5px] font-black text-[#F97316] hover:underline mt-2 flex items-center gap-1">
+                          Use Template →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
               </div>
 
             </div>

@@ -198,7 +198,7 @@ const App = () => (
                 <Route path="/admin/preview" element={<AdminRoute requiredPermission="settings.view"><PreviewPage /></AdminRoute>} />
                 <Route path="/admin/inquiries" element={<AdminRoute requiredPermission="inquiries.view"><InquiriesPage /></AdminRoute>} />
                 <Route path="/admin/media" element={<AdminRoute requiredPermission="settings.view"><MediaPage /></AdminRoute>} />
-                <Route path="/admin/vendors" element={<AdminRoute requiredPermission="vendors.view"><VendorsPage /></AdminRoute>} />
+                <Route path="/admin/vendors" element={<AdminRoute requiredPermission="vendors.view"><VendorDirectoryPage /></AdminRoute>} />
                 <Route path="/admin/vendor-directory" element={<AdminRoute requiredPermission="vendors.view"><VendorDirectoryPage /></AdminRoute>} />
                 <Route path="/admin/booking-forms" element={<AdminRoute requiredPermission="bookings.view"><BookingLinksPage /></AdminRoute>} />
                 <Route path="/admin/quotations" element={<AdminRoute requiredPermission="quotations.view"><QuotationsPage /></AdminRoute>} />

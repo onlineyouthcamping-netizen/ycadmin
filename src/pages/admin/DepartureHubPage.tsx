@@ -1,7 +1,8 @@
 import { normalizePassenger } from "@/utils/passengerUtils";
+import { calculateReadinessScore } from "@/utils/readinessUtils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Users, Calendar, User, Compass, Upload, Download, FileText,
   ClipboardList, CheckCircle2, MoreHorizontal, MessageSquare,
@@ -285,6 +286,7 @@ const generateMockBookings = (tripId: string, departureDateStr: string) => {
 };
 
 export default function DepartureHubPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Extract from departureId if present (format: tripId_YYYY-MM-DD)
@@ -759,7 +761,10 @@ export default function DepartureHubPage() {
           notes: h.notes,
           agreedCost: h.totalAmount,
           paidAmount: h.advancePaid,
-          balanceDue: h.balanceAmount
+          balanceDue: h.balanceAmount,
+          numberOfRooms: h.numberOfRooms || 5,
+          confirmed: h.confirmed || 'CONFIRMED',
+          rawAssignment: h
         })),
         ...transports.map((t: any) => ({
           id: t.id,
@@ -1738,6 +1743,8 @@ export default function DepartureHubPage() {
     };
   }, [bookings, tripVendors]);
 
+
+
   // Find lead guide and vehicles from tripVendors
   const [leadGuideName, setLeadGuideName] = useState("Assign Guide");
   const [itineraryViewMode, setItineraryViewMode] = useState<"customer" | "internal">("internal");
@@ -2009,7 +2016,9 @@ export default function DepartureHubPage() {
             })
             .map(alloc => alloc.room)
         );
-        const roomsCount = allocatedRoomsForCity.size > 0 ? allocatedRoomsForCity.size : (raw?.numberOfRooms || 0);
+        const roomsCount = allocatedRoomsForCity.size > 0 ? allocatedRoomsForCity.size : (raw?.numberOfRooms || assignment?.numberOfRooms || (night.city.includes('Chandratal') || night.city.includes('Kullu') ? 4 : 5));
+        const isCampUnit = (night.city.toLowerCase().includes("chandratal") || night.city.toLowerCase().includes("kullu") || (vendorObj?.name || raw?.hotelName || '').toLowerCase().includes("tent") || (vendorObj?.name || raw?.hotelName || '').toLowerCase().includes("camp"));
+        const unitLabel = isCampUnit ? "Tents" : "Rooms";
 
         return {
           id: assignment?.id || `spt-stay-${idx}`,
@@ -2020,8 +2029,8 @@ export default function DepartureHubPage() {
           destCity: night.city,
           hotel: vendorObj?.name || raw?.hotelName || "— Not Assigned —",
           vendor: vendorObj?.location || raw?.location || night.city,
-          allocations: roomsCount > 0
-            ? [{ text: `${roomsCount} Rooms`, color: 'blue' }]
+          allocations: assignment
+            ? [{ text: `${roomsCount} ${unitLabel}`, color: 'blue' }]
             : [{ text: "Pending", color: "orange" }],
           totalPaxText: assignment ? `${raw?.totalPax || allPassengers.length} Pax` : "Not booked",
           capacityPercent: 100,
@@ -2478,6 +2487,16 @@ export default function DepartureHubPage() {
     return list;
   }, [bookings, tripVendors]);
 
+  // Dynamic Readiness Calculation via dedicated helper
+  const calculatedReadinessScore = useMemo(() => {
+    return calculateReadinessScore({
+      stats,
+      vendors: tripVendors,
+      fleet: allocFleet,
+      documents: computedDocuments
+    });
+  }, [stats, tripVendors, allocFleet, computedDocuments]);
+
   const computedTasks = useMemo(() => {
     if (checklistTasks.length === 0) {
       return MOCK_TASKS;
@@ -2764,43 +2783,16 @@ const [sharingPref, setSharingPref] = useState<string>("3");
       });
     }
 
-    // Helper to allocate a list of same-gender travelers into rooms of 3 and 4
+    const capacitySize = parseInt(sharingPref) || 3;
+
+    // Helper to allocate a list of same-gender travelers into rooms of capacitySize
     const allocateSameGender = (travelersList: any[]) => {
       const N = travelersList.length;
       if (N === 0) return;
 
       let index = 0;
-      
-      // If N % 3 === 1, we need one room of 4, and the rest rooms of 3
-      if (N % 3 === 1) {
-        // Allocate first 4 into a room
-        const chunk = travelersList.slice(index, index + 4);
-        chunk.forEach(p => {
-          newAllocs[p.name] = {
-            room: `Room ${roomNum}`
-          };
-          allocated.add(p.name);
-        });
-        roomNum++;
-        index += 4;
-      } 
-      // If N % 3 === 2, we need one room of 2, and the rest rooms of 3
-      else if (N % 3 === 2) {
-        // Allocate first 2 into a room
-        const chunk = travelersList.slice(index, index + 2);
-        chunk.forEach(p => {
-          newAllocs[p.name] = {
-            room: `Room ${roomNum}`
-          };
-          allocated.add(p.name);
-        });
-        roomNum++;
-        index += 2;
-      }
-
-      // Allocate the remaining travelers in chunks of 3
       while (index < N) {
-        const chunk = travelersList.slice(index, index + 3);
+        const chunk = travelersList.slice(index, index + capacitySize);
         chunk.forEach(p => {
           newAllocs[p.name] = {
             room: `Room ${roomNum}`
@@ -2808,7 +2800,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
           allocated.add(p.name);
         });
         roomNum++;
-        index += 3;
+        index += capacitySize;
       }
     };
 
@@ -2869,8 +2861,13 @@ const [sharingPref, setSharingPref] = useState<string>("3");
     });
 
     setPassengerAllocations(newAllocs);
-    toast.success(`Auto-allocated: couples in 2-sharing, same-gender 3/4 sharing rooms, and grouped vehicle seats.`);
   };
+
+  useEffect(() => {
+    if (allPassengers.length > 0) {
+      handleTriggerAutoAllocate();
+    }
+  }, [sharingPref, sameGenderEnforced, prioritizeCouples, fallbackToQuad]);
 
 
 
@@ -3210,13 +3207,23 @@ const [sharingPref, setSharingPref] = useState<string>("3");
 
       {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
       <div className="bg-white border-b border-[#E2E8F0] shadow-xs">
-        {/* Breadcrumb */}
-        <div className="px-4 sm:px-6 pt-3 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
-          <span className="hover:text-slate-600 cursor-pointer">Departures Hub</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="hover:text-slate-600 cursor-pointer">{tripId}</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-slate-700 font-bold capitalize">{activeTab}</span>
+        {/* Breadcrumb & Back Button */}
+        <div className="px-4 sm:px-6 pt-3 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+            <span onClick={() => navigate("/admin/operations")} className="hover:text-slate-600 cursor-pointer">Departures Hub</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <span className="hover:text-slate-600 cursor-pointer">{tripId}</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-slate-700 font-bold capitalize">{activeTab}</span>
+          </div>
+
+          <button
+            onClick={() => navigate("/admin/operations")}
+            className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-[4px] transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+            Back to Departures Hub
+          </button>
         </div>
 
         {/* Title row */}
@@ -3309,7 +3316,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         {/* Meta row */}
         <div className="px-4 sm:px-6 py-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] font-semibold text-slate-500 border-t border-slate-100 mt-2">
           <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-slate-400" /> {dateAndDurationLabel}</span>
-          <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-400" /> {passengerStats.total} / {tripDetails?.maxGroupSize || 30} Participants</span>
+          <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-slate-400" /> {passengerStats.total} Participants</span>
           <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-400" /> Lead Guide: {leadGuideName}</span>
           <span className="flex items-center gap-1.5"><Bus className="w-3.5 h-3.5 text-slate-400" /> {transportVehiclesLabel}</span>
           <span className="w-full sm:w-auto sm:ml-auto text-slate-400">Created by Suresh Bhai on 15 Jun 2027</span>
@@ -3356,15 +3363,19 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90">
                     <circle cx="32" cy="32" r="28" stroke="#E2E8F0" strokeWidth="6" fill="transparent" />
-                    <circle cx="32" cy="32" r="28" stroke="#12B76A" strokeWidth="6" fill="transparent"
+                    <circle cx="32" cy="32" r="28" 
+                      stroke={calculatedReadinessScore >= 90 ? "#12B76A" : calculatedReadinessScore >= 70 ? "#F97316" : "#EF4444"} 
+                      strokeWidth="6" fill="transparent"
                       strokeDasharray={2 * Math.PI * 28}
-                      strokeDashoffset={2 * Math.PI * 28 * (1 - 0.91)} />
+                      strokeDashoffset={2 * Math.PI * 28 * (1 - (calculatedReadinessScore / 100))} />
                   </svg>
-                  <span className="absolute text-sm font-black text-slate-800">91%</span>
+                  <span className="absolute text-sm font-black text-slate-800">{calculatedReadinessScore}%</span>
                 </div>
                 <div>
                   <h4 className="text-[11px] font-black text-slate-700">Departure Readiness</h4>
-                  <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">Great! You're almost ready to depart.</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                    {calculatedReadinessScore >= 90 ? "Great! You're ready to depart." : calculatedReadinessScore >= 70 ? "Needs attention before departure." : "Critical items pending review."}
+                  </p>
                   <button onClick={() => toast.info("Checklist")} className="text-[10px] font-bold text-blue-600 hover:underline mt-1.5 flex items-center gap-0.5">View Readiness Checklist</button>
                 </div>
               </div>
@@ -5316,7 +5327,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   );
                 })()}
               </div>
-              <button onClick={() => toast.info("View Payment Summary")} className="text-[11.5px] font-extrabold text-blue-600 hover:underline">View Payment Summary →</button>
+              <button onClick={() => setActiveTab("payments")} className="text-[11.5px] font-extrabold text-blue-600 hover:underline cursor-pointer">View Payment Summary →</button>
             </div>
           </>
         )}

@@ -106,9 +106,9 @@ export default function DepartureActivities({
   const handleEditActivity = (act: any) => {
     setEditingActivity(act);
     setActivityForm({
-      dayNumber: act.dayNumber,
-      name: act.name,
-      type: act.type,
+      dayNumber: act.dayNumber || 1,
+      name: act.name || "",
+      type: act.type || "SIGHTSEEING",
       startTime: act.startTime || "",
       endTime: act.endTime || "",
       location: act.location || "",
@@ -241,11 +241,11 @@ export default function DepartureActivities({
       {/* KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
         {[
-          { label: "Total Activities", value: computedActivities.length, desc: "Across departure days", bg: "bg-blue-50/50" },
-          { label: "Planned/Confirmed", value: computedActivities.filter(a => a.status === 'Planned' || a.status === 'Confirmed').length, desc: "Pending execution", bg: "bg-emerald-50/50" },
-          { label: "In Progress", value: computedActivities.filter(a => a.status === 'In Progress').length, desc: "Active right now", bg: "bg-amber-50/50" },
-          { label: "Completed", value: computedActivities.filter(a => a.status === 'Completed').length, desc: "Executed successfully", bg: "bg-purple-50/50" },
-          { label: "Cancelled", value: computedActivities.filter(a => a.status === 'Cancelled').length, desc: "Inactive", bg: "bg-red-50/50" }
+          { label: "Total Activities", value: activitiesList.length, desc: "Across departure days", bg: "bg-blue-50/50" },
+          { label: "Planned/Confirmed", value: activitiesList.filter(a => { const s = (a.status || '').toUpperCase(); return s === 'PLANNED' || s === 'CONFIRMED'; }).length, desc: "Pending execution", bg: "bg-emerald-50/50" },
+          { label: "In Progress", value: activitiesList.filter(a => { const s = (a.status || '').toUpperCase(); return s === 'IN_PROGRESS' || s === 'IN PROGRESS'; }).length, desc: "Active right now", bg: "bg-amber-50/50" },
+          { label: "Completed", value: activitiesList.filter(a => (a.status || '').toUpperCase() === 'COMPLETED').length, desc: "Executed successfully", bg: "bg-purple-50/50" },
+          { label: "Cancelled", value: activitiesList.filter(a => (a.status || '').toUpperCase() === 'CANCELLED').length, desc: "Inactive", bg: "bg-red-50/50" }
         ].map(kpi => (
           <div key={kpi.label} className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs">
             <p className="text-2xl font-black text-slate-800">{kpi.value}</p>

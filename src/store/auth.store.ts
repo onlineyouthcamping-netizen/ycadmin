@@ -100,10 +100,30 @@ interface AuthState {
   checkAuth: (force?: boolean) => Promise<void>;
 }
 
+function getStoredAdmin(): Admin | null {
+  try {
+    const raw = typeof window !== "undefined" ? (localStorage.getItem("admin_user") || localStorage.getItem("admin")) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+const initialToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+const initialGuideToken = typeof window !== "undefined" ? localStorage.getItem("guide_access_token") : null;
+
+const hasInitialAdminToken = isValidTokenString(initialToken) && isStructurallyValidJwt(initialToken) && !isJwtExpired(initialToken);
+const hasInitialGuideToken = isValidTokenString(initialGuideToken) && isStructurallyValidJwt(initialGuideToken) && !isJwtExpired(initialGuideToken);
+
+const initialAdmin = getStoredAdmin();
+const initialHasAuth = (hasInitialAdminToken || hasInitialGuideToken) && !!initialAdmin;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  admin: null,
-  isAuthenticated: false,
-  isLoading: false, // Start false — AdminRoute checks token existence synchronously
+  admin: initialAdmin,
+  isAuthenticated: initialHasAuth,
+  isLoading: (hasInitialAdminToken || hasInitialGuideToken) && !initialAdmin,
 
   login: async (email, password) => {
     set({ isLoading: true });
@@ -113,6 +133,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new Error("Login failed: server returned an invalid token.");
       }
       localStorage.setItem("token", auth.token);
+      if (auth.admin) {
+        localStorage.setItem("admin_user", JSON.stringify(auth.admin));
+      }
       set({ admin: auth.admin, isAuthenticated: true, isLoading: false });
     } catch (err) {
       set({ isLoading: false });
@@ -127,15 +150,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (guideAuth && guideAuth.token && isStructurallyValidJwt(guideAuth.token)) {
         localStorage.setItem("guide_access_token", guideAuth.token);
       }
+      const gAdmin = {
+        id: guideAuth.id.toString(),
+        name: guideAuth.name,
+        email: guideAuth.email || null,
+        role: "guide",
+        isActive: true,
+        tokenVersion: 0,
+      };
+      localStorage.setItem("admin_user", JSON.stringify(gAdmin));
       set({
-        admin: {
-          id: guideAuth.id.toString(),
-          name: guideAuth.name,
-          email: guideAuth.email || null,
-          role: "guide",
-          isActive: true,
-          tokenVersion: 0,
-        },
+        admin: gAdmin,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -151,6 +176,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem("guide_token");
     localStorage.removeItem("user");
     localStorage.removeItem("admin");
+    localStorage.removeItem("admin_user");
     sessionStorage.clear();
     guideLoginPromise = null;
     set({ admin: null, isAuthenticated: false, isLoading: false });
@@ -168,6 +194,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.removeItem("token");
       localStorage.removeItem("guide_access_token");
       localStorage.removeItem("guide_token");
+      localStorage.removeItem("admin_user");
       set({ admin: null, isAuthenticated: false, isLoading: false });
       return;
     }
@@ -182,21 +209,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (hasGuideToken && !hasAdminToken) {
       try {
         const guideProfile = await guideService.getProfile();
+        const gAdmin = {
+          id: guideProfile.id.toString(),
+          name: guideProfile.name,
+          email: guideProfile.email || null,
+          role: "guide",
+          isActive: true,
+          tokenVersion: 0,
+        };
+        localStorage.setItem("admin_user", JSON.stringify(gAdmin));
         set({
-          admin: {
-            id: guideProfile.id.toString(),
-            name: guideProfile.name,
-            email: guideProfile.email || null,
-            role: "guide",
-            isActive: true,
-            tokenVersion: 0,
-          },
+          admin: gAdmin,
           isAuthenticated: true,
           isLoading: false,
         });
       } catch {
         localStorage.removeItem("guide_access_token");
         localStorage.removeItem("guide_token");
+        localStorage.removeItem("admin_user");
         set({ admin: null, isAuthenticated: false, isLoading: false });
       }
       return;
@@ -205,11 +235,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Case 2: Admin session — validate with backend
     try {
       const admin = await authService.getMe();
+      if (admin) {
+        localStorage.setItem("admin_user", JSON.stringify(admin));
+      }
       set({ admin, isAuthenticated: true, isLoading: false });
     } catch (err: any) {
       if (err?.response?.status === 401) {
         // Token is definitively invalid/expired — clear everything
         localStorage.removeItem("token");
+        localStorage.removeItem("admin_user");
         set({ admin: null, isAuthenticated: false, isLoading: false });
       } else {
         // Network error, 500, etc. — don't clear auth, just stop loading

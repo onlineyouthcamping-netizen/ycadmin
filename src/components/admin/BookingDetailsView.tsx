@@ -368,7 +368,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     : 0;
 
   // Live preview values during editing
-  const { previewItems, previewBasePrice, previewGstDiscount, previewGstAmount, previewTotalWithGST, previewFinalTotal } = useMemo(() => {
+  const { previewItems, previewSubtotal, previewOtherDiscount, previewBasePrice, previewGstDiscount, previewGstAmount, previewTotalWithGST, previewFinalTotal } = useMemo(() => {
     const items = [...bookingItems];
     if (customDescription && customRate) {
       items.push({
@@ -382,11 +382,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     
     // Separate GST discounts from regular discounts
     const gstDiscounts = active.filter(item => item.name.toLowerCase().includes("gst") && item.rate < 0);
-    const otherDiscounts = active.filter(item => item.rate < 0 && !gstDiscounts.includes(item));
-    const base = active.filter(item => item.rate >= 0);
+    const otherDiscounts = active.filter(item => (item.rate < 0 || item.category === 'discounts' || item.name.toLowerCase().includes("discount") || item.name.toLowerCase().includes("coupon")) && !gstDiscounts.includes(item));
+    const base = active.filter(item => item.rate >= 0 && !otherDiscounts.includes(item));
     
     const packageSubtotal = base.reduce((acc, item) => acc + (item.rate * item.qty), 0);
-    const baseDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
+    const baseDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0) + (booking.discountAmount && otherDiscounts.length === 0 ? booking.discountAmount : 0);
     const gstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
     
     const packageTotal = Math.max(0, packageSubtotal - baseDiscount);
@@ -396,13 +396,15 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
     return {
       previewItems: items,
+      previewSubtotal: packageSubtotal,
+      previewOtherDiscount: baseDiscount,
       previewBasePrice: packageTotal,
       previewGstDiscount: gstDiscount,
       previewGstAmount: gstA,
       previewTotalWithGST: totalW,
       previewFinalTotal: finalT
     };
-  }, [bookingItems, customDescription, customRate, customQty, gstRate]);
+  }, [bookingItems, customDescription, customRate, customQty, gstRate, booking.discountAmount]);
 
   useEffect(() => {
     setLoadingPayments(true);
@@ -961,6 +963,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         totalAmount,
         remainingAmount,
         baseAmount: calculatedBase,
+        discountAmount: calculatedDiscount,
         gstAmount: calculatedGst,
         advancePaid: totalPaymentsPaid,
         sourceMeta: newMeta
@@ -2620,8 +2623,50 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 flex-wrap gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Select Passengers</span>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => toast.info("Passengers are automatically selected.")} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all">Special Charge/Discount</button>
-                    <button type="button" onClick={() => toast.info("No coupons available for this trip.")} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all">Coupon</button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const val = prompt("Enter Special Discount Amount (₹):", "1000");
+                        if (!val) return;
+                        const num = parseFloat(val);
+                        if (isNaN(num) || num <= 0) return toast.error("Please enter a valid discount amount");
+                        const newItem = {
+                          id: `discount_${Date.now()}`,
+                          name: "Special Discount",
+                          rate: -Math.abs(num),
+                          qty: 1,
+                          category: "discounts"
+                        };
+                        setBookingItems(prev => [...prev, newItem]);
+                        toast.success(`Applied ₹${num} Special Discount!`);
+                      }} 
+                      className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all cursor-pointer"
+                    >
+                      Special Charge/Discount
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const code = prompt("Enter Coupon Code:", "SUMMER500");
+                        if (!code) return;
+                        const val = prompt(`Enter Discount Amount for Coupon (${code.toUpperCase()}) (₹):`, "500");
+                        if (!val) return;
+                        const num = parseFloat(val);
+                        if (isNaN(num) || num <= 0) return toast.error("Please enter a valid coupon amount");
+                        const newItem = {
+                          id: `coupon_${Date.now()}`,
+                          name: `Coupon (${code.toUpperCase()})`,
+                          rate: -Math.abs(num),
+                          qty: 1,
+                          category: "discounts"
+                        };
+                        setBookingItems(prev => [...prev, newItem]);
+                        toast.success(`Applied Coupon ${code.toUpperCase()} (-₹${num})!`);
+                      }} 
+                      className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all cursor-pointer"
+                    >
+                      Coupon
+                    </button>
                     <button type="button" onClick={() => toast.info("No addons configured for this trip.")} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all">Addon (0 Available)</button>
                   </div>
                 </div>
@@ -2790,18 +2835,37 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       </tr>
 
                       {/* Live Breakdown in Edit Mode */}
-                      <tr className="bg-slate-550/5 border-t border-slate-150">
-                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Base Price Preview</td>
-                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <tr className="bg-slate-50/80 border-t border-slate-200">
+                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Subtotal Preview</td>
+                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td></td>
                       </tr>
-                      <tr className="bg-slate-550/5">
+                      {previewOtherDiscount > 0 && (
+                        <tr className="bg-rose-50/80 border-t border-rose-200">
+                          <td colSpan={3} className="px-5 py-2.5 text-right font-black text-rose-700 text-[10px] uppercase tracking-wider">
+                            Applied Special Discount / Coupon
+                          </td>
+                          <td className="px-5 py-2.5 text-right font-mono font-black text-rose-700">
+                            -₹ {previewOtherDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td></td>
+                        </tr>
+                      )}
+                      <tr className="bg-slate-50/80 border-t border-slate-200">
+                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Base Price Preview (After Discount)</td>
+                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td></td>
+                      </tr>
+                      <tr className="bg-slate-50/80">
                         <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">GST ({Math.round(gstRate * 100)}%) Preview</td>
                         <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewGstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td></td>
                       </tr>
                       {previewGstDiscount > 0 && (
-                        <tr className="bg-slate-550/5">
+                        <tr className="bg-rose-50/80">
                           <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider">GST Discount</td>
                           <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-600">-₹ {previewGstDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td></td>
                         </tr>
                       )}
                       <tr className="bg-slate-900 text-white">

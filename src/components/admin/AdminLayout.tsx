@@ -119,9 +119,9 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       { title: "Departures Hub", url: "/admin/operations" },
-      { title: "Vendors", url: "/admin/vendors" },
+      { title: "Vendor Management", url: "/admin/vendors" },
       { title: "Guide Management", url: "/admin/guides-hub" },
-      { title: "Documents", url: "/admin/company-documents" },
+      { title: "Company Documents", url: "/admin/company-documents" },
       { title: "Reports", url: "/admin/reports" }
     ]
   },

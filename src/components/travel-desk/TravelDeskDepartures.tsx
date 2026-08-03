@@ -77,7 +77,7 @@ export const TravelDeskDepartures: React.FC<TravelDeskDeparturesProps> = ({ trip
                         <div className="flex items-center gap-3 mt-1.5">
                           <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500">
                             <Users className="w-3.5 h-3.5 text-slate-450" />
-                            <span>{totalPax} / {maxPax} Pax</span>
+                            <span>{totalPax} Pax</span>
                           </div>
                           <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500">
                             <FileText className="w-3.5 h-3.5 text-slate-450" />
