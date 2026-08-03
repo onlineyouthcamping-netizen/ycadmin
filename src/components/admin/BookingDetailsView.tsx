@@ -599,6 +599,13 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     };
     if (booking.tripId) {
       loadTripData();
+    } else if (!meta.bookingItems || !Array.isArray(meta.bookingItems) || meta.bookingItems.length === 0) {
+      let persons: any[] = [];
+      if (meta?.persons && Array.isArray(meta.persons) && meta.persons.length > 0) {
+        persons = meta.persons;
+      }
+      const defaultItems = generatePerPersonBookingItems(booking, persons, null);
+      setBookingItems(defaultItems);
     }
   }, [booking, trips]);
 
@@ -4107,10 +4114,21 @@ export function generatePerPersonBookingItems(bookingObj: any, personsList: any[
   const items: any[] = [];
   const paxCount = (personsList && personsList.length > 0) ? personsList.length : (bookingObj.numberOfTravelers || 1);
   
-  const totalAmount = bookingObj.totalAmount || 0;
-  const discount = bookingObj.discount || 0;
-  const subtotal = totalAmount / (1 + gstRate);
-  const totalBaseRequired = subtotal + discount;
+  const rawTotal = Number(bookingObj.totalAmount) || Number(bookingObj.amount) || Number(bookingObj.price) || 0;
+  const rawBase = Number(bookingObj.baseAmount) || 0;
+  const discount = Number(bookingObj.discount) || Number(bookingObj.discountAmount) || 0;
+
+  let subtotal = 0;
+  if (rawBase > 0) {
+    subtotal = rawBase;
+  } else if (rawTotal > 0) {
+    subtotal = Math.round(rawTotal / (1 + gstRate));
+  } else if (resObj?.price) {
+    subtotal = (Number(resObj.price) || 15000) * paxCount;
+  } else {
+    subtotal = 15000 * paxCount;
+  }
+  const totalBaseRequired = Math.max(1000, subtotal + discount);
 
   let sumOfDeltas = 0;
   const processedPersons: any[] = [];
