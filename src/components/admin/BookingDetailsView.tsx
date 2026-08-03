@@ -2750,7 +2750,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                           const absAmt = Math.abs(row.rate * row.qty);
 
                           return (
-                            <tr key={row.key} className="hover:bg-slate-50/60 transition-colors">
+                            <tr key={row.originalIds[0] || row.key} className="hover:bg-slate-50/60 transition-colors">
                               <td className="px-5 py-3">
                                 <Input
                                   type="text"
