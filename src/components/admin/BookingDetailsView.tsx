@@ -569,37 +569,38 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
     // Fetch full trip details and populate bookingItems
     const loadTripData = async () => {
+      let tripRes = null;
       try {
-        const res = await tripsService.getById(booking.tripId);
-        setFullTrip(res);
-        
-        if (meta.bookingItems && Array.isArray(meta.bookingItems) && meta.bookingItems.length > 0) {
-          setBookingItems(meta.bookingItems);
-        } else {
-          let persons: any[] = [];
-          if (meta?.persons && Array.isArray(meta.persons) && meta.persons.length > 0) {
-            persons = meta.persons;
-          } else if (booking.passengers) {
-            let parsed: any = booking.passengers;
-            if (typeof parsed === 'string') {
-              try { parsed = JSON.parse(parsed); } catch (e) {}
-            }
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              persons = parsed;
-            } else if (parsed && typeof parsed === 'object') {
-              if (Array.isArray(parsed.persons) && parsed.persons.length > 0) {
-                persons = parsed.persons;
-              } else if (Array.isArray(parsed.passengers) && parsed.passengers.length > 0) {
-                persons = parsed.passengers;
-              }
+        tripRes = await tripsService.getById(booking.tripId);
+        setFullTrip(tripRes);
+      } catch (err) {
+        console.error("Failed to fetch full trip details for tripId:", booking.tripId, err);
+      }
+
+      if (meta.bookingItems && Array.isArray(meta.bookingItems) && meta.bookingItems.length > 0) {
+        setBookingItems(meta.bookingItems);
+      } else {
+        let persons: any[] = [];
+        if (meta?.persons && Array.isArray(meta.persons) && meta.persons.length > 0) {
+          persons = meta.persons;
+        } else if (booking.passengers) {
+          let parsed: any = booking.passengers;
+          if (typeof parsed === 'string') {
+            try { parsed = JSON.parse(parsed); } catch (e) {}
+          }
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            persons = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.persons) && parsed.persons.length > 0) {
+              persons = parsed.persons;
+            } else if (Array.isArray(parsed.passengers) && parsed.passengers.length > 0) {
+              persons = parsed.passengers;
             }
           }
-
-          const defaultItems = generatePerPersonBookingItems(booking, persons, res);
-          setBookingItems(defaultItems);
         }
-      } catch (err) {
-        console.error("Failed to fetch full trip details", err);
+
+        const defaultItems = generatePerPersonBookingItems(booking, persons, tripRes);
+        setBookingItems(defaultItems);
       }
     };
     if (booking.tripId) {
