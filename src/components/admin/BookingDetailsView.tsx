@@ -391,23 +391,22 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     const base = active.filter(item => item.rate >= 0 && !otherDiscounts.includes(item));
     
     const packageSubtotal = base.reduce((acc, item) => acc + (item.rate * item.qty), 0);
-    const baseDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0) + (booking.discountAmount && otherDiscounts.length === 0 ? booking.discountAmount : 0);
-    const gstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
+    const baseDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0) + (booking.discountAmount && otherDiscounts.length === 0 ? booking.discountAmount : 0) + gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
     
-    // Net Base Price (Base minus Discount)
-    const packageTotal = Math.max(0, packageSubtotal - baseDiscount);
-    // GST (5%) calculated on Net Base Price
-    const gstA = Math.round(packageTotal * gstRate);
-    // Final Total = Net Base Price + GST - GST Discount
-    const finalT = Math.max(0, packageTotal + gstA - gstDiscount);
-    const totalW = packageTotal + gstA;
+    // Gross Base Price (full package amount)
+    const grossBasePrice = packageSubtotal;
+    // GST (5%) calculated on Gross Base Price
+    const gstA = Math.round(grossBasePrice * gstRate);
+    // Final Total = Gross Base Price + GST - Discount
+    const finalT = Math.max(0, grossBasePrice + gstA - baseDiscount);
+    const totalW = grossBasePrice + gstA;
 
     return {
       previewItems: items,
       previewSubtotal: packageSubtotal,
       previewOtherDiscount: baseDiscount,
-      previewBasePrice: packageTotal,
-      previewGstDiscount: gstDiscount,
+      previewBasePrice: grossBasePrice,
+      previewGstDiscount: 0,
       previewGstAmount: gstA,
       previewTotalWithGST: totalW,
       previewFinalTotal: finalT
@@ -628,13 +627,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       const baseItems = activeItems.filter((item: any) => item.rate >= 0);
 
       const calculatedBase = baseItems.reduce((acc: number, item: any) => acc + ((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
-      const calculatedDiscount = otherDiscounts.reduce((acc: number, item: any) => acc + Math.abs((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
-      const calculatedGstDiscount = gstDiscounts.reduce((acc: number, item: any) => acc + Math.abs((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
+      const calculatedDiscount = otherDiscounts.reduce((acc: number, item: any) => acc + Math.abs((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0) + gstDiscounts.reduce((acc: number, item: any) => acc + Math.abs((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
 
       const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
-      const netBasePrice = Math.max(0, calculatedBase - calculatedDiscount);
-      const calculatedGst = Math.round(netBasePrice * gstRate);
-      const totalAmount = Math.max(0, netBasePrice + calculatedGst - calculatedGstDiscount);
+      const calculatedGst = Math.round(calculatedBase * gstRate);
+      const totalAmount = Math.max(0, calculatedBase + calculatedGst - calculatedDiscount);
       const totalPaymentsPaid = (Array.isArray(paymentsList) ? paymentsList : []).reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0);
       const remainingAmount = totalAmount - totalPaymentsPaid;
 
@@ -958,13 +955,11 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       const baseItems = activeItems.filter(item => item.rate >= 0);
 
       const calculatedBase = baseItems.reduce((acc, item) => acc + (item.rate * item.qty), 0);
-      const calculatedDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
-      const calculatedGstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
+      const calculatedDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0) + gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
 
       const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
-      const netBasePrice = Math.max(0, calculatedBase - calculatedDiscount);
-      const calculatedGst = Math.round(netBasePrice * gstRate);
-      const totalAmount = Math.max(0, netBasePrice + calculatedGst - calculatedGstDiscount);
+      const calculatedGst = Math.round(calculatedBase * gstRate);
+      const totalAmount = Math.max(0, calculatedBase + calculatedGst - calculatedDiscount);
       const totalPaymentsPaid = paymentsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
       const remainingAmount = totalAmount - totalPaymentsPaid;
       
@@ -3211,12 +3206,10 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                   const regularDiscounts = discountItems.filter(r => !r.name.toLowerCase().includes('gst'));
 
                   const subtotal = baseItems.reduce((acc, r) => acc + (r.rate * r.qty), 0);
-                  const regularDiscountTotal = regularDiscounts.reduce((acc, r) => acc + Math.abs(r.rate * r.qty), 0);
-                  const gstDiscountTotal = gstDiscounts.reduce((acc, r) => acc + Math.abs(r.rate * r.qty), 0);
+                  const discountTotal = discountItems.reduce((acc, r) => acc + Math.abs(r.rate * r.qty), 0);
 
-                  const packageTotal = Math.max(0, subtotal - regularDiscountTotal);
-                  const gstAmount = Math.round(packageTotal * (gstRate || 0.05));
-                  const grandTotal = Math.max(0, packageTotal + gstAmount - gstDiscountTotal);
+                  const gstAmount = Math.round(subtotal * (gstRate || 0.05));
+                  const grandTotal = Math.max(0, subtotal + gstAmount - discountTotal);
 
                   return (
                     <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
@@ -3260,20 +3253,16 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                             <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Gross Base Price</td>
                             <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {Math.round(subtotal).toLocaleString('en-IN')}</td>
                           </tr>
-                          {regularDiscountTotal > 0 && (
-                            <tr className="bg-rose-50/70 border-t border-rose-100">
-                              <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-700 text-[10px] uppercase tracking-wider">Applied Special Discount / Coupon</td>
-                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-700">- ₹ {Math.round(regularDiscountTotal).toLocaleString('en-IN')}</td>
-                            </tr>
-                          )}
-                          <tr className="bg-slate-50/60">
-                            <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Base Price (After Discount)</td>
-                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {Math.round(packageTotal).toLocaleString('en-IN')}</td>
-                          </tr>
                           <tr className="bg-slate-50/60">
                             <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">GST ({Math.round((gstRate || 0.05) * 100)}%)</td>
                             <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {gstAmount.toLocaleString('en-IN')}</td>
                           </tr>
+                          {discountTotal > 0 && (
+                            <tr className="bg-rose-50/70 border-t border-rose-100">
+                              <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-700 text-[10px] uppercase tracking-wider">Applied Special Discount / Coupon</td>
+                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-700">- ₹ {Math.round(discountTotal).toLocaleString('en-IN')}</td>
+                            </tr>
+                          )}
                           {gstDiscountTotal > 0 && (
                             <tr className="bg-slate-50/60">
                               <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider">GST Discount</td>
