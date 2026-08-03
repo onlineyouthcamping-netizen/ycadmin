@@ -6,7 +6,7 @@ import {
   Calendar, Users, Pencil, Trash2, Plus, ArrowLeft, Check, X, 
   ChevronRight, CreditCard, Globe, Languages, Tag, MessageSquare, 
   Clock, Send, HelpCircle, User, Phone, Mail, FileText, AlertCircle, CheckCircle2,
-  ShieldCheck, MapPin, History, Train, RefreshCw
+  ShieldCheck, MapPin, History, Train, RefreshCw, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
