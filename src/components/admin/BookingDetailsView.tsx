@@ -393,16 +393,15 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     const baseDiscount = otherDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0) + (booking.discountAmount && otherDiscounts.length === 0 ? booking.discountAmount : 0);
     const gstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
     
-    const packageTotal = Math.max(0, packageSubtotal - baseDiscount);
-    const gstA = Math.round(packageTotal * gstRate);
-    const finalT = Math.max(0, packageTotal + gstA - gstDiscount);
-    const totalW = packageTotal + gstA;
+    const gstA = Math.round(packageSubtotal * gstRate);
+    const totalW = packageSubtotal + gstA;
+    const finalT = Math.max(0, totalW - baseDiscount - gstDiscount);
 
     return {
       previewItems: items,
       previewSubtotal: packageSubtotal,
       previewOtherDiscount: baseDiscount,
-      previewBasePrice: packageTotal,
+      previewBasePrice: packageSubtotal,
       previewGstDiscount: gstDiscount,
       previewGstAmount: gstA,
       previewTotalWithGST: totalW,
@@ -620,9 +619,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       const calculatedGstDiscount = gstDiscounts.reduce((acc: number, item: any) => acc + Math.abs((Number(item.rate) || 0) * (Number(item.qty) || 1)), 0);
 
       const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
-      const packageTotal = Math.max(0, calculatedBase - calculatedDiscount);
-      const calculatedGst = Math.round(packageTotal * gstRate);
-      const totalAmount = Math.max(0, packageTotal + calculatedGst - calculatedGstDiscount);
+      const calculatedGst = Math.round(calculatedBase * gstRate);
+      const totalAmount = Math.max(0, calculatedBase + calculatedGst - calculatedDiscount - calculatedGstDiscount);
       const totalPaymentsPaid = (Array.isArray(paymentsList) ? paymentsList : []).reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0);
       const remainingAmount = totalAmount - totalPaymentsPaid;
 
@@ -950,9 +948,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       const calculatedGstDiscount = gstDiscounts.reduce((acc, item) => acc + Math.abs(item.rate * item.qty), 0);
 
       const gstRate = (fullTrip?.gstPercentage ?? 5) / 100;
-      const packageTotal = Math.max(0, calculatedBase - calculatedDiscount);
-      const calculatedGst = Math.round(packageTotal * gstRate);
-      const totalAmount = Math.max(0, packageTotal + calculatedGst - calculatedGstDiscount);
+      const calculatedGst = Math.round(calculatedBase * gstRate);
+      const totalAmount = Math.max(0, calculatedBase + calculatedGst - calculatedDiscount - calculatedGstDiscount);
       const totalPaymentsPaid = paymentsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
       const remainingAmount = totalAmount - totalPaymentsPaid;
       
