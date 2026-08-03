@@ -186,6 +186,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   
   // Custom states matching screenshots
   const [bookingItems, setBookingItems] = useState<any[]>([]);
+  const [accountingViewMode, setAccountingViewMode] = useState<'per_person' | 'group'>('per_person');
   const [selectedTravelOptionToAdd, setSelectedTravelOptionToAdd] = useState("");
   const [selectedRoomOptionToAdd, setSelectedRoomOptionToAdd] = useState("");
   
@@ -2573,10 +2574,34 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
             <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-200 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-slate-800 text-xs">Booking Items</h3>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-700 bg-white border border-slate-300 px-2 py-0.5 rounded shadow-sm">
-                  <User className="w-3.5 h-3.5 text-slate-500" />
-                  Passenger Details
-                </span>
+                <div className="inline-flex items-center bg-slate-200/70 p-0.5 rounded-lg border border-slate-300/80">
+                  <button
+                    type="button"
+                    onClick={() => setAccountingViewMode('per_person')}
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer flex items-center gap-1",
+                      accountingViewMode === 'per_person' 
+                        ? "bg-white text-emerald-700 shadow-xs border border-slate-200 font-extrabold" 
+                        : "text-slate-600 hover:text-slate-900 font-semibold"
+                    )}
+                  >
+                    <User className="w-3 h-3 text-emerald-600" />
+                    Per-Person Details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountingViewMode('group')}
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer flex items-center gap-1",
+                      accountingViewMode === 'group' 
+                        ? "bg-white text-blue-700 shadow-xs border border-slate-200 font-extrabold" 
+                        : "text-slate-600 hover:text-slate-900 font-semibold"
+                    )}
+                  >
+                    <Layers className="w-3 h-3 text-blue-600" />
+                    Group Summary
+                  </button>
+                </div>
               </div>
               <div className="flex gap-1.5">
                 <button 
@@ -3168,8 +3193,18 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
                   const groupRows = Array.from(groupMap.values());
 
-                  const baseItems = groupRows.filter(r => r.rate >= 0 && r.category !== 'discounts');
-                  const discountItems = groupRows.filter(r => r.rate < 0 || r.category === 'discounts');
+                  const displayRows = accountingViewMode === 'per_person'
+                    ? activeItems.map((item: any, idx: number) => ({
+                        key: item.id || `item_${idx}`,
+                        name: item.name,
+                        category: item.category,
+                        rate: item.rate || 0,
+                        qty: item.qty || 1
+                      }))
+                    : groupRows;
+
+                  const baseItems = activeItems.filter(r => r.rate >= 0 && r.category !== 'discounts');
+                  const discountItems = activeItems.filter(r => r.rate < 0 || r.category === 'discounts');
 
                   const gstDiscounts = discountItems.filter(r => r.name.toLowerCase().includes('gst'));
                   const regularDiscounts = discountItems.filter(r => !r.name.toLowerCase().includes('gst'));
@@ -3187,14 +3222,16 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="border-b border-slate-200 bg-slate-100/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                            <th className="px-5 py-3">DESCRIPTION</th>
+                            <th className="px-5 py-3">
+                              {accountingViewMode === 'per_person' ? 'PASSENGER & DESCRIPTION' : 'DESCRIPTION'}
+                            </th>
                             <th className="px-5 py-3 text-right w-36">RATE</th>
                             <th className="px-5 py-3 text-center w-24">QTY</th>
                             <th className="px-5 py-3 text-right w-40">AMOUNT</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                          {groupRows.map((row) => {
+                          {displayRows.map((row) => {
                             const isDiscount = row.rate < 0 || row.category === 'discounts';
                             const absRate = Math.abs(row.rate);
                             const absAmt = Math.abs(row.rate * row.qty);
@@ -3219,15 +3256,19 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
                           {/* Subtotal & GST Summary Rows */}
                           <tr className="bg-slate-50/60 border-t border-slate-100">
-                            <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Package Total</td>
-                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {Math.round(packageTotal).toLocaleString('en-IN')}</td>
+                            <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Gross Base Price</td>
+                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {Math.round(subtotal).toLocaleString('en-IN')}</td>
                           </tr>
                           {regularDiscountTotal > 0 && (
-                            <tr className="bg-slate-50/60">
-                              <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider">Regular Discounts</td>
-                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-600">- ₹ {Math.round(regularDiscountTotal).toLocaleString('en-IN')}</td>
+                            <tr className="bg-rose-50/70 border-t border-rose-100">
+                              <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-700 text-[10px] uppercase tracking-wider">Applied Special Discount / Coupon</td>
+                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-700">- ₹ {Math.round(regularDiscountTotal).toLocaleString('en-IN')}</td>
                             </tr>
                           )}
+                          <tr className="bg-slate-50/60">
+                            <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Base Price (After Discount)</td>
+                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {Math.round(packageTotal).toLocaleString('en-IN')}</td>
+                          </tr>
                           <tr className="bg-slate-50/60">
                             <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">GST ({Math.round((gstRate || 0.05) * 100)}%)</td>
                             <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {gstAmount.toLocaleString('en-IN')}</td>
