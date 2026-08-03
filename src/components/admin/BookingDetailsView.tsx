@@ -137,7 +137,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   const [editRate, setEditRate] = useState("");
   const [editQty, setEditQty] = useState("");
   const [editDiscount, setEditDiscount] = useState("");
-  const [editDiscountLabel, setEditDiscountLabel] = useState("GST Discount");
+  const [editDiscountLabel, setEditDiscountLabel] = useState("Discount");
 
   // Create payment modal state
   const [showCreatePayment, setShowCreatePayment] = useState(false);
@@ -1323,7 +1323,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
               <div class="totals-box">
                 <div class="total-row"><span class="lbl">Subtotal</span><span class="val">&#8377;${basePrice.toLocaleString('en-IN')}</span></div>
                 <div class="total-row"><span class="lbl">GST @ ${Math.round(gstRate * 100)}%</span><span class="val">&#8377;${gstAmount.toLocaleString('en-IN')}</span></div>
-                ${gstDiscount > 0 ? `<div class="total-row"><span class="lbl" style="color:#e11d48">GST Discount</span><span class="val" style="color:#e11d48">&minus;&#8377;${gstDiscount.toLocaleString('en-IN')}</span></div>` : ''}
+                ${gstDiscount > 0 ? `<div class="total-row"><span class="lbl" style="color:#e11d48">Discount</span><span class="val" style="color:#e11d48">&minus;&#8377;${gstDiscount.toLocaleString('en-IN')}</span></div>` : ''}
                 <div class="total-row"><span class="lbl">Total Amount</span><span class="val">&#8377;${(booking.totalAmount || 0).toLocaleString('en-IN')}</span></div>
                 <div class="total-row"><span class="lbl">Advance Paid</span><span class="val" style="color:#059669">&minus;&#8377;${(booking.advancePaid || 0).toLocaleString('en-IN')}</span></div>
                 <div class="total-row grand"><span class="lbl">Balance Due</span><span class="val">&#8377;${(booking.remainingAmount || 0).toLocaleString('en-IN')}</span></div>
