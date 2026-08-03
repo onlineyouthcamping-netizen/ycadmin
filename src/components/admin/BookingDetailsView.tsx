@@ -3106,9 +3106,27 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
               /* ─── STATIC VIEW (DEFAULT: GROUP-WISE ACCOUNTING) ─── */
               <div className="p-0 bg-white">
                 {(() => {
-                  const activeItems = bookingItems.filter(item => item.qty > 0 || item.rate < 0);
+                  let activeItems = bookingItems.filter(item => item.qty > 0 || item.rate < 0);
                   if (activeItems.length === 0) {
-                     return <div className="p-6 text-center text-slate-500 italic">No booking items recorded.</div>;
+                    activeItems = generatePerPersonBookingItems(booking, passengers, fullTrip).filter(item => item.qty > 0 || item.rate < 0);
+                  }
+                  if (activeItems.length === 0) {
+                     return (
+                       <div className="p-8 text-center space-y-3 bg-slate-50/50">
+                         <p className="text-slate-500 font-semibold text-xs">No booking items recorded for this booking yet.</p>
+                         <button
+                           type="button"
+                           onClick={() => {
+                             const generated = generatePerPersonBookingItems(booking, passengers, fullTrip);
+                             setBookingItems(generated);
+                             toast.success("Generated per-person booking items!");
+                           }}
+                           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition-all cursor-pointer inline-flex items-center gap-1.5"
+                         >
+                           <RefreshCw className="w-3.5 h-3.5" /> Generate Per-Person Line Items
+                         </button>
+                       </div>
+                     );
                   }
 
                   // Aggregate per-person items into Group-wise rows
