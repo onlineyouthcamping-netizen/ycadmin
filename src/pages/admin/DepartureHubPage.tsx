@@ -689,6 +689,32 @@ export default function DepartureHubPage() {
   const [actStatusFilter, setActStatusFilter] = useState("All Status");
   const [actSearch, setActSearch] = useState("");
 
+  // Multi-Vendor Hotel & Stay Assignment Architecture State
+  const [hotelViewMode, setHotelViewMode] = useState<"card" | "table">("card");
+  const [isAddHotelWizardOpen, setIsAddHotelWizardOpen] = useState(false);
+  const [hotelWizardStep, setHotelWizardStep] = useState<1 | 2 | 3 | 4>(1);
+  const [hotelWizardData, setHotelWizardData] = useState({
+    destination: "Shimla",
+    hotelId: "HTL-2",
+    hotelName: "Hotel Snow View",
+    hotelRating: "★★★★★",
+    vendorId: "VND-2",
+    vendorName: "Mountain Hospitality",
+    checkIn: "05 Aug 2026",
+    checkOut: "06 Aug 2026",
+    nights: 1,
+    rooms: { Twin: 3, Triple: 2, Quad: 0 } as Record<string, number>,
+    totalGuests: 16,
+    vendorRate: 4200,
+    sellingRate: 5500,
+    totalAmount: 21000,
+    advancePaid: 10500,
+    mealPlan: "MAP",
+    remarks: "",
+    status: "Draft"
+  });
+  const [selectedStayForDrawer, setSelectedStayForDrawer] = useState<any | null>(null);
+
   const fetchPageData = async () => {
     setLoading(true);
     try {
@@ -3309,6 +3335,9 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                   if (input) input.focus();
                 } else if (activeTab === "activities") {
                   setActivityModalOpen(true);
+                } else if (activeTab === "hotels") {
+                  setHotelWizardStep(1);
+                  setIsAddHotelWizardOpen(true);
                 } else {
                   toast.success(`${ctaLabel[activeTab] || "Action"} triggered!`);
                 }
@@ -4574,6 +4603,394 @@ const [sharingPref, setSharingPref] = useState<string>("3");
           </DialogContent>
         </Dialog>
 
+        {/* 4-Step Add Hotel / Stay Assignment Wizard Modal */}
+        <Dialog open={isAddHotelWizardOpen} onOpenChange={setIsAddHotelWizardOpen}>
+          <DialogContent className="max-w-2xl bg-white p-6 rounded-[12px] shadow-xl border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-800">Add Hotel & Stay Assignment</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Step {hotelWizardStep} of 4: {
+                  hotelWizardStep === 1 ? "Choose Destination" :
+                  hotelWizardStep === 2 ? "Select Hotel Property" :
+                  hotelWizardStep === 3 ? "Choose Vendor Contract" :
+                  "Configure Stay & Pricing"
+                }</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4].map(s => (
+                  <div key={s} className={cn(
+                    "w-6 h-1.5 rounded-full transition-all",
+                    hotelWizardStep === s ? "bg-[#F97316]" :
+                    hotelWizardStep > s ? "bg-emerald-500" :
+                    "bg-slate-200"
+                  )} />
+                ))}
+              </div>
+            </div>
+
+            <div className="py-4">
+              {hotelWizardStep === 1 && (
+                <div className="space-y-4">
+                  <p className="text-xs font-bold text-slate-700">Select destination for this stay:</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {["Shimla", "Sangla", "Tabo", "Kaza", "Manali", "Chandigarh"].map(dest => (
+                      <button
+                        key={dest}
+                        type="button"
+                        onClick={() => {
+                          setHotelWizardData(prev => ({ ...prev, destination: dest }));
+                          setHotelWizardStep(2);
+                        }}
+                        className={cn(
+                          "p-4 rounded-[8px] border text-left font-black transition-all flex items-center justify-between",
+                          hotelWizardData.destination === dest
+                            ? "bg-[#FFF7ED] border-[#F97316] text-[#F97316] shadow-xs"
+                            : "bg-white border-slate-200 text-slate-750 hover:bg-slate-50"
+                        )}
+                      >
+                        <span className="text-sm">{dest}</span>
+                        <MapPin className="w-4 h-4 text-slate-400" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {hotelWizardStep === 2 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-700">Select hotel in <span className="text-[#F97316]">{hotelWizardData.destination}</span>:</p>
+                    <button
+                      type="button"
+                      onClick={() => toast.success("Opening Create New Hotel form")}
+                      className="text-[11px] font-bold text-[#F97316] hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Create New Hotel
+                    </button>
+                  </div>
+                  <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                    {[
+                      { id: "HTL-1", name: "Apple Blossom", city: "Sangla", category: "Standard", rating: "★★★★" },
+                      { id: "HTL-2", name: "Hotel Snow View", city: "Shimla", category: "Deluxe", rating: "★★★★★" },
+                      { id: "HTL-3", name: "Mehak Resort", city: "Sangla", category: "Luxury", rating: "★★★★" },
+                      { id: "HTL-4", name: "Spiti Siddharth", city: "Kaza", category: "Standard", rating: "★★★★" },
+                      { id: "HTL-5", name: "Mountain Vista", city: "Tabo", category: "Deluxe", rating: "★★★★★" }
+                    ].map(h => (
+                      <div
+                        key={h.id}
+                        onClick={() => {
+                          setHotelWizardData(prev => ({ ...prev, hotelId: h.id, hotelName: h.name, hotelRating: h.rating }));
+                          setHotelWizardStep(3);
+                        }}
+                        className={cn(
+                          "p-3.5 rounded-[8px] border cursor-pointer transition-all flex items-center justify-between",
+                          hotelWizardData.hotelId === h.id
+                            ? "bg-[#FFF7ED] border-[#F97316] shadow-xxs"
+                            : "bg-white border-slate-200 hover:bg-slate-50"
+                        )}
+                      >
+                        <div>
+                          <p className="text-sm font-black text-slate-800">{h.name} <span className="text-amber-400 font-normal">{h.rating}</span></p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">{h.city} • {h.category} Property</p>
+                        </div>
+                        <span className="text-[10px] font-extrabold px-2 py-1 rounded bg-slate-100 text-slate-700">Select →</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {hotelWizardStep === 3 && (
+                <div className="space-y-4">
+                  <p className="text-xs font-bold text-slate-700">Choose Vendor Contract for <span className="text-[#F97316]">{hotelWizardData.hotelName}</span>:</p>
+                  <div className="space-y-2.5">
+                    {[
+                      { id: "VND-1", name: "Direct Hotel", rate: 3200, terms: "100% at Check-in", default: true, outstanding: 0 },
+                      { id: "VND-2", name: "Mountain Hospitality", rate: 2950, terms: "50% Advance, 50% Post-Trip", default: false, outstanding: 45000 },
+                      { id: "VND-3", name: "XYZ Travels", rate: 3100, terms: "7 Days Credit", default: false, outstanding: 12000 }
+                    ].map(v => (
+                      <div
+                        key={v.id}
+                        onClick={() => {
+                          setHotelWizardData(prev => ({ ...prev, vendorId: v.id, vendorName: v.name, vendorRate: v.rate, totalAmount: v.rate * 5 }));
+                          setHotelWizardStep(4);
+                        }}
+                        className={cn(
+                          "p-4 rounded-[8px] border cursor-pointer transition-all flex items-center justify-between",
+                          hotelWizardData.vendorId === v.id
+                            ? "bg-[#FFF7ED] border-[#F97316] shadow-xxs"
+                            : "bg-white border-slate-200 hover:bg-slate-50"
+                        )}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-black text-slate-800">{v.name}</p>
+                            {v.default && <span className="text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded">Default Vendor</span>}
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-1">Payment Terms: {v.terms} • Outstanding: ₹{v.outstanding.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-slate-800">₹{v.rate.toLocaleString('en-IN')}</p>
+                          <p className="text-[9px] text-slate-400">Negotiated Rate / Night</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {hotelWizardStep === 4 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Check In</label>
+                      <input
+                        type="text"
+                        value={hotelWizardData.checkIn}
+                        onChange={(e) => setHotelWizardData(prev => ({ ...prev, checkIn: e.target.value }))}
+                        className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Check Out</label>
+                      <input
+                        type="text"
+                        value={hotelWizardData.checkOut}
+                        onChange={(e) => setHotelWizardData(prev => ({ ...prev, checkOut: e.target.value }))}
+                        className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Twin Rooms</label>
+                      <input
+                        type="number"
+                        value={hotelWizardData.rooms.Twin || 0}
+                        onChange={(e) => setHotelWizardData(prev => ({ ...prev, rooms: { ...prev.rooms, Twin: Number(e.target.value) } }))}
+                        className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Triple Rooms</label>
+                      <input
+                        type="number"
+                        value={hotelWizardData.rooms.Triple || 0}
+                        onChange={(e) => setHotelWizardData(prev => ({ ...prev, rooms: { ...prev.rooms, Triple: Number(e.target.value) } }))}
+                        className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Meal Plan</label>
+                      <select
+                        value={hotelWizardData.mealPlan}
+                        onChange={(e) => setHotelWizardData(prev => ({ ...prev, mealPlan: e.target.value }))}
+                        className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
+                      >
+                        <option value="CP">CP (Breakfast)</option>
+                        <option value="MAP">MAP (Breakfast & Dinner)</option>
+                        <option value="AP">AP (All Meals)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-3 rounded-lg">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Vendor Negotiated Rate</span>
+                      <span className="text-sm font-black text-slate-800">₹{hotelWizardData.vendorRate.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Selling Rate / Budget</span>
+                      <input
+                        type="number"
+                        value={hotelWizardData.sellingRate}
+                        onChange={(e) => setHotelWizardData(prev => ({ ...prev, sellingRate: Number(e.target.value) }))}
+                        className="w-full h-7 text-xs font-bold border border-slate-200 rounded px-2 bg-white mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Remarks / Special Instructions</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Early check-in requested"
+                      value={hotelWizardData.remarks}
+                      onChange={(e) => setHotelWizardData(prev => ({ ...prev, remarks: e.target.value }))}
+                      className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+              {hotelWizardStep > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setHotelWizardStep(prev => (prev - 1) as any)}
+                  className="h-8 px-4 text-xs font-bold border border-slate-200 rounded-[4px] text-slate-600 hover:bg-slate-50"
+                >
+                  ← Back
+                </button>
+              ) : <div />}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddHotelWizardOpen(false)}
+                  className="h-8 px-4 text-xs font-bold border border-slate-200 rounded-[4px] text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                {hotelWizardStep < 4 ? (
+                  <button
+                    type="button"
+                    onClick={() => setHotelWizardStep(prev => (prev + 1) as any)}
+                    className="h-8 px-4 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] shadow-xs"
+                  >
+                    Next Step →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.success(`Assigned ${hotelWizardData.hotelName} via ${hotelWizardData.vendorName}!`);
+                      setIsAddHotelWizardOpen(false);
+                    }}
+                    className="h-8 px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] shadow-xs flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Save Stay Assignment
+                  </button>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Hotel Details Right Drawer Modal */}
+        <Dialog open={!!selectedStayForDrawer} onOpenChange={() => setSelectedStayForDrawer(null)}>
+          <DialogContent className="max-w-lg bg-white p-6 rounded-[12px] shadow-2xl border border-slate-200 overflow-hidden fixed right-4 top-4 bottom-4 h-[calc(100vh-2rem)] flex flex-col justify-between">
+            <div className="overflow-y-auto pr-1 flex-1 space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-[#F97316] tracking-wider block">{selectedStayForDrawer?.day} • {selectedStayForDrawer?.destCity}</span>
+                  <h3 className="text-lg font-black text-slate-800 mt-0.5">{selectedStayForDrawer?.hotel}</h3>
+                  <p className="text-xs font-semibold text-slate-500 mt-0.5">Supplied by {selectedStayForDrawer?.vendor}</p>
+                </div>
+                <span className="text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-1 rounded-full uppercase">
+                  {selectedStayForDrawer?.status || "Hotel Confirmed"}
+                </span>
+              </div>
+
+              {/* Section 1: Hotel Information */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-2 text-xs">
+                <p className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider text-slate-400">Hotel Information</p>
+                <div className="grid grid-cols-2 gap-2 text-slate-700">
+                  <p><b>Vendor:</b> {selectedStayForDrawer?.vendor}</p>
+                  <p><b>Contact Person:</b> Rajesh Sharma</p>
+                  <p><b>Phone:</b> +91 98765 43210</p>
+                  <p><b>GSTIN:</b> 02AAACR2345K1Z0</p>
+                </div>
+              </div>
+
+              {/* Section 2: Room Allocation */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2 text-xs">
+                <p className="font-extrabold text-[11px] uppercase tracking-wider text-slate-400">Room Allocation</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {(selectedStayForDrawer?.allocations || []).map((alloc: any, i: number) => (
+                    <span key={i} className="text-xs font-bold px-2.5 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                      {alloc.text}
+                    </span>
+                  ))}
+                  <span className="text-xs font-bold text-slate-500 ml-auto">{selectedStayForDrawer?.totalPaxText}</span>
+                </div>
+              </div>
+
+              {/* Section 3: Voucher Controls */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2 text-xs">
+                <p className="font-extrabold text-[11px] uppercase tracking-wider text-slate-400">Voucher & Documents</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toast.success("Downloading signed hotel voucher...")}
+                    className="flex-1 h-8 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded flex items-center justify-center gap-1.5 text-xs shadow-xxs"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-400" /> Download Voucher
+                  </button>
+                  <button
+                    onClick={() => toast.success("Voucher file uploaded successfully!")}
+                    className="flex-1 h-8 bg-[#FFF7ED] border border-[#F97316] text-[#F97316] hover:bg-[#FFEEDE] font-bold rounded flex items-center justify-center gap-1.5 text-xs shadow-xxs"
+                  >
+                    <Upload className="w-3.5 h-3.5" /> Upload Signed Voucher
+                  </button>
+                </div>
+              </div>
+
+              {/* Section 4: Payment Breakdown */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2 text-xs">
+                <p className="font-extrabold text-[11px] uppercase tracking-wider text-slate-400">Payment Breakdown</p>
+                <div className="flex justify-between font-bold text-slate-700">
+                  <span>Vendor Agreed Rate:</span>
+                  <span>₹{selectedStayForDrawer?.amt || '18,400'}</span>
+                </div>
+                <div className="flex justify-between font-bold text-emerald-600">
+                  <span>Advance Paid:</span>
+                  <span>₹9,200</span>
+                </div>
+                <div className="flex justify-between font-black text-rose-600 border-t border-slate-100 pt-1.5">
+                  <span>Remaining Balance:</span>
+                  <span>₹9,200</span>
+                </div>
+              </div>
+
+              {/* Section 5: Status Timeline (9-stage workflow) */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-3">
+                <p className="font-extrabold text-[11px] uppercase tracking-wider text-slate-400">Workflow Timeline</p>
+                <div className="space-y-2">
+                  {[
+                    { step: "Draft", completed: true, time: "01 Aug, 10:00 AM" },
+                    { step: "Rate Finalized", completed: true, time: "01 Aug, 11:45 AM" },
+                    { step: "Voucher Sent", completed: true, time: "02 Aug, 02:30 PM" },
+                    { step: "Hotel Confirmed", completed: true, time: "02 Aug, 04:30 PM" },
+                    { step: "Checked In", completed: false },
+                    { step: "Checked Out", completed: false },
+                    { step: "Invoice Received", completed: false },
+                    { step: "Paid", completed: false },
+                    { step: "Closed", completed: false }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black",
+                          item.completed ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"
+                        )}>
+                          {item.completed ? "✓" : idx + 1}
+                        </div>
+                        <span className={cn("font-bold", item.completed ? "text-slate-800" : "text-slate-400")}>
+                          {item.step}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-semibold">{item.time || "Pending"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3 flex justify-between items-center mt-3">
+              <span className="text-[11px] font-bold text-slate-400">Stay ID: {selectedStayForDrawer?.id || "STAY-01"}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedStayForDrawer(null)}
+                className="h-8 px-5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded shadow-xs"
+              >
+                Close Drawer
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* ──────────────────────── HOTELS ──────────────────────── */}
         {activeTab === "hotels" && (
           <div className="space-y-4">
@@ -5048,8 +5465,11 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                     <p className="text-[11px] text-slate-500 mt-0.5">Manage hotels and stay arrangements for each day</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => toast.info("View Timeline")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
-                      <Sliders className="w-3.5 h-3.5 text-slate-400" /> View as Timeline
+                    <button onClick={() => setHotelViewMode(hotelViewMode === "card" ? "table" : "card")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
+                      <Sliders className="w-3.5 h-3.5 text-slate-400" /> {hotelViewMode === "card" ? "Table View" : "Card View"}
+                    </button>
+                    <button onClick={() => { setHotelWizardStep(1); setIsAddHotelWizardOpen(true); }} className="text-[11px] font-bold border border-[#F97316] rounded-[4px] px-3.5 py-1.5 bg-[#F97316] hover:bg-[#E05E00] text-white flex items-center gap-1.5 shadow-xs">
+                      <Plus className="w-3.5 h-3.5" /> Add Hotel
                     </button>
                     <button onClick={() => toast.info("Download")} className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs">
                       <Download className="w-3.5 h-3.5 text-slate-400" /> Download
@@ -5124,14 +5544,73 @@ const [sharingPref, setSharingPref] = useState<string>("3");
               </button>
             </div>
 
-            {/* Hotels Table */}
+            {/* Hotels Table or Card View */}
+            {hotelViewMode === "card" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {computedHotels.map((row, idx) => (
+                  <div key={row.id || idx} className="bg-white border border-[#E2E8F0] rounded-[10px] p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
+                        <span className="text-[11px] font-black text-[#F97316] uppercase tracking-wider">{row.day} • {row.destCity}</span>
+                        <span className="text-[9px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-150 px-2 py-0.5 rounded-full uppercase">{row.status}</span>
+                      </div>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                            <MapPin className="w-4 h-4 text-slate-400 shrink-0" /> {row.hotel}
+                            <span className="text-amber-400 text-xs font-normal">★★★★</span>
+                          </h3>
+                          <p className="text-[11px] text-slate-500 font-semibold mt-1 flex items-center gap-1.5">
+                            <span className="text-slate-400">Vendor:</span> <span className="text-slate-700 font-bold">{row.vendor}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50 border border-slate-100 rounded-lg p-2.5 mt-3 text-[11px]">
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 block uppercase">Check In</span>
+                          <span className="font-extrabold text-slate-700">{row.date}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 block uppercase">Check Out</span>
+                          <span className="font-extrabold text-slate-700">+1 Day</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                        {(row.allocations || []).map((alloc: any, aIdx: number) => (
+                          <span key={aIdx} className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                            {alloc.text}
+                          </span>
+                        ))}
+                        <span className="text-[10px] font-bold text-slate-500 ml-auto">{row.totalPaxText}</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-100 pt-3 mt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">Voucher ✓</span>
+                        <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Invoice Pending</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-slate-800">₹{row.amt || '18,400'}</span>
+                        <button
+                          onClick={() => setSelectedStayForDrawer(row)}
+                          className="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded transition-colors"
+                        >
+                          View
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                   <tr className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">
                     <th className="p-3 border-r border-slate-100">DAY</th>
                     <th className="p-3 border-r border-slate-100">DESTINATION</th>
-                    <th className="p-3 border-r border-slate-100">HOTEL & VENDOR</th>
+                    <th className="p-3 border-r border-slate-100">HOTEL</th>
+                    <th className="p-3 border-r border-slate-100">VENDOR</th>
                     <th className="p-3 border-r border-slate-100">BOOKED ROOMS</th>
                     <th className="p-3 border-r border-slate-100 text-center">NIGHTS</th>
                     <th className="p-3 border-r border-slate-100">STATUS</th>
@@ -5164,12 +5643,12 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                           </td>
                           <td className="p-3 border-r border-slate-100">
                             <p className="font-bold text-slate-855">{row.hotel}</p>
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
-                                <User className="w-3 h-3" /> {row.vendor}
-                              </span>
-                              <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-wider">CONFIRMED</span>
-                            </div>
+                            <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-wider inline-block mt-1">CONFIRMED</span>
+                          </td>
+                          <td className="p-3 border-r border-slate-100">
+                            <span className="text-[10px] text-slate-600 font-bold flex items-center gap-1">
+                              <User className="w-3 h-3 text-slate-400" /> {row.vendor}
+                            </span>
                           </td>
                           <td className="p-3 border-r border-slate-100">
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -5303,6 +5782,7 @@ const [sharingPref, setSharingPref] = useState<string>("3");
                 </tbody>
               </table>
             </div>
+            )}
 
             {/* Bottom calculation status */}
             <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold">

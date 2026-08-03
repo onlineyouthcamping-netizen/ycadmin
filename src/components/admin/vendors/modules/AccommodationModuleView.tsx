@@ -76,6 +76,47 @@ export function AccommodationModuleView({
         </Button>
       </div>
 
+      {/* Vendor Performance Summary Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-5 rounded-xl border border-slate-700 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black bg-[#F97316] text-white px-2 py-0.5 rounded uppercase tracking-wider">Featured Partner Stats</span>
+            <span className="text-sm font-black text-emerald-400 flex items-center gap-1">
+              <ShieldCheck className="w-4 h-4" /> Mountain Hospitality
+            </span>
+            <span className="text-amber-400 text-xs font-normal">★★★★☆ (4.7)</span>
+          </div>
+          <p className="text-xs text-slate-300 font-semibold mt-1">
+            Top performing accommodation vendor across Himachal & Spiti departures.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs border-t md:border-t-0 border-slate-700 pt-3 md:pt-0 w-full md:w-auto">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Hotels</span>
+            <span className="font-extrabold text-white text-sm">18</span>
+          </div>
+          <div className="h-6 w-px bg-slate-700 hidden sm:block" />
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Trips Served</span>
+            <span className="font-extrabold text-white text-sm">72</span>
+          </div>
+          <div className="h-6 w-px bg-slate-700 hidden sm:block" />
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Outstanding</span>
+            <span className="font-extrabold text-amber-400 text-sm">₹2.1L</span>
+          </div>
+          <div className="h-6 w-px bg-slate-700 hidden sm:block" />
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Last Used</span>
+            <span className="font-extrabold text-slate-200 text-sm">Yesterday</span>
+          </div>
+          <div className="h-6 w-px bg-slate-700 hidden sm:block" />
+          <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-2.5 py-1 rounded font-black text-[11px]">
+            Preferred Vendor ✓
+          </div>
+        </div>
+      </div>
+
       {/* Accommodation-Specific KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((k, i) => {

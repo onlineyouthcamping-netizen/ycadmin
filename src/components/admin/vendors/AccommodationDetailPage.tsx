@@ -71,7 +71,9 @@ export function AccommodationDetailPage({ vendor: initialVendor, onBack, onUpdat
   ]);
 
   const [contracts, setContracts] = useState<any[]>(vendor.contracts || [
-    { id: "ctr1", title: "Seasonal Master Operations Agreement 2026", agreementType: "Annual Contract", startDate: "2026-01-01", expiryDate: "2026-12-31", renewalReminderDate: "2026-11-30", commissionPercent: 12.5, cancellationPolicy: "Free cancellation 7 days prior to check-in. 50% charge thereafter.", status: "ACTIVE", fileUrl: "#" }
+    { id: "ctr1", title: "Direct Hotel Property Agreement 2026", vendorName: "Direct Hotel (Property Manager)", agreementType: "Direct Supply", startDate: "2026-01-01", expiryDate: "2026-12-31", renewalReminderDate: "2026-11-30", commissionPercent: 0, cancellationPolicy: "Free cancellation 7 days prior to check-in. 50% charge thereafter.", status: "ACTIVE", fileUrl: "#" },
+    { id: "ctr2", title: "Mountain Hospitality Preferred B2B Supply Contract", vendorName: "Mountain Hospitality Pvt Ltd", agreementType: "B2B Contract", startDate: "2026-03-01", expiryDate: "2027-02-28", renewalReminderDate: "2027-01-31", commissionPercent: 10, cancellationPolicy: "Flexible cancellation up to 48 hours prior.", status: "ACTIVE", fileUrl: "#" },
+    { id: "ctr3", title: "Spiti Valley Escapes Seasonal Contract", vendorName: "Spiti Valley Escapes", agreementType: "Wholesale Rate", startDate: "2026-04-01", expiryDate: "2026-10-31", renewalReminderDate: "2026-09-30", commissionPercent: 8, cancellationPolicy: "Non-refundable within 7 days of trip.", status: "ACTIVE", fileUrl: "#" }
   ]);
 
   const [gallery, setGallery] = useState<any[]>(vendor.photos || [
@@ -839,6 +841,11 @@ export function AccommodationDetailPage({ vendor: initialVendor, onBack, onUpdat
                         <div>
                           <span className="font-extrabold text-slate-800 text-sm block">{ctr.title}</span>
                           <span className="text-[10px] font-bold text-slate-500 uppercase">{ctr.agreementType}</span>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3" /> Supplier Contract: {ctr.vendorName || "Direct Hotel Property Manager"}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded border border-emerald-200">
