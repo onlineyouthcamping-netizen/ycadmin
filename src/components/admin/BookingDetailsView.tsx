@@ -3263,12 +3263,6 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                               <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-700">- ₹ {Math.round(discountTotal).toLocaleString('en-IN')}</td>
                             </tr>
                           )}
-                          {gstDiscountTotal > 0 && (
-                            <tr className="bg-slate-50/60">
-                              <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider">GST Discount</td>
-                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-600">- ₹ {Math.round(gstDiscountTotal).toLocaleString('en-IN')}</td>
-                            </tr>
-                          )}
                         </tbody>
                         <tfoot>
                           <tr className="bg-slate-900 text-white">
