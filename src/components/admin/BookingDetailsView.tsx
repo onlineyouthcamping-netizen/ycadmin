@@ -1385,7 +1385,15 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       <div className="border-b border-zinc-200 px-4 py-3 md:px-6 md:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6 bg-white sticky top-0 z-30 font-sans">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto justify-between sm:justify-start">
           <div className="flex items-center gap-3 min-w-0">
-            <button onClick={onBack} className="text-slate-400 hover:text-slate-900 text-sm font-bold pr-2 border-r border-slate-200">← Back</button>
+            <button 
+              onClick={() => {
+                if (onBack) onBack();
+                else navigate('/admin/bookings');
+              }} 
+              className="flex items-center gap-1 text-slate-500 hover:text-slate-900 text-xs font-bold pr-3 border-r border-slate-200 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back
+            </button>
             <div className="flex flex-col">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Booking ID</span>
               <span className="font-bold text-slate-800 text-xs sm:text-sm font-mono">{booking.bookingId}</span>

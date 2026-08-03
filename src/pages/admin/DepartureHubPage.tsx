@@ -3229,7 +3229,15 @@ const [sharingPref, setSharingPref] = useState<string>("3");
         {/* Title row */}
         <div className="px-4 sm:px-6 pt-2 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[4px] bg-[#FFF0E6] flex items-center justify-center text-[#F97316]">
+            <button
+              onClick={() => navigate("/admin/operations")}
+              className="flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1.5 rounded-[4px] transition-colors cursor-pointer shrink-0"
+              title="Back to Departures Hub"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+              <span>Back</span>
+            </button>
+            <div className="w-8 h-8 rounded-[4px] bg-[#FFF0E6] flex items-center justify-center text-[#F97316] shrink-0">
               <Compass className="w-5 h-5" />
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
