@@ -29,12 +29,10 @@ import { toast } from "sonner";
 import TripVendorsPanel from "@/components/admin/TripVendorsPanel";
 import { cn } from "@/lib/utils";
 
-let cachedTripsList: Trip[] | null = null;
-
 export default function TripsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [trips, setTrips] = useState<Trip[]>(cachedTripsList || []);
-  const [loading, setLoading] = useState(!cachedTripsList);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editing, setEditing] = useState<Trip | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -74,15 +72,14 @@ export default function TripsPage() {
   }, [editParam, isNewParam]);
 
   const load = useCallback(async () => {
-    if (!cachedTripsList) setLoading(true);
+    setLoading(true);
     try {
       const data = await tripsService.getAll();
       const arr = Array.isArray(data) ? data : [];
-      cachedTripsList = arr;
       setTrips(arr);
     } catch (err) {
       console.error(err);
-      if (!cachedTripsList) setTrips([]);
+      setTrips([]);
     } finally {
       setLoading(false);
     }
