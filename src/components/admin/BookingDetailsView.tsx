@@ -371,10 +371,14 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
   const { previewItems, previewSubtotal, previewOtherDiscount, previewBasePrice, previewGstDiscount, previewGstAmount, previewTotalWithGST, previewFinalTotal } = useMemo(() => {
     const items = [...bookingItems];
     if (customDescription && customRate) {
+      const parsedRate = parseFloat(customRate) || 0;
+      const isDescDiscount = customDescription.toLowerCase().includes("discount") || customDescription.toLowerCase().includes("coupon") || customDescription.toLowerCase().includes("off");
+      const finalRate = (isDescDiscount && parsedRate > 0) ? -parsedRate : parsedRate;
       items.push({
         name: customDescription,
-        rate: parseFloat(customRate) || 0,
-        qty: parseInt(customQty) || 1
+        rate: finalRate,
+        qty: parseInt(customQty) || 1,
+        category: isDescDiscount ? 'discounts' : undefined
       });
     }
     
@@ -2797,6 +2801,28 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                             placeholder="Add custom item description (e.g. GST Discount)"
                             value={customDescription}
                             onChange={e => setCustomDescription(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (!customDescription.trim() || !customRate) return toast.error("Enter item description and rate");
+                                const parsedRate = parseFloat(customRate) || 0;
+                                const isDescDiscount = customDescription.toLowerCase().includes("discount") || customDescription.toLowerCase().includes("coupon") || customDescription.toLowerCase().includes("off");
+                                const finalRate = (isDescDiscount && parsedRate > 0) ? -parsedRate : parsedRate;
+                                const newItem = {
+                                  id: `custom_${Date.now()}`,
+                                  name: customDescription.trim(),
+                                  rate: finalRate,
+                                  qty: parseInt(customQty) || 1,
+                                  category: isDescDiscount ? "discounts" : undefined,
+                                  isCustom: true
+                                };
+                                setBookingItems(prev => [...prev, newItem]);
+                                setCustomDescription("");
+                                setCustomRate("");
+                                setCustomQty("1");
+                                toast.success(`Added ${newItem.name} (${finalRate < 0 ? `-₹${Math.abs(finalRate)}` : `₹${finalRate}`})!`);
+                              }
+                            }}
                             className="h-8.5 text-xs w-full border-slate-200 placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-slate-450"
                           />
                           {customDescription && (
@@ -2817,6 +2843,28 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                               type="number"
                               value={customRate}
                               onChange={e => setCustomRate(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  if (!customDescription.trim() || !customRate) return toast.error("Enter item description and rate");
+                                  const parsedRate = parseFloat(customRate) || 0;
+                                  const isDescDiscount = customDescription.toLowerCase().includes("discount") || customDescription.toLowerCase().includes("coupon") || customDescription.toLowerCase().includes("off");
+                                  const finalRate = (isDescDiscount && parsedRate > 0) ? -parsedRate : parsedRate;
+                                  const newItem = {
+                                    id: `custom_${Date.now()}`,
+                                    name: customDescription.trim(),
+                                    rate: finalRate,
+                                    qty: parseInt(customQty) || 1,
+                                    category: isDescDiscount ? "discounts" : undefined,
+                                    isCustom: true
+                                  };
+                                  setBookingItems(prev => [...prev, newItem]);
+                                  setCustomDescription("");
+                                  setCustomRate("");
+                                  setCustomQty("1");
+                                  toast.success(`Added ${newItem.name} (${finalRate < 0 ? `-₹${Math.abs(finalRate)}` : `₹${finalRate}`})!`);
+                                }
+                              }}
                               className="h-8.5 text-xs w-24 font-mono border-slate-200 text-slate-800 focus-visible:ring-1 focus-visible:ring-slate-450"
                             />
                           </div>
@@ -2830,7 +2878,41 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                           />
                         </td>
                         <td className="px-5 py-4 text-right font-bold font-mono text-[12px] text-slate-800">
-                          ₹ {((parseFloat(customRate) || 0) * (parseInt(customQty) || 1)).toLocaleString('en-IN')}
+                          {(() => {
+                            const parsedRate = parseFloat(customRate) || 0;
+                            const isDescDiscount = customDescription.toLowerCase().includes("discount") || customDescription.toLowerCase().includes("coupon") || customDescription.toLowerCase().includes("off");
+                            const finalRate = (isDescDiscount && parsedRate > 0) ? -parsedRate : parsedRate;
+                            const totalAmt = finalRate * (parseInt(customQty) || 1);
+                            return (totalAmt < 0 ? "- " : "") + "₹ " + Math.abs(totalAmt).toLocaleString('en-IN');
+                          })()}
+                        </td>
+                        <td className="px-3 py-4 text-center">
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              if (!customDescription.trim() || !customRate) return toast.error("Enter item description and rate");
+                              const parsedRate = parseFloat(customRate) || 0;
+                              const isDescDiscount = customDescription.toLowerCase().includes("discount") || customDescription.toLowerCase().includes("coupon") || customDescription.toLowerCase().includes("off");
+                              const finalRate = (isDescDiscount && parsedRate > 0) ? -parsedRate : parsedRate;
+                              const newItem = {
+                                id: `custom_${Date.now()}`,
+                                name: customDescription.trim(),
+                                rate: finalRate,
+                                qty: parseInt(customQty) || 1,
+                                category: isDescDiscount ? "discounts" : undefined,
+                                isCustom: true
+                              };
+                              setBookingItems(prev => [...prev, newItem]);
+                              setCustomDescription("");
+                              setCustomRate("");
+                              setCustomQty("1");
+                              toast.success(`Added ${newItem.name} (${finalRate < 0 ? `-₹${Math.abs(finalRate)}` : `₹${finalRate}`})!`);
+                            }}
+                            className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[11px] font-bold transition-all shadow-xs flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                            title="Add Item"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add
+                          </button>
                         </td>
                       </tr>
 
