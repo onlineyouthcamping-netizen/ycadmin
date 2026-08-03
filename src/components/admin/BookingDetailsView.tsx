@@ -2922,8 +2922,13 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
                       {/* Live Breakdown in Edit Mode */}
                       <tr className="bg-slate-50/80 border-t border-slate-200">
-                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Subtotal Preview</td>
-                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Gross Base Price</td>
+                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td></td>
+                      </tr>
+                      <tr className="bg-slate-50/80">
+                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">GST ({Math.round(gstRate * 100)}%) Amount</td>
+                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewGstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td></td>
                       </tr>
                       {previewOtherDiscount > 0 && (
@@ -2937,16 +2942,6 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                           <td></td>
                         </tr>
                       )}
-                      <tr className="bg-slate-50/80 border-t border-slate-200">
-                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">Base Price Preview (After Discount)</td>
-                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td></td>
-                      </tr>
-                      <tr className="bg-slate-50/80">
-                        <td colSpan={3} className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider">GST ({Math.round(gstRate * 100)}%) Preview</td>
-                        <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">₹ {previewGstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td></td>
-                      </tr>
                       {previewGstDiscount > 0 && (
                         <tr className="bg-rose-50/80">
                           <td colSpan={3} className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider">GST Discount</td>
