@@ -15,6 +15,7 @@ import {
   Save,
   Check,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ export interface DepartureActivityItem {
 interface DayWiseCardProps {
   activity: DepartureActivityItem;
   onUpdateActivity: (id: string, updated: Partial<DepartureActivityItem>) => Promise<void> | void;
+  onDeleteActivity?: (id: string) => Promise<void> | void;
   availableVendors?: {
     vendorId: string;
     vendorName: string;
@@ -68,12 +70,16 @@ const SIX_OPERATIONAL_STATUSES = [
 export default function DayWiseActivityAccordionCard({
   activity,
   onUpdateActivity,
+  onDeleteActivity,
   availableVendors,
 }: DayWiseCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Editable local state
+  const [activityName, setActivityName] = useState(activity.name);
+  const [category, setCategory] = useState(activity.category || "Adventure");
+  const [duration, setDuration] = useState("2 Hours");
   const [status, setStatus] = useState<DepartureActivityItem["status"]>(activity.status || "CONFIRMED");
   const [guideName, setGuideName] = useState(activity.guideName || "Neel Patel");
   const [vehicleName, setVehicleName] = useState(activity.vehicleName || "Traveller 2");
@@ -277,28 +283,43 @@ export default function DayWiseActivityAccordionCard({
           </div>
 
           {/* SECTION 2: BASIC INFORMATION & OPERATIONAL ASSIGNMENTS */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-white rounded-xl border border-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white rounded-xl border border-slate-200">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">
-                Assigned Guide
+                Activity Name
               </label>
               <input
                 type="text"
-                value={guideName}
-                onChange={(e) => setGuideName(e.target.value)}
-                placeholder="e.g. Neel Patel"
-                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                value={activityName}
+                onChange={(e) => setActivityName(e.target.value)}
+                className="w-full text-sm font-bold text-slate-900 px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">
-                Assigned Vehicle / Bus
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              >
+                <option value="Adventure">Adventure</option>
+                <option value="Sightseeing">Sightseeing</option>
+                <option value="Transit">Transit</option>
+                <option value="Meal">Meal</option>
+                <option value="Entertainment">Entertainment</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">
+                Duration
               </label>
               <input
                 type="text"
-                value={vehicleName}
-                onChange={(e) => setVehicleName(e.target.value)}
-                placeholder="e.g. Traveller 2"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                placeholder="e.g. 2 Hours"
                 className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
             </div>
@@ -323,6 +344,30 @@ export default function DayWiseActivityAccordionCard({
               </div>
             </div>
             <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">
+                Assigned Guide
+              </label>
+              <input
+                type="text"
+                value={guideName}
+                onChange={(e) => setGuideName(e.target.value)}
+                placeholder="e.g. Neel Patel"
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">
+                Assigned Vehicle / Bus
+              </label>
+              <input
+                type="text"
+                value={vehicleName}
+                onChange={(e) => setVehicleName(e.target.value)}
+                placeholder="e.g. Traveller 2"
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              />
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-slate-500 mb-1">
                 Meal Plan Inclusion
               </label>
@@ -511,23 +556,36 @@ export default function DayWiseActivityAccordionCard({
               />
             </div>
 
-            <Button
-              onClick={handleSaveInline}
-              disabled={saving}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 h-10 shrink-0 self-end sm:self-center"
-            >
-              {saving ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </>
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              {onDeleteActivity && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onDeleteActivity(activity.id)}
+                  className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 font-semibold px-4 h-10"
+                >
+                  <Trash2 className="w-4 h-4 mr-1.5" />
+                  Delete
+                </Button>
               )}
-            </Button>
+              <Button
+                onClick={handleSaveInline}
+                disabled={saving}
+                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 h-10"
+              >
+                {saving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}

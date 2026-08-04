@@ -12,6 +12,8 @@ import {
   ChevronLeft,
   Star,
   CheckCircle2,
+  Plus,
+  PlusCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -89,12 +91,29 @@ export default function Activity5StepWizardModal({
     "pax-4",
   ]);
 
-  const defaultActivities = activitiesMasterList || [
-    { id: "ACT-1", name: "River Rafting", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 700 },
-    { id: "ACT-2", name: "Paragliding", category: "ADVENTURE", defaultCapacity: 30, defaultCost: 2000 },
-    { id: "ACT-3", name: "ATV Ride", category: "ADVENTURE", defaultCapacity: 20, defaultCost: 900 },
-    { id: "ACT-4", name: "Solang Valley Visit", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 400 },
-    { id: "ACT-5", name: "DJ Night & Bonfire", category: "ENTERTAINMENT", defaultCapacity: 60, defaultCost: 500 },
+  // + Create New Activity local state
+  const [customActivities, setCustomActivities] = useState<any[]>([]);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newActName, setNewActName] = useState("");
+  const [newActCategory, setNewActCategory] = useState("ADVENTURE");
+  const [newActCapacity, setNewActCapacity] = useState(40);
+  const [newActCost, setNewActCost] = useState(500);
+
+  const defaultActivities = [
+    ...customActivities,
+    ...(activitiesMasterList || [
+      { id: "ACT-1", name: "River Rafting", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 700 },
+      { id: "ACT-2", name: "Paragliding", category: "ADVENTURE", defaultCapacity: 30, defaultCost: 2000 },
+      { id: "ACT-3", name: "ATV Ride", category: "ADVENTURE", defaultCapacity: 20, defaultCost: 900 },
+      { id: "ACT-4", name: "Solang Valley Visit", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 400 },
+      { id: "ACT-5", name: "DJ Night & Bonfire", category: "ENTERTAINMENT", defaultCapacity: 60, defaultCost: 500 },
+      { id: "ACT-6", name: "Golden Temple Visit", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 0 },
+      { id: "ACT-7", name: "Wagah Border Excursion", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 300 },
+      { id: "ACT-8", name: "Manikaran Sahib Visit", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 200 },
+      { id: "ACT-9", name: "Chalal Trek & Cafe Walk", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 400 },
+      { id: "ACT-10", name: "Bijli Mahadev Day Trek", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 600 },
+      { id: "ACT-11", name: "Jogini Waterfall Trek", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 350 },
+    ]),
   ];
 
   const defaultVendors = vendorsList || [
@@ -117,6 +136,27 @@ export default function Activity5StepWizardModal({
   const handleSelectActivity = (act: any) => {
     setSelectedActivity(act);
     setVendorCost(act.defaultCost);
+  };
+
+  const handleCreateNewActivity = () => {
+    if (!newActName.trim()) {
+      toast.error("Please enter activity name");
+      return;
+    }
+    const createdAct = {
+      id: `ACT-CUST-${Date.now()}`,
+      name: newActName.trim(),
+      category: newActCategory,
+      defaultCapacity: Number(newActCapacity) || 40,
+      defaultCost: Number(newActCost) || 0,
+    };
+    setCustomActivities((prev) => [createdAct, ...prev]);
+    setSelectedActivity(createdAct);
+    setVendorCost(createdAct.defaultCost);
+    setIsCreatingNew(false);
+    setNewActName("");
+    toast.success(`"${createdAct.name}" created in Activity Master & selected!`);
+    setCurrentStep(3);
   };
 
   const handleSelectVendor = (vnd: any) => {
@@ -275,10 +315,104 @@ export default function Activity5StepWizardModal({
           {/* STEP 2: SELECT ACTIVITY (FROM 0-COUPLED MASTER) */}
           {currentStep === 2 && (
             <div className="space-y-4">
-              <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                Choose Activity from Canonical Master Directory
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                  Choose Activity from Canonical Master Directory
+                </h4>
+                {!isCreatingNew && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setIsCreatingNew(true)}
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    + Create New Activity
+                  </Button>
+                )}
+              </div>
+
+              {isCreatingNew ? (
+                <div className="p-4 bg-orange-50/50 border-2 border-orange-200 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-orange-900 uppercase">
+                      Create Custom Activity in Master Directory
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingNew(false)}
+                      className="text-xs text-slate-500 hover:text-slate-800 underline font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Activity Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newActName}
+                        onChange={(e) => setNewActName(e.target.value)}
+                        placeholder="e.g. ATV Ride, Zipline, Snow Scooter"
+                        className="w-full text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={newActCategory}
+                        onChange={(e) => setNewActCategory(e.target.value)}
+                        className="w-full text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                      >
+                        <option value="ADVENTURE">ADVENTURE</option>
+                        <option value="SIGHTSEEING">SIGHTSEEING</option>
+                        <option value="TRANSIT">TRANSIT</option>
+                        <option value="MEAL">MEAL</option>
+                        <option value="ENTERTAINMENT">ENTERTAINMENT</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Default Capacity
+                      </label>
+                      <input
+                        type="number"
+                        value={newActCapacity}
+                        onChange={(e) => setNewActCapacity(Number(e.target.value) || 0)}
+                        className="w-full text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Default Vendor Cost (₹)
+                      </label>
+                      <input
+                        type="number"
+                        value={newActCost}
+                        onChange={(e) => setNewActCost(Number(e.target.value) || 0)}
+                        className="w-full text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreateNewActivity}
+                      className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8 px-4"
+                    >
+                      <Check className="w-3.5 h-3.5 mr-1" />
+                      Create & Select Activity
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1">
                 {defaultActivities.map((act) => {
                   const isSelected = selectedActivity?.id === act.id;
                   return (
