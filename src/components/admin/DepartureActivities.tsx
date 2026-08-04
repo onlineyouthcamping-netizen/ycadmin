@@ -356,7 +356,8 @@ export default function DepartureActivities({
                   ))}
                 </div>
               </div>
-            ))}
+            );
+          })}
 
         {Object.keys(groupedByDay).length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
