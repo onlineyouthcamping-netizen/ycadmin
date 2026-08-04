@@ -121,7 +121,10 @@ export function normalizePassenger(booking?: any, targetInput?: any, index: numb
 
   // Extract raw properties
   const id = pObj.id || pObj.passengerId || (index === 0 ? 'primary' : `p_${index}`);
-  const name = pObj.name || pObj.fullName || pObj.passengerName || booking?.fullName || booking?.name || 'Traveler';
+  const firstName = pObj.firstName || '';
+  const lastName = pObj.lastName || '';
+  const firstLast = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : null;
+  const name = pObj.name || pObj.fullName || pObj.passengerName || firstLast || booking?.fullName || booking?.name || 'Traveler';
   const phone = pObj.phone || pObj.mobile || booking?.mobile || booking?.phone || '';
   const email = pObj.email || booking?.email || '';
   const roomSharing = pObj.roomSharing || pObj.roomType || bookingDetails.roomSharing || booking?.roomType || 'Double Sharing';

@@ -70,7 +70,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
     age: "",
     phone: "",
     email: "",
-    foodPreference: "Normal Food"
+    foodPreference: "Normal Food",
+    roomSharing: "Triple"
   });
   
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
@@ -1127,7 +1128,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       age: p.age?.toString() || "",
       phone: p.phone || "",
       email: p.email !== "Not specified" ? p.email : "",
-      foodPreference: p.foodPreference || "Normal Food"
+      foodPreference: p.foodPreference || "Normal Food",
+      roomSharing: p.roomSharing || booking.roomType || booking.roomSharing || "Triple"
     });
     setShowAddPassenger(true);
   };
@@ -1154,7 +1156,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
-        foodPreference: newPassenger.foodPreference || "Normal Food"
+        foodPreference: newPassenger.foodPreference || "Normal Food",
+        roomSharing: newPassenger.roomSharing || "Triple"
       } : p);
       toast.success("Passenger updated");
     } else {
@@ -1167,7 +1170,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
         age: newPassenger.age || "N/A",
         type: `${booking.trainClass} Train`,
         status: 'Form complete',
-        foodPreference: newPassenger.foodPreference || "Normal Food"
+        foodPreference: newPassenger.foodPreference || "Normal Food",
+        roomSharing: newPassenger.roomSharing || "Triple"
       };
       updatedPassengers = [...passengers, passenger];
       toast.success(`${newPassenger.firstName} added to booking`);
@@ -1192,7 +1196,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       toast.error("Failed to sync passengers and booking items with backend");
     }
 
-    setNewPassenger({ salutation: "Mr.", firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food" });
+    setNewPassenger({ salutation: "Mr.", firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food", roomSharing: "Triple" });
     setEditingPassenger(null);
     if (!keepOpen) setShowAddPassenger(false);
   };
@@ -1885,7 +1889,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                     <button 
                       onClick={() => {
                         setEditingPassenger(null);
-                        setNewPassenger({ firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food", salutation: "Mr." });
+                        setNewPassenger({ firstName: "", lastName: "", gender: "Male", age: "", phone: "", email: "", foodPreference: "Normal Food", salutation: "Mr.", roomSharing: booking.roomType || "Triple" });
                         setShowAddPassenger(true);
                       }}
                       className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1"
@@ -1916,6 +1920,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {passengers.map((p, index) => {
+                    const normP = normalizePassenger(booking, p, index);
                     const hasDocs = true;
                     
                     // Room sharing option label helper
@@ -1975,7 +1980,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                       };
                     };
 
-                    const passStatus = getPassengerStatus(p.name);
+                    const passStatus = getPassengerStatus(normP.name);
 
                     return (
                       <tr key={p.id || index}>
@@ -1993,7 +1998,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                                 </button>
                                 <button 
                                   onClick={async () => {
-                                    if (confirm(`Remove passenger ${p.name}?`)) {
+                                    if (confirm(`Remove passenger ${normP.name}?`)) {
                                       const updated = passengers.filter(x => x.id !== p.id);
                                       setPassengers(updated);
                                       try {
@@ -2018,21 +2023,16 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                         </td>
                         
                         <td className="px-4 py-3 font-bold text-slate-800">
-                          {p.name || "N/A"}
+                          {normP.name || "N/A"}
                         </td>
-                        {(() => {
-                            const normP = normalizePassenger(booking, p, index);
-                            return (
-                              <>
-                                <td className="px-4 py-3 font-mono font-bold text-slate-800">
-                                  {normP.age !== null ? `${normP.age}y` : "N/A"}
-                                  {normP.dob && <span className="block text-[9px] text-slate-400 font-normal">DOB: {normP.dob}</span>}
-                                </td>
-                                <td className="px-4 py-3 font-medium text-slate-700">{normP.genderFull}</td>
-                              </>
-                            );
-                          })()}
-                        <td className="px-4 py-3 font-mono text-slate-500 truncate max-w-[120px]">{p.email || 'N/A'}</td>
+                        
+                        <td className="px-4 py-3 font-mono font-bold text-slate-800">
+                          {normP.age !== null ? `${normP.age}y` : "N/A"}
+                          {normP.dob && <span className="block text-[9px] text-slate-400 font-normal">DOB: {normP.dob}</span>}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-700">{normP.genderFull}</td>
+                        
+                        <td className="px-4 py-3 font-mono text-slate-500 truncate max-w-[120px]">{normP.email || 'N/A'}</td>
                         
                         {/* Documents */}
                         <td className="px-4 py-3">
@@ -2047,7 +2047,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                             }
 
                             const passengerDocs = ((booking as any).documents || []).filter((d: any) => 
-                              String(d.passengerId) === String(p.id) || (normIdx === 0 && (!d.passengerId || d.passengerId === 'primary'))
+                              String(d.passengerId) === String(p.id) || (index === 0 && (!d.passengerId || d.passengerId === 'primary'))
                             );
 
                             return (
@@ -2103,7 +2103,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
 
                         {/* Room Sharing */}
                         <td className="px-4 py-3 font-medium text-slate-700">
-                          {getRoomSharingLabel(p.roomSharing || p.roomType || booking.roomType)}
+                          {getRoomSharingLabel(normP.roomSharing)}
                         </td>
 
                         {/* Food Preference */}
@@ -3670,6 +3670,17 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
                   <SelectContent>
                     <SelectItem value="Normal Food" className="text-xs">Normal Food</SelectItem>
                     <SelectItem value="Jain Food" className="text-xs">Jain Food</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase text-slate-400">Room Sharing</label>
+                <Select value={newPassenger.roomSharing} onValueChange={v => setNewPassenger({...newPassenger, roomSharing: v})}>
+                  <SelectTrigger className="h-8 text-xs rounded"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Double" className="text-xs">Double Sharing</SelectItem>
+                    <SelectItem value="Triple" className="text-xs">Triple Sharing</SelectItem>
+                    <SelectItem value="Quad" className="text-xs">Quad Sharing</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

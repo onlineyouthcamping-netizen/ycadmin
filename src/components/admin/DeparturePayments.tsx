@@ -128,23 +128,11 @@ export default function DeparturePayments({
   const [addAdjustmentOpen, setAddAdjustmentOpen] = useState(false);
   const [adjustmentForm, setAdjustmentForm] = useState({
     type: "Refund",
-    type: "",
     originalPaymentRef: "",
     amount: "",
     reason: "",
-      totalAmount: 30000,
-      advancePaid: 0,
-      paymentStatus: "Unpaid",
-      passengers: [
-        { name: "Ananya Desai" },
-        { name: "Siddharth Desai" },
-        { name: "Aarav Desai" },
-        { name: "Meera Desai" },
-      ],
-      history: [],
-      expectedNext: { amount: 30000, dueDate: "Overdue — Contact Customer" },
-    },
-  ];
+    status: "PENDING",
+  });
 
   // Fetch API data and merge cleanly with defaults if API is empty
   const fetchData = async () => {
@@ -155,19 +143,6 @@ export default function DeparturePayments({
         api.get("/vendors/directory").catch(() => ({ data: { data: [] } })),
       ]);
 
-      const mergedBookings = clientRes.bookings && clientRes.bookings.length > 0
-        ? clientRes.bookings.map((b: any) => {
-            const bookingReceipts = (clientRes.receipts || []).filter((r: any) => r.bookingId === b.bookingId);
-            return {
-              ...b,
-              history: bookingReceipts.map((r: any) => ({
-                id: r.id,
-                date: r.paymentDate ? r.paymentDate.substring(0, 10) : "N/A",
-                amount: r.amount,
-                method: r.paymentMode,
-                txnId: r.transactionId || "N/A",
-                status: r.status,
-                verifiedBy: r.collectedBy || "System",
       const mergedBookings = clientRes.bookings && clientRes.bookings.length > 0
         ? clientRes.bookings.map((b: any) => {
             const bookingReceipts = (clientRes.receipts || []).filter((r: any) => r.bookingId === b.bookingId);
@@ -872,6 +847,7 @@ export default function DeparturePayments({
                 >
                   View All ({bookings.length})
                 </button>
+              </div>
               <div className="divide-y divide-slate-100">
                 {bookings.length === 0 ? (
                   <div className="py-8 text-center text-xs font-semibold text-slate-400">
@@ -923,6 +899,7 @@ export default function DeparturePayments({
                   className="text-xs font-semibold text-orange-600 hover:underline"
                 >
                   View All ({vendorPayments.length})
+                </button>
               </div>
               <div className="divide-y divide-slate-100">
                 {vendorPayments.length === 0 ? (
@@ -959,7 +936,7 @@ export default function DeparturePayments({
                       </div>
                     </div>
                   </div>
-                ))}
+                )))}
               </div>
             </div>
           </div>
@@ -1029,26 +1006,27 @@ export default function DeparturePayments({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {bookings
-                  .filter((b) => {
-                    const matchSearch =
-                      searchQuery === "" ||
-                      b.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      (b.phone || "").toLowerCase().includes(searchQuery.toLowerCase());
-                    const matchStatus =
-                      clientStatusFilter === "All Status" || b.paymentStatus === clientStatusFilter;
-                    return matchSearch && matchStatus;
-                  });
+                {(() => {
+                  const filteredBookings = bookings
+                    .filter((b) => {
+                      const matchSearch =
+                        searchQuery === "" ||
+                        b.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (b.phone || "").toLowerCase().includes(searchQuery.toLowerCase());
+                      const matchStatus =
+                        clientStatusFilter === "All Status" || b.paymentStatus === clientStatusFilter;
+                      return matchSearch && matchStatus;
+                    });
 
-                return filteredBookings.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-xs font-semibold text-slate-400">
-                      No client bookings or receivables found for this departure.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredBookings.map((b) => {
+                  return filteredBookings.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-xs font-semibold text-slate-400">
+                        No client bookings or receivables found for this departure.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredBookings.map((b) => {
                     const balance = Math.max(0, b.totalAmount - (b.advancePaid || 0));
                     const isExpanded = expandedBookingId === b.bookingId;
                     return (
@@ -1250,7 +1228,9 @@ export default function DeparturePayments({
                         )}
                       </React.Fragment>
                     );
-                  })}
+                })
+              )
+            })()}
               </tbody>
             </table>
           </div>
@@ -1339,8 +1319,8 @@ export default function DeparturePayments({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {vendorPayments
-                  .filter((v) => {
+                {(() => {
+                  const filteredVendors = vendorPayments.filter((v) => {
                     const matchSearch =
                       searchQuery === "" ||
                       v.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1352,223 +1332,225 @@ export default function DeparturePayments({
                     return matchSearch && matchCat && matchStatus;
                   });
 
-                return filteredVendors.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-12 text-center text-xs font-semibold text-slate-400">
-                      No vendor payables recorded yet for this departure.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredVendors.map((v) => {
-                    const balance = Math.max(0, (v.agreedAmount || 0) - (v.advancePaid || 0));
-                    const isExpanded = expandedVendorId === v.id;
-                    return (
-                      <React.Fragment key={v.id}>
-                        <tr
-                          onClick={() =>
-                            setExpandedVendorId(isExpanded ? null : v.id)
-                          }
-                          className={cn(
-                            "hover:bg-slate-50/70 transition-colors cursor-pointer",
-                            isExpanded && "bg-orange-50/40"
-                          )}
-                        >
-                          <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
-                            <div className="flex items-center gap-1.5">
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-orange-600" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 text-slate-400" />
-                              )}
-                              <span>{v.vendorName}</span>
-                            </div>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5 truncate max-w-[200px]">
-                              {v.serviceDescription}
-                            </p>
-                          </td>
-                          <td className="p-3 border-r border-slate-100">
-                            <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded uppercase">
-                              {v.category}
-                            </span>
-                          </td>
-                          <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
-                            {v.invoiceNumber || "INV-001"}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
-                            {formatCurrency(v.agreedAmount)}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-black text-blue-600">
-                            {formatCurrency(v.advancePaid)}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-black text-red-600">
-                            {formatCurrency(balance)}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-center">
-                            <span
-                              className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
-                                v.status === "Paid"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : v.status === "Advance Paid" || v.status === "Partially Paid"
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-red-50 text-red-700 border-red-200"
-                              )}
-                            >
-                              {v.status}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex gap-1.5 justify-center">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingVendorPayment(v);
-                                  setVendorPaymentForm({
-                                    vendorName: v.vendorName,
-                                    category: v.category,
-                                    serviceDescription: v.serviceDescription || "",
-                                    agreedAmount: String(v.agreedAmount),
-                                    advancePaid: String(v.advancePaid),
-                                    paymentDate: v.paymentDate || "",
-                                    paymentMode: v.paymentMode || "BANK_TRANSFER",
-                                    transactionId: v.transactionId || "",
-                                    invoiceProof: v.invoiceProof || "",
-                                    status: v.status,
-                                    remarks: v.remarks || "",
-                                  });
-                                  setAddVendorPaymentOpen(true);
-                                }}
-                                className="bg-orange-600 text-white hover:bg-orange-700 text-[10px] font-bold px-2.5 py-1 rounded shadow-xs"
+                  return filteredVendors.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-xs font-semibold text-slate-400">
+                        No vendor payables recorded yet for this departure.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredVendors.map((v) => {
+                      const balance = Math.max(0, (v.agreedAmount || 0) - (v.advancePaid || 0));
+                      const isExpanded = expandedVendorId === v.id;
+                      return (
+                        <React.Fragment key={v.id}>
+                          <tr
+                            onClick={() =>
+                              setExpandedVendorId(isExpanded ? null : v.id)
+                            }
+                            className={cn(
+                              "hover:bg-slate-50/70 transition-colors cursor-pointer",
+                              isExpanded && "bg-orange-50/40"
+                            )}
+                          >
+                            <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
+                              <div className="flex items-center gap-1.5">
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 text-orange-600" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                                )}
+                                <span>{v.vendorName}</span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5 truncate max-w-[200px]">
+                                {v.serviceDescription}
+                              </p>
+                            </td>
+                            <td className="p-3 border-r border-slate-100">
+                              <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded uppercase">
+                                {v.category}
+                              </span>
+                            </td>
+                            <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
+                              {v.invoiceNumber || "INV-001"}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
+                              {formatCurrency(v.agreedAmount)}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-black text-blue-600">
+                              {formatCurrency(v.advancePaid)}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-black text-red-600">
+                              {formatCurrency(balance)}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-center">
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
+                                  v.status === "Paid"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : v.status === "Advance Paid" || v.status === "Partially Paid"
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : "bg-red-50 text-red-700 border-red-200"
+                                )}
                               >
-                                Record Pay
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedVendorId(isExpanded ? null : v.id)
-                                }
-                                className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded"
-                              >
-                                {isExpanded ? "Hide" : "Invoice"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-
-                        {/* EXPANDABLE ROW: VENDOR INVOICE DETAILS & PAYMENT HISTORY */}
-                        {isExpanded && (
-                          <tr className="bg-slate-50/80 border-t border-b border-slate-200">
-                            <td colSpan={8} className="p-4">
-                              <div className="space-y-3 max-w-4xl">
-                                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                    <Building2 className="w-4 h-4 text-orange-600" />
-                                    {v.vendorName} ({v.category}) — Invoice {v.invoiceNumber} Details
-                                  </span>
-                                  <span className="text-xs font-semibold text-slate-500">
-                                    Invoice Total: {formatCurrency(v.agreedAmount)} · Paid:{" "}
-                                    {formatCurrency(v.advancePaid)} · Balance Due:{" "}
-                                    {formatCurrency(balance)}
-                                  </span>
-                                </div>
-
-                                <div className="space-y-2">
-                                  {(!v.history || v.history.length === 0) ? (
-                                    <div className="text-xs text-slate-400 italic py-2">
-                                      No advance or settlement payments recorded against this invoice yet.
-                                    </div>
-                                  ) : (
-                                    v.history.map((h: any, idx: number) => (
-                                      <div
-                                        key={idx}
-                                        className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs"
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <div className="p-2 bg-blue-50 rounded-lg">
-                                            <CreditCard className="w-4 h-4 text-blue-600" />
-                                          </div>
-                                          <div>
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-extrabold text-slate-900 text-sm">
-                                                {formatCurrency(h.amount)}
-                                              </span>
-                                              <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
-                                                {h.method}
-                                              </span>
-                                              <span className="text-xs font-mono text-slate-500">
-                                                TXN: {h.txnId}
-                                              </span>
-                                            </div>
-                                            <p className="text-xs text-slate-500 mt-0.5">
-                                              Date: {h.date} · Type: {h.type || "ADVANCE"}
-                                            </p>
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                                            VERIFIED ✓
-                                          </span>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() =>
-                                              toast.success(`Invoice PDF downloaded for ${v.invoiceNumber}`)
-                                            }
-                                            className="h-7 text-[11px] font-semibold"
-                                          >
-                                            Download Invoice PDF
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ))
-                                  )}
-
-                                  {/* Next Settlement Card */}
-                                  {balance > 0 && (
-                                    <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-200 flex items-center justify-between">
-                                      <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-                                        <Clock className="w-4 h-4 text-amber-600" />
-                                        <span>
-                                          Settlement Due: {formatCurrency(balance)}
-                                        </span>
-                                        <span className="text-slate-600 font-normal">
-                                          — Due {v.dueDate || "after trip completion"}
-                                        </span>
-                                      </div>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => {
-                                          setEditingVendorPayment(v);
-                                          setVendorPaymentForm({
-                                            vendorName: v.vendorName,
-                                            category: v.category,
-                                            serviceDescription: v.serviceDescription || "",
-                                            agreedAmount: String(v.agreedAmount),
-                                            advancePaid: String(v.agreedAmount),
-                                            paymentDate: new Date().toISOString().substring(0, 10),
-                                            paymentMode: "BANK_TRANSFER",
-                                            transactionId: `NEFT-SETTLE-${Date.now()}`,
-                                            invoiceProof: "",
-                                            status: "Paid",
-                                            remarks: "Final balance settlement",
-                                          });
-                                          setAddVendorPaymentOpen(true);
-                                        }}
-                                        className="h-7 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
-                                      >
-                                        Record Final Settlement
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
+                                {v.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex gap-1.5 justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingVendorPayment(v);
+                                    setVendorPaymentForm({
+                                      vendorName: v.vendorName,
+                                      category: v.category,
+                                      serviceDescription: v.serviceDescription || "",
+                                      agreedAmount: String(v.agreedAmount),
+                                      advancePaid: String(v.advancePaid),
+                                      paymentDate: v.paymentDate || "",
+                                      paymentMode: v.paymentMode || "BANK_TRANSFER",
+                                      transactionId: v.transactionId || "",
+                                      invoiceProof: v.invoiceProof || "",
+                                      status: v.status,
+                                      remarks: v.remarks || "",
+                                    });
+                                    setAddVendorPaymentOpen(true);
+                                  }}
+                                  className="bg-orange-600 text-white hover:bg-orange-700 text-[10px] font-bold px-2.5 py-1 rounded shadow-xs"
+                                >
+                                  Record Pay
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedVendorId(isExpanded ? null : v.id)
+                                  }
+                                  className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded"
+                                >
+                                  {isExpanded ? "Hide" : "Invoice"}
+                                </button>
                               </div>
                             </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
+
+                          {/* EXPANDABLE ROW: VENDOR INVOICE DETAILS & PAYMENT HISTORY */}
+                          {isExpanded && (
+                            <tr className="bg-slate-50/80 border-t border-b border-slate-200">
+                              <td colSpan={8} className="p-4">
+                                <div className="space-y-3 max-w-4xl">
+                                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                      <Building2 className="w-4 h-4 text-orange-600" />
+                                      {v.vendorName} ({v.category}) — Invoice {v.invoiceNumber} Details
+                                    </span>
+                                    <span className="text-xs font-semibold text-slate-500">
+                                      Invoice Total: {formatCurrency(v.agreedAmount)} · Paid:{" "}
+                                      {formatCurrency(v.advancePaid)} · Balance Due:{" "}
+                                      {formatCurrency(balance)}
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    {(!v.history || v.history.length === 0) ? (
+                                      <div className="text-xs text-slate-400 italic py-2">
+                                        No advance or settlement payments recorded against this invoice yet.
+                                      </div>
+                                    ) : (
+                                      v.history.map((h: any, idx: number) => (
+                                        <div
+                                          key={idx}
+                                          className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs"
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-blue-50 rounded-lg">
+                                              <CreditCard className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-extrabold text-slate-900 text-sm">
+                                                  {formatCurrency(h.amount)}
+                                                </span>
+                                                <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
+                                                  {h.method}
+                                                </span>
+                                                <span className="text-xs font-mono text-slate-500">
+                                                  TXN: {h.txnId}
+                                                </span>
+                                              </div>
+                                              <p className="text-xs text-slate-500 mt-0.5">
+                                                Date: {h.date} · Type: {h.type || "ADVANCE"}
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                                              VERIFIED ✓
+                                            </span>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() =>
+                                                toast.success(`Invoice PDF downloaded for ${v.invoiceNumber}`)
+                                              }
+                                              className="h-7 text-[11px] font-semibold"
+                                            >
+                                              Download Invoice PDF
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))
+                                    )}
+
+                                    {/* Next Settlement Card */}
+                                    {balance > 0 && (
+                                      <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-200 flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                                          <Clock className="w-4 h-4 text-amber-600" />
+                                          <span>
+                                            Settlement Due: {formatCurrency(balance)}
+                                          </span>
+                                          <span className="text-slate-600 font-normal">
+                                            — Due {v.dueDate || "after trip completion"}
+                                          </span>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => {
+                                            setEditingVendorPayment(v);
+                                            setVendorPaymentForm({
+                                              vendorName: v.vendorName,
+                                              category: v.category,
+                                              serviceDescription: v.serviceDescription || "",
+                                              agreedAmount: String(v.agreedAmount),
+                                              advancePaid: String(v.agreedAmount),
+                                              paymentDate: new Date().toISOString().substring(0, 10),
+                                              paymentMode: "BANK_TRANSFER",
+                                              transactionId: `NEFT-SETTLE-${Date.now()}`,
+                                              invoiceProof: "",
+                                              status: "Paid",
+                                              remarks: "Final balance settlement",
+                                            });
+                                            setAddVendorPaymentOpen(true);
+                                          }}
+                                          className="h-7 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                                        >
+                                          Record Final Settlement
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  );
+                })()}
               </tbody>
             </table>
           </div>
@@ -1605,6 +1587,7 @@ export default function DeparturePayments({
                   <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
                   <th className="p-3 text-center w-36">ACTION</th>
                 </tr>
+              </thead>
               <tbody className="divide-y divide-slate-100">
                 {activityPayments.length === 0 ? (
                   <tr>
@@ -1683,7 +1666,8 @@ export default function DeparturePayments({
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>
@@ -1718,6 +1702,7 @@ export default function DeparturePayments({
                   <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
                   <th className="p-3 text-center w-48">ACTION</th>
                 </tr>
+              </thead>
               <tbody className="divide-y divide-slate-100">
                 {miscPayments.length === 0 ? (
                   <tr>
@@ -1798,7 +1783,8 @@ export default function DeparturePayments({
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>
@@ -1841,6 +1827,7 @@ export default function DeparturePayments({
                   <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
                   <th className="p-3 text-center w-40">ACTION</th>
                 </tr>
+              </thead>
               <tbody className="divide-y divide-slate-100">
                 {adjustments.length === 0 ? (
                   <tr>
@@ -1917,7 +1904,8 @@ export default function DeparturePayments({
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>
