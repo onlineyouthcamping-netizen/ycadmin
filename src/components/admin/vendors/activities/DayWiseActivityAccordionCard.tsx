@@ -195,7 +195,9 @@ export default function DayWiseActivityAccordionCard({
     }
   };
 
-  const optedCount = passengers.filter((p) => p.isOpted).length;
+  const optedCount = isIncluded
+    ? activity.bookedCount || activity.maxCapacity || 40
+    : passengers.filter((p) => p.isOpted).length;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all overflow-hidden mb-3">
