@@ -489,10 +489,13 @@ export default function DepartureActivities({
     if (activitiesList && activitiesList.length > 0) {
       return activitiesList.map((a, idx) => ({
         id: a.id || `act-${idx}`,
-        name: a.name || "Activity",
+        name: a.name || a.act || "Activity",
         category: a.type || a.category || "ADVENTURE",
-        dayNumber: Number(a.dayNumber) || 1,
-        scheduledTime: a.startTime || a.scheduledTime || "10:00 AM",
+        dayNumber:
+          Number(a.dayNumber) ||
+          Number(String(a.day || "").replace(/\D/g, "")) ||
+          1,
+        scheduledTime: a.startTime || a.scheduledTime || a.time || "10:00 AM",
         endTime: a.endTime || "01:00 PM",
         status: (a.status?.toUpperCase() as any) || "CONFIRMED",
         vendorName: a.vendorName || "Contracted Supplier",
@@ -504,7 +507,7 @@ export default function DepartureActivities({
         guideName: a.responsibleGuide || "Neel Patel",
         vehicleName: a.vehicleName || "Traveller 2",
         mealIncluded: "Included",
-        notes: a.remarks || "",
+        notes: a.remarks || a.sub || "",
       }));
     }
     return defaultSampleActivities;
@@ -529,16 +532,22 @@ export default function DepartureActivities({
 
   const groupedByDay = useMemo(() => {
     const groups: Record<number, DepartureActivityItem[]> = {};
+    // Ensure all 9 days of a 9-day trip are always shown in chronological order when All Days is selected
+    if (actDayFilter === "All Days") {
+      for (let d = 1; d <= 9; d++) {
+        groups[d] = [];
+      }
+    }
     computedActivities.forEach((a) => {
       const day = a.dayNumber || 1;
       if (!groups[day]) groups[day] = [];
       groups[day].push(a);
     });
     return groups;
-  }, [computedActivities]);
+  }, [computedActivities, actDayFilter]);
 
   const daysAvailable = useMemo(() => {
-    const s = new Set<number>();
+    const s = new Set<number>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     currentActivities.forEach((a) => s.add(a.dayNumber));
     return Array.from(s).sort((a, b) => a - b);
   }, [currentActivities]);
@@ -679,14 +688,29 @@ export default function DepartureActivities({
 
                 {/* ACCORDION CARDS FOR THIS DAY */}
                 <div className="space-y-3">
-                  {dayItems.map((activity) => (
-                    <DayWiseActivityAccordionCard
-                      key={activity.id}
-                      activity={activity}
-                      onUpdateActivity={handleUpdateActivityItem}
-                      onDeleteActivity={handleDeleteActivityItem}
-                    />
-                  ))}
+                  {dayItems.length > 0 ? (
+                    dayItems.map((activity) => (
+                      <DayWiseActivityAccordionCard
+                        key={activity.id}
+                        activity={activity}
+                        onUpdateActivity={handleUpdateActivityItem}
+                        onDeleteActivity={handleDeleteActivityItem}
+                      />
+                    ))
+                  ) : (
+                    <div className="p-4 bg-slate-50/70 border border-dashed border-slate-300 rounded-xl flex items-center justify-between text-xs text-slate-500">
+                      <span>No activities scheduled for Day {day} yet.</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setWizardOpen(true)}
+                        className="h-7 px-3 text-xs bg-white hover:bg-orange-50 hover:text-orange-600 border-slate-300 font-semibold"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Add Activity to Day {day}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
