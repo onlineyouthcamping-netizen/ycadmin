@@ -81,6 +81,7 @@ export default function Activity5StepWizardModal({
   const [childPrice, setChildPrice] = useState(800);
   const [vendorCost, setVendorCost] = useState(700);
   const [gstPercent, setGstPercent] = useState(5);
+  const [isIncluded, setIsIncluded] = useState(true);
   const [scheduledTime, setScheduledTime] = useState("09:30 AM");
   const [endTime, setEndTime] = useState("12:30 PM");
 
@@ -190,7 +191,9 @@ export default function Activity5StepWizardModal({
         vendorRating: selectedVendor?.rating || 4.5,
         maxCapacity: selectedActivity.defaultCapacity,
         bookedCount: selectedPaxIds.length,
-        adultPrice,
+        adultPrice: isIncluded ? 0 : adultPrice,
+        customerPrice: isIncluded ? 0 : adultPrice,
+        isIncluded,
         childPrice,
         vendorCost,
         gstPercent,
@@ -518,83 +521,125 @@ export default function Activity5StepWizardModal({
           {/* STEP 4: PRICING (EDITABLE ADULT, CHILD, VENDOR COST, PROFIT) */}
           {currentStep === 4 && (
             <div className="space-y-5">
-              <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                Configure Pricing & Profit Margin
-              </h4>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <label className="block text-xs text-slate-500 mb-1">
-                    Adult Selling Price
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-slate-400">₹</span>
-                    <input
-                      type="number"
-                      value={adultPrice}
-                      onChange={(e) => setAdultPrice(Number(e.target.value) || 0)}
-                      className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-900 rounded-lg border border-slate-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <label className="block text-xs text-slate-500 mb-1">
-                    Child Selling Price
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-slate-400">₹</span>
-                    <input
-                      type="number"
-                      value={childPrice}
-                      onChange={(e) => setChildPrice(Number(e.target.value) || 0)}
-                      className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-900 rounded-lg border border-slate-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <label className="block text-xs text-slate-500 mb-1">
-                    Vendor Net Cost
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-slate-400">₹</span>
-                    <input
-                      type="number"
-                      value={vendorCost}
-                      onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
-                      className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-700 rounded-lg border border-slate-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <label className="block text-xs text-slate-500 mb-1">GST %</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={gstPercent}
-                      onChange={(e) => setGstPercent(Number(e.target.value) || 0)}
-                      className="w-full pl-3 pr-6 py-1.5 font-bold text-slate-900 rounded-lg border border-slate-300"
-                    />
-                    <span className="absolute right-2.5 top-1.5 text-slate-400">%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div>
-                  <h5 className="font-bold text-emerald-900 text-sm">
-                    Calculated Net Profit per Passenger
-                  </h5>
-                  <p className="text-xs text-emerald-700">
-                    Selling Price (₹{adultPrice}) - Vendor Cost (₹{vendorCost})
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                    Configure Activity Type & Pricing
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Select if company pays (included) or customer pays (optional add-on)
                   </p>
                 </div>
-                <div className="text-2xl font-black text-emerald-700">
-                  ₹{profitPerPax}/pax
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsIncluded(true)}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all",
+                      isIncluded
+                        ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
+                        : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                    )}
+                  >
+                    ● Included in Package
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsIncluded(false)}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all",
+                      !isIncluded
+                        ? "bg-purple-600 text-white border-purple-700 shadow-sm"
+                        : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                    )}
+                  >
+                    ○ Optional Paid Activity
+                  </button>
                 </div>
               </div>
+
+              {isIncluded ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-emerald-50/70 p-5 rounded-xl border border-emerald-200">
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-900 mb-1">
+                      Vendor Cost / Pax (Company Pays)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-emerald-700 font-bold">₹</span>
+                      <input
+                        type="number"
+                        value={vendorCost}
+                        onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                        className="w-full pl-7 pr-3 py-1.5 font-bold text-emerald-950 rounded-lg border border-emerald-300 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-900 mb-1">
+                      Total Payable to Vendor (Auto Calc)
+                    </label>
+                    <div className="text-xl font-black text-emerald-700 mt-1">
+                      ₹{(selectedPaxIds.length * vendorCost).toLocaleString()}
+                    </div>
+                    <span className="text-[11px] text-emerald-600">
+                      Based on {selectedPaxIds.length} manifested passengers
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-purple-50/70 p-4 rounded-xl border border-purple-200">
+                    <div>
+                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                        Adult Selling Price
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1.5 text-purple-600 font-bold">₹</span>
+                        <input
+                          type="number"
+                          value={adultPrice}
+                          onChange={(e) => setAdultPrice(Number(e.target.value) || 0)}
+                          className="w-full pl-6 pr-2 py-1.5 font-bold text-purple-950 rounded-lg border border-purple-300 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                        Vendor Net Cost
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1.5 text-slate-500">₹</span>
+                        <input
+                          type="number"
+                          value={vendorCost}
+                          onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                          className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-700 rounded-lg border border-purple-300 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                        Profit / Pax
+                      </label>
+                      <div className="text-lg font-black text-emerald-600 mt-1">
+                        ₹{profitPerPax}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                        Total Revenue
+                      </label>
+                      <div className="text-lg font-black text-purple-950 mt-1">
+                        ₹{(selectedPaxIds.length * adultPrice).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

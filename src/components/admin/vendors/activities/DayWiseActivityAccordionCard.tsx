@@ -39,6 +39,8 @@ export interface DepartureActivityItem {
   adultPrice: number;
   childPrice: number;
   vendorCost: number;
+  customerPrice?: number;
+  isIncluded?: boolean;
   gstPercent?: number;
   mealIncluded?: string;
   notes?: string;
@@ -88,13 +90,31 @@ export default function DayWiseActivityAccordionCard({
   const [mealIncluded, setMealIncluded] = useState(activity.mealIncluded || "Included");
   const [notes, setNotes] = useState(activity.notes || "");
 
-  // Pricing
+  // Inclusion & Pricing
+  const [isIncluded, setIsIncluded] = useState<boolean>(
+    activity.isIncluded !== undefined
+      ? activity.isIncluded
+      : activity.adultPrice === 0 ||
+        activity.name.toLowerCase().includes("breakfast") ||
+        activity.name.toLowerCase().includes("rafting") ||
+        activity.name.toLowerCase().includes("temple") ||
+        activity.name.toLowerCase().includes("bonfire") ||
+        activity.name.toLowerCase().includes("trek") ||
+        activity.name.toLowerCase().includes("check-in") ||
+        activity.name.toLowerCase().includes("briefing") ||
+        activity.name.toLowerCase().includes("departure") ||
+        activity.name.toLowerCase().includes("arrival") ||
+        activity.name.toLowerCase().includes("shawl")
+  );
+  const [sellingPrice, setSellingPrice] = useState(
+    activity.customerPrice || activity.adultPrice || 2500
+  );
   const [adultPrice, setAdultPrice] = useState(activity.adultPrice || 1200);
   const [childPrice, setChildPrice] = useState(activity.childPrice || 800);
-  const [vendorCost, setVendorCost] = useState(activity.vendorCost || 700);
+  const [vendorCost, setVendorCost] = useState(activity.vendorCost || 200);
   const [gstPercent, setGstPercent] = useState(activity.gstPercent || 5);
 
-  const profitPerPax = adultPrice - vendorCost;
+  const profitPerPax = sellingPrice - vendorCost;
   const remainingSeats = Math.max(0, activity.maxCapacity - activity.bookedCount);
   const capacityPercent = Math.min(100, Math.round((activity.bookedCount / activity.maxCapacity) * 100));
 
@@ -143,6 +163,10 @@ export default function DayWiseActivityAccordionCard({
     setSaving(true);
     try {
       await onUpdateActivity(activity.id, {
+        name: activityName,
+        category,
+        isIncluded,
+        customerPrice: sellingPrice,
         status,
         guideName,
         vehicleName,
@@ -150,7 +174,7 @@ export default function DayWiseActivityAccordionCard({
         endTime,
         mealIncluded,
         notes,
-        adultPrice,
+        adultPrice: sellingPrice,
         childPrice,
         vendorCost,
         gstPercent,
@@ -168,20 +192,30 @@ export default function DayWiseActivityAccordionCard({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all overflow-hidden mb-3">
-      {/* HEADER BAR — ALWAYS VISIBLE INFORMATION-DENSE ROW */}
+      {/* HEADER BAR — COMPACT INFORMATION-DENSE SUMMARY (COLLAPSED VIEW) */}
       <div
         onClick={() => setExpanded(!expanded)}
-        className="p-4 cursor-pointer flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 select-none hover:bg-slate-50/70 transition-colors"
+        className="p-4 cursor-pointer flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 select-none hover:bg-slate-50/70 transition-colors"
       >
-        {/* Left: Time + Activity Name + Status Badge */}
-        <div className="flex items-center gap-3.5 min-w-[240px]">
+        {/* Left: Inclusion Badge + Time + Activity Name + Status Badge */}
+        <div className="flex items-center gap-3.5 min-w-[260px]">
           <div className="px-2.5 py-1.5 bg-slate-100 rounded-lg text-slate-800 font-bold text-sm font-mono whitespace-nowrap">
             {scheduledTime}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={cn(
+                  "px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider border",
+                  isIncluded
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                    : "bg-purple-50 text-purple-700 border-purple-300"
+                )}
+              >
+                {isIncluded ? "Included Activity" : "Optional Add-on"}
+              </span>
               <h4 className="font-bold text-slate-900 text-base">
-                {activity.name}
+                {activityName}
               </h4>
               <span
                 className={cn(
@@ -192,66 +226,74 @@ export default function DayWiseActivityAccordionCard({
                 {currentStatusObj.label}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Vendor: <strong className="text-slate-800">{activity.vendorName}</strong> •{" "}
-              {scheduledTime} - {endTime}
+            <p className="text-xs text-slate-500 mt-1">
+              Vendor: <strong className="text-slate-800">{activity.vendorName}</strong>
             </p>
           </div>
         </div>
 
-        {/* Center: Operational Assignments (Guide & Bus & Capacity) */}
-        <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200">
-            <User className="w-3.5 h-3.5 text-slate-500" />
-            <span>Guide:</span>
-            <strong className="text-slate-900">{guideName || "Unassigned"}</strong>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200">
-            <Bus className="w-3.5 h-3.5 text-slate-500" />
-            <span>Vehicle:</span>
-            <strong className="text-slate-900">{vehicleName || "Unassigned"}</strong>
-          </div>
-
-          <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg border border-slate-200">
-            <Users className="w-3.5 h-3.5 text-slate-500" />
-            <div className="flex items-center gap-1.5">
-              <span>Booked: <strong className="text-slate-900">{optedCount}</strong>/{activity.maxCapacity}</span>
-              <span className="text-slate-400">|</span>
-              <span>Remaining: <strong className="text-emerald-700">{remainingSeats}</strong></span>
-            </div>
-          </div>
+        {/* Center: Key Metrics Summary based on Included vs Optional */}
+        <div className="flex flex-wrap items-center gap-6 text-xs bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+          {isIncluded ? (
+            <>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
+                <strong className="text-slate-900 font-bold text-sm">₹{vendorCost} / Pax</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Passengers</span>
+                <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Total Vendor Cost</span>
+                <strong className="text-emerald-700 font-bold text-sm">₹{(optedCount * vendorCost).toLocaleString()}</strong>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Selling Price</span>
+                <strong className="text-slate-900 font-bold text-sm">₹{sellingPrice}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
+                <strong className="text-slate-700 font-bold text-sm">₹{vendorCost}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Profit</span>
+                <strong className="text-emerald-600 font-bold text-sm">₹{(sellingPrice - vendorCost).toLocaleString()} / Pax</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Booked</span>
+                <strong className="text-purple-900 font-bold text-sm">{optedCount} Pax</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Revenue</span>
+                <strong className="text-purple-900 font-bold text-sm">₹{(optedCount * sellingPrice).toLocaleString()}</strong>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Right: Pricing Summary & Chevron Accordion Toggle */}
-        <div className="flex items-center justify-between lg:justify-end gap-5 w-full lg:w-auto">
-          <div className="text-right">
-            <div className="flex items-center gap-3 text-xs">
-              <div>
-                <span className="text-slate-400">Adult: </span>
-                <strong className="text-slate-900">₹{adultPrice}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400">Cost: </span>
-                <strong className="text-slate-700">₹{vendorCost}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400">Profit: </span>
-                <strong className="text-emerald-600 font-bold">₹{profitPerPax}/pax</strong>
-              </div>
-            </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
-              Meal: <span className="text-slate-700 font-medium">{mealIncluded}</span>
-            </div>
-          </div>
-
-          <div className="p-1 rounded-lg hover:bg-slate-200/60 text-slate-500">
+        {/* Right: Details Button */}
+        <div className="flex items-center gap-2 self-end xl:self-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+            className="text-xs font-semibold px-3.5 h-8 border-slate-300 hover:bg-slate-100 text-slate-700"
+          >
+            <span>Details</span>
             {expanded ? (
-              <ChevronUp className="w-5 h-5 text-slate-700" />
+              <ChevronUp className="w-3.5 h-3.5 ml-1.5 text-slate-700" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-slate-700" />
+              <ChevronDown className="w-3.5 h-3.5 ml-1.5 text-slate-700" />
             )}
-          </div>
+          </Button>
         </div>
       </div>
 
@@ -384,73 +426,143 @@ export default function DayWiseActivityAccordionCard({
             </div>
           </div>
 
-          {/* SECTION 3: PRICING BREAKDOWN (EDITABLE) */}
-          <div className="p-4 bg-white rounded-xl border border-slate-200">
-            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-              Pricing Breakdown (Editable per Departure)
-            </h5>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {/* SECTION 3: ACTIVITY TYPE TOGGLE & DYNAMIC INCLUSION / OPTIONAL PRICING */}
+          <div className="p-5 bg-white rounded-xl border border-slate-200 space-y-5">
+            {/* TOGGLE BAR */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
               <div>
-                <label className="block text-xs text-slate-500 mb-1">Adult Selling</label>
-                <div className="relative">
-                  <span className="absolute left-2.5 top-1.5 text-slate-400 text-xs">₹</span>
-                  <input
-                    type="number"
-                    value={adultPrice}
-                    onChange={(e) => setAdultPrice(Number(e.target.value) || 0)}
-                    className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-900 rounded-lg border border-slate-300 focus:border-orange-500"
-                  />
-                </div>
+                <h5 className="text-sm font-bold text-slate-900">
+                  Activity Type & Package Inclusion
+                </h5>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Choose whether this activity is included in the company tour package or sold as an optional add-on.
+                </p>
               </div>
-
-              <div>
-                <label className="block text-xs text-slate-500 mb-1">Child Selling</label>
-                <div className="relative">
-                  <span className="absolute left-2.5 top-1.5 text-slate-400 text-xs">₹</span>
-                  <input
-                    type="number"
-                    value={childPrice}
-                    onChange={(e) => setChildPrice(Number(e.target.value) || 0)}
-                    className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-900 rounded-lg border border-slate-300 focus:border-orange-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-500 mb-1">Vendor Net Cost</label>
-                <div className="relative">
-                  <span className="absolute left-2.5 top-1.5 text-slate-400 text-xs">₹</span>
-                  <input
-                    type="number"
-                    value={vendorCost}
-                    onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
-                    className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-700 rounded-lg border border-slate-300 focus:border-orange-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-500 mb-1">GST %</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={gstPercent}
-                    onChange={(e) => setGstPercent(Number(e.target.value) || 0)}
-                    className="w-full pl-3 pr-6 py-1.5 text-sm font-bold text-slate-900 rounded-lg border border-slate-300 focus:border-orange-500"
-                  />
-                  <span className="absolute right-2.5 top-1.5 text-slate-400 text-xs">%</span>
-                </div>
-              </div>
-
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2 flex flex-col justify-center">
-                <span className="text-[11px] font-semibold text-emerald-800 uppercase">
-                  Net Profit / Pax
-                </span>
-                <span className="text-lg font-bold text-emerald-700">
-                  ₹{profitPerPax}
-                </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsIncluded(true)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5",
+                    isIncluded
+                      ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
+                      : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                  )}
+                >
+                  <span>● Included in Package</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsIncluded(false)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5",
+                    !isIncluded
+                      ? "bg-purple-600 text-white border-purple-700 shadow-sm"
+                      : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                  )}
+                >
+                  <span>○ Optional Paid Activity</span>
+                </button>
               </div>
             </div>
+
+            {/* DYNAMIC CALCULATION VIEW BASED ON TOGGLE */}
+            {isIncluded ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-emerald-50/60 p-4 rounded-xl border border-emerald-200">
+                <div>
+                  <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
+                    Vendor Cost / Pax
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-emerald-700 font-bold text-sm">₹</span>
+                    <input
+                      type="number"
+                      value={vendorCost}
+                      onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                      className="w-full pl-7 pr-3 py-1.5 text-sm font-black text-emerald-950 rounded-lg border border-emerald-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
+                    Expected Passengers
+                  </label>
+                  <div className="text-lg font-black text-emerald-950 mt-1 flex items-baseline gap-1.5">
+                    <span>{optedCount}</span>
+                    <span className="text-xs font-semibold text-emerald-700">passengers (package roster)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
+                    Total Payable to Vendor (Auto)
+                  </label>
+                  <div className="text-xl font-black text-emerald-700 mt-1">
+                    ₹{(optedCount * vendorCost).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-purple-50/60 p-4 rounded-xl border border-purple-200">
+                <div>
+                  <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider mb-1">
+                    Selling Price
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">₹</span>
+                    <input
+                      type="number"
+                      value={sellingPrice}
+                      onChange={(e) => setSellingPrice(Number(e.target.value) || 0)}
+                      className="w-full pl-6 pr-2 py-1.5 text-sm font-black text-purple-950 rounded-lg border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider mb-1">
+                    Vendor Cost
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">₹</span>
+                    <input
+                      type="number"
+                      value={vendorCost}
+                      onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                      className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-700 rounded-lg border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-white/80 p-2 rounded-lg border border-purple-200">
+                  <span className="text-[11px] font-bold text-purple-800 uppercase block">
+                    Profit / Pax
+                  </span>
+                  <span className="text-base font-black text-emerald-600 mt-0.5 block">
+                    ₹{(sellingPrice - vendorCost).toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="bg-white/80 p-2 rounded-lg border border-purple-200">
+                  <span className="text-[11px] font-bold text-purple-800 uppercase block">
+                    Booked Count
+                  </span>
+                  <span className="text-base font-black text-purple-950 mt-0.5 block">
+                    {optedCount} Pax
+                  </span>
+                </div>
+
+                <div className="bg-purple-900 text-white p-2 rounded-lg flex flex-col justify-center">
+                  <span className="text-[11px] font-semibold text-purple-200 uppercase">
+                    Total Revenue
+                  </span>
+                  <span className="text-base font-black text-white">
+                    ₹{(optedCount * sellingPrice).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SECTION 4: INLINE VENDOR COMPARISON (ONE-CLICK SELECTION, NO POPUPS) */}
@@ -508,38 +620,50 @@ export default function DayWiseActivityAccordionCard({
             </div>
           </div>
 
-          {/* SECTION 5: PASSENGER ALLOCATION CHECKLIST */}
-          <div className="p-4 bg-white rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between mb-3">
-              <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Booked Passengers ({optedCount}/{activity.maxCapacity})
-              </h5>
-              <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                Remaining Seats: {remainingSeats}
+          {/* SECTION 5: PASSENGER SELECTION (SHOWS ENTIRELY FOR OPTIONAL ACTIVITIES OR SUMMARY FOR INCLUDED) */}
+          {!isIncluded ? (
+            <div className="p-4 bg-white rounded-xl border border-slate-200">
+              <div className="flex items-center justify-between mb-3">
+                <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Booked Passengers — Check Opt-In ({optedCount}/{activity.maxCapacity})
+                </h5>
+                <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  Remaining Seats: {remainingSeats}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {passengers.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleTogglePassenger(p.id)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5",
+                      p.isOpted
+                        ? "bg-purple-600 text-white border-purple-600 shadow-sm font-bold"
+                        : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                    )}
+                  >
+                    <span>{p.name}</span>
+                    {p.isOpted && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                ))}
               </div>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              {passengers.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleTogglePassenger(p.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all select-none",
-                    p.isOpted
-                      ? "bg-orange-50 border-orange-300 text-orange-950 font-bold"
-                      : "bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300"
-                  )}
-                >
-                  <span className="text-sm">
-                    {p.isOpted ? "☑" : "☐"}
-                  </span>
-                  <span>{p.name}</span>
-                </button>
-              ))}
+          ) : (
+            <div className="p-4 bg-emerald-50/40 rounded-xl border border-emerald-200 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-900 font-medium text-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  <strong>Included in Tour Package:</strong> All {optedCount} manifested passengers are automatically covered.
+                </span>
+              </div>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg">
+                ₹0 Extra Charge
+              </span>
             </div>
-          </div>
+          )}
 
           {/* SECTION 6: NOTES & INLINE SAVE */}
           <div className="p-4 bg-white rounded-xl border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
