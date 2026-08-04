@@ -138,6 +138,7 @@ export default function DayWiseActivityAccordionCard({
       { id: "p8", name: "Priya Nair", isOpted: true },
     ]
   );
+  const [manualPaxCount, setManualPaxCount] = useState<number | null>(null);
 
   // Vendor comparison mock defaults if not provided
   const comparisonVendors = availableVendors || [
@@ -151,9 +152,11 @@ export default function DayWiseActivityAccordionCard({
     SIX_OPERATIONAL_STATUSES[1];
 
   const handleTogglePassenger = (pId: string) => {
-    setPassengers((prev) =>
-      prev.map((p) => (p.id === pId ? { ...p, isOpted: !p.isOpted } : p))
-    );
+    setPassengers((prev) => {
+      const updated = prev.map((p) => (p.id === pId ? { ...p, isOpted: !p.isOpted } : p));
+      setManualPaxCount(updated.filter((p) => p.isOpted).length);
+      return updated;
+    });
   };
 
   const handleAssignVendor = (vnd: { vendorId: string; vendorName: string; netCost: number }) => {
@@ -195,9 +198,12 @@ export default function DayWiseActivityAccordionCard({
     }
   };
 
-  const optedCount = isIncluded
-    ? activity.bookedCount || activity.maxCapacity || 40
-    : passengers.filter((p) => p.isOpted).length;
+  const optedCount =
+    manualPaxCount !== null
+      ? manualPaxCount
+      : isIncluded
+      ? activity.bookedCount || activity.maxCapacity || 40
+      : passengers.filter((p) => p.isOpted).length;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all overflow-hidden mb-3">
@@ -519,11 +525,16 @@ export default function DayWiseActivityAccordionCard({
 
                 <div>
                   <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
-                    Expected Passengers
+                    Booked Count (Pax)
                   </label>
-                  <div className="text-lg font-black text-emerald-950 mt-1 flex items-baseline gap-1.5">
-                    <span>{optedCount}</span>
-                    <span className="text-xs font-semibold text-emerald-700">passengers (package roster)</span>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={optedCount}
+                      onChange={(e) => setManualPaxCount(Math.max(0, Number(e.target.value) || 0))}
+                      className="w-full pl-3 pr-10 py-1.5 text-sm font-black text-emerald-950 rounded-lg border border-emerald-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                    <span className="absolute right-3 top-2 text-emerald-700 font-bold text-xs">Pax</span>
                   </div>
                 </div>
 
@@ -578,12 +589,18 @@ export default function DayWiseActivityAccordionCard({
                 </div>
 
                 <div className="bg-white/80 p-2 rounded-lg border border-purple-200">
-                  <span className="text-[11px] font-bold text-purple-800 uppercase block">
-                    Booked Count
-                  </span>
-                  <span className="text-base font-black text-purple-950 mt-0.5 block">
-                    {optedCount} Pax
-                  </span>
+                  <label className="text-[11px] font-bold text-purple-800 uppercase block mb-1">
+                    Booked Count (Pax)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={optedCount}
+                      onChange={(e) => setManualPaxCount(Math.max(0, Number(e.target.value) || 0))}
+                      className="w-full pl-2.5 pr-8 py-1 text-sm font-black text-purple-950 rounded border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    />
+                    <span className="absolute right-2 top-1.5 text-purple-700 font-bold text-xs">Pax</span>
+                  </div>
                 </div>
 
                 <div className="bg-purple-900 text-white p-2 rounded-lg flex flex-col justify-center">
