@@ -645,12 +645,7 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       await bookingsService.update(booking.id, {
         passengers: updatedPassengers,
         numberOfTravelers: newQty,
-        baseAmount: calculatedBase,
-        gstAmount: calculatedGst,
-        totalAmount,
-        remainingAmount,
         sourceMeta: newMeta,
-        advancePaid: totalPaymentsPaid,
         ...extraFields
       });
     } catch (err: any) {
@@ -1152,6 +1147,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       updatedPassengers = passengers.map(p => p.id === editingPassenger.id ? {
         ...p,
         name: name,
+        firstName: newPassenger.firstName,
+        lastName: newPassenger.lastName,
         phone: newPassenger.phone || "N/A",
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
@@ -1164,6 +1161,8 @@ export default function BookingDetailsView({ booking, onBack, onRefresh, trips, 
       const passenger = {
         id: Math.random().toString(36).substr(2, 9),
         name: name,
+        firstName: newPassenger.firstName,
+        lastName: newPassenger.lastName,
         phone: newPassenger.phone || "N/A",
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
