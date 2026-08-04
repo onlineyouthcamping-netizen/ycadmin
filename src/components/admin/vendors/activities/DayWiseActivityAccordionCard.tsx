@@ -668,6 +668,28 @@ export default function DayWiseActivityAccordionCard({
                 );
               })}
             </div>
+
+            {/* INLINE CUSTOM / MISCELLANEOUS VENDOR BUTTON */}
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-[11px] font-semibold text-slate-500">
+                Need an unlisted vendor or miscellaneous cost?
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const name = window.prompt("Enter Vendor Name or Miscellaneous Cost Label:", "Miscellaneous Expense");
+                  if (!name) return;
+                  const costStr = window.prompt("Enter Net Cost per passenger (₹):", "0");
+                  const cost = Number(costStr) || 0;
+                  setVendorCost(cost);
+                  toast.success(`Assigned custom vendor "${name}" at ₹${cost}/pax`);
+                }}
+                className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-200 transition-all flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                + Add Custom Vendor / Misc Cost
+              </button>
+            </div>
           </div>
 
           {/* SECTION 5: PASSENGER SELECTION (SHOWS ENTIRELY FOR OPTIONAL ACTIVITIES OR SUMMARY FOR INCLUDED) */}

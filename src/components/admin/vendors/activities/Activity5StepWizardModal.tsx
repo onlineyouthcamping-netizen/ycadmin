@@ -117,11 +117,41 @@ export default function Activity5StepWizardModal({
     ]),
   ];
 
-  const defaultVendors = vendorsList || [
-    { vendorId: "VND-ABC", vendorName: "ABC Adventures", rating: 4.8, netCost: 700, seasonType: "PEAK" },
-    { vendorId: "VND-XYZ", vendorName: "XYZ Adventure", rating: 4.2, netCost: 650, seasonType: "OFF_SEASON" },
-    { vendorId: "VND-MTN", vendorName: "Mountain Adventure", rating: 4.5, netCost: 680, seasonType: "REGULAR" },
+  // + Create New Vendor or Miscellaneous Expense local state
+  const [customVendors, setCustomVendors] = useState<any[]>([]);
+  const [isCreatingVendor, setIsCreatingVendor] = useState(false);
+  const [newVendorName, setNewVendorName] = useState("");
+  const [newVendorCost, setNewVendorCost] = useState("");
+
+  const defaultVendors = [
+    ...customVendors,
+    ...(vendorsList || [
+      { vendorId: "VND-ABC", vendorName: "ABC Adventures", rating: 4.8, netCost: 700, seasonType: "PEAK" },
+      { vendorId: "VND-XYZ", vendorName: "XYZ Adventure", rating: 4.2, netCost: 650, seasonType: "OFF_SEASON" },
+      { vendorId: "VND-MTN", vendorName: "Mountain Adventure", rating: 4.5, netCost: 680, seasonType: "REGULAR" },
+    ]),
   ];
+
+  const handleCreateNewVendor = () => {
+    if (!newVendorName.trim()) {
+      toast.error("Please enter vendor or miscellaneous cost name");
+      return;
+    }
+    const newVnd = {
+      vendorId: `VND-CUSTOM-${Date.now()}`,
+      vendorName: newVendorName.trim(),
+      rating: 5.0,
+      netCost: Number(newVendorCost) || 0,
+      seasonType: "CUSTOM",
+    };
+    setCustomVendors((prev) => [newVnd, ...prev]);
+    setSelectedVendor(newVnd);
+    setVendorCost(newVnd.netCost);
+    setNewVendorName("");
+    setNewVendorCost("");
+    setIsCreatingVendor(false);
+    toast.success(`Selected custom vendor/cost: ${newVnd.vendorName}`);
+  };
 
   const defaultPax = manifestPassengers || [
     { id: "pax-1", name: "Rahul Sharma" },
@@ -514,6 +544,69 @@ export default function Activity5StepWizardModal({
                     </div>
                   );
                 })}
+
+                {/* + ADD NEW OR MISCELLANEOUS VENDOR / COST */}
+                {!isCreatingVendor ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingVendor(true)}
+                    className="w-full py-3 px-4 rounded-xl border border-dashed border-slate-300 hover:border-orange-400 bg-slate-50/50 hover:bg-orange-50/30 text-xs font-bold text-slate-700 hover:text-orange-600 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    + Add New Vendor or Miscellaneous Expense / Cost
+                  </button>
+                ) : (
+                  <div className="p-4 rounded-xl border border-orange-300 bg-orange-50/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-orange-900 uppercase tracking-wider">
+                        Add Custom / Miscellaneous Vendor & Cost
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatingVendor(false)}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Vendor Name / Misc Expense Label
+                        </label>
+                        <input
+                          type="text"
+                          value={newVendorName}
+                          onChange={(e) => setNewVendorName(e.target.value)}
+                          placeholder="e.g. Local Dhaba / Emergency Porter / Permit Fee"
+                          className="w-full px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Net Cost (₹/pax)
+                        </label>
+                        <input
+                          type="number"
+                          value={newVendorCost}
+                          onChange={(e) => setNewVendorCost(e.target.value)}
+                          placeholder="0"
+                          className="w-full px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleCreateNewVendor}
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
+                      >
+                        Save & Select Vendor
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
