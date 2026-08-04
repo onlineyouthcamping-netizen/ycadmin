@@ -104,15 +104,22 @@ export default function DayWiseActivityAccordionCard({
         activity.name.toLowerCase().includes("briefing") ||
         activity.name.toLowerCase().includes("departure") ||
         activity.name.toLowerCase().includes("arrival") ||
-        activity.name.toLowerCase().includes("shawl")
+        activity.name.toLowerCase().includes("shawl") ||
+        activity.name.toLowerCase().includes("ice breaking") ||
+        activity.name.toLowerCase().includes("music") ||
+        activity.name.toLowerCase().includes("station")
   );
   const [sellingPrice, setSellingPrice] = useState(
-    activity.customerPrice || activity.adultPrice || 2500
+    activity.customerPrice !== undefined
+      ? activity.customerPrice
+      : activity.adultPrice !== undefined
+      ? activity.adultPrice
+      : 0
   );
-  const [adultPrice, setAdultPrice] = useState(activity.adultPrice || 1200);
-  const [childPrice, setChildPrice] = useState(activity.childPrice || 800);
-  const [vendorCost, setVendorCost] = useState(activity.vendorCost || 200);
-  const [gstPercent, setGstPercent] = useState(activity.gstPercent || 5);
+  const [adultPrice, setAdultPrice] = useState(activity.adultPrice ?? 0);
+  const [childPrice, setChildPrice] = useState(activity.childPrice ?? 0);
+  const [vendorCost, setVendorCost] = useState(activity.vendorCost ?? 0);
+  const [gstPercent, setGstPercent] = useState(activity.gstPercent ?? 5);
 
   const profitPerPax = sellingPrice - vendorCost;
   const remainingSeats = Math.max(0, activity.maxCapacity - activity.bookedCount);
@@ -235,43 +242,67 @@ export default function DayWiseActivityAccordionCard({
         {/* Center: Key Metrics Summary based on Included vs Optional */}
         <div className="flex flex-wrap items-center gap-6 text-xs bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
           {isIncluded ? (
-            <>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
-                <strong className="text-slate-900 font-bold text-sm">₹{vendorCost} / Pax</strong>
+            vendorCost > 0 ? (
+              <>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
+                  <strong className="text-slate-900 font-bold text-sm">₹{vendorCost} / Pax</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Passengers</span>
+                  <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Total Vendor Cost</span>
+                  <strong className="text-emerald-700 font-bold text-sm">₹{(optedCount * vendorCost).toLocaleString()}</strong>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-4">
+                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-xs font-semibold">
+                  Included in Package • No Vendor Cost
+                </span>
+                <div className="pl-2 border-l border-slate-200">
+                  <span className="text-slate-400 block text-[11px]">Passengers</span>
+                  <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Passengers</span>
-                <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Total Vendor Cost</span>
-                <strong className="text-emerald-700 font-bold text-sm">₹{(optedCount * vendorCost).toLocaleString()}</strong>
-              </div>
-            </>
+            )
           ) : (
-            <>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Selling Price</span>
-                <strong className="text-slate-900 font-bold text-sm">₹{sellingPrice}</strong>
+            sellingPrice > 0 || vendorCost > 0 ? (
+              <>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Selling Price</span>
+                  <strong className="text-slate-900 font-bold text-sm">₹{sellingPrice}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
+                  <strong className="text-slate-700 font-bold text-sm">₹{vendorCost}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Profit</span>
+                  <strong className="text-emerald-600 font-bold text-sm">₹{(sellingPrice - vendorCost).toLocaleString()} / Pax</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Booked</span>
+                  <strong className="text-purple-900 font-bold text-sm">{optedCount} Pax</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Revenue</span>
+                  <strong className="text-purple-900 font-bold text-sm">₹{(optedCount * sellingPrice).toLocaleString()}</strong>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-4">
+                <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-md text-xs font-semibold">
+                  Optional Activity • Price Not Set
+                </span>
+                <div className="pl-2 border-l border-slate-200">
+                  <span className="text-slate-400 block text-[11px]">Booked</span>
+                  <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
-                <strong className="text-slate-700 font-bold text-sm">₹{vendorCost}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Profit</span>
-                <strong className="text-emerald-600 font-bold text-sm">₹{(sellingPrice - vendorCost).toLocaleString()} / Pax</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Booked</span>
-                <strong className="text-purple-900 font-bold text-sm">{optedCount} Pax</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Revenue</span>
-                <strong className="text-purple-900 font-bold text-sm">₹{(optedCount * sellingPrice).toLocaleString()}</strong>
-              </div>
-            </>
+            )
           )}
         </div>
 

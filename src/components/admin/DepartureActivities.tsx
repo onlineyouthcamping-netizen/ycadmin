@@ -500,10 +500,30 @@ export default function DepartureActivities({
         status: (a.status?.toUpperCase() as any) || "CONFIRMED",
         vendorName: a.vendorName || "Contracted Supplier",
         maxCapacity: Number(a.maxParticipants) || 40,
-        bookedCount: Number(a.bookedCount) || 32,
-        adultPrice: Number(a.sellingPrice) || 1200,
-        childPrice: Math.round((Number(a.sellingPrice) || 1200) * 0.7),
-        vendorCost: Number(a.estimatedCost) || Number(a.vendorCost) || 700,
+        bookedCount:
+          a.bookedCount !== undefined ? Number(a.bookedCount) : 40,
+        isIncluded:
+          a.isIncluded !== undefined
+            ? a.isIncluded
+            : a.inc !== undefined
+            ? a.inc
+            : true,
+        adultPrice:
+          a.adultPrice !== undefined
+            ? Number(a.adultPrice)
+            : a.sellingPrice !== undefined
+            ? Number(a.sellingPrice)
+            : 0,
+        childPrice:
+          a.childPrice !== undefined
+            ? Number(a.childPrice)
+            : 0,
+        vendorCost:
+          a.vendorCost !== undefined
+            ? Number(a.vendorCost)
+            : a.estimatedCost !== undefined
+            ? Number(a.estimatedCost)
+            : 0,
         guideName: a.responsibleGuide || "Neel Patel",
         vehicleName: a.vehicleName || "Traveller 2",
         mealIncluded: "Included",
