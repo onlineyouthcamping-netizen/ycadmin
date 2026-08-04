@@ -188,7 +188,7 @@ export default function DayWiseActivityAccordionCard({
         childPrice,
         vendorCost,
         gstPercent,
-        bookedCount: passengers.filter((p) => p.isOpted).length,
+        bookedCount: optedCount,
       });
       toast.success("Activity details updated successfully");
     } catch (err: any) {

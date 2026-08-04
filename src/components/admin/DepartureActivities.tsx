@@ -623,10 +623,51 @@ export default function DepartureActivities({
     9: "Arrival — Trip Conclusion",
   };
 
+  const kpiStats = useMemo(() => {
+    const totalActivities = currentActivities.length;
+    const pendingVendorConfirmations = currentActivities.filter(
+      (a) => a.status === "DRAFT" || a.status === "READY" || a.status === "PENDING" || !a.status
+    ).length;
+    const passengersBooked = currentActivities.reduce(
+      (acc, a) => acc + (a.isIncluded ? (a.bookedCount || 40) : (a.bookedCount || 0)),
+      0
+    );
+    const totalRevenue = currentActivities.reduce(
+      (acc, a) =>
+        acc +
+        (a.isIncluded
+          ? 0
+          : (a.adultPrice || a.sellingPrice || 0) * (a.bookedCount || 0)),
+      0
+    );
+    const totalVendorCost = currentActivities.reduce(
+      (acc, a) =>
+        acc + (a.vendorCost || 0) * (a.bookedCount || (a.isIncluded ? 40 : 0)),
+      0
+    );
+    const grossProfit = currentActivities.reduce(
+      (acc, a) =>
+        acc +
+        (a.isIncluded
+          ? 0
+          : Math.max(0, (a.adultPrice || a.sellingPrice || 0) - (a.vendorCost || 0)) * (a.bookedCount || 0)),
+      0
+    );
+
+    return {
+      todayActivities: totalActivities,
+      pendingVendorConfirmations,
+      passengersBooked,
+      totalRevenue,
+      totalVendorCost,
+      grossProfit,
+    };
+  }, [currentActivities]);
+
   return (
     <div className="space-y-6">
       {/* ENTERPRISE KPI DASHBOARD HEADER */}
-      <ActivityKPIHeader />
+      <ActivityKPIHeader stats={kpiStats} />
 
       {/* TOOLBAR: FILTER BAR & ADD ACTIVITY ACTION */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">

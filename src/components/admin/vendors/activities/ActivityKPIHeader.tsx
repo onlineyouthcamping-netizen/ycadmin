@@ -15,23 +15,23 @@ interface ActivityKPIProps {
 
 export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
   const data = stats || {
-    todayActivities: 28,
-    pendingVendorConfirmations: 6,
-    passengersBooked: 412,
-    totalRevenue: 480000,
-    totalVendorCost: 305000,
-    grossProfit: 175000,
+    todayActivities: 0,
+    pendingVendorConfirmations: 0,
+    passengersBooked: 0,
+    totalRevenue: 0,
+    totalVendorCost: 0,
+    grossProfit: 0,
   };
 
   const margin = data.totalRevenue > 0
     ? Math.round((data.grossProfit / data.totalRevenue) * 100)
-    : 36;
+    : 0;
 
   const kpis = [
     {
-      label: "Today's Activities",
+      label: "Total Activities",
       value: data.todayActivities.toString(),
-      subtext: "Across all active departures",
+      subtext: "In departure itinerary",
       icon: Activity,
       color: "text-amber-600 bg-amber-50 border-amber-200",
       iconColor: "text-amber-600",
@@ -63,7 +63,7 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
     {
       label: "Passengers Booked",
       value: data.passengersBooked.toString(),
-      subtext: "Opted-in travellers",
+      subtext: "Total activity seat-slots",
       icon: Users,
       color: "text-purple-600 bg-purple-50 border-purple-200",
       iconColor: "text-purple-600",
@@ -71,7 +71,7 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
     {
       label: "Vendor Cost",
       value: `₹${data.totalVendorCost.toLocaleString("en-IN")}`,
-      subtext: "Direct net liabilities",
+      subtext: "Direct vendor liabilities",
       icon: CreditCard,
       color: "text-slate-700 bg-slate-50 border-slate-200",
       iconColor: "text-slate-600",
