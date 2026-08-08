@@ -25,6 +25,7 @@ import {
   Bed,
   Bus,
   Sliders,
+  Settings,
   FileSpreadsheet,
   ClipboardCheck,
   Check,
