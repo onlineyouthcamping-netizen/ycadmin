@@ -1341,9 +1341,33 @@ export default function DepartureHubPage() {
   const [genderFilter, setGenderFilter] = useState("All");
   const [page, setPage] = useState(1);
 
+  // New Departure API & Readiness state
+  const [departureRecord, setDepartureRecord] = useState<any | null>(null);
+  const [readinessData, setReadinessData] = useState<any | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const handleStatusChange = async (targetStatus: string) => {
+    setUpdatingStatus(true);
+    try {
+      const res = await api.put("/api/departures/status", {
+        tripId,
+        date: departureDateStr,
+        status: targetStatus,
+      });
+      if (res.data?.success) {
+        setDepartureRecord(res.data.data.departure);
+        setReadinessData(res.data.data.readiness);
+        toast.success(`Departure status updated to '${targetStatus}'`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || `Failed to transition to '${targetStatus}'`);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   // New Passengers Grouping & Room Allocation states
   const [bookingGroupFilter, setBookingGroupFilter] = useState("All");
-  const [coupleFilter, setCoupleFilter] = useState("All");
   const [roomAllocFilter, setRoomAllocFilter] = useState("All");
   const [trainTicketFilter, setTrainTicketFilter] = useState("All");
   const [joiningCityFilter, setJoiningCityFilter] = useState("All");
@@ -1689,6 +1713,16 @@ export default function DepartureHubPage() {
           b.departureDate?.substring(0, 10) === departureDateStr,
       );
       setBookings(filtered);
+
+      try {
+        const depRes = await api.get(`/api/departures/resolve?tripId=${tripId}&date=${departureDateStr}`);
+        if (depRes.data?.success) {
+          setDepartureRecord(depRes.data.data.departure);
+          setReadinessData(depRes.data.data.readiness);
+        }
+      } catch (err) {
+        console.error("Failed to resolve departure record and readiness", err);
+      }
 
       try {
         const engineRes = await api.get(`/departure-engine/${tripId}/${departureDateStr}/passenger-stats`);
@@ -5738,21 +5772,84 @@ export default function DepartureHubPage() {
                   <span className="text-[9.5px] font-black text-[#F97316] uppercase tracking-wider block mb-0.5">
                     Departure Operations Workspace
                   </span>
-                  <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none">
-                    {tripId}
+                  <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none font-mono">
+                    {departureRecord?.departureCode || `DEP-${tripId.toUpperCase()}-${departureDateStr}`}
                   </h1>
                 </div>
-                <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase tracking-wider border border-emerald-200">
-                  CONFIRMED
-                </span>
+                {(() => {
+                  const status = departureRecord?.status || "Planning";
+                  const statusColors: Record<string, string> = {
+                    Planning: "bg-amber-100 text-amber-800 border-amber-200",
+                    Ready: "bg-blue-100 text-blue-800 border-blue-200",
+                    Confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+                    "In Progress": "bg-indigo-100 text-indigo-800 border-indigo-200",
+                    Completed: "bg-slate-100 text-slate-800 border-slate-200",
+                    Cancelled: "bg-rose-100 text-rose-800 border-rose-200",
+                  };
+                  return (
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border ${statusColors[status] || "bg-slate-100 text-slate-800 border-slate-200"}`}>
+                      {status}
+                    </span>
+                  );
+                })()}
                 <span className="text-slate-300">•</span>
                 <span className="text-sm text-slate-600 font-semibold">
-                  {tripDetails?.title || "Manali Kasol Amritsar"}
+                  {tripDetails?.title || "Trip Departure"}
                 </span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0 relative w-full sm:w-auto mt-3 sm:mt-0">
+              {/* Dynamic Status Transition Buttons */}
+              {(() => {
+                const currentStatus = departureRecord?.status || "Planning";
+                if (currentStatus === "Planning") {
+                  return (
+                    <button
+                      disabled={updatingStatus}
+                      onClick={() => handleStatusChange("Ready")}
+                      className="text-[11px] font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors"
+                    >
+                      Mark Ready
+                    </button>
+                  );
+                }
+                if (currentStatus === "Ready") {
+                  return (
+                    <button
+                      disabled={updatingStatus}
+                      onClick={() => handleStatusChange("Confirmed")}
+                      className="text-[11px] font-bold border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                    >
+                      Confirm Departure
+                    </button>
+                  );
+                }
+                if (currentStatus === "Confirmed") {
+                  return (
+                    <button
+                      disabled={updatingStatus}
+                      onClick={() => handleStatusChange("In Progress")}
+                      className="text-[11px] font-bold border border-indigo-300 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                    >
+                      Start Trip (In Progress)
+                    </button>
+                  );
+                }
+                if (currentStatus === "In Progress") {
+                  return (
+                    <button
+                      disabled={updatingStatus}
+                      onClick={() => handleStatusChange("Completed")}
+                      className="text-[11px] font-bold border border-slate-300 bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                    >
+                      Complete Departure
+                    </button>
+                  );
+                }
+                return null;
+              })()}
+
               <button
                 onClick={() => {
                   setEditGuideName(leadGuideName);
@@ -5770,7 +5867,7 @@ export default function DepartureHubPage() {
                   More Actions <ChevronDown className="w-3 h-3" />
                 </button>
                 {moreActionsOpen && (
-                  <div className="absolute right-0 mt-1 w-full sm:w-40 bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50 text-left">
+                  <div className="absolute right-0 mt-1 w-full sm:w-44 bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50 text-left">
                     <button
                       onClick={() => {
                         handlePrintManifest();
@@ -5780,24 +5877,17 @@ export default function DepartureHubPage() {
                     >
                       Print Manifest
                     </button>
-                    <button
-                      onClick={() => {
-                        toast.success("Departure locked successfully!");
-                        setMoreActionsOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-                    >
-                      Lock Departure
-                    </button>
-                    <button
-                      onClick={() => {
-                        toast.error("Cancellation requires Senior Approval");
-                        setMoreActionsOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
-                    >
-                      Cancel Departure
-                    </button>
+                    {(departureRecord?.status || "Planning") !== "Cancelled" && (
+                      <button
+                        onClick={() => {
+                          handleStatusChange("Cancelled");
+                          setMoreActionsOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 font-bold"
+                      >
+                        Cancel Departure
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -5912,34 +6002,39 @@ export default function DepartureHubPage() {
                 const overviewGuide = tripVendors.filter((v: any) => v.vendorType === "guide");
                 const isGuideAssigned = overviewGuide.length > 0;
                 
-                let readiness = 0;
-                if (stats.totalParticipants > 0) readiness += 20;
-                if (isHotelsConfirmed) readiness += 20;
-                if (isTransportConfirmed) readiness += 20;
-                if (isGuideAssigned) readiness += 20;
-                if (stats.customerPaidPercent && parseFloat(stats.customerPaidPercent) > 0) readiness += 20;
-                
-                const formatCompact = (num: number) => {
-                  if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)}Cr`;
-                  if (num >= 100000) return `₹${(num / 100000).toFixed(1)}L`;
-                  if (num >= 1000) return `₹${(num / 1000).toFixed(1)}K`;
-                  return `₹${num.toLocaleString("en-IN")}`;
-                };
+                const rScore = readinessData?.totalScore ?? 0;
+                const rStatus = readinessData?.status === "READY" ? "READY" : "ACTION REQUIRED";
+                const missingList = readinessData?.missingItems || [];
 
                 return (
                   <div className="bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs overflow-hidden">
                     <div className="flex bg-slate-900 text-white p-4 items-center justify-between">
                       <div className="flex gap-4 items-center">
-                        <h3 className="font-black text-lg">Departure {tripId.substring(0,8).toUpperCase()}</h3>
-                        <span className={`border px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${readiness === 100 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-amber-500/20 text-amber-400 border-amber-500/50'}`}>
-                          {readiness === 100 ? "READY" : "IN PROGRESS"}
+                        <h3 className="font-black text-lg font-mono">
+                          {departureRecord?.departureCode || `DEP-${tripId.toUpperCase()}-${departureDateStr}`}
+                        </h3>
+                        <span className={`border px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${rStatus === "READY" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" : "bg-amber-500/20 text-amber-400 border-amber-500/50"}`}>
+                          {rStatus}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-slate-400 font-bold uppercase">Readiness</span>
-                        <span className={`font-black text-lg ${readiness === 100 ? 'text-emerald-400' : 'text-amber-400'}`}>{readiness}%</span>
+                        <span className={`font-black text-lg ${rStatus === "READY" ? "text-emerald-400" : "text-amber-400"}`}>{rScore}%</span>
                       </div>
                     </div>
+
+                    {missingList.length > 0 && (
+                      <div className="p-3 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 space-y-1">
+                        <span className="font-bold flex items-center gap-1 text-amber-800">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Operational Missing Items ({missingList.length}):
+                        </span>
+                        <ul className="list-disc list-inside space-y-0.5 text-[11px] font-medium text-amber-800">
+                          {missingList.map((item: string, idx: number) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 divide-x divide-y md:divide-y-0 divide-[#E2E8F0] bg-slate-50">
                       <div className="p-4 text-center">
@@ -5948,32 +6043,36 @@ export default function DepartureHubPage() {
                       </div>
                       <div className="p-4 text-center">
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Hotels</p>
-                        <p className={`font-black text-base ${isHotelsConfirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <p className={`font-black text-base ${isHotelsConfirmed ? "text-emerald-600" : "text-amber-600"}`}>
                           {isHotelsConfirmed ? "Confirmed" : "Pending"}
                         </p>
                       </div>
                       <div className="p-4 text-center">
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Transport</p>
-                        <p className={`font-black text-base ${isTransportConfirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <p className={`font-black text-base ${isTransportConfirmed ? "text-emerald-600" : "text-amber-600"}`}>
                           {isTransportConfirmed ? "Confirmed" : "Pending"}
                         </p>
                       </div>
                       <div className="p-4 text-center">
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Guide</p>
-                        <p className={`font-black text-base ${isGuideAssigned ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <p className={`font-black text-base ${isGuideAssigned ? "text-emerald-600" : "text-amber-600"}`}>
                           {isGuideAssigned ? "Assigned" : "Pending"}
                         </p>
                       </div>
                       <div className="p-4 text-center col-span-2 md:col-span-1">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payments</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Collections</p>
                         <div className="flex items-end justify-center gap-2">
-                          <p className="font-black text-slate-800 text-base">{formatCompact(stats.totalRevenue)}</p>
+                          <p className="font-black text-slate-800 text-base">{formatCompact(stats.totalCollected || stats.totalAdvance || 0)}</p>
                           <p className="text-[10px] font-bold text-emerald-600 mb-0.5">{stats.customerPaidPercent}%</p>
                         </div>
                       </div>
                       <div className="p-4 text-center col-span-2 md:col-span-1">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Profit</p>
-                        <p className="font-black text-emerald-600 text-base">{formatCompact(stats.estProfit)}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Expenses</p>
+                        <p className="font-black text-slate-800 text-base">{formatCompact(stats.totalExpenses || 0)}</p>
+                      </div>
+                      <div className="p-4 text-center col-span-2 md:col-span-1">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Net Profit</p>
+                        <p className="font-black text-emerald-600 text-base">{formatCompact(stats.estProfit || 0)}</p>
                       </div>
                     </div>
                   </div>
@@ -6705,19 +6804,6 @@ export default function DepartureHubPage() {
                       {bg.bookingRef} ({bg.leadName})
                     </option>
                   ))}
-                </select>
-
-                <select
-                  value={coupleFilter}
-                  onChange={(e) => {
-                    setCoupleFilter(e.target.value);
-                    setPage(1);
-                  }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50"
-                >
-                  <option value="All">All Couples Status</option>
-                  <option value="With Couples">Has Couple</option>
-                  <option value="Without Couples">No Couple</option>
                 </select>
 
                 <select
