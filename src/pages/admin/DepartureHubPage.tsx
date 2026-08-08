@@ -5047,65 +5047,13 @@ export default function DepartureHubPage() {
       allocatePass1(remainingAll);
     }
 
-    // Phase 2: Smart Fallback (Pools leftovers to perfectly balance 3s and 4s)
-    const leftovers = activeTravelers.filter(p => !allocated.has(p.name));
-    const N = leftovers.length;
-    if (N > 0) {
-      let partition: number[] = [];
-      if (fallbackToQuad && capacitySize === 3) {
-        const remainder = N % 3;
-        let numFours = 0;
-        let numThrees = 0;
-        if (remainder === 0) {
-          numThrees = Math.floor(N / 3);
-        } else if (remainder === 1) {
-          if (N >= 4) { numFours = 1; numThrees = Math.floor((N - 4) / 3); }
-          else { partition = [1]; }
-        } else if (remainder === 2) {
-          if (N >= 8) { numFours = 2; numThrees = Math.floor((N - 8) / 3); }
-          else { if (N === 2) partition = [2]; if (N === 5) partition = [3, 2]; }
-        }
-        for (let i = 0; i < numFours; i++) partition.push(4);
-        for (let i = 0; i < numThrees; i++) partition.push(3);
-      } else {
-        let temp = N;
-        while (temp > 0) {
-          if (temp >= capacitySize) { partition.push(capacitySize); temp -= capacitySize; }
-          else { partition.push(temp); temp = 0; }
-        }
-      }
-
-      // Group leftovers by gender to try and keep chunks same-gender as much as possible
-      let remainingMales = leftovers.filter(p => (p.gender || "").toLowerCase() === "male");
-      let remainingFemales = leftovers.filter(p => (p.gender || "").toLowerCase() === "female");
-      let remainingUnknowns = leftovers.filter(p => (p.gender || "").toLowerCase() !== "male" && (p.gender || "").toLowerCase() !== "female");
-      
-      if (!sameGenderEnforced) {
-        remainingUnknowns = leftovers;
-        remainingMales = [];
-        remainingFemales = [];
-      }
-
-      partition.forEach(size => {
-        let chunk: any[] = [];
-        
-        // Try to find a pure gender pool that can fulfill the entire room size first
-        if (remainingMales.length >= size) {
-          chunk = remainingMales.splice(0, size);
-        } else if (remainingFemales.length >= size) {
-          chunk = remainingFemales.splice(0, size);
-        } else if (remainingUnknowns.length >= size) {
-          chunk = remainingUnknowns.splice(0, size);
-        } else {
-          // If no pure pool has enough people, we must mix the remaining fragments to perfectly pack the room
-          while (chunk.length < size) {
-            if (remainingMales.length > 0) chunk.push(remainingMales.shift());
-            else if (remainingFemales.length > 0) chunk.push(remainingFemales.shift());
-            else if (remainingUnknowns.length > 0) chunk.push(remainingUnknowns.shift());
-            else break; // safety break
-          }
-        }
-
+    // Phase 2: Smart Fallback (Allocates remaining unassigned travelers into rooms strictly per gender)
+    const allocatePoolByGender = (genderPool: any[]) => {
+      let pool = [...genderPool];
+      while (pool.length > 0) {
+        let chunkSize = Math.min(capacitySize, pool.length);
+        if (chunkSize === 0) break;
+        const chunk = pool.splice(0, chunkSize);
         chunk.forEach((p) => {
           if (p) {
             newAllocs[p.name] = { room: `Room ${roomNum}` };
@@ -5113,7 +5061,27 @@ export default function DepartureHubPage() {
           }
         });
         roomNum++;
-      });
+      }
+    };
+
+    if (sameGenderEnforced) {
+      const leftoverFemales = activeTravelers.filter(
+        (p) => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.name),
+      );
+      allocatePoolByGender(leftoverFemales);
+
+      const leftoverMales = activeTravelers.filter(
+        (p) => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.name),
+      );
+      allocatePoolByGender(leftoverMales);
+
+      const leftoverOthers = activeTravelers.filter(
+        (p) => !allocated.has(p.name),
+      );
+      allocatePoolByGender(leftoverOthers);
+    } else {
+      const remainingAll = activeTravelers.filter((p) => !allocated.has(p.name));
+      allocatePoolByGender(remainingAll);
     }
 
     // ── VEHICLE & TEMPO AUTO-ALLOCATION PASS ──
