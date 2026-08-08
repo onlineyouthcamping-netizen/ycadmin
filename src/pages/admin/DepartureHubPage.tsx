@@ -5940,8 +5940,8 @@ export default function DepartureHubPage() {
               <Bus className="w-3.5 h-3.5 text-slate-400" />{" "}
               {transportVehiclesLabel}
             </span>
-            <span className="w-full sm:w-auto sm:ml-auto text-slate-400">
-              Created by Suresh Bhai on 15 Jun 2027
+            <span className="w-full sm:w-auto sm:ml-auto text-slate-400 font-mono text-[10.5px]">
+              {departureRecord?.departureCode || `DEP-${tripId.toUpperCase()}-${departureDateStr}`}
             </span>
           </div>
 
@@ -6599,8 +6599,8 @@ export default function DepartureHubPage() {
                       <p className="text-xl font-black">{engineStats.summary?.seniors || 0}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Couples</p>
-                      <p className="text-xl font-black text-pink-400">{engineStats.groups?.couples?.length || 0}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Twin Pairs</p>
+                      <p className="text-xl font-black text-pink-400">{engineStats?.groups?.couples?.length || engineStats?.groups?.pairs?.length || 0}</p>
                     </div>
                     <div>
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Families</p>
@@ -7464,76 +7464,88 @@ export default function DepartureHubPage() {
               </div>
 
               {/* Metrics cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                {[
-                  {
-                    v: "9 Days / 8 Nights",
-                    l: "Duration & Stays",
-                    icon: <Calendar className="w-4 h-4 text-blue-600" />,
-                    bg: "bg-blue-50/50",
-                  },
-                  {
-                    v: "7 Destinations",
-                    l: "Places to be visited",
-                    icon: <MapPin className="w-4 h-4 text-emerald-600" />,
-                    bg: "bg-emerald-50/50",
-                  },
-                  {
-                    v: "~1,320 KM",
-                    l: "Total Travel Distance",
-                    icon: <Bus className="w-4 h-4 text-cyan-600" />,
-                    bg: "bg-cyan-50/50",
-                  },
-                  {
-                    v: "6 Activities",
-                    l: "Included in itinerary",
-                    icon: <Star className="w-4 h-4 text-amber-600" />,
-                    bg: "bg-amber-50/50",
-                  },
-                ].map((kpi) => (
-                  <div
-                    key={kpi.l}
-                    className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex items-center gap-3"
-                  >
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                        kpi.bg,
-                      )}
-                    >
-                      {kpi.icon}
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-slate-800 leading-tight">
-                        {kpi.v}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        {kpi.l}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                {(() => {
+                  const dayCount = computedItinerary.length || tripDetails?.durationDays || 9;
+                  const nightCount = computedItinerary.filter((i: any) => i.stay && i.stay !== "—" && !i.stay.includes("No Stay")).length || (dayCount > 1 ? dayCount - 1 : 1);
+                  const destSet = new Set(computedItinerary.map((i: any) => i.loc).filter(Boolean));
+                  const destCount = destSet.size || 1;
+                  const actCount = computedItinerary.filter((i: any) => i.activities && i.activities !== "—" && i.activities !== "").length;
+                  const totalHotelCost = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").reduce((sum: number, h: any) => sum + (h.totalAmount || h.cost || 0), 0) || (stats.totalExpenses ? Math.round(stats.totalExpenses * 0.45) : 0);
+                  const hotelVendorCount = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").length;
 
-              {/* Grid Table */}
-              
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-slate-800 rounded-lg p-4 text-white shadow-sm">
-                    <div className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Est. Hotel Cost</div>
-                    <div className="text-2xl font-black text-emerald-400 mt-1">₹4,47,000</div>
-                    <div className="text-[10px] text-slate-500 font-semibold mt-1">Includes 5% GST</div>
-                  </div>
-                  <div className="bg-white border border-[#E2E8F0] rounded-lg p-4 shadow-sm">
-                    <div className="text-slate-500 text-[10px] font-black uppercase tracking-wider">Total Nights</div>
-                    <div className="text-2xl font-black text-slate-800 mt-1">8 Nights</div>
-                    <div className="text-[10px] text-slate-400 font-semibold mt-1">Across 4 destinations</div>
-                  </div>
-                  <div className="bg-white border border-[#E2E8F0] rounded-lg p-4 shadow-sm">
-                    <div className="text-slate-500 text-[10px] font-black uppercase tracking-wider">Confirmed Hotels</div>
-                    <div className="text-2xl font-black text-slate-800 mt-1">4 / 4</div>
-                    <div className="text-[10px] text-slate-400 font-semibold mt-1">All stays confirmed</div>
-                  </div>
-                </div>
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                        {[
+                          {
+                            v: `${dayCount} Days / ${nightCount} Nights`,
+                            l: "Duration & Stays",
+                            icon: <Calendar className="w-4 h-4 text-blue-600" />,
+                            bg: "bg-blue-50/50",
+                          },
+                          {
+                            v: `${destCount} Destinations`,
+                            l: "Places to be visited",
+                            icon: <MapPin className="w-4 h-4 text-emerald-600" />,
+                            bg: "bg-emerald-50/50",
+                          },
+                          {
+                            v: `~${dayCount * 140} KM`,
+                            l: "Total Travel Distance",
+                            icon: <Bus className="w-4 h-4 text-cyan-600" />,
+                            bg: "bg-cyan-50/50",
+                          },
+                          {
+                            v: `${actCount} Activities`,
+                            l: "Included in itinerary",
+                            icon: <Star className="w-4 h-4 text-amber-600" />,
+                            bg: "bg-amber-50/50",
+                          },
+                        ].map((kpi) => (
+                          <div
+                            key={kpi.l}
+                            className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex items-center gap-3"
+                          >
+                            <div
+                              className={cn(
+                                "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                                kpi.bg,
+                              )}
+                            >
+                              {kpi.icon}
+                            </div>
+                            <div>
+                              <p className="text-xs font-black text-slate-800 leading-tight">
+                                {kpi.v}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                {kpi.l}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="bg-slate-800 rounded-lg p-4 text-white shadow-sm">
+                          <div className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Est. Hotel Cost</div>
+                          <div className="text-2xl font-black text-emerald-400 mt-1">₹{totalHotelCost.toLocaleString("en-IN")}</div>
+                          <div className="text-[10px] text-slate-500 font-semibold mt-1">Includes 5% GST</div>
+                        </div>
+                        <div className="bg-white border border-[#E2E8F0] rounded-lg p-4 shadow-sm">
+                          <div className="text-slate-500 text-[10px] font-black uppercase tracking-wider">Total Nights</div>
+                          <div className="text-2xl font-black text-slate-800 mt-1">{nightCount} Nights</div>
+                          <div className="text-[10px] text-slate-400 font-semibold mt-1">Across {destCount} destinations</div>
+                        </div>
+                        <div className="bg-white border border-[#E2E8F0] rounded-lg p-4 shadow-sm">
+                          <div className="text-slate-500 text-[10px] font-black uppercase tracking-wider">Confirmed Hotels</div>
+                          <div className="text-2xl font-black text-slate-800 mt-1">{hotelVendorCount} / {hotelVendorCount || 1}</div>
+                          <div className="text-[10px] text-slate-400 font-semibold mt-1">All stays mapped</div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
                 
                 <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
                 <table className="w-full text-left text-xs border-collapse">
@@ -9067,405 +9079,136 @@ export default function DepartureHubPage() {
                   </div>
                 </div>
                 
-                {/* Sharing-Wise Per Person Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-2">
-                  <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
-                    <div className="flex items-center justify-between text-slate-500 mb-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Total Est. Stay Budget</span>
-                      <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">5 Nights</span>
-                    </div>
-                    <div className="text-xl font-extrabold text-slate-900">₹3,72,500</div>
-                    <div className="text-[11px] text-slate-500 mt-1 font-medium">₹74,500 / night across all stays</div>
-                  </div>
+                {(() => {
+                  const totalNights = computedItinerary.filter((i: any) => i.stay && i.stay !== "—" && !i.stay.includes("No Stay")).length || 5;
+                  const totalHotelBudget = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").reduce((sum: number, h: any) => sum + (h.totalAmount || h.cost || 0), 0) || (stats.totalExpenses ? Math.round(stats.totalExpenses * 0.45) : 372500);
+                  const perNightCost = totalNights > 0 ? Math.round(totalHotelBudget / totalNights) : 0;
+                  const totalPax = allPassengers.length || 1;
+                  const avgPerPaxCost = Math.round(totalHotelBudget / totalPax);
 
-                  <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
-                    <div className="flex items-center justify-between text-slate-500 mb-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Twin Sharing (2 Pax)</span>
-                      <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono">12 Rooms (24 Pax)</span>
-                    </div>
-                    <div className="text-xl font-extrabold text-blue-600">₹1,875 <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
-                    <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹9,375 / pax</div>
-                  </div>
+                  const twinAllocated = computedRoomAllocations.filter((r: any) => r.sharingType === "STANDARD" || r.roomType === "Twin" || r.roomType === "TWIN").length;
+                  const tripleAllocated = computedRoomAllocations.filter((r: any) => r.roomType === "Triple" || r.roomType === "TRIPLE").length;
 
-                  <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
-                    <div className="flex items-center justify-between text-slate-500 mb-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Triple Sharing (3 Pax)</span>
-                      <span className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-mono">5 Rooms (15 Pax)</span>
-                    </div>
-                    <div className="text-xl font-extrabold text-purple-600">₹1,967 <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
-                    <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹9,835 / pax</div>
-                  </div>
+                  return (
+                    <>
+                      {/* Sharing-Wise Per Person Summary Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-2">
+                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
+                          <div className="flex items-center justify-between text-slate-500 mb-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wider">Total Est. Stay Budget</span>
+                            <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">{totalNights} Nights</span>
+                          </div>
+                          <div className="text-xl font-extrabold text-slate-900">₹{totalHotelBudget.toLocaleString("en-IN")}</div>
+                          <div className="text-[11px] text-slate-500 mt-1 font-medium">₹{perNightCost.toLocaleString("en-IN")} / night across all stays</div>
+                        </div>
 
-                  <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs border-l-4 border-l-orange-500">
-                    <div className="flex items-center justify-between text-slate-500 mb-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Avg Per Person Cost</span>
-                      <span className="text-xs bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono">39 Pax Allotted</span>
-                    </div>
-                    <div className="text-xl font-extrabold text-orange-600">₹1,910 <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
-                    <div className="text-[11px] text-slate-500 mt-1 font-medium">Weighted avg for full departure</div>
-                  </div>
-                </div>
-                
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-[#E2E8F0]">
-                      <tr>
-                        <th className="px-6 py-4 w-20">Day</th>
-                        <th className="px-6 py-4">Date</th>
-                        <th className="px-6 py-4">Destination</th>
-                        <th className="px-6 py-4">Night Stay</th>
-                        <th className="px-6 py-4">Hotel</th>
-                        <th className="px-6 py-4">Rooms & Allotment</th>
-                        <th className="px-6 py-4">Cost & Per-Pax Sharing</th>
-                        <th className="px-6 py-4">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
-                      {/* Day 1 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 1</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Jul 28, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Tue</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Ahmedabad</div>
-                              <div className="text-slate-400 mt-0.5">Departure</div>
-                            </div>
+                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
+                          <div className="flex items-center justify-between text-slate-500 mb-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wider">Twin Sharing (2 Pax)</span>
+                            <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono">{Math.ceil(twinAllocated / 2)} Rooms ({twinAllocated} Pax)</span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">No</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900">—</div>
-                          <div className="text-slate-400 mt-0.5">No Stay</div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">—</td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">—</td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">NO STAY</span>
-                        </td>
-                      </tr>
+                          <div className="text-xl font-extrabold text-blue-600">₹{totalPax > 0 ? Math.round(perNightCost / totalPax) : 1875} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
+                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹{avgPerPaxCost.toLocaleString("en-IN")} / pax</div>
+                        </div>
 
-                      {/* Day 2 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 2</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Jul 29, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Wed</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Delhi</div>
-                              <div className="text-slate-400 mt-0.5">Enroute</div>
-                            </div>
+                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
+                          <div className="flex items-center justify-between text-slate-500 mb-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wider">Triple Sharing (3 Pax)</span>
+                            <span className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-mono">{Math.ceil(tripleAllocated / 3)} Rooms ({tripleAllocated} Pax)</span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">No</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900">—</div>
-                          <div className="text-slate-400 mt-0.5">No Stay</div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">—</td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">—</td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">NO STAY</span>
-                        </td>
-                      </tr>
+                          <div className="text-xl font-extrabold text-purple-600">₹{totalPax > 0 ? Math.round((perNightCost / totalPax) * 1.05) : 1967} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
+                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹{Math.round(avgPerPaxCost * 1.05).toLocaleString("en-IN")} / pax</div>
+                        </div>
 
-                      {/* Day 3 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 3</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Jul 30, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Thu</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Manali</div>
-                            </div>
+                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs border-l-4 border-l-orange-500">
+                          <div className="flex items-center justify-between text-slate-500 mb-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wider">Avg Per Person Cost</span>
+                            <span className="text-xs bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono">{totalPax} Pax Allotted</span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">Yes</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                            Hotel Snow View <span className="text-orange-400 text-[10px]">★★★★☆</span>
-                          </div>
-                          <div className="text-slate-400 mt-0.5">Manali</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-800 flex items-center justify-between gap-3">
-                            <span>12 Twin</span>
-                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">₹1,875/pax</span>
-                          </div>
-                          <div className="font-bold text-slate-600 mt-1 flex items-center justify-between gap-3">
-                            <span>5 Triple</span>
-                            <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">₹1,967/pax</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-extrabold text-emerald-600">₹74,500 <span className="text-[10px] text-slate-400 font-normal">/ night</span></div>
-                          <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 mt-1 inline-block">
-                            ₹1,910 / pax avg
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">CONFIRMED</span>
-                        </td>
-                      </tr>
+                          <div className="text-xl font-extrabold text-orange-600">₹{totalPax > 0 ? Math.round(perNightCost / totalPax) : 1910} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
+                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Weighted avg for full departure</div>
+                        </div>
+                      </div>
 
-                      {/* Day 4 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 4</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Jul 31, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Fri</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Manali</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">Yes</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                            Hotel Snow View <span className="text-orange-400 text-[10px]">★★★★☆</span>
-                          </div>
-                          <div className="text-slate-400 mt-0.5">Manali</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-800 flex items-center justify-between gap-3">
-                            <span>12 Twin</span>
-                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">₹1,875/pax</span>
-                          </div>
-                          <div className="font-bold text-slate-600 mt-1 flex items-center justify-between gap-3">
-                            <span>5 Triple</span>
-                            <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">₹1,967/pax</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-extrabold text-emerald-600">₹74,500 <span className="text-[10px] text-slate-400 font-normal">/ night</span></div>
-                          <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 mt-1 inline-block">
-                            ₹1,910 / pax avg
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">CONFIRMED</span>
-                        </td>
-                      </tr>
-
-                      {/* Day 5 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 5</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Aug 01, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Sat</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Kasol</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">Yes</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                            Kasol Riverside Resort <span className="text-orange-400 text-[10px]">★★★★☆</span>
-                          </div>
-                          <div className="text-slate-400 mt-0.5">Kasol</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-800 flex items-center justify-between gap-3">
-                            <span>12 Twin</span>
-                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">₹1,875/pax</span>
-                          </div>
-                          <div className="font-bold text-slate-600 mt-1 flex items-center justify-between gap-3">
-                            <span>5 Triple</span>
-                            <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">₹1,967/pax</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-extrabold text-emerald-600">₹74,500 <span className="text-[10px] text-slate-400 font-normal">/ night</span></div>
-                          <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 mt-1 inline-block">
-                            ₹1,910 / pax avg
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">CONFIRMED</span>
-                        </td>
-                      </tr>
-
-                      {/* Day 6 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 6</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Aug 02, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Sun</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Kasol</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">Yes</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                            Kasol Riverside Resort <span className="text-orange-400 text-[10px]">★★★★☆</span>
-                          </div>
-                          <div className="text-slate-400 mt-0.5">Kasol</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-800 flex items-center justify-between gap-3">
-                            <span>12 Twin</span>
-                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">₹1,875/pax</span>
-                          </div>
-                          <div className="font-bold text-slate-600 mt-1 flex items-center justify-between gap-3">
-                            <span>5 Triple</span>
-                            <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">₹1,967/pax</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-extrabold text-emerald-600">₹74,500 <span className="text-[10px] text-slate-400 font-normal">/ night</span></div>
-                          <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 mt-1 inline-block">
-                            ₹1,910 / pax avg
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">CONFIRMED</span>
-                        </td>
-                      </tr>
-
-                      {/* Day 7 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 7</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Aug 03, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Mon</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Kullu</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">Yes</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                            The Kullu Valley Resort <span className="text-orange-400 text-[10px]">★★★★☆</span>
-                          </div>
-                          <div className="text-slate-400 mt-0.5">Kullu</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-700">12 Twin</div>
-                          <div className="font-bold text-slate-500 mt-0.5">5 Triple</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-emerald-600">₹74,500</div>
-                          <div className="text-[10px] text-slate-400 font-semibold mt-0.5">Est. Per Night</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">CONFIRMED</span>
-                        </td>
-                      </tr>
-
-                      {/* Day 8 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 8</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Aug 04, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Tue</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Manali</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">Yes</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                            Hotel Snow View <span className="text-orange-400 text-[10px]">★★★★☆</span>
-                          </div>
-                          <div className="text-slate-400 mt-0.5">Manali</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-700">12 Twin</div>
-                          <div className="font-bold text-slate-500 mt-0.5">5 Triple</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-emerald-600">₹74,500</div>
-                          <div className="text-[10px] text-slate-400 font-semibold mt-0.5">Est. Per Night</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">CONFIRMED</span>
-                        </td>
-                      </tr>
-
-                      {/* Day 9 */}
-                      <tr className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                        <td className="px-6 py-4 font-black text-slate-900">Day 9</td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-700">Aug 05, 2026</div>
-                          <div className="text-slate-400 mt-0.5">Wed</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-1.5">
-                            <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900">Delhi</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase">No</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900">—</div>
-                          <div className="text-slate-400 mt-0.5">No Stay</div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">—</td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">—</td>
-                        <td className="px-6 py-4">
-                          <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase">NO STAY</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                      <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-[#E2E8F0]">
+                            <tr>
+                              <th className="px-6 py-4 w-20">Day</th>
+                              <th className="px-6 py-4">Date</th>
+                              <th className="px-6 py-4">Destination</th>
+                              <th className="px-6 py-4">Night Stay</th>
+                              <th className="px-6 py-4">Hotel</th>
+                              <th className="px-6 py-4">Rooms & Allotment</th>
+                              <th className="px-6 py-4">Cost & Per-Pax Sharing</th>
+                              <th className="px-6 py-4">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
+                            {computedItinerary.map((row: any, idx: number) => {
+                              const hasStay = row.stay && row.stay !== "—" && !row.stay.includes("No Stay");
+                              const hotelName = hasStay ? (dbVendors.find((v: any) => v.type?.toLowerCase() === "hotel")?.name || row.stay) : "—";
+                              return (
+                                <tr key={idx} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
+                                  <td className="px-6 py-4 font-black text-slate-900">Day {row.day || idx + 1}</td>
+                                  <td className="px-6 py-4">
+                                    <div className="font-medium text-slate-700">{row.date || departureDateStr}</div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-start gap-1.5">
+                                      <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                                      <div>
+                                        <div className="font-bold text-slate-900">{row.loc || "Enroute"}</div>
+                                        <div className="text-slate-400 mt-0.5">{row.sub || "Travel & Sightseeing"}</div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className={cn("px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase", hasStay ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600")}>
+                                      {hasStay ? "Yes" : "No"}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                      {hotelName} {hasStay && <span className="text-orange-400 text-[10px]">★★★★☆</span>}
+                                    </div>
+                                    <div className="text-slate-400 mt-0.5">{hasStay ? (row.loc || "Destination") : "No Stay"}</div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    {hasStay ? (
+                                      <div className="font-bold text-slate-800">
+                                        {computedRoomAllocations.length > 0 ? `${computedRoomAllocations.length} Rooms Allocated` : "Standard Inventory"}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400 font-bold">—</span>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    {hasStay ? (
+                                      <>
+                                        <div className="font-extrabold text-emerald-600">₹{perNightCost.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 font-normal">/ night</span></div>
+                                        <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 mt-1 inline-block">
+                                          ₹{avgPerPaxCost} / pax avg
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <span className="text-slate-400 font-bold">—</span>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className={cn("px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase", hasStay ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500")}>
+                                      {hasStay ? "CONFIRMED" : "NO STAY"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                })()}
 
                 <div className="flex items-center gap-2 mt-2">
                   <Info className="w-3.5 h-3.5 text-slate-400" />
