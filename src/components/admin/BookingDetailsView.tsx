@@ -1792,7 +1792,11 @@ export default function BookingDetailsView({
           );
           setPassengers(updatedPassengers);
           try {
-            await syncBookingDataWithPassengers(updatedPassengers);
+            // Strip out placeholder padding entries (gen-co-* with empty names) before saving to DB
+            const passengersToSave = updatedPassengers.filter(
+              p => !(String(p.id || "").startsWith("gen-co-") && !p.name)
+            );
+            await syncBookingDataWithPassengers(passengersToSave);
             toast.success("Passenger details updated");
             setIsPassengerDrawerOpen(false);
             onRefresh();
