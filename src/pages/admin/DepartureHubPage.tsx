@@ -9061,10 +9061,12 @@ export default function DepartureHubPage() {
                 
                 {(() => {
                   const totalNights = computedItinerary.filter((i: any) => i.stay && i.stay !== "—" && !i.stay.includes("No Stay")).length || 5;
-                  const totalHotelBudget = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").reduce((sum: number, h: any) => sum + (h.totalAmount || h.cost || 0), 0) || (stats.totalExpenses ? Math.round(stats.totalExpenses * 0.45) : 372500);
+                  const totalPax = allPassengers.length || 6;
+                  const estimatedBudget = totalPax * totalNights * 1250;
+                  const totalHotelBudget = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").reduce((sum: number, h: any) => sum + (h.totalAmount || h.cost || 0), 0) || (stats.totalExpenses ? Math.round(stats.totalExpenses * 0.45) : estimatedBudget);
                   const perNightCost = totalNights > 0 ? Math.round(totalHotelBudget / totalNights) : 0;
-                  const totalPax = allPassengers.length || 1;
-                  const avgPerPaxCost = Math.round(totalHotelBudget / totalPax);
+                  const avgPerPaxCost = totalPax > 0 ? Math.round(totalHotelBudget / totalPax) : 0;
+                  const perPaxPerNight = totalPax > 0 && totalNights > 0 ? Math.round(perNightCost / totalPax) : 1250;
 
                   const twinAllocated = computedRoomAllocations.filter((r: any) => r.sharingType === "STANDARD" || r.roomType === "Twin" || r.roomType === "TWIN").length;
                   const tripleAllocated = computedRoomAllocations.filter((r: any) => r.roomType === "Triple" || r.roomType === "TRIPLE").length;
@@ -9087,7 +9089,7 @@ export default function DepartureHubPage() {
                             <span className="text-[11px] font-bold uppercase tracking-wider">Twin Sharing (2 Pax)</span>
                             <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono">{Math.ceil(twinAllocated / 2)} Rooms ({twinAllocated} Pax)</span>
                           </div>
-                          <div className="text-xl font-extrabold text-blue-600">₹{totalPax > 0 ? Math.round(perNightCost / totalPax) : 1875} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
+                          <div className="text-xl font-extrabold text-blue-600">₹{perPaxPerNight.toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
                           <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹{avgPerPaxCost.toLocaleString("en-IN")} / pax</div>
                         </div>
 
@@ -9096,8 +9098,8 @@ export default function DepartureHubPage() {
                             <span className="text-[11px] font-bold uppercase tracking-wider">Triple Sharing (3 Pax)</span>
                             <span className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-mono">{Math.ceil(tripleAllocated / 3)} Rooms ({tripleAllocated} Pax)</span>
                           </div>
-                          <div className="text-xl font-extrabold text-purple-600">₹{totalPax > 0 ? Math.round((perNightCost / totalPax) * 1.05) : 1967} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
-                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹{Math.round(avgPerPaxCost * 1.05).toLocaleString("en-IN")} / pax</div>
+                          <div className="text-xl font-extrabold text-purple-600">₹{Math.round(perPaxPerNight * 0.9).toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
+                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹{Math.round(avgPerPaxCost * 0.9).toLocaleString("en-IN")} / pax</div>
                         </div>
 
                         <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs border-l-4 border-l-orange-500">
@@ -9105,7 +9107,7 @@ export default function DepartureHubPage() {
                             <span className="text-[11px] font-bold uppercase tracking-wider">Avg Per Person Cost</span>
                             <span className="text-xs bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono">{totalPax} Pax Allotted</span>
                           </div>
-                          <div className="text-xl font-extrabold text-orange-600">₹{totalPax > 0 ? Math.round(perNightCost / totalPax) : 1910} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
+                          <div className="text-xl font-extrabold text-orange-600">₹{perPaxPerNight.toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
                           <div className="text-[11px] text-slate-500 mt-1 font-medium">Weighted avg for full departure</div>
                         </div>
                       </div>
@@ -9127,20 +9129,20 @@ export default function DepartureHubPage() {
                           <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
                             {computedItinerary.map((row: any, idx: number) => {
                               const hasStay = row.stay && row.stay !== "—" && !row.stay.includes("No Stay");
+                              const dayLabel = String(row.day || idx + 1).toLowerCase().startsWith("day") ? (row.day || `Day ${idx + 1}`) : `Day ${row.day || idx + 1}`;
+                              const cleanLoc = row.stay && row.stay !== "—" && !row.stay.includes("No Stay") ? row.stay : (row.plan ? row.plan.split(" to ")[0].split(":")[0].trim() : "Enroute");
                               const hotelName = hasStay ? (dbVendors.find((v: any) => v.type?.toLowerCase() === "hotel")?.name || row.stay) : "—";
+                              
                               return (
                                 <tr key={idx} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                                  <td className="px-6 py-4 font-black text-slate-900">Day {row.day || idx + 1}</td>
+                                  <td className="px-6 py-4 font-black text-slate-900">{dayLabel}</td>
                                   <td className="px-6 py-4">
                                     <div className="font-medium text-slate-700">{row.date || departureDateStr}</div>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <div className="flex items-start gap-1.5">
-                                      <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                                      <div>
-                                        <div className="font-bold text-slate-900">{row.loc || "Enroute"}</div>
-                                        <div className="text-slate-400 mt-0.5">{row.sub || "Travel & Sightseeing"}</div>
-                                      </div>
+                                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                                      <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                                      <span>{cleanLoc}</span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
@@ -9149,10 +9151,13 @@ export default function DepartureHubPage() {
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                      {hotelName} {hasStay && <span className="text-orange-400 text-[10px]">★★★★☆</span>}
-                                    </div>
-                                    <div className="text-slate-400 mt-0.5">{hasStay ? (row.loc || "Destination") : "No Stay"}</div>
+                                    {hasStay ? (
+                                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                        {hotelName} <span className="text-orange-400 text-[10px]">★★★★☆</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400 font-bold">—</span>
+                                    )}
                                   </td>
                                   <td className="px-6 py-4">
                                     {hasStay ? (
@@ -9168,7 +9173,7 @@ export default function DepartureHubPage() {
                                       <>
                                         <div className="font-extrabold text-emerald-600">₹{perNightCost.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 font-normal">/ night</span></div>
                                         <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 mt-1 inline-block">
-                                          ₹{avgPerPaxCost} / pax avg
+                                          ₹{perPaxPerNight.toLocaleString("en-IN")} / pax avg
                                         </div>
                                       </>
                                     ) : (
