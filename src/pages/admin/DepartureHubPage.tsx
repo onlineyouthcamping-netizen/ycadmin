@@ -5495,11 +5495,6 @@ export default function DepartureHubPage() {
       const matchBookingGroup =
         bookingGroupFilter === "All" || bg.bookingId === bookingGroupFilter;
 
-      const matchCouple =
-        coupleFilter === "All" ||
-        (coupleFilter === "With Couples" && bg.coupleCount > 0) ||
-        (coupleFilter === "Without Couples" && bg.coupleCount === 0);
-
       const hasUnallocated = bg.passengers.some(
         (p: any) =>
           p.roomNo === "—" ||
@@ -5542,7 +5537,6 @@ export default function DepartureHubPage() {
       return (
         matchSearch &&
         matchBookingGroup &&
-        matchCouple &&
         matchRoomAlloc &&
         matchPayment &&
         matchPickup &&
@@ -5555,7 +5549,6 @@ export default function DepartureHubPage() {
     bookingGroups,
     paxSearch,
     bookingGroupFilter,
-    coupleFilter,
     roomAllocFilter,
     paymentFilter,
     pickupFilter,
