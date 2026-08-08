@@ -715,7 +715,7 @@ export default function BookingDetailsView({
         const pTrain =
           p.trainOption || p.trainClass || booking.trainClass || "Sleeper";
         const pRoom =
-          p.roomSharing || p.roomType || booking.roomType || "Triple Sharing";
+          p.roomSharing || p.roomType || booking.roomSharing || booking.roomType || "Double Sharing";
         passengersList.push({
           id: p.id || (idx === 0 ? "main" : `p-${idx}`),
           name:
@@ -745,7 +745,7 @@ export default function BookingDetailsView({
       // Add main guest fallback when no individual persons payload exists
       const defaultTrain = booking.trainClass || "Sleeper";
       const defaultRoom =
-        booking.roomType || booking.roomSharing || "Triple Sharing";
+        booking.roomSharing || booking.roomType || "Double Sharing";
       passengersList.push({
         id: "main",
         name: booking.fullName || booking.name || "Guest",
