@@ -5707,7 +5707,7 @@ export default function DepartureHubPage() {
       {/* ─── MOBILE DEPARTURE WORKSPACE (<768px) ─── */}
       <div className="block md:hidden p-3 pb-24 overflow-y-auto">
         <MobileDepartureWorkspace
-          departureName={selectedTrip?.title || tripId}
+          departureName={tripDetails?.title || tripId}
           departureDate={departureDateStr}
           passengers={allPassengers}
           onSelectPassenger={(p) => setActivePassenger(p.rawPassenger || p)}
@@ -5995,6 +5995,13 @@ export default function DepartureHubPage() {
                 const overviewGuide = tripVendors.filter((v: any) => v.vendorType === "guide");
                 const isGuideAssigned = overviewGuide.length > 0;
                 
+                const formatCompact = (num: number) => {
+                  if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)}Cr`;
+                  if (num >= 100000) return `₹${(num / 100000).toFixed(1)}L`;
+                  if (num >= 1000) return `₹${(num / 1000).toFixed(1)}K`;
+                  return `₹${(num || 0).toLocaleString("en-IN")}`;
+                };
+
                 const rScore = readinessData?.totalScore ?? 0;
                 const rStatus = readinessData?.status === "READY" ? "READY" : "ACTION REQUIRED";
                 const missingList = readinessData?.missingItems || [];
