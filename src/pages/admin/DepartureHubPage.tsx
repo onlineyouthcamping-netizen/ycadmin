@@ -4979,37 +4979,32 @@ export default function DepartureHubPage() {
       bookingGroups[bId].push(p);
     });
 
-    // Couples = travelers in the same booking group who have roomType "Couple" and match each other
+    // Step 1: Allocate Same-Booking Groups (Same booking co-travelers stay together!)
     if (prioritizeCouples) {
       Object.values(bookingGroups).forEach((group) => {
-        const matched = new Set<string>();
-        group.forEach((p) => {
-          if (allocated.has(p.name) || matched.has(p.name)) return;
-
-          // Check if traveler is couple or has coupleWith configured
-          const couplePartnerName = p.coupleWith || "";
-          if (couplePartnerName) {
-            const partner = group.find(
-              (other) =>
-                other.name === couplePartnerName &&
-                !allocated.has(other.name) &&
-                !matched.has(other.name),
-            );
-            if (partner) {
-              newAllocs[p.name] = {
-                room: `Room ${roomNum}`,
-              };
-              newAllocs[partner.name] = {
-                room: `Room ${roomNum}`,
-              };
-              allocated.add(p.name);
-              allocated.add(partner.name);
-              matched.add(p.name);
-              matched.add(partner.name);
-              roomNum++;
+        const unallocated = group.filter((p) => !allocated.has(p.name));
+        if (unallocated.length >= 2) {
+          let list = [...unallocated];
+          while (list.length >= 2) {
+            let chunkSize = 2;
+            const pref = list[0]?.roomType || "";
+            if (pref.includes("Quad") || pref.includes("Family") || list.length === 4) {
+              chunkSize = Math.min(4, list.length);
+            } else if (pref.includes("Triple") || list.length === 3) {
+              chunkSize = Math.min(3, list.length);
+            } else {
+              chunkSize = Math.min(2, list.length);
             }
+
+            const chunk = list.slice(0, chunkSize);
+            chunk.forEach((p) => {
+              newAllocs[p.name] = { room: `Room ${roomNum}` };
+              allocated.add(p.name);
+            });
+            roomNum++;
+            list = list.slice(chunkSize);
           }
-        });
+        }
       });
     }
 
@@ -9465,7 +9460,7 @@ export default function DepartureHubPage() {
                       htmlFor="rule-prioritize-couples"
                       className="text-[11px] font-bold text-slate-650 cursor-pointer select-none"
                     >
-                      Prioritize couples for 2-sharing rooms
+                      Prioritize same-booking groups for 2-sharing rooms
                     </label>
                   </div>
 
