@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { dashboardService } from '@/services/dashboard.service';
+import React, { useEffect, useState } from "react";
+import { dashboardService } from "@/services/dashboard.service";
 import {
   BarChart,
   Bar,
@@ -12,8 +12,14 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import { TrendingUp, Users, MapPin, CreditCard, CheckCircle } from 'lucide-react';
+} from "recharts";
+import {
+  TrendingUp,
+  Users,
+  MapPin,
+  CreditCard,
+  CheckCircle,
+} from "lucide-react";
 
 interface StatsData {
   overview: {
@@ -30,7 +36,7 @@ interface StatsData {
   inquiryStatusBreakdown: Record<string, number>;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -42,7 +48,7 @@ export default function AdminDashboard() {
         const data = await dashboardService.getStats();
         setStats(data);
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error("Failed to fetch stats:", error);
       } finally {
         setLoading(false);
       }
@@ -72,15 +78,19 @@ export default function AdminDashboard() {
     );
   }
 
-  const analyticsData = Object.entries(stats.bookingStatusBreakdown).map(([status, count]) => ({
-    name: status,
-    value: count
-  }));
+  const analyticsData = Object.entries(stats.bookingStatusBreakdown).map(
+    ([status, count]) => ({
+      name: status,
+      value: count,
+    }),
+  );
 
-  const inquiryData = Object.entries(stats.inquiryStatusBreakdown).map(([status, count]) => ({
-    name: status,
-    value: count
-  }));
+  const inquiryData = Object.entries(stats.inquiryStatusBreakdown).map(
+    ([status, count]) => ({
+      name: status,
+      value: count,
+    }),
+  );
 
   return (
     <div className="p-8 background-white">
@@ -124,7 +134,9 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Booking Status Distribution */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Booking Status</h2>
+          <h2 className="text-lg font-bold mb-4 text-gray-900">
+            Booking Status
+          </h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -138,7 +150,10 @@ export default function AdminDashboard() {
                 dataKey="value"
               >
                 {analyticsData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -148,7 +163,9 @@ export default function AdminDashboard() {
 
         {/* Inquiry Status Distribution */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Inquiry Status</h2>
+          <h2 className="text-lg font-bold mb-4 text-gray-900">
+            Inquiry Status
+          </h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={inquiryData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -164,17 +181,26 @@ export default function AdminDashboard() {
       {/* Top Trips */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Top Trips by Inquiries</h2>
+          <h2 className="text-lg font-bold mb-4 text-gray-900">
+            Top Trips by Inquiries
+          </h2>
           <div className="space-y-3">
             {stats.topTrips.slice(0, 5).map((trip, index) => (
-              <div key={trip.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div
+                key={trip.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
                     {index + 1}
                   </div>
-                  <span className="font-semibold text-gray-800">{trip.title}</span>
+                  <span className="font-semibold text-gray-800">
+                    {trip.title}
+                  </span>
                 </div>
-                <div className="text-sm font-bold text-primary">{trip.inquiriesCount} inquiries</div>
+                <div className="text-sm font-bold text-primary">
+                  {trip.inquiriesCount} inquiries
+                </div>
               </div>
             ))}
           </div>
@@ -182,20 +208,30 @@ export default function AdminDashboard() {
 
         {/* Recent Inquiries */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Recent Inquiries</h2>
+          <h2 className="text-lg font-bold mb-4 text-gray-900">
+            Recent Inquiries
+          </h2>
           <div className="space-y-3">
             {stats.recentInquiries.slice(0, 5).map((inquiry) => (
-              <div key={inquiry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div
+                key={inquiry.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
                 <div className="flex-1">
                   <p className="font-semibold text-gray-800">{inquiry.name}</p>
                   <p className="text-xs text-gray-500">{inquiry.trip.title}</p>
                 </div>
-                <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                  inquiry.status === 'BOOKED' ? 'bg-green-100 text-green-800' :
-                  inquiry.status === 'CONTACTED' ? 'bg-blue-100 text-blue-800' :
-                  inquiry.status === 'NEGOTIATING' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <span
+                  className={`text-xs font-bold px-2 py-1 rounded-full ${
+                    inquiry.status === "BOOKED"
+                      ? "bg-green-100 text-green-800"
+                      : inquiry.status === "CONTACTED"
+                        ? "bg-blue-100 text-blue-800"
+                        : inquiry.status === "NEGOTIATING"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                  }`}
+                >
                   {inquiry.status}
                 </span>
               </div>
@@ -219,15 +255,17 @@ function StatCard({
   color: string;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    orange: 'bg-orange-50 text-orange-600',
-    red: 'bg-red-50 text-red-600',
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-green-50 text-green-600",
+    purple: "bg-purple-50 text-purple-600",
+    orange: "bg-orange-50 text-orange-600",
+    red: "bg-red-50 text-red-600",
   };
 
   return (
-    <div className={`p-6 rounded-lg ${colorClasses[color as keyof typeof colorClasses]} border border-gray-100`}>
+    <div
+      className={`p-6 rounded-lg ${colorClasses[color as keyof typeof colorClasses]} border border-gray-100`}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>

@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
-import { Compass, Clock, MapPin, Activity, Users, ExternalLink, Star, Share2, Settings } from 'lucide-react';
-import { Trip } from '@/types';
-import { DepartureSummary } from '@/services/travelDesk.service';
-import { TripSettingsModal } from './TripSettingsModal';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import {
+  Compass,
+  Clock,
+  MapPin,
+  Activity,
+  Users,
+  ExternalLink,
+  Star,
+  Share2,
+  Settings,
+} from "lucide-react";
+import { Trip } from "@/types";
+import { DepartureSummary } from "@/services/travelDesk.service";
+import { TripSettingsModal } from "./TripSettingsModal";
+import { toast } from "sonner";
 
 interface TravelDeskHeaderProps {
   trip: Trip;
@@ -12,14 +22,22 @@ interface TravelDeskHeaderProps {
   onTripUpdated?: (updatedTrip: Trip) => void;
 }
 
-export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({ trip, readinessScore, departures, onTripUpdated }) => {
-  const activeDepartures = departures.reduce((sum, d) => sum + d.bookingsCount, 0);
+export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({
+  trip,
+  readinessScore,
+  departures,
+  onTripUpdated,
+}) => {
+  const activeDepartures = departures.reduce(
+    (sum, d) => sum + d.bookingsCount,
+    0,
+  );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleTripBrief = () => {
     // Open trip public page in new tab
     const slug = (trip as any).slug || trip.id;
-    window.open(`https://youthcamping.online/trips/${slug}`, '_blank');
+    window.open(`https://youthcamping.online/trips/${slug}`, "_blank");
   };
 
   const handleShare = () => {
@@ -27,7 +45,7 @@ export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({ trip, readin
     const url = `https://youthcamping.online/trips/${slug}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(() => {
-        toast.success('Trip link copied to clipboard!');
+        toast.success("Trip link copied to clipboard!");
       });
     } else {
       toast.info(`Share URL: ${url}`);
@@ -40,8 +58,8 @@ export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({ trip, readin
         <div className="relative bg-[#0A192F] rounded-lg overflow-hidden text-white shadow-sm border border-[#233554]">
           {/* Background Image Overlay */}
           {trip.heroImage && (
-            <div 
-              className="absolute inset-0 opacity-20 mix-blend-overlay bg-cover bg-center" 
+            <div
+              className="absolute inset-0 opacity-20 mix-blend-overlay bg-cover bg-center"
               style={{ backgroundImage: `url('${trip.heroImage}')` }}
             />
           )}
@@ -57,7 +75,7 @@ export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({ trip, readin
 
                 {/* Category Badge */}
                 <span className="inline-block px-2 py-0.5 bg-[#F97316] text-white text-[9px] font-bold tracking-wider uppercase rounded">
-                  {(trip as any).category || 'DOMESTIC TRIP'}
+                  {(trip as any).category || "DOMESTIC TRIP"}
                 </span>
 
                 {/* YouthCamping OS text */}
@@ -100,15 +118,21 @@ export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({ trip, readin
             {/* Title & Metadata */}
             <div className="mt-2.5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold tracking-tight text-white">{trip.title}</h1>
-                <span className="text-xs text-[#64748B] font-semibold">({(trip as any).code || trip.id.substring(0, 6).toUpperCase()})</span>
+                <h1 className="text-base font-bold tracking-tight text-white">
+                  {trip.title}
+                </h1>
+                <span className="text-xs text-[#64748B] font-semibold">
+                  ({(trip as any).code || trip.id.substring(0, 6).toUpperCase()}
+                  )
+                </span>
               </div>
 
               <div className="flex items-center gap-4 text-[11px] font-medium text-slate-300">
                 {trip.duration && (
                   <div className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-[#F97316]" />
-                    {trip.duration} {trip.duration.includes('Days') ? '' : 'Days'}
+                    {trip.duration}{" "}
+                    {trip.duration.includes("Days") ? "" : "Days"}
                   </div>
                 )}
                 {trip.location && (
@@ -125,7 +149,9 @@ export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({ trip, readin
                 )}
                 <div className="flex items-center gap-1">
                   <Users className="w-3.5 h-3.5 text-[#F97316]" />
-                  {trip.maxGroupSize ? `Up to ${trip.maxGroupSize} Pax` : '15 - 45 Pax'}
+                  {trip.maxGroupSize
+                    ? `Up to ${trip.maxGroupSize} Pax`
+                    : "15 - 45 Pax"}
                 </div>
               </div>
             </div>

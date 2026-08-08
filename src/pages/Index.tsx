@@ -12,7 +12,9 @@ const Index = () => {
           <Plane className="h-8 w-8 text-primary-foreground" />
         </div>
         <h1 className="text-3xl font-bold text-foreground mb-2">YCOS</h1>
-        <p className="text-muted-foreground mb-8">Youth Camping & Travel Operating System</p>
+        <p className="text-muted-foreground mb-8">
+          Youth Camping & Travel Operating System
+        </p>
         <Button size="lg" onClick={() => navigate("/admin/login")}>
           Go to Admin Panel
         </Button>

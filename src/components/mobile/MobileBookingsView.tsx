@@ -1,5 +1,15 @@
 import React, { useState } from "react";
-import { Phone, MessageSquare, CreditCard, Share2, Edit2, Search, Filter, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Phone,
+  MessageSquare,
+  CreditCard,
+  Share2,
+  Edit2,
+  Search,
+  Filter,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BookingItem {
@@ -16,9 +26,9 @@ interface BookingItem {
 }
 
 interface MobileBookingsViewProps {
-  bookings?: BookingItem[];
-  onSelectBooking?: (booking: BookingItem) => void;
-  onCollectPayment?: (booking: BookingItem) => void;
+  bookings?: any[];
+  onSelectBooking?: (booking: any) => void;
+  onCollectPayment?: (booking: any) => void;
 }
 
 export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
@@ -29,13 +39,25 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("all");
 
-  const sampleBookings: BookingItem[] = [
-    { id: "1", bookingId: "BK-2026-948", customerName: "Rahul Verma", phone: "+91 9876543210", tripName: "Manali Backpacking", departureDate: "05 Aug 2026", totalPrice: 12999, paidAmount: 8000, balance: 4999, status: "CONFIRMED" },
-    { id: "2", bookingId: "BK-2026-949", customerName: "Priya Sharma", phone: "+91 9812345678", tripName: "Kerala Road Trip", departureDate: "12 Aug 2026", totalPrice: 19999, paidAmount: 19999, balance: 0, status: "CONFIRMED" },
-    { id: "3", bookingId: "BK-2026-950", customerName: "Vikas Patel", phone: "+91 9765432109", tripName: "Spiti Valley Expedition", departureDate: "18 Aug 2026", totalPrice: 22000, paidAmount: 5000, balance: 17000, status: "PENDING" },
-  ];
-
-  const list = bookings.length > 0 ? bookings : sampleBookings;
+  const list: (BookingItem & { rawBooking?: any })[] = (bookings || []).map((b: any) => ({
+    id: b.id,
+    bookingId: b.bookingId || b.id,
+    customerName: b.name || b.fullName || b.customerName || "Customer",
+    phone: b.phone || b.mobile || "",
+    tripName: b.tripName || b.tripTitle || b.tripId || "Trip",
+    departureDate: b.departureDate
+      ? new Date(b.departureDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "Flexible",
+    totalPrice: b.totalAmount || b.amount || 0,
+    paidAmount: b.advancePaid || 0,
+    balance: b.remainingAmount !== undefined ? b.remainingAmount : (b.totalAmount || 0) - (b.advancePaid || 0),
+    status: (b.status === "confirmed" || b.status === "Confirmed" ? "CONFIRMED" : "PENDING") as any,
+    rawBooking: b,
+  }));
 
   const filtered = list.filter((b) => {
     const matchesSearch =
@@ -49,7 +71,7 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
   });
 
   return (
-    <div className="space-y-3 pb-20">
+    <div className="space-y-3 pb-32">
       {/* Mobile Search & Filter Bar */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
@@ -85,26 +107,41 @@ export const MobileBookingsView: React.FC<MobileBookingsViewProps> = ({
             {/* Header: Customer Name & Status */}
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{b.bookingId}</span>
-                <h3 className="text-sm font-bold text-slate-900 leading-tight mt-0.5">{b.customerName}</h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">{b.tripName} • {b.departureDate}</p>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  {b.bookingId}
+                </span>
+                <h3 className="text-sm font-bold text-slate-900 leading-tight mt-0.5">
+                  {b.customerName}
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  {b.tripName} • {b.departureDate}
+                </p>
               </div>
 
               <div className="text-right">
                 <span
                   className={cn(
                     "text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider block mb-1",
-                    b.balance === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                    b.balance === 0
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-amber-100 text-amber-700",
                   )}
                 >
-                  {b.balance === 0 ? "FULLY PAID" : `DUE ₹${b.balance.toLocaleString()}`}
+                  {b.balance === 0
+                    ? "FULLY PAID"
+                    : `DUE ₹${b.balance.toLocaleString()}`}
                 </span>
-                <span className="text-[11px] font-extrabold text-slate-900 block">₹{b.totalPrice.toLocaleString()}</span>
+                <span className="text-[11px] font-extrabold text-slate-900 block">
+                  ₹{b.totalPrice.toLocaleString()}
+                </span>
               </div>
             </div>
 
             {/* Quick 1-Thumb Action Buttons */}
-            <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center gap-1.5">
                 <a
                   href={`tel:${b.phone}`}

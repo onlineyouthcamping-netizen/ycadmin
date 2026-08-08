@@ -1,11 +1,38 @@
 import { useState, useEffect, useRef } from "react";
-import { X, CheckCircle2, XCircle, AlertCircle, Clock, Send, Train, FileText, User, ChevronRight, Plus, Eye, History, AlertTriangle, ArrowRightLeft, Loader2 } from "lucide-react";
+import {
+  X,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Clock,
+  Send,
+  Train,
+  FileText,
+  User,
+  ChevronRight,
+  Plus,
+  Eye,
+  History,
+  AlertTriangle,
+  ArrowRightLeft,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
-import { trainTicketService, type TrainTicket, type TrainTemplate } from "@/services/trainTicket.service";
+import {
+  trainTicketService,
+  type TrainTicket,
+  type TrainTemplate,
+} from "@/services/trainTicket.service";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -13,27 +40,60 @@ import TrainTicketsPanel from "./TrainTicketsPanel";
 import { bookingsService } from "@/services/bookings.service";
 
 // ── STATUS BADGE COLORS ──
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  DRAFT:                  { bg: "bg-gray-100",   text: "text-gray-600",   label: "Draft" },
-  PENDING_VERIFICATION:   { bg: "bg-amber-50",   text: "text-amber-700",  label: "Pending Verification" },
-  CHANGES_REQUESTED:      { bg: "bg-orange-50",  text: "text-orange-700", label: "Changes Requested" },
-  VERIFIED:               { bg: "bg-emerald-50", text: "text-emerald-700", label: "Verified" },
-  APPROVED:               { bg: "bg-emerald-50", text: "text-emerald-700", label: "Approved" },
-  REJECTED:               { bg: "bg-red-50",     text: "text-red-600",    label: "Rejected" },
-  ISSUED:                 { bg: "bg-blue-50",    text: "text-blue-700",   label: "Issued" },
-  PENDING:                { bg: "bg-amber-50",   text: "text-amber-700",  label: "Pending" },
-  BOOKED:                 { bg: "bg-emerald-50", text: "text-emerald-700", label: "Booked" },
-  WAITLISTED:             { bg: "bg-indigo-50",  text: "text-indigo-700", label: "Waitlisted" },
-  CONFIRMED:              { bg: "bg-teal-50",    text: "text-teal-700",   label: "Confirmed" },
-  RAC:                    { bg: "bg-pink-50",    text: "text-pink-700",   label: "RAC" },
-  SELF_BOOKED:            { bg: "bg-purple-50",  text: "text-purple-700", label: "Self Booked" },
-  CANCELLED:              { bg: "bg-red-50",     text: "text-red-700",    label: "Cancelled" },
+const STATUS_STYLES: Record<
+  string,
+  { bg: string; text: string; label: string }
+> = {
+  DRAFT: { bg: "bg-gray-100", text: "text-gray-600", label: "Draft" },
+  PENDING_VERIFICATION: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    label: "Pending Verification",
+  },
+  CHANGES_REQUESTED: {
+    bg: "bg-orange-50",
+    text: "text-orange-700",
+    label: "Changes Requested",
+  },
+  VERIFIED: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    label: "Verified",
+  },
+  APPROVED: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    label: "Approved",
+  },
+  REJECTED: { bg: "bg-red-50", text: "text-red-600", label: "Rejected" },
+  ISSUED: { bg: "bg-blue-50", text: "text-blue-700", label: "Issued" },
+  PENDING: { bg: "bg-amber-50", text: "text-amber-700", label: "Pending" },
+  BOOKED: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Booked" },
+  WAITLISTED: {
+    bg: "bg-indigo-50",
+    text: "text-indigo-700",
+    label: "Waitlisted",
+  },
+  CONFIRMED: { bg: "bg-teal-50", text: "text-teal-700", label: "Confirmed" },
+  RAC: { bg: "bg-pink-50", text: "text-pink-700", label: "RAC" },
+  SELF_BOOKED: {
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    label: "Self Booked",
+  },
+  CANCELLED: { bg: "bg-red-50", text: "text-red-700", label: "Cancelled" },
 };
 
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLES[status] || STATUS_STYLES.DRAFT;
   return (
-    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", s.bg, s.text)}>
+    <span
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+        s.bg,
+        s.text,
+      )}
+    >
       {s.label}
     </span>
   );
@@ -54,15 +114,25 @@ function TimelineItem({ log, isLast }: { log: any; isLast: boolean }) {
     <div className="flex gap-3">
       <div className="flex flex-col items-center">
         <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-          {iconMap[log.action] || <Clock className="w-3.5 h-3.5 text-slate-400" />}
+          {iconMap[log.action] || (
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+          )}
         </div>
         {!isLast && <div className="w-px flex-1 bg-slate-200 mt-1" />}
       </div>
       <div className="pb-5 min-w-0">
-        <p className="text-[11px] font-semibold text-slate-800">{log.action?.replace(/_/g, " ")}</p>
-        {log.notes && <p className="text-[10px] text-slate-500 mt-0.5">{log.notes}</p>}
+        <p className="text-[11px] font-semibold text-slate-800">
+          {log.action?.replace(/_/g, " ")}
+        </p>
+        {log.notes && (
+          <p className="text-[10px] text-slate-500 mt-0.5">{log.notes}</p>
+        )}
         <p className="text-[9px] text-slate-400 mt-1">
-          {log.performedBy && <span className="font-medium text-slate-500">{log.performedBy} · </span>}
+          {log.performedBy && (
+            <span className="font-medium text-slate-500">
+              {log.performedBy} ·{" "}
+            </span>
+          )}
           {log.createdAt ? new Date(log.createdAt).toLocaleString() : ""}
         </p>
       </div>
@@ -95,11 +165,15 @@ export default function VerificationDetailsPanel({
   const [ticketHistory, setTicketHistory] = useState<any[]>([]);
   const [trainTickets, setTrainTickets] = useState<TrainTicket[]>([]);
   const [ticketCount, setTicketCount] = useState(0);
-  const [selectedTicket, setSelectedTicket] = useState<TrainTicket | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<TrainTicket | null>(
+    null,
+  );
   const [templates, setTemplates] = useState<TrainTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"verification" | "ticket">("verification");
+  const [activeTab, setActiveTab] = useState<"verification" | "ticket">(
+    "verification",
+  );
 
   // Form states for adding/editing ticket
   const [showForm, setShowForm] = useState(false);
@@ -130,7 +204,11 @@ export default function VerificationDetailsPanel({
   const [cancelReason, setCancelReason] = useState("");
   const [cancelRefund, setCancelRefund] = useState("0");
 
-  const canPerformActions = hasPermission((admin as any)?.permissions || (admin as any)?.customPermissions, "bookings.verify", admin?.role);
+  const canPerformActions = hasPermission(
+    (admin as any)?.permissions || (admin as any)?.customPermissions,
+    "bookings.verify",
+    admin?.role,
+  );
   const isSales = !canPerformActions;
 
   useEffect(() => {
@@ -144,13 +222,15 @@ export default function VerificationDetailsPanel({
     try {
       const [verification, fullB] = await Promise.all([
         bookingVerificationService.getVerificationStatus(bookingId),
-        bookingsService.getById(bookingId).catch(() => null)
+        bookingsService.getById(bookingId).catch(() => null),
       ]);
       setVerificationData(verification);
       setFullBooking(fullB);
 
       if (queueType === "train" && booking?.id && !booking.isPseudo) {
-        const history = await trainTicketService.getTicketHistory(booking.id).catch(() => []);
+        const history = await trainTicketService
+          .getTicketHistory(booking.id)
+          .catch(() => []);
         setTicketHistory(history);
       }
     } catch (err) {
@@ -164,7 +244,9 @@ export default function VerificationDetailsPanel({
 
     let note = "";
     if (action === "REQUEST_CHANGES") {
-      const p = prompt("Please enter notes/comments detailing what changes are requested:");
+      const p = prompt(
+        "Please enter notes/comments detailing what changes are requested:",
+      );
       if (!p || !p.trim()) {
         toast.error("A comment is required to request changes.");
         return;
@@ -178,7 +260,11 @@ export default function VerificationDetailsPanel({
       }
       note = p;
     } else if (action === "VERIFY") {
-      const confirmed = window.confirm(queueType === "train" ? "Are you sure you want to verify and approve this train ticket?" : "Are you sure you want to verify and approve this booking?");
+      const confirmed = window.confirm(
+        queueType === "train"
+          ? "Are you sure you want to verify and approve this train ticket?"
+          : "Are you sure you want to verify and approve this booking?",
+      );
       if (!confirmed) return;
     }
 
@@ -186,7 +272,9 @@ export default function VerificationDetailsPanel({
     try {
       if (queueType === "train") {
         if (booking?.isPseudo) {
-          toast.error("Cannot perform actions on ungenerated ticket placeholders. Please add or auto-generate tickets first.");
+          toast.error(
+            "Cannot perform actions on ungenerated ticket placeholders. Please add or auto-generate tickets first.",
+          );
           setActionLoading(false);
           return;
         }
@@ -205,12 +293,16 @@ export default function VerificationDetailsPanel({
           action,
           notes: note || undefined,
         });
-        toast.success(`Booking verification: ${action.toLowerCase().replace(/_/g, " ")}`);
+        toast.success(
+          `Booking verification: ${action.toLowerCase().replace(/_/g, " ")}`,
+        );
       }
       await loadData();
       onRefresh?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || `Failed to ${action.toLowerCase()}`);
+      toast.error(
+        err?.response?.data?.message || `Failed to ${action.toLowerCase()}`,
+      );
     }
     setActionLoading(false);
   };
@@ -224,7 +316,9 @@ export default function VerificationDetailsPanel({
     try {
       await trainTicketService.createTicket(bookingId, {
         ...formData,
-        ticketAmount: formData.ticketAmount ? parseFloat(formData.ticketAmount) : 0,
+        ticketAmount: formData.ticketAmount
+          ? parseFloat(formData.ticketAmount)
+          : 0,
       });
       toast.success("Traveler ticket created successfully");
       setShowForm(false);
@@ -243,7 +337,9 @@ export default function VerificationDetailsPanel({
     try {
       await trainTicketService.updateTicket(selectedTicket.id, {
         ...formData,
-        ticketAmount: formData.ticketAmount ? parseFloat(formData.ticketAmount) : 0,
+        ticketAmount: formData.ticketAmount
+          ? parseFloat(formData.ticketAmount)
+          : 0,
       });
       toast.success("Traveler ticket updated successfully");
       setShowForm(false);
@@ -336,7 +432,12 @@ export default function VerificationDetailsPanel({
   };
 
   const handleTicketRebook = async (ticketId: string) => {
-    if (!confirm("Are you sure you want to rebook this ticket? It will create a new superseding ticket.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to rebook this ticket? It will create a new superseding ticket.",
+      )
+    )
+      return;
     setActionLoading(true);
     try {
       await trainTicketService.rebookTicket(ticketId);
@@ -358,7 +459,9 @@ export default function VerificationDetailsPanel({
       destinationStation: template.destination || prev.destinationStation,
       coach: template.defaultCoach || prev.coach,
       berthType: template.defaultClass || prev.berthType,
-      journeyDate: template.journeyDate ? template.journeyDate.slice(0, 10) : prev.journeyDate,
+      journeyDate: template.journeyDate
+        ? template.journeyDate.slice(0, 10)
+        : prev.journeyDate,
     }));
     toast.success("Template parameters prefilled!");
   };
@@ -390,8 +493,10 @@ export default function VerificationDetailsPanel({
     // Prefill name from booking passengers if possible
     let defaultName = "";
     if (booking?.passengers && Array.isArray(booking.passengers)) {
-      const existingNames = trainTickets.map(t => t.travelerName);
-      const remaining = booking.passengers.find((p: any) => p && p.name && !existingNames.includes(p.name));
+      const existingNames = trainTickets.map((t) => t.travelerName);
+      const remaining = booking.passengers.find(
+        (p: any) => p && p.name && !existingNames.includes(p.name),
+      );
       if (remaining) defaultName = remaining.name;
     }
     setFormData({
@@ -421,17 +526,30 @@ export default function VerificationDetailsPanel({
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/40 z-40 transition-opacity" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+        onClick={onClose}
+      />
 
       {/* Panel */}
-      <div ref={panelRef} className="fixed right-0 top-0 h-full w-full max-w-[540px] bg-white z-50 shadow-2xl flex flex-col overflow-hidden">
+      <div
+        ref={panelRef}
+        className="fixed right-0 top-0 h-full w-full max-w-[540px] bg-white z-50 shadow-2xl flex flex-col overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 tracking-tight">Verification & Tickets</h2>
-            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">{booking?.bookingId || bookingId}</p>
+            <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+              Verification & Tickets
+            </h2>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
+              {booking?.bookingId || bookingId}
+            </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+          >
             <X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
@@ -445,8 +563,18 @@ export default function VerificationDetailsPanel({
             {/* Booking Summary Header */}
             <div className="px-6 py-4 border-b border-slate-100 shrink-0 bg-slate-50/30">
               <div className="flex items-center justify-between text-[11px] text-slate-600">
-                <span className="font-bold text-slate-800 flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-400" /> {fullBooking?.fullName || fullBooking?.name || booking?.travelerName}</span>
-                <span>Trip: <span className="font-semibold text-slate-700">{fullBooking?.tripName || booking?.booking?.tripName || "—"}</span></span>
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" />{" "}
+                  {fullBooking?.fullName ||
+                    fullBooking?.name ||
+                    booking?.travelerName}
+                </span>
+                <span>
+                  Trip:{" "}
+                  <span className="font-semibold text-slate-700">
+                    {fullBooking?.tripName || booking?.booking?.tripName || "—"}
+                  </span>
+                </span>
               </div>
             </div>
 
@@ -454,19 +582,29 @@ export default function VerificationDetailsPanel({
             {queueType === "booking" && (
               <div className="px-6 pt-3 flex gap-1 border-b border-slate-100 shrink-0">
                 <button
-                  onClick={() => { setActiveTab("verification"); setShowForm(false); }}
+                  onClick={() => {
+                    setActiveTab("verification");
+                    setShowForm(false);
+                  }}
                   className={cn(
                     "px-4 py-2 border-b-2 text-[10px] font-bold uppercase tracking-wider transition-all",
-                    activeTab === "verification" ? "border-slate-950 text-slate-950" : "border-transparent text-slate-400"
+                    activeTab === "verification"
+                      ? "border-slate-950 text-slate-950"
+                      : "border-transparent text-slate-400",
                   )}
                 >
                   Verification status
                 </button>
                 <button
-                  onClick={() => { setActiveTab("ticket"); setShowForm(false); }}
+                  onClick={() => {
+                    setActiveTab("ticket");
+                    setShowForm(false);
+                  }}
                   className={cn(
                     "px-4 py-2 border-b-2 text-[10px] font-bold uppercase tracking-wider transition-all",
-                    activeTab === "ticket" ? "border-slate-950 text-slate-950" : "border-transparent text-slate-400"
+                    activeTab === "ticket"
+                      ? "border-slate-950 text-slate-950"
+                      : "border-transparent text-slate-400",
                   )}
                 >
                   Traveler Tickets ({ticketCount})
@@ -480,44 +618,92 @@ export default function VerificationDetailsPanel({
                 <div className="p-6 space-y-6">
                   {/* 1. Booking Summary */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Booking Summary</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      Booking Summary
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell label="Booking ID" value={fullBooking?.bookingId || booking?.bookingId || bookingId} />
-                      <InfoCell label="Booking Date" value={fullBooking?.createdAt ? new Date(fullBooking.createdAt).toLocaleDateString() : "—"} />
+                      <InfoCell
+                        label="Booking ID"
+                        value={
+                          fullBooking?.bookingId ||
+                          booking?.bookingId ||
+                          bookingId
+                        }
+                      />
+                      <InfoCell
+                        label="Booking Date"
+                        value={
+                          fullBooking?.createdAt
+                            ? new Date(
+                                fullBooking.createdAt,
+                              ).toLocaleDateString()
+                            : "—"
+                        }
+                      />
                     </div>
                   </div>
 
                   {/* 2. Passenger / Group Details */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">Passenger / Group Details</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                      Passenger / Group Details
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px]">
-                      <InfoCell label="Traveler Name" value={booking?.travelerName || "—"} />
+                      <InfoCell
+                        label="Traveler Name"
+                        value={booking?.travelerName || "—"}
+                      />
                       {booking?.passengerReference && (
-                        <div className="mt-2"><InfoCell label="Passenger Reference" value={booking.passengerReference} /></div>
+                        <div className="mt-2">
+                          <InfoCell
+                            label="Passenger Reference"
+                            value={booking.passengerReference}
+                          />
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* 3. Trip and Departure */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">Trip & Departure</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                      Trip & Departure
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
                       <div className="col-span-2">
-                        <InfoCell label="Trip Name" value={fullBooking?.tripName || booking?.booking?.tripName || "—"} />
+                        <InfoCell
+                          label="Trip Name"
+                          value={
+                            fullBooking?.tripName ||
+                            booking?.booking?.tripName ||
+                            "—"
+                          }
+                        />
                       </div>
-                      <InfoCell label="Departure Date" value={fullBooking?.departureDate ? new Date(fullBooking.departureDate).toLocaleDateString() : "—"} />
+                      <InfoCell
+                        label="Departure Date"
+                        value={
+                          fullBooking?.departureDate
+                            ? new Date(
+                                fullBooking.departureDate,
+                              ).toLocaleDateString()
+                            : "—"
+                        }
+                      />
                     </div>
                   </div>
 
                   {/* 4. PNR Details */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">PNR Details</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                      PNR Details
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px]">
                       {booking?.isPseudo ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-rose-200 bg-rose-50 text-rose-600 font-montserrat">
                           PNR Not Generated
                         </span>
-                      ) : (!booking?.pnr || booking?.pnr === "PENDING") ? (
+                      ) : !booking?.pnr || booking?.pnr === "PENDING" ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-amber-250 bg-amber-50 text-amber-700 font-montserrat">
                           Ticket Details Pending
                         </span>
@@ -529,25 +715,56 @@ export default function VerificationDetailsPanel({
 
                   {/* 5. Train, Coach and Seat Details */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">Train, Coach and Seat Details</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                      Train, Coach and Seat Details
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell label="Train Name" value={booking?.trainName || "—"} />
-                      <InfoCell label="Train Number" value={booking?.trainNumber || "—"} />
+                      <InfoCell
+                        label="Train Name"
+                        value={booking?.trainName || "—"}
+                      />
+                      <InfoCell
+                        label="Train Number"
+                        value={booking?.trainNumber || "—"}
+                      />
                       <InfoCell label="Coach" value={booking?.coach || "—"} />
-                      <InfoCell label="Seat Number" value={booking?.seatNumber || "—"} />
-                      {booking?.berthType && <InfoCell label="Berth Type" value={booking.berthType} />}
+                      <InfoCell
+                        label="Seat Number"
+                        value={booking?.seatNumber || "—"}
+                      />
+                      {booking?.berthType && (
+                        <InfoCell
+                          label="Berth Type"
+                          value={booking.berthType}
+                        />
+                      )}
                     </div>
                   </div>
 
                   {/* 6. Ticket Source / Entry Details */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">Ticket Source / Entry Details</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                      Ticket Source / Entry Details
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell label="Ticket Amount" value={booking?.ticketAmount ? `₹${Number(booking.ticketAmount).toFixed(2)}` : "—"} />
-                      <InfoCell label="Amount Mode" value={booking?.amountMode?.replace(/_/g, " ") || "—"} />
+                      <InfoCell
+                        label="Ticket Amount"
+                        value={
+                          booking?.ticketAmount
+                            ? `₹${Number(booking.ticketAmount).toFixed(2)}`
+                            : "—"
+                        }
+                      />
+                      <InfoCell
+                        label="Amount Mode"
+                        value={booking?.amountMode?.replace(/_/g, " ") || "—"}
+                      />
                       {booking?.ticketBookingPerson && (
                         <div className="col-span-2 mt-1">
-                          <InfoCell label="Ticket Booking Person" value={booking.ticketBookingPerson} />
+                          <InfoCell
+                            label="Ticket Booking Person"
+                            value={booking.ticketBookingPerson}
+                          />
                         </div>
                       )}
                     </div>
@@ -555,17 +772,31 @@ export default function VerificationDetailsPanel({
 
                   {/* 7. Submitted By and Submitted Time */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">Submission Details</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                      Submission Details
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell label="Submitted By" value={booking?.submittedBy?.name || "System"} />
-                      <InfoCell label="Submitted Time" value={booking?.createdAt ? new Date(booking.createdAt).toLocaleString() : "—"} />
+                      <InfoCell
+                        label="Submitted By"
+                        value={booking?.submittedBy?.name || "System"}
+                      />
+                      <InfoCell
+                        label="Submitted Time"
+                        value={
+                          booking?.createdAt
+                            ? new Date(booking.createdAt).toLocaleString()
+                            : "—"
+                        }
+                      />
                     </div>
                   </div>
 
                   {/* 8. Internal Notes */}
                   {booking?.internalNote && (
                     <div className="space-y-2">
-                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">Internal Notes</h3>
+                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                        Internal Notes
+                      </h3>
                       <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px] font-medium text-slate-650 italic">
                         "{booking.internalNote}"
                       </div>
@@ -574,101 +805,199 @@ export default function VerificationDetailsPanel({
 
                   {/* 9 & 10. Timeline & History */}
                   <div className="space-y-4">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">Activity Timeline & History</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
+                      Activity Timeline & History
+                    </h3>
                     {ticketHistory.length > 0 ? (
                       <div className="space-y-3 pl-1">
                         {ticketHistory.map((log: any, idx: number) => (
-                          <TimelineItem key={idx} log={{ action: log.action, notes: log.details || log.notes, performedBy: log.performedBy?.name, createdAt: log.createdAt }} isLast={idx === ticketHistory.length - 1} />
+                          <TimelineItem
+                            key={idx}
+                            log={{
+                              action: log.action,
+                              notes: log.details || log.notes,
+                              performedBy: log.performedBy?.name,
+                              createdAt: log.createdAt,
+                            }}
+                            isLast={idx === ticketHistory.length - 1}
+                          />
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[11px] text-slate-400 italic font-semibold">No ticketing log history.</p>
+                      <p className="text-[11px] text-slate-400 italic font-semibold">
+                        No ticketing log history.
+                      </p>
                     )}
                   </div>
                 </div>
               ) : (
                 <div className="p-6 space-y-6">
-                  
                   {/* Booking Details Summary */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Booking Summary</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      Booking Summary
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Booking ID</p>
-                        <p className="font-bold text-slate-800">{fullBooking?.bookingId || bookingId}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Booking ID
+                        </p>
+                        <p className="font-bold text-slate-800">
+                          {fullBooking?.bookingId || bookingId}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Booking Date</p>
-                        <p className="font-semibold text-slate-700">{fullBooking?.createdAt ? new Date(fullBooking.createdAt).toLocaleDateString() : "—"}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Booking Date
+                        </p>
+                        <p className="font-semibold text-slate-700">
+                          {fullBooking?.createdAt
+                            ? new Date(
+                                fullBooking.createdAt,
+                              ).toLocaleDateString()
+                            : "—"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Verification Status</p>
-                        <div className="mt-0.5"><StatusBadge status={verificationData?.verificationStatus || booking?.status} /></div>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Verification Status
+                        </p>
+                        <div className="mt-0.5">
+                          <StatusBadge
+                            status={
+                              verificationData?.verificationStatus ||
+                              booking?.status
+                            }
+                          />
+                        </div>
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Sales Executive</p>
-                        <p className="font-semibold text-slate-700">{fullBooking?.salesAdmin?.name || "System"}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Sales Executive
+                        </p>
+                        <p className="font-semibold text-slate-700">
+                          {fullBooking?.salesAdmin?.name || "System"}
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Customer and Passengers */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Customer & Passengers</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      Customer & Passengers
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-3 text-[11px]">
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Lead Customer</p>
-                        <p className="font-bold text-slate-850">{fullBooking?.fullName || fullBooking?.name || "—"}</p>
-                        <p className="text-slate-500 text-[10px] mt-0.5">{fullBooking?.email} · {fullBooking?.phone}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Lead Customer
+                        </p>
+                        <p className="font-bold text-slate-850">
+                          {fullBooking?.fullName || fullBooking?.name || "—"}
+                        </p>
+                        <p className="text-slate-500 text-[10px] mt-0.5">
+                          {fullBooking?.email} · {fullBooking?.phone}
+                        </p>
                       </div>
-                      {fullBooking?.passengers && fullBooking.passengers.length > 0 && (
-                        <div className="border-t border-slate-200/60 pt-2 space-y-1.5">
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">Travelers ({fullBooking.passengers.length})</p>
-                          {fullBooking.passengers.map((p: any, idx: number) => (
-                            <div key={idx} className="flex justify-between items-center bg-white px-2 py-1 rounded border border-slate-100">
-                              <span className="font-semibold text-slate-700">{p.name}</span>
-                              <span className="text-[9px] text-slate-500 font-medium">{p.age} Yrs · {p.gender}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {fullBooking?.passengers &&
+                        fullBooking.passengers.length > 0 && (
+                          <div className="border-t border-slate-200/60 pt-2 space-y-1.5">
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">
+                              Travelers ({fullBooking.passengers.length})
+                            </p>
+                            {fullBooking.passengers.map(
+                              (p: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="flex justify-between items-center bg-white px-2 py-1 rounded border border-slate-100"
+                                >
+                                  <span className="font-semibold text-slate-700">
+                                    {p.name}
+                                  </span>
+                                  <span className="text-[9px] text-slate-500 font-medium">
+                                    {p.age} Yrs · {p.gender}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
                     </div>
                   </div>
 
                   {/* Trip and Departure */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Trip & Departure</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      Trip & Departure
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
                       <div className="col-span-2">
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Trip Name</p>
-                        <p className="font-bold text-slate-850">{fullBooking?.tripName || "—"}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Trip Name
+                        </p>
+                        <p className="font-bold text-slate-850">
+                          {fullBooking?.tripName || "—"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Departure Date</p>
-                        <p className="font-semibold text-slate-700">{fullBooking?.departureDate ? new Date(fullBooking.departureDate).toLocaleDateString() : "—"}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Departure Date
+                        </p>
+                        <p className="font-semibold text-slate-700">
+                          {fullBooking?.departureDate
+                            ? new Date(
+                                fullBooking.departureDate,
+                              ).toLocaleDateString()
+                            : "—"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Pickup City</p>
-                        <p className="font-semibold text-slate-700">{fullBooking?.pickupCity || "—"}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                          Pickup City
+                        </p>
+                        <p className="font-semibold text-slate-700">
+                          {fullBooking?.pickupCity || "—"}
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Payment Summary */}
                   <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Payment Summary</h3>
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      Payment Summary
+                    </h3>
                     <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-3 gap-2 text-[11px] text-center">
                       <div className="bg-white p-1.5 rounded border border-slate-100">
-                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">Total Value</p>
-                        <p className="font-extrabold text-slate-850 mt-0.5">₹{Number(fullBooking?.amount || 0).toLocaleString()}</p>
+                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">
+                          Total Value
+                        </p>
+                        <p className="font-extrabold text-slate-850 mt-0.5">
+                          ₹{Number(fullBooking?.amount || 0).toLocaleString()}
+                        </p>
                       </div>
                       <div className="bg-white p-1.5 rounded border border-slate-100">
-                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">Paid Amount</p>
-                        <p className="font-extrabold text-[#16A34A] mt-0.5">₹{Number(fullBooking?.advancePaid || 0).toLocaleString()}</p>
+                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">
+                          Paid Amount
+                        </p>
+                        <p className="font-extrabold text-[#16A34A] mt-0.5">
+                          ₹
+                          {Number(
+                            fullBooking?.advancePaid || 0,
+                          ).toLocaleString()}
+                        </p>
                       </div>
                       <div className="bg-white p-1.5 rounded border border-slate-100 font-mono">
-                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">Balance</p>
-                        <p className="font-extrabold text-amber-600 mt-0.5">₹{Number((fullBooking?.amount || 0) - (fullBooking?.advancePaid || 0)).toLocaleString()}</p>
+                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">
+                          Balance
+                        </p>
+                        <p className="font-extrabold text-amber-600 mt-0.5">
+                          ₹
+                          {Number(
+                            (fullBooking?.amount || 0) -
+                              (fullBooking?.advancePaid || 0),
+                          ).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -676,14 +1005,28 @@ export default function VerificationDetailsPanel({
                   {/* Documents Checklist */}
                   {verificationData?.checklist && (
                     <div className="space-y-2">
-                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Documents Checklist</h3>
+                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                        Documents Checklist
+                      </h3>
                       <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-2">
-                        {Object.entries(verificationData.checklist).map(([key, val]: any) => (
-                          <div key={key} className="flex items-center gap-2.5 text-[11px] text-slate-700 font-semibold">
-                            <CheckCircle2 className={cn("w-4 h-4 shrink-0", val ? "text-emerald-500" : "text-slate-200")} />
-                            <span className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                          </div>
-                        ))}
+                        {Object.entries(verificationData.checklist).map(
+                          ([key, val]: any) => (
+                            <div
+                              key={key}
+                              className="flex items-center gap-2.5 text-[11px] text-slate-700 font-semibold"
+                            >
+                              <CheckCircle2
+                                className={cn(
+                                  "w-4 h-4 shrink-0",
+                                  val ? "text-emerald-500" : "text-slate-200",
+                                )}
+                              />
+                              <span className="capitalize">
+                                {key.replace(/([A-Z])/g, " $1")}
+                              </span>
+                            </div>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
@@ -691,7 +1034,9 @@ export default function VerificationDetailsPanel({
                   {/* Internal Notes */}
                   {fullBooking?.notes && (
                     <div className="space-y-2">
-                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Internal Notes</h3>
+                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                        Internal Notes
+                      </h3>
                       <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px] font-medium text-slate-650 italic">
                         "{fullBooking.notes}"
                       </div>
@@ -700,15 +1045,24 @@ export default function VerificationDetailsPanel({
 
                   {/* Logs Timeline */}
                   <div className="space-y-4">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Verification Timeline</h3>
-                    {verificationData?.logs && verificationData.logs.length > 0 ? (
+                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      Verification Timeline
+                    </h3>
+                    {verificationData?.logs &&
+                    verificationData.logs.length > 0 ? (
                       <div className="space-y-3 pl-1">
                         {verificationData.logs.map((log: any, idx: number) => (
-                          <TimelineItem key={idx} log={log} isLast={idx === verificationData.logs.length - 1} />
+                          <TimelineItem
+                            key={idx}
+                            log={log}
+                            isLast={idx === verificationData.logs.length - 1}
+                          />
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[11px] text-slate-400 italic">No verification history logs.</p>
+                      <p className="text-[11px] text-slate-400 italic">
+                        No verification history logs.
+                      </p>
                     )}
                   </div>
                 </div>
@@ -716,7 +1070,11 @@ export default function VerificationDetailsPanel({
 
               {activeTab === "ticket" && queueType === "booking" && (
                 <div className="p-6">
-                  <TrainTicketsPanel bookingId={bookingId} booking={fullBooking || booking} onCountChange={setTicketCount} />
+                  <TrainTicketsPanel
+                    bookingId={bookingId}
+                    booking={fullBooking || booking}
+                    onCountChange={setTicketCount}
+                  />
                 </div>
               )}
             </div>
@@ -724,25 +1082,25 @@ export default function VerificationDetailsPanel({
             {/* Sticky Actions Footer */}
             {canPerformActions && (
               <div className="border-t border-slate-150 px-6 py-4 bg-slate-50/50 flex items-center justify-end gap-2 shrink-0">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => handleVerificationAction("REQUEST_CHANGES")} 
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleVerificationAction("REQUEST_CHANGES")}
                   className="border-blue-200 text-blue-700 hover:bg-blue-50 text-[10px] font-bold uppercase tracking-wider font-montserrat h-9"
                 >
                   Request Changes
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => handleVerificationAction("REJECT")} 
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleVerificationAction("REJECT")}
                   className="border-rose-200 text-rose-650 hover:bg-rose-50 text-[10px] font-bold uppercase tracking-wider font-montserrat h-9"
                 >
                   Reject
                 </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => handleVerificationAction("VERIFY")} 
+                <Button
+                  size="sm"
+                  onClick={() => handleVerificationAction("VERIFY")}
                   className="bg-[#16A34A] hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider font-montserrat h-9"
                 >
                   {queueType === "train" ? "Verify Ticket" : "Verify Booking"}
@@ -760,8 +1118,12 @@ export default function VerificationDetailsPanel({
 function InfoCell({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className="text-[11px] font-semibold text-slate-700 mt-0.5 truncate">{String(value)}</p>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+      <p className="text-[11px] font-semibold text-slate-700 mt-0.5 truncate">
+        {String(value)}
+      </p>
     </div>
   );
 }

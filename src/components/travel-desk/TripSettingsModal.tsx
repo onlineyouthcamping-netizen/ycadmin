@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Loader2, AlertCircle } from 'lucide-react';
-import { Trip } from '@/types';
-import api from '@/services/api';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from "react";
+import { X, Save, Loader2, AlertCircle } from "lucide-react";
+import { Trip } from "@/types";
+import api from "@/services/api";
+import { toast } from "sonner";
 
 interface TripSettingsModalProps {
   trip: Trip;
@@ -11,21 +11,34 @@ interface TripSettingsModalProps {
   onUpdated: (updatedTrip: Trip) => void;
 }
 
-const DIFFICULTY_OPTIONS = ['Easy', 'Moderate', 'Difficult', 'Challenging'];
-const CATEGORY_OPTIONS = ['Domestic Trip', 'International', 'Backpacking', 'Adventure', 'Cultural', 'Wildlife', 'Beach'];
+const DIFFICULTY_OPTIONS = ["Easy", "Moderate", "Difficult", "Challenging"];
+const CATEGORY_OPTIONS = [
+  "Domestic Trip",
+  "International",
+  "Backpacking",
+  "Adventure",
+  "Cultural",
+  "Wildlife",
+  "Beach",
+];
 
-export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOpen, onClose, onUpdated }) => {
+export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
+  trip,
+  isOpen,
+  onClose,
+  onUpdated,
+}) => {
   const [form, setForm] = useState({
-    title: '',
-    code: '',
-    duration: '',
-    location: '',
-    difficulty: '',
-    category: '',
-    maxGroupSize: '',
-    heroImage: '',
-    description: '',
-    slug: '',
+    title: "",
+    code: "",
+    duration: "",
+    location: "",
+    difficulty: "",
+    category: "",
+    maxGroupSize: "",
+    heroImage: "",
+    description: "",
+    slug: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,22 +46,22 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
   useEffect(() => {
     if (trip) {
       setForm({
-        title: trip.title || '',
-        code: (trip as any).code || '',
-        duration: trip.duration || '',
-        location: trip.location || '',
-        difficulty: trip.difficulty || '',
-        category: (trip as any).category || '',
-        maxGroupSize: trip.maxGroupSize ? String(trip.maxGroupSize) : '',
-        heroImage: trip.heroImage || '',
-        description: (trip as any).description || '',
-        slug: (trip as any).slug || '',
+        title: trip.title || "",
+        code: (trip as any).code || "",
+        duration: trip.duration || "",
+        location: trip.location || "",
+        difficulty: trip.difficulty || "",
+        category: (trip as any).category || "",
+        maxGroupSize: trip.maxGroupSize ? String(trip.maxGroupSize) : "",
+        heroImage: trip.heroImage || "",
+        description: (trip as any).description || "",
+        slug: (trip as any).slug || "",
       });
     }
   }, [trip, isOpen]);
 
   const handleChange = (field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
@@ -61,11 +74,12 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
       };
       const res = await api.put(`/trips/${trip.id}`, payload);
       const updatedTrip = res.data?.data || res.data;
-      toast.success('Trip settings saved!');
+      toast.success("Trip settings saved!");
       onUpdated(updatedTrip);
       onClose();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Failed to save trip settings';
+      const msg =
+        err?.response?.data?.message || "Failed to save trip settings";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -81,10 +95,18 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-bold text-slate-800">Trip Settings</h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Edit details for <span className="text-orange-500 font-bold">{trip.title}</span></p>
+            <h2 className="text-base font-bold text-slate-800">
+              Trip Settings
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Edit details for{" "}
+              <span className="text-orange-500 font-bold">{trip.title}</span>
+            </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+          >
             <X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
@@ -101,11 +123,13 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
           <div className="grid grid-cols-2 gap-4">
             {/* Title */}
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Trip Title *</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Trip Title *
+              </label>
               <input
                 type="text"
                 value={form.title}
-                onChange={e => handleChange('title', e.target.value)}
+                onChange={(e) => handleChange("title", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                 placeholder="e.g. Bali Adventure"
               />
@@ -113,11 +137,13 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
 
             {/* Code */}
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Trip Code</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Trip Code
+              </label>
               <input
                 type="text"
                 value={form.code}
-                onChange={e => handleChange('code', e.target.value)}
+                onChange={(e) => handleChange("code", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                 placeholder="e.g. MKA-1"
               />
@@ -125,11 +151,13 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
 
             {/* Slug */}
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">URL Slug</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                URL Slug
+              </label>
               <input
                 type="text"
                 value={form.slug}
-                onChange={e => handleChange('slug', e.target.value)}
+                onChange={(e) => handleChange("slug", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                 placeholder="e.g. bali-adventure"
               />
@@ -137,11 +165,13 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
 
             {/* Duration */}
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Duration</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Duration
+              </label>
               <input
                 type="text"
                 value={form.duration}
-                onChange={e => handleChange('duration', e.target.value)}
+                onChange={(e) => handleChange("duration", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                 placeholder="e.g. 5 Days / 4 Nights"
               />
@@ -149,11 +179,13 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
 
             {/* Location */}
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Location</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Location
+              </label>
               <input
                 type="text"
                 value={form.location}
-                onChange={e => handleChange('location', e.target.value)}
+                onChange={(e) => handleChange("location", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                 placeholder="e.g. Bali, Indonesia"
               />
@@ -161,37 +193,51 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
 
             {/* Difficulty */}
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Difficulty</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Difficulty
+              </label>
               <select
                 value={form.difficulty}
-                onChange={e => handleChange('difficulty', e.target.value)}
+                onChange={(e) => handleChange("difficulty", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition bg-white"
               >
                 <option value="">Select difficulty</option>
-                {DIFFICULTY_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                {DIFFICULTY_OPTIONS.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* Category */}
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Category</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Category
+              </label>
               <select
                 value={form.category}
-                onChange={e => handleChange('category', e.target.value)}
+                onChange={(e) => handleChange("category", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition bg-white"
               >
                 <option value="">Select category</option>
-                {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* Max Group Size */}
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Max Group Size</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Max Group Size
+              </label>
               <input
                 type="number"
                 value={form.maxGroupSize}
-                onChange={e => handleChange('maxGroupSize', e.target.value)}
+                onChange={(e) => handleChange("maxGroupSize", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                 placeholder="e.g. 45"
                 min={1}
@@ -200,27 +246,36 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
 
             {/* Hero Image URL */}
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Hero Image URL</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Hero Image URL
+              </label>
               <input
                 type="url"
                 value={form.heroImage}
-                onChange={e => handleChange('heroImage', e.target.value)}
+                onChange={(e) => handleChange("heroImage", e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
                 placeholder="https://..."
               />
               {form.heroImage && (
                 <div className="mt-2 rounded-lg overflow-hidden h-24 border border-slate-200">
-                  <img src={form.heroImage} alt="Hero preview" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                  <img
+                    src={form.heroImage}
+                    alt="Hero preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
                 </div>
               )}
             </div>
 
             {/* Description */}
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Description</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Description
+              </label>
               <textarea
                 value={form.description}
-                onChange={e => handleChange('description', e.target.value)}
+                onChange={(e) => handleChange("description", e.target.value)}
                 rows={3}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition resize-none"
                 placeholder="Short description of the trip..."
@@ -242,7 +297,11 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({ trip, isOp
             disabled={saving || !form.title.trim()}
             className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors"
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {saving ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
             Save Changes
           </button>
         </div>

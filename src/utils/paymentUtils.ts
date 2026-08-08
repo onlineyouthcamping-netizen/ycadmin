@@ -10,32 +10,42 @@
  */
 
 export enum BookingPaymentState {
-  CONFIRMED = 'confirmed',
-  PENDING = 'pending',
-  UNCONFIRMED = 'unconfirmed',
-  INQUIRY = 'inquiry',
-  CANCELLED = 'cancelled',
-  EXPIRED = 'expired',
-  REFUNDED = 'refunded',
-  PARTIALLY_REFUNDED = 'partially_refunded'
+  CONFIRMED = "confirmed",
+  PENDING = "pending",
+  UNCONFIRMED = "unconfirmed",
+  INQUIRY = "inquiry",
+  CANCELLED = "cancelled",
+  EXPIRED = "expired",
+  REFUNDED = "refunded",
+  PARTIALLY_REFUNDED = "partially_refunded",
 }
 
-export function normalizeBookingStatus(status?: string, paymentStatus?: string): string {
-  if (!status && !paymentStatus) return 'pending';
+export function normalizeBookingStatus(
+  status?: string,
+  paymentStatus?: string,
+): string {
+  if (!status && !paymentStatus) return "pending";
 
-  const s = (status || '').toLowerCase().trim();
-  const ps = (paymentStatus || '').toLowerCase().trim();
+  const s = (status || "").toLowerCase().trim();
+  const ps = (paymentStatus || "").toLowerCase().trim();
 
-  if (ps === 'refunded' || s === 'refunded') return BookingPaymentState.REFUNDED;
-  if (ps === 'partially refunded' || ps === 'partially_refunded') return BookingPaymentState.PARTIALLY_REFUNDED;
-  if (s === 'cancelled' || ps === 'cancelled') return BookingPaymentState.CANCELLED;
-  if (s === 'expired') return BookingPaymentState.EXPIRED;
-  if (s === 'confirmed') return BookingPaymentState.CONFIRMED;
+  if (ps === "refunded" || s === "refunded")
+    return BookingPaymentState.REFUNDED;
+  if (ps === "partially refunded" || ps === "partially_refunded")
+    return BookingPaymentState.PARTIALLY_REFUNDED;
+  if (s === "cancelled" || ps === "cancelled")
+    return BookingPaymentState.CANCELLED;
+  if (s === "expired") return BookingPaymentState.EXPIRED;
+  if (s === "confirmed") return BookingPaymentState.CONFIRMED;
 
   return BookingPaymentState.PENDING;
 }
 
-export function getPaymentReceivedColorClass(status?: string, paymentStatus?: string, fontClass: string = 'font-bold'): string {
+export function getPaymentReceivedColorClass(
+  status?: string,
+  paymentStatus?: string,
+  fontClass: string = "font-bold",
+): string {
   const state = normalizeBookingStatus(status, paymentStatus);
 
   switch (state) {
@@ -56,23 +66,26 @@ export function getPaymentReceivedColorClass(status?: string, paymentStatus?: st
   }
 }
 
-export function getPaymentReceivedColorHex(status?: string, paymentStatus?: string): string {
+export function getPaymentReceivedColorHex(
+  status?: string,
+  paymentStatus?: string,
+): string {
   const state = normalizeBookingStatus(status, paymentStatus);
 
   switch (state) {
     case BookingPaymentState.CONFIRMED:
-      return '#059669'; // Green
+      return "#059669"; // Green
     case BookingPaymentState.REFUNDED:
-      return '#2563EB'; // Blue
+      return "#2563EB"; // Blue
     case BookingPaymentState.PARTIALLY_REFUNDED:
-      return '#D97706'; // Orange
+      return "#D97706"; // Orange
     case BookingPaymentState.CANCELLED:
     case BookingPaymentState.EXPIRED:
-      return '#64748B'; // Grey
+      return "#64748B"; // Grey
     case BookingPaymentState.PENDING:
     case BookingPaymentState.UNCONFIRMED:
     case BookingPaymentState.INQUIRY:
     default:
-      return '#DC2626'; // Red
+      return "#DC2626"; // Red
   }
 }

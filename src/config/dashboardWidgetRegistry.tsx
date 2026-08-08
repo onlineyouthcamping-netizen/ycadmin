@@ -21,7 +21,7 @@ export interface DashboardWidgetContextProps {
   hasPermission: (perms: any, required: string, role?: string) => boolean;
 }
 
-export type DashboardCategory = 'kpi' | 'operations' | 'management' | 'team';
+export type DashboardCategory = "kpi" | "operations" | "management" | "team";
 
 export interface DashboardWidget {
   id: string;
@@ -33,11 +33,26 @@ export interface DashboardWidget {
   component: React.ComponentType<DashboardWidgetContextProps>;
 }
 
-export const CATEGORY_LABELS: Record<DashboardCategory, { title: string; subtitle: string }> = {
-  kpi: { title: "KPI Summary", subtitle: "Key performance indicators and business metrics" },
-  operations: { title: "Operational Workspace", subtitle: "Active departures, itinerary schedules, and urgent alerts" },
-  management: { title: "Management & Cash Flow", subtitle: "Schedule, approvals, daily cash flow, and announcements" },
-  team: { title: "Team & Workforce Activity", subtitle: "Employee status, task workload meters, and recent bookings" }
+export const CATEGORY_LABELS: Record<
+  DashboardCategory,
+  { title: string; subtitle: string }
+> = {
+  kpi: {
+    title: "KPI Summary",
+    subtitle: "Key performance indicators and business metrics",
+  },
+  operations: {
+    title: "Operational Workspace",
+    subtitle: "Active departures, itinerary schedules, and urgent alerts",
+  },
+  management: {
+    title: "Management & Cash Flow",
+    subtitle: "Schedule, approvals, daily cash flow, and announcements",
+  },
+  team: {
+    title: "Team & Workforce Activity",
+    subtitle: "Employee status, task workload meters, and recent bookings",
+  },
 };
 
 // ─────────────────────────────────────────────────────────────

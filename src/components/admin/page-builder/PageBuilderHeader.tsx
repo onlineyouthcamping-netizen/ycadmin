@@ -69,7 +69,7 @@ export function PageBuilderHeader({
               Website Page Builder
             </span>
             <span className="text-slate-300">•</span>
-            
+
             {/* Status Pill Badge */}
             {status === "saving" || isSaving ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
@@ -98,7 +98,10 @@ export function PageBuilderHeader({
                 <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-[#D4541A] transition-transform group-hover:translate-y-0.5" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48 rounded-xl p-1.5 shadow-lg border-slate-200">
+            <DropdownMenuContent
+              align="start"
+              className="w-48 rounded-xl p-1.5 shadow-lg border-slate-200"
+            >
               {pages.map((p) => (
                 <DropdownMenuItem
                   key={p.id}
@@ -110,7 +113,9 @@ export function PageBuilderHeader({
                   }`}
                 >
                   <span>{p.name}</span>
-                  {p.id === currentPage && <CheckCircle2 className="w-3.5 h-3.5 text-[#D4541A]" />}
+                  {p.id === currentPage && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#D4541A]" />
+                  )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { trainTicketService, type TrainTemplate } from "@/services/trainTicket.service";
+import {
+  trainTicketService,
+  type TrainTemplate,
+} from "@/services/trainTicket.service";
 import { tripsService } from "@/services/trips.service";
 import type { Trip } from "@/types";
 import { toast } from "sonner";
@@ -99,8 +102,13 @@ export default function TrainTemplatesPage() {
         <div className="flex items-center gap-2.5">
           <Train className="w-5 h-5 text-[#F97316]" />
           <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Ticketing Templates Management</h1>
-            <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Configure default ticketing profiles to prefill traveler ticket details</p>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+              Ticketing Templates Management
+            </h1>
+            <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
+              Configure default ticketing profiles to prefill traveler ticket
+              details
+            </p>
           </div>
         </div>
         <Button
@@ -125,7 +133,9 @@ export default function TrainTemplatesPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="h-8.5 pl-8 text-xs rounded-[4px] border-[#E2E8F0] font-medium placeholder:text-slate-400"
           />
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+            🔍
+          </span>
         </div>
       </div>
 
@@ -153,7 +163,8 @@ export default function TrainTemplatesPage() {
               {editTemplate ? "Edit Ticket Template" : "Add Ticket Template"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 font-semibold mt-1">
-              Fill in transport defaults which will prefill traveler-level ticket profiles.
+              Fill in transport defaults which will prefill traveler-level
+              ticket profiles.
             </DialogDescription>
           </DialogHeader>
 

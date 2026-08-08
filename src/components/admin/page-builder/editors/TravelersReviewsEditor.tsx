@@ -26,21 +26,24 @@ const DEFAULT_REVIEWS: ReviewItem[] = [
     id: "gr1",
     name: "Kathan Patel",
     tripName: "Spiti Valley Bike Trip",
-    comment: "I travelled with YouthCamping Spiti Valley Bike Trip this June. My experience was super thrilling and captains were supportive!",
+    comment:
+      "I travelled with YouthCamping Spiti Valley Bike Trip this June. My experience was super thrilling and captains were supportive!",
     rating: 5,
   },
   {
     id: "gr2",
     name: "Bhumit Rabadiya",
     tripName: "Manali Kasol Backpacking",
-    comment: "Thank you for crafting a trip that perfectly matched our style! Stays, bonfire nights, and riverfront camping were out of this world.",
+    comment:
+      "Thank you for crafting a trip that perfectly matched our style! Stays, bonfire nights, and riverfront camping were out of this world.",
     rating: 5,
   },
   {
     id: "gr3",
     name: "Janak Chauhan",
     tripName: "Kedarkantha Trek",
-    comment: "Just a few weeks back I took the trek with YouthCamping and believe me I had an amazing expedition of a lifetime!",
+    comment:
+      "Just a few weeks back I took the trek with YouthCamping and believe me I had an amazing expedition of a lifetime!",
     rating: 5,
   },
 ];
@@ -51,7 +54,11 @@ export function TravelersReviewsEditor({
   onChange,
   onReset,
 }: TravelersReviewsEditorProps) {
-  const selectedReviewIds: string[] = draft.selectedReviewIds || ["gr1", "gr2", "gr3"];
+  const selectedReviewIds: string[] = draft.selectedReviewIds || [
+    "gr1",
+    "gr2",
+    "gr3",
+  ];
 
   const updateField = (field: string, value: any) => {
     onChange({ ...draft, [field]: value });
@@ -120,13 +127,19 @@ export function TravelersReviewsEditor({
                 <Checkbox checked={isChecked} className="mt-1" />
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold text-[#1A2332]">{rev.name}</p>
+                    <p className="text-xs font-bold text-[#1A2332]">
+                      {rev.name}
+                    </p>
                     <div className="flex items-center gap-0.5 text-amber-500">
                       <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span className="text-[10px] font-bold text-[#1A2332]">5.0</span>
+                      <span className="text-[10px] font-bold text-[#1A2332]">
+                        5.0
+                      </span>
                     </div>
                   </div>
-                  <p className="text-[10.5px] font-bold text-[#D97854]">{rev.tripName}</p>
+                  <p className="text-[10.5px] font-bold text-[#D97854]">
+                    {rev.tripName}
+                  </p>
                   <p className="text-[11px] text-[#6b7280] font-medium line-clamp-2 leading-relaxed">
                     "{rev.comment}"
                   </p>
@@ -145,7 +158,8 @@ export function TravelersReviewsEditor({
           onClick={onReset}
           className="h-9 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to Default
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to
+          Default
         </Button>
       </div>
     </div>

@@ -45,11 +45,18 @@ export default function DeparturePayments({
 }: DeparturePaymentsProps) {
   // 6 Enterprise Sub Tabs
   const [subTab, setSubTab] = useState<
-    "dashboard" | "clients" | "vendors" | "activities" | "misc" | "reconciliation"
+    | "dashboard"
+    | "clients"
+    | "vendors"
+    | "activities"
+    | "misc"
+    | "reconciliation"
   >("dashboard");
 
   // Expanded Row IDs for detailed transaction ledger view
-  const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
+  const [expandedBookingId, setExpandedBookingId] = useState<string | null>(
+    null,
+  );
   const [expandedVendorId, setExpandedVendorId] = useState<string | null>(null);
 
   // Live Data States
@@ -66,7 +73,8 @@ export default function DeparturePayments({
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [clientStatusFilter, setClientStatusFilter] = useState("All Status");
-  const [vendorCategoryFilter, setVendorCategoryFilter] = useState("All Categories");
+  const [vendorCategoryFilter, setVendorCategoryFilter] =
+    useState("All Categories");
   const [vendorStatusFilter, setVendorStatusFilter] = useState("All Status");
 
   // Modals
@@ -83,7 +91,9 @@ export default function DeparturePayments({
   });
 
   const [addVendorPaymentOpen, setAddVendorPaymentOpen] = useState(false);
-  const [editingVendorPayment, setEditingVendorPayment] = useState<any | null>(null);
+  const [editingVendorPayment, setEditingVendorPayment] = useState<any | null>(
+    null,
+  );
   const [vendorPaymentForm, setVendorPaymentForm] = useState({
     vendorName: "",
     category: "Hotels",
@@ -138,45 +148,74 @@ export default function DeparturePayments({
   const fetchData = async () => {
     try {
       const [clientRes, vendorRes, vendorsDirRes] = await Promise.all([
-        opsService.getClientPayments(tripId, departureDateStr).catch(() => ({ bookings: [], receipts: [] })),
+        opsService
+          .getClientPayments(tripId, departureDateStr)
+          .catch(() => ({ bookings: [], receipts: [] })),
         opsService.getVendorPayments(tripId, departureDateStr).catch(() => []),
         api.get("/vendors/directory").catch(() => ({ data: { data: [] } })),
       ]);
 
-      const mergedBookings = clientRes.bookings && clientRes.bookings.length > 0
-        ? clientRes.bookings.map((b: any) => {
-            const bookingReceipts = (clientRes.receipts || []).filter((r: any) => r.bookingId === b.bookingId);
-            return {
-              ...b,
-              history: bookingReceipts.map((r: any) => ({
-                id: r.id,
-                date: r.paymentDate ? r.paymentDate.substring(0, 10) : "N/A",
-                amount: r.amount,
-                method: r.paymentMode,
-                txnId: r.transactionId || "N/A",
-                status: r.status,
-                verifiedBy: r.collectedBy || "System",
-                remarks: r.remarks || "",
-              })),
-            };
-          })
-        : [];
+      const mergedBookings =
+        clientRes.bookings && clientRes.bookings.length > 0
+          ? clientRes.bookings.map((b: any) => {
+              const bookingReceipts = (clientRes.receipts || []).filter(
+                (r: any) => r.bookingId === b.bookingId,
+              );
+              return {
+                ...b,
+                history: bookingReceipts.map((r: any) => ({
+                  id: r.id,
+                  date: r.paymentDate ? r.paymentDate.substring(0, 10) : "N/A",
+                  amount: r.amount,
+                  method: r.paymentMode,
+                  txnId: r.transactionId || "N/A",
+                  status: r.status,
+                  verifiedBy: r.collectedBy || "System",
+                  remarks: r.remarks || "",
+                })),
+              };
+            })
+          : [];
 
-      const mergedVendors = vendorRes && vendorRes.length > 0
-        ? vendorRes.map((v: any) => ({
-            ...v,
-            history: [
-              {
-                date: v.paymentDate ? v.paymentDate.substring(0, 10) : "N/A",
-                amount: v.advancePaid || 0,
-                method: v.paymentMode || "Bank Transfer",
-                txnId: v.transactionId || "N/A",
-                type: "ADVANCE",
-                status: v.status,
-              },
-            ],
-          }))
-        : [];
+      const apiVendors =
+        vendorRes && vendorRes.length > 0
+          ? vendorRes.map((v: any) => ({
+              ...v,
+              history: [
+                {
+                  date: v.paymentDate ? v.paymentDate.substring(0, 10) : "N/A",
+                  amount: v.advancePaid || 0,
+                  method: v.paymentMode || "Bank Transfer",
+                  txnId: v.transactionId || "N/A",
+                  type: "ADVANCE",
+                  status: v.status,
+                },
+              ],
+            }))
+          : [];
+
+      // Merge auto-assigned vendors from the trip (Hotels, Guides, Transport)
+      const mergedVendors = [...apiVendors];
+      (tripVendors || []).forEach((tv) => {
+        const vName = tv.vendor?.name || tv.name;
+        if (!vName) return;
+        
+        const exists = mergedVendors.find((v) => v.vendorName === vName);
+        if (!exists) {
+          mergedVendors.push({
+            id: tv.id || `auto-${vName}`,
+            vendorName: vName,
+            category: tv.vendorType === "hotel" ? "Hotels" : tv.vendorType === "guide" ? "Guides" : "Transport",
+            serviceDescription: tv.notes || `${tv.vendorType} services`,
+            agreedAmount: tv.agreedCost || 0,
+            advancePaid: tv.paidAmount || 0,
+            balanceAmount: (tv.agreedCost || 0) - (tv.paidAmount || 0),
+            status: tv.paymentStatus === "paid" ? "Paid" : "Pending",
+            paymentMode: "N/A",
+            history: [],
+          });
+        }
+      });
 
       setBookings(mergedBookings);
       setReceipts(clientRes.receipts || []);
@@ -191,7 +230,7 @@ export default function DeparturePayments({
 
   useEffect(() => {
     fetchData();
-  }, [tripId, departureDateStr]);
+  }, [tripId, departureDateStr, tripVendors]);
 
   // Live Calculated Stats across all 5 categories
   const calculatedStats = useMemo(() => {
@@ -200,37 +239,65 @@ export default function DeparturePayments({
     const activeActivities = activityPayments;
     const activeMisc = miscPayments;
 
-    const totalClientRevenue = activeBookings.reduce((s, b) => s + (b.totalAmount || 0), 0);
-    const clientAmountReceived = activeBookings.reduce((s, b) => s + (b.advancePaid || 0), 0);
-    const clientOutstandingBalance = Math.max(0, totalClientRevenue - clientAmountReceived);
+    const totalClientRevenue = activeBookings.reduce(
+      (s, b) => s + (b.totalAmount || 0),
+      0,
+    );
+    const clientAmountReceived = activeBookings.reduce(
+      (s, b) => s + (b.advancePaid || 0),
+      0,
+    );
+    const clientOutstandingBalance = Math.max(
+      0,
+      totalClientRevenue - clientAmountReceived,
+    );
     const clientCollectedPercent =
       totalClientRevenue > 0
         ? ((clientAmountReceived / totalClientRevenue) * 100).toFixed(1)
         : "0";
 
-    const totalVendorPayable = activeVendors.reduce((s, v) => s + (v.agreedAmount || 0), 0);
-    const vendorAmountPaid = activeVendors.reduce((s, v) => s + (v.advancePaid || 0), 0);
-    const vendorOutstandingBalance = Math.max(0, totalVendorPayable - vendorAmountPaid);
+    const totalVendorPayable = activeVendors.reduce(
+      (s, v) => s + (v.agreedAmount || 0),
+      0,
+    );
+    const vendorAmountPaid = activeVendors.reduce(
+      (s, v) => s + (v.advancePaid || 0),
+      0,
+    );
+    const vendorOutstandingBalance = Math.max(
+      0,
+      totalVendorPayable - vendorAmountPaid,
+    );
     const vendorPaidPercent =
       totalVendorPayable > 0
         ? ((vendorAmountPaid / totalVendorPayable) * 100).toFixed(0)
         : "0";
 
-    const totalActivityCost = activeActivities.reduce((s, a) => s + (a.totalCost || 0), 0);
-    const activityAmountPaid = activeActivities.reduce((s, a) => s + (a.amountPaid || 0), 0);
+    const totalActivityCost = activeActivities.reduce(
+      (s, a) => s + (a.totalCost || 0),
+      0,
+    );
+    const activityAmountPaid = activeActivities.reduce(
+      (s, a) => s + (a.amountPaid || 0),
+      0,
+    );
     const activityPending = Math.max(0, totalActivityCost - activityAmountPaid);
     const activityPercent =
       totalActivityCost > 0
         ? ((activityAmountPaid / totalActivityCost) * 100).toFixed(0)
         : "100";
 
-    const totalMiscExpenses = activeMisc.reduce((s, m) => s + (m.amount || 0), 0);
+    const totalMiscExpenses = activeMisc.reduce(
+      (s, m) => s + (m.amount || 0),
+      0,
+    );
     const miscApproved = activeMisc
       .filter((m) => m.status === "APPROVED" || m.status === "PAID")
       .reduce((s, m) => s + (m.amount || 0), 0);
     const miscPendingApproval = totalMiscExpenses - miscApproved;
 
-    const totalCosts = totalVendorPayable + totalActivityCost + totalMiscExpenses;
+    const totalCosts =
+      totalVendorPayable + totalActivityCost + totalMiscExpenses;
     const estimatedProfit = totalClientRevenue - totalCosts;
     const profitMargin =
       totalClientRevenue > 0
@@ -271,7 +338,9 @@ export default function DeparturePayments({
   const getPassengerNames = (booking: any) => {
     try {
       const parsed =
-        typeof booking.passengers === "string" ? JSON.parse(booking.passengers) : booking.passengers;
+        typeof booking.passengers === "string"
+          ? JSON.parse(booking.passengers)
+          : booking.passengers;
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed.map((p: any) => p.name || p.fullName).join(", ");
       }
@@ -289,11 +358,16 @@ export default function DeparturePayments({
     const rows = data.map((row) =>
       Object.values(row)
         .map((val) =>
-          typeof val === "string" ? `"${val.replace(/"/g, '""')}"` : typeof val === "object" ? `""` : val
+          typeof val === "string"
+            ? `"${val.replace(/"/g, '""')}"`
+            : typeof val === "object"
+              ? `""`
+              : val,
         )
-        .join(",")
+        .join(","),
     );
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -309,7 +383,10 @@ export default function DeparturePayments({
     if (!selectedBooking) return;
     const amountNum = Number(clientPaymentForm.amount) || 0;
     try {
-      await opsService.addClientPayment(selectedBooking.bookingId, clientPaymentForm);
+      await opsService.addClientPayment(
+        selectedBooking.bookingId,
+        clientPaymentForm,
+      );
     } catch {
       // Continue update in local state for seamless feedback
     }
@@ -339,9 +416,11 @@ export default function DeparturePayments({
           };
         }
         return b;
-      })
+      }),
     );
-    toast.success(`Recorded ₹${amountNum.toLocaleString()} receipt for ${selectedBooking.bookingId}`);
+    toast.success(
+      `Recorded ₹${amountNum.toLocaleString()} receipt for ${selectedBooking.bookingId}`,
+    );
     setAddClientPaymentOpen(false);
     setSelectedBooking(null);
   };
@@ -351,11 +430,20 @@ export default function DeparturePayments({
     const agreedNum = Number(vendorPaymentForm.agreedAmount) || 0;
     const advNum = Number(vendorPaymentForm.advancePaid) || 0;
     const remaining = Math.max(0, agreedNum - advNum);
-    const status = advNum >= agreedNum && agreedNum > 0 ? "Paid" : advNum > 0 ? "Advance Paid" : "Not Paid";
+    const status =
+      advNum >= agreedNum && agreedNum > 0
+        ? "Paid"
+        : advNum > 0
+          ? "Advance Paid"
+          : "Not Paid";
 
     if (editingVendorPayment) {
       try {
-        await opsService.updateVendorPayment(tripId, editingVendorPayment.id, vendorPaymentForm);
+        await opsService.updateVendorPayment(
+          tripId,
+          editingVendorPayment.id,
+          vendorPaymentForm,
+        );
       } catch {}
       setVendorPayments((prev) =>
         prev.map((v) =>
@@ -370,8 +458,8 @@ export default function DeparturePayments({
                 remainingPayable: remaining,
                 status,
               }
-            : v
-        )
+            : v,
+        ),
       );
       toast.success("Vendor payable updated!");
     } else {
@@ -381,7 +469,8 @@ export default function DeparturePayments({
         category: vendorPaymentForm.category,
         invoiceNumber: `INV-${Math.floor(100 + Math.random() * 900)}`,
         invoiceDate: vendorPaymentForm.paymentDate,
-        serviceDescription: vendorPaymentForm.serviceDescription || "Trip Service Invoice",
+        serviceDescription:
+          vendorPaymentForm.serviceDescription || "Trip Service Invoice",
         agreedAmount: agreedNum,
         advancePaid: advNum,
         remainingPayable: remaining,
@@ -389,19 +478,26 @@ export default function DeparturePayments({
         paymentDate: vendorPaymentForm.paymentDate,
         paymentMode: vendorPaymentForm.paymentMode,
         transactionId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
-        history: advNum > 0 ? [
-          {
-            date: vendorPaymentForm.paymentDate,
-            amount: advNum,
-            method: vendorPaymentForm.paymentMode,
-            txnId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
-            type: "ADVANCE",
-            status: "Paid",
-          }
-        ] : [],
+        history:
+          advNum > 0
+            ? [
+                {
+                  date: vendorPaymentForm.paymentDate,
+                  amount: advNum,
+                  method: vendorPaymentForm.paymentMode,
+                  txnId:
+                    vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
+                  type: "ADVANCE",
+                  status: "Paid",
+                },
+              ]
+            : [],
       };
       try {
-        await opsService.createVendorPayment(tripId, { ...newVnd, departureDate: departureDateStr });
+        await opsService.createVendorPayment(tripId, {
+          ...newVnd,
+          departureDate: departureDateStr,
+        });
       } catch {}
       setVendorPayments((prev) => [newVnd, ...prev]);
       toast.success("Vendor payable logged!");
@@ -417,7 +513,8 @@ export default function DeparturePayments({
     const total = cost * pax;
     const paid = Number(activityPaymentForm.amountPaid) || 0;
     const balance = Math.max(0, total - paid);
-    const status = paid >= total && total > 0 ? "PAID" : paid > 0 ? "PARTIAL" : "PENDING";
+    const status =
+      paid >= total && total > 0 ? "PAID" : paid > 0 ? "PARTIAL" : "PENDING";
 
     const newAct = {
       id: `ACT-PAY-${Date.now()}`,
@@ -477,19 +574,20 @@ export default function DeparturePayments({
       createdAt: new Date().toISOString().substring(0, 10),
     };
     setAdjustments((prev) => [newAdj, ...prev]);
-    toast.success(`Logged ${newAdj.type} adjustment of ₹${amountNum.toLocaleString()}`);
+    toast.success(
+      `Logged ${newAdj.type} adjustment of ₹${amountNum.toLocaleString()}`,
+    );
     setAddAdjustmentOpen(false);
   };
 
   const handleRunReconciliation = () => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1000)),
-      {
-        loading: "Running automated reconciliation engine across 5 payment categories...",
-        success: "Reconciliation complete! 0 mismatched transactions, 100% ledgers balanced.",
-        error: "Reconciliation failed",
-      }
-    );
+    toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
+      loading:
+        "Running automated reconciliation engine across 5 payment categories...",
+      success:
+        "Reconciliation complete! 0 mismatched transactions, 100% ledgers balanced.",
+      error: "Reconciliation failed",
+    });
   };
 
   return (
@@ -499,11 +597,31 @@ export default function DeparturePayments({
         <div className="flex flex-wrap items-center gap-1">
           {[
             { key: "dashboard", label: "Payment Dashboard", badge: "" },
-            { key: "clients", label: "Client Receivables", badge: `₹${(calculatedStats.clientAmountReceived / 1000).toFixed(1)}k` },
-            { key: "vendors", label: "Vendor Payables", badge: `₹${(calculatedStats.totalVendorPayable / 1000).toFixed(1)}k` },
-            { key: "activities", label: "Activity Payments", badge: `${activityPayments.length}` },
-            { key: "misc", label: "Miscellaneous", badge: `₹${calculatedStats.totalMiscExpenses.toLocaleString()}` },
-            { key: "reconciliation", label: "Reconciliation", badge: `${adjustments.length}` },
+            {
+              key: "clients",
+              label: "Client Receivables",
+              badge: `₹${(calculatedStats.clientAmountReceived / 1000).toFixed(1)}k`,
+            },
+            {
+              key: "vendors",
+              label: "Vendor Payables",
+              badge: `₹${(calculatedStats.totalVendorPayable / 1000).toFixed(1)}k`,
+            },
+            {
+              key: "activities",
+              label: "Activity Payments",
+              badge: `${activityPayments.length}`,
+            },
+            {
+              key: "misc",
+              label: "Miscellaneous",
+              badge: `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`,
+            },
+            {
+              key: "reconciliation",
+              label: "Reconciliation",
+              badge: `${adjustments.length}`,
+            },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -512,7 +630,7 @@ export default function DeparturePayments({
                 "px-3.5 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 -mb-[2px]",
                 subTab === tab.key
                   ? "border-orange-600 text-orange-600 bg-orange-50/50 rounded-t-lg"
-                  : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-lg"
+                  : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-lg",
               )}
             >
               <span>{tab.label}</span>
@@ -522,7 +640,7 @@ export default function DeparturePayments({
                     "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
                     subTab === tab.key
                       ? "bg-orange-600 text-white"
-                      : "bg-slate-100 text-slate-600"
+                      : "bg-slate-100 text-slate-600",
                   )}
                 >
                   {tab.badge}
@@ -557,7 +675,8 @@ export default function DeparturePayments({
             onClick={handleRunReconciliation}
             className="h-8 text-xs font-bold text-slate-700 hover:bg-slate-50 border-slate-300"
           >
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-orange-600" /> Reconcile
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-orange-600" />{" "}
+            Reconcile
           </Button>
         </div>
       </div>
@@ -580,7 +699,9 @@ export default function DeparturePayments({
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Total Revenue:</span>
+                  <span className="text-slate-500 font-medium">
+                    Total Revenue:
+                  </span>
                   <span className="font-extrabold text-slate-900">
                     {formatCurrency(calculatedStats.totalClientRevenue)}
                   </span>
@@ -592,7 +713,9 @@ export default function DeparturePayments({
                   </span>
                 </div>
                 <div className="flex justify-between text-xs pt-1.5 border-t border-slate-100">
-                  <span className="text-slate-500 font-medium">Outstanding:</span>
+                  <span className="text-slate-500 font-medium">
+                    Outstanding:
+                  </span>
                   <span className="font-extrabold text-amber-600">
                     {formatCurrency(calculatedStats.clientOutstandingBalance)}
                   </span>
@@ -619,19 +742,25 @@ export default function DeparturePayments({
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Total Payable:</span>
+                  <span className="text-slate-500 font-medium">
+                    Total Payable:
+                  </span>
                   <span className="font-extrabold text-slate-900">
                     {formatCurrency(calculatedStats.totalVendorPayable)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Amount Paid:</span>
+                  <span className="text-slate-500 font-medium">
+                    Amount Paid:
+                  </span>
                   <span className="font-extrabold text-blue-600">
                     {formatCurrency(calculatedStats.vendorAmountPaid)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs pt-1.5 border-t border-slate-100">
-                  <span className="text-slate-500 font-medium">Balance Due:</span>
+                  <span className="text-slate-500 font-medium">
+                    Balance Due:
+                  </span>
                   <span className="font-extrabold text-red-600">
                     {formatCurrency(calculatedStats.vendorOutstandingBalance)}
                   </span>
@@ -658,13 +787,17 @@ export default function DeparturePayments({
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Total Activity Cost:</span>
+                  <span className="text-slate-500 font-medium">
+                    Total Activity Cost:
+                  </span>
                   <span className="font-extrabold text-slate-900">
                     {formatCurrency(calculatedStats.totalActivityCost)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Paid to Vendors:</span>
+                  <span className="text-slate-500 font-medium">
+                    Paid to Vendors:
+                  </span>
                   <span className="font-extrabold text-emerald-700">
                     {formatCurrency(calculatedStats.activityAmountPaid)}
                   </span>
@@ -697,7 +830,9 @@ export default function DeparturePayments({
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Total Misc Cost:</span>
+                  <span className="text-slate-500 font-medium">
+                    Total Misc Cost:
+                  </span>
                   <span className="font-extrabold text-slate-900">
                     {formatCurrency(calculatedStats.totalMiscExpenses)}
                   </span>
@@ -709,7 +844,9 @@ export default function DeparturePayments({
                   </span>
                 </div>
                 <div className="flex justify-between text-xs pt-1.5 border-t border-slate-100">
-                  <span className="text-slate-500 font-medium">Pending Approval:</span>
+                  <span className="text-slate-500 font-medium">
+                    Pending Approval:
+                  </span>
                   <span className="font-extrabold text-amber-600">
                     {formatCurrency(calculatedStats.miscPendingApproval)}
                   </span>
@@ -735,7 +872,7 @@ export default function DeparturePayments({
                     "text-xs font-bold px-2 py-0.5 rounded",
                     Number(calculatedStats.profitMargin) >= 0
                       ? "bg-emerald-100 text-emerald-800"
-                      : "bg-red-100 text-red-800"
+                      : "bg-red-100 text-red-800",
                   )}
                 >
                   {calculatedStats.profitMargin}% Margin
@@ -743,25 +880,31 @@ export default function DeparturePayments({
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Total Revenue:</span>
+                  <span className="text-slate-500 font-medium">
+                    Total Revenue:
+                  </span>
                   <span className="font-extrabold text-slate-900">
                     {formatCurrency(calculatedStats.totalClientRevenue)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Total Costs:</span>
+                  <span className="text-slate-500 font-medium">
+                    Total Costs:
+                  </span>
                   <span className="font-extrabold text-red-700">
                     {formatCurrency(calculatedStats.totalCosts)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs pt-1.5 border-t border-slate-100">
-                  <span className="text-slate-500 font-medium">Est. Profit:</span>
+                  <span className="text-slate-500 font-medium">
+                    Est. Profit:
+                  </span>
                   <span
                     className={cn(
                       "font-extrabold",
                       calculatedStats.estimatedProfit >= 0
                         ? "text-emerald-700"
-                        : "text-red-600"
+                        : "text-red-600",
                     )}
                   >
                     {formatCurrency(calculatedStats.estimatedProfit)}
@@ -825,7 +968,9 @@ export default function DeparturePayments({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleDownloadCSV(bookings, "payment_ledger_summary.csv")}
+                onClick={() =>
+                  handleDownloadCSV(bookings, "payment_ledger_summary.csv")
+                }
                 className="h-8 text-xs font-bold border-slate-300 text-slate-700"
               >
                 <Download className="w-3.5 h-3.5 mr-1" /> Download Report
@@ -855,36 +1000,48 @@ export default function DeparturePayments({
                   </div>
                 ) : (
                   bookings.slice(0, 4).map((b) => {
-                  const bal = Math.max(0, b.totalAmount - (b.advancePaid || 0));
-                  return (
-                    <div key={b.bookingId} className="py-2.5 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-black text-slate-900">{b.bookingId}</span>
-                        <span className="text-slate-600 ml-1.5 font-medium">{b.name}</span>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                          Paid: {formatCurrency(b.advancePaid)} of {formatCurrency(b.totalAmount)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
-                            b.paymentStatus === "Paid"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : b.paymentStatus === "Partially Paid"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-red-50 text-red-700 border border-red-200"
-                          )}
-                        >
-                          {b.paymentStatus || "Unpaid"}
-                        </span>
-                        <div className="text-[11px] font-bold text-slate-500 mt-1">
-                          Due: {formatCurrency(bal)}
+                    const bal = Math.max(
+                      0,
+                      b.totalAmount - (b.advancePaid || 0),
+                    );
+                    return (
+                      <div
+                        key={b.bookingId}
+                        className="py-2.5 flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <span className="font-black text-slate-900">
+                            {b.bookingId}
+                          </span>
+                          <span className="text-slate-600 ml-1.5 font-medium">
+                            {b.name}
+                          </span>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Paid: {formatCurrency(b.advancePaid)} of{" "}
+                            {formatCurrency(b.totalAmount)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
+                              b.paymentStatus === "Paid"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : b.paymentStatus === "Partially Paid"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : "bg-red-50 text-red-700 border border-red-200",
+                            )}
+                          >
+                            {b.paymentStatus || "Unpaid"}
+                          </span>
+                          <div className="text-[11px] font-bold text-slate-500 mt-1">
+                            Due: {formatCurrency(bal)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                }))}
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -908,35 +1065,43 @@ export default function DeparturePayments({
                   </div>
                 ) : (
                   vendorPayments.slice(0, 4).map((v) => (
-                  <div key={v.id} className="py-2.5 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-black text-slate-900">{v.vendorName}</span>
-                      <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded uppercase ml-1.5">
-                        {v.category}
-                      </span>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Inv: {v.invoiceNumber} · Agreed: {formatCurrency(v.agreedAmount)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
-                          v.status === "Paid"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : v.status === "Advance Paid" || v.status === "Partially Paid"
-                            ? "bg-amber-50 text-amber-700 border border-amber-200"
-                            : "bg-red-50 text-red-700 border border-red-200"
-                        )}
-                      >
-                        {v.status}
-                      </span>
-                      <div className="text-[11px] font-bold text-red-600 mt-1">
-                        Bal: {formatCurrency(v.remainingPayable)}
+                    <div
+                      key={v.id}
+                      className="py-2.5 flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <span className="font-black text-slate-900">
+                          {v.vendorName}
+                        </span>
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded uppercase ml-1.5">
+                          {v.category}
+                        </span>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Inv: {v.invoiceNumber} · Agreed:{" "}
+                          {formatCurrency(v.agreedAmount)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded uppercase",
+                            v.status === "Paid"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : v.status === "Advance Paid" ||
+                                  v.status === "Partially Paid"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-red-50 text-red-700 border border-red-200",
+                          )}
+                        >
+                          {v.status}
+                        </span>
+                        <div className="text-[11px] font-bold text-red-600 mt-1">
+                          Bal: {formatCurrency(v.remainingPayable)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -982,7 +1147,9 @@ export default function DeparturePayments({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleDownloadCSV(bookings, "client_receivables_ledger.csv")}
+                onClick={() =>
+                  handleDownloadCSV(bookings, "client_receivables_ledger.csv")
+                }
                 className="h-8 text-xs font-bold border-slate-200 text-slate-700"
               >
                 <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
@@ -998,239 +1165,285 @@ export default function DeparturePayments({
                   <th className="p-3 border-r border-slate-100">BOOKING ID</th>
                   <th className="p-3 border-r border-slate-100">PASSENGER</th>
                   <th className="p-3 border-r border-slate-100">PHONE</th>
-                  <th className="p-3 border-r border-slate-100 text-right">PACKAGE AMOUNT</th>
-                  <th className="p-3 border-r border-slate-100 text-right">AMOUNT PAID</th>
-                  <th className="p-3 border-r border-slate-100 text-right">BALANCE DUE</th>
-                  <th className="p-3 border-r border-slate-100 text-center">PAYMENT STATUS</th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    PACKAGE AMOUNT
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    AMOUNT PAID
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    BALANCE DUE
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-center">
+                    PAYMENT STATUS
+                  </th>
                   <th className="p-3 text-center w-36">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {(() => {
-                  const filteredBookings = bookings
-                    .filter((b) => {
-                      const matchSearch =
-                        searchQuery === "" ||
-                        b.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        (b.phone || "").toLowerCase().includes(searchQuery.toLowerCase());
-                      const matchStatus =
-                        clientStatusFilter === "All Status" || b.paymentStatus === clientStatusFilter;
-                      return matchSearch && matchStatus;
-                    });
+                  const filteredBookings = bookings.filter((b) => {
+                    const matchSearch =
+                      searchQuery === "" ||
+                      b.bookingId
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      b.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      (b.phone || "")
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase());
+                    const matchStatus =
+                      clientStatusFilter === "All Status" ||
+                      b.paymentStatus === clientStatusFilter;
+                    return matchSearch && matchStatus;
+                  });
 
                   return filteredBookings.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-xs font-semibold text-slate-400">
-                        No client bookings or receivables found for this departure.
+                      <td
+                        colSpan={8}
+                        className="py-12 text-center text-xs font-semibold text-slate-400"
+                      >
+                        No client bookings or receivables found for this
+                        departure.
                       </td>
                     </tr>
                   ) : (
                     filteredBookings.map((b) => {
-                    const balance = Math.max(0, b.totalAmount - (b.advancePaid || 0));
-                    const isExpanded = expandedBookingId === b.bookingId;
-                    return (
-                      <React.Fragment key={b.bookingId}>
-                        <tr
-                          onClick={() =>
-                            setExpandedBookingId(isExpanded ? null : b.bookingId)
-                          }
-                          className={cn(
-                            "hover:bg-slate-50/70 transition-colors cursor-pointer",
-                            isExpanded && "bg-orange-50/40"
-                          )}
-                        >
-                          <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
-                            <div className="flex items-center gap-1.5">
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-orange-600" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 text-slate-400" />
-                              )}
-                              <span>{b.bookingId}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 border-r border-slate-100">
-                            <span className="font-bold text-slate-800">{b.name}</span>
-                            <p className="text-[10px] text-slate-500 font-medium">
-                              {getPassengerNames(b)}
-                            </p>
-                          </td>
-                          <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
-                            {b.phone || "—"}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
-                            {formatCurrency(b.totalAmount)}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-black text-emerald-700">
-                            {formatCurrency(b.advancePaid)}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-black text-amber-600">
-                            {formatCurrency(balance)}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-center">
-                            <span
-                              className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
-                                b.paymentStatus === "Paid"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : b.paymentStatus === "Partially Paid"
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-red-50 text-red-700 border-red-200"
-                              )}
+                      const balance = Math.max(
+                        0,
+                        b.totalAmount - (b.advancePaid || 0),
+                      );
+                      const isExpanded = expandedBookingId === b.bookingId;
+                      return (
+                        <React.Fragment key={b.bookingId}>
+                          <tr
+                            onClick={() =>
+                              setExpandedBookingId(
+                                isExpanded ? null : b.bookingId,
+                              )
+                            }
+                            className={cn(
+                              "hover:bg-slate-50/70 transition-colors cursor-pointer",
+                              isExpanded && "bg-orange-50/40",
+                            )}
+                          >
+                            <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
+                              <div className="flex items-center gap-1.5">
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 text-orange-600" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                                )}
+                                <span>{b.bookingId}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 border-r border-slate-100">
+                              <span className="font-bold text-slate-800">
+                                {b.name}
+                              </span>
+                              <p className="text-[10px] text-slate-500 font-medium">
+                                {getPassengerNames(b)}
+                              </p>
+                            </td>
+                            <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
+                              {b.phone || "—"}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
+                              {formatCurrency(b.totalAmount)}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-black text-emerald-700">
+                              {formatCurrency(b.advancePaid)}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-black text-amber-600">
+                              {formatCurrency(balance)}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-center">
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
+                                  b.paymentStatus === "Paid"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : b.paymentStatus === "Partially Paid"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                                      : "bg-red-50 text-red-700 border-red-200",
+                                )}
+                              >
+                                {b.paymentStatus || "Unpaid"}
+                              </span>
+                            </td>
+                            <td
+                              className="p-3 text-center"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {b.paymentStatus || "Unpaid"}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex gap-1.5 justify-center">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedBooking(b);
-                                  setClientPaymentForm({
-                                    amount: String(balance),
-                                    paymentMode: "UPI",
-                                    transactionId: "",
-                                    paymentDate: new Date().toISOString().substring(0, 10),
-                                    proofUrl: "",
-                                    remarks: "",
-                                    status: "Verified",
-                                  });
-                                  setAddClientPaymentOpen(true);
-                                }}
-                                className="bg-blue-600 text-white hover:bg-blue-700 text-[10px] font-bold px-2.5 py-1 rounded shadow-xs"
-                              >
-                                Record Pay
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedBookingId(isExpanded ? null : b.bookingId)
-                                }
-                                className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded"
-                              >
-                                {isExpanded ? "Hide" : "History"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-
-                        {/* EXPANDABLE ROW: TRANSACTION LEDGER HISTORY FOR THIS BOOKING */}
-                        {isExpanded && (
-                          <tr className="bg-slate-50/80 border-t border-b border-slate-200">
-                            <td colSpan={8} className="p-4">
-                              <div className="space-y-3 max-w-4xl">
-                                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                    <Receipt className="w-4 h-4 text-blue-600" />
-                                    {b.bookingId} | {b.name} — Transaction Ledger History
-                                  </span>
-                                  <span className="text-xs font-semibold text-slate-500">
-                                    Summary: {formatCurrency(b.advancePaid)} received (
-                                    {b.totalAmount > 0
-                                      ? `${(((b.advancePaid || 0) / b.totalAmount) * 100).toFixed(0)}%`
-                                      : "0%"}
-                                    ) · {formatCurrency(balance)} remaining due
-                                  </span>
-                                </div>
-
-                                <div className="space-y-2">
-                                  {(!b.history || b.history.length === 0) ? (
-                                    <div className="text-xs text-slate-400 italic py-2">
-                                      No transaction receipts logged for this customer yet.
-                                    </div>
-                                  ) : (
-                                    b.history.map((h: any, idx: number) => (
-                                      <div
-                                        key={h.id || idx}
-                                        className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs"
-                                      >
-                                        <div className="flex items-center gap-3">
-                                          <div className="p-2 bg-emerald-50 rounded-lg">
-                                            <Check className="w-4 h-4 text-emerald-600" />
-                                          </div>
-                                          <div>
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-extrabold text-slate-900 text-sm">
-                                                {formatCurrency(h.amount)}
-                                              </span>
-                                              <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
-                                                {h.method}
-                                              </span>
-                                              <span className="text-xs font-mono text-slate-500">
-                                                TXN: {h.txnId}
-                                              </span>
-                                            </div>
-                                            <p className="text-xs text-slate-500 mt-0.5">
-                                              Date: {h.date} · Verified by {h.verifiedBy || "Finance Admin"}
-                                              {h.remarks ? ` · Remarks: "${h.remarks}"` : ""}
-                                            </p>
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                                            VERIFIED ✓
-                                          </span>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() =>
-                                              toast.success(`Receipt downloaded for ${h.txnId}`)
-                                            }
-                                            className="h-7 text-[11px] font-semibold"
-                                          >
-                                            Download Receipt
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ))
-                                  )}
-
-                                  {/* Expected Next Payment Card */}
-                                  {balance > 0 && (
-                                    <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-200 flex items-center justify-between">
-                                      <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-                                        <Clock className="w-4 h-4 text-amber-600" />
-                                        <span>
-                                          Expected Settlement Due: {formatCurrency(balance)}
-                                        </span>
-                                        <span className="text-slate-600 font-normal">
-                                          — Full settlement before departure
-                                        </span>
-                                      </div>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedBooking(b);
-                                          setClientPaymentForm({
-                                            amount: String(balance),
-                                            paymentMode: "UPI",
-                                            transactionId: "",
-                                            paymentDate: new Date().toISOString().substring(0, 10),
-                                            proofUrl: "",
-                                            remarks: "Final balance settlement",
-                                            status: "Verified",
-                                          });
-                                          setAddClientPaymentOpen(true);
-                                        }}
-                                        className="h-7 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
-                                      >
-                                        Record Settlement Now
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
+                              <div className="flex gap-1.5 justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedBooking(b);
+                                    setClientPaymentForm({
+                                      amount: String(balance),
+                                      paymentMode: "UPI",
+                                      transactionId: "",
+                                      paymentDate: new Date()
+                                        .toISOString()
+                                        .substring(0, 10),
+                                      proofUrl: "",
+                                      remarks: "",
+                                      status: "Verified",
+                                    });
+                                    setAddClientPaymentOpen(true);
+                                  }}
+                                  className="bg-blue-600 text-white hover:bg-blue-700 text-[10px] font-bold px-2.5 py-1 rounded shadow-xs"
+                                >
+                                  Record Pay
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedBookingId(
+                                      isExpanded ? null : b.bookingId,
+                                    )
+                                  }
+                                  className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded"
+                                >
+                                  {isExpanded ? "Hide" : "History"}
+                                </button>
                               </div>
                             </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                })
-              )
-            })()}
+
+                          {/* EXPANDABLE ROW: TRANSACTION LEDGER HISTORY FOR THIS BOOKING */}
+                          {isExpanded && (
+                            <tr className="bg-slate-50/80 border-t border-b border-slate-200">
+                              <td colSpan={8} className="p-4">
+                                <div className="space-y-3 max-w-4xl">
+                                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                      <Receipt className="w-4 h-4 text-blue-600" />
+                                      {b.bookingId} | {b.name} — Transaction
+                                      Ledger History
+                                    </span>
+                                    <span className="text-xs font-semibold text-slate-500">
+                                      Summary: {formatCurrency(b.advancePaid)}{" "}
+                                      received (
+                                      {b.totalAmount > 0
+                                        ? `${(((b.advancePaid || 0) / b.totalAmount) * 100).toFixed(0)}%`
+                                        : "0%"}
+                                      ) · {formatCurrency(balance)} remaining
+                                      due
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    {!b.history || b.history.length === 0 ? (
+                                      <div className="text-xs text-slate-400 italic py-2">
+                                        No transaction receipts logged for this
+                                        customer yet.
+                                      </div>
+                                    ) : (
+                                      b.history.map((h: any, idx: number) => (
+                                        <div
+                                          key={h.id || idx}
+                                          className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs"
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-emerald-50 rounded-lg">
+                                              <Check className="w-4 h-4 text-emerald-600" />
+                                            </div>
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-extrabold text-slate-900 text-sm">
+                                                  {formatCurrency(h.amount)}
+                                                </span>
+                                                <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
+                                                  {h.method}
+                                                </span>
+                                                <span className="text-xs font-mono text-slate-500">
+                                                  TXN: {h.txnId}
+                                                </span>
+                                              </div>
+                                              <p className="text-xs text-slate-500 mt-0.5">
+                                                Date: {h.date} · Verified by{" "}
+                                                {h.verifiedBy ||
+                                                  "Finance Admin"}
+                                                {h.remarks
+                                                  ? ` · Remarks: "${h.remarks}"`
+                                                  : ""}
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                                              VERIFIED ✓
+                                            </span>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() =>
+                                                toast.success(
+                                                  `Receipt downloaded for ${h.txnId}`,
+                                                )
+                                              }
+                                              className="h-7 text-[11px] font-semibold"
+                                            >
+                                              Download Receipt
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))
+                                    )}
+
+                                    {/* Expected Next Payment Card */}
+                                    {balance > 0 && (
+                                      <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-200 flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                                          <Clock className="w-4 h-4 text-amber-600" />
+                                          <span>
+                                            Expected Settlement Due:{" "}
+                                            {formatCurrency(balance)}
+                                          </span>
+                                          <span className="text-slate-600 font-normal">
+                                            — Full settlement before departure
+                                          </span>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => {
+                                            setSelectedBooking(b);
+                                            setClientPaymentForm({
+                                              amount: String(balance),
+                                              paymentMode: "UPI",
+                                              transactionId: "",
+                                              paymentDate: new Date()
+                                                .toISOString()
+                                                .substring(0, 10),
+                                              proofUrl: "",
+                                              remarks:
+                                                "Final balance settlement",
+                                              status: "Verified",
+                                            });
+                                            setAddClientPaymentOpen(true);
+                                          }}
+                                          className="h-7 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
+                                        >
+                                          Record Settlement Now
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  );
+                })()}
               </tbody>
             </table>
           </div>
@@ -1249,7 +1462,14 @@ export default function DeparturePayments({
                 className="h-8 text-xs font-bold border border-slate-200 rounded-lg px-3 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
               >
                 <option value="All Categories">All Vendor Categories</option>
-                {["Hotels", "Transport", "Activities", "Guides", "Meals", "Other"].map((c) => (
+                {[
+                  "Hotels",
+                  "Transport",
+                  "Activities",
+                  "Guides",
+                  "Meals",
+                  "Other",
+                ].map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -1262,11 +1482,13 @@ export default function DeparturePayments({
                 className="h-8 text-xs font-bold border border-slate-200 rounded-lg px-3 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
               >
                 <option value="All Status">All Payment Statuses</option>
-                {["Not Paid", "Advance Paid", "Partially Paid", "Paid"].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
+                {["Not Paid", "Advance Paid", "Partially Paid", "Paid"].map(
+                  (s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ),
+                )}
               </select>
 
               <div className="relative min-w-[220px]">
@@ -1295,7 +1517,12 @@ export default function DeparturePayments({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleDownloadCSV(vendorPayments, "vendor_payables_ledger.csv")}
+                onClick={() =>
+                  handleDownloadCSV(
+                    vendorPayments,
+                    "vendor_payables_ledger.csv",
+                  )
+                }
                 className="h-8 text-xs font-bold border-slate-200 text-slate-700"
               >
                 <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
@@ -1311,10 +1538,18 @@ export default function DeparturePayments({
                   <th className="p-3 border-r border-slate-100">VENDOR</th>
                   <th className="p-3 border-r border-slate-100">TYPE</th>
                   <th className="p-3 border-r border-slate-100">INVOICE #</th>
-                  <th className="p-3 border-r border-slate-100 text-right">INVOICE AMOUNT</th>
-                  <th className="p-3 border-r border-slate-100 text-right">ADVANCE PAID</th>
-                  <th className="p-3 border-r border-slate-100 text-right">BALANCE DUE</th>
-                  <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    INVOICE AMOUNT
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    ADVANCE PAID
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    BALANCE DUE
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-center">
+                    STATUS
+                  </th>
                   <th className="p-3 text-center w-36">ACTION</th>
                 </tr>
               </thead>
@@ -1323,24 +1558,36 @@ export default function DeparturePayments({
                   const filteredVendors = vendorPayments.filter((v) => {
                     const matchSearch =
                       searchQuery === "" ||
-                      v.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      (v.invoiceNumber || "").toLowerCase().includes(searchQuery.toLowerCase());
+                      v.vendorName
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      (v.invoiceNumber || "")
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase());
                     const matchCat =
-                      vendorCategoryFilter === "All Categories" || v.category === vendorCategoryFilter;
+                      vendorCategoryFilter === "All Categories" ||
+                      v.category === vendorCategoryFilter;
                     const matchStatus =
-                      vendorStatusFilter === "All Status" || v.status === vendorStatusFilter;
+                      vendorStatusFilter === "All Status" ||
+                      v.status === vendorStatusFilter;
                     return matchSearch && matchCat && matchStatus;
                   });
 
                   return filteredVendors.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-xs font-semibold text-slate-400">
+                      <td
+                        colSpan={9}
+                        className="py-12 text-center text-xs font-semibold text-slate-400"
+                      >
                         No vendor payables recorded yet for this departure.
                       </td>
                     </tr>
                   ) : (
                     filteredVendors.map((v) => {
-                      const balance = Math.max(0, (v.agreedAmount || 0) - (v.advancePaid || 0));
+                      const balance = Math.max(
+                        0,
+                        (v.agreedAmount || 0) - (v.advancePaid || 0),
+                      );
                       const isExpanded = expandedVendorId === v.id;
                       return (
                         <React.Fragment key={v.id}>
@@ -1350,7 +1597,7 @@ export default function DeparturePayments({
                             }
                             className={cn(
                               "hover:bg-slate-50/70 transition-colors cursor-pointer",
-                              isExpanded && "bg-orange-50/40"
+                              isExpanded && "bg-orange-50/40",
                             )}
                           >
                             <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
@@ -1389,15 +1636,19 @@ export default function DeparturePayments({
                                   "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
                                   v.status === "Paid"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : v.status === "Advance Paid" || v.status === "Partially Paid"
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : "bg-red-50 text-red-700 border-red-200"
+                                    : v.status === "Advance Paid" ||
+                                        v.status === "Partially Paid"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                                      : "bg-red-50 text-red-700 border-red-200",
                                 )}
                               >
                                 {v.status}
                               </span>
                             </td>
-                            <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <td
+                              className="p-3 text-center"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <div className="flex gap-1.5 justify-center">
                                 <button
                                   type="button"
@@ -1406,11 +1657,13 @@ export default function DeparturePayments({
                                     setVendorPaymentForm({
                                       vendorName: v.vendorName,
                                       category: v.category,
-                                      serviceDescription: v.serviceDescription || "",
+                                      serviceDescription:
+                                        v.serviceDescription || "",
                                       agreedAmount: String(v.agreedAmount),
                                       advancePaid: String(v.advancePaid),
                                       paymentDate: v.paymentDate || "",
-                                      paymentMode: v.paymentMode || "BANK_TRANSFER",
+                                      paymentMode:
+                                        v.paymentMode || "BANK_TRANSFER",
                                       transactionId: v.transactionId || "",
                                       invoiceProof: v.invoiceProof || "",
                                       status: v.status,
@@ -1425,7 +1678,9 @@ export default function DeparturePayments({
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    setExpandedVendorId(isExpanded ? null : v.id)
+                                    setExpandedVendorId(
+                                      isExpanded ? null : v.id,
+                                    )
                                   }
                                   className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded"
                                 >
@@ -1443,19 +1698,22 @@ export default function DeparturePayments({
                                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                                       <Building2 className="w-4 h-4 text-orange-600" />
-                                      {v.vendorName} ({v.category}) — Invoice {v.invoiceNumber} Details
+                                      {v.vendorName} ({v.category}) — Invoice{" "}
+                                      {v.invoiceNumber} Details
                                     </span>
                                     <span className="text-xs font-semibold text-slate-500">
-                                      Invoice Total: {formatCurrency(v.agreedAmount)} · Paid:{" "}
-                                      {formatCurrency(v.advancePaid)} · Balance Due:{" "}
-                                      {formatCurrency(balance)}
+                                      Invoice Total:{" "}
+                                      {formatCurrency(v.agreedAmount)} · Paid:{" "}
+                                      {formatCurrency(v.advancePaid)} · Balance
+                                      Due: {formatCurrency(balance)}
                                     </span>
                                   </div>
 
                                   <div className="space-y-2">
-                                    {(!v.history || v.history.length === 0) ? (
+                                    {!v.history || v.history.length === 0 ? (
                                       <div className="text-xs text-slate-400 italic py-2">
-                                        No advance or settlement payments recorded against this invoice yet.
+                                        No advance or settlement payments
+                                        recorded against this invoice yet.
                                       </div>
                                     ) : (
                                       v.history.map((h: any, idx: number) => (
@@ -1480,7 +1738,8 @@ export default function DeparturePayments({
                                                 </span>
                                               </div>
                                               <p className="text-xs text-slate-500 mt-0.5">
-                                                Date: {h.date} · Type: {h.type || "ADVANCE"}
+                                                Date: {h.date} · Type:{" "}
+                                                {h.type || "ADVANCE"}
                                               </p>
                                             </div>
                                           </div>
@@ -1493,7 +1752,9 @@ export default function DeparturePayments({
                                               size="sm"
                                               variant="outline"
                                               onClick={() =>
-                                                toast.success(`Invoice PDF downloaded for ${v.invoiceNumber}`)
+                                                toast.success(
+                                                  `Invoice PDF downloaded for ${v.invoiceNumber}`,
+                                                )
                                               }
                                               className="h-7 text-[11px] font-semibold"
                                             >
@@ -1510,10 +1771,13 @@ export default function DeparturePayments({
                                         <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                                           <Clock className="w-4 h-4 text-amber-600" />
                                           <span>
-                                            Settlement Due: {formatCurrency(balance)}
+                                            Settlement Due:{" "}
+                                            {formatCurrency(balance)}
                                           </span>
                                           <span className="text-slate-600 font-normal">
-                                            — Due {v.dueDate || "after trip completion"}
+                                            — Due{" "}
+                                            {v.dueDate ||
+                                              "after trip completion"}
                                           </span>
                                         </div>
                                         <Button
@@ -1523,15 +1787,23 @@ export default function DeparturePayments({
                                             setVendorPaymentForm({
                                               vendorName: v.vendorName,
                                               category: v.category,
-                                              serviceDescription: v.serviceDescription || "",
-                                              agreedAmount: String(v.agreedAmount),
-                                              advancePaid: String(v.agreedAmount),
-                                              paymentDate: new Date().toISOString().substring(0, 10),
+                                              serviceDescription:
+                                                v.serviceDescription || "",
+                                              agreedAmount: String(
+                                                v.agreedAmount,
+                                              ),
+                                              advancePaid: String(
+                                                v.agreedAmount,
+                                              ),
+                                              paymentDate: new Date()
+                                                .toISOString()
+                                                .substring(0, 10),
                                               paymentMode: "BANK_TRANSFER",
                                               transactionId: `NEFT-SETTLE-${Date.now()}`,
                                               invoiceProof: "",
                                               status: "Paid",
-                                              remarks: "Final balance settlement",
+                                              remarks:
+                                                "Final balance settlement",
                                             });
                                             setAddVendorPaymentOpen(true);
                                           }}
@@ -1577,96 +1849,124 @@ export default function DeparturePayments({
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-                  <th className="p-3 border-r border-slate-100">ACTIVITY NAME</th>
+                  <th className="p-3 border-r border-slate-100">
+                    ACTIVITY NAME
+                  </th>
                   <th className="p-3 border-r border-slate-100">TYPE</th>
-                  <th className="p-3 border-r border-slate-100 text-right">COST/PPL</th>
-                  <th className="p-3 border-r border-slate-100 text-center">PAX</th>
-                  <th className="p-3 border-r border-slate-100 text-right">TOTAL COST</th>
-                  <th className="p-3 border-r border-slate-100 text-right">PAID</th>
-                  <th className="p-3 border-r border-slate-100 text-right">BALANCE</th>
-                  <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    COST/PPL
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-center">
+                    PAX
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    TOTAL COST
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    PAID
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    BALANCE
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-center">
+                    STATUS
+                  </th>
                   <th className="p-3 text-center w-36">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {activityPayments.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-xs font-semibold text-slate-400">
+                    <td
+                      colSpan={9}
+                      className="py-12 text-center text-xs font-semibold text-slate-400"
+                    >
                       No activity payments recorded yet for this departure.
                     </td>
                   </tr>
                 ) : (
                   activityPayments.map((act) => (
-                  <tr key={act.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="p-3 border-r border-slate-100">
-                      <span className="font-extrabold text-slate-900">{act.activityName}</span>
-                      <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                        Vendor: {act.vendorName}
-                      </p>
-                    </td>
-                    <td className="p-3 border-r border-slate-100">
-                      <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded uppercase">
-                        {act.activityType}
-                      </span>
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-700">
-                      {act.isIncluded ? "₹0 (Incl)" : formatCurrency(act.costPerPerson)}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-800">
-                      {act.participantCount}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
-                      {formatCurrency(act.totalCost)}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-right font-black text-emerald-700">
-                      {formatCurrency(act.amountPaid)}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-right font-black text-amber-600">
-                      {formatCurrency(act.balanceDue)}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-center">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
-                          act.status === "INCLUDED" || act.status === "PAID"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : act.status === "PARTIAL"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : "bg-red-50 text-red-700 border-red-200"
-                        )}
-                      >
-                        {act.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center">
-                      {!act.isIncluded && act.balanceDue > 0 ? (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setActivityPaymentForm({
-                              activityName: act.activityName,
-                              activityType: act.activityType,
-                              costPerPerson: String(act.costPerPerson),
-                              participantCount: String(act.participantCount),
-                              vendorName: act.vendorName,
-                              amountPaid: String(act.totalCost),
-                              paymentDate: new Date().toISOString().substring(0, 10),
-                              paymentMode: "UPI",
-                              transactionId: `ACT-TXN-${Date.now()}`,
-                              remarks: "Full activity settlement",
-                            });
-                            setAddActivityPaymentOpen(true);
-                          }}
-                          className="h-7 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] px-2.5"
+                    <tr
+                      key={act.id}
+                      className="hover:bg-slate-50/70 transition-colors"
+                    >
+                      <td className="p-3 border-r border-slate-100">
+                        <span className="font-extrabold text-slate-900">
+                          {act.activityName}
+                        </span>
+                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                          Vendor: {act.vendorName}
+                        </p>
+                      </td>
+                      <td className="p-3 border-r border-slate-100">
+                        <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded uppercase">
+                          {act.activityType}
+                        </span>
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-700">
+                        {act.isIncluded
+                          ? "₹0 (Incl)"
+                          : formatCurrency(act.costPerPerson)}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-800">
+                        {act.participantCount}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
+                        {formatCurrency(act.totalCost)}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-right font-black text-emerald-700">
+                        {formatCurrency(act.amountPaid)}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-right font-black text-amber-600">
+                        {formatCurrency(act.balanceDue)}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-center">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
+                            act.status === "INCLUDED" || act.status === "PAID"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : act.status === "PARTIAL"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-red-50 text-red-700 border-red-200",
+                          )}
                         >
-                          Record Pay
-                        </Button>
-                      ) : (
-                        <span className="text-[11px] text-slate-400 font-semibold">Settled</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                          {act.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        {!act.isIncluded && act.balanceDue > 0 ? (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setActivityPaymentForm({
+                                activityName: act.activityName,
+                                activityType: act.activityType,
+                                costPerPerson: String(act.costPerPerson),
+                                participantCount: String(act.participantCount),
+                                vendorName: act.vendorName,
+                                amountPaid: String(act.totalCost),
+                                paymentDate: new Date()
+                                  .toISOString()
+                                  .substring(0, 10),
+                                paymentMode: "UPI",
+                                transactionId: `ACT-TXN-${Date.now()}`,
+                                remarks: "Full activity settlement",
+                              });
+                              setAddActivityPaymentOpen(true);
+                            }}
+                            className="h-7 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] px-2.5"
+                          >
+                            Record Pay
+                          </Button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-semibold">
+                            Settled
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -1696,94 +1996,112 @@ export default function DeparturePayments({
                 <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                   <th className="p-3 border-r border-slate-100">DESCRIPTION</th>
                   <th className="p-3 border-r border-slate-100">CATEGORY</th>
-                  <th className="p-3 border-r border-slate-100 text-right">AMOUNT</th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    AMOUNT
+                  </th>
                   <th className="p-3 border-r border-slate-100">PAYEE NAME</th>
                   <th className="p-3 border-r border-slate-100">APPROVED BY</th>
-                  <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
+                  <th className="p-3 border-r border-slate-100 text-center">
+                    STATUS
+                  </th>
                   <th className="p-3 text-center w-48">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {miscPayments.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-xs font-semibold text-slate-400">
+                    <td
+                      colSpan={8}
+                      className="py-12 text-center text-xs font-semibold text-slate-400"
+                    >
                       No miscellaneous expenses recorded for this departure.
                     </td>
                   </tr>
                 ) : (
                   miscPayments.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
-                      {m.description}
-                      <p className="text-[10px] text-slate-400 mt-0.5">Date: {m.paymentDate}</p>
-                    </td>
-                    <td className="p-3 border-r border-slate-100">
-                      <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded uppercase">
-                        {m.category}
-                      </span>
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
-                      {formatCurrency(m.amount)}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
-                      {m.payeeName}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
-                      {m.approvedBy}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-center">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
-                          m.status === "APPROVED" || m.status === "PAID"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : m.status === "PENDING"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : "bg-red-50 text-red-700 border-red-200"
+                    <tr
+                      key={m.id}
+                      className="hover:bg-slate-50/70 transition-colors"
+                    >
+                      <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
+                        {m.description}
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          Date: {m.paymentDate}
+                        </p>
+                      </td>
+                      <td className="p-3 border-r border-slate-100">
+                        <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded uppercase">
+                          {m.category}
+                        </span>
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
+                        {formatCurrency(m.amount)}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
+                        {m.payeeName}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
+                        {m.approvedBy}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-center">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
+                            m.status === "APPROVED" || m.status === "PAID"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : m.status === "PENDING"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-red-50 text-red-700 border-red-200",
+                          )}
+                        >
+                          {m.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        {m.status === "PENDING" ? (
+                          <div className="flex gap-1.5 justify-center">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setMiscPayments((prev) =>
+                                  prev.map((item) =>
+                                    item.id === m.id
+                                      ? { ...item, status: "APPROVED" }
+                                      : item,
+                                  ),
+                                );
+                                toast.success("Expense approved!");
+                              }}
+                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5"
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setMiscPayments((prev) =>
+                                  prev.map((item) =>
+                                    item.id === m.id
+                                      ? { ...item, status: "REJECTED" }
+                                      : item,
+                                  ),
+                                );
+                                toast.success("Expense rejected");
+                              }}
+                              className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-500">
+                            Processed ✓
+                          </span>
                         )}
-                      >
-                        {m.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center">
-                      {m.status === "PENDING" ? (
-                        <div className="flex gap-1.5 justify-center">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setMiscPayments((prev) =>
-                                prev.map((item) =>
-                                  item.id === m.id ? { ...item, status: "APPROVED" } : item
-                                )
-                              );
-                              toast.success("Expense approved!");
-                            }}
-                            className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5"
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setMiscPayments((prev) =>
-                                prev.map((item) =>
-                                  item.id === m.id ? { ...item, status: "REJECTED" } : item
-                                )
-                              );
-                              toast.success("Expense rejected");
-                            }}
-                            className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50"
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-xs font-semibold text-slate-500">Processed ✓</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -1804,7 +2122,8 @@ export default function DeparturePayments({
                 onClick={handleRunReconciliation}
                 className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
               >
-                <RefreshCw className="w-3.5 h-3.5 mr-1" /> Run Auto-Reconciliation
+                <RefreshCw className="w-3.5 h-3.5 mr-1" /> Run
+                Auto-Reconciliation
               </Button>
               <Button
                 size="sm"
@@ -1821,90 +2140,108 @@ export default function DeparturePayments({
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                   <th className="p-3 border-r border-slate-100">TYPE</th>
-                  <th className="p-3 border-r border-slate-100">ORIGINAL PAYMENT</th>
-                  <th className="p-3 border-r border-slate-100 text-right">AMOUNT</th>
+                  <th className="p-3 border-r border-slate-100">
+                    ORIGINAL PAYMENT
+                  </th>
+                  <th className="p-3 border-r border-slate-100 text-right">
+                    AMOUNT
+                  </th>
                   <th className="p-3 border-r border-slate-100">REASON</th>
-                  <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
+                  <th className="p-3 border-r border-slate-100 text-center">
+                    STATUS
+                  </th>
                   <th className="p-3 text-center w-40">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {adjustments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-xs font-semibold text-slate-400">
+                    <td
+                      colSpan={6}
+                      className="py-12 text-center text-xs font-semibold text-slate-400"
+                    >
                       No reconciliation adjustments recorded for this departure.
                     </td>
                   </tr>
                 ) : (
                   adjustments.map((a) => (
-                  <tr key={a.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="p-3 border-r border-slate-100">
-                      <span className="text-[10px] bg-slate-100 text-slate-800 font-extrabold px-2 py-0.5 rounded uppercase">
-                        {a.type}
-                      </span>
-                    </td>
-                    <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
-                      {a.originalPaymentRef}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
-                      {formatCurrency(a.amount)}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
-                      {a.reason}
-                    </td>
-                    <td className="p-3 border-r border-slate-100 text-center">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
-                          a.status === "APPROVED" || a.status === "COMPLETED"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : a.status === "PENDING"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : "bg-red-50 text-red-700 border-red-200"
+                    <tr
+                      key={a.id}
+                      className="hover:bg-slate-50/70 transition-colors"
+                    >
+                      <td className="p-3 border-r border-slate-100">
+                        <span className="text-[10px] bg-slate-100 text-slate-800 font-extrabold px-2 py-0.5 rounded uppercase">
+                          {a.type}
+                        </span>
+                      </td>
+                      <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
+                        {a.originalPaymentRef}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
+                        {formatCurrency(a.amount)}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
+                        {a.reason}
+                      </td>
+                      <td className="p-3 border-r border-slate-100 text-center">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded border uppercase",
+                            a.status === "APPROVED" || a.status === "COMPLETED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : a.status === "PENDING"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-red-50 text-red-700 border-red-200",
+                          )}
+                        >
+                          {a.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        {a.status === "PENDING" ? (
+                          <div className="flex gap-1.5 justify-center">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setAdjustments((prev) =>
+                                  prev.map((item) =>
+                                    item.id === a.id
+                                      ? { ...item, status: "APPROVED" }
+                                      : item,
+                                  ),
+                                );
+                                toast.success("Adjustment approved!");
+                              }}
+                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5"
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setAdjustments((prev) =>
+                                  prev.map((item) =>
+                                    item.id === a.id
+                                      ? { ...item, status: "REJECTED" }
+                                      : item,
+                                  ),
+                                );
+                                toast.success("Adjustment rejected");
+                              }}
+                              className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-500">
+                            Resolved ✓
+                          </span>
                         )}
-                      >
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center">
-                      {a.status === "PENDING" ? (
-                        <div className="flex gap-1.5 justify-center">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setAdjustments((prev) =>
-                                prev.map((item) =>
-                                  item.id === a.id ? { ...item, status: "APPROVED" } : item
-                                )
-                              );
-                              toast.success("Adjustment approved!");
-                            }}
-                            className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5"
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setAdjustments((prev) =>
-                                prev.map((item) =>
-                                  item.id === a.id ? { ...item, status: "REJECTED" } : item
-                                )
-                              );
-                              toast.success("Adjustment rejected");
-                            }}
-                            className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50"
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-xs font-semibold text-slate-500">Resolved ✓</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
@@ -1913,7 +2250,10 @@ export default function DeparturePayments({
       )}
 
       {/* ──────────────────────── MODAL 1: RECORD CLIENT PAYMENT ──────────────────────── */}
-      <Dialog open={addClientPaymentOpen} onOpenChange={setAddClientPaymentOpen}>
+      <Dialog
+        open={addClientPaymentOpen}
+        onOpenChange={setAddClientPaymentOpen}
+      >
         <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200">
           <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
             Record Client Payment Receipt
@@ -1925,13 +2265,18 @@ export default function DeparturePayments({
           )}
           <form onSubmit={handleClientPaymentSubmit} className="space-y-3 mt-3">
             <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">Amount (₹)</label>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Amount (₹)
+              </label>
               <input
                 type="number"
                 required
                 value={clientPaymentForm.amount}
                 onChange={(e) =>
-                  setClientPaymentForm((prev) => ({ ...prev, amount: e.target.value }))
+                  setClientPaymentForm((prev) => ({
+                    ...prev,
+                    amount: e.target.value,
+                  }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-blue-500"
               />
@@ -1945,12 +2290,17 @@ export default function DeparturePayments({
                 <select
                   value={clientPaymentForm.paymentMode}
                   onChange={(e) =>
-                    setClientPaymentForm((prev) => ({ ...prev, paymentMode: e.target.value }))
+                    setClientPaymentForm((prev) => ({
+                      ...prev,
+                      paymentMode: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
                 >
                   <option value="UPI">UPI / PhonePe / GPay</option>
-                  <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
+                  <option value="BANK_TRANSFER">
+                    Bank Transfer (NEFT/RTGS)
+                  </option>
                   <option value="CASH">Cash</option>
                   <option value="CARD">Debit / Credit Card</option>
                 </select>
@@ -1964,7 +2314,10 @@ export default function DeparturePayments({
                   required
                   value={clientPaymentForm.paymentDate}
                   onChange={(e) =>
-                    setClientPaymentForm((prev) => ({ ...prev, paymentDate: e.target.value }))
+                    setClientPaymentForm((prev) => ({
+                      ...prev,
+                      paymentDate: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
                 />
@@ -1980,7 +2333,10 @@ export default function DeparturePayments({
                 placeholder="e.g. UTR123456789"
                 value={clientPaymentForm.transactionId}
                 onChange={(e) =>
-                  setClientPaymentForm((prev) => ({ ...prev, transactionId: e.target.value }))
+                  setClientPaymentForm((prev) => ({
+                    ...prev,
+                    transactionId: e.target.value,
+                  }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
@@ -1995,7 +2351,10 @@ export default function DeparturePayments({
                 placeholder="Advance deposit notes..."
                 value={clientPaymentForm.remarks}
                 onChange={(e) =>
-                  setClientPaymentForm((prev) => ({ ...prev, remarks: e.target.value }))
+                  setClientPaymentForm((prev) => ({
+                    ...prev,
+                    remarks: e.target.value,
+                  }))
                 }
                 className="w-full text-xs font-bold border border-slate-300 rounded-lg p-2 bg-white text-slate-800 outline-none"
               />
@@ -2022,10 +2381,15 @@ export default function DeparturePayments({
       </Dialog>
 
       {/* ──────────────────────── MODAL 2: RECORD VENDOR PAYMENT ──────────────────────── */}
-      <Dialog open={addVendorPaymentOpen} onOpenChange={setAddVendorPaymentOpen}>
+      <Dialog
+        open={addVendorPaymentOpen}
+        onOpenChange={setAddVendorPaymentOpen}
+      >
         <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200 overflow-y-auto max-h-[85vh]">
           <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
-            {editingVendorPayment ? "Edit Vendor Payment Record" : "Record Vendor Payment"}
+            {editingVendorPayment
+              ? "Edit Vendor Payment Record"
+              : "Record Vendor Payment"}
           </h3>
           <form onSubmit={handleVendorPaymentSubmit} className="space-y-3 mt-3">
             <div>
@@ -2037,7 +2401,10 @@ export default function DeparturePayments({
                 required
                 value={vendorPaymentForm.vendorName}
                 onChange={(e) =>
-                  setVendorPaymentForm((prev) => ({ ...prev, vendorName: e.target.value }))
+                  setVendorPaymentForm((prev) => ({
+                    ...prev,
+                    vendorName: e.target.value,
+                  }))
                 }
                 placeholder="e.g. ABC Travels & Hotels"
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
@@ -2046,11 +2413,16 @@ export default function DeparturePayments({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">Category</label>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Category
+                </label>
                 <select
                   value={vendorPaymentForm.category}
                   onChange={(e) =>
-                    setVendorPaymentForm((prev) => ({ ...prev, category: e.target.value }))
+                    setVendorPaymentForm((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
                 >
@@ -2071,7 +2443,10 @@ export default function DeparturePayments({
                   required
                   value={vendorPaymentForm.agreedAmount}
                   onChange={(e) =>
-                    setVendorPaymentForm((prev) => ({ ...prev, agreedAmount: e.target.value }))
+                    setVendorPaymentForm((prev) => ({
+                      ...prev,
+                      agreedAmount: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
                 />
@@ -2087,7 +2462,10 @@ export default function DeparturePayments({
                   type="number"
                   value={vendorPaymentForm.advancePaid}
                   onChange={(e) =>
-                    setVendorPaymentForm((prev) => ({ ...prev, advancePaid: e.target.value }))
+                    setVendorPaymentForm((prev) => ({
+                      ...prev,
+                      advancePaid: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
                 />
@@ -2099,11 +2477,16 @@ export default function DeparturePayments({
                 <select
                   value={vendorPaymentForm.paymentMode}
                   onChange={(e) =>
-                    setVendorPaymentForm((prev) => ({ ...prev, paymentMode: e.target.value }))
+                    setVendorPaymentForm((prev) => ({
+                      ...prev,
+                      paymentMode: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
                 >
-                  <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
+                  <option value="BANK_TRANSFER">
+                    Bank Transfer (NEFT/RTGS)
+                  </option>
                   <option value="UPI">UPI / GPay</option>
                   <option value="CASH">Cash</option>
                 </select>
@@ -2119,7 +2502,10 @@ export default function DeparturePayments({
                 placeholder="e.g. NEFT123456"
                 value={vendorPaymentForm.transactionId}
                 onChange={(e) =>
-                  setVendorPaymentForm((prev) => ({ ...prev, transactionId: e.target.value }))
+                  setVendorPaymentForm((prev) => ({
+                    ...prev,
+                    transactionId: e.target.value,
+                  }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
@@ -2164,12 +2550,18 @@ export default function DeparturePayments({
       </Dialog>
 
       {/* ──────────────────────── MODAL 3: RECORD ACTIVITY PAYMENT ──────────────────────── */}
-      <Dialog open={addActivityPaymentOpen} onOpenChange={setAddActivityPaymentOpen}>
+      <Dialog
+        open={addActivityPaymentOpen}
+        onOpenChange={setAddActivityPaymentOpen}
+      >
         <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200">
           <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
             Record Activity Vendor Payment
           </h3>
-          <form onSubmit={handleActivityPaymentSubmit} className="space-y-3 mt-3">
+          <form
+            onSubmit={handleActivityPaymentSubmit}
+            className="space-y-3 mt-3"
+          >
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
                 Activity Name
@@ -2179,7 +2571,10 @@ export default function DeparturePayments({
                 required
                 value={activityPaymentForm.activityName}
                 onChange={(e) =>
-                  setActivityPaymentForm((prev) => ({ ...prev, activityName: e.target.value }))
+                  setActivityPaymentForm((prev) => ({
+                    ...prev,
+                    activityName: e.target.value,
+                  }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
@@ -2193,7 +2588,10 @@ export default function DeparturePayments({
                   type="number"
                   value={activityPaymentForm.costPerPerson}
                   onChange={(e) =>
-                    setActivityPaymentForm((prev) => ({ ...prev, costPerPerson: e.target.value }))
+                    setActivityPaymentForm((prev) => ({
+                      ...prev,
+                      costPerPerson: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
                 />
@@ -2223,7 +2621,10 @@ export default function DeparturePayments({
                 type="text"
                 value={activityPaymentForm.vendorName}
                 onChange={(e) =>
-                  setActivityPaymentForm((prev) => ({ ...prev, vendorName: e.target.value }))
+                  setActivityPaymentForm((prev) => ({
+                    ...prev,
+                    vendorName: e.target.value,
+                  }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
@@ -2265,7 +2666,10 @@ export default function DeparturePayments({
                 placeholder="e.g. Emergency guide fee increase"
                 value={miscPaymentForm.description}
                 onChange={(e) =>
-                  setMiscPaymentForm((prev) => ({ ...prev, description: e.target.value }))
+                  setMiscPaymentForm((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
@@ -2273,11 +2677,16 @@ export default function DeparturePayments({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">Category</label>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Category
+                </label>
                 <select
                   value={miscPaymentForm.category}
                   onChange={(e) =>
-                    setMiscPaymentForm((prev) => ({ ...prev, category: e.target.value }))
+                    setMiscPaymentForm((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
                 >
@@ -2297,7 +2706,10 @@ export default function DeparturePayments({
                   required
                   value={miscPaymentForm.amount}
                   onChange={(e) =>
-                    setMiscPaymentForm((prev) => ({ ...prev, amount: e.target.value }))
+                    setMiscPaymentForm((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
                 />
@@ -2305,13 +2717,18 @@ export default function DeparturePayments({
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">Payee Name</label>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Payee Name
+              </label>
               <input
                 type="text"
                 placeholder="e.g. Local Mountain Guide Team"
                 value={miscPaymentForm.payeeName}
                 onChange={(e) =>
-                  setMiscPaymentForm((prev) => ({ ...prev, payeeName: e.target.value }))
+                  setMiscPaymentForm((prev) => ({
+                    ...prev,
+                    payeeName: e.target.value,
+                  }))
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
@@ -2352,7 +2769,10 @@ export default function DeparturePayments({
                 <select
                   value={adjustmentForm.type}
                   onChange={(e) =>
-                    setAdjustmentForm((prev) => ({ ...prev, type: e.target.value }))
+                    setAdjustmentForm((prev) => ({
+                      ...prev,
+                      type: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
                 >
@@ -2371,7 +2791,10 @@ export default function DeparturePayments({
                   required
                   value={adjustmentForm.amount}
                   onChange={(e) =>
-                    setAdjustmentForm((prev) => ({ ...prev, amount: e.target.value }))
+                    setAdjustmentForm((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
                 />
@@ -2397,13 +2820,18 @@ export default function DeparturePayments({
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">Reason</label>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Reason
+              </label>
               <textarea
                 rows={2}
                 placeholder="Why is this adjustment being made?"
                 value={adjustmentForm.reason}
                 onChange={(e) =>
-                  setAdjustmentForm((prev) => ({ ...prev, reason: e.target.value }))
+                  setAdjustmentForm((prev) => ({
+                    ...prev,
+                    reason: e.target.value,
+                  }))
                 }
                 className="w-full text-xs font-bold border border-slate-300 rounded-lg p-2 bg-white text-slate-800 outline-none"
               />

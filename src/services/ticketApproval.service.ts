@@ -38,28 +38,53 @@ export interface TicketApprovalStats {
 }
 
 export const ticketApprovalService = {
-  async generate(bookingId: string, data: { ticketType: string; ticketNumber?: string; ticketFileUrl?: string }): Promise<TicketApproval> {
+  async generate(
+    bookingId: string,
+    data: { ticketType: string; ticketNumber?: string; ticketFileUrl?: string },
+  ): Promise<TicketApproval> {
     const res = await api.post(`/tickets/${bookingId}/generate`, data);
     return res.data.data;
   },
 
-  async getApprovals(params?: { status?: string; ticketType?: string; search?: string; page?: number; limit?: number }): Promise<{ data: TicketApproval[]; pagination: { page: number; limit: number; totalCount: number; totalPages: number } }> {
+  async getApprovals(params?: {
+    status?: string;
+    ticketType?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: TicketApproval[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+    };
+  }> {
     const qs = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, val]) => {
-        if (val !== undefined && val !== null && val !== "") qs.append(key, String(val));
+        if (val !== undefined && val !== null && val !== "")
+          qs.append(key, String(val));
       });
     }
     const res = await api.get(`/tickets/approvals?${qs.toString()}`);
     return {
       data: res.data?.data || [],
-      pagination: res.data?.pagination || { page: 1, limit: 25, totalCount: 0, totalPages: 1 },
+      pagination: res.data?.pagination || {
+        page: 1,
+        limit: 25,
+        totalCount: 0,
+        totalPages: 1,
+      },
     };
   },
 
   async getStats(): Promise<TicketApprovalStats> {
     const res = await api.get("/tickets/approvals/stats");
-    return res.data?.data || { pendingCount: 0, approvedToday: 0, rejectedToday: 0 };
+    return (
+      res.data?.data || { pendingCount: 0, approvedToday: 0, rejectedToday: 0 }
+    );
   },
 
   async getDetail(id: string): Promise<TicketApproval> {
@@ -73,14 +98,16 @@ export const ticketApprovalService = {
   },
 
   async reject(id: string, rejectionNote: string): Promise<TicketApproval> {
-    const res = await api.post(`/tickets/approvals/${id}/reject`, { rejectionNote });
+    const res = await api.post(`/tickets/approvals/${id}/reject`, {
+      rejectionNote,
+    });
     return res.data.data;
   },
 
   async getPendingCount(): Promise<number> {
     const res = await api.get("/tickets/approvals/pending-count");
     return res.data?.data?.pendingCount || 0;
-  }
+  },
 };
 
 export default ticketApprovalService;

@@ -1,3 +1,3 @@
-import ActivityLog from '../travel-desk/ActivityLog';
-export * from '../travel-desk/ActivityLog';
+import ActivityLog from "../travel-desk/ActivityLog";
+export * from "../travel-desk/ActivityLog";
 export default ActivityLog;

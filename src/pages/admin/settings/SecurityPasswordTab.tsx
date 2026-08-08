@@ -2,7 +2,15 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, Eye, EyeOff, ShieldCheck, Key, Loader2, AlertCircle } from "lucide-react";
+import {
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Key,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import { PasswordStrengthMeter } from "./components/PasswordStrengthMeter";
 import { SessionTable } from "./components/SessionTable";
 import { Admin, LoginSession } from "@/types";
@@ -14,7 +22,10 @@ interface SecurityPasswordTabProps {
   onRefresh: () => void;
 }
 
-export function SecurityPasswordTab({ profile, onRefresh }: SecurityPasswordTabProps) {
+export function SecurityPasswordTab({
+  profile,
+  onRefresh,
+}: SecurityPasswordTabProps) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -57,7 +68,7 @@ export function SecurityPasswordTab({ profile, onRefresh }: SecurityPasswordTabP
       await settingsService.changePassword({
         currentPassword,
         newPassword,
-        confirmPassword
+        confirmPassword,
       });
       toast.success("Password updated successfully!");
       setCurrentPassword("");
@@ -86,32 +97,45 @@ export function SecurityPasswordTab({ profile, onRefresh }: SecurityPasswordTabP
       toast.success(`Signed out of ${closed} other device sessions`);
       fetchSessions();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to logout other devices");
+      toast.error(
+        error.response?.data?.message || "Failed to logout other devices",
+      );
     }
   };
 
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Change Password Form */}
-      <form onSubmit={handleChangePassword} className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-5">
+      <form
+        onSubmit={handleChangePassword}
+        className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-5"
+      >
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <Key className="w-4 h-4 text-orange-600" />
-            <h3 className="text-sm font-bold text-slate-900">Change Password & Authentication</h3>
+            <h3 className="text-sm font-bold text-slate-900">
+              Change Password & Authentication
+            </h3>
           </div>
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1"
           >
-            {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            {showPassword ? (
+              <EyeOff className="w-3.5 h-3.5" />
+            ) : (
+              <Eye className="w-3.5 h-3.5" />
+            )}
             {showPassword ? "Hide" : "Show"} Passwords
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-slate-700">Current Password</Label>
+            <Label className="text-xs font-bold text-slate-700">
+              Current Password
+            </Label>
             <Input
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
@@ -122,7 +146,9 @@ export function SecurityPasswordTab({ profile, onRefresh }: SecurityPasswordTabP
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-slate-700">New Password</Label>
+            <Label className="text-xs font-bold text-slate-700">
+              New Password
+            </Label>
             <Input
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
@@ -133,7 +159,9 @@ export function SecurityPasswordTab({ profile, onRefresh }: SecurityPasswordTabP
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-slate-700">Confirm New Password</Label>
+            <Label className="text-xs font-bold text-slate-700">
+              Confirm New Password
+            </Label>
             <Input
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
@@ -150,10 +178,16 @@ export function SecurityPasswordTab({ profile, onRefresh }: SecurityPasswordTabP
           <Button
             id="settings-tab-save-btn"
             type="submit"
-            disabled={isChanging || !newPassword || newPassword !== confirmPassword}
+            disabled={
+              isChanging || !newPassword || newPassword !== confirmPassword
+            }
             className="h-9 px-5 text-xs font-bold uppercase tracking-wider bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xs rounded-lg flex items-center gap-1.5"
           >
-            {isChanging ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1.5" />}
+            {isChanging ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : (
+              <ShieldCheck className="w-4 h-4 mr-1.5" />
+            )}
             Update Password
           </Button>
         </div>

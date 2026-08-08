@@ -10,92 +10,121 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
 import { Loader2 } from "lucide-react";
-import StaticWorkspacePage from "@/pages/admin/StaticWorkspacePage";
 
 const LoadingUI = () => (
   <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
     <div className="flex flex-col items-center gap-3">
       <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-      <p className="text-xs font-semibold text-slate-500">Loading YouthCamping OS...</p>
+      <p className="text-xs font-semibold text-slate-500">
+        Loading YouthCamping OS...
+      </p>
     </div>
   </div>
 );
 
+// ── Core Pages ──
 const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const LoginPage = lazy(() => import("./pages/admin/LoginPage.tsx"));
 const DashboardPage = lazy(() => import("./pages/admin/DashboardPage.tsx"));
-const TripsPage = lazy(() => import("./pages/admin/TripsPage.tsx"));
-const BookingsPage = lazy(() => import("./pages/admin/BookingsPage.tsx"));
-const InquiriesPage = lazy(() => import("./pages/admin/InquiriesPage.tsx"));
-const BlogsPage = lazy(() => import("./pages/admin/BlogsPage.tsx"));
-const ReviewsPage = lazy(() => import("./pages/admin/ReviewsPage.tsx"));
-const MediaPage = lazy(() => import("./pages/admin/MediaPage.tsx"));
+const ProfilePage = lazy(() => import("./pages/admin/ProfilePage.tsx"));
+const UnauthorizedPage = lazy(
+  () => import("./pages/admin/UnauthorizedPage.tsx"),
+);
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage.tsx"));
-const FooterManagementPage = lazy(() => import("./pages/admin/FooterManagementPage.tsx"));
+
+// ── Sales ──
+const InquiriesPage = lazy(() => import("./pages/admin/InquiriesPage.tsx"));
+const InquiryFormPage = lazy(() => import("./pages/admin/InquiryFormPage.tsx"));
+const BookingsPage = lazy(() => import("./pages/admin/BookingsPage.tsx"));
+const BookingLinksPage = lazy(
+  () => import("./pages/admin/BookingLinksPage.tsx"),
+);
+const QuotationsPage = lazy(() => import("./pages/admin/QuotationsPage.tsx"));
+const QuotationFormPage = lazy(
+  () => import("./pages/admin/QuotationFormPage.tsx"),
+);
+
+const CustomerProfilePage = lazy(
+  () => import("./pages/admin/CustomerProfilePage.tsx"),
+);
+
+// ── Operations ──
+const OperationsHubPage = lazy(
+  () => import("./pages/admin/OperationsHubPage.tsx"),
+);
+const DepartureHubPage = lazy(
+  () => import("./pages/admin/DepartureHubPage.tsx"),
+);
+const VendorDirectoryPage = lazy(
+  () => import("./pages/admin/VendorDirectoryPage.tsx"),
+);
+const VendorLedgerPage = lazy(
+  () => import("./pages/admin/VendorLedgerPage.tsx"),
+);
+const CompanyDocumentsPage = lazy(
+  () => import("./pages/admin/CompanyDocumentsPage.tsx"),
+);
+
+// ── Approval Center ──
+const ApprovalsHubPage = lazy(
+  () => import("./pages/admin/ApprovalsHubPage.tsx"),
+);
+const VerificationQueuePage = lazy(
+  () => import("./pages/admin/VerificationQueuePage.tsx"),
+);
+const TicketApprovalsPage = lazy(
+  () => import("./pages/admin/TicketApprovalsPage.tsx"),
+);
+
+// ── Finance ──
+const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
+
+// ── Travel Desk ──
+const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
+const TrainTemplatesPage = lazy(
+  () => import("./pages/admin/TrainTemplatesPage.tsx"),
+);
+
+// ── Business: Trips, Master Database, Website CMS ──
+const TripsPage = lazy(() => import("./pages/admin/TripsPage.tsx"));
+const MasterDatabasePage = lazy(
+  () => import("./pages/admin/MasterDatabasePage.tsx"),
+);
+const WebsiteControlCenterPage = lazy(
+  () => import("./pages/admin/WebsiteControlCenterPage.tsx"),
+);
+const WebsiteEditorPage = lazy(
+  () => import("./pages/admin/WebsiteEditorPage.tsx"),
+);
 const PagesPage = lazy(() => import("./pages/admin/PagesPage.tsx"));
 const PageEditorPage = lazy(() => import("./pages/admin/PageEditorPage.tsx"));
-const SeoCenterPage = lazy(() => import("./pages/admin/SeoCenterPage.tsx"));
-const InquiryFormPage = lazy(() => import("./pages/admin/InquiryFormPage.tsx"));
-const WebsiteControlCenterPage = lazy(() => import("./pages/admin/WebsiteControlCenterPage.tsx"));
-const WebsiteEditorPage = lazy(() => import("./pages/admin/WebsiteEditorPage.tsx"));
-const ApprovalsHubPage = lazy(() => import("./pages/admin/ApprovalsHubPage.tsx"));
 const PageBuilderPage = lazy(() => import("./pages/admin/PageBuilderPage.tsx"));
 const PreviewPage = lazy(() => import("./pages/admin/PreviewPage.tsx"));
+const SeoCenterPage = lazy(() => import("./pages/admin/SeoCenterPage.tsx"));
+const FooterManagementPage = lazy(
+  () => import("./pages/admin/FooterManagementPage.tsx"),
+);
+const BlogsPage = lazy(() => import("./pages/admin/BlogsPage.tsx"));
+const ReviewsPage = lazy(() => import("./pages/admin/ReviewsPage.tsx"));
 const AttractionsPage = lazy(() => import("./pages/admin/AttractionsPage.tsx"));
-const VendorsPage = lazy(() => import("./pages/admin/VendorsPage.tsx"));
-const VendorDirectoryPage = lazy(() => import("./pages/admin/VendorDirectoryPage.tsx"));
-const BookingLinksPage = lazy(() => import("./pages/admin/BookingLinksPage.tsx"));
-const QuotationsPage = lazy(() => import("./pages/admin/QuotationsPage.tsx"));
-const QuotationFormPage = lazy(() => import("./pages/admin/QuotationFormPage.tsx"));
-const AIItineraryGeneratorPage = lazy(() => import("./pages/admin/AIItineraryGeneratorPage.tsx"));
+const MediaPage = lazy(() => import("./pages/admin/MediaPage.tsx"));
 const QuestionsPage = lazy(() => import("./pages/admin/QuestionsPage.tsx"));
-const UserManagementPage = lazy(() => import("./pages/admin/UserManagementPage.tsx"));
-const AccessControlPage = lazy(() => import("./pages/admin/AccessControlPage.tsx"));
+
+// ── Administration ──
+const UserManagementPage = lazy(
+  () => import("./pages/admin/UserManagementPage.tsx"),
+);
+const AccessControlPage = lazy(
+  () => import("./pages/admin/AccessControlPage.tsx"),
+);
 const RolesPage = lazy(() => import("./pages/admin/RolesPage.tsx"));
-const PermissionMatrixPage = lazy(() => import("./pages/admin/PermissionMatrixPage.tsx"));
-const AuditLogsPage = lazy(() => import("./pages/admin/AuditLogsPage.tsx"));
-const ProfilePage = lazy(() => import("./pages/admin/ProfilePage.tsx"));
-const UnauthorizedPage = lazy(() => import("./pages/admin/UnauthorizedPage.tsx"));
-const DynamicFormAdmin = lazy(() => import("./pages/admin/DynamicFormAdmin.tsx"));
-const GuidesDashboardPage = lazy(() => import("./pages/admin/GuidesDashboardPage.tsx"));
-const GuideOperationsCenterPage = lazy(() => import("./pages/admin/GuideOperationsCenterPage.tsx"));
-const GuidesListPage = lazy(() => import("./pages/admin/GuidesListPage.tsx"));
-const AttendanceLogsPage = lazy(() => import("./pages/admin/AttendanceLogsPage.tsx"));
-const AssignmentsPage = lazy(() => import("./pages/admin/AssignmentsPage.tsx"));
-const PayrollPage = lazy(() => import("./pages/admin/PayrollPage.tsx"));
-const ExpensesApprovalPage = lazy(() => import("./pages/admin/ExpensesApprovalPage.tsx"));
-const GuideDashboardPage = lazy(() => import("./pages/admin/GuideDashboardPage.tsx"));
-const GuideTripDetailPage = lazy(() => import("./pages/admin/GuideTripDetailPage.tsx"));
-const HRPage = lazy(() => import("./pages/admin/HRPage.tsx"));
-const EmailTemplatesPage = lazy(() => import("./pages/admin/EmailTemplatesPage.tsx"));
-const PackageBuilderPage = lazy(() => import("./pages/admin/PackageBuilderPage.tsx"));
-
-// Placeholder & Module Pages
-const CollectionsPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.CollectionsPage })));
-const PromotionsPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.PromotionsPage })));
-const DistributionPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.DistributionPage })));
-const ReportsPage = lazy(() => import("./pages/admin/marketing/ReportsPage.tsx"));
-const BillingPage = lazy(() => import("./pages/admin/PlaceholderPages.tsx").then(m => ({ default: m.BillingPage })));
-
-const MarketingOverviewPage = lazy(() => import("./pages/admin/marketing/MarketingOverviewPage.tsx"));
-const ContentStudioPage = lazy(() => import("./pages/admin/marketing/ContentStudioPage.tsx"));
-const CampaignJournalPage = lazy(() => import("./pages/admin/marketing/CampaignJournalPage.tsx"));
-const LearningsPage = lazy(() => import("./pages/admin/marketing/LearningsPage.tsx"));
-const AssetsPage = lazy(() => import("./pages/admin/marketing/AssetsPage.tsx"));
-
-const CompanyDocumentsPage = lazy(() => import("./pages/admin/CompanyDocumentsPage.tsx"));
-const AutomationPage = lazy(() => import("./pages/admin/AutomationPage.tsx"));
-const OperationsHubPage = lazy(() => import("./pages/admin/OperationsHubPage.tsx"));
-const DepartureHubPage = lazy(() => import("./pages/admin/DepartureHubPage.tsx"));
-const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
-const MasterDatabasePage = lazy(() => import("./pages/admin/MasterDatabasePage.tsx"));
-const CustomerProfilePage = lazy(() => import("./pages/admin/CustomerProfilePage.tsx"));
-const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
-const VerificationQueuePage = lazy(() => import("./pages/admin/VerificationQueuePage.tsx"));
-const TicketApprovalsPage = lazy(() => import("./pages/admin/TicketApprovalsPage.tsx"));
-const TrainTemplatesPage = lazy(() => import("./pages/admin/TrainTemplatesPage.tsx"));
-const LiveTripOperationsPage = lazy(() => import("./pages/admin/LiveTripOperationsPage.tsx"));
+const PermissionMatrixPage = lazy(
+  () => import("./pages/admin/PermissionMatrixPage.tsx"),
+);
+const EmailTemplatesPage = lazy(
+  () => import("./pages/admin/EmailTemplatesPage.tsx"),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,7 +138,15 @@ const queryClient = new QueryClient({
 
 import { isFounder } from "@/config/permissions.config";
 
-function AdminRoute({ children, requiredPermission, founderOnly }: { children: React.ReactNode; requiredPermission?: string; founderOnly?: boolean }) {
+function AdminRoute({
+  children,
+  requiredPermission,
+  founderOnly,
+}: {
+  children: React.ReactNode;
+  requiredPermission?: string;
+  founderOnly?: boolean;
+}) {
   const { admin, isAuthenticated, isLoading } = useAuthStore();
 
   if (isLoading) {
@@ -126,19 +163,22 @@ function AdminRoute({ children, requiredPermission, founderOnly }: { children: R
     return <Navigate to="/admin/unauthorized" replace />;
   }
 
-  const customPerms = Array.isArray(admin.customPermissions) ? admin.customPermissions : [];
+  const customPerms = Array.isArray(admin.customPermissions)
+    ? admin.customPermissions
+    : [];
   const tokenPerms = Array.isArray(admin.permissions) ? admin.permissions : [];
   const combinedPerms = Array.from(new Set([...tokenPerms, ...customPerms]));
 
-  if (requiredPermission && !hasPermission(combinedPerms, requiredPermission, admin.role)) {
+  if (
+    requiredPermission &&
+    !hasPermission(combinedPerms, requiredPermission, admin.role)
+  ) {
     return <Navigate to="/admin/unauthorized" replace />;
   }
 
   return (
     <AdminLayout>
-      <Suspense fallback={<LoadingUI />}>
-        {children}
-      </Suspense>
+      <Suspense fallback={<LoadingUI />}>{children}</Suspense>
     </AdminLayout>
   );
 }
@@ -158,103 +198,489 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <BrowserRouter
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+          >
             <AuthInitializer>
               <Routes>
-                <Route path="/login" element={<Suspense fallback={<LoadingUI />}><LoginPage /></Suspense>} />
-                <Route path="/admin/login" element={<Suspense fallback={<LoadingUI />}><LoginPage /></Suspense>} />
-                <Route path="/" element={<AdminRoute requiredPermission="dashboard.view"><DashboardPage /></AdminRoute>} />
-                <Route path="/admin" element={<AdminRoute requiredPermission="dashboard.view"><DashboardPage /></AdminRoute>} />
+                <Route
+                  path="/login"
+                  element={
+                    <Suspense fallback={<LoadingUI />}>
+                      <LoginPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/admin/login"
+                  element={
+                    <Suspense fallback={<LoadingUI />}>
+                      <LoginPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/"
+                  element={
+                    <AdminRoute requiredPermission="dashboard.view">
+                      <DashboardPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute requiredPermission="dashboard.view">
+                      <DashboardPage />
+                    </AdminRoute>
+                  }
+                />
 
-                {/* Profile & Personal Settings Routes */}
-                <Route path="/admin/profile" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-                <Route path="/admin/my-profile" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-                <Route path="/admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-                <Route path="/admin/change-password" element={<AdminRoute><SettingsPage /></AdminRoute>} />
-                <Route path="/admin/security" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+                {/* Profile & Personal Settings */}
+                <Route
+                  path="/admin/profile"
+                  element={
+                    <AdminRoute>
+                      <SettingsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/my-profile"
+                  element={
+                    <AdminRoute>
+                      <SettingsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <AdminRoute>
+                      <SettingsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/change-password"
+                  element={
+                    <AdminRoute>
+                      <SettingsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/security"
+                  element={
+                    <AdminRoute>
+                      <SettingsPage />
+                    </AdminRoute>
+                  }
+                />
 
-                {/* Core OS Modules */}
-                <Route path="/admin/trips" element={<AdminRoute requiredPermission="trips.view"><TripsPage /></AdminRoute>} />
-                <Route path="/admin/bookings" element={<AdminRoute requiredPermission="bookings.view"><BookingsPage /></AdminRoute>} />
-                <Route path="/admin/verification-queue" element={<AdminRoute requiredPermission="bookings.view"><VerificationQueuePage /></AdminRoute>} />
-                <Route path="/admin/approvals-hub" element={<AdminRoute requiredPermission="bookings.view"><ApprovalsHubPage /></AdminRoute>} />
-                <Route path="/admin/train-templates" element={<AdminRoute requiredPermission="tickets.templates.manage"><TrainTemplatesPage /></AdminRoute>} />
-                <Route path="/admin/ticket-approvals" element={<AdminRoute requiredPermission="tickets.approve"><TicketApprovalsPage /></AdminRoute>} />
-                <Route path="/admin/collections" element={<AdminRoute requiredPermission="settings.view"><CollectionsPage /></AdminRoute>} />
-                <Route path="/admin/promotions" element={<AdminRoute requiredPermission="settings.view"><PromotionsPage /></AdminRoute>} />
-                <Route path="/admin/blogs" element={<AdminRoute requiredPermission="settings.view"><BlogsPage /></AdminRoute>} />
-                <Route path="/admin/attractions" element={<AdminRoute requiredPermission="trips.view"><AttractionsPage /></AdminRoute>} />
-                <Route path="/admin/reviews" element={<AdminRoute requiredPermission="marketing.social"><ReviewsPage /></AdminRoute>} />
-                <Route path="/admin/pages" element={<AdminRoute requiredPermission="settings.view"><PagesPage /></AdminRoute>} />
-                <Route path="/admin/pages/:id" element={<AdminRoute requiredPermission="settings.view"><PageEditorPage /></AdminRoute>} />
-                <Route path="/admin/theme" element={<Navigate to="/admin/website" replace />} />
-                <Route path="/admin/design" element={<Navigate to="/admin/website" replace />} />
-                <Route path="/admin/seo" element={<AdminRoute requiredPermission="seo.view"><SeoCenterPage /></AdminRoute>} />
-                <Route path="/admin/inquiry-form" element={<AdminRoute requiredPermission="inquiries.view"><InquiryFormPage /></AdminRoute>} />
-                <Route path="/admin/website" element={<AdminRoute requiredPermission="settings.view"><WebsiteControlCenterPage /></AdminRoute>} />
-                <Route path="/admin/website/editor/:slug" element={<AdminRoute requiredPermission="settings.view"><WebsiteEditorPage /></AdminRoute>} />
-                <Route path="/admin/page-builder" element={<AdminRoute requiredPermission="settings.view"><PageBuilderPage /></AdminRoute>} />
-                <Route path="/admin/package-builder" element={<AdminRoute requiredPermission="quotations.view"><PackageBuilderPage /></AdminRoute>} />
-                <Route path="/admin/preview" element={<AdminRoute requiredPermission="settings.view"><PreviewPage /></AdminRoute>} />
-                <Route path="/admin/inquiries" element={<AdminRoute requiredPermission="inquiries.view"><InquiriesPage /></AdminRoute>} />
-                <Route path="/admin/media" element={<AdminRoute requiredPermission="settings.view"><MediaPage /></AdminRoute>} />
-                <Route path="/admin/vendors" element={<AdminRoute requiredPermission="vendors.view"><VendorDirectoryPage /></AdminRoute>} />
-                <Route path="/admin/vendor-directory" element={<AdminRoute requiredPermission="vendors.view"><VendorDirectoryPage /></AdminRoute>} />
-                <Route path="/admin/booking-forms" element={<AdminRoute requiredPermission="bookings.view"><BookingLinksPage /></AdminRoute>} />
-                <Route path="/admin/quotations" element={<AdminRoute requiredPermission="quotations.view"><QuotationsPage /></AdminRoute>} />
-                <Route path="/admin/quotations/:id" element={<AdminRoute requiredPermission="quotations.view"><QuotationFormPage /></AdminRoute>} />
-                <Route path="/admin/ai-itinerary" element={<AdminRoute requiredPermission="trips.view"><AIItineraryGeneratorPage /></AdminRoute>} />
-                <Route path="/admin/questions" element={<AdminRoute requiredPermission="settings.view"><QuestionsPage /></AdminRoute>} />
-                <Route path="/admin/footer-management" element={<AdminRoute requiredPermission="settings.view"><FooterManagementPage /></AdminRoute>} />
-                <Route path="/admin/distribution" element={<AdminRoute requiredPermission="settings.view"><DistributionPage /></AdminRoute>} />
-                <Route path="/admin/reports" element={<AdminRoute requiredPermission="reports.view"><ReportsPage /></AdminRoute>} />
-                <Route path="/admin/marketing/overview" element={<AdminRoute requiredPermission="settings.view"><MarketingOverviewPage /></AdminRoute>} />
-                <Route path="/admin/marketing/content-studio" element={<AdminRoute requiredPermission="marketing.social"><ContentStudioPage /></AdminRoute>} />
-                <Route path="/admin/marketing/campaigns" element={<AdminRoute requiredPermission="settings.view"><CampaignJournalPage /></AdminRoute>} />
-                <Route path="/admin/marketing/learnings" element={<AdminRoute requiredPermission="settings.view"><LearningsPage /></AdminRoute>} />
-                <Route path="/admin/marketing/assets" element={<AdminRoute requiredPermission="settings.view"><AssetsPage /></AdminRoute>} />
-                <Route path="/admin/company-documents" element={<AdminRoute requiredPermission="company_documents.view"><CompanyDocumentsPage /></AdminRoute>} />
-                <Route path="/admin/automation" element={<AdminRoute requiredPermission="settings.view"><AutomationPage /></AdminRoute>} />
-                <Route path="/admin/billing" element={<AdminRoute requiredPermission="settings.view"><BillingPage /></AdminRoute>} />
+                {/* Sales */}
+                <Route
+                  path="/admin/inquiries"
+                  element={
+                    <AdminRoute requiredPermission="inquiries.view">
+                      <InquiriesPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/inquiry-form"
+                  element={
+                    <AdminRoute requiredPermission="inquiries.view">
+                      <InquiryFormPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/bookings"
+                  element={
+                    <AdminRoute requiredPermission="bookings.view">
+                      <BookingsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/booking-forms"
+                  element={
+                    <AdminRoute requiredPermission="bookings.view">
+                      <BookingLinksPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/quotations"
+                  element={
+                    <AdminRoute requiredPermission="quotations.view">
+                      <QuotationsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/quotations/:id"
+                  element={
+                    <AdminRoute requiredPermission="quotations.view">
+                      <QuotationFormPage />
+                    </AdminRoute>
+                  }
+                />
 
-                {/* Founder Only Routes & Staff Management */}
-                <Route path="/admin/staff-profiles" element={<AdminRoute founderOnly requiredPermission="staff_profiles.view"><UserManagementPage /></AdminRoute>} />
-                <Route path="/admin/staff-profiles/:staffId" element={<AdminRoute founderOnly requiredPermission="staff_profiles.view"><UserManagementPage /></AdminRoute>} />
-                <Route path="/admin/people/staff" element={<AdminRoute founderOnly requiredPermission="staff_profiles.view"><UserManagementPage /></AdminRoute>} />
-                <Route path="/admin/users" element={<Navigate to="/admin/staff-profiles" replace />} />
-                <Route path="/admin/roles-permissions" element={<AdminRoute founderOnly requiredPermission="roles_permissions.manage"><AccessControlPage /></AdminRoute>} />
-                <Route path="/admin/roles" element={<AdminRoute requiredPermission="users.permissions"><RolesPage /></AdminRoute>} />
-                <Route path="/admin/permission-matrix" element={<AdminRoute requiredPermission="users.permissions"><PermissionMatrixPage /></AdminRoute>} />
-                <Route path="/admin/access-control/roles" element={<AdminRoute requiredPermission="users.permissions"><RolesPage /></AdminRoute>} />
-                <Route path="/admin/access-control/matrix" element={<AdminRoute requiredPermission="users.permissions"><PermissionMatrixPage /></AdminRoute>} />
-                <Route path="/admin/access-control" element={<Navigate to="/admin/roles" replace />} />
+                <Route
+                  path="/admin/customers/:id"
+                  element={
+                    <AdminRoute requiredPermission="customers.timeline.view">
+                      <CustomerProfilePage />
+                    </AdminRoute>
+                  }
+                />
 
-                <Route path="/admin/audit-logs" element={<AdminRoute founderOnly requiredPermission="audit.view"><AuditLogsPage /></AdminRoute>} />
-                <Route path="/admin/unauthorized" element={<AdminRoute><UnauthorizedPage /></AdminRoute>} />
-                <Route path="/admin/dynamic-sync" element={<AdminRoute requiredPermission="settings.view"><DynamicFormAdmin /></AdminRoute>} />
-                <Route path="/admin/guides-dashboard" element={<AdminRoute requiredPermission="guides.view"><GuidesDashboardPage /></AdminRoute>} />
-                <Route path="/admin/guides-hub" element={<AdminRoute requiredPermission="guides.view"><GuideOperationsCenterPage /></AdminRoute>} />
-                <Route path="/admin/guides" element={<AdminRoute requiredPermission="guides.view"><GuidesListPage /></AdminRoute>} />
-                <Route path="/admin/attendance-logs" element={<AdminRoute requiredPermission="attendance.view"><AttendanceLogsPage /></AdminRoute>} />
-                <Route path="/admin/assignments" element={<AdminRoute requiredPermission="guides.view"><AssignmentsPage /></AdminRoute>} />
-                <Route path="/admin/payroll" element={<AdminRoute requiredPermission="payroll.view"><PayrollPage /></AdminRoute>} />
-                <Route path="/admin/expenses" element={<AdminRoute requiredPermission="ops.view"><ExpensesApprovalPage /></AdminRoute>} />
-                <Route path="/admin/live-operations" element={<AdminRoute requiredPermission="ops.view"><LiveTripOperationsPage /></AdminRoute>} />
-                <Route path="/admin/guide-portal" element={<AdminRoute requiredPermission="trips.view"><GuideDashboardPage /></AdminRoute>} />
-                <Route path="/admin/guide-portal/trip/:assignmentId" element={<AdminRoute requiredPermission="trips.view"><GuideTripDetailPage /></AdminRoute>} />
-                <Route path="/admin/hr" element={<AdminRoute requiredPermission="hr.view"><HRPage /></AdminRoute>} />
-                <Route path="/admin/hr/:tab" element={<AdminRoute requiredPermission="hr.view"><HRPage /></AdminRoute>} />
-                <Route path="/admin/accounting" element={<AdminRoute requiredPermission="accounting.view"><AccountingPage /></AdminRoute>} />
-                <Route path="/admin/operations" element={<AdminRoute requiredPermission="ops.view"><OperationsHubPage /></AdminRoute>} />
-                <Route path="/admin/master-database" element={<AdminRoute requiredPermission="settings.view"><MasterDatabasePage /></AdminRoute>} />
-                <Route path="/admin/customers/:id" element={<AdminRoute requiredPermission="customers.timeline.view"><CustomerProfilePage /></AdminRoute>} />
-                <Route path="/admin/booking-workspace" element={<AdminRoute requiredPermission="bookings.view"><StaticWorkspacePage src="/booking-workspace.html" title="Booking Workspace" /></AdminRoute>} />
-                <Route path="/admin/departure-workspace" element={<AdminRoute requiredPermission="ops.view"><DepartureHubPage /></AdminRoute>} />
-                <Route path="/admin/accounting-workspace" element={<AdminRoute requiredPermission="accounting.view"><StaticWorkspacePage src="/accounting-workspace.html" title="Accounting Workspace" /></AdminRoute>} />
-                <Route path="/admin/web-workspace" element={<AdminRoute requiredPermission="bookings.view"><StaticWorkspacePage src="/web.html" title="Web Booking Workspace" /></AdminRoute>} />
-                <Route path="/admin/travel-desk" element={<AdminRoute><TravelDeskPage /></AdminRoute>} />
-                <Route path="/admin/email-templates" element={<AdminRoute requiredPermission="emails.manage_templates"><EmailTemplatesPage /></AdminRoute>} />
-                <Route path="*" element={<Suspense fallback={<LoadingUI />}><NotFound /></Suspense>} />
+                {/* Operations */}
+                <Route
+                  path="/admin/operations"
+                  element={
+                    <AdminRoute requiredPermission="ops.view">
+                      <OperationsHubPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/departure-workspace"
+                  element={
+                    <AdminRoute requiredPermission="ops.view">
+                      <DepartureHubPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/vendors"
+                  element={
+                    <AdminRoute requiredPermission="vendors.view">
+                      <VendorDirectoryPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/vendors/ledger"
+                  element={
+                    <AdminRoute requiredPermission="vendors.view">
+                      <VendorLedgerPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/vendor-directory"
+                  element={
+                    <AdminRoute requiredPermission="vendors.view">
+                      <VendorDirectoryPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/company-documents"
+                  element={
+                    <AdminRoute requiredPermission="company_documents.view">
+                      <CompanyDocumentsPage />
+                    </AdminRoute>
+                  }
+                />
+
+                {/* Approval Center */}
+                <Route
+                  path="/admin/verification-queue"
+                  element={
+                    <AdminRoute requiredPermission="bookings.view">
+                      <VerificationQueuePage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/approvals-hub"
+                  element={
+                    <AdminRoute requiredPermission="bookings.view">
+                      <ApprovalsHubPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/ticket-approvals"
+                  element={
+                    <AdminRoute requiredPermission="tickets.approve">
+                      <TicketApprovalsPage />
+                    </AdminRoute>
+                  }
+                />
+
+                {/* Finance */}
+                <Route
+                  path="/admin/accounting"
+                  element={
+                    <AdminRoute requiredPermission="accounting.view">
+                      <AccountingPage />
+                    </AdminRoute>
+                  }
+                />
+
+                {/* Travel Desk */}
+                <Route
+                  path="/admin/travel-desk"
+                  element={
+                    <AdminRoute>
+                      <TravelDeskPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/train-templates"
+                  element={
+                    <AdminRoute requiredPermission="tickets.templates.manage">
+                      <TrainTemplatesPage />
+                    </AdminRoute>
+                  }
+                />
+
+                {/* Business: Trips, Master Database, Website CMS */}
+                <Route
+                  path="/admin/trips"
+                  element={
+                    <AdminRoute requiredPermission="trips.view">
+                      <TripsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/master-database"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <MasterDatabasePage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/website"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <WebsiteControlCenterPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/website/editor/:slug"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <WebsiteEditorPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/pages"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <PagesPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/pages/:id"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <PageEditorPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/page-builder"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <PageBuilderPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/preview"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <PreviewPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/seo"
+                  element={
+                    <AdminRoute requiredPermission="seo.view">
+                      <SeoCenterPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/footer-management"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <FooterManagementPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/blogs"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <BlogsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reviews"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <ReviewsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/attractions"
+                  element={
+                    <AdminRoute requiredPermission="trips.view">
+                      <AttractionsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/media"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <MediaPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/questions"
+                  element={
+                    <AdminRoute requiredPermission="settings.view">
+                      <QuestionsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/theme"
+                  element={<Navigate to="/admin/website" replace />}
+                />
+                <Route
+                  path="/admin/design"
+                  element={<Navigate to="/admin/website" replace />}
+                />
+
+                {/* Administration */}
+                <Route
+                  path="/admin/staff-profiles"
+                  element={
+                    <AdminRoute
+                      founderOnly
+                      requiredPermission="staff_profiles.view"
+                    >
+                      <UserManagementPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/staff-profiles/:staffId"
+                  element={
+                    <AdminRoute
+                      founderOnly
+                      requiredPermission="staff_profiles.view"
+                    >
+                      <UserManagementPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/people/staff"
+                  element={
+                    <AdminRoute
+                      founderOnly
+                      requiredPermission="staff_profiles.view"
+                    >
+                      <UserManagementPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={<Navigate to="/admin/staff-profiles" replace />}
+                />
+                <Route
+                  path="/admin/roles-permissions"
+                  element={
+                    <AdminRoute
+                      founderOnly
+                      requiredPermission="roles_permissions.manage"
+                    >
+                      <AccessControlPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/roles"
+                  element={
+                    <AdminRoute requiredPermission="users.permissions">
+                      <RolesPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/permission-matrix"
+                  element={
+                    <AdminRoute requiredPermission="users.permissions">
+                      <PermissionMatrixPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/access-control/roles"
+                  element={
+                    <AdminRoute requiredPermission="users.permissions">
+                      <RolesPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/access-control/matrix"
+                  element={
+                    <AdminRoute requiredPermission="users.permissions">
+                      <PermissionMatrixPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/access-control"
+                  element={<Navigate to="/admin/roles" replace />}
+                />
+                <Route
+                  path="/admin/email-templates"
+                  element={
+                    <AdminRoute requiredPermission="emails.manage_templates">
+                      <EmailTemplatesPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/unauthorized"
+                  element={
+                    <AdminRoute>
+                      <UnauthorizedPage />
+                    </AdminRoute>
+                  }
+                />
+
+                <Route
+                  path="*"
+                  element={
+                    <Suspense fallback={<LoadingUI />}>
+                      <NotFound />
+                    </Suspense>
+                  }
+                />
               </Routes>
             </AuthInitializer>
           </BrowserRouter>

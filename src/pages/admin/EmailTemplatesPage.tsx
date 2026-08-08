@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  emailsService,
-  EmailTemplate
-} from "@/services/emails.service";
+import { emailsService, EmailTemplate } from "@/services/emails.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
@@ -26,17 +28,18 @@ import {
   Settings,
   Search,
   CheckCircle,
-  FileText
+  FileText,
 } from "lucide-react";
 
 export default function EmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState("");
-  
+
   // Modal states
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<Partial<EmailTemplate> | null>(null);
+  const [editingTemplate, setEditingTemplate] =
+    useState<Partial<EmailTemplate> | null>(null);
 
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -63,7 +66,7 @@ export default function EmailTemplatesPage() {
       subject: "",
       body: "",
       category: "Booking",
-      isActive: true
+      isActive: true,
     });
     setIsEditOpen(true);
     setTimeout(() => {
@@ -105,9 +108,11 @@ export default function EmailTemplatesPage() {
   const handleToggleStatus = async (template: EmailTemplate) => {
     try {
       await emailsService.updateTemplate(template.id, {
-        isActive: !template.isActive
+        isActive: !template.isActive,
       });
-      toast.success(`Template ${!template.isActive ? "activated" : "deactivated"} successfully!`);
+      toast.success(
+        `Template ${!template.isActive ? "activated" : "deactivated"} successfully!`,
+      );
       fetchTemplates();
     } catch (err) {
       toast.error("Failed to update status.");
@@ -117,9 +122,11 @@ export default function EmailTemplatesPage() {
   const handleSave = async () => {
     if (!editingTemplate) return;
     const body = editorRef.current ? editorRef.current.innerHTML : "";
-    
-    if (!editingTemplate.name?.trim()) return toast.error("Template name is required");
-    if (!editingTemplate.subject?.trim()) return toast.error("Subject is required");
+
+    if (!editingTemplate.name?.trim())
+      return toast.error("Template name is required");
+    if (!editingTemplate.subject?.trim())
+      return toast.error("Subject is required");
     if (!body.trim()) return toast.error("Message content is required");
 
     try {
@@ -128,7 +135,7 @@ export default function EmailTemplatesPage() {
         subject: editingTemplate.subject,
         body,
         category: editingTemplate.category,
-        isActive: editingTemplate.isActive
+        isActive: editingTemplate.isActive,
       };
 
       if (editingTemplate.id) {
@@ -158,10 +165,11 @@ export default function EmailTemplatesPage() {
     if (url) formatDoc("createLink", url);
   };
 
-  const filteredTemplates = templates.filter(t => 
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.category.toLowerCase().includes(search.toLowerCase()) ||
-    t.subject.toLowerCase().includes(search.toLowerCase())
+  const filteredTemplates = templates.filter(
+    (t) =>
+      t.name.toLowerCase().includes(search.toLowerCase()) ||
+      t.category.toLowerCase().includes(search.toLowerCase()) ||
+      t.subject.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -174,7 +182,8 @@ export default function EmailTemplatesPage() {
             Email Templates
           </h1>
           <p className="text-xs font-semibold text-slate-500 mt-1">
-            Create, duplicate, customize, and manage email notification templates.
+            Create, duplicate, customize, and manage email notification
+            templates.
           </p>
         </div>
         <Button
@@ -193,7 +202,7 @@ export default function EmailTemplatesPage() {
           <Search className="h-4 w-4 text-slate-400 shrink-0" />
           <Input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search templates by name, subject, or category..."
             className="border-none shadow-none text-sm font-semibold p-2.5 focus-visible:ring-0 grow"
           />
@@ -209,11 +218,13 @@ export default function EmailTemplatesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map(template => (
+            {filteredTemplates.map((template) => (
               <div
                 key={template.id}
                 className={`bg-white border rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-4 transition-all hover:shadow-md hover:border-slate-300 ${
-                  !template.isActive ? "opacity-60 border-slate-200 bg-slate-50/20" : "border-slate-100"
+                  !template.isActive
+                    ? "opacity-60 border-slate-200 bg-slate-50/20"
+                    : "border-slate-100"
                 }`}
               >
                 <div className="space-y-2">
@@ -221,18 +232,28 @@ export default function EmailTemplatesPage() {
                     <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full uppercase tracking-wide">
                       {template.category}
                     </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      template.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
-                    }`}>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        template.isActive
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
                       {template.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
 
-                  <h3 className="font-extrabold text-base text-slate-800 line-clamp-1">{template.name}</h3>
-                  
+                  <h3 className="font-extrabold text-base text-slate-800 line-clamp-1">
+                    {template.name}
+                  </h3>
+
                   <div className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-100 p-2.5 rounded-lg">
-                    <span className="text-slate-400 font-extrabold block text-[9px] uppercase tracking-wider mb-0.5">Subject</span>
-                    <span className="line-clamp-2 text-slate-700 leading-tight">{template.subject}</span>
+                    <span className="text-slate-400 font-extrabold block text-[9px] uppercase tracking-wider mb-0.5">
+                      Subject
+                    </span>
+                    <span className="line-clamp-2 text-slate-700 leading-tight">
+                      {template.subject}
+                    </span>
                   </div>
                 </div>
 
@@ -241,7 +262,11 @@ export default function EmailTemplatesPage() {
                     type="button"
                     onClick={() => handleToggleStatus(template)}
                     className="text-slate-500 hover:text-indigo-600 transition-colors p-1"
-                    title={template.isActive ? "Deactivate Template" : "Activate Template"}
+                    title={
+                      template.isActive
+                        ? "Deactivate Template"
+                        : "Activate Template"
+                    }
                   >
                     {template.isActive ? (
                       <ToggleRight className="h-6 w-6 text-emerald-600" />
@@ -290,12 +315,17 @@ export default function EmailTemplatesPage() {
       </div>
 
       {/* Editor dialog modal */}
-      <Dialog open={isEditOpen} onOpenChange={(open) => !open && setIsEditOpen(false)}>
+      <Dialog
+        open={isEditOpen}
+        onOpenChange={(open) => !open && setIsEditOpen(false)}
+      >
         <DialogContent className="max-w-[700px] w-full bg-white p-6 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Mail className="h-5 w-5 text-indigo-600" />
-              {editingTemplate?.id ? "Edit Email Template" : "Create New Email Template"}
+              {editingTemplate?.id
+                ? "Edit Email Template"
+                : "Create New Email Template"}
             </DialogTitle>
           </DialogHeader>
 
@@ -303,19 +333,33 @@ export default function EmailTemplatesPage() {
             <div className="space-y-4 grow overflow-y-auto pr-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Template Name</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Template Name
+                  </label>
                   <Input
                     value={editingTemplate.name || ""}
-                    onChange={e => setEditingTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setEditingTemplate((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
                     placeholder="e.g. Booking Confirmation"
                     className="border-slate-200 text-sm font-semibold focus:border-indigo-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Category</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Category
+                  </label>
                   <select
                     value={editingTemplate.category || "Booking"}
-                    onChange={e => setEditingTemplate(prev => ({ ...prev, category: e.target.value }))}
+                    onChange={(e) =>
+                      setEditingTemplate((prev) => ({
+                        ...prev,
+                        category: e.target.value,
+                      }))
+                    }
                     className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold outline-none focus:border-indigo-500 transition-colors"
                   >
                     <option value="Booking">Booking</option>
@@ -327,10 +371,17 @@ export default function EmailTemplatesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Subject</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                  Subject
+                </label>
                 <Input
                   value={editingTemplate.subject || ""}
-                  onChange={e => setEditingTemplate(prev => ({ ...prev, subject: e.target.value }))}
+                  onChange={(e) =>
+                    setEditingTemplate((prev) => ({
+                      ...prev,
+                      subject: e.target.value,
+                    }))
+                  }
                   placeholder="e.g. Your booking is confirmed! {{booking.reference}}"
                   className="border-slate-200 text-sm font-semibold focus:border-indigo-500"
                 />
@@ -338,30 +389,75 @@ export default function EmailTemplatesPage() {
 
               {/* Rich text editor box */}
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Template Body</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                  Template Body
+                </label>
                 <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                   {/* Rich editor toolbar */}
                   <div className="bg-slate-50 border-b border-slate-200 p-2 flex flex-wrap gap-1 items-center">
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-200" onClick={() => formatDoc("bold")}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-slate-200"
+                      onClick={() => formatDoc("bold")}
+                    >
                       <Bold className="h-4 w-4 text-slate-600" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-200" onClick={() => formatDoc("italic")}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-slate-200"
+                      onClick={() => formatDoc("italic")}
+                    >
                       <Italic className="h-4 w-4 text-slate-600" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-200" onClick={() => formatDoc("underline")}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-slate-200"
+                      onClick={() => formatDoc("underline")}
+                    >
                       <Underline className="h-4 w-4 text-slate-600" />
                     </Button>
                     <div className="h-4 w-[1px] bg-slate-300 mx-1" />
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-200" onClick={() => formatDoc("insertUnorderedList")}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-slate-200"
+                      onClick={() => formatDoc("insertUnorderedList")}
+                    >
                       <List className="h-4 w-4 text-slate-600" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-200" onClick={() => formatDoc("insertOrderedList")}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-slate-200"
+                      onClick={() => formatDoc("insertOrderedList")}
+                    >
                       <ListOrdered className="h-4 w-4 text-slate-600" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-200" onClick={addLink}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-slate-200"
+                      onClick={addLink}
+                    >
                       <Link2 className="h-4 w-4 text-slate-600" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-200" onClick={() => formatDoc("removeFormat")} title="Clear formatting">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-slate-200"
+                      onClick={() => formatDoc("removeFormat")}
+                      title="Clear formatting"
+                    >
                       <Trash2 className="h-4 w-4 text-rose-500" />
                     </Button>
                   </div>
@@ -380,9 +476,17 @@ export default function EmailTemplatesPage() {
                 <Checkbox
                   id="template-active"
                   checked={editingTemplate.isActive}
-                  onCheckedChange={(checked) => setEditingTemplate(prev => ({ ...prev, isActive: checked === true }))}
+                  onCheckedChange={(checked) =>
+                    setEditingTemplate((prev) => ({
+                      ...prev,
+                      isActive: checked === true,
+                    }))
+                  }
                 />
-                <label htmlFor="template-active" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                <label
+                  htmlFor="template-active"
+                  className="text-xs font-bold text-slate-700 cursor-pointer select-none"
+                >
                   Template Active / Enabled
                 </label>
               </div>

@@ -25,15 +25,19 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
   const [title, setTitle] = useState(page.title);
   const [slug, setSlug] = useState(page.slug);
   const [metaTitle, setMetaTitle] = useState(page.metaTitle || "");
-  const [metaDescription, setMetaDescription] = useState(page.metaDescription || "");
+  const [metaDescription, setMetaDescription] = useState(
+    page.metaDescription || "",
+  );
   const [published, setPublished] = useState(page.published);
   const [content, setContent] = useState<Record<string, any>>(
-    typeof page.content === "object" && page.content !== null ? page.content : {}
+    typeof page.content === "object" && page.content !== null
+      ? page.content
+      : {},
   );
   const [bodyHtml, setBodyHtml] = useState<string>(
     (typeof page.content === "object" && page.content !== null
       ? (page.content as any).body
-      : "") || ""
+      : "") || "",
   );
 
   const [saving, setSaving] = useState(false);
@@ -43,7 +47,8 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
   const [isPreviewRefreshing, setIsPreviewRefreshing] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
+  const frontendUrl =
+    import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
 
   // Track unsaved changes
   useEffect(() => {
@@ -83,7 +88,18 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
     } finally {
       setSaving(false);
     }
-  }, [title, slug, metaTitle, metaDescription, published, bodyHtml, content, page.id, onSave, saving]);
+  }, [
+    title,
+    slug,
+    metaTitle,
+    metaDescription,
+    published,
+    bodyHtml,
+    content,
+    page.id,
+    onSave,
+    saving,
+  ]);
 
   // Keyboard shortcut: Ctrl/Cmd + S
   useEffect(() => {
@@ -119,9 +135,7 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
             <h1 className="text-lg font-black text-[#0B1528] tracking-tight leading-tight">
               {title || "Untitled Page"}
             </h1>
-            <span className="text-xs text-slate-400 font-mono">
-              /{slug}
-            </span>
+            <span className="text-xs text-slate-400 font-mono">/{slug}</span>
           </div>
 
           {dirty && (
@@ -168,8 +182,8 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
               justSaved
                 ? "bg-emerald-600 text-white shadow-emerald-500/20"
                 : dirty && !saving
-                ? "bg-[#D4541A] hover:bg-[#C04A16] text-white shadow-orange-500/20"
-                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  ? "bg-[#D4541A] hover:bg-[#C04A16] text-white shadow-orange-500/20"
+                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
             }`}
           >
             {saving ? (
@@ -179,7 +193,9 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
             ) : (
               <Save className="w-3.5 h-3.5" />
             )}
-            <span>{saving ? "Saving..." : justSaved ? "Saved!" : "Save Page"}</span>
+            <span>
+              {saving ? "Saving..." : justSaved ? "Saved!" : "Save Page"}
+            </span>
           </button>
         </div>
       </div>
@@ -225,7 +241,7 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
                         e.target.value
                           .toLowerCase()
                           .replace(/[^a-z0-9-]/g, "-")
-                          .replace(/-+/g, "-")
+                          .replace(/-+/g, "-"),
                       )
                     }
                     placeholder="about-us"
@@ -316,7 +332,9 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
                 className="p-1 hover:bg-slate-200 active:scale-90 rounded-lg transition-all duration-100 ease-out cursor-pointer"
                 title="Refresh preview"
               >
-                <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isPreviewRefreshing ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`w-3.5 h-3.5 text-slate-400 ${isPreviewRefreshing ? "animate-spin" : ""}`}
+                />
               </button>
             </div>
 

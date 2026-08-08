@@ -39,9 +39,12 @@ export function SectionEditor({
           <Sparkles className="w-6 h-6" />
         </div>
         <div className="space-y-1 max-w-sm">
-          <h3 className="text-base font-extrabold text-[#0B1528]">No Section Selected</h3>
+          <h3 className="text-base font-extrabold text-[#0B1528]">
+            No Section Selected
+          </h3>
           <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            Select a live frontend section from the left panel to configure its text fields, photo galleries, and visual layout parameters.
+            Select a live frontend section from the left panel to configure its
+            text fields, photo galleries, and visual layout parameters.
           </p>
         </div>
       </div>
@@ -198,7 +201,8 @@ export function SectionEditor({
           onClick={() => onResetSection(section.id)}
           className="h-8 px-3 text-xs font-bold text-slate-600 hover:text-slate-900 border-slate-200 rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset Section
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset
+          Section
         </Button>
       </div>
 

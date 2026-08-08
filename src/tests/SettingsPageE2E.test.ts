@@ -4,9 +4,13 @@ import { COMPONENT_REGISTRY } from "../config/componentRegistry";
 
 describe("Settings Page E2E & Routing Verification", () => {
   it("should have canonical registered routes for settings and profile aliases", () => {
-    const settingsRoute = ADMIN_ROUTES.find((r) => r.path === "/admin/settings");
+    const settingsRoute = ADMIN_ROUTES.find(
+      (r) => r.path === "/admin/settings",
+    );
     const profileRoute = ADMIN_ROUTES.find((r) => r.path === "/admin/profile");
-    const securityRoute = ADMIN_ROUTES.find((r) => r.path === "/admin/security");
+    const securityRoute = ADMIN_ROUTES.find(
+      (r) => r.path === "/admin/security",
+    );
 
     expect(settingsRoute).toBeDefined();
     expect(profileRoute).toBeDefined();

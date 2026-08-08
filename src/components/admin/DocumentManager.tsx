@@ -1,10 +1,28 @@
 import React, { useState, useRef } from "react";
-import { 
-  FileText, Upload, Trash2, Eye, Download, RefreshCw, AlertCircle, 
-  CheckCircle2, Image as ImageIcon, Camera, File, ArrowUp, ArrowDown, X, Plus
+import {
+  FileText,
+  Upload,
+  Trash2,
+  Eye,
+  Download,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  Image as ImageIcon,
+  Camera,
+  File,
+  ArrowUp,
+  ArrowDown,
+  X,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -18,10 +36,10 @@ export const DOCUMENT_CATEGORIES = [
   "Tickets",
   "Hotel Voucher",
   "Invoice",
-  "Other"
+  "Other",
 ] as const;
 
-export type DocumentCategory = typeof DOCUMENT_CATEGORIES[number];
+export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
 
 export interface DocumentItem {
   id: string;
@@ -44,7 +62,11 @@ interface DocumentManagerProps {
   passengerId?: string;
   passengerName?: string;
   documents: DocumentItem[];
-  onUpload: (file: File, category: string, passengerId?: string) => Promise<void>;
+  onUpload: (
+    file: File,
+    category: string,
+    passengerId?: string,
+  ) => Promise<void>;
   onDelete: (docId: string, passengerId?: string) => Promise<void>;
   onViewDoc?: (doc: DocumentItem) => void;
   canEdit?: boolean;
@@ -85,7 +107,7 @@ async function compressImageIfNeeded(file: File): Promise<File> {
             if (blob) {
               const compressed = new File([blob], file.name, {
                 type: "image/jpeg",
-                lastModified: Date.now()
+                lastModified: Date.now(),
               });
               resolve(compressed);
             } else {
@@ -93,7 +115,7 @@ async function compressImageIfNeeded(file: File): Promise<File> {
             }
           },
           "image/jpeg",
-          0.85
+          0.85,
         );
       } else {
         resolve(file);
@@ -112,17 +134,24 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   onUpload,
   onDelete,
   onViewDoc,
-  canEdit = true
+  canEdit = true,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("Aadhaar Front");
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>("Aadhaar Front");
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number; category: string }[]>([]);
-  const [previewModalDoc, setPreviewModalDoc] = useState<DocumentItem | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<
+    { name: string; progress: number; category: string }[]
+  >([]);
+  const [previewModalDoc, setPreviewModalDoc] = useState<DocumentItem | null>(
+    null,
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const filterDocs = documents.filter((d) => !passengerId || d.passengerId === passengerId);
+  const filterDocs = documents.filter(
+    (d) => !passengerId || d.passengerId === passengerId,
+  );
 
   const validateFile = (file: File): boolean => {
     const maxSizeMB = 20;
@@ -136,7 +165,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       "image/png",
       "image/jpg",
       "image/webp",
-      "application/pdf"
+      "application/pdf",
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -153,31 +182,44 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       if (!validateFile(rawFile)) continue;
 
       const category = selectedCategory;
-      setUploadingFiles((prev) => [...prev, { name: rawFile.name, progress: 10, category }]);
+      setUploadingFiles((prev) => [
+        ...prev,
+        { name: rawFile.name, progress: 10, category },
+      ]);
 
       try {
         setUploadingFiles((prev) =>
-          prev.map((f) => (f.name === rawFile.name ? { ...f, progress: 40 } : f))
+          prev.map((f) =>
+            f.name === rawFile.name ? { ...f, progress: 40 } : f,
+          ),
         );
 
         const fileToUpload = await compressImageIfNeeded(rawFile);
 
         setUploadingFiles((prev) =>
-          prev.map((f) => (f.name === rawFile.name ? { ...f, progress: 75 } : f))
+          prev.map((f) =>
+            f.name === rawFile.name ? { ...f, progress: 75 } : f,
+          ),
         );
 
         await onUpload(fileToUpload, category, passengerId);
 
         setUploadingFiles((prev) =>
-          prev.map((f) => (f.name === rawFile.name ? { ...f, progress: 100 } : f))
+          prev.map((f) =>
+            f.name === rawFile.name ? { ...f, progress: 100 } : f,
+          ),
         );
 
         toast.success(`Uploaded ${rawFile.name} as ${category}`);
       } catch (err: any) {
-        toast.error(`Upload failed for ${rawFile.name}: ${err.message || "Server error"}`);
+        toast.error(
+          `Upload failed for ${rawFile.name}: ${err.message || "Server error"}`,
+        );
       } finally {
         setTimeout(() => {
-          setUploadingFiles((prev) => prev.filter((f) => f.name !== rawFile.name));
+          setUploadingFiles((prev) =>
+            prev.filter((f) => f.name !== rawFile.name),
+          );
         }, 800);
       }
     }
@@ -199,8 +241,10 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   };
 
   const getFileIcon = (mimeType?: string) => {
-    if (mimeType?.includes("pdf")) return <FileText className="w-4 h-4 text-rose-500" />;
-    if (mimeType?.includes("image")) return <ImageIcon className="w-4 h-4 text-blue-500" />;
+    if (mimeType?.includes("pdf"))
+      return <FileText className="w-4 h-4 text-rose-500" />;
+    if (mimeType?.includes("image"))
+      return <ImageIcon className="w-4 h-4 text-blue-500" />;
     return <File className="w-4 h-4 text-slate-500" />;
   };
 
@@ -235,7 +279,9 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 multiple
                 accept=".jpg,.jpeg,.png,.webp,.pdf"
                 className="hidden"
-                onChange={(e) => e.target.files && processAndUploadFiles(e.target.files)}
+                onChange={(e) =>
+                  e.target.files && processAndUploadFiles(e.target.files)
+                }
               />
               {/* Mobile Camera Capture */}
               <input
@@ -244,7 +290,9 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 accept="image/*"
                 capture="environment"
                 className="hidden"
-                onChange={(e) => e.target.files && processAndUploadFiles(e.target.files)}
+                onChange={(e) =>
+                  e.target.files && processAndUploadFiles(e.target.files)
+                }
               />
 
               <Button
@@ -276,12 +324,20 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
             onClick={() => fileInputRef.current?.click()}
             className={cn(
               "border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5",
-              isDragging ? "border-blue-500 bg-blue-50/50" : "border-slate-200 hover:border-slate-300 bg-white"
+              isDragging
+                ? "border-blue-500 bg-blue-50/50"
+                : "border-slate-200 hover:border-slate-300 bg-white",
             )}
           >
-            <Upload className={cn("w-5 h-5", isDragging ? "text-blue-500" : "text-slate-400")} />
+            <Upload
+              className={cn(
+                "w-5 h-5",
+                isDragging ? "text-blue-500" : "text-slate-400",
+              )}
+            />
             <p className="text-xs font-semibold text-slate-700">
-              Drag & Drop document files here or <span className="text-blue-600 underline">browse</span>
+              Drag & Drop document files here or{" "}
+              <span className="text-blue-600 underline">browse</span>
             </p>
             <p className="text-[10px] text-slate-400">
               Supported: JPG, PNG, WEBP, PDF (Max file size: 20 MB)
@@ -294,10 +350,17 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       {uploadingFiles.length > 0 && (
         <div className="space-y-2">
           {uploadingFiles.map((f, i) => (
-            <div key={i} className="p-3 bg-blue-50/60 border border-blue-100 rounded-lg space-y-1 text-xs">
+            <div
+              key={i}
+              className="p-3 bg-blue-50/60 border border-blue-100 rounded-lg space-y-1 text-xs"
+            >
               <div className="flex justify-between font-medium text-slate-700">
-                <span>{f.name} ({f.category})</span>
-                <span className="font-mono text-blue-600 font-bold">{f.progress}%</span>
+                <span>
+                  {f.name} ({f.category})
+                </span>
+                <span className="font-mono text-blue-600 font-bold">
+                  {f.progress}%
+                </span>
               </div>
               <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
                 <div
@@ -314,14 +377,22 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       <div className="space-y-2">
         <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
           <span>Attached Documents ({filterDocs.length})</span>
-          {passengerName && <span className="text-slate-400 font-normal">for {passengerName}</span>}
+          {passengerName && (
+            <span className="text-slate-400 font-normal">
+              for {passengerName}
+            </span>
+          )}
         </h4>
 
         {filterDocs.length === 0 ? (
           <div className="p-6 text-center border border-slate-100 rounded-xl bg-slate-50/50">
             <FileText className="w-6 h-6 text-slate-300 mx-auto mb-1.5" />
-            <p className="text-xs font-medium text-slate-500">No documents uploaded yet.</p>
-            <p className="text-[10px] text-slate-400">Upload Aadhaar, PAN, Passport, or vouchers above.</p>
+            <p className="text-xs font-medium text-slate-500">
+              No documents uploaded yet.
+            </p>
+            <p className="text-[10px] text-slate-400">
+              Upload Aadhaar, PAN, Passport, or vouchers above.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -339,7 +410,10 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                       <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
                         {doc.documentType || "Document"}
                       </span>
-                      <p className="text-xs font-bold text-slate-800 truncate mt-0.5" title={doc.originalFileName}>
+                      <p
+                        className="text-xs font-bold text-slate-800 truncate mt-0.5"
+                        title={doc.originalFileName}
+                      >
                         {doc.originalFileName}
                       </p>
                     </div>
@@ -348,7 +422,11 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 
                 <div className="text-[10px] text-slate-400 flex justify-between items-center pt-1 border-t border-slate-100">
                   <span>By: {doc.uploadedBy || "System"}</span>
-                  <span>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : ""}</span>
+                  <span>
+                    {doc.uploadedAt
+                      ? new Date(doc.uploadedAt).toLocaleDateString()
+                      : ""}
+                  </span>
                 </div>
 
                 {/* Actions */}
@@ -385,7 +463,10 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       </div>
 
       {/* Internal Preview Dialog */}
-      <Dialog open={!!previewModalDoc} onOpenChange={() => setPreviewModalDoc(null)}>
+      <Dialog
+        open={!!previewModalDoc}
+        onOpenChange={() => setPreviewModalDoc(null)}
+      >
         <DialogContent className="max-w-3xl max-h-[85vh] p-4 flex flex-col">
           <DialogHeader className="flex flex-row justify-between items-center border-b pb-2">
             <DialogTitle className="text-sm font-bold truncate">

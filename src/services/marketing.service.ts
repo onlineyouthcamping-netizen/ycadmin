@@ -144,5 +144,5 @@ export const marketingService = {
   async getReports(tripId: string = "MKA"): Promise<Report[]> {
     const res = await api.get(`/marketing/reports?tripId=${tripId}`);
     return res.data.data;
-  }
+  },
 };

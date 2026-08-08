@@ -10,13 +10,22 @@ interface SessionTableProps {
   isLoading?: boolean;
 }
 
-export function SessionTable({ sessions, onLogoutSession, onLogoutAllOthers, isLoading }: SessionTableProps) {
+export function SessionTable({
+  sessions,
+  onLogoutSession,
+  onLogoutAllOthers,
+  isLoading,
+}: SessionTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h4 className="text-xs font-bold text-slate-800 dark:text-white">Active Login Sessions</h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Devices currently logged into your YouthCamping account</p>
+          <h4 className="text-xs font-bold text-slate-800 dark:text-white">
+            Active Login Sessions
+          </h4>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Devices currently logged into your YouthCamping account
+          </p>
         </div>
         {sessions.length > 1 && (
           <Button
@@ -47,11 +56,16 @@ export function SessionTable({ sessions, onLogoutSession, onLogoutAllOthers, isL
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-normal">
               {sessions.map((sess) => (
-                <tr key={sess.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                <tr
+                  key={sess.id}
+                  className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                >
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
-                        {sess.deviceName.toLowerCase().includes("mobile") || sess.deviceName.toLowerCase().includes("iphone") || sess.deviceName.toLowerCase().includes("android") ? (
+                        {sess.deviceName.toLowerCase().includes("mobile") ||
+                        sess.deviceName.toLowerCase().includes("iphone") ||
+                        sess.deviceName.toLowerCase().includes("android") ? (
                           <Smartphone className="w-4 h-4" />
                         ) : (
                           <Laptop className="w-4 h-4" />
@@ -73,11 +87,16 @@ export function SessionTable({ sessions, onLogoutSession, onLogoutAllOthers, isL
                     <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
                       <Globe className="w-3.5 h-3.5 text-slate-400" />
                       <span>{sess.location}</span>
-                      <span className="text-slate-400 font-mono text-[11px]">({sess.ipAddress})</span>
+                      <span className="text-slate-400 font-mono text-[11px]">
+                        ({sess.ipAddress})
+                      </span>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-slate-500 dark:text-slate-400 font-medium">
-                    {new Date(sess.lastActivityAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(sess.lastActivityAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </td>
                   <td className="py-3 px-4 text-right">
                     {sess.isCurrent ? (
@@ -107,11 +126,16 @@ export function SessionTable({ sessions, onLogoutSession, onLogoutAllOthers, isL
       {/* Mobile Stacked Card View (< 768px) */}
       <div className="block md:hidden space-y-3">
         {sessions.map((sess) => (
-          <div key={sess.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl space-y-3 shadow-2xs">
+          <div
+            key={sess.id}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl space-y-3 shadow-2xs"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
-                  {sess.deviceName.toLowerCase().includes("mobile") || sess.deviceName.toLowerCase().includes("iphone") || sess.deviceName.toLowerCase().includes("android") ? (
+                  {sess.deviceName.toLowerCase().includes("mobile") ||
+                  sess.deviceName.toLowerCase().includes("iphone") ||
+                  sess.deviceName.toLowerCase().includes("android") ? (
                     <Smartphone className="w-4 h-4" />
                   ) : (
                     <Laptop className="w-4 h-4" />
@@ -126,7 +150,9 @@ export function SessionTable({ sessions, onLogoutSession, onLogoutAllOthers, isL
                       </span>
                     )}
                   </h5>
-                  <p className="text-[10px] text-slate-500 font-mono">{sess.ipAddress}</p>
+                  <p className="text-[10px] text-slate-500 font-mono">
+                    {sess.ipAddress}
+                  </p>
                 </div>
               </div>
               {sess.isCurrent ? (
@@ -152,7 +178,10 @@ export function SessionTable({ sessions, onLogoutSession, onLogoutAllOthers, isL
                 <Globe className="w-3 h-3 text-slate-400" /> {sess.location}
               </span>
               <span>
-                {new Date(sess.lastActivityAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {new Date(sess.lastActivityAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
           </div>

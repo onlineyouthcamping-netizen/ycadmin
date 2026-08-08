@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { SETTINGS_TABS, isTabVisible } from "../pages/admin/settings/constants/tabs";
+import {
+  SETTINGS_TABS,
+  isTabVisible,
+} from "../pages/admin/settings/constants/tabs";
 import { calculatePasswordStrength } from "../pages/admin/settings/components/PasswordStrengthMeter";
 
 describe("Settings Page & Tab System Suite", () => {
@@ -16,20 +19,24 @@ describe("Settings Page & Tab System Suite", () => {
       "api-keys",
       "privacy",
       "billing",
-      "integrations"
+      "integrations",
     ]);
   });
 
   it("should show all 10 tabs for Founder superadmin", () => {
     const founderEmail = "hemal.patel@youthcamping.online";
-    const visibleTabs = SETTINGS_TABS.filter((t) => isTabVisible(t, "superadmin", founderEmail));
+    const visibleTabs = SETTINGS_TABS.filter((t) =>
+      isTabVisible(t, "superadmin", founderEmail),
+    );
     expect(visibleTabs.length).toBe(10);
   });
 
   it("should hide Founder-only tabs for sales and operations roles", () => {
     const salesEmail = "sales@youthcamping.online";
-    const salesTabs = SETTINGS_TABS.filter((t) => isTabVisible(t, "sales", salesEmail));
-    
+    const salesTabs = SETTINGS_TABS.filter((t) =>
+      isTabVisible(t, "sales", salesEmail),
+    );
+
     // Founder-only (billing, api-keys) and admin-only (audit, integrations) must be restricted
     const salesTabIds = salesTabs.map((t) => t.id);
     expect(salesTabIds).not.toContain("billing");

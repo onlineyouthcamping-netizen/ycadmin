@@ -16,8 +16,15 @@ export interface TrainTicket {
   coach?: string;
   seatNumber?: string;
   berthType?: string;
-  ticketStatus: 'PENDING' | 'BOOKED' | 'WAITLISTED' | 'CONFIRMED' | 'RAC' | 'SELF_BOOKED' | 'CANCELLED';
-  approvalStatus: 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'REOPENED';
+  ticketStatus:
+    | "PENDING"
+    | "BOOKED"
+    | "WAITLISTED"
+    | "CONFIRMED"
+    | "RAC"
+    | "SELF_BOOKED"
+    | "CANCELLED";
+  approvalStatus: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "REOPENED";
   isLocked: boolean;
   ticketAmount: number;
   amountMode?: string;
@@ -50,9 +57,9 @@ export interface TrainTemplate {
   tripId?: string;
   tripTitle?: string;
   departureDate?: string;
-  scope: 'TRIP' | 'DEPARTURE';
-  transportMode: 'TRAIN' | 'FLIGHT' | 'BUS';
-  
+  scope: "TRIP" | "DEPARTURE";
+  transportMode: "TRAIN" | "FLIGHT" | "BUS";
+
   trainName?: string;
   trainNumber?: string;
   source?: string;
@@ -109,8 +116,12 @@ export const trainTicketService = {
     return res.data?.data;
   },
 
-  async autoGenerateTickets(bookingId: string): Promise<{ tickets: TrainTicket[]; message: string }> {
-    const res = await api.post(`/train-tickets/booking/${bookingId}/auto-generate`);
+  async autoGenerateTickets(
+    bookingId: string,
+  ): Promise<{ tickets: TrainTicket[]; message: string }> {
+    const res = await api.post(
+      `/train-tickets/booking/${bookingId}/auto-generate`,
+    );
     return res.data?.data || { tickets: [], message: "No tickets generated" };
   },
 
@@ -140,7 +151,10 @@ export const trainTicketService = {
     return res.data?.data;
   },
 
-  async cancelTicket(ticketId: string, data: { reason: string; refundAmount?: number }): Promise<TrainTicket> {
+  async cancelTicket(
+    ticketId: string,
+    data: { reason: string; refundAmount?: number },
+  ): Promise<TrainTicket> {
     const res = await api.post(`/train-tickets/${ticketId}/cancel`, {
       reason: data.reason,
       refundAmount: data.refundAmount || 0,
@@ -148,7 +162,9 @@ export const trainTicketService = {
     return res.data?.data;
   },
 
-  async rebookTicket(ticketId: string): Promise<{ oldTicketId: string; newTicket: TrainTicket }> {
+  async rebookTicket(
+    ticketId: string,
+  ): Promise<{ oldTicketId: string; newTicket: TrainTicket }> {
     const res = await api.post(`/train-tickets/${ticketId}/rebook`);
     return res.data?.data;
   },
@@ -170,17 +186,33 @@ export const trainTicketService = {
   },
 
   // Queues and Alerts
-  async getApprovalsQueue(params?: Record<string, string>): Promise<{ data: TrainTicket[]; pagination: { page: number; limit: number; totalCount: number; totalPages: number } }> {
+  async getApprovalsQueue(
+    params?: Record<string, string>,
+  ): Promise<{
+    data: TrainTicket[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+    };
+  }> {
     const qs = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, val]) => {
-        if (val !== undefined && val !== null && val !== "") qs.append(key, String(val));
+        if (val !== undefined && val !== null && val !== "")
+          qs.append(key, String(val));
       });
     }
     const res = await api.get(`/train-tickets/approvals?${qs.toString()}`);
     return {
       data: res.data?.data || [],
-      pagination: res.data?.pagination || { page: 1, limit: 25, totalCount: 0, totalPages: 1 },
+      pagination: res.data?.pagination || {
+        page: 1,
+        limit: 25,
+        totalCount: 0,
+        totalPages: 1,
+      },
     };
   },
 
@@ -195,13 +227,21 @@ export const trainTicketService = {
   },
 
   // Template CRUD operations
-  async getTemplates(params?: { tripId?: string; departureDate?: string }): Promise<TrainTemplate[]> {
+  async getTemplates(params?: {
+    tripId?: string;
+    departureDate?: string;
+  }): Promise<TrainTemplate[]> {
     const res = await api.get("/train-ticket-templates", { params });
     return (res.data?.data || []).filter((x: TrainTemplate) => x.isActive);
   },
 
-  async getEffectiveTemplates(tripId: string, departureDate: string): Promise<any[]> {
-    const res = await api.get("/train-ticket-templates/effective", { params: { tripId, departureDate } });
+  async getEffectiveTemplates(
+    tripId: string,
+    departureDate: string,
+  ): Promise<any[]> {
+    const res = await api.get("/train-ticket-templates/effective", {
+      params: { tripId, departureDate },
+    });
     return res.data?.data || [];
   },
 
@@ -225,7 +265,7 @@ export const trainTicketService = {
 
   async restoreTemplate(id: string): Promise<void> {
     await api.post(`/train-ticket-templates/${id}/restore`);
-  }
+  },
 };
 
 export default trainTicketService;

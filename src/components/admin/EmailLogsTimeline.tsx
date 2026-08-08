@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { emailsService, EmailLog } from "@/services/emails.service";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Mail, Clock, User, Eye, AlertCircle, FileText, CheckCircle2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Mail,
+  Clock,
+  User,
+  Eye,
+  AlertCircle,
+  FileText,
+  CheckCircle2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface EmailLogsTimelineProps {
@@ -10,7 +23,10 @@ interface EmailLogsTimelineProps {
   contextId: string;
 }
 
-export default function EmailLogsTimeline({ contextType, contextId }: EmailLogsTimelineProps) {
+export default function EmailLogsTimeline({
+  contextType,
+  contextId,
+}: EmailLogsTimelineProps) {
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [previewLog, setPreviewLog] = useState<EmailLog | null>(null);
@@ -42,7 +58,9 @@ export default function EmailLogsTimeline({ contextType, contextId }: EmailLogsT
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Email Communication History</h3>
+        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+          Email Communication History
+        </h3>
         <Button
           type="button"
           variant="outline"
@@ -73,21 +91,31 @@ export default function EmailLogsTimeline({ contextType, contextId }: EmailLogsT
             <div
               key={log.id}
               className={`p-3.5 rounded-xl border border-slate-100 bg-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-3 transition-all hover:border-slate-200 ${
-                log.isTest ? "border-l-4 border-l-amber-400" : log.status === "FAILED" ? "border-l-4 border-l-rose-400" : "border-l-4 border-l-emerald-400"
+                log.isTest
+                  ? "border-l-4 border-l-amber-400"
+                  : log.status === "FAILED"
+                    ? "border-l-4 border-l-rose-400"
+                    : "border-l-4 border-l-emerald-400"
               }`}
             >
               <div className="space-y-1.5 grow max-w-full truncate">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
-                    log.isTest 
-                      ? "bg-amber-50 text-amber-700" 
-                      : log.status === "FAILED" 
-                        ? "bg-rose-50 text-rose-700" 
-                        : "bg-emerald-50 text-emerald-700"
-                  }`}>
-                    {log.isTest ? "Test Mail" : log.status === "FAILED" ? "Failed" : "Sent"}
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                      log.isTest
+                        ? "bg-amber-50 text-amber-700"
+                        : log.status === "FAILED"
+                          ? "bg-rose-50 text-rose-700"
+                          : "bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    {log.isTest
+                      ? "Test Mail"
+                      : log.status === "FAILED"
+                        ? "Failed"
+                        : "Sent"}
                   </span>
-                  
+
                   {log.templateName && (
                     <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
                       Template: {log.templateName}
@@ -95,23 +123,32 @@ export default function EmailLogsTimeline({ contextType, contextId }: EmailLogsT
                   )}
                 </div>
 
-                <div className="font-bold text-sm text-slate-800 truncate" title={log.subject}>
+                <div
+                  className="font-bold text-sm text-slate-800 truncate"
+                  title={log.subject}
+                >
                   {log.subject}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500">
                   <span className="flex items-center gap-1">
                     <Mail className="h-3 w-3 shrink-0 text-slate-400" />
-                    To: <strong className="text-slate-700">{log.recipient}</strong>
+                    To:{" "}
+                    <strong className="text-slate-700">{log.recipient}</strong>
                   </span>
                   {(log.ccCount > 0 || log.bccCount > 0) && (
                     <span className="text-[11px] text-slate-400 font-normal">
-                      ({log.ccCount > 0 ? `${log.ccCount} Cc` : ""}{log.ccCount > 0 && log.bccCount > 0 ? ", " : ""}{log.bccCount > 0 ? `${log.bccCount} Bcc` : ""})
+                      ({log.ccCount > 0 ? `${log.ccCount} Cc` : ""}
+                      {log.ccCount > 0 && log.bccCount > 0 ? ", " : ""}
+                      {log.bccCount > 0 ? `${log.bccCount} Bcc` : ""})
                     </span>
                   )}
                   <span className="flex items-center gap-1">
                     <User className="h-3 w-3 shrink-0 text-slate-400" />
-                    By: <strong className="text-slate-700">{log.sender?.name || "System"}</strong>
+                    By:{" "}
+                    <strong className="text-slate-700">
+                      {log.sender?.name || "System"}
+                    </strong>
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3 shrink-0 text-slate-400" />
@@ -119,16 +156,21 @@ export default function EmailLogsTimeline({ contextType, contextId }: EmailLogsT
                   </span>
                 </div>
 
-                {log.attachments && Array.isArray(log.attachments) && log.attachments.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {log.attachments.map((file: any, idx: number) => (
-                      <span key={idx} className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
-                        <FileText className="h-3 w-3 text-slate-400" />
-                        {file.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {log.attachments &&
+                  Array.isArray(log.attachments) &&
+                  log.attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {log.attachments.map((file: any, idx: number) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded"
+                        >
+                          <FileText className="h-3 w-3 text-slate-400" />
+                          {file.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                 {log.status === "FAILED" && log.error && (
                   <div className="text-xs font-semibold text-rose-500 flex items-center gap-1 mt-1 bg-rose-50/50 p-1.5 rounded border border-rose-100">
@@ -156,7 +198,10 @@ export default function EmailLogsTimeline({ contextType, contextId }: EmailLogsT
       )}
 
       {/* sent email preview modal */}
-      <Dialog open={!!previewLog} onOpenChange={(open) => !open && setPreviewLog(null)}>
+      <Dialog
+        open={!!previewLog}
+        onOpenChange={(open) => !open && setPreviewLog(null)}
+      >
         <DialogContent className="max-w-[700px] w-full bg-white p-6 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -170,32 +215,60 @@ export default function EmailLogsTimeline({ contextType, contextId }: EmailLogsT
               {/* Header Details */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-1.5 text-xs text-slate-600 shadow-sm">
                 <div className="grid grid-cols-[80px_1fr] gap-1">
-                  <span className="font-bold uppercase tracking-wider text-slate-400">Subject:</span>
-                  <span className="font-bold text-slate-800 text-sm">{previewLog.subject}</span>
+                  <span className="font-bold uppercase tracking-wider text-slate-400">
+                    Subject:
+                  </span>
+                  <span className="font-bold text-slate-800 text-sm">
+                    {previewLog.subject}
+                  </span>
                 </div>
                 <div className="grid grid-cols-[80px_1fr] gap-1">
-                  <span className="font-bold uppercase tracking-wider text-slate-400">To:</span>
-                  <span className="font-semibold text-slate-700">{previewLog.recipient}</span>
+                  <span className="font-bold uppercase tracking-wider text-slate-400">
+                    To:
+                  </span>
+                  <span className="font-semibold text-slate-700">
+                    {previewLog.recipient}
+                  </span>
                 </div>
                 {previewLog.ccCount > 0 && (
                   <div className="grid grid-cols-[80px_1fr] gap-1">
-                    <span className="font-bold uppercase tracking-wider text-slate-400">Cc Count:</span>
-                    <span className="font-semibold text-slate-700">{previewLog.ccCount} recipient(s)</span>
+                    <span className="font-bold uppercase tracking-wider text-slate-400">
+                      Cc Count:
+                    </span>
+                    <span className="font-semibold text-slate-700">
+                      {previewLog.ccCount} recipient(s)
+                    </span>
                   </div>
                 )}
                 {previewLog.bccCount > 0 && (
                   <div className="grid grid-cols-[80px_1fr] gap-1">
-                    <span className="font-bold uppercase tracking-wider text-slate-400">Bcc Count:</span>
-                    <span className="font-semibold text-slate-700">{previewLog.bccCount} recipient(s) <span className="text-[10px] text-amber-500 font-normal">(Hidden from customer)</span></span>
+                    <span className="font-bold uppercase tracking-wider text-slate-400">
+                      Bcc Count:
+                    </span>
+                    <span className="font-semibold text-slate-700">
+                      {previewLog.bccCount} recipient(s){" "}
+                      <span className="text-[10px] text-amber-500 font-normal">
+                        (Hidden from customer)
+                      </span>
+                    </span>
                   </div>
                 )}
                 <div className="grid grid-cols-[80px_1fr] gap-1">
-                  <span className="font-bold uppercase tracking-wider text-slate-400">Sent By:</span>
-                  <span className="font-semibold text-slate-700">{previewLog.sender?.name || "System"} ({previewLog.sender?.email || "system@youthcamping.online"})</span>
+                  <span className="font-bold uppercase tracking-wider text-slate-400">
+                    Sent By:
+                  </span>
+                  <span className="font-semibold text-slate-700">
+                    {previewLog.sender?.name || "System"} (
+                    {previewLog.sender?.email || "system@youthcamping.online"})
+                  </span>
                 </div>
                 <div className="grid grid-cols-[80px_1fr] gap-1">
-                  <span className="font-bold uppercase tracking-wider text-slate-400">Date:</span>
-                  <span className="font-semibold text-slate-700">{new Date(previewLog.sentAt).toLocaleString()}</span>
+                  <span className="font-bold uppercase tracking-wider text-slate-400">
+                    Date:
+                  </span>
+                  <span className="font-semibold text-slate-700">
+                    {new Date(previewLog.sentAt).toLocaleString()}
+                  </span>
                 </div>
               </div>
 

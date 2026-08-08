@@ -1,7 +1,10 @@
 /**
  * Normalizes phone numbers to E.164 standard format.
  */
-export function formatE164Phone(phone: string, defaultCountryCode: string = "91"): string {
+export function formatE164Phone(
+  phone: string,
+  defaultCountryCode: string = "91",
+): string {
   // Normalize by removing spaces, dashes, parentheses and plus signs
   let cleaned = phone.replace(/[\s\-\(\)\+]/g, "");
 

@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  ClipboardCheck, ShieldCheck, Ticket, CreditCard, Building2,
-  RefreshCw, FileText, ArrowRightLeft
+  ClipboardCheck,
+  ShieldCheck,
+  Ticket,
+  CreditCard,
+  Building2,
+  RefreshCw,
+  FileText,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,25 +17,68 @@ import { hasPermission } from "@/lib/permissions";
 import VerificationQueuePage from "./VerificationQueuePage";
 import TicketApprovalsPage from "./TicketApprovalsPage";
 
-type ApprovalTab = "booking-verification" | "ticket-approvals" | "payment-approvals" | "vendor-bills" | "refund-requests" | "expense-claims";
+type ApprovalTab =
+  | "booking-verification"
+  | "ticket-approvals"
+  | "payment-approvals"
+  | "vendor-bills"
+  | "refund-requests"
+  | "expense-claims";
 
-const TABS: { key: ApprovalTab; label: string; icon: any; description: string }[] = [
-  { key: "booking-verification", label: "Booking Verification", icon: ShieldCheck, description: "Verify booking details and documents" },
-  { key: "ticket-approvals", label: "Ticket Approvals", icon: Ticket, description: "Review generated tickets before issuing" },
-  { key: "payment-approvals", label: "Payment Approvals", icon: CreditCard, description: "Approve pending customer payments" },
-  { key: "vendor-bills", label: "Vendor Bills", icon: Building2, description: "Review and approve vendor invoices" },
-  { key: "refund-requests", label: "Refund Requests", icon: RefreshCw, description: "Process customer refund requests" },
-  { key: "expense-claims", label: "Expense Claims", icon: FileText, description: "Approve employee expense claims" },
+const TABS: {
+  key: ApprovalTab;
+  label: string;
+  icon: any;
+  description: string;
+}[] = [
+  {
+    key: "booking-verification",
+    label: "Booking Verification",
+    icon: ShieldCheck,
+    description: "Verify booking details and documents",
+  },
+  {
+    key: "ticket-approvals",
+    label: "Ticket Approvals",
+    icon: Ticket,
+    description: "Review generated tickets before issuing",
+  },
+  {
+    key: "payment-approvals",
+    label: "Payment Approvals",
+    icon: CreditCard,
+    description: "Approve pending customer payments",
+  },
+  {
+    key: "vendor-bills",
+    label: "Vendor Bills",
+    icon: Building2,
+    description: "Review and approve vendor invoices",
+  },
+  {
+    key: "refund-requests",
+    label: "Refund Requests",
+    icon: RefreshCw,
+    description: "Process customer refund requests",
+  },
+  {
+    key: "expense-claims",
+    label: "Expense Claims",
+    icon: FileText,
+    description: "Approve employee expense claims",
+  },
 ];
 
 export default function ApprovalsHubPage() {
   const { admin } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as ApprovalTab;
-  const [activeTab, setActiveTab] = useState<ApprovalTab>("booking-verification");
+  const [activeTab, setActiveTab] = useState<ApprovalTab>(
+    "booking-verification",
+  );
 
   useEffect(() => {
-    if (tabParam && TABS.some(t => t.key === tabParam)) {
+    if (tabParam && TABS.some((t) => t.key === tabParam)) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -59,7 +108,10 @@ export default function ApprovalsHubPage() {
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
-          const isDisabled = !["booking-verification", "ticket-approvals"].includes(tab.key);
+          const isDisabled = ![
+            "booking-verification",
+            "ticket-approvals",
+          ].includes(tab.key);
           return (
             <button
               key={tab.key}
@@ -71,7 +123,7 @@ export default function ApprovalsHubPage() {
                   ? "bg-white text-[#F97316] border-[#F97316] shadow-sm"
                   : isDisabled
                     ? "bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed"
-                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800",
               )}
             >
               <Icon className={cn("w-4 h-4", isActive && "text-[#F97316]")} />
@@ -89,7 +141,9 @@ export default function ApprovalsHubPage() {
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <ClipboardCheck className="w-10 h-10 mb-3 text-slate-300" />
             <p className="text-sm font-semibold">Coming Soon</p>
-            <p className="text-[11px] text-slate-400 mt-1">This approval module is under development.</p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              This approval module is under development.
+            </p>
           </div>
         )}
       </div>

@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import TripFormEditor from "@/components/admin/TripFormEditor";
 import TripSortModal from "@/components/admin/TripSortModal";
 import type { Trip, TripFormData } from "@/types";
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Map, 
-  CalendarDays, 
-  Building2, 
-  Shuffle, 
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Map,
+  CalendarDays,
+  Building2,
+  Shuffle,
   GripVertical,
   Compass,
   CheckCircle2,
@@ -23,7 +23,7 @@ import {
   ArrowUpDown,
   Search,
   Filter,
-  Eye
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import TripVendorsPanel from "@/components/admin/TripVendorsPanel";
@@ -50,21 +50,25 @@ export default function TripsPage() {
       setEditing(null);
     } else if (editParam) {
       setIsEditingMode(true);
-      const found = trips.find((t) => 
-        String(t.id) === String(editParam) || 
-        String((t as any)._id) === String(editParam) || 
-        String((t as any).slug) === String(editParam) || 
-        String(t.tripCode || (t as any).code) === String(editParam)
+      const found = trips.find(
+        (t) =>
+          String(t.id) === String(editParam) ||
+          String((t as any)._id) === String(editParam) ||
+          String((t as any).slug) === String(editParam) ||
+          String(t.tripCode || (t as any).code) === String(editParam),
       );
       if (found) {
         setEditing(found);
       }
-      tripsService.getById(editParam).then(fullTrip => {
-        if (fullTrip) {
-          setEditing(fullTrip);
-          setIsEditingMode(true);
-        }
-      }).catch(() => {});
+      tripsService
+        .getById(editParam)
+        .then((fullTrip) => {
+          if (fullTrip) {
+            setEditing(fullTrip);
+            setIsEditingMode(true);
+          }
+        })
+        .catch(() => {});
     } else {
       setIsEditingMode(false);
       setEditing(null);
@@ -85,15 +89,21 @@ export default function TripsPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const openCreate = () => {
     setSearchParams({ new: "true", tab: "overview" });
   };
 
   const openEdit = (t: Trip) => {
-    const identifier = t.id || (t as any)._id || (t as any).slug || t.tripCode || "trip";
-    setSearchParams({ edit: String(identifier), tab: searchParams.get("tab") || "overview" });
+    const identifier =
+      t.id || (t as any)._id || (t as any).slug || t.tripCode || "trip";
+    setSearchParams({
+      edit: String(identifier),
+      tab: searchParams.get("tab") || "overview",
+    });
   };
 
   const closeEditor = () => {
@@ -103,9 +113,10 @@ export default function TripsPage() {
   // Quick Metrics Stats
   const metrics = useMemo(() => {
     const total = trips.length;
-    const published = trips.filter(t => t.status === "published").length;
-    const draft = trips.filter(t => t.status !== "published").length;
-    const categories = new Set(trips.map(t => t.category).filter(Boolean)).size;
+    const published = trips.filter((t) => t.status === "published").length;
+    const draft = trips.filter((t) => t.status !== "published").length;
+    const categories = new Set(trips.map((t) => t.category).filter(Boolean))
+      .size;
     return { total, published, draft, categories };
   }, [trips]);
 
@@ -113,16 +124,18 @@ export default function TripsPage() {
   const filtered = useMemo(() => {
     return (trips || []).filter((t) => {
       if (!t) return false;
-      
+
       // Status filter
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
-      
+
       // Category Tab filter
       if (categoryTab !== "all") {
         const cat = (t.category || "").toLowerCase();
-        if (categoryTab === "backpacking" && !cat.includes("backpack")) return false;
+        if (categoryTab === "backpacking" && !cat.includes("backpack"))
+          return false;
         if (categoryTab === "roadtrip" && !cat.includes("road")) return false;
-        if (categoryTab === "international" && !cat.includes("inter")) return false;
+        if (categoryTab === "international" && !cat.includes("inter"))
+          return false;
       }
 
       // Search Query
@@ -167,7 +180,8 @@ export default function TripsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!id || !confirm("Are you sure you want to delete this trip itinerary?")) return;
+    if (!id || !confirm("Are you sure you want to delete this trip itinerary?"))
+      return;
     try {
       await tripsService.remove(id);
       toast.success("Trip deleted");
@@ -203,21 +217,27 @@ export default function TripsPage() {
   };
 
   const columns = [
-    { 
-      key: "title", 
-      header: "Trip", 
+    {
+      key: "title",
+      header: "Trip",
       render: (t: Trip) => {
         if (!t) return null;
-        const img = t.heroImage || t.images?.[0] || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400";
+        const img =
+          t.heroImage ||
+          t.images?.[0] ||
+          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400";
         return (
           <div className="flex items-center gap-3 min-w-[280px]">
-            <img 
-              src={img} 
-              alt={t.title || ""} 
-              className="h-8 w-8 rounded-md object-cover border border-slate-200 shrink-0" 
+            <img
+              src={img}
+              alt={t.title || ""}
+              className="h-8 w-8 rounded-md object-cover border border-slate-200 shrink-0"
             />
             <div className="min-w-0">
-              <p className="font-medium text-slate-900 text-sm hover:text-[#D4541A] transition-colors cursor-pointer truncate" onClick={() => openEdit(t)}>
+              <p
+                className="font-medium text-slate-900 text-sm hover:text-[#D4541A] transition-colors cursor-pointer truncate"
+                onClick={() => openEdit(t)}
+              >
                 {t.title || "Untitled Expedition"}
               </p>
               {t.location && t.location.toLowerCase() !== "destination" && (
@@ -228,40 +248,42 @@ export default function TripsPage() {
             </div>
           </div>
         );
-      }
+      },
     },
-    { 
-      key: "tripCode", 
-      header: "Code", 
+    {
+      key: "tripCode",
+      header: "Code",
       render: (t: Trip) => (
         <span className="text-xs text-slate-600 font-mono bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">
           {t?.tripCode || t?.id?.substring(0, 8) || "N/A"}
         </span>
-      )
+      ),
     },
-    { 
-      key: "category", 
-      header: "Category", 
+    {
+      key: "category",
+      header: "Category",
       render: (t: Trip) => (
         <span className="text-xs text-slate-600 capitalize">
-          {t?.category?.replace(/-/g, ' ') || "Expedition"}
+          {t?.category?.replace(/-/g, " ") || "Expedition"}
         </span>
-      )
+      ),
     },
-    { 
-      key: "price", 
-      header: "Price", 
+    {
+      key: "price",
+      header: "Price",
       render: (t: Trip) => {
         const price = Number(t?.price);
         return (
           <div className="flex flex-col">
             <span className="font-bold text-sm text-slate-900">
-              ₹{isNaN(price) ? '0' : price.toLocaleString()}
+              ₹{isNaN(price) ? "0" : price.toLocaleString()}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wide">per traveler</span>
+            <span className="text-[10px] text-slate-400 font-medium tracking-wide">
+              per traveler
+            </span>
           </div>
         );
-      }
+      },
     },
     {
       key: "order",
@@ -270,16 +292,16 @@ export default function TripsPage() {
         <span className="text-xs font-black text-[#FF5400]">
           #{t?.order || 0}
         </span>
-      )
+      ),
     },
-    { 
-      key: "duration", 
-      header: "Duration", 
+    {
+      key: "duration",
+      header: "Duration",
       render: (t: Trip) => (
         <span className="text-xs text-slate-700 font-medium">
           {t?.duration || "N/A"}
         </span>
-      )
+      ),
     },
     {
       key: "itinerary",
@@ -292,72 +314,83 @@ export default function TripsPage() {
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-md w-fit">
             <CalendarDays className="w-3.5 h-3.5 text-[#FF5400]" />
             <div className="flex flex-col leading-none">
-              <span className="text-[10px] font-bold text-slate-700">{daysVal}</span>
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Days</span>
+              <span className="text-[10px] font-bold text-slate-700">
+                {daysVal}
+              </span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                Days
+              </span>
             </div>
           </div>
         );
-      }
+      },
     },
-    { 
-      key: "status", 
-      header: "Status", 
+    {
+      key: "status",
+      header: "Status",
       render: (t: Trip) => {
         if (!t?.status) return null;
         const isPub = t.status === "published";
         return (
-          <button 
-            type="button" 
-            onClick={() => toggleStatus(t)} 
+          <button
+            type="button"
+            onClick={() => toggleStatus(t)}
             className={cn(
               "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors",
-              isPub ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100" : "bg-orange-50 text-[#FF5400] border-orange-100 hover:bg-orange-100"
+              isPub
+                ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
+                : "bg-orange-50 text-[#FF5400] border-orange-100 hover:bg-orange-100",
             )}
             title="Click to toggle status"
           >
-            <span className={cn("w-1.5 h-1.5 rounded-full", isPub ? "bg-emerald-500" : "bg-[#FF5400]")} />
+            <span
+              className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                isPub ? "bg-emerald-500" : "bg-[#FF5400]",
+              )}
+            />
             {isPub ? "ACTIVE" : "DRAFT"}
           </button>
         );
-      }
+      },
     },
-    { 
-      key: "actions", 
-      header: "", 
+    {
+      key: "actions",
+      header: "",
       render: (t: Trip) => {
         if (!t) return null;
         return (
           <div className="flex gap-1 items-center justify-end opacity-0 group-hover/row:opacity-100 transition-opacity">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setVendorTrip(t)} 
-              title="Manage Hotel & Transport Vendors" 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setVendorTrip(t)}
+              title="Manage Hotel & Transport Vendors"
               className="h-7 w-7 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md"
             >
               <Building2 className="h-3.5 w-3.5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => openEdit(t)} 
-              title="Edit Itinerary & Pricing" 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openEdit(t)}
+              title="Edit Itinerary & Pricing"
               className="h-7 w-7 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md"
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => handleDelete(t.id)} 
-              title="Delete Trip" 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDelete(t.id)}
+              title="Delete Trip"
               className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         );
-      }
+      },
     },
   ];
 
@@ -377,29 +410,35 @@ export default function TripsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">Expeditions</h1>
-            <span className="bg-orange-50 text-[#FF5400] text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider">Catalog OS</span>
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+              Expeditions
+            </h1>
+            <span className="bg-orange-50 text-[#FF5400] text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider">
+              Catalog OS
+            </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">Manage itineraries, pricing, variants & website display.</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Manage itineraries, pricing, variants & website display.
+          </p>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <Button 
+          <Button
             variant="outline"
-            onClick={() => setSortModalOpen(true)} 
+            onClick={() => setSortModalOpen(true)}
             className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
           >
             <GripVertical className="w-3.5 h-3.5 text-slate-400" /> Reorder
           </Button>
-          <Button 
+          <Button
             variant="outline"
-            onClick={handleShuffle} 
+            onClick={handleShuffle}
             className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
           >
             <Shuffle className="w-3.5 h-3.5 text-slate-400" /> Shuffle
           </Button>
-          <Button 
-            onClick={openCreate} 
+          <Button
+            onClick={openCreate}
             className="h-8 px-3 sm:px-3.5 rounded-lg text-xs font-bold bg-[#FF5400] hover:bg-[#e04a00] text-white shadow-xs gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" /> New Expedition
@@ -411,34 +450,58 @@ export default function TripsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block">{metrics.total}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+              Total
+            </span>
+            <span className="text-xl font-black text-slate-900 mt-0.5 block">
+              {metrics.total}
+            </span>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs">ALL</div>
+          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs">
+            ALL
+          </div>
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Published</span>
-            <span className="text-xl font-black text-emerald-600 mt-0.5 block">{metrics.published}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+              Published
+            </span>
+            <span className="text-xl font-black text-emerald-600 mt-0.5 block">
+              {metrics.published}
+            </span>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">LIVE</div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">
+            LIVE
+          </div>
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Drafts</span>
-            <span className="text-xl font-black text-amber-600 mt-0.5 block">{metrics.draft}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+              Drafts
+            </span>
+            <span className="text-xl font-black text-amber-600 mt-0.5 block">
+              {metrics.draft}
+            </span>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 font-bold text-xs">DEV</div>
+          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 font-bold text-xs">
+            DEV
+          </div>
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Categories</span>
-            <span className="text-xl font-black text-[#FF5400] mt-0.5 block">{metrics.categories}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+              Categories
+            </span>
+            <span className="text-xl font-black text-[#FF5400] mt-0.5 block">
+              {metrics.categories}
+            </span>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF5400] font-bold text-xs">CAT</div>
+          <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF5400] font-bold text-xs">
+            CAT
+          </div>
         </div>
       </div>
 
@@ -462,7 +525,7 @@ export default function TripsPage() {
                   "px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap",
                   categoryTab === tab.id
                     ? "bg-white text-[#FF5400] shadow-2xs border border-slate-200/80"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/60"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/60",
                 )}
               >
                 {tab.label}
@@ -474,7 +537,7 @@ export default function TripsPage() {
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input 
+              <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -498,12 +561,12 @@ export default function TripsPage() {
         {/* Data Table */}
         <div className="p-2">
           <DataTable
-            columns={columns} 
-            data={filtered} 
+            columns={columns}
+            data={filtered}
             loading={loading}
-            searchKey="title" 
+            searchKey="title"
             searchPlaceholder="Search trips..."
-            emptyMessage="No expeditions found" 
+            emptyMessage="No expeditions found"
             emptyIcon={<Search className="h-6 w-6 text-slate-300" />}
           />
         </div>
@@ -516,16 +579,18 @@ export default function TripsPage() {
           tripTitle={vendorTrip.title}
           tripPrice={vendorTrip.price}
           open={!!vendorTrip}
-          onOpenChange={(open) => { if (!open) setVendorTrip(null); }}
+          onOpenChange={(open) => {
+            if (!open) setVendorTrip(null);
+          }}
         />
       )}
 
       {/* Sort Reorder Modal */}
-      <TripSortModal 
-        open={sortModalOpen} 
-        onOpenChange={setSortModalOpen} 
-        trips={trips} 
-        onSaved={load} 
+      <TripSortModal
+        open={sortModalOpen}
+        onOpenChange={setSortModalOpen}
+        trips={trips}
+        onSaved={load}
       />
     </div>
   );

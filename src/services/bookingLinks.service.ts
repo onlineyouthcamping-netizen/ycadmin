@@ -42,9 +42,22 @@ export const bookingLinksService = {
     return res.data.data;
   },
 
-  async getAll(page = 1, limit = 25): Promise<{ data: BookingLinkRecord[]; pagination: { page: number; limit: number; totalCount: number; totalPages: number } }> {
+  async getAll(
+    page = 1,
+    limit = 25,
+  ): Promise<{
+    data: BookingLinkRecord[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+    };
+  }> {
     const cappedLimit = Math.min(Math.max(1, limit), 100);
-    const res = await api.get(`/booking-links?page=${page}&limit=${cappedLimit}`);
+    const res = await api.get(
+      `/booking-links?page=${page}&limit=${cappedLimit}`,
+    );
     return { data: res.data.data || [], pagination: res.data.pagination };
   },
 
@@ -53,7 +66,11 @@ export const bookingLinksService = {
     return res.data.data;
   },
 
-  async getAnalytics(params?: { from?: string; to?: string; salesAdminId?: string }): Promise<{
+  async getAnalytics(params?: {
+    from?: string;
+    to?: string;
+    salesAdminId?: string;
+  }): Promise<{
     linksGenerated: number;
     opened: number;
     completedBookings: number;
@@ -64,9 +81,10 @@ export const bookingLinksService = {
     if (params?.to) qs.set("to", params.to);
     if (params?.salesAdminId) qs.set("salesAdminId", params.salesAdminId);
 
-    const url = qs.toString() ? `/booking-links/analytics?${qs.toString()}` : "/booking-links/analytics";
+    const url = qs.toString()
+      ? `/booking-links/analytics?${qs.toString()}`
+      : "/booking-links/analytics";
     const res = await api.get(url);
     return res.data.data;
   },
 };
-

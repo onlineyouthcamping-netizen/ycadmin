@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +20,11 @@ interface ConfirmDeleteModalProps {
   onConfirm: (password: string) => Promise<void>;
 }
 
-export function ConfirmDeleteModal({ isOpen, onClose, onConfirm }: ConfirmDeleteModalProps) {
+export function ConfirmDeleteModal({
+  isOpen,
+  onClose,
+  onConfirm,
+}: ConfirmDeleteModalProps) {
   const [password, setPassword] = useState("");
   const [confirmedCheck, setConfirmedCheck] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -25,7 +36,9 @@ export function ConfirmDeleteModal({ isOpen, onClose, onConfirm }: ConfirmDelete
       return;
     }
     if (!confirmedCheck) {
-      toast.error("Please confirm that you understand this action is permanent");
+      toast.error(
+        "Please confirm that you understand this action is permanent",
+      );
       return;
     }
 
@@ -55,13 +68,15 @@ export function ConfirmDeleteModal({ isOpen, onClose, onConfirm }: ConfirmDelete
             Delete Account Permanently?
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-500">
-            This action is irreversible. All your profile data, personal preferences, and permissions will be permanently removed.
+            This action is irreversible. All your profile data, personal
+            preferences, and permissions will be permanently removed.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs">
-            ⚠️ <strong>Warning:</strong> You will be immediately logged out of all active devices once deleted.
+            ⚠️ <strong>Warning:</strong> You will be immediately logged out of
+            all active devices once deleted.
           </div>
 
           <div className="flex items-start space-x-2 pt-1">
@@ -71,13 +86,19 @@ export function ConfirmDeleteModal({ isOpen, onClose, onConfirm }: ConfirmDelete
               onCheckedChange={(c) => setConfirmedCheck(!!c)}
               className="mt-0.5"
             />
-            <label htmlFor="confirm-check" className="text-xs text-slate-700 font-semibold cursor-pointer">
-              I understand that deleting my account is permanent and cannot be undone.
+            <label
+              htmlFor="confirm-check"
+              className="text-xs text-slate-700 font-semibold cursor-pointer"
+            >
+              I understand that deleting my account is permanent and cannot be
+              undone.
             </label>
           </div>
 
           <div className="space-y-1.5 pt-1">
-            <Label className="text-xs font-bold text-slate-700">Enter Your Password</Label>
+            <Label className="text-xs font-bold text-slate-700">
+              Enter Your Password
+            </Label>
             <Input
               type="password"
               placeholder="Current password"
@@ -88,7 +109,13 @@ export function ConfirmDeleteModal({ isOpen, onClose, onConfirm }: ConfirmDelete
           </div>
 
           <DialogFooter className="pt-3 gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={handleClose} className="h-9 text-xs font-semibold">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleClose}
+              className="h-9 text-xs font-semibold"
+            >
               Cancel
             </Button>
             <Button

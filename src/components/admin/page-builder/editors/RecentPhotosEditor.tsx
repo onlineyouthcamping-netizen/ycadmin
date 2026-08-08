@@ -34,10 +34,26 @@ export function RecentPhotosEditor({
   const [newCaption, setNewCaption] = useState("");
 
   const photos: PhotoItem[] = draft.photos || [
-    { id: "p1", src: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800&q=80", caption: "Snow Peak Camp" },
-    { id: "p2", src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80", caption: "Valley Pass Trail" },
-    { id: "p3", src: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80", caption: "Spiti Monastery" },
-    { id: "p4", src: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80", caption: "Campfire Night" },
+    {
+      id: "p1",
+      src: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800&q=80",
+      caption: "Snow Peak Camp",
+    },
+    {
+      id: "p2",
+      src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+      caption: "Valley Pass Trail",
+    },
+    {
+      id: "p3",
+      src: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80",
+      caption: "Spiti Monastery",
+    },
+    {
+      id: "p4",
+      src: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80",
+      caption: "Campfire Night",
+    },
   ];
 
   const updateField = (field: string, value: any) => {
@@ -84,7 +100,10 @@ export function RecentPhotosEditor({
 
         <div className="space-y-1.5">
           <Label className="text-xs font-bold text-[#D97854] uppercase tracking-wider block flex items-center gap-1">
-            <span>Accent Word</span> <span className="italic text-[#D97854] font-normal">(Italic Orange)</span>
+            <span>Accent Word</span>{" "}
+            <span className="italic text-[#D97854] font-normal">
+              (Italic Orange)
+            </span>
           </Label>
           <Input
             type="text"
@@ -198,7 +217,8 @@ export function RecentPhotosEditor({
           onClick={onReset}
           className="h-9 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to Default
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to
+          Default
         </Button>
       </div>
     </div>

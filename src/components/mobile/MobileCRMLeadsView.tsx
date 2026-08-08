@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Phone, MessageSquare, UserCheck, Search, Filter, Calendar, Star } from "lucide-react";
+import {
+  Phone,
+  MessageSquare,
+  UserCheck,
+  Search,
+  Filter,
+  Calendar,
+  Star,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LeadItem {
@@ -27,23 +35,62 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
   const [filter, setFilter] = useState<string>("all");
 
   const fallbackLeads: LeadItem[] = [
-    { id: "L1", name: "Ankit Sharma", phone: "+91 9876543210", tripName: "Manali Kasol Trip", status: "INTERESTED", priority: "HIGH", lastContact: "2 hours ago" },
-    { id: "L2", name: "Neha Gupta", phone: "+91 9812345678", tripName: "Kedarnath Trek", status: "FOLLOWUP", priority: "HIGH", lastContact: "Yesterday" },
-    { id: "L3", name: "Rohan Mehta", phone: "+91 9765432109", tripName: "Spiti Road Trip", status: "NEW", priority: "MEDIUM", lastContact: "Just now" },
-    { id: "L4", name: "Karan Johar", phone: "+91 9654321098", tripName: "Kerala Backpacking", status: "CONTACTED", priority: "LOW", lastContact: "3 days ago" },
+    {
+      id: "L1",
+      name: "Ankit Sharma",
+      phone: "+91 9876543210",
+      tripName: "Manali Kasol Trip",
+      status: "INTERESTED",
+      priority: "HIGH",
+      lastContact: "2 hours ago",
+    },
+    {
+      id: "L2",
+      name: "Neha Gupta",
+      phone: "+91 9812345678",
+      tripName: "Kedarnath Trek",
+      status: "FOLLOWUP",
+      priority: "HIGH",
+      lastContact: "Yesterday",
+    },
+    {
+      id: "L3",
+      name: "Rohan Mehta",
+      phone: "+91 9765432109",
+      tripName: "Spiti Road Trip",
+      status: "NEW",
+      priority: "MEDIUM",
+      lastContact: "Just now",
+    },
+    {
+      id: "L4",
+      name: "Karan Johar",
+      phone: "+91 9654321098",
+      tripName: "Kerala Backpacking",
+      status: "CONTACTED",
+      priority: "LOW",
+      lastContact: "3 days ago",
+    },
   ];
 
-  const leadsList: LeadItem[] = inquiries.length > 0
-    ? inquiries.map((inq: any) => ({
-        id: inq.id,
-        name: inq.customerName || inq.name || "Lead",
-        phone: inq.customerPhone || inq.phone || "",
-        tripName: inq.tripName || inq.destination || "Trip Inquiry",
-        status: (inq.status || "NEW").toUpperCase() as any,
-        priority: (inq.priority || "MEDIUM").toUpperCase() as any,
-        lastContact: inq.updatedAt ? new Date(inq.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : "Recent"
-      }))
-    : fallbackLeads;
+  const leadsList: (LeadItem & { rawInquiry?: any })[] =
+    inquiries.length > 0
+      ? inquiries.map((inq: any) => ({
+          id: inq.id,
+          name: inq.name || inq.customerName || "Lead",
+          phone: inq.phone || inq.customerPhone || "",
+          tripName: inq.tripTitle || inq.tripName || inq.destination || "Trip Inquiry",
+          status: (inq.status || "NEW").toUpperCase() as any,
+          priority: (inq.priority || "MEDIUM").toUpperCase() as any,
+          lastContact: inq.createdAt
+            ? new Date(inq.createdAt).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+              })
+            : "Recent",
+          rawInquiry: inq,
+        }))
+      : fallbackLeads;
 
   const filtered = leadsList.filter((l) => {
     const matchesSearch =
@@ -87,7 +134,8 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
         {filtered.map((l) => (
           <div
             key={l.id}
-            className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-2xs space-y-3"
+            onClick={() => onSelectInquiry && onSelectInquiry(l.rawInquiry || l)}
+            className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-2xs space-y-3 cursor-pointer hover:border-orange-300 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -99,8 +147,12 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">{l.tripName} • {l.phone}</p>
-                <span className="text-[10px] text-slate-400 font-medium block mt-1">Last contact: {l.lastContact}</span>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  {l.tripName} • {l.phone}
+                </p>
+                <span className="text-[10px] text-slate-400 font-medium block mt-1">
+                  Last contact: {l.lastContact}
+                </span>
               </div>
 
               <span
@@ -109,8 +161,8 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
                   l.status === "INTERESTED"
                     ? "bg-orange-100 text-[#FF5400]"
                     : l.status === "FOLLOWUP"
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-slate-100 text-slate-600"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-600",
                 )}
               >
                 {l.status}
@@ -118,7 +170,10 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
             </div>
 
             {/* Quick 1-Thumb Actions */}
-            <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100">
+            <div
+              className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center gap-1.5">
                 <a
                   href={`tel:${l.phone}`}
@@ -141,7 +196,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => updateLeadStatus(l.id, "WON")}
+                  onClick={() => onUpdateStatus && onUpdateStatus(l.id, "converted")}
                   className="h-9 px-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-2xs"
                 >
                   <UserCheck className="w-3.5 h-3.5" />

@@ -21,10 +21,38 @@ interface StoriesEditorProps {
 }
 
 const DEFAULT_STORIES: StoryItem[] = [
-  { id: "st1", title: "Top 10 Stargazing Spots in Spiti Valley", author: "Devanshi Patel", readTime: "5 min read", image: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&q=80" },
-  { id: "st2", title: "Solo Female Backpacking Guide to Manali", author: "Hetvi Mehta", readTime: "8 min read", image: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80" },
-  { id: "st3", title: "How to Prepare for Your First Himalayan Winter Trek", author: "Hemal Shah", readTime: "7 min read", image: "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=600&q=80" },
-  { id: "st4", title: "Kerala Backwaters & Houseboat Travel Tips", author: "Parth Patel", readTime: "6 min read", image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&q=80" },
+  {
+    id: "st1",
+    title: "Top 10 Stargazing Spots in Spiti Valley",
+    author: "Devanshi Patel",
+    readTime: "5 min read",
+    image:
+      "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&q=80",
+  },
+  {
+    id: "st2",
+    title: "Solo Female Backpacking Guide to Manali",
+    author: "Hetvi Mehta",
+    readTime: "8 min read",
+    image:
+      "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80",
+  },
+  {
+    id: "st3",
+    title: "How to Prepare for Your First Himalayan Winter Trek",
+    author: "Hemal Shah",
+    readTime: "7 min read",
+    image:
+      "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=600&q=80",
+  },
+  {
+    id: "st4",
+    title: "Kerala Backwaters & Houseboat Travel Tips",
+    author: "Parth Patel",
+    readTime: "6 min read",
+    image:
+      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&q=80",
+  },
 ];
 
 export function StoriesEditor({
@@ -33,7 +61,12 @@ export function StoriesEditor({
   onChange,
   onReset,
 }: StoriesEditorProps) {
-  const selectedStoryIds: string[] = draft.selectedStoryIds || ["st1", "st2", "st3", "st4"];
+  const selectedStoryIds: string[] = draft.selectedStoryIds || [
+    "st1",
+    "st2",
+    "st3",
+    "st4",
+  ];
 
   const updateField = (field: string, value: any) => {
     onChange({ ...draft, [field]: value });
@@ -70,7 +103,10 @@ export function StoriesEditor({
 
         <div className="space-y-1.5">
           <Label className="text-xs font-bold text-[#D97854] uppercase tracking-wider block flex items-center gap-1">
-            <span>Accent Word</span> <span className="italic text-[#D97854] font-normal">(Italic Orange)</span>
+            <span>Accent Word</span>{" "}
+            <span className="italic text-[#D97854] font-normal">
+              (Italic Orange)
+            </span>
           </Label>
           <Input
             type="text"
@@ -124,9 +160,16 @@ export function StoriesEditor({
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#1A2332] truncate">{st.title}</p>
+                    <p className="text-xs font-bold text-[#1A2332] truncate">
+                      {st.title}
+                    </p>
                     <p className="text-[10.5px] text-[#6b7280] font-medium flex items-center gap-1">
-                      by <span className="font-semibold text-slate-700">{st.author}</span> • <Clock className="w-2.5 h-2.5 text-[#D97854]" /> {st.readTime}
+                      by{" "}
+                      <span className="font-semibold text-slate-700">
+                        {st.author}
+                      </span>{" "}
+                      • <Clock className="w-2.5 h-2.5 text-[#D97854]" />{" "}
+                      {st.readTime}
                     </p>
                   </div>
                 </div>
@@ -144,7 +187,8 @@ export function StoriesEditor({
           onClick={onReset}
           className="h-9 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to Default
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to
+          Default
         </Button>
       </div>
     </div>

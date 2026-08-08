@@ -1,18 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { Trip } from '@/types';
-import { trainTicketService, TrainTemplate } from '@/services/trainTicket.service';
-import { Ticket } from 'lucide-react';
-import { TravelDeskLoadingState } from './TravelDeskStateComponents';
-import { TicketTemplateList } from '../ticket-templates/TicketTemplateList';
-import { TicketTemplateForm } from '../ticket-templates/TicketTemplateForm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import React, { useEffect, useState } from "react";
+import { Trip } from "@/types";
+import {
+  trainTicketService,
+  TrainTemplate,
+} from "@/services/trainTicket.service";
+import { Ticket } from "lucide-react";
+import { TravelDeskLoadingState } from "./TravelDeskStateComponents";
+import { TicketTemplateList } from "../ticket-templates/TicketTemplateList";
+import { TicketTemplateForm } from "../ticket-templates/TicketTemplateForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface TravelDeskTicketingProps {
   trip: Trip;
 }
 
-export const TravelDeskTicketing: React.FC<TravelDeskTicketingProps> = ({ trip }) => {
+export const TravelDeskTicketing: React.FC<TravelDeskTicketingProps> = ({
+  trip,
+}) => {
   const [templates, setTemplates] = useState<TrainTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,7 +36,7 @@ export const TravelDeskTicketing: React.FC<TravelDeskTicketingProps> = ({ trip }
       setTemplates(result);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load ticket templates');
+      toast.error("Failed to load ticket templates");
     } finally {
       setLoading(false);
     }
@@ -69,12 +80,19 @@ export const TravelDeskTicketing: React.FC<TravelDeskTicketingProps> = ({ trip }
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
         <div>
-          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Trip Ticketing Templates</h2>
-          <p className="text-xs text-slate-550 mt-0.5 font-bold">Manage global ticketing guidelines for this trip.</p>
+          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+            Trip Ticketing Templates
+          </h2>
+          <p className="text-xs text-slate-550 mt-0.5 font-bold">
+            Manage global ticketing guidelines for this trip.
+          </p>
         </div>
         <div className="flex gap-2">
-          <button 
-            onClick={() => { setEditTemplate(null); setIsModalOpen(true); }}
+          <button
+            onClick={() => {
+              setEditTemplate(null);
+              setIsModalOpen(true);
+            }}
             className="px-4 py-2 bg-[#FF6B00] text-white rounded-lg text-xs font-bold hover:bg-[#E66000] shadow-sm"
           >
             + Add Trip Template
@@ -83,9 +101,12 @@ export const TravelDeskTicketing: React.FC<TravelDeskTicketingProps> = ({ trip }
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-        <TicketTemplateList 
-          templates={templates} 
-          onEdit={(t) => { setEditTemplate(t); setIsModalOpen(true); }}
+        <TicketTemplateList
+          templates={templates}
+          onEdit={(t) => {
+            setEditTemplate(t);
+            setIsModalOpen(true);
+          }}
           onArchive={handleArchive}
           showTripColumn={false}
         />

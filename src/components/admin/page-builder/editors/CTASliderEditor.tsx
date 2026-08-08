@@ -10,7 +10,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { RotateCcw, Video, Film, Sparkles, X, GripVertical, Image as ImageIcon } from "lucide-react";
+import {
+  RotateCcw,
+  Video,
+  Film,
+  Sparkles,
+  X,
+  GripVertical,
+  Image as ImageIcon,
+} from "lucide-react";
 
 interface CTASliderEditorProps {
   draft: Record<string, any>;
@@ -29,16 +37,21 @@ export function CTASliderEditor({
 
   const title = draft.title ?? "Experience The Thrill Of Adventure";
   const showTitle = draft.showTitle !== false;
-  
+
   // Media items array (videos and/or photos)
-  const mediaList: string[] = Array.isArray(draft.mediaList) && draft.mediaList.length > 0
-    ? draft.mediaList
-    : draft.videoUrl
-    ? [draft.videoUrl]
-    : ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&q=85"];
+  const mediaList: string[] =
+    Array.isArray(draft.mediaList) && draft.mediaList.length > 0
+      ? draft.mediaList
+      : draft.videoUrl
+        ? [draft.videoUrl]
+        : [
+            "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&q=85",
+          ];
 
   const activeMedia = mediaList[0] || "";
-  const videoPosterUrl = draft.videoPosterUrl || "https://images.unsplash.com/photo-1581793745862-99f579601e1b?w=1600&q=80";
+  const videoPosterUrl =
+    draft.videoPosterUrl ||
+    "https://images.unsplash.com/photo-1581793745862-99f579601e1b?w=1600&q=80";
   const borderRadius = draft.borderRadius || "rounded-[24px]";
 
   const addMedia = (url: string) => {
@@ -55,17 +68,24 @@ export function CTASliderEditor({
 
   const removeMedia = (index: number) => {
     const updated = mediaList.filter((_, i) => i !== index);
-    const finalArr = updated.length > 0 ? updated : ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&q=85"];
+    const finalArr =
+      updated.length > 0
+        ? updated
+        : [
+            "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&q=85",
+          ];
     onChange({ ...draft, mediaList: finalArr, videoUrl: finalArr[0] });
   };
 
-  const isVideo = (url: string) => url && (/\.(mp4|webm|mov|ogg)$/i.test(url) || url.includes('/video/'));
+  const isVideo = (url: string) =>
+    url && (/\.(mp4|webm|mov|ogg)$/i.test(url) || url.includes("/video/"));
   const isYouTube = (url: string) => url && /youtube\.com|youtu\.be/.test(url);
   const getYouTubeId = (url: string) => {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    return match && match[2].length === 11 ? match[2] : null;
   };
 
   return (
@@ -114,8 +134,16 @@ export function CTASliderEditor({
 
           {/* Overlay Badge */}
           <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10.5px] font-bold flex items-center gap-1.5 border border-white/10">
-            {isVideo(activeMedia) || isYouTube(activeMedia) ? <Video className="w-3.5 h-3.5 text-[#D4541A]" /> : <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />}
-            <span>{isVideo(activeMedia) || isYouTube(activeMedia) ? "Video Background" : "Photo Banner"}</span>
+            {isVideo(activeMedia) || isYouTube(activeMedia) ? (
+              <Video className="w-3.5 h-3.5 text-[#D4541A]" />
+            ) : (
+              <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+            )}
+            <span>
+              {isVideo(activeMedia) || isYouTube(activeMedia)
+                ? "Video Background"
+                : "Photo Banner"}
+            </span>
           </div>
         </div>
       </div>
@@ -126,7 +154,8 @@ export function CTASliderEditor({
           Upload Videos & Photos (Single or Multiple)
         </Label>
         <p className="text-[11px] text-slate-500 font-medium">
-          Upload video clips (.mp4, .webm, .mov) or photos (.jpg, .png, .webp). Multiple files will auto-slideshow on the website!
+          Upload video clips (.mp4, .webm, .mov) or photos (.jpg, .png, .webp).
+          Multiple files will auto-slideshow on the website!
         </p>
 
         <ImageUpload
@@ -151,16 +180,33 @@ export function CTASliderEditor({
                     <Video className="w-5 h-5 text-slate-400" />
                   </div>
                 ) : isVideo(url) ? (
-                  <video src={url} muted className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
+                  <video
+                    src={url}
+                    muted
+                    className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
+                  />
                 ) : (
-                  <img src={url} alt={`Media ${idx + 1}`} className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
+                  <img
+                    src={url}
+                    alt={`Media ${idx + 1}`}
+                    className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
+                  />
                 )}
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-[#0B1528] truncate flex items-center gap-1.5">
-                    {isVideo(url) || isYouTube(url) ? <Video className="w-3.5 h-3.5 text-[#D4541A]" /> : <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />}
-                    <span>{isVideo(url) || isYouTube(url) ? "Video" : "Photo"} {idx + 1} {idx === 0 && "(Active)"}</span>
+                    {isVideo(url) || isYouTube(url) ? (
+                      <Video className="w-3.5 h-3.5 text-[#D4541A]" />
+                    ) : (
+                      <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                    )}
+                    <span>
+                      {isVideo(url) || isYouTube(url) ? "Video" : "Photo"}{" "}
+                      {idx + 1} {idx === 0 && "(Active)"}
+                    </span>
                   </p>
-                  <p className="text-[10.5px] font-mono text-slate-400 truncate max-w-xs">{url}</p>
+                  <p className="text-[10.5px] font-mono text-slate-400 truncate max-w-xs">
+                    {url}
+                  </p>
                 </div>
               </div>
 
@@ -224,8 +270,12 @@ export function CTASliderEditor({
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="rounded-[16px]">Compact (16px)</SelectItem>
-              <SelectItem value="rounded-[24px]">Medium Rounded (24px)</SelectItem>
-              <SelectItem value="rounded-[32px]">Large Rounded (32px)</SelectItem>
+              <SelectItem value="rounded-[24px]">
+                Medium Rounded (24px)
+              </SelectItem>
+              <SelectItem value="rounded-[32px]">
+                Large Rounded (32px)
+              </SelectItem>
               <SelectItem value="rounded-[44px]">Full Pill (44px)</SelectItem>
             </SelectContent>
           </Select>
@@ -240,7 +290,8 @@ export function CTASliderEditor({
           onClick={onReset}
           className="h-9 px-4 text-xs font-bold text-slate-600 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset Section
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset
+          Section
         </Button>
       </div>
     </div>

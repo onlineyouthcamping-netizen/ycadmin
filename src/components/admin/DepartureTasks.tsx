@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from "react";
 import {
-  Plus, Search, Edit, Trash, Check, Clock, AlertTriangle, Play, CheckCircle2, Download
+  Plus,
+  Search,
+  Edit,
+  Trash,
+  Check,
+  Clock,
+  AlertTriangle,
+  Play,
+  CheckCircle2,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { opsService } from "@/services/ops.service";
 
 interface DepartureTasksProps {
@@ -13,7 +27,10 @@ interface DepartureTasksProps {
   departureDateStr: string;
 }
 
-export default function DepartureTasks({ tripId, departureDateStr }: DepartureTasksProps) {
+export default function DepartureTasks({
+  tripId,
+  departureDateStr,
+}: DepartureTasksProps) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,7 +52,7 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
     dueDate: "",
     status: "Pending",
     notes: "",
-    remarks: ""
+    remarks: "",
   });
 
   const fetchTasks = async () => {
@@ -62,7 +79,12 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
     setIsSubmitting(true);
     try {
       if (editingTask) {
-        await opsService.updateTask(tripId, departureDateStr, editingTask.id, taskForm);
+        await opsService.updateTask(
+          tripId,
+          departureDateStr,
+          editingTask.id,
+          taskForm,
+        );
         toast.success("Task updated successfully!");
       } else {
         await opsService.createTask(tripId, departureDateStr, taskForm);
@@ -73,7 +95,8 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
       fetchTasks();
     } catch (err: any) {
       console.error(err);
-      const errMsg = err.response?.data?.message || err.message || "Failed to save task";
+      const errMsg =
+        err.response?.data?.message || err.message || "Failed to save task";
       toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
@@ -89,7 +112,8 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
       fetchTasks();
     } catch (err: any) {
       console.error(err);
-      const errMsg = err.response?.data?.message || err.message || "Failed to delete task";
+      const errMsg =
+        err.response?.data?.message || err.message || "Failed to delete task";
       toast.error(errMsg);
     }
   };
@@ -101,13 +125,14 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
       await opsService.updateTask(tripId, departureDateStr, task.id, {
         ...task,
         status: nextStatus,
-        isCompleted: nextStatus === "Completed"
+        isCompleted: nextStatus === "Completed",
       });
       toast.success(`Task marked as ${nextStatus}`);
       fetchTasks();
     } catch (err: any) {
       console.error(err);
-      const errMsg = err.response?.data?.message || err.message || "Failed to toggle status";
+      const errMsg =
+        err.response?.data?.message || err.message || "Failed to toggle status";
       toast.error(errMsg);
     }
   };
@@ -115,17 +140,28 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
   // KPI Calculations
   const kpis = {
     total: tasks.length,
-    completed: tasks.filter(t => t.status === "Completed").length,
-    inProgress: tasks.filter(t => t.status === "In Progress").length,
-    pending: tasks.filter(t => t.status === "Pending").length,
-    overdue: tasks.filter(t => t.status === "Overdue" || (t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "Completed")).length
+    completed: tasks.filter((t) => t.status === "Completed").length,
+    inProgress: tasks.filter((t) => t.status === "In Progress").length,
+    pending: tasks.filter((t) => t.status === "Pending").length,
+    overdue: tasks.filter(
+      (t) =>
+        t.status === "Overdue" ||
+        (t.dueDate &&
+          new Date(t.dueDate) < new Date() &&
+          t.status !== "Completed"),
+    ).length,
   };
 
-  const filteredTasks = tasks.filter(t => {
+  const filteredTasks = tasks.filter((t) => {
     const matchStage = stageFilter === "All Stages" || t.stage === stageFilter;
-    const matchPriority = priorityFilter === "All Priorities" || t.priority === priorityFilter;
-    const matchStatus = statusFilter === "All Status" || t.status === statusFilter;
-    const matchSearch = search === "" || t.taskName.toLowerCase().includes(search.toLowerCase()) || (t.remarks && t.remarks.toLowerCase().includes(search.toLowerCase()));
+    const matchPriority =
+      priorityFilter === "All Priorities" || t.priority === priorityFilter;
+    const matchStatus =
+      statusFilter === "All Status" || t.status === statusFilter;
+    const matchSearch =
+      search === "" ||
+      t.taskName.toLowerCase().includes(search.toLowerCase()) ||
+      (t.remarks && t.remarks.toLowerCase().includes(search.toLowerCase()));
     return matchStage && matchPriority && matchStatus && matchSearch;
   });
 
@@ -134,17 +170,28 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
       toast.info("No tasks to export");
       return;
     }
-    const headers = ["Task Name", "Stage", "Assigned To", "Priority", "Due Date", "Status", "Remarks"].join(",");
-    const rows = filteredTasks.map(t => [
-      `"${t.taskName}"`,
-      t.stage,
-      t.assignedTo || "Unassigned",
-      t.priority,
-      t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-IN') : "—",
-      t.status,
-      `"${t.remarks || ''}"`
-    ].join(","));
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+    const headers = [
+      "Task Name",
+      "Stage",
+      "Assigned To",
+      "Priority",
+      "Due Date",
+      "Status",
+      "Remarks",
+    ].join(",");
+    const rows = filteredTasks.map((t) =>
+      [
+        `"${t.taskName}"`,
+        t.stage,
+        t.assignedTo || "Unassigned",
+        t.priority,
+        t.dueDate ? new Date(t.dueDate).toLocaleDateString("en-IN") : "—",
+        t.status,
+        `"${t.remarks || ""}"`,
+      ].join(","),
+    );
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -159,15 +206,59 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total Tasks", value: kpis.total, desc: "Across all stages", color: "text-slate-700", bg: "bg-slate-50" },
-          { label: "Completed", value: kpis.completed, desc: kpis.total > 0 ? `${Math.round((kpis.completed / kpis.total) * 100)}% of total` : "0% of total", color: "text-emerald-600", bg: "bg-emerald-50/50" },
-          { label: "In Progress", value: kpis.inProgress, desc: "Active items", color: "text-blue-600", bg: "bg-blue-50/50" },
-          { label: "Pending", value: kpis.pending, desc: kpis.total > 0 ? `${Math.round((kpis.pending / kpis.total) * 100)}% of total` : "0% of total", color: "text-amber-600", bg: "bg-amber-50/50" },
-          { label: "Overdue", value: kpis.overdue, desc: "Passed due date", color: "text-red-600", bg: "bg-red-50/50" }
-        ].map(kpi => (
-          <div key={kpi.label} className={cn("border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-3xs space-y-1", kpi.bg)}>
+          {
+            label: "Total Tasks",
+            value: kpis.total,
+            desc: "Across all stages",
+            color: "text-slate-700",
+            bg: "bg-slate-50",
+          },
+          {
+            label: "Completed",
+            value: kpis.completed,
+            desc:
+              kpis.total > 0
+                ? `${Math.round((kpis.completed / kpis.total) * 100)}% of total`
+                : "0% of total",
+            color: "text-emerald-600",
+            bg: "bg-emerald-50/50",
+          },
+          {
+            label: "In Progress",
+            value: kpis.inProgress,
+            desc: "Active items",
+            color: "text-blue-600",
+            bg: "bg-blue-50/50",
+          },
+          {
+            label: "Pending",
+            value: kpis.pending,
+            desc:
+              kpis.total > 0
+                ? `${Math.round((kpis.pending / kpis.total) * 100)}% of total`
+                : "0% of total",
+            color: "text-amber-600",
+            bg: "bg-amber-50/50",
+          },
+          {
+            label: "Overdue",
+            value: kpis.overdue,
+            desc: "Passed due date",
+            color: "text-red-600",
+            bg: "bg-red-50/50",
+          },
+        ].map((kpi) => (
+          <div
+            key={kpi.label}
+            className={cn(
+              "border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-3xs space-y-1",
+              kpi.bg,
+            )}
+          >
             <p className={cn("text-2xl font-black", kpi.color)}>{kpi.value}</p>
-            <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">{kpi.label}</p>
+            <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">
+              {kpi.label}
+            </p>
             <p className="text-[9px] text-slate-400 font-medium">{kpi.desc}</p>
           </div>
         ))}
@@ -175,29 +266,63 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
 
       {/* Filter Bar */}
       <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex flex-wrap gap-2.5 items-center">
-        <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
+        <select
+          value={stageFilter}
+          onChange={(e) => setStageFilter(e.target.value)}
+          className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
+        >
           <option value="All Stages">All Stages</option>
-          {["PRE_TRIP_30D", "PRE_TRIP_7D", "PRE_TRIP_1D", "DEPARTURE_DAY", "DURING_TRIP", "POST_TRIP"].map(s => (
-            <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+          {[
+            "PRE_TRIP_30D",
+            "PRE_TRIP_7D",
+            "PRE_TRIP_1D",
+            "DEPARTURE_DAY",
+            "DURING_TRIP",
+            "POST_TRIP",
+          ].map((s) => (
+            <option key={s} value={s}>
+              {s.replace(/_/g, " ")}
+            </option>
           ))}
         </select>
-        <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
+        <select
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value)}
+          className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
+        >
           <option value="All Priorities">All Priorities</option>
-          {["LOW", "MEDIUM", "HIGH"].map(p => (
-            <option key={p} value={p}>{p}</option>
+          {["LOW", "MEDIUM", "HIGH"].map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
           ))}
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
+        >
           <option value="All Status">All Status</option>
-          {["Pending", "In Progress", "Completed", "Overdue"].map(s => (
-            <option key={s} value={s}>{s}</option>
+          {["Pending", "In Progress", "Completed", "Overdue"].map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
         <div className="relative flex-1 max-w-xs min-w-[150px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-          <input type="text" placeholder="Search tasks..." value={search} onChange={e => setSearch(e.target.value)} className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none" />
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none"
+          />
         </div>
-        <button onClick={handleDownloadCSV} className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-3xs">
+        <button
+          onClick={handleDownloadCSV}
+          className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-3xs"
+        >
           <Download className="w-3.5 h-3.5 text-slate-400" /> Export CSV
         </button>
         <button
@@ -211,7 +336,7 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
               dueDate: new Date().toISOString().substring(0, 10),
               status: "Pending",
               notes: "",
-              remarks: ""
+              remarks: "",
             });
             setTaskModalOpen(true);
           }}
@@ -230,56 +355,106 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
               <th className="p-3 border-r border-slate-100">TASK NAME</th>
               <th className="p-3 border-r border-slate-100">STAGE</th>
               <th className="p-3 border-r border-slate-100">ASSIGNED TO</th>
-              <th className="p-3 border-r border-slate-100 text-center">PRIORITY</th>
+              <th className="p-3 border-r border-slate-100 text-center">
+                PRIORITY
+              </th>
               <th className="p-3 border-r border-slate-100">DUE DATE</th>
-              <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
+              <th className="p-3 border-r border-slate-100 text-center">
+                STATUS
+              </th>
               <th className="p-3 text-center w-28">ACTION</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E2E8F0]">
             {loading ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">Loading tasks checklist data...</td>
+                <td
+                  colSpan={8}
+                  className="p-8 text-center text-slate-400 font-medium"
+                >
+                  Loading tasks checklist data...
+                </td>
               </tr>
             ) : filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No tasks logged matching active filters.</td>
+                <td
+                  colSpan={8}
+                  className="p-8 text-center text-slate-400 font-medium"
+                >
+                  No tasks logged matching active filters.
+                </td>
               </tr>
             ) : (
-              filteredTasks.map(t => (
-                <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+              filteredTasks.map((t) => (
+                <tr
+                  key={t.id}
+                  className="hover:bg-slate-50/50 transition-colors"
+                >
                   <td className="p-3 text-center">
-                    <button onClick={() => toggleComplete(t)} className={cn("p-1.5 rounded-full border transition-colors",
-                      t.status === "Completed" ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-white text-slate-300 border-slate-200 hover:border-slate-300"
-                    )}>
+                    <button
+                      onClick={() => toggleComplete(t)}
+                      className={cn(
+                        "p-1.5 rounded-full border transition-colors",
+                        t.status === "Completed"
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                          : "bg-white text-slate-300 border-slate-200 hover:border-slate-300",
+                      )}
+                    >
                       <Check className="w-3.5 h-3.5" />
                     </button>
                   </td>
                   <td className="p-3 border-r border-slate-100">
-                    <p className="font-extrabold text-slate-800">{t.taskName}</p>
-                    {t.notes && <p className="text-[10px] text-slate-400 mt-0.5">{t.notes}</p>}
+                    <p className="font-extrabold text-slate-800">
+                      {t.taskName}
+                    </p>
+                    {t.notes && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        {t.notes}
+                      </p>
+                    )}
                   </td>
                   <td className="p-3 border-r border-slate-100">
-                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 uppercase tracking-wider">{t.stage.replace(/_/g, " ")}</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 uppercase tracking-wider">
+                      {t.stage.replace(/_/g, " ")}
+                    </span>
                   </td>
-                  <td className="p-3 border-r border-slate-100 font-bold text-slate-700">{t.assignedTo || "Unassigned"}</td>
+                  <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
+                    {t.assignedTo || "Unassigned"}
+                  </td>
                   <td className="p-3 border-r border-slate-100 text-center">
-                    <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider block w-fit mx-auto",
-                      t.priority === "HIGH" ? "bg-red-50 text-red-700 border-red-100" :
-                      t.priority === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-100" :
-                      "bg-blue-50 text-blue-700 border-blue-100"
-                    )}>{t.priority}</span>
+                    <span
+                      className={cn(
+                        "text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider block w-fit mx-auto",
+                        t.priority === "HIGH"
+                          ? "bg-red-50 text-red-700 border-red-100"
+                          : t.priority === "MEDIUM"
+                            ? "bg-amber-50 text-amber-700 border-amber-100"
+                            : "bg-blue-50 text-blue-700 border-blue-100",
+                      )}
+                    >
+                      {t.priority}
+                    </span>
                   </td>
                   <td className="p-3 border-r border-slate-100 font-semibold text-slate-600">
-                    {t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-IN') : "—"}
+                    {t.dueDate
+                      ? new Date(t.dueDate).toLocaleDateString("en-IN")
+                      : "—"}
                   </td>
                   <td className="p-3 border-r border-slate-100 text-center">
-                    <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider inline-block",
-                      t.status === "Completed" ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
-                      t.status === "In Progress" ? "bg-blue-50 text-blue-700 border-blue-100 animate-pulse" :
-                      t.status === "Overdue" ? "bg-red-50 text-red-700 border-red-100" :
-                      "bg-slate-100 text-slate-600 border-slate-200"
-                    )}>{t.status}</span>
+                    <span
+                      className={cn(
+                        "text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider inline-block",
+                        t.status === "Completed"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          : t.status === "In Progress"
+                            ? "bg-blue-50 text-blue-700 border-blue-100 animate-pulse"
+                            : t.status === "Overdue"
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : "bg-slate-100 text-slate-600 border-slate-200",
+                      )}
+                    >
+                      {t.status}
+                    </span>
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex gap-1.5 justify-center">
@@ -291,10 +466,12 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
                             stage: t.stage,
                             assignedTo: t.assignedTo || "OPERATIONS",
                             priority: t.priority,
-                            dueDate: t.dueDate ? t.dueDate.substring(0, 10) : "",
+                            dueDate: t.dueDate
+                              ? t.dueDate.substring(0, 10)
+                              : "",
                             status: t.status,
                             notes: t.notes || "",
-                            remarks: t.remarks || ""
+                            remarks: t.remarks || "",
                           });
                           setTaskModalOpen(true);
                         }}
@@ -328,22 +505,30 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
           </DialogDescription>
           <form onSubmit={handleSubmit} className="space-y-4 mt-3">
             <div>
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Task Title</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                Task Title
+              </label>
               <input
                 type="text"
                 required
                 value={taskForm.taskName}
-                onChange={e => setTaskForm(prev => ({ ...prev, taskName: e.target.value }))}
+                onChange={(e) =>
+                  setTaskForm((prev) => ({ ...prev, taskName: e.target.value }))
+                }
                 placeholder="e.g. Call passengers for confirmation"
                 className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700 outline-none"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Stage</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                  Stage
+                </label>
                 <select
                   value={taskForm.stage}
-                  onChange={e => setTaskForm(prev => ({ ...prev, stage: e.target.value }))}
+                  onChange={(e) =>
+                    setTaskForm((prev) => ({ ...prev, stage: e.target.value }))
+                  }
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
                 >
                   <option value="PRE_TRIP_30D">Pre Trip (30 Days)</option>
@@ -355,10 +540,17 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Assigned Department</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                  Assigned Department
+                </label>
                 <select
                   value={taskForm.assignedTo}
-                  onChange={e => setTaskForm(prev => ({ ...prev, assignedTo: e.target.value }))}
+                  onChange={(e) =>
+                    setTaskForm((prev) => ({
+                      ...prev,
+                      assignedTo: e.target.value,
+                    }))
+                  }
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
                 >
                   <option value="OPERATIONS">Operations Staff</option>
@@ -370,10 +562,17 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Priority</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                  Priority
+                </label>
                 <select
                   value={taskForm.priority}
-                  onChange={e => setTaskForm(prev => ({ ...prev, priority: e.target.value }))}
+                  onChange={(e) =>
+                    setTaskForm((prev) => ({
+                      ...prev,
+                      priority: e.target.value,
+                    }))
+                  }
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
                 >
                   <option value="LOW">LOW</option>
@@ -382,10 +581,14 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Status</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                  Status
+                </label>
                 <select
                   value={taskForm.status}
-                  onChange={e => setTaskForm(prev => ({ ...prev, status: e.target.value }))}
+                  onChange={(e) =>
+                    setTaskForm((prev) => ({ ...prev, status: e.target.value }))
+                  }
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
                 >
                   <option value="Pending">Pending</option>
@@ -395,41 +598,69 @@ export default function DepartureTasks({ tripId, departureDateStr }: DepartureTa
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Due Date</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                  Due Date
+                </label>
                 <input
                   type="date"
                   value={taskForm.dueDate}
-                  onChange={e => setTaskForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                  onChange={(e) =>
+                    setTaskForm((prev) => ({
+                      ...prev,
+                      dueDate: e.target.value,
+                    }))
+                  }
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-700 outline-none"
                 />
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Task Subtitle / Description</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                Task Subtitle / Description
+              </label>
               <textarea
                 rows={2}
                 value={taskForm.notes}
-                onChange={e => setTaskForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) =>
+                  setTaskForm((prev) => ({ ...prev, notes: e.target.value }))
+                }
                 placeholder="Details of the task..."
                 className="w-full text-xs font-bold border border-slate-200 rounded p-2 bg-white text-slate-700 outline-none"
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Staff Remarks</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                Staff Remarks
+              </label>
               <textarea
                 rows={2}
                 value={taskForm.remarks}
-                onChange={e => setTaskForm(prev => ({ ...prev, remarks: e.target.value }))}
+                onChange={(e) =>
+                  setTaskForm((prev) => ({ ...prev, remarks: e.target.value }))
+                }
                 placeholder="Log updates or notes here..."
                 className="w-full text-xs font-bold border border-slate-200 rounded p-2 bg-white text-slate-700 outline-none"
               />
             </div>
             <div className="flex gap-2 justify-end pt-2">
-              <Button type="button" variant="ghost" onClick={() => setTaskModalOpen(false)} className="h-8 text-xs font-bold text-slate-500 rounded">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setTaskModalOpen(false)}
+                className="h-8 text-xs font-bold text-slate-500 rounded"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="h-8 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded">
-                {isSubmitting ? "Saving..." : (editingTask ? "Save Task" : "Create Task")}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-8 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase rounded"
+              >
+                {isSubmitting
+                  ? "Saving..."
+                  : editingTask
+                    ? "Save Task"
+                    : "Create Task"}
               </Button>
             </div>
           </form>

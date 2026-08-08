@@ -39,7 +39,9 @@ export const bookingVerificationService = {
           }
         });
       }
-      const res = await api.get(`/booking-verifications/queue?${queryParams.toString()}`);
+      const res = await api.get(
+        `/booking-verifications/queue?${queryParams.toString()}`,
+      );
       return res.data;
     } catch (err) {
       console.error("🔥 Verification queue fetch failed:", err);
@@ -51,10 +53,13 @@ export const bookingVerificationService = {
 
   async performVerificationAction(
     bookingId: string,
-    data: { action: string; notes?: string; checklist?: any }
+    data: { action: string; notes?: string; checklist?: any },
   ): Promise<any> {
     try {
-      const res = await api.post(`/booking-verifications/${bookingId}/action`, data);
+      const res = await api.post(
+        `/booking-verifications/${bookingId}/action`,
+        data,
+      );
       return res.data.data;
     } catch (err) {
       console.error("🔥 Verification action failed:", err);
@@ -66,7 +71,9 @@ export const bookingVerificationService = {
 
   async getTrainTicket(bookingId: string): Promise<any> {
     try {
-      const res = await api.get(`/booking-verifications/${bookingId}/train-ticket`);
+      const res = await api.get(
+        `/booking-verifications/${bookingId}/train-ticket`,
+      );
       return res.data.data;
     } catch (err) {
       console.error("🔥 Train ticket fetch failed:", err);
@@ -76,7 +83,10 @@ export const bookingVerificationService = {
 
   async saveTrainTicket(bookingId: string, data: any): Promise<any> {
     try {
-      const res = await api.post(`/booking-verifications/${bookingId}/train-ticket`, data);
+      const res = await api.post(
+        `/booking-verifications/${bookingId}/train-ticket`,
+        data,
+      );
       return res.data.data;
     } catch (err) {
       console.error("🔥 Train ticket save failed:", err);
@@ -86,10 +96,18 @@ export const bookingVerificationService = {
 
   async performTicketAction(
     bookingId: string,
-    data: { action: string; notes?: string; pnr?: string; ticketDetails?: string }
+    data: {
+      action: string;
+      notes?: string;
+      pnr?: string;
+      ticketDetails?: string;
+    },
   ): Promise<any> {
     try {
-      const res = await api.post(`/booking-verifications/${bookingId}/train-ticket/action`, data);
+      const res = await api.post(
+        `/booking-verifications/${bookingId}/train-ticket/action`,
+        data,
+      );
       return res.data.data;
     } catch (err) {
       console.error("🔥 Ticket action failed:", err);
@@ -107,7 +125,13 @@ export const bookingVerificationService = {
     }
   },
 
-  async bulkUpdateTickets(data: { bookingIds: string[]; action: string; notes?: string; pnr?: string; ticketDetails?: string }): Promise<any> {
+  async bulkUpdateTickets(data: {
+    bookingIds: string[];
+    action: string;
+    notes?: string;
+    pnr?: string;
+    ticketDetails?: string;
+  }): Promise<any> {
     try {
       const res = await api.post(`/booking-verifications/bulk-update`, data);
       return res.data.data;

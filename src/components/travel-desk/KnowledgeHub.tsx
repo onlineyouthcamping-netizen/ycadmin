@@ -1,34 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../services/api';
-import { toast } from 'sonner';
-import { 
-  Search, Plus, FileText, BookOpen, HelpCircle, ListChecks, 
-  Users, FileCode, Paperclip, Image, History, 
-  Eye, Edit3, Trash2, RefreshCw, AlertCircle, X
-} from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../services/api";
+import { toast } from "sonner";
+import {
+  Search,
+  Plus,
+  FileText,
+  BookOpen,
+  HelpCircle,
+  ListChecks,
+  Users,
+  FileCode,
+  Paperclip,
+  Image,
+  History,
+  Eye,
+  Edit3,
+  Trash2,
+  RefreshCw,
+  AlertCircle,
+  X,
+} from "lucide-react";
 
-export type KnowledgeSection = 
-  | 'overview' 
-  | 'sales_guide' 
-  | 'faqs' 
-  | 'itinerary' 
-  | 'inclusions' 
-  | 'vendors' 
-  | 'sops' 
-  | 'documents' 
-  | 'gallery' 
-  | 'activity_log';
+export type KnowledgeSection =
+  | "overview"
+  | "sales_guide"
+  | "faqs"
+  | "itinerary"
+  | "inclusions"
+  | "vendors"
+  | "sops"
+  | "documents"
+  | "gallery"
+  | "activity_log";
 
 export interface KnowledgeItem {
   id: string;
   tripId: string;
   section: KnowledgeSection;
-  contentType: 'text' | 'file' | 'structured_data';
+  contentType: "text" | "file" | "structured_data";
   title: string;
   body: string;
   data?: any;
-  status: 'draft' | 'published';
+  status: "draft" | "published";
   version: number;
   createdBy: string;
   createdAt: string;
@@ -47,22 +61,25 @@ export interface KnowledgeHubProps {
 }
 
 const TABS: { key: KnowledgeSection; label: string; icon: any }[] = [
-  { key: 'overview', label: 'Overview', icon: BookOpen },
-  { key: 'sales_guide', label: 'Sales Guide', icon: FileText },
-  { key: 'faqs', label: 'FAQs', icon: HelpCircle },
-  { key: 'inclusions', label: 'Inclusions/Exclusions', icon: ListChecks },
-  { key: 'vendors', label: 'Vendor Directory', icon: Users },
-  { key: 'sops', label: 'SOPs', icon: FileCode },
-  { key: 'documents', label: 'Documents', icon: Paperclip },
-  { key: 'gallery', label: 'Gallery', icon: Image },
-  { key: 'activity_log', label: 'Activity Log', icon: History }
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "sales_guide", label: "Sales Guide", icon: FileText },
+  { key: "faqs", label: "FAQs", icon: HelpCircle },
+  { key: "inclusions", label: "Inclusions/Exclusions", icon: ListChecks },
+  { key: "vendors", label: "Vendor Directory", icon: Users },
+  { key: "sops", label: "SOPs", icon: FileCode },
+  { key: "documents", label: "Documents", icon: Paperclip },
+  { key: "gallery", label: "Gallery", icon: Image },
+  { key: "activity_log", label: "Activity Log", icon: History },
 ];
 
-export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab = 'overview' }) => {
+export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({
+  tripId,
+  initialTab = "overview",
+}) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<KnowledgeSection>(initialTab);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
 
   // Modal State
@@ -71,10 +88,12 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
   const [previewItem, setPreviewItem] = useState<KnowledgeItem | null>(null);
 
   // Form State
-  const [formTitle, setFormTitle] = useState('');
-  const [formBody, setFormBody] = useState('');
-  const [formContentType, setFormContentType] = useState<'text' | 'file' | 'structured_data'>('text');
-  const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
+  const [formTitle, setFormTitle] = useState("");
+  const [formBody, setFormBody] = useState("");
+  const [formContentType, setFormContentType] = useState<
+    "text" | "file" | "structured_data"
+  >("text");
+  const [formStatus, setFormStatus] = useState<"draft" | "published">("draft");
 
   // Debounce search query (500ms)
   useEffect(() => {
@@ -90,109 +109,111 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
     isLoading,
     isError,
     error,
-    refetch
+    refetch,
   } = useQuery({
-    queryKey: ['trip-knowledge', tripId, activeTab],
+    queryKey: ["trip-knowledge", tripId, activeTab],
     queryFn: async () => {
-      if (activeTab === 'documents') {
+      if (activeTab === "documents") {
         const res = await api.get(`/trips/${tripId}/documents`);
         return {
           items: (res.data?.data?.documents || []).map((doc: any) => ({
             id: doc.id,
             tripId: doc.tripId,
-            section: 'documents',
-            contentType: 'file',
+            section: "documents",
+            contentType: "file",
             title: doc.name || doc.fileName,
             body: `Category: ${doc.category} | File URL: ${doc.fileUrl}`,
-            status: doc.status || 'published',
+            status: doc.status || "published",
             version: doc.version || 1,
             createdBy: doc.uploadedBy,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt || doc.createdAt,
-            author: doc.uploader
+            author: doc.uploader,
           })),
-          total: res.data?.data?.total || 0
+          total: res.data?.data?.total || 0,
         };
       }
-      if (activeTab === 'sops') {
+      if (activeTab === "sops") {
         const res = await api.get(`/trips/${tripId}/sops`);
         return {
           items: (res.data?.data?.sops || []).map((sop: any) => ({
             id: sop.id,
             tripId: sop.tripId,
-            section: 'sops',
-            contentType: 'structured_data',
+            section: "sops",
+            contentType: "structured_data",
             title: sop.title,
             body: sop.description,
             data: sop.steps,
-            status: sop.status || 'draft',
+            status: sop.status || "draft",
             version: sop.version || 1,
             createdBy: sop.createdBy,
             createdAt: sop.createdAt,
             updatedAt: sop.updatedAt,
-            author: sop.author
+            author: sop.author,
           })),
-          total: res.data?.data?.total || 0
+          total: res.data?.data?.total || 0,
         };
       }
-      if (activeTab === 'vendors') {
+      if (activeTab === "vendors") {
         const res = await api.get(`/trips/${tripId}/vendors`);
         return {
           items: (res.data?.data?.vendors || []).map((v: any) => ({
             id: v.id,
             tripId: v.tripId,
-            section: 'vendors',
-            contentType: 'structured_data',
-            title: `${v.contactName || 'Vendor'} (${v.role || 'Partner'})`,
-            body: `Phone: ${v.contactPhone || 'N/A'} | Email: ${v.contactEmail || 'N/A'} \nNotes: ${v.notes || 'None'}`,
-            status: 'published',
+            section: "vendors",
+            contentType: "structured_data",
+            title: `${v.contactName || "Vendor"} (${v.role || "Partner"})`,
+            body: `Phone: ${v.contactPhone || "N/A"} | Email: ${v.contactEmail || "N/A"} \nNotes: ${v.notes || "None"}`,
+            status: "published",
             version: 1,
-            createdBy: 'system',
+            createdBy: "system",
             createdAt: v.createdAt || new Date().toISOString(),
-            updatedAt: v.createdAt || new Date().toISOString()
+            updatedAt: v.createdAt || new Date().toISOString(),
           })),
-          total: res.data?.data?.total || 0
+          total: res.data?.data?.total || 0,
         };
       }
-      if (activeTab === 'activity_log') {
+      if (activeTab === "activity_log") {
         const res = await api.get(`/trips/${tripId}/activity`);
         return {
           items: (res.data?.data?.activities || []).map((act: any) => ({
             id: act.id,
             tripId: act.tripId,
-            section: 'activity_log',
-            contentType: 'text',
+            section: "activity_log",
+            contentType: "text",
             title: `${act.action.toUpperCase()} in ${act.section}`,
             body: JSON.stringify(act.changes, null, 2),
-            status: 'published',
+            status: "published",
             version: 1,
             createdBy: act.performedBy,
             createdAt: act.createdAt,
             updatedAt: act.createdAt,
-            author: act.actor
+            author: act.actor,
           })),
-          total: res.data?.data?.total || 0
+          total: res.data?.data?.total || 0,
         };
       }
 
       const res = await api.get(`/trips/${tripId}/knowledge/${activeTab}`);
       return {
         items: res.data?.data?.items || [],
-        total: res.data?.data?.total || 0
+        total: res.data?.data?.total || 0,
       };
     },
-    enabled: !!tripId
+    enabled: !!tripId,
   });
 
   // 2. Global Search Query
   const { data: searchResults, isLoading: isSearching } = useQuery({
-    queryKey: ['trip-knowledge-search', tripId, debouncedSearch],
+    queryKey: ["trip-knowledge-search", tripId, debouncedSearch],
     queryFn: async () => {
       if (!debouncedSearch) return [];
-      const res = await api.get(`/trips/${tripId}/knowledge/search?q=${encodeURIComponent(debouncedSearch)}`);
+      const res = await api.get(
+        `/trips/${tripId}/knowledge/search?q=${encodeURIComponent(debouncedSearch)}`,
+      );
       return res.data?.data?.results || [];
     },
-    enabled: !!debouncedSearch
+    enabled: !!debouncedSearch,
   });
 
   // 3. Create/Update Mutation
@@ -202,7 +223,7 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
         title: formTitle,
         body: formBody,
         contentType: formContentType,
-        status: formStatus
+        status: formStatus,
       };
       if (editingItem) {
         return api.put(`/trips/${tripId}/knowledge/${editingItem.id}`, payload);
@@ -210,13 +231,19 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
       return api.post(`/trips/${tripId}/knowledge/${activeTab}`, payload);
     },
     onSuccess: () => {
-      toast.success(editingItem ? 'Knowledge item updated!' : 'Knowledge item created!');
-      queryClient.invalidateQueries({ queryKey: ['trip-knowledge', tripId, activeTab] });
+      toast.success(
+        editingItem ? "Knowledge item updated!" : "Knowledge item created!",
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["trip-knowledge", tripId, activeTab],
+      });
       closeModal();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to save knowledge item');
-    }
+      toast.error(
+        err.response?.data?.message || "Failed to save knowledge item",
+      );
+    },
   });
 
   // 4. Delete Mutation
@@ -225,20 +252,22 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
       return api.delete(`/trips/${tripId}/knowledge/${id}`);
     },
     onSuccess: () => {
-      toast.success('Item deleted successfully!');
-      queryClient.invalidateQueries({ queryKey: ['trip-knowledge', tripId, activeTab] });
+      toast.success("Item deleted successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["trip-knowledge", tripId, activeTab],
+      });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to delete item');
-    }
+      toast.error(err.response?.data?.message || "Failed to delete item");
+    },
   });
 
   const openAddModal = () => {
     setEditingItem(null);
-    setFormTitle('');
-    setFormBody('');
-    setFormContentType('text');
-    setFormStatus('draft');
+    setFormTitle("");
+    setFormBody("");
+    setFormContentType("text");
+    setFormStatus("draft");
     setIsModalOpen(true);
   };
 
@@ -254,8 +283,8 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
-    setFormTitle('');
-    setFormBody('');
+    setFormTitle("");
+    setFormBody("");
   };
 
   const handleSearchResultClick = (result: any) => {
@@ -263,11 +292,11 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
       setActiveTab(result.section as KnowledgeSection);
     }
     setHighlightItemId(result.id);
-    setSearchQuery('');
+    setSearchQuery("");
     setTimeout(() => {
       const el = document.getElementById(`item-${result.id}`);
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, 300);
   };
@@ -279,8 +308,12 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
       {/* ─── Top Header & Global Search Bar ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
-          <h1 className="text-xl font-black tracking-tight text-[#0A192F]">Travel Desk Knowledge Hub</h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">Central repository for trips, SOPs, FAQs, and vendor operations</p>
+          <h1 className="text-xl font-black tracking-tight text-[#0A192F]">
+            Travel Desk Knowledge Hub
+          </h1>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Central repository for trips, SOPs, FAQs, and vendor operations
+          </p>
         </div>
 
         {/* Global Search Bar */}
@@ -295,7 +328,10 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
               className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-1 focus:ring-[#F97316]/20 font-medium"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -305,7 +341,9 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
           {debouncedSearch && (
             <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto p-2 divide-y divide-slate-100">
               {isSearching ? (
-                <div className="p-4 text-center text-xs text-slate-400">Searching...</div>
+                <div className="p-4 text-center text-xs text-slate-400">
+                  Searching...
+                </div>
               ) : searchResults && searchResults.length > 0 ? (
                 searchResults.map((res: any) => (
                   <div
@@ -316,14 +354,18 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
                     <div className="flex items-center justify-between text-[11px] font-bold text-slate-800">
                       <span className="truncate pr-2">{res.title}</span>
                       <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-slate-100 text-[#F97316]">
-                        {res.section || 'General'}
+                        {res.section || "General"}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{res.body}</p>
+                    <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
+                      {res.body}
+                    </p>
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-xs text-slate-400">No matching items found</div>
+                <div className="p-4 text-center text-xs text-slate-400">
+                  No matching items found
+                </div>
               )}
             </div>
           )}
@@ -342,11 +384,13 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-[#0A192F] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? "bg-[#0A192F] text-white shadow-xs"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#F97316]' : 'text-slate-400'}`} />
+                <Icon
+                  className={`w-3.5 h-3.5 ${isActive ? "text-[#F97316]" : "text-slate-400"}`}
+                />
                 <span>{tab.label}</span>
               </button>
             );
@@ -354,7 +398,7 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
         </div>
 
         {/* Add Item CTAs */}
-        {!['documents', 'vendors', 'activity_log'].includes(activeTab) && (
+        {!["documents", "vendors", "activity_log"].includes(activeTab) && (
           <button
             onClick={openAddModal}
             className="flex items-center gap-1.5 bg-[#F97316] hover:bg-[#e06100] text-white text-xs font-bold px-3.5 py-2 rounded-lg transition-all shadow-xs shrink-0 ml-4"
@@ -369,7 +413,10 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-44 bg-white rounded-xl border border-slate-200 p-4 animate-pulse space-y-3">
+            <div
+              key={i}
+              className="h-44 bg-white rounded-xl border border-slate-200 p-4 animate-pulse space-y-3"
+            >
               <div className="h-4 bg-slate-200 rounded w-3/4"></div>
               <div className="h-3 bg-slate-100 rounded w-1/2"></div>
               <div className="h-16 bg-slate-50 rounded"></div>
@@ -379,8 +426,12 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
       ) : isError ? (
         <div className="bg-white border border-rose-200 rounded-xl p-8 text-center space-y-3 max-w-md mx-auto my-12">
           <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-800">Failed to load knowledge content</h3>
-          <p className="text-xs text-slate-500">{(error as any)?.response?.data?.message || (error as any)?.message}</p>
+          <h3 className="text-sm font-bold text-slate-800">
+            Failed to load knowledge content
+          </h3>
+          <p className="text-xs text-slate-500">
+            {(error as any)?.response?.data?.message || (error as any)?.message}
+          </p>
           <button
             onClick={() => refetch()}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg transition-all"
@@ -392,9 +443,13 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
       ) : itemsList.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-xl p-12 text-center space-y-3 max-w-md mx-auto my-8 shadow-xs">
           <BookOpen className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-800">No items found in {activeTab.replace('_', ' ')}</h3>
-          <p className="text-xs text-slate-500">Create new items or SOPs to populate this knowledge section.</p>
-          {!['documents', 'vendors', 'activity_log'].includes(activeTab) && (
+          <h3 className="text-sm font-bold text-slate-800">
+            No items found in {activeTab.replace("_", " ")}
+          </h3>
+          <p className="text-xs text-slate-500">
+            Create new items or SOPs to populate this knowledge section.
+          </p>
+          {!["documents", "vendors", "activity_log"].includes(activeTab) && (
             <button
               onClick={openAddModal}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#F97316] text-white text-xs font-bold rounded-lg transition-all hover:bg-[#e06100]"
@@ -414,18 +469,20 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
                 key={item.id}
                 className={`bg-white border rounded-xl p-4 flex flex-col justify-between transition-all duration-300 shadow-xs hover:shadow-md ${
                   isHighlighted
-                    ? 'border-[#F97316] ring-2 ring-[#F97316]/20 bg-orange-50/20'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? "border-[#F97316] ring-2 ring-[#F97316]/20 bg-orange-50/20"
+                    : "border-slate-200 hover:border-slate-300"
                 }`}
               >
                 <div className="space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-slate-900 text-sm line-clamp-1">{item.title}</h3>
+                    <h3 className="font-bold text-slate-900 text-sm line-clamp-1">
+                      {item.title}
+                    </h3>
                     <span
                       className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 border ${
-                        item.status === 'published'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                        item.status === "published"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                     >
                       {item.status}
@@ -433,15 +490,22 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
                   </div>
 
                   <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                    {item.body.length > 200 ? `${item.body.substring(0, 200)}...` : item.body}
+                    {item.body.length > 200
+                      ? `${item.body.substring(0, 200)}...`
+                      : item.body}
                   </p>
                 </div>
 
                 <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                   <div className="flex items-center gap-1.5 font-medium">
-                    <span>{item.author?.name || 'System'}</span>
+                    <span>{item.author?.name || "System"}</span>
                     <span>•</span>
-                    <span>{new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+                    <span>
+                      {new Date(item.createdAt).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-1">
@@ -452,7 +516,9 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
                     >
                       <Eye className="w-3.5 h-3.5" />
                     </button>
-                    {!['documents', 'vendors', 'activity_log'].includes(activeTab) && (
+                    {!["documents", "vendors", "activity_log"].includes(
+                      activeTab,
+                    ) && (
                       <>
                         <button
                           onClick={() => openEditModal(item)}
@@ -463,7 +529,11 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm('Are you sure you want to delete this item?')) {
+                            if (
+                              confirm(
+                                "Are you sure you want to delete this item?",
+                              )
+                            ) {
                               deleteMutation.mutate(item.id);
                             }
                           }}
@@ -488,16 +558,23 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
           <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h2 className="text-base font-bold text-[#0A192F]">
-                {editingItem ? 'Edit Knowledge Item' : `Add Item to ${activeTab.replace('_', ' ')}`}
+                {editingItem
+                  ? "Edit Knowledge Item"
+                  : `Add Item to ${activeTab.replace("_", " ")}`}
               </h2>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={closeModal}
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Title *</label>
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Title *
+                </label>
                 <input
                   type="text"
                   value={formTitle}
@@ -508,7 +585,9 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Content Body *</label>
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                  Content Body *
+                </label>
                 <textarea
                   value={formBody}
                   onChange={(e) => setFormBody(e.target.value)}
@@ -520,7 +599,9 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Content Type</label>
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Content Type
+                  </label>
                   <select
                     value={formContentType}
                     onChange={(e: any) => setFormContentType(e.target.value)}
@@ -533,7 +614,9 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Status</label>
+                  <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                    Status
+                  </label>
                   <select
                     value={formStatus}
                     onChange={(e: any) => setFormStatus(e.target.value)}
@@ -555,10 +638,14 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
               </button>
               <button
                 onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending || !formTitle.trim() || !formBody.trim()}
+                disabled={
+                  saveMutation.isPending ||
+                  !formTitle.trim() ||
+                  !formBody.trim()
+                }
                 className="px-5 py-2 bg-[#F97316] hover:bg-[#e06100] text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
               >
-                {saveMutation.isPending ? 'Saving...' : 'Save Item'}
+                {saveMutation.isPending ? "Saving..." : "Save Item"}
               </button>
             </div>
           </div>
@@ -572,11 +659,16 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
             <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <div>
                 <span className="text-[9px] font-black uppercase text-[#F97316] tracking-wider block">
-                  {previewItem.section.replace('_', ' ')}
+                  {previewItem.section.replace("_", " ")}
                 </span>
-                <h2 className="text-base font-bold text-[#0A192F] mt-0.5">{previewItem.title}</h2>
+                <h2 className="text-base font-bold text-[#0A192F] mt-0.5">
+                  {previewItem.title}
+                </h2>
               </div>
-              <button onClick={() => setPreviewItem(null)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setPreviewItem(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -586,7 +678,7 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({ tripId, initialTab =
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100">
-              <span>Author: {previewItem.author?.name || 'System'}</span>
+              <span>Author: {previewItem.author?.name || "System"}</span>
               <span>Version: v{previewItem.version}</span>
             </div>
           </div>

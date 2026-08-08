@@ -19,6 +19,8 @@ export interface Admin {
   permissions?: string[];
   customPermissions?: string[];
 }
+
+export interface NotificationPreferences {
   dailyDigest?: boolean;
   bookingAlerts?: boolean;
   paymentConfirmations?: boolean;

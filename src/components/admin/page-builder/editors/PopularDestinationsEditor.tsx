@@ -3,7 +3,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { RotateCcw, MapPin, Plus, Trash2, Image as ImageIcon, Sparkles } from "lucide-react";
+import {
+  RotateCcw,
+  MapPin,
+  Plus,
+  Trash2,
+  Image as ImageIcon,
+  Sparkles,
+} from "lucide-react";
 
 interface DestinationObject {
   id?: string;
@@ -20,11 +27,36 @@ interface PopularDestinationsEditorProps {
 }
 
 const DEFAULT_ITEMS: DestinationObject[] = [
-  { name: "Himachal Pradesh", subtext: "Snow Peaks & Valleys", imageUrl: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80" },
-  { name: "Uttarakhand", subtext: "Trekking & Temple Trails", imageUrl: "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=600&q=80" },
-  { name: "Spiti Valley", subtext: "High Altitude Desert", imageUrl: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&q=80" },
-  { name: "Ladakh", subtext: "Passes & Pangong Lake", imageUrl: "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=600&q=80" },
-  { name: "Kerala", subtext: "Backwaters & Tropical Hills", imageUrl: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&q=80" },
+  {
+    name: "Himachal Pradesh",
+    subtext: "Snow Peaks & Valleys",
+    imageUrl:
+      "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80",
+  },
+  {
+    name: "Uttarakhand",
+    subtext: "Trekking & Temple Trails",
+    imageUrl:
+      "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=600&q=80",
+  },
+  {
+    name: "Spiti Valley",
+    subtext: "High Altitude Desert",
+    imageUrl:
+      "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&q=80",
+  },
+  {
+    name: "Ladakh",
+    subtext: "Passes & Pangong Lake",
+    imageUrl:
+      "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=600&q=80",
+  },
+  {
+    name: "Kerala",
+    subtext: "Backwaters & Tropical Hills",
+    imageUrl:
+      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&q=80",
+  },
 ];
 
 export function PopularDestinationsEditor({
@@ -36,20 +68,31 @@ export function PopularDestinationsEditor({
     onChange({ ...draft, [field]: value });
   };
 
-  const destinationsList: DestinationObject[] = Array.isArray(draft.destinations) && draft.destinations.length > 0
-    ? draft.destinations.map((d: any) => typeof d === 'string' ? { name: d, imageUrl: '' } : { ...d, imageUrl: d.imageUrl || d.img })
-    : Array.isArray(draft.selectedDestinations) && draft.selectedDestinations.length > 0
-    ? draft.selectedDestinations.map((name: string) => {
-        const found = DEFAULT_ITEMS.find(i => i.name.toLowerCase() === name.toLowerCase());
-        return found || { name, imageUrl: '' };
-      })
-    : DEFAULT_ITEMS;
+  const destinationsList: DestinationObject[] =
+    Array.isArray(draft.destinations) && draft.destinations.length > 0
+      ? draft.destinations.map((d: any) =>
+          typeof d === "string"
+            ? { name: d, imageUrl: "" }
+            : { ...d, imageUrl: d.imageUrl || d.img },
+        )
+      : Array.isArray(draft.selectedDestinations) &&
+          draft.selectedDestinations.length > 0
+        ? draft.selectedDestinations.map((name: string) => {
+            const found = DEFAULT_ITEMS.find(
+              (i) => i.name.toLowerCase() === name.toLowerCase(),
+            );
+            return found || { name, imageUrl: "" };
+          })
+        : DEFAULT_ITEMS;
 
   const [newName, setNewName] = useState("");
   const [newSubtext, setNewSubtext] = useState("");
   const [newImage, setNewImage] = useState("");
 
-  const handleUpdateItem = (index: number, updatedItem: Partial<DestinationObject>) => {
+  const handleUpdateItem = (
+    index: number,
+    updatedItem: Partial<DestinationObject>,
+  ) => {
     const updated = destinationsList.map((item, i) => {
       if (i === index) {
         return { ...item, ...updatedItem };
@@ -69,7 +112,9 @@ export function PopularDestinationsEditor({
     const newItem: DestinationObject = {
       name: newName.trim(),
       subtext: newSubtext.trim() || "Explore Group Trip",
-      imageUrl: newImage || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80",
+      imageUrl:
+        newImage ||
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80",
     };
     updateField("destinations", [...destinationsList, newItem]);
     setNewName("");
@@ -96,7 +141,10 @@ export function PopularDestinationsEditor({
 
         <div className="space-y-1.5">
           <Label className="text-xs font-bold text-[#D4541A] uppercase tracking-wider block flex items-center gap-1">
-            <span>Accent Word</span> <span className="italic text-[#D4541A] font-normal">(Italic Orange)</span>
+            <span>Accent Word</span>{" "}
+            <span className="italic text-[#D4541A] font-normal">
+              (Italic Orange)
+            </span>
           </Label>
           <Input
             type="text"
@@ -129,7 +177,9 @@ export function PopularDestinationsEditor({
                   <Input
                     type="text"
                     value={item.name}
-                    onChange={(e) => handleUpdateItem(idx, { name: e.target.value })}
+                    onChange={(e) =>
+                      handleUpdateItem(idx, { name: e.target.value })
+                    }
                     placeholder="Destination Name (e.g. Manali)"
                     className="h-9 text-xs font-bold text-[#0B1528] rounded-xl border-slate-200 bg-white"
                   />
@@ -147,21 +197,29 @@ export function PopularDestinationsEditor({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div className="space-y-1">
-                  <Label className="text-[10.5px] font-bold text-slate-500 uppercase">Subtext / Tagline</Label>
+                  <Label className="text-[10.5px] font-bold text-slate-500 uppercase">
+                    Subtext / Tagline
+                  </Label>
                   <Input
                     type="text"
                     value={item.subtext || ""}
-                    onChange={(e) => handleUpdateItem(idx, { subtext: e.target.value })}
+                    onChange={(e) =>
+                      handleUpdateItem(idx, { subtext: e.target.value })
+                    }
                     placeholder="e.g. Snow Peaks & Valleys"
                     className="h-8 text-xs font-medium rounded-xl border-slate-200 bg-white"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[10.5px] font-bold text-slate-500 uppercase">Upload Card Photo</Label>
+                  <Label className="text-[10.5px] font-bold text-slate-500 uppercase">
+                    Upload Card Photo
+                  </Label>
                   <ImageUpload
                     value={item.imageUrl || item.img}
-                    onUpload={(url) => handleUpdateItem(idx, { imageUrl: url, img: url })}
+                    onUpload={(url) =>
+                      handleUpdateItem(idx, { imageUrl: url, img: url })
+                    }
                     label="Upload Photo"
                   />
                 </div>
@@ -218,7 +276,8 @@ export function PopularDestinationsEditor({
           onClick={onReset}
           className="h-9 px-4 text-xs font-bold text-slate-600 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset to Default
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset to
+          Default
         </Button>
       </div>
     </div>

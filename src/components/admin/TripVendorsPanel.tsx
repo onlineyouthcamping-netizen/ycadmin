@@ -3,18 +3,44 @@ import { vendorsService } from "@/services/vendors.service";
 import type { Vendor, TripVendor, TripVendorSummary } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
-  Building2, Truck, UserCheck, UtensilsCrossed, Wrench, HelpCircle,
-  Plus, Trash2, IndianRupee, CheckCircle2, AlertTriangle, X
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Building2,
+  Truck,
+  UserCheck,
+  UtensilsCrossed,
+  Wrench,
+  HelpCircle,
+  Plus,
+  Trash2,
+  IndianRupee,
+  CheckCircle2,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const TYPE_ICONS: Record<string, any> = {
-  hotel: Building2, transport: Truck, guide: UserCheck,
-  meals: UtensilsCrossed, equipment: Wrench, other: HelpCircle,
+  hotel: Building2,
+  transport: Truck,
+  guide: UserCheck,
+  meals: UtensilsCrossed,
+  equipment: Wrench,
+  other: HelpCircle,
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -34,7 +60,13 @@ interface TripVendorsPanelProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, onOpenChange }: TripVendorsPanelProps) {
+export default function TripVendorsPanel({
+  tripId,
+  tripTitle,
+  tripPrice,
+  open,
+  onOpenChange,
+}: TripVendorsPanelProps) {
   const [assignments, setAssignments] = useState<TripVendor[]>([]);
   const [summary, setSummary] = useState<TripVendorSummary | null>(null);
   const [allVendors, setAllVendors] = useState<Vendor[]>([]);
@@ -45,7 +77,7 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
   const [form, setForm] = useState({
     vendorId: "",
     agreedCost: "",
-    notes: ""
+    notes: "",
   });
 
   const loadData = useCallback(async () => {
@@ -54,7 +86,7 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
     try {
       const [vendorData, allV] = await Promise.all([
         vendorsService.getForTrip(tripId),
-        vendorsService.getAll()
+        vendorsService.getAll(),
       ]);
       setAssignments(vendorData.assignments);
       setSummary(vendorData.summary);
@@ -81,7 +113,7 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
         tripId,
         vendorId: form.vendorId,
         agreedCost: Number(form.agreedCost),
-        notes: form.notes
+        notes: form.notes,
       });
       toast.success("Vendor assigned");
       setShowAdd(false);
@@ -94,10 +126,17 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
     }
   };
 
-  const handleUpdatePayment = async (assignmentId: string, paymentStatus: string, paidAmount: number) => {
+  const handleUpdatePayment = async (
+    assignmentId: string,
+    paymentStatus: string,
+    paidAmount: number,
+  ) => {
     setSubmitting(true);
     try {
-      await vendorsService.updateAssignment(assignmentId, { paymentStatus: paymentStatus as any, paidAmount });
+      await vendorsService.updateAssignment(assignmentId, {
+        paymentStatus: paymentStatus as any,
+        paidAmount,
+      });
       toast.success("Vendor payment updated");
       loadData();
     } catch {
@@ -123,13 +162,17 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
 
   // Available vendors = all vendors minus already assigned
   const assignedIds = (assignments || [])
-    .map(a => {
+    .map((a) => {
       if (!a.vendorId) return null;
-      return typeof a.vendorId === 'object' ? (a.vendorId as Vendor).id : a.vendorId;
+      return typeof a.vendorId === "object"
+        ? (a.vendorId as Vendor).id
+        : a.vendorId;
     })
     .filter(Boolean);
-    
-  const availableVendors = (allVendors || []).filter(v => v?.id && !assignedIds.includes(v.id));
+
+  const availableVendors = (allVendors || []).filter(
+    (v) => v?.id && !assignedIds.includes(v.id),
+  );
 
   const totalCost = summary?.totalVendorCost ?? 0;
   const estimatedProfit = tripPrice - totalCost;
@@ -142,7 +185,9 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
             <DialogTitle className="text-lg font-black uppercase tracking-tight">
               Vendor Management
             </DialogTitle>
-            <p className="text-sm text-muted-foreground font-medium">{tripTitle}</p>
+            <p className="text-sm text-muted-foreground font-medium">
+              {tripTitle}
+            </p>
           </DialogHeader>
         </div>
 
@@ -150,25 +195,43 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
           {/* ─── Profit Summary ─── */}
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-              <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Per Person Price</p>
-              <p className="text-lg font-black text-emerald-700">₹{tripPrice.toLocaleString()}</p>
+              <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">
+                Per Person Price
+              </p>
+              <p className="text-lg font-black text-emerald-700">
+                ₹{tripPrice.toLocaleString()}
+              </p>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-2xl border border-red-100">
-              <p className="text-[9px] font-black uppercase tracking-wider text-red-600">Total Vendor Cost</p>
-              <p className="text-lg font-black text-red-700">₹{totalCost.toLocaleString()}</p>
+              <p className="text-[9px] font-black uppercase tracking-wider text-red-600">
+                Total Vendor Cost
+              </p>
+              <p className="text-lg font-black text-red-700">
+                ₹{totalCost.toLocaleString()}
+              </p>
             </div>
-            <div className={cn(
-              "text-center p-4 rounded-2xl border",
-              estimatedProfit >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"
-            )}>
-              <p className={cn("text-[9px] font-black uppercase tracking-wider",
-                estimatedProfit >= 0 ? "text-emerald-600" : "text-red-600"
-              )}>
+            <div
+              className={cn(
+                "text-center p-4 rounded-2xl border",
+                estimatedProfit >= 0
+                  ? "bg-emerald-50 border-emerald-200"
+                  : "bg-red-50 border-red-200",
+              )}
+            >
+              <p
+                className={cn(
+                  "text-[9px] font-black uppercase tracking-wider",
+                  estimatedProfit >= 0 ? "text-emerald-600" : "text-red-600",
+                )}
+              >
                 Est. Profit/Person
               </p>
-              <p className={cn("text-lg font-black",
-                estimatedProfit >= 0 ? "text-emerald-700" : "text-red-700"
-              )}>
+              <p
+                className={cn(
+                  "text-lg font-black",
+                  estimatedProfit >= 0 ? "text-emerald-700" : "text-red-700",
+                )}
+              >
                 ₹{estimatedProfit.toLocaleString()}
               </p>
             </div>
@@ -179,8 +242,16 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
               Assigned Vendors ({assignments.length})
             </h4>
-            <Button size="sm" onClick={() => setShowAdd(!showAdd)} className="h-8 text-[10px] font-black uppercase tracking-wider gap-1.5 rounded-xl">
-              {showAdd ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+            <Button
+              size="sm"
+              onClick={() => setShowAdd(!showAdd)}
+              className="h-8 text-[10px] font-black uppercase tracking-wider gap-1.5 rounded-xl"
+            >
+              {showAdd ? (
+                <X className="h-3.5 w-3.5" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
               {showAdd ? "Cancel" : "Assign Vendor"}
             </Button>
           </div>
@@ -189,16 +260,23 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
             <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-5 space-y-3 animate-in slide-in-from-top-2 duration-300">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Vendor *</label>
-                  <Select value={form.vendorId} onValueChange={(v) => setForm({ ...form, vendorId: v })}>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Vendor *
+                  </label>
+                  <Select
+                    value={form.vendorId}
+                    onValueChange={(v) => setForm({ ...form, vendorId: v })}
+                  >
                     <SelectTrigger className="h-10 rounded-xl text-sm">
                       <SelectValue placeholder="Select vendor..." />
                     </SelectTrigger>
                     <SelectContent>
                       {availableVendors.length === 0 ? (
-                        <SelectItem value="none" disabled>No vendors available</SelectItem>
+                        <SelectItem value="none" disabled>
+                          No vendors available
+                        </SelectItem>
                       ) : (
-                        availableVendors.map(v => (
+                        availableVendors.map((v) => (
                           <SelectItem key={v.id} value={v.id}>
                             {v.name} ({v.type})
                           </SelectItem>
@@ -208,17 +286,25 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Agreed Cost (₹) *</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Agreed Cost (₹) *
+                  </label>
                   <Input
                     type="number"
                     placeholder="0"
                     value={form.agreedCost}
-                    onChange={(e) => setForm({ ...form, agreedCost: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, agreedCost: e.target.value })
+                    }
                     className="h-10 rounded-xl"
                   />
                 </div>
               </div>
-              <Button onClick={handleAssign} disabled={submitting} className="w-full h-10 rounded-xl font-bold text-xs uppercase tracking-wider">
+              <Button
+                onClick={handleAssign}
+                disabled={submitting}
+                className="w-full h-10 rounded-xl font-bold text-xs uppercase tracking-wider"
+              >
                 {submitting ? "Assigning..." : "Assign to Trip"}
               </Button>
             </div>
@@ -227,37 +313,70 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
           {/* ─── Vendor List ─── */}
           {loading ? (
             <div className="space-y-3">
-              {[1, 2].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />)}
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-20 bg-muted animate-pulse rounded-xl"
+                />
+              ))}
             </div>
           ) : assignments.length === 0 ? (
             <div className="text-center py-12 bg-muted/20 rounded-2xl">
               <Building2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground font-medium">No vendors assigned to this trip</p>
+              <p className="text-sm text-muted-foreground font-medium">
+                No vendors assigned to this trip
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {assignments.map((a) => {
-                const vendor = typeof a.vendorId === 'object' ? a.vendorId as Vendor : null;
+                const vendor =
+                  typeof a.vendorId === "object"
+                    ? (a.vendorId as Vendor)
+                    : null;
                 if (!vendor) return null;
                 const TypeIcon = TYPE_ICONS[vendor.type] || HelpCircle;
 
                 return (
-                  <div key={a.id || a._id} className="bg-white border-2 border-border rounded-2xl p-5 space-y-3">
+                  <div
+                    key={a.id || a._id}
+                    className="bg-white border-2 border-border rounded-2xl p-5 space-y-3"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", TYPE_COLORS[vendor.type])}>
+                        <div
+                          className={cn(
+                            "w-9 h-9 rounded-xl flex items-center justify-center",
+                            TYPE_COLORS[vendor.type],
+                          )}
+                        >
                           <TypeIcon className="h-4 w-4" />
                         </div>
                         <div>
-                          <h5 className="font-black text-sm uppercase tracking-tight">{vendor.name}</h5>
-                          <span className={cn("text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", TYPE_COLORS[vendor.type])}>
+                          <h5 className="font-black text-sm uppercase tracking-tight">
+                            {vendor.name}
+                          </h5>
+                          <span
+                            className={cn(
+                              "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                              TYPE_COLORS[vendor.type],
+                            )}
+                          >
                             {vendor.type}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-black">₹{a.agreedCost.toLocaleString()}</span>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={submitting} onClick={() => handleRemove(a.id || a._id!)}>
+                        <span className="text-lg font-black">
+                          ₹{a.agreedCost.toLocaleString()}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          disabled={submitting}
+                          onClick={() => handleRemove(a.id || a._id!)}
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -267,7 +386,9 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
                       <Select
                         value={a.paymentStatus}
                         disabled={submitting}
-                        onValueChange={(v) => handleUpdatePayment(a.id || a._id!, v, a.paidAmount)}
+                        onValueChange={(v) =>
+                          handleUpdatePayment(a.id || a._id!, v, a.paidAmount)
+                        }
                       >
                         <SelectTrigger className="h-8 w-36 rounded-lg text-[10px] font-bold uppercase">
                           <SelectValue />
@@ -279,7 +400,7 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
                         </SelectContent>
                       </Select>
 
-                      {a.paymentStatus !== 'paid' && (
+                      {a.paymentStatus !== "paid" && (
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
@@ -290,8 +411,17 @@ export default function TripVendorsPanel({ tripId, tripTitle, tripPrice, open, o
                             onBlur={(e) => {
                               const val = Number(e.target.value);
                               if (val !== a.paidAmount) {
-                                const status = val >= a.agreedCost ? 'paid' : val > 0 ? 'partial' : 'pending';
-                                handleUpdatePayment(a.id || a._id!, status, val);
+                                const status =
+                                  val >= a.agreedCost
+                                    ? "paid"
+                                    : val > 0
+                                      ? "partial"
+                                      : "pending";
+                                handleUpdatePayment(
+                                  a.id || a._id!,
+                                  status,
+                                  val,
+                                );
                               }
                             }}
                           />

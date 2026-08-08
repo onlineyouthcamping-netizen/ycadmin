@@ -17,11 +17,7 @@ interface FooterEditorProps {
   onReset: () => void;
 }
 
-export function FooterEditor({
-  draft,
-  onChange,
-  onReset,
-}: FooterEditorProps) {
+export function FooterEditor({ draft, onChange, onReset }: FooterEditorProps) {
   const updateField = (field: string, value: any) => {
     onChange({ ...draft, [field]: value });
   };
@@ -50,27 +46,36 @@ export function FooterEditor({
   };
 
   const removeQuickLink = (idx: number) => {
-    updateField("quickLinks", quickLinks.filter((_, i) => i !== idx));
+    updateField(
+      "quickLinks",
+      quickLinks.filter((_, i) => i !== idx),
+    );
   };
 
   const updateQuickLink = (idx: number, key: "text" | "url", val: string) => {
     const updated = quickLinks.map((item, i) =>
-      i === idx ? { ...item, [key]: val } : item
+      i === idx ? { ...item, [key]: val } : item,
     );
     updateField("quickLinks", updated);
   };
 
   const addUsefulLink = () => {
-    updateField("usefulLinks", [...usefulLinks, { text: "New Policy", url: "#" }]);
+    updateField("usefulLinks", [
+      ...usefulLinks,
+      { text: "New Policy", url: "#" },
+    ]);
   };
 
   const removeUsefulLink = (idx: number) => {
-    updateField("usefulLinks", usefulLinks.filter((_, i) => i !== idx));
+    updateField(
+      "usefulLinks",
+      usefulLinks.filter((_, i) => i !== idx),
+    );
   };
 
   const updateUsefulLink = (idx: number, key: "text" | "url", val: string) => {
     const updated = usefulLinks.map((item, i) =>
-      i === idx ? { ...item, [key]: val } : item
+      i === idx ? { ...item, [key]: val } : item,
     );
     updateField("usefulLinks", updated);
   };
@@ -215,7 +220,9 @@ export function FooterEditor({
           </Label>
           <Input
             type="text"
-            value={draft.copyright ?? "© 2026 YouthCamping. All Rights Reserved."}
+            value={
+              draft.copyright ?? "© 2026 YouthCamping. All Rights Reserved."
+            }
             onChange={(e) => updateField("copyright", e.target.value)}
             placeholder="© 2026 YouthCamping. All Rights Reserved."
             className="h-10 text-xs font-semibold rounded-xl border-[#e5e7eb]"
@@ -231,7 +238,9 @@ export function FooterEditor({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div className="space-y-1">
-            <span className="text-[10.5px] font-bold text-[#6b7280]">Instagram URL</span>
+            <span className="text-[10.5px] font-bold text-[#6b7280]">
+              Instagram URL
+            </span>
             <Input
               type="url"
               value={socialLinks.instagram || ""}
@@ -242,7 +251,9 @@ export function FooterEditor({
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10.5px] font-bold text-[#6b7280]">Facebook URL</span>
+            <span className="text-[10.5px] font-bold text-[#6b7280]">
+              Facebook URL
+            </span>
             <Input
               type="url"
               value={socialLinks.facebook || ""}
@@ -253,7 +264,9 @@ export function FooterEditor({
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10.5px] font-bold text-[#6b7280]">YouTube URL</span>
+            <span className="text-[10.5px] font-bold text-[#6b7280]">
+              YouTube URL
+            </span>
             <Input
               type="url"
               value={socialLinks.youtube || ""}
@@ -264,7 +277,9 @@ export function FooterEditor({
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10.5px] font-bold text-[#6b7280]">WhatsApp URL</span>
+            <span className="text-[10.5px] font-bold text-[#6b7280]">
+              WhatsApp URL
+            </span>
             <Input
               type="url"
               value={socialLinks.whatsapp || ""}
@@ -284,7 +299,8 @@ export function FooterEditor({
           onClick={onReset}
           className="h-9 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to Default
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to
+          Default
         </Button>
       </div>
     </div>

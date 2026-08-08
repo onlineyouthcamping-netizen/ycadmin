@@ -1,7 +1,24 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, X, Ticket, UserPlus, FileText, CreditCard, DollarSign, MessageSquare, Phone, Search, QrCode } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Plus,
+  X,
+  Ticket,
+  UserPlus,
+  FileText,
+  CreditCard,
+  DollarSign,
+  MessageSquare,
+  Phone,
+  Search,
+  QrCode,
+} from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 interface MobileQuickActionFabProps {
   onOpenNewBooking: () => void;
@@ -100,12 +117,19 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
 
       {/* Quick Action Bottom Sheet */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl p-4 bg-white max-h-[85vh]">
+        <SheetContent
+          side="bottom"
+          className="rounded-t-2xl p-4 bg-white max-h-[85vh]"
+        >
           <SheetHeader className="pb-3 border-b border-slate-100 text-left">
             <div className="flex items-center justify-between">
               <div>
-                <SheetTitle className="text-base font-bold text-slate-900">Quick Actions</SheetTitle>
-                <p className="text-xs text-slate-500">1-tap operational shortcuts</p>
+                <SheetTitle className="text-base font-bold text-slate-900">
+                  Quick Actions
+                </SheetTitle>
+                <p className="text-xs text-slate-500">
+                  1-tap operational shortcuts
+                </p>
               </div>
               <button
                 type="button"
@@ -127,11 +151,17 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
                   onClick={act.onClick}
                   className="flex flex-col text-left p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200 hover:shadow-2xs active:scale-98 transition-all"
                 >
-                  <div className={`w-9 h-9 rounded-lg border flex items-center justify-center mb-2.5 ${act.color}`}>
+                  <div
+                    className={`w-9 h-9 rounded-lg border flex items-center justify-center mb-2.5 ${act.color}`}
+                  >
                     <Icon className="w-4 h-4 stroke-[2px]" />
                   </div>
-                  <span className="text-xs font-bold text-slate-900 leading-tight">{act.label}</span>
-                  <span className="text-[10px] text-slate-500 mt-0.5 leading-tight">{act.desc}</span>
+                  <span className="text-xs font-bold text-slate-900 leading-tight">
+                    {act.label}
+                  </span>
+                  <span className="text-[10px] text-slate-500 mt-0.5 leading-tight">
+                    {act.desc}
+                  </span>
                 </button>
               );
             })}

@@ -14,16 +14,16 @@ export default function UnauthorizedPage() {
         <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-4 border-background animate-ping" />
       </div>
 
-      <h1 className="text-xl font-bold text-slate-800 mb-2">
-        Access Denied
-      </h1>
+      <h1 className="text-xl font-bold text-slate-800 mb-2">Access Denied</h1>
       <p className="text-[10px] uppercase tracking-wider text-rose-500 font-bold mb-6">
         Error Code: 403 Forbidden
       </p>
 
       <div className="max-w-md bg-white border border-[#E2E8F0] rounded-[4px] p-6 shadow-none mb-8">
         <p className="text-slate-600 font-medium text-xs leading-relaxed">
-          You do not have permission to access this area. If you believe this is an error, please contact your administrator to upgrade your role or permissions.
+          You do not have permission to access this area. If you believe this is
+          an error, please contact your administrator to upgrade your role or
+          permissions.
         </p>
       </div>
 

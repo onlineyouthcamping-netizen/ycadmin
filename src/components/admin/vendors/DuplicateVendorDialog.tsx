@@ -1,6 +1,13 @@
 import React from "react";
 import { AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface DuplicateVendorDialogProps {
@@ -16,7 +23,7 @@ export function DuplicateVendorDialog({
   onClose,
   existingVendor,
   onUseExisting,
-  onForceCreate
+  onForceCreate,
 }: DuplicateVendorDialogProps) {
   if (!existingVendor) return null;
 
@@ -31,22 +38,49 @@ export function DuplicateVendorDialog({
             Potential Duplicate Vendor Detected
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-550 leading-relaxed">
-            A vendor with matching details already exists in the system. To avoid duplicate vendor records across trips, we recommend linking the existing vendor.
+            A vendor with matching details already exists in the system. To
+            avoid duplicate vendor records across trips, we recommend linking
+            the existing vendor.
           </DialogDescription>
         </DialogHeader>
 
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 my-3 space-y-2 text-xs">
           <div className="flex justify-between items-center">
-            <span className="font-bold text-slate-800 text-sm">{existingVendor.name}</span>
+            <span className="font-bold text-slate-800 text-sm">
+              {existingVendor.name}
+            </span>
             <span className="text-[10px] font-mono font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded uppercase">
               {existingVendor.vendorCode || existingVendor.id}
             </span>
           </div>
           <div className="text-slate-600 font-medium space-y-1">
-            <p>Type: <span className="font-bold text-slate-700 uppercase">{existingVendor.type || existingVendor.category}</span></p>
-            <p>Phone: <span className="font-bold text-slate-700">{existingVendor.contactNumber || existingVendor.phone || "—"}</span></p>
-            <p>Location: <span className="font-bold text-slate-700">{existingVendor.city || existingVendor.location || "—"}, {existingVendor.state || "—"}</span></p>
-            {existingVendor.gstin && <p>GSTIN: <span className="font-mono text-slate-700 font-bold">{existingVendor.gstin}</span></p>}
+            <p>
+              Type:{" "}
+              <span className="font-bold text-slate-700 uppercase">
+                {existingVendor.type || existingVendor.category}
+              </span>
+            </p>
+            <p>
+              Phone:{" "}
+              <span className="font-bold text-slate-700">
+                {existingVendor.contactNumber || existingVendor.phone || "—"}
+              </span>
+            </p>
+            <p>
+              Location:{" "}
+              <span className="font-bold text-slate-700">
+                {existingVendor.city || existingVendor.location || "—"},{" "}
+                {existingVendor.state || "—"}
+              </span>
+            </p>
+            {existingVendor.gstin && (
+              <p>
+                GSTIN:{" "}
+                <span className="font-mono text-slate-700 font-bold">
+                  {existingVendor.gstin}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 

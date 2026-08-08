@@ -1,13 +1,26 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { bookingLinksService, type BookingLinkRecord } from "@/services/bookingLinks.service";
+import {
+  bookingLinksService,
+  type BookingLinkRecord,
+} from "@/services/bookingLinks.service";
 import { tripsService } from "@/services/trips.service";
 import type { Trip } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-  DialogDescription 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -21,9 +34,26 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
-  Link2, Plus, Trash2, ExternalLink, Copy, Share2, Pencil,
-  FileSpreadsheet, ClipboardCheck, Loader2, MessageCircle,
-  CalendarDays, MapPin, Send, Search, Eye, AlertCircle, CheckCircle2, ChevronRight, ArrowLeft
+  Link2,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Copy,
+  Share2,
+  Pencil,
+  FileSpreadsheet,
+  ClipboardCheck,
+  Loader2,
+  MessageCircle,
+  CalendarDays,
+  MapPin,
+  Send,
+  Search,
+  Eye,
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import { cn, formatDate, getUpcomingDefaultDates } from "@/lib/utils";
 
@@ -43,7 +73,13 @@ const getYYYYMMDD = (dateVal: any): string => {
 
 interface MockDepartureDate {
   date: string;
-  status: "Open for Booking" | "Closing Soon" | "Full" | "Closed" | "Cancelled" | "Completed / Past Departure";
+  status:
+    | "Open for Booking"
+    | "Closing Soon"
+    | "Full"
+    | "Closed"
+    | "Cancelled"
+    | "Completed / Past Departure";
   capacity: string;
   cutoff: string;
 }
@@ -53,9 +89,11 @@ export default function BookingLinksPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  
+
   // Workflow Pages: "directory" | "departures" | "workspace"
-  const [workflowPage, setWorkflowPage] = useState<"directory" | "departures" | "workspace">("directory");
+  const [workflowPage, setWorkflowPage] = useState<
+    "directory" | "departures" | "workspace"
+  >("directory");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -69,12 +107,17 @@ export default function BookingLinksPage() {
 
   // Search & Filter state for Trip Directory
   const [tripSearch, setTripSearch] = useState("");
-  const [tripFilterTab, setTripFilterTab] = useState<"all" | "open" | "active">("all");
-  const [linkFilterTab, setLinkFilterTab] = useState<"active" | "used">("active");
+  const [tripFilterTab, setTripFilterTab] = useState<"all" | "open" | "active">(
+    "all",
+  );
+  const [linkFilterTab, setLinkFilterTab] = useState<"active" | "used">(
+    "active",
+  );
 
   // Duplicate safety check warning dialog
   const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false);
-  const [existingFormMatch, setExistingFormMatch] = useState<BookingLinkRecord | null>(null);
+  const [existingFormMatch, setExistingFormMatch] =
+    useState<BookingLinkRecord | null>(null);
 
   const [formData, setFormData] = useState({
     paymentMode: "Full Payment" as "Full Payment" | "Partial Payment",
@@ -88,7 +131,7 @@ export default function BookingLinksPage() {
     customerPhone: "",
     customerEmail: "",
     travelerCount: 1,
-    internalNote: ""
+    internalNote: "",
   });
 
   const load = useCallback(async () => {
@@ -96,7 +139,7 @@ export default function BookingLinksPage() {
     try {
       const [linksData, tripsData] = await Promise.all([
         bookingLinksService.getAll(1, 200),
-        tripsService.getAll()
+        tripsService.getAll(),
       ]);
       setLinks(Array.isArray(linksData.data) ? linksData.data : []);
       setTrips(Array.isArray(tripsData) ? tripsData : []);
@@ -109,18 +152,19 @@ export default function BookingLinksPage() {
 
   useEffect(() => {
     load();
-    
+
     // Support quick launch from trip details
     const handleQuickLaunch = (e: any) => {
       const { tripId, date } = e.detail || {};
       if (tripId) {
-        tripsService.getAll().then(data => {
+        tripsService.getAll().then((data) => {
           const matched = data.find((t: any) => t.id === tripId);
           if (matched) {
             setSelectedTrip(matched);
             setWorkflowPage("departures");
             if (date) {
-              const cleanDate = typeof date === 'string' ? date : date?.date || "";
+              const cleanDate =
+                typeof date === "string" ? date : date?.date || "";
               setSelectedDate(cleanDate);
               setWorkflowPage("workspace");
             }
@@ -129,9 +173,12 @@ export default function BookingLinksPage() {
       }
     };
     window.addEventListener("quick-launch-booking-forms", handleQuickLaunch);
-    return () => window.removeEventListener("quick-launch-booking-forms", handleQuickLaunch);
+    return () =>
+      window.removeEventListener(
+        "quick-launch-booking-forms",
+        handleQuickLaunch,
+      );
   }, [load]);
-
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -158,11 +205,12 @@ export default function BookingLinksPage() {
 
   const checkAndOpenGenerate = () => {
     if (!selectedTrip || !selectedDate) return;
-    
+
     // Check duplicate safety
-    const existing = links.find(f => 
-      f.tripName.toLowerCase() === selectedTrip.title.toLowerCase() && 
-      getYYYYMMDD(f.departureDate) === getYYYYMMDD(selectedDate)
+    const existing = links.find(
+      (f) =>
+        f.tripName.toLowerCase() === selectedTrip.title.toLowerCase() &&
+        getYYYYMMDD(f.departureDate) === getYYYYMMDD(selectedDate),
     );
 
     if (existing) {
@@ -178,7 +226,10 @@ export default function BookingLinksPage() {
 
     setGenerating(true);
     try {
-      const dateStr = typeof selectedDate === 'string' ? selectedDate : (selectedDate as any)?.date || "";
+      const dateStr =
+        typeof selectedDate === "string"
+          ? selectedDate
+          : (selectedDate as any)?.date || "";
       const result = await bookingLinksService.create({
         tripId: selectedTrip.id,
         departureDate: dateStr,
@@ -193,7 +244,7 @@ export default function BookingLinksPage() {
         customerPhone: formData.customerPhone || undefined,
         customerEmail: formData.customerEmail || undefined,
         travelerCount: Number(formData.travelerCount) || 1,
-        internalNote: formData.internalNote || undefined
+        internalNote: formData.internalNote || undefined,
       });
       toast.success("Booking link generated successfully!");
       setCreateOpen(false);
@@ -202,7 +253,8 @@ export default function BookingLinksPage() {
       load();
       openShare(result);
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "Failed to generate form link";
+      const msg =
+        err?.response?.data?.message || "Failed to generate form link";
       toast.error(msg);
     } finally {
       setGenerating(false);
@@ -226,39 +278,56 @@ export default function BookingLinksPage() {
   // Generate Mock Departures List for selected Trip
   const departuresList = useMemo<MockDepartureDate[]>(() => {
     if (!selectedTrip) return [];
-    const rawDates = selectedTrip.availableDates && selectedTrip.availableDates.length > 0 
-      ? selectedTrip.availableDates 
-      : getUpcomingDefaultDates();
-    const dates = rawDates.map((d: any) => typeof d === 'string' ? d : d?.date || "");
+    const rawDates =
+      selectedTrip.availableDates && selectedTrip.availableDates.length > 0
+        ? selectedTrip.availableDates
+        : getUpcomingDefaultDates();
+    const dates = rawDates.map((d: any) =>
+      typeof d === "string" ? d : d?.date || "",
+    );
 
     return dates.map((dateStr) => {
       const dateObj = new Date(dateStr);
-      const isPast = !isNaN(dateObj.getTime()) && dateObj.setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
-      const linksForDate = links.filter(l =>
-        l.tripName?.toLowerCase() === selectedTrip.title.toLowerCase() &&
-        getYYYYMMDD(l.departureDate) === getYYYYMMDD(dateStr)
+      const isPast =
+        !isNaN(dateObj.getTime()) &&
+        dateObj.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+      const linksForDate = links.filter(
+        (l) =>
+          l.tripName?.toLowerCase() === selectedTrip.title.toLowerCase() &&
+          getYYYYMMDD(l.departureDate) === getYYYYMMDD(dateStr),
       );
-      const opened = linksForDate.reduce((sum, l) => sum + (l.openedCount || 0), 0);
-      const completed = linksForDate.reduce((sum, l) => sum + (l.completedCount || 0), 0);
+      const opened = linksForDate.reduce(
+        (sum, l) => sum + (l.openedCount || 0),
+        0,
+      );
+      const completed = linksForDate.reduce(
+        (sum, l) => sum + (l.completedCount || 0),
+        0,
+      );
       // Default capacity is taken from the trip if available; otherwise show unknown.
-      const totalCapacity = selectedTrip.maxGroupSize || selectedTrip.capacity || 0;
-      let status: MockDepartureDate["status"] = isPast ? "Completed / Past Departure" : "Open for Booking";
+      const totalCapacity =
+        selectedTrip.maxGroupSize || selectedTrip.capacity || 0;
+      let status: MockDepartureDate["status"] = isPast
+        ? "Completed / Past Departure"
+        : "Open for Booking";
       if (!isPast && completed >= totalCapacity) status = "Full";
-      else if (!isPast && completed >= totalCapacity * 0.85) status = "Closing Soon";
-      else if (!isPast && completed === 0 && linksForDate.length === 0) status = "Open for Booking";
+      else if (!isPast && completed >= totalCapacity * 0.85)
+        status = "Closing Soon";
+      else if (!isPast && completed === 0 && linksForDate.length === 0)
+        status = "Open for Booking";
 
       const d = new Date(dateStr);
       let cutoff = "N/A";
       if (!isNaN(d.getTime())) {
         d.setDate(d.getDate() - 3);
-        cutoff = d.toISOString().split('T')[0];
+        cutoff = d.toISOString().split("T")[0];
       }
 
       return {
         date: dateStr,
         status,
         capacity: `${completed} / ${totalCapacity}`,
-        cutoff
+        cutoff,
       };
     });
   }, [selectedTrip, links]);
@@ -266,16 +335,19 @@ export default function BookingLinksPage() {
   // Selected Date Workspace Links
   const workspaceLinks = useMemo(() => {
     if (!selectedTrip || !selectedDate) return [];
-    return links.filter(f => 
-      f.tripName.toLowerCase() === selectedTrip.title.toLowerCase() && 
-      getYYYYMMDD(f.departureDate) === getYYYYMMDD(selectedDate)
+    return links.filter(
+      (f) =>
+        f.tripName.toLowerCase() === selectedTrip.title.toLowerCase() &&
+        getYYYYMMDD(f.departureDate) === getYYYYMMDD(selectedDate),
     );
   }, [links, selectedTrip, selectedDate]);
 
   const displayedLinks = useMemo(() => {
-    return workspaceLinks.filter(form => {
-      const isUsed = form.status === 'used' || (form.completedCount && form.completedCount > 0);
-      if (linkFilterTab === 'used') {
+    return workspaceLinks.filter((form) => {
+      const isUsed =
+        form.status === "used" ||
+        (form.completedCount && form.completedCount > 0);
+      if (linkFilterTab === "used") {
         return isUsed;
       } else {
         return !isUsed;
@@ -285,9 +357,9 @@ export default function BookingLinksPage() {
 
   // Filtered trips list for Directory
   const filteredTrips = useMemo(() => {
-    return trips.filter(trip => {
-      const matchesSearch = 
-        trip.title.toLowerCase().includes(tripSearch.toLowerCase()) || 
+    return trips.filter((trip) => {
+      const matchesSearch =
+        trip.title.toLowerCase().includes(tripSearch.toLowerCase()) ||
         trip.id.toLowerCase().includes(tripSearch.toLowerCase());
 
       return matchesSearch;
@@ -296,7 +368,6 @@ export default function BookingLinksPage() {
 
   return (
     <div className="space-y-4 pb-12 select-none px-4 py-3 bg-[#F4F7FB] min-h-screen text-[#162B45] font-sans antialiased">
-      
       {/* ─── WORKFLOW PAGE 1: TRIP DIRECTORY ─── */}
       {workflowPage === "directory" && (
         <>
@@ -306,10 +377,11 @@ export default function BookingLinksPage() {
                 Booking Forms
               </h1>
               <p className="text-[#74839A] text-[11px] font-[500] mt-1 leading-none">
-                Select a trip and departure date to create or manage booking links.
+                Select a trip and departure date to create or manage booking
+                links.
               </p>
             </div>
-            
+
             <div className="flex items-center gap-2.5">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
@@ -317,7 +389,7 @@ export default function BookingLinksPage() {
                   type="text"
                   placeholder="Search trip or code..."
                   value={tripSearch}
-                  onChange={e => setTripSearch(e.target.value)}
+                  onChange={(e) => setTripSearch(e.target.value)}
                   className="w-48 h-8 pl-8 pr-2.5 bg-white border border-[#E3EAF2] rounded-md text-[11px] outline-none text-[#162B45] focus:ring-1 focus:ring-[#F97316] placeholder:text-[#74839A]/60"
                 />
               </div>
@@ -327,23 +399,36 @@ export default function BookingLinksPage() {
           {/* Directory Grid */}
           {loading ? (
             <div className="grid grid-cols-3 gap-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-28 bg-white border border-[#E3EAF2] rounded-[10px] animate-pulse" />
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-28 bg-white border border-[#E3EAF2] rounded-[10px] animate-pulse"
+                />
               ))}
             </div>
           ) : filteredTrips.length === 0 ? (
             <div className="text-center py-20 bg-white border border-[#E3EAF2] rounded-[10px] space-y-2">
               <MapPin className="h-8 w-8 mx-auto text-[#74839A]/40" />
-              <p className="text-xs font-bold text-[#74839A] uppercase tracking-wider">No Trips Found</p>
+              <p className="text-xs font-bold text-[#74839A] uppercase tracking-wider">
+                No Trips Found
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTrips.map(trip => {
+              {filteredTrips.map((trip) => {
                 const upcomingCount = trip.availableDates?.length || 6;
-                const activeLinksCount = links.filter(f => f.tripName.toLowerCase() === trip.title.toLowerCase()).length;
+                const activeLinksCount = links.filter(
+                  (f) => f.tripName.toLowerCase() === trip.title.toLowerCase(),
+                ).length;
                 const rawNext = trip.availableDates?.[0];
-                const nextDeparture = typeof rawNext === 'string' ? rawNext : rawNext?.date || getUpcomingDefaultDates()[0];
-                const img = trip.heroImage || trip.images?.[0] || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400";
+                const nextDeparture =
+                  typeof rawNext === "string"
+                    ? rawNext
+                    : rawNext?.date || getUpcomingDefaultDates()[0];
+                const img =
+                  trip.heroImage ||
+                  trip.images?.[0] ||
+                  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400";
 
                 return (
                   <div
@@ -351,23 +436,28 @@ export default function BookingLinksPage() {
                     className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs hover:border-[#D4541A]/50 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
                   >
                     <div className="flex items-start gap-3">
-                      <img 
-                        src={img} 
-                        alt={trip.title} 
-                        className="h-12 w-16 rounded-xl object-cover border border-slate-200/80 shrink-0 group-hover:scale-105 transition-transform" 
+                      <img
+                        src={img}
+                        alt={trip.title}
+                        className="h-12 w-16 rounded-xl object-cover border border-slate-200/80 shrink-0 group-hover:scale-105 transition-transform"
                       />
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <div className="flex items-start justify-between gap-1">
-                          <h3 className="font-extrabold text-xs text-[#0B1528] leading-tight truncate" title={trip.title}>
+                          <h3
+                            className="font-extrabold text-xs text-[#0B1528] leading-tight truncate"
+                            title={trip.title}
+                          >
                             {trip.title}
                           </h3>
                           <span className="font-mono text-[9.5px] font-black text-[#D4541A] bg-orange-50 border border-orange-200/60 px-1.5 py-0.5 rounded-md shrink-0">
-                            {trip.tripCode || trip.id.substring(0, 4).toUpperCase()}
+                            {trip.tripCode ||
+                              trip.id.substring(0, 4).toUpperCase()}
                           </span>
                         </div>
-                        
+
                         <p className="text-[11px] text-slate-500 font-semibold truncate">
-                          {upcomingCount} departures · Next: {formatDate(nextDeparture)}
+                          {upcomingCount} departures · Next:{" "}
+                          {formatDate(nextDeparture)}
                         </p>
                       </div>
                     </div>
@@ -400,11 +490,16 @@ export default function BookingLinksPage() {
         <>
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-xs font-semibold text-[#74839A] pb-1">
-            <button onClick={() => setWorkflowPage("directory")} className="hover:text-[#F97316] flex items-center gap-1">
+            <button
+              onClick={() => setWorkflowPage("directory")}
+              className="hover:text-[#F97316] flex items-center gap-1"
+            >
               <ArrowLeft className="w-3.5 h-3.5" /> Booking Forms
             </button>
             <span className="text-slate-300">/</span>
-            <span className="text-[#162B45] truncate max-w-[200px]">{selectedTrip.title}</span>
+            <span className="text-[#162B45] truncate max-w-[200px]">
+              {selectedTrip.title}
+            </span>
           </div>
 
           <div className="flex items-center justify-between pb-1.5 border-b border-[#E3EAF2]">
@@ -419,23 +514,44 @@ export default function BookingLinksPage() {
           </div>
 
           {/* Departures Table */}
-          <div className="bg-white border border-[#E3EAF2] rounded-[10px] overflow-hidden shadow-sm">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="bg-white border border-[#E3EAF2] rounded-[10px] overflow-x-auto scrollbar-none shadow-sm">
+            <table className="w-full min-w-[600px] text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-[#E3EAF2] bg-slate-50">
-                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px]">Departure Date</th>
-                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px]">Booking Status</th>
-                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">Seats / Capacity</th>
-                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px]">Cutoff Date</th>
-                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">Active Links</th>
-                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">Total Opens</th>
-                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">Action</th>
+                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px]">
+                    Departure Date
+                  </th>
+                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px]">
+                    Booking Status
+                  </th>
+                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">
+                    Seats / Capacity
+                  </th>
+                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px]">
+                    Cutoff Date
+                  </th>
+                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">
+                    Active Links
+                  </th>
+                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">
+                    Total Opens
+                  </th>
+                  <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {departuresList.map((dep) => {
-                  const linksCount = links.filter(f => f.tripName.toLowerCase() === selectedTrip.title.toLowerCase() && getYYYYMMDD(f.departureDate) === getYYYYMMDD(dep.date)).length;
-                  const isEligible = dep.status === "Open for Booking" || dep.status === "Closing Soon";
+                  const linksCount = links.filter(
+                    (f) =>
+                      f.tripName.toLowerCase() ===
+                        selectedTrip.title.toLowerCase() &&
+                      getYYYYMMDD(f.departureDate) === getYYYYMMDD(dep.date),
+                  ).length;
+                  const isEligible =
+                    dep.status === "Open for Booking" ||
+                    dep.status === "Closing Soon";
 
                   return (
                     <tr
@@ -446,24 +562,43 @@ export default function BookingLinksPage() {
                       }}
                       className="hover:bg-[#F8FAFD] transition-colors cursor-pointer"
                     >
-                      <td className="px-4 py-3 font-bold text-[#162B45]">{formatDate(dep.date)}</td>
+                      <td className="px-4 py-3 font-bold text-[#162B45]">
+                        {formatDate(dep.date)}
+                      </td>
                       <td className="px-4 py-3">
-                        <span className={cn(
-                          "text-[8.5px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
-                          dep.status === "Open for Booking" ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200" :
-                          dep.status === "Closing Soon" ? "bg-[#FFF7E6] text-[#D97706] border-amber-200" :
-                          dep.status === "Full" ? "bg-slate-100 text-slate-700 border-slate-300" :
-                          dep.status === "Cancelled" ? "bg-[#FFF1F3] text-[#E23D4D] border-rose-200" :
-                          "bg-slate-50 text-[#74839A] border-slate-200"
-                        )}>
+                        <span
+                          className={cn(
+                            "text-[8.5px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
+                            dep.status === "Open for Booking"
+                              ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200"
+                              : dep.status === "Closing Soon"
+                                ? "bg-[#FFF7E6] text-[#D97706] border-amber-200"
+                                : dep.status === "Full"
+                                  ? "bg-slate-100 text-slate-700 border-slate-300"
+                                  : dep.status === "Cancelled"
+                                    ? "bg-[#FFF1F3] text-[#E23D4D] border-rose-200"
+                                    : "bg-slate-50 text-[#74839A] border-slate-200",
+                          )}
+                        >
                           {dep.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center font-bold text-slate-700">{dep.capacity}</td>
-                      <td className="px-4 py-3 font-semibold text-[#74839A]">{formatDate(dep.cutoff)}</td>
-                      <td className="px-4 py-3 text-center font-bold text-slate-700">{linksCount}</td>
-                      <td className="px-4 py-3 text-center font-bold text-slate-700">{linksCount * 12}</td>
-                      <td className="px-4 py-2 text-center" onClick={e => e.stopPropagation()}>
+                      <td className="px-4 py-3 text-center font-bold text-slate-700">
+                        {dep.capacity}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-[#74839A]">
+                        {formatDate(dep.cutoff)}
+                      </td>
+                      <td className="px-4 py-3 text-center font-bold text-slate-700">
+                        {linksCount}
+                      </td>
+                      <td className="px-4 py-3 text-center font-bold text-slate-700">
+                        {linksCount * 12}
+                      </td>
+                      <td
+                        className="px-4 py-2 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Button
                           size="sm"
                           onClick={() => {
@@ -489,15 +624,23 @@ export default function BookingLinksPage() {
         <>
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-xs font-semibold text-[#74839A] pb-1">
-            <button onClick={() => setWorkflowPage("directory")} className="hover:text-[#F97316] flex items-center gap-1">
+            <button
+              onClick={() => setWorkflowPage("directory")}
+              className="hover:text-[#F97316] flex items-center gap-1"
+            >
               Booking Forms
             </button>
             <span className="text-slate-300">/</span>
-            <button onClick={() => setWorkflowPage("departures")} className="hover:text-[#F97316] truncate max-w-[150px]">
+            <button
+              onClick={() => setWorkflowPage("departures")}
+              className="hover:text-[#F97316] truncate max-w-[150px]"
+            >
               {selectedTrip.title}
             </button>
             <span className="text-slate-300">/</span>
-            <span className="text-[#162B45] font-bold">{formatDate(selectedDate)}</span>
+            <span className="text-[#162B45] font-bold">
+              {formatDate(selectedDate)}
+            </span>
           </div>
 
           <div className="flex items-center justify-between pb-1.5 border-b border-[#E3EAF2]">
@@ -506,7 +649,11 @@ export default function BookingLinksPage() {
                 Departure: {formatDate(selectedDate)}
               </h1>
               <p className="text-[#74839A] text-[11px] font-[500] mt-1 leading-none">
-                Trip: <span className="font-bold text-[#162B45]">{selectedTrip.title}</span> · Status: Open for Booking
+                Trip:{" "}
+                <span className="font-bold text-[#162B45]">
+                  {selectedTrip.title}
+                </span>{" "}
+                · Status: Open for Booking
               </p>
             </div>
 
@@ -526,10 +673,16 @@ export default function BookingLinksPage() {
                 "px-3 py-1.5 text-[11px] font-bold rounded-md transition-all border",
                 linkFilterTab === "active"
                   ? "bg-[#162B45] text-white border-[#162B45] shadow-sm"
-                  : "bg-white text-slate-600 border-[#E3EAF2] hover:bg-slate-50"
+                  : "bg-white text-slate-600 border-[#E3EAF2] hover:bg-slate-50",
               )}
             >
-              Active Links ({workspaceLinks.filter(f => f.status !== 'used' && (f.completedCount || 0) === 0).length})
+              Active Links (
+              {
+                workspaceLinks.filter(
+                  (f) => f.status !== "used" && (f.completedCount || 0) === 0,
+                ).length
+              }
+              )
             </button>
             <button
               onClick={() => setLinkFilterTab("used")}
@@ -537,10 +690,16 @@ export default function BookingLinksPage() {
                 "px-3 py-1.5 text-[11px] font-bold rounded-md transition-all border",
                 linkFilterTab === "used"
                   ? "bg-[#162B45] text-white border-[#162B45] shadow-sm"
-                  : "bg-white text-slate-600 border-[#E3EAF2] hover:bg-slate-50"
+                  : "bg-white text-slate-600 border-[#E3EAF2] hover:bg-slate-50",
               )}
             >
-              Used Links ({workspaceLinks.filter(f => f.status === 'used' || (f.completedCount || 0) > 0).length})
+              Used Links (
+              {
+                workspaceLinks.filter(
+                  (f) => f.status === "used" || (f.completedCount || 0) > 0,
+                ).length
+              }
+              )
             </button>
           </div>
 
@@ -548,9 +707,15 @@ export default function BookingLinksPage() {
           {displayedLinks.length === 0 ? (
             <div className="text-center py-16 bg-white border border-[#E3EAF2] rounded-[10px] space-y-3">
               <Link2 className="h-8 w-8 mx-auto text-[#74839A]/30" />
-              <p className="text-xs font-bold text-[#74839A]">No {linkFilterTab === 'active' ? 'Active' : 'Used'} Booking Links found for this departure date.</p>
-              {linkFilterTab === 'active' && (
-                <Button onClick={checkAndOpenGenerate} className="bg-[#F97316] hover:bg-[#EA580C] text-white text-[11px] font-bold h-8 rounded-md px-3.5">
+              <p className="text-xs font-bold text-[#74839A]">
+                No {linkFilterTab === "active" ? "Active" : "Used"} Booking
+                Links found for this departure date.
+              </p>
+              {linkFilterTab === "active" && (
+                <Button
+                  onClick={checkAndOpenGenerate}
+                  className="bg-[#F97316] hover:bg-[#EA580C] text-white text-[11px] font-bold h-8 rounded-md px-3.5"
+                >
                   Generate Booking Link
                 </Button>
               )}
@@ -558,10 +723,15 @@ export default function BookingLinksPage() {
           ) : (
             <div className="grid grid-cols-3 gap-4">
               {displayedLinks.map((form) => {
-                const status = 
-                  form.status === 'revoked' ? 'Revoked' :
-                  form.status === 'used' || (form.completedCount && form.completedCount > 0) ? 'Used' :
-                  form.expiresAt && new Date(form.expiresAt) < new Date() ? 'Expired' : 'Active';
+                const status =
+                  form.status === "revoked"
+                    ? "Revoked"
+                    : form.status === "used" ||
+                        (form.completedCount && form.completedCount > 0)
+                      ? "Used"
+                      : form.expiresAt && new Date(form.expiresAt) < new Date()
+                        ? "Expired"
+                        : "Active";
                 const opens = form.openedCount || 0;
                 const comps = form.completedCount || 0;
 
@@ -573,31 +743,54 @@ export default function BookingLinksPage() {
                     <div>
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-[11px] font-bold text-[#162B45] font-mono">Token: {(form.id || form._id || '').substring(0, 8)}</p>
-                          <p className="text-[9px] text-[#74839A] font-semibold mt-1">Created {formatDate(form.createdAt || new Date().toISOString())}</p>
+                          <p className="text-[11px] font-bold text-[#162B45] font-mono">
+                            Token: {(form.id || form._id || "").substring(0, 8)}
+                          </p>
+                          <p className="text-[9px] text-[#74839A] font-semibold mt-1">
+                            Created{" "}
+                            {formatDate(
+                              form.createdAt || new Date().toISOString(),
+                            )}
+                          </p>
                         </div>
-                        <span className={cn(
-                          "text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border",
-                          status === "Active" ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200" :
-                          status === "Used" ? "bg-[#EFF6FF] text-[#2563EB] border-blue-200" :
-                          "bg-slate-50 text-slate-500 border-slate-200"
-                        )}>
+                        <span
+                          className={cn(
+                            "text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border",
+                            status === "Active"
+                              ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200"
+                              : status === "Used"
+                                ? "bg-[#EFF6FF] text-[#2563EB] border-blue-200"
+                                : "bg-slate-50 text-slate-500 border-slate-200",
+                          )}
+                        >
                           {status}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 py-1.5 px-2 bg-slate-50 border border-[#E3EAF2] rounded-md text-center text-xs mt-3">
                         <div>
-                          <p className="text-[8px] font-bold text-[#74839A] uppercase tracking-wider">Opened</p>
-                          <p className="font-bold text-[#162B45] text-xs mt-0.5">{opens}</p>
+                          <p className="text-[8px] font-bold text-[#74839A] uppercase tracking-wider">
+                            Opened
+                          </p>
+                          <p className="font-bold text-[#162B45] text-xs mt-0.5">
+                            {opens}
+                          </p>
                         </div>
                         <div className="border-x border-slate-200">
-                          <p className="text-[8px] font-bold text-[#74839A] uppercase tracking-wider">Completed</p>
-                          <p className="font-bold text-[#162B45] text-xs mt-0.5">{comps}</p>
+                          <p className="text-[8px] font-bold text-[#74839A] uppercase tracking-wider">
+                            Completed
+                          </p>
+                          <p className="font-bold text-[#162B45] text-xs mt-0.5">
+                            {comps}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-[8px] font-bold text-[#74839A] uppercase tracking-wider">Conversion</p>
-                          <p className="font-bold text-slate-800 text-xs mt-0.5">{opens > 0 ? Math.round((comps / opens) * 100) : 0}%</p>
+                          <p className="text-[8px] font-bold text-[#74839A] uppercase tracking-wider">
+                            Conversion
+                          </p>
+                          <p className="font-bold text-slate-800 text-xs mt-0.5">
+                            {opens > 0 ? Math.round((comps / opens) * 100) : 0}%
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -614,7 +807,9 @@ export default function BookingLinksPage() {
                       <Button
                         variant="outline"
                         className="h-8 rounded text-[10px] font-bold uppercase border border-[#E3EAF2] text-slate-700"
-                        onClick={() => copyToClipboard(form.shareUrl || "", "Link")}
+                        onClick={() =>
+                          copyToClipboard(form.shareUrl || "", "Link")
+                        }
                       >
                         Copy
                       </Button>
@@ -632,7 +827,6 @@ export default function BookingLinksPage() {
                         Revoke
                       </Button>
                     </div>
-
                   </div>
                 );
               })}
@@ -648,41 +842,74 @@ export default function BookingLinksPage() {
             <DialogTitle className="font-bold uppercase tracking-tight text-xs text-[#162B45]">
               Generate Booking Link
             </DialogTitle>
-            <DialogDescription className="sr-only">Pre-filled date booking form generator</DialogDescription>
+            <DialogDescription className="sr-only">
+              Pre-filled date booking form generator
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3.5 py-2">
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">Selected Trip</label>
-              <Input value={selectedTrip?.title || ""} readOnly className="h-9 rounded bg-slate-50 text-xs text-slate-700 font-bold" />
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">
+                Selected Trip
+              </label>
+              <Input
+                value={selectedTrip?.title || ""}
+                readOnly
+                className="h-9 rounded bg-slate-50 text-xs text-slate-700 font-bold"
+              />
             </div>
 
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">Departure Date</label>
-              <Input value={selectedDate ? formatDate(selectedDate) : ""} readOnly className="h-9 rounded bg-slate-50 text-xs text-slate-700 font-bold" />
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">
+                Departure Date
+              </label>
+              <Input
+                value={selectedDate ? formatDate(selectedDate) : ""}
+                readOnly
+                className="h-9 rounded bg-slate-50 text-xs text-slate-700 font-bold"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">Payment Mode</label>
-                <Select value={formData.paymentMode} onValueChange={val => setFormData(prev => ({ ...prev, paymentMode: val as any }))}>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">
+                  Payment Mode
+                </label>
+                <Select
+                  value={formData.paymentMode}
+                  onValueChange={(val) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      paymentMode: val as any,
+                    }))
+                  }
+                >
                   <SelectTrigger className="h-9 rounded">
                     <SelectValue placeholder="Select Mode" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Full Payment">Full Payment</SelectItem>
-                    <SelectItem value="Partial Payment">Partial Payment</SelectItem>
+                    <SelectItem value="Partial Payment">
+                      Partial Payment
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">Amount (₹)</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[#74839A]">
+                  Amount (₹)
+                </label>
                 <Input
                   type="number"
                   placeholder="2000"
                   value={formData.customAmount || ""}
-                  onChange={e => setFormData(prev => ({ ...prev, customAmount: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      customAmount: Number(e.target.value),
+                    }))
+                  }
                   className="h-9 rounded text-xs font-bold"
                 />
               </div>
@@ -690,30 +917,46 @@ export default function BookingLinksPage() {
           </div>
 
           <DialogFooter className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => setCreateOpen(false)} className="text-xs font-semibold h-9 rounded">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCreateOpen(false)}
+              className="text-xs font-semibold h-9 rounded"
+            >
               Cancel
             </Button>
-            <Button 
-              size="sm" 
-              onClick={handleGenerate} 
+            <Button
+              size="sm"
+              onClick={handleGenerate}
               disabled={generating}
               className="text-xs bg-[#F97316] hover:bg-[#EA580C] text-white font-bold px-4 h-9 rounded"
             >
-              {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Generate Booking Link"}
+              {generating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                "Generate Booking Link"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ─── DUPLICATE LINK WARNING SAFETY SCREEN ─── */}
-      <Dialog open={duplicateWarningOpen} onOpenChange={setDuplicateWarningOpen}>
+      <Dialog
+        open={duplicateWarningOpen}
+        onOpenChange={setDuplicateWarningOpen}
+      >
         <DialogContent className="sm:max-w-[460px] w-[95vw] p-6 rounded-[10px] text-center space-y-4">
           <AlertCircle className="w-10 h-10 mx-auto text-[#D97706]" />
-          
+
           <div className="space-y-1.5">
-            <h3 className="font-bold text-[#162B45] text-sm uppercase tracking-wide">Active Link Already Exists</h3>
+            <h3 className="font-bold text-[#162B45] text-sm uppercase tracking-wide">
+              Active Link Already Exists
+            </h3>
             <p className="text-xs text-[#74839A] leading-relaxed">
-              An active booking link already exists for this departure date. Creating multiple public links can lead to duplicate tracking issues.
+              An active booking link already exists for this departure date.
+              Creating multiple public links can lead to duplicate tracking
+              issues.
             </p>
           </div>
 
@@ -721,7 +964,14 @@ export default function BookingLinksPage() {
             <div className="bg-slate-50 border border-dashed border-[#E3EAF2] rounded p-3 text-left text-[11px] font-semibold space-y-1">
               <p>Trip: {existingFormMatch.tripName}</p>
               <p>Departure: {formatDate(existingFormMatch.departureDate)}</p>
-              <p>Token: {(existingFormMatch.id || existingFormMatch._id || '').substring(0, 8)}</p>
+              <p>
+                Token:{" "}
+                {(
+                  existingFormMatch.id ||
+                  existingFormMatch._id ||
+                  ""
+                ).substring(0, 8)}
+              </p>
             </div>
           )}
 
@@ -731,7 +981,10 @@ export default function BookingLinksPage() {
               className="h-9 rounded text-xs font-bold text-[#162B45] uppercase tracking-wide border border-[#E3EAF2]"
               onClick={() => {
                 if (existingFormMatch) {
-                  copyToClipboard(existingFormMatch.shareUrl || "", "Booking Link");
+                  copyToClipboard(
+                    existingFormMatch.shareUrl || "",
+                    "Booking Link",
+                  );
                   setDuplicateWarningOpen(false);
                 }
               }}
@@ -777,8 +1030,15 @@ export default function BookingLinksPage() {
                 Copy booking link
               </label>
               <div className="flex gap-2">
-                <Input value={shareUrl} readOnly className="h-10 rounded-md text-xs bg-slate-50 flex-1 font-mono" />
-                <Button className="h-10 rounded-md px-3 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold" onClick={() => copyToClipboard(shareUrl, "Booking link")}>
+                <Input
+                  value={shareUrl}
+                  readOnly
+                  className="h-10 rounded-md text-xs bg-slate-50 flex-1 font-mono"
+                />
+                <Button
+                  className="h-10 rounded-md px-3 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold"
+                  onClick={() => copyToClipboard(shareUrl, "Booking link")}
+                >
                   Copy
                 </Button>
               </div>
@@ -790,18 +1050,31 @@ export default function BookingLinksPage() {
               </label>
               <textarea
                 value={shareMsg}
-                onChange={e => setShareMsg(e.target.value)}
+                onChange={(e) => setShareMsg(e.target.value)}
                 className="w-full h-32 text-xs border border-slate-200 rounded-md p-2 outline-none font-mono focus:ring-1 focus:ring-[#F97316]"
               />
             </div>
           </div>
 
-          <DialogFooter className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => setShareOpen(false)} className="text-xs font-semibold h-9 rounded-md">
+          <DialogFooter className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShareOpen(false)}
+              className="text-xs font-semibold h-9 rounded-md"
+            >
               Close
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyToClipboard(shareMsg, "Full message")}
+              className="text-xs font-bold h-9 rounded-md border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
+            >
+              <Copy className="w-3.5 h-3.5" /> Copy Full Message
+            </Button>
+            <Button
+              size="sm"
               onClick={() => {
                 const url = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
                 window.open(url, "_blank");
@@ -822,18 +1095,23 @@ export default function BookingLinksPage() {
               Revoke booking form link?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-[#74839A]">
-              Are you sure you want to revoke this booking link? Clients will no longer be able to use it to submit new bookings.
+              Are you sure you want to revoke this booking link? Clients will no
+              longer be able to use it to submit new bookings.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex items-center justify-end gap-2 mt-4">
-            <AlertDialogCancel className="h-9 rounded-md text-xs font-semibold">Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-[#E23D4D] hover:bg-red-700 text-white font-bold h-9 rounded-md text-xs" onClick={handleDelete}>
+            <AlertDialogCancel className="h-9 rounded-md text-xs font-semibold">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[#E23D4D] hover:bg-red-700 text-white font-bold h-9 rounded-md text-xs"
+              onClick={handleDelete}
+            >
               Revoke Link
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }

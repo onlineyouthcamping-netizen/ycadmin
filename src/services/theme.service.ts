@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 export interface ThemeConfig {
   // Typography
@@ -136,28 +136,28 @@ export interface ThemePreset {
 
 export const themeService = {
   get: async (): Promise<ThemeConfig> => {
-    const response = await api.get('/theme');
+    const response = await api.get("/theme");
     return response.data;
   },
-  
+
   update: async (config: ThemeConfig): Promise<ThemeConfig> => {
-    const response = await api.post('/theme', config);
+    const response = await api.post("/theme", config);
     return response.data;
   },
-  
+
   reset: async (): Promise<ThemeConfig> => {
-    const response = await api.post('/theme/reset');
+    const response = await api.post("/theme/reset");
     return response.data;
   },
 
   // Presets
   getPresets: async (): Promise<ThemePreset[]> => {
-    const response = await api.get('/theme/presets');
+    const response = await api.get("/theme/presets");
     return response.data.data || [];
   },
 
   savePreset: async (name: string): Promise<ThemePreset> => {
-    const response = await api.post('/theme/presets', { name });
+    const response = await api.post("/theme/presets", { name });
     return response.data.data;
   },
 
@@ -166,7 +166,9 @@ export const themeService = {
   },
 
   applyPreset: async (name: string): Promise<ThemeConfig> => {
-    const response = await api.post(`/theme/presets/${encodeURIComponent(name)}/apply`);
+    const response = await api.post(
+      `/theme/presets/${encodeURIComponent(name)}/apply`,
+    );
     return response.data;
-  }
+  },
 };

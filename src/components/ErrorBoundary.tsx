@@ -23,7 +23,13 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("🔥 React Crash caught by ErrorBoundary:", error, errorInfo);
-    if (error && error.message && (error.message.includes("dynamically imported module") || error.message.includes("module script") || error.message.includes("Importing a module script failed"))) {
+    if (
+      error &&
+      error.message &&
+      (error.message.includes("dynamically imported module") ||
+        error.message.includes("module script") ||
+        error.message.includes("Importing a module script failed"))
+    ) {
       const isRetry = sessionStorage.getItem("chunk_retry_attempt");
       if (!isRetry) {
         sessionStorage.setItem("chunk_retry_attempt", "true");
@@ -40,17 +46,22 @@ class ErrorBoundary extends Component<Props, State> {
             <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
               <AlertTriangle className="h-10 w-10 text-red-500" />
             </div>
-            
+
             <div className="space-y-2">
-              <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Application Crashed</h1>
+              <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
+                Application Crashed
+              </h1>
               <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                Something went wrong while rendering this page. This is usually caused by malformed data or a network glitch.
+                Something went wrong while rendering this page. This is usually
+                caused by malformed data or a network glitch.
               </p>
             </div>
 
             {this.state.error && (
               <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-left overflow-hidden">
-                <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1">Error Message</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1">
+                  Error Message
+                </p>
                 <p className="text-xs font-mono text-red-700 break-words whitespace-pre-wrap max-h-[100px] overflow-y-auto">
                   {this.state.error.message}
                 </p>
@@ -58,15 +69,15 @@ class ErrorBoundary extends Component<Props, State> {
             )}
 
             <div className="grid grid-cols-2 gap-3">
-              <Button 
+              <Button
                 onClick={() => window.location.reload()}
                 className="bg-[#0f172a] hover:bg-black text-white rounded-xl h-12 font-black uppercase tracking-widest text-[10px] flex items-center gap-2"
               >
                 <RefreshCw className="h-3 w-3" /> Reload App
               </Button>
-              <Button 
+              <Button
                 variant="outline"
-                onClick={() => window.location.href = "/admin"}
+                onClick={() => (window.location.href = "/admin")}
                 className="border-2 border-gray-100 hover:bg-gray-50 text-gray-900 rounded-xl h-12 font-black uppercase tracking-widest text-[10px] flex items-center gap-2"
               >
                 <Home className="h-3 w-3" /> Dashboard

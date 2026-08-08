@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { X, Plus, Compass, MapPin, Calendar, Sparkles } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,13 +21,12 @@ interface TravelDeskCreateTripModalProps {
   onTripCreated: (tripId: string) => void;
 }
 
-const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80";
+const DEFAULT_HERO_IMAGE =
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80";
 
-export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps> = ({
-  isOpen,
-  onClose,
-  onTripCreated
-}) => {
+export const TravelDeskCreateTripModal: React.FC<
+  TravelDeskCreateTripModalProps
+> = ({ isOpen, onClose, onTripCreated }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form Fields (Cleaned up: Hero Image, Duration, Starting Price, and Max Group Size removed)
@@ -42,18 +48,24 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
     setIsSubmitting(true);
     try {
       // 1. Create Trip Master Record
-      const cleanSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+      const cleanSlug =
+        title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, "") +
+        "-" +
+        Math.floor(1000 + Math.random() * 9000);
 
       const newTrip = await tripsService.create({
         title: title.trim(),
         slug: cleanSlug,
-        description: overview.trim() || `${title} expedition exploring ${location}.`,
+        description:
+          overview.trim() || `${title} expedition exploring ${location}.`,
         shortName: code.trim() || title.slice(0, 4).toUpperCase() + "-1",
         category,
-        tripType: category.toLowerCase().includes("international") ? "international" : "domestic",
+        tripType: category.toLowerCase().includes("international")
+          ? "international"
+          : "domestic",
         location: location.trim(),
         duration: "5 Days / 4 Nights",
         price: 14999,
@@ -61,7 +73,7 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
         maxGroupSize: 30,
         startEnd,
         heroImage: DEFAULT_HERO_IMAGE,
-        status: "ACTIVE"
+        status: "ACTIVE",
       } as any);
 
       toast.success(`Destination "${title}" created successfully!`);
@@ -77,7 +89,9 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
       resetForm();
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to create destination trip");
+      toast.error(
+        err?.response?.data?.message || "Failed to create destination trip",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +107,6 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-0 bg-white rounded-xl overflow-hidden border border-[#E2E8F0] shadow-xl font-sans">
-        
         {/* Header */}
         <div className="bg-[#0A192F] px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -112,27 +125,33 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-          
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-4 max-h-[75vh] overflow-y-auto"
+        >
           {/* Title & Code */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Trip / Destination Title *</label>
+              <label className="text-xs font-bold text-[#0A192F]">
+                Trip / Destination Title *
+              </label>
               <Input
                 required
                 placeholder="e.g. Spiti Valley Circuit"
                 value={title}
-                onChange={e => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 className="h-9 text-xs border-[#E2E8F0] text-[#0A192F] placeholder:text-[#64748B]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Trip Code</label>
+              <label className="text-xs font-bold text-[#0A192F]">
+                Trip Code
+              </label>
               <Input
                 placeholder="e.g. SPT-1"
                 value={code}
-                onChange={e => setCode(e.target.value)}
+                onChange={(e) => setCode(e.target.value)}
                 className="h-9 text-xs border-[#E2E8F0] font-mono text-[#0A192F] placeholder:text-[#64748B]"
               />
             </div>
@@ -141,10 +160,12 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
           {/* Category & Location */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Category *</label>
+              <label className="text-xs font-bold text-[#0A192F]">
+                Category *
+              </label>
               <select
                 value={category}
-                onChange={e => setCategory(e.target.value)}
+                onChange={(e) => setCategory(e.target.value)}
                 className="w-full h-9 bg-white border border-[#E2E8F0] rounded-md px-3 text-xs font-medium text-[#0A192F] outline-none focus:ring-1 focus:ring-[#F97316]"
               >
                 <option value="Domestic">Domestic</option>
@@ -156,12 +177,14 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Destination Location / Region *</label>
+              <label className="text-xs font-bold text-[#0A192F]">
+                Destination Location / Region *
+              </label>
               <Input
                 required
                 placeholder="e.g. Himachal Pradesh & Ladakh"
                 value={location}
-                onChange={e => setLocation(e.target.value)}
+                onChange={(e) => setLocation(e.target.value)}
                 className="h-9 text-xs border-[#E2E8F0] text-[#0A192F] placeholder:text-[#64748B]"
               />
             </div>
@@ -170,10 +193,12 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
           {/* Difficulty & Season */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Difficulty Level</label>
+              <label className="text-xs font-bold text-[#0A192F]">
+                Difficulty Level
+              </label>
               <select
                 value={difficulty}
-                onChange={e => setDifficulty(e.target.value)}
+                onChange={(e) => setDifficulty(e.target.value)}
                 className="w-full h-9 bg-white border border-[#E2E8F0] rounded-md px-3 text-xs font-medium text-[#0A192F] outline-none"
               >
                 <option value="Easy">Easy</option>
@@ -184,11 +209,13 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-[#0A192F]">Best Season</label>
+              <label className="text-xs font-bold text-[#0A192F]">
+                Best Season
+              </label>
               <Input
                 placeholder="e.g. May - October"
                 value={startEnd}
-                onChange={e => setStartEnd(e.target.value)}
+                onChange={(e) => setStartEnd(e.target.value)}
                 className="h-9 text-xs border-[#E2E8F0] text-[#0A192F]"
               />
             </div>
@@ -196,12 +223,14 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
 
           {/* Brief Overview */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#0A192F]">Destination Overview & Highlights</label>
+            <label className="text-xs font-bold text-[#0A192F]">
+              Destination Overview & Highlights
+            </label>
             <Textarea
               rows={3}
               placeholder="Enter brief description to initialize the Knowledge Hub overview..."
               value={overview}
-              onChange={e => setOverview(e.target.value)}
+              onChange={(e) => setOverview(e.target.value)}
               className="text-xs border-[#E2E8F0] text-[#0A192F] placeholder:text-[#64748B]"
             />
           </div>
@@ -222,7 +251,9 @@ export const TravelDeskCreateTripModal: React.FC<TravelDeskCreateTripModalProps>
               className="h-9 bg-[#0A192F] hover:bg-[#112240] text-white text-xs font-bold px-5 rounded-md flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#F97316]" />
-              {isSubmitting ? "Creating & Initializing..." : "Create & Open Workspace"}
+              {isSubmitting
+                ? "Creating & Initializing..."
+                : "Create & Open Workspace"}
             </Button>
           </DialogFooter>
         </form>

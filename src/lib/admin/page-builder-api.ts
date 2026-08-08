@@ -3,7 +3,15 @@ import { pageBuilderService } from "@/services/page-builder.service";
 
 export interface PageSectionConfig {
   id: string;
-  type: "hero" | "featured_trips" | "destinations" | "recent_photos" | "reviews" | "stories" | "footer" | string;
+  type:
+    | "hero"
+    | "featured_trips"
+    | "destinations"
+    | "recent_photos"
+    | "reviews"
+    | "stories"
+    | "footer"
+    | string;
   name?: string;
   visible?: boolean;
   draft?: Record<string, any>;
@@ -32,12 +40,18 @@ export const pageBuilderApi = {
     return res?.sections || [];
   },
 
-  savePageDraft: async (pageId: string, sections: PageSectionConfig[]): Promise<boolean> => {
+  savePageDraft: async (
+    pageId: string,
+    sections: PageSectionConfig[],
+  ): Promise<boolean> => {
     await pageBuilderService.saveDraft(pageId, sections).catch(() => null);
     return true;
   },
 
-  publishPage: async (pageId: string, sections: PageSectionConfig[]): Promise<boolean> => {
+  publishPage: async (
+    pageId: string,
+    sections: PageSectionConfig[],
+  ): Promise<boolean> => {
     await pageBuilderService.saveDraft(pageId, sections).catch(() => null);
     await pageBuilderService.publish(pageId).catch(() => null);
     await api.post("/revalidate", { path: "/" }).catch(() => {});

@@ -19,9 +19,21 @@ describe("Frontend Navigation & Central Route Configuration Suite", () => {
   });
 
   test("isFounder utility strictly identifies Hemal Patel as superadmin", () => {
-    const founderUser = { role: "superadmin", email: "hemal.patel@youthcamping.online", name: "Hemal Patel" };
-    const managerUser = { role: "admin", email: "suresh.chaudhary@youthcamping.online", name: "Suresh Chaudhary" };
-    const salesUser = { role: "sales", email: "zeel.panchal@youthcamping.online", name: "Zeel Panchal" };
+    const founderUser = {
+      role: "superadmin",
+      email: "hemal.patel@youthcamping.online",
+      name: "Hemal Patel",
+    };
+    const managerUser = {
+      role: "admin",
+      email: "suresh.chaudhary@youthcamping.online",
+      name: "Suresh Chaudhary",
+    };
+    const salesUser = {
+      role: "sales",
+      email: "zeel.panchal@youthcamping.online",
+      name: "Zeel Panchal",
+    };
 
     expect(isFounder(founderUser)).toBe(true);
     expect(isFounder(managerUser)).toBe(false);

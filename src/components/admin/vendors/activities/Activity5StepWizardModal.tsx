@@ -103,17 +103,83 @@ export default function Activity5StepWizardModal({
   const defaultActivities = [
     ...customActivities,
     ...(activitiesMasterList || [
-      { id: "ACT-1", name: "River Rafting", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 700 },
-      { id: "ACT-2", name: "Paragliding", category: "ADVENTURE", defaultCapacity: 30, defaultCost: 2000 },
-      { id: "ACT-3", name: "ATV Ride", category: "ADVENTURE", defaultCapacity: 20, defaultCost: 900 },
-      { id: "ACT-4", name: "Solang Valley Visit", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 400 },
-      { id: "ACT-5", name: "DJ Night & Bonfire", category: "ENTERTAINMENT", defaultCapacity: 60, defaultCost: 500 },
-      { id: "ACT-6", name: "Golden Temple Visit", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 0 },
-      { id: "ACT-7", name: "Wagah Border Excursion", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 300 },
-      { id: "ACT-8", name: "Manikaran Sahib Visit", category: "SIGHTSEEING", defaultCapacity: 50, defaultCost: 200 },
-      { id: "ACT-9", name: "Chalal Trek & Cafe Walk", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 400 },
-      { id: "ACT-10", name: "Bijli Mahadev Day Trek", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 600 },
-      { id: "ACT-11", name: "Jogini Waterfall Trek", category: "ADVENTURE", defaultCapacity: 40, defaultCost: 350 },
+      {
+        id: "ACT-1",
+        name: "River Rafting",
+        category: "ADVENTURE",
+        defaultCapacity: 40,
+        defaultCost: 700,
+      },
+      {
+        id: "ACT-2",
+        name: "Paragliding",
+        category: "ADVENTURE",
+        defaultCapacity: 30,
+        defaultCost: 2000,
+      },
+      {
+        id: "ACT-3",
+        name: "ATV Ride",
+        category: "ADVENTURE",
+        defaultCapacity: 20,
+        defaultCost: 900,
+      },
+      {
+        id: "ACT-4",
+        name: "Solang Valley Visit",
+        category: "SIGHTSEEING",
+        defaultCapacity: 50,
+        defaultCost: 400,
+      },
+      {
+        id: "ACT-5",
+        name: "DJ Night & Bonfire",
+        category: "ENTERTAINMENT",
+        defaultCapacity: 60,
+        defaultCost: 500,
+      },
+      {
+        id: "ACT-6",
+        name: "Golden Temple Visit",
+        category: "SIGHTSEEING",
+        defaultCapacity: 50,
+        defaultCost: 0,
+      },
+      {
+        id: "ACT-7",
+        name: "Wagah Border Excursion",
+        category: "SIGHTSEEING",
+        defaultCapacity: 50,
+        defaultCost: 300,
+      },
+      {
+        id: "ACT-8",
+        name: "Manikaran Sahib Visit",
+        category: "SIGHTSEEING",
+        defaultCapacity: 50,
+        defaultCost: 200,
+      },
+      {
+        id: "ACT-9",
+        name: "Chalal Trek & Cafe Walk",
+        category: "ADVENTURE",
+        defaultCapacity: 40,
+        defaultCost: 400,
+      },
+      {
+        id: "ACT-10",
+        name: "Bijli Mahadev Day Trek",
+        category: "ADVENTURE",
+        defaultCapacity: 40,
+        defaultCost: 600,
+      },
+      {
+        id: "ACT-11",
+        name: "Jogini Waterfall Trek",
+        category: "ADVENTURE",
+        defaultCapacity: 40,
+        defaultCost: 350,
+      },
     ]),
   ];
 
@@ -126,9 +192,27 @@ export default function Activity5StepWizardModal({
   const defaultVendors = [
     ...customVendors,
     ...(vendorsList || [
-      { vendorId: "VND-ABC", vendorName: "ABC Adventures", rating: 4.8, netCost: 700, seasonType: "PEAK" },
-      { vendorId: "VND-XYZ", vendorName: "XYZ Adventure", rating: 4.2, netCost: 650, seasonType: "OFF_SEASON" },
-      { vendorId: "VND-MTN", vendorName: "Mountain Adventure", rating: 4.5, netCost: 680, seasonType: "REGULAR" },
+      {
+        vendorId: "VND-ABC",
+        vendorName: "ABC Adventures",
+        rating: 4.8,
+        netCost: 700,
+        seasonType: "PEAK",
+      },
+      {
+        vendorId: "VND-XYZ",
+        vendorName: "XYZ Adventure",
+        rating: 4.2,
+        netCost: 650,
+        seasonType: "OFF_SEASON",
+      },
+      {
+        vendorId: "VND-MTN",
+        vendorName: "Mountain Adventure",
+        rating: 4.5,
+        netCost: 680,
+        seasonType: "REGULAR",
+      },
     ]),
   ];
 
@@ -186,7 +270,9 @@ export default function Activity5StepWizardModal({
     setVendorCost(createdAct.defaultCost);
     setIsCreatingNew(false);
     setNewActName("");
-    toast.success(`"${createdAct.name}" created in Activity Master & selected!`);
+    toast.success(
+      `"${createdAct.name}" created in Activity Master & selected!`,
+    );
     setCurrentStep(3);
   };
 
@@ -197,7 +283,7 @@ export default function Activity5StepWizardModal({
 
   const handleTogglePax = (id: string) => {
     setSelectedPaxIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
     );
   };
 
@@ -273,8 +359,8 @@ export default function Activity5StepWizardModal({
                     isCurrent
                       ? "bg-orange-600 border-orange-500 text-white font-bold shadow-md"
                       : isCompleted
-                      ? "bg-slate-800 border-slate-700 text-emerald-400 font-medium"
-                      : "bg-slate-800/50 border-slate-700/50 text-slate-500 opacity-60"
+                        ? "bg-slate-800 border-slate-700 text-emerald-400 font-medium"
+                        : "bg-slate-800/50 border-slate-700/50 text-slate-500 opacity-60",
                   )}
                 >
                   <div className="flex items-center gap-1">
@@ -285,7 +371,9 @@ export default function Activity5StepWizardModal({
                     )}
                     <span className="text-xs">Step {s.step}</span>
                   </div>
-                  <span className="text-[11px] mt-1 line-clamp-1">{s.label}</span>
+                  <span className="text-[11px] mt-1 line-clamp-1">
+                    {s.label}
+                  </span>
                 </div>
               );
             })}
@@ -309,10 +397,12 @@ export default function Activity5StepWizardModal({
                       "p-5 rounded-xl border text-center cursor-pointer transition-all",
                       selectedDay === day
                         ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20 text-orange-950 font-bold"
-                        : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
+                        : "bg-white border-slate-200 hover:border-slate-300 text-slate-700",
                     )}
                   >
-                    <span className="text-xs text-slate-400 block">Itinerary</span>
+                    <span className="text-xs text-slate-400 block">
+                      Itinerary
+                    </span>
                     <span className="text-2xl font-black">DAY {day}</span>
                   </div>
                 ))}
@@ -359,8 +449,7 @@ export default function Activity5StepWizardModal({
                     onClick={() => setIsCreatingNew(true)}
                     className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8"
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    + Create New Activity
+                    <Plus className="w-3.5 h-3.5 mr-1" />+ Create New Activity
                   </Button>
                 )}
               </div>
@@ -415,7 +504,9 @@ export default function Activity5StepWizardModal({
                       <input
                         type="number"
                         value={newActCapacity}
-                        onChange={(e) => setNewActCapacity(Number(e.target.value) || 0)}
+                        onChange={(e) =>
+                          setNewActCapacity(Number(e.target.value) || 0)
+                        }
                         className="w-full text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
                       />
                     </div>
@@ -426,7 +517,9 @@ export default function Activity5StepWizardModal({
                       <input
                         type="number"
                         value={newActCost}
-                        onChange={(e) => setNewActCost(Number(e.target.value) || 0)}
+                        onChange={(e) =>
+                          setNewActCost(Number(e.target.value) || 0)
+                        }
                         className="w-full text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
                       />
                     </div>
@@ -456,7 +549,7 @@ export default function Activity5StepWizardModal({
                         "p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between",
                         isSelected
                           ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20"
-                          : "bg-white border-slate-200 hover:border-slate-300"
+                          : "bg-white border-slate-200 hover:border-slate-300",
                       )}
                     >
                       <div>
@@ -464,12 +557,17 @@ export default function Activity5StepWizardModal({
                           {act.name}
                         </h5>
                         <p className="text-xs text-slate-500 mt-0.5">
-                          Category: {act.category} • Capacity: {act.defaultCapacity} pax
+                          Category: {act.category} • Capacity:{" "}
+                          {act.defaultCapacity} pax
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-slate-400">Default Cost</span>
-                        <div className="font-bold text-slate-800">₹{act.defaultCost}</div>
+                        <span className="text-xs text-slate-400">
+                          Default Cost
+                        </span>
+                        <div className="font-bold text-slate-800">
+                          ₹{act.defaultCost}
+                        </div>
                       </div>
                     </div>
                   );
@@ -495,7 +593,7 @@ export default function Activity5StepWizardModal({
                         "p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between",
                         isSelected
                           ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20"
-                          : "bg-white border-slate-200 hover:border-slate-300"
+                          : "bg-white border-slate-200 hover:border-slate-300",
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -523,7 +621,9 @@ export default function Activity5StepWizardModal({
 
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <span className="text-xs text-slate-400">Net Cost</span>
+                          <span className="text-xs text-slate-400">
+                            Net Cost
+                          </span>
                           <div className="text-lg font-black text-slate-900">
                             ₹{vnd.netCost}/pax
                           </div>
@@ -535,7 +635,8 @@ export default function Activity5StepWizardModal({
                           variant={isSelected ? "default" : "outline"}
                           className={cn(
                             "h-9 px-4 text-xs font-bold",
-                            isSelected && "bg-orange-600 hover:bg-orange-700 text-white"
+                            isSelected &&
+                              "bg-orange-600 hover:bg-orange-700 text-white",
                           )}
                         >
                           {isSelected ? "Selected" : "Assign"}
@@ -552,8 +653,8 @@ export default function Activity5StepWizardModal({
                     onClick={() => setIsCreatingVendor(true)}
                     className="w-full py-3 px-4 rounded-xl border border-dashed border-slate-300 hover:border-orange-400 bg-slate-50/50 hover:bg-orange-50/30 text-xs font-bold text-slate-700 hover:text-orange-600 transition-all flex items-center justify-center gap-2"
                   >
-                    <Plus className="w-4 h-4" />
-                    + Add New Vendor or Miscellaneous Expense / Cost
+                    <Plus className="w-4 h-4" />+ Add New Vendor or
+                    Miscellaneous Expense / Cost
                   </button>
                 ) : (
                   <div className="p-4 rounded-xl border border-orange-300 bg-orange-50/40 space-y-3">
@@ -620,7 +721,8 @@ export default function Activity5StepWizardModal({
                     Configure Activity Type & Pricing
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Select if company pays (included) or customer pays (optional add-on)
+                    Select if company pays (included) or customer pays (optional
+                    add-on)
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -631,7 +733,7 @@ export default function Activity5StepWizardModal({
                       "px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all",
                       isIncluded
                         ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
-                        : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                        : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                     )}
                   >
                     ● Included in Package
@@ -643,7 +745,7 @@ export default function Activity5StepWizardModal({
                       "px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all",
                       !isIncluded
                         ? "bg-purple-600 text-white border-purple-700 shadow-sm"
-                        : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                        : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                     )}
                   >
                     ○ Optional Paid Activity
@@ -658,11 +760,15 @@ export default function Activity5StepWizardModal({
                       Vendor Cost / Pax (Company Pays)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2 text-emerald-700 font-bold">₹</span>
+                      <span className="absolute left-3 top-2 text-emerald-700 font-bold">
+                        ₹
+                      </span>
                       <input
                         type="number"
                         value={vendorCost}
-                        onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                        onChange={(e) =>
+                          setVendorCost(Number(e.target.value) || 0)
+                        }
                         className="w-full pl-7 pr-3 py-1.5 font-bold text-emerald-950 rounded-lg border border-emerald-300 bg-white"
                       />
                     </div>
@@ -688,11 +794,15 @@ export default function Activity5StepWizardModal({
                         Adult Selling Price
                       </label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-purple-600 font-bold">₹</span>
+                        <span className="absolute left-2.5 top-1.5 text-purple-600 font-bold">
+                          ₹
+                        </span>
                         <input
                           type="number"
                           value={adultPrice}
-                          onChange={(e) => setAdultPrice(Number(e.target.value) || 0)}
+                          onChange={(e) =>
+                            setAdultPrice(Number(e.target.value) || 0)
+                          }
                           className="w-full pl-6 pr-2 py-1.5 font-bold text-purple-950 rounded-lg border border-purple-300 bg-white"
                         />
                       </div>
@@ -703,11 +813,15 @@ export default function Activity5StepWizardModal({
                         Vendor Net Cost
                       </label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-slate-500">₹</span>
+                        <span className="absolute left-2.5 top-1.5 text-slate-500">
+                          ₹
+                        </span>
                         <input
                           type="number"
                           value={vendorCost}
-                          onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                          onChange={(e) =>
+                            setVendorCost(Number(e.target.value) || 0)
+                          }
                           className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-700 rounded-lg border border-purple-300 bg-white"
                         />
                       </div>
@@ -741,13 +855,16 @@ export default function Activity5StepWizardModal({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                  Select Booked Passengers ({selectedPaxIds.length} / {selectedActivity?.defaultCapacity || 40})
+                  Select Booked Passengers ({selectedPaxIds.length} /{" "}
+                  {selectedActivity?.defaultCapacity || 40})
                 </h4>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setSelectedPaxIds(defaultPax.map((p) => p.id))}
+                    onClick={() =>
+                      setSelectedPaxIds(defaultPax.map((p) => p.id))
+                    }
                     className="text-xs h-7"
                   >
                     Select All
@@ -774,7 +891,7 @@ export default function Activity5StepWizardModal({
                         "p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 select-none",
                         isChecked
                           ? "bg-orange-50 border-orange-300 text-orange-950 font-bold"
-                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
                       )}
                     >
                       <span className="text-base">{isChecked ? "☑" : "☐"}</span>

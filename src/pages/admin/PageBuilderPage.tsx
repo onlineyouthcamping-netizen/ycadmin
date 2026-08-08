@@ -5,9 +5,16 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageBuilderHeader } from "@/components/admin/page-builder/PageBuilderHeader";
-import { SectionList, SectionItem } from "@/components/admin/page-builder/SectionList";
+import {
+  SectionList,
+  SectionItem,
+} from "@/components/admin/page-builder/SectionList";
 import { SectionEditor } from "@/components/admin/page-builder/SectionEditor";
-import { AddSectionModal, FrontendSectionDefinition, FRONTEND_7_SECTIONS } from "@/components/admin/page-builder/AddSectionModal";
+import {
+  AddSectionModal,
+  FrontendSectionDefinition,
+  FRONTEND_7_SECTIONS,
+} from "@/components/admin/page-builder/AddSectionModal";
 
 const PAGES_LIST = [
   { id: "home", name: "Homepage" },
@@ -43,7 +50,7 @@ export default function PageBuilderPage() {
     const targetSectionType = searchParams.get("section");
     if (targetSectionType && sections && sections.length > 0) {
       const found = sections.find(
-        (s) => s.type === targetSectionType || s.id === targetSectionType
+        (s) => s.type === targetSectionType || s.id === targetSectionType,
       );
       if (found) {
         setSelectedSectionId(found.id);
@@ -55,7 +62,7 @@ export default function PageBuilderPage() {
 
   const handleToggleVisibility = (id: string) => {
     const updated = sections.map((s) =>
-      s.id === id ? { ...s, visible: s.visible === false } : s
+      s.id === id ? { ...s, visible: s.visible === false } : s,
     );
     setSections(updated);
   };
@@ -89,9 +96,12 @@ export default function PageBuilderPage() {
     toast.success(`Added ${typeDef.name} section`);
   };
 
-  const handleChangeDraft = (sectionId: string, updatedDraft: Record<string, any>) => {
+  const handleChangeDraft = (
+    sectionId: string,
+    updatedDraft: Record<string, any>,
+  ) => {
     const updated = sections.map((s) =>
-      s.id === sectionId ? { ...s, draft: updatedDraft } : s
+      s.id === sectionId ? { ...s, draft: updatedDraft } : s,
     );
     setSections(updated);
   };
@@ -102,17 +112,22 @@ export default function PageBuilderPage() {
 
     const frontendDef = FRONTEND_7_SECTIONS.find((t) => t.id === section.type);
     if (frontendDef) {
-      handleChangeDraft(sectionId, JSON.parse(JSON.stringify(frontendDef.defaultDraft)));
+      handleChangeDraft(
+        sectionId,
+        JSON.parse(JSON.stringify(frontendDef.defaultDraft)),
+      );
       toast.info("Section reset to default parameters");
     }
   };
 
   const handlePreview = () => {
-    const frontendUrl = import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
+    const frontendUrl =
+      import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
     window.open(frontendUrl, "_blank");
   };
 
-  const selectedSection = sections.find((s) => s.id === selectedSectionId) || null;
+  const selectedSection =
+    sections.find((s) => s.id === selectedSectionId) || null;
 
   if (loading) {
     return (

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Loader2, AlertTriangle } from "lucide-react";
-import { websiteService, WebsitePage, UpdatePagePayload } from "@/services/website.service";
+import {
+  websiteService,
+  WebsitePage,
+  UpdatePagePayload,
+} from "@/services/website.service";
 import { WebsiteEditor } from "@/components/admin/website/WebsiteEditor";
 import { toast } from "sonner";
 
@@ -33,14 +37,18 @@ export default function WebsiteEditorPage() {
         }
       })
       .catch((err) => {
-        const message = err?.response?.data?.message || err?.message || "Failed to load page";
+        const message =
+          err?.response?.data?.message || err?.message || "Failed to load page";
         setError(message);
         console.error("[WebsiteEditorPage] load error:", err);
       })
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const handleSave = async (id: string, data: UpdatePagePayload): Promise<WebsitePage | null> => {
+  const handleSave = async (
+    id: string,
+    data: UpdatePagePayload,
+  ): Promise<WebsitePage | null> => {
     try {
       const updated = await websiteService.updatePage(id, data);
       setPage(updated);
@@ -90,11 +98,5 @@ export default function WebsiteEditorPage() {
     );
   }
 
-  return (
-    <WebsiteEditor
-      page={page}
-      onSave={handleSave}
-      onBack={handleBack}
-    />
-  );
+  return <WebsiteEditor page={page} onSave={handleSave} onBack={handleBack} />;
 }

@@ -1,18 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Underline from '@tiptap/extension-underline';
-import Placeholder from '@tiptap/extension-placeholder';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../services/api';
-import { toast } from 'sonner';
-import { 
-  Bold, Italic, Underline as UnderlineIcon, 
-  Heading1, Heading2, Heading3, 
-  List, ListOrdered, Link as LinkIcon, Code, 
-  RemoveFormatting, Save, Send, RotateCcw, Clock
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
+import Placeholder from "@tiptap/extension-placeholder";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../services/api";
+import { toast } from "sonner";
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Link as LinkIcon,
+  Code,
+  RemoveFormatting,
+  Save,
+  Send,
+  RotateCcw,
+  Clock,
+} from "lucide-react";
 
 export interface RichTextEditorProps {
   tripId: string;
@@ -27,59 +38,61 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   section,
   itemId,
   onSave,
-  onCancel
+  onCancel,
 }) => {
   const queryClient = useQueryClient();
-  const [title, setTitle] = useState('');
-  const [lastSavedContent, setLastSavedContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [lastSavedContent, setLastSavedContent] = useState("");
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [version, setVersion] = useState<number>(1);
-  const [status, setStatus] = useState<'draft' | 'published'>('draft');
+  const [status, setStatus] = useState<"draft" | "published">("draft");
   const [charCount, setCharCount] = useState<number>(0);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch Existing Item if itemId is provided
   const { data: itemData, isLoading: isFetching } = useQuery({
-    queryKey: ['knowledge-item', tripId, section, itemId],
+    queryKey: ["knowledge-item", tripId, section, itemId],
     queryFn: async () => {
       if (!itemId) return null;
       const res = await api.get(`/trips/${tripId}/knowledge/${section}`);
       const items = res.data?.data?.items || [];
       return items.find((x: any) => x.id === itemId) || null;
     },
-    enabled: !!itemId
+    enabled: !!itemId,
   });
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] }
+        heading: { levels: [1, 2, 3] },
       }),
       Underline,
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: 'text-[#F97316] underline font-semibold' }
+        HTMLAttributes: { class: "text-[#F97316] underline font-semibold" },
       }),
       Placeholder.configure({
-        placeholder: 'Write knowledge content, instructions, or guide...'
-      })
+        placeholder: "Write knowledge content, instructions, or guide...",
+      }),
     ],
-    content: '',
+    content: "",
     onUpdate: ({ editor }) => {
       const text = editor.getText();
       setCharCount(text.length);
-    }
+    },
   });
 
   // Populate data when fetched
   useEffect(() => {
     if (itemData) {
-      setTitle(itemData.title || '');
-      setStatus(itemData.status || 'draft');
+      setTitle(itemData.title || "");
+      setStatus(itemData.status || "draft");
       setVersion(itemData.version || 1);
-      const initialHtml = itemData.body || '';
+      const initialHtml = itemData.body || "";
       setLastSavedContent(initialHtml);
-      setLastSavedTime(new Date(itemData.updatedAt || Date.now()).toLocaleTimeString());
+      setLastSavedTime(
+        new Date(itemData.updatedAt || Date.now()).toLocaleTimeString(),
+      );
       if (editor && editor.getHTML() !== initialHtml) {
         editor.commands.setContent(initialHtml);
       }
@@ -88,13 +101,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   // Save Mutation
   const saveMutation = useMutation({
-    mutationFn: async (overrideStatus?: 'draft' | 'published') => {
-      const bodyHtml = editor ? editor.getHTML() : '';
+    mutationFn: async (overrideStatus?: "draft" | "published") => {
+      const bodyHtml = editor ? editor.getHTML() : "";
       const payload = {
-        title: title.trim() || 'Untitled Section',
+        title: title.trim() || "Untitled Section",
         body: bodyHtml,
-        contentType: 'text',
-        status: overrideStatus || status
+        contentType: "text",
+        status: overrideStatus || status,
       };
 
       if (itemId) {
@@ -108,16 +121,22 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         setVersion(updated.version || version + 1);
         setStatus(updated.status || overrideStatus || status);
       }
-      const currentHtml = editor ? editor.getHTML() : '';
+      const currentHtml = editor ? editor.getHTML() : "";
       setLastSavedContent(currentHtml);
       setLastSavedTime(new Date().toLocaleTimeString());
-      queryClient.invalidateQueries({ queryKey: ['trip-knowledge', tripId, section] });
-      toast.success(overrideStatus === 'published' ? 'Published successfully!' : 'Saved draft successfully!');
+      queryClient.invalidateQueries({
+        queryKey: ["trip-knowledge", tripId, section],
+      });
+      toast.success(
+        overrideStatus === "published"
+          ? "Published successfully!"
+          : "Saved draft successfully!",
+      );
       if (onSave) onSave();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to save item');
-    }
+      toast.error(err.response?.data?.message || "Failed to save item");
+    },
   });
 
   // 30-Second Auto Save Interval
@@ -126,7 +145,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       if (editor && title.trim()) {
         const currentHtml = editor.getHTML();
         if (currentHtml !== lastSavedContent && !saveMutation.isPending) {
-          saveMutation.mutate('draft');
+          saveMutation.mutate("draft");
         }
       }
     }, 30000);
@@ -140,21 +159,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (editor) {
       editor.commands.setContent(lastSavedContent);
     }
-    toast.info('Changes discarded, reverted to last saved version.');
+    toast.info("Changes discarded, reverted to last saved version.");
     if (onCancel) onCancel();
   };
 
   const addLink = () => {
     if (!editor) return;
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('Enter URL:', previousUrl);
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("Enter URL:", previousUrl);
 
     if (url === null) return;
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
   if (isFetching) {
@@ -184,11 +203,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3 text-slate-400" />
-              {lastSavedTime ? `Last saved at ${lastSavedTime}` : 'Not saved yet'}
+              {lastSavedTime
+                ? `Last saved at ${lastSavedTime}`
+                : "Not saved yet"}
             </span>
-            <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-[9px] ${
-              status === 'published' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-            }`}>
+            <span
+              className={`px-2 py-0.5 rounded-full font-bold uppercase text-[9px] ${
+                status === "published"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
               {status}
             </span>
           </div>
@@ -205,7 +230,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
 
           <button
-            onClick={() => saveMutation.mutate('draft')}
+            onClick={() => saveMutation.mutate("draft")}
             disabled={saveMutation.isPending || charCount > 5000}
             className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1 disabled:opacity-50"
           >
@@ -214,7 +239,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
 
           <button
-            onClick={() => saveMutation.mutate('published')}
+            onClick={() => saveMutation.mutate("published")}
             disabled={saveMutation.isPending || charCount > 5000}
             className="px-4 py-1.5 bg-[#F97316] hover:bg-[#e06100] text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
           >
@@ -230,7 +255,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('bold') ? 'bg-slate-300 text-black font-bold' : ''}`}
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("bold") ? "bg-slate-300 text-black font-bold" : ""}`}
             title="Bold"
           >
             <Bold className="w-4 h-4" />
@@ -238,7 +263,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('italic') ? 'bg-slate-300 text-black' : ''}`}
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("italic") ? "bg-slate-300 text-black" : ""}`}
             title="Italic"
           >
             <Italic className="w-4 h-4" />
@@ -246,7 +271,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('underline') ? 'bg-slate-300 text-black' : ''}`}
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("underline") ? "bg-slate-300 text-black" : ""}`}
             title="Underline"
           >
             <UnderlineIcon className="w-4 h-4" />
@@ -256,24 +281,30 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
           <button
             type="button"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('heading', { level: 1 }) ? 'bg-slate-300 text-black font-bold' : ''}`}
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 1 }).run()
+            }
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("heading", { level: 1 }) ? "bg-slate-300 text-black font-bold" : ""}`}
             title="Heading 1"
           >
             <Heading1 className="w-4 h-4" />
           </button>
           <button
             type="button"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('heading', { level: 2 }) ? 'bg-slate-300 text-black font-bold' : ''}`}
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 2 }).run()
+            }
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("heading", { level: 2 }) ? "bg-slate-300 text-black font-bold" : ""}`}
             title="Heading 2"
           >
             <Heading2 className="w-4 h-4" />
           </button>
           <button
             type="button"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('heading', { level: 3 }) ? 'bg-slate-300 text-black font-bold' : ''}`}
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 3 }).run()
+            }
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("heading", { level: 3 }) ? "bg-slate-300 text-black font-bold" : ""}`}
             title="Heading 3"
           >
             <Heading3 className="w-4 h-4" />
@@ -284,7 +315,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('bulletList') ? 'bg-slate-300 text-black' : ''}`}
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("bulletList") ? "bg-slate-300 text-black" : ""}`}
             title="Bullet List"
           >
             <List className="w-4 h-4" />
@@ -292,7 +323,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('orderedList') ? 'bg-slate-300 text-black' : ''}`}
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("orderedList") ? "bg-slate-300 text-black" : ""}`}
             title="Ordered List"
           >
             <ListOrdered className="w-4 h-4" />
@@ -303,7 +334,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={addLink}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('link') ? 'bg-slate-300 text-black' : ''}`}
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("link") ? "bg-slate-300 text-black" : ""}`}
             title="Link"
           >
             <LinkIcon className="w-4 h-4" />
@@ -311,14 +342,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive('codeBlock') ? 'bg-slate-300 text-black' : ''}`}
+            className={`p-1.5 rounded hover:bg-slate-200 ${editor.isActive("codeBlock") ? "bg-slate-300 text-black" : ""}`}
             title="Code Block"
           >
             <Code className="w-4 h-4" />
           </button>
           <button
             type="button"
-            onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+            onClick={() =>
+              editor.chain().focus().unsetAllMarks().clearNodes().run()
+            }
             className="p-1.5 rounded hover:bg-slate-200 text-slate-500"
             title="Clear Formatting"
           >
@@ -335,7 +368,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       {/* ─── Footer Character Count ─── */}
       <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] font-medium text-slate-500">
         <span>Auto-saves every 30s</span>
-        <span className={charCount > 5000 ? 'text-rose-600 font-bold' : 'text-slate-500'}>
+        <span
+          className={
+            charCount > 5000 ? "text-rose-600 font-bold" : "text-slate-500"
+          }
+        >
           {charCount.toLocaleString()} / 5,000 characters
         </span>
       </div>

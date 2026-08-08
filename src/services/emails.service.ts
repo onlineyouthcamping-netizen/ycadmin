@@ -50,7 +50,10 @@ export const emailsService = {
     return res.data.data;
   },
 
-  async updateTemplate(id: string, data: Partial<EmailTemplate>): Promise<EmailTemplate> {
+  async updateTemplate(
+    id: string,
+    data: Partial<EmailTemplate>,
+  ): Promise<EmailTemplate> {
     const res = await api.put(`/emails/templates/${id}`, data);
     return res.data.data;
   },
@@ -84,8 +87,8 @@ export const emailsService = {
   async sendCustomEmail(formData: FormData): Promise<any> {
     const res = await api.post("/emails/send-custom", formData, {
       headers: {
-        "Content-Type": "multipart/form-data"
-      }
+        "Content-Type": "multipart/form-data",
+      },
     });
     return res.data;
   },
@@ -96,8 +99,13 @@ export const emailsService = {
     subject: string;
     body: string;
     templateId?: string;
-  }): Promise<{ total: number; sent: number; failed: number; skipped: number }> {
+  }): Promise<{
+    total: number;
+    sent: number;
+    failed: number;
+    skipped: number;
+  }> {
     const res = await api.post("/emails/send-bulk-custom", data);
     return res.data.data;
-  }
+  },
 };

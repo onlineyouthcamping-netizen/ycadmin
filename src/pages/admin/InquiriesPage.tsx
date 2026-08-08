@@ -3,10 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { inquiriesService } from "@/services/inquiries.service";
 import type { Inquiry } from "@/types";
 import { Button } from "@/components/ui/button";
-import { 
-  MessageSquare, Mail, Phone, Search, MoreHorizontal, Download, Upload, 
-  RefreshCw, CheckCircle2, ChevronLeft, ChevronRight, Star, X, TrendingUp, 
-  MapPin, FileText, User, Calendar, Tag, ArrowUpRight, Sparkles, Filter
+import {
+  MessageSquare,
+  Mail,
+  Phone,
+  Search,
+  MoreHorizontal,
+  Download,
+  Upload,
+  RefreshCw,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  X,
+  TrendingUp,
+  MapPin,
+  FileText,
+  User,
+  Calendar,
+  Tag,
+  ArrowUpRight,
+  Sparkles,
+  Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -64,7 +83,7 @@ export default function InquiriesPage() {
   // Debounced search query
   useEffect(() => {
     const handler = setTimeout(() => {
-      setSearchQuery(prev => {
+      setSearchQuery((prev) => {
         if (prev !== searchInput) {
           setPage(1);
           return searchInput;
@@ -76,47 +95,50 @@ export default function InquiriesPage() {
   }, [searchInput]);
 
   // Load inquiries from backend
-  const load = useCallback(async (isInitial = false) => {
-    const requestId = ++loadRequestRef.current;
-    if (isInitial) setLoading(true);
+  const load = useCallback(
+    async (isInitial = false) => {
+      const requestId = ++loadRequestRef.current;
+      if (isInitial) setLoading(true);
 
-    try {
-      let apiStatus = activeTab;
-      if (activeTab === "all") apiStatus = "all";
-      if (activeTab === "follow-up") apiStatus = "contacted";
-      if (activeTab === "interested") apiStatus = "contacted";
-      if (activeTab === "payment-pending") apiStatus = "new";
+      try {
+        let apiStatus = activeTab;
+        if (activeTab === "all") apiStatus = "all";
+        if (activeTab === "follow-up") apiStatus = "contacted";
+        if (activeTab === "interested") apiStatus = "contacted";
+        if (activeTab === "payment-pending") apiStatus = "new";
 
-      const res = await inquiriesService.getAll({
-        status: apiStatus,
-        search: searchQuery,
-        page,
-        limit: pageSize,
-      });
+        const res = await inquiriesService.getAll({
+          status: apiStatus,
+          search: searchQuery,
+          page,
+          limit: pageSize,
+        });
 
-      if (requestId !== loadRequestRef.current) return;
-      const currentTotalPages = res.pagination?.totalPages || 0;
+        if (requestId !== loadRequestRef.current) return;
+        const currentTotalPages = res.pagination?.totalPages || 0;
 
-      if (currentTotalPages > 0 && page > currentTotalPages) {
-        setPage(1);
-        return;
+        if (currentTotalPages > 0 && page > currentTotalPages) {
+          setPage(1);
+          return;
+        }
+
+        const list = res.data || [];
+        setInquiries(list);
+        setTotalCount(res.pagination?.totalCount || list.length);
+        setTotalPages(currentTotalPages || Math.ceil(list.length / pageSize));
+
+        if (list.length > 0 && !selected) {
+          setSelected(list[0]);
+        }
+      } catch (error) {
+        if (requestId !== loadRequestRef.current) return;
+        toast.error("Failed to load inquiries");
+      } finally {
+        if (requestId === loadRequestRef.current) setLoading(false);
       }
-
-      const list = res.data || [];
-      setInquiries(list);
-      setTotalCount(res.pagination?.totalCount || list.length);
-      setTotalPages(currentTotalPages || Math.ceil(list.length / pageSize));
-
-      if (list.length > 0 && !selected) {
-        setSelected(list[0]);
-      }
-    } catch (error) {
-      if (requestId !== loadRequestRef.current) return;
-      toast.error("Failed to load inquiries");
-    } finally {
-      if (requestId === loadRequestRef.current) setLoading(false);
-    }
-  }, [activeTab, searchQuery, page, pageSize, selected]);
+    },
+    [activeTab, searchQuery, page, pageSize, selected],
+  );
 
   useEffect(() => {
     load(true);
@@ -131,36 +153,78 @@ export default function InquiriesPage() {
       interested: 0,
       paymentPending: 0,
       booked: 0,
-      lost: 0
+      lost: 0,
     };
 
-    inquiries.forEach(inq => {
+    inquiries.forEach((inq) => {
       const st = (inq.status || "").toLowerCase();
-      if (st === 'new') counts.new++;
-      else if (st === 'contacted') counts.contacted++;
-      else if (st === 'converted') counts.booked++;
-      else if (st === 'closed') counts.lost++;
+      if (st === "new") counts.new++;
+      else if (st === "contacted") counts.contacted++;
+      else if (st === "converted") counts.booked++;
+      else if (st === "closed") counts.lost++;
       else counts.contacted++;
     });
 
     return [
-      { label: "New Leads", count: counts.new || inquiries.filter(i => i.status === 'new').length || 15, color: "text-blue-600", bg: "bg-blue-50" },
-      { label: "Contacted", count: counts.contacted || 28, color: "text-[#FF6B00]", bg: "bg-orange-50" },
-      { label: "Follow-up", count: counts.followUp || 36, color: "text-amber-600", bg: "bg-amber-50" },
-      { label: "Interested", count: counts.interested || 17, color: "text-purple-600", bg: "bg-purple-50" },
-      { label: "Payment Pending", count: counts.paymentPending || 10, color: "text-indigo-600", bg: "bg-indigo-50" },
-      { label: "Booked", count: counts.booked || 18, color: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Lost", count: counts.lost || 6, color: "text-rose-600", bg: "bg-rose-50" },
+      {
+        label: "New Leads",
+        count:
+          counts.new ||
+          inquiries.filter((i) => i.status === "new").length ||
+          15,
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+      },
+      {
+        label: "Contacted",
+        count: counts.contacted || 28,
+        color: "text-[#FF6B00]",
+        bg: "bg-orange-50",
+      },
+      {
+        label: "Follow-up",
+        count: counts.followUp || 36,
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+      },
+      {
+        label: "Interested",
+        count: counts.interested || 17,
+        color: "text-purple-600",
+        bg: "bg-purple-50",
+      },
+      {
+        label: "Payment Pending",
+        count: counts.paymentPending || 10,
+        color: "text-indigo-600",
+        bg: "bg-indigo-50",
+      },
+      {
+        label: "Booked",
+        count: counts.booked || 18,
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+      },
+      {
+        label: "Lost",
+        count: counts.lost || 6,
+        color: "text-rose-600",
+        bg: "bg-rose-50",
+      },
     ];
   }, [inquiries]);
 
   // Tab count resolver
   const getTabCount = (key: string) => {
     if (key === activeTab) return totalCount;
-    if (key === "new") return inquiries.filter(i => i.status === 'new').length || 15;
-    if (key === "contacted") return inquiries.filter(i => i.status === 'contacted').length || 28;
-    if (key === "converted") return inquiries.filter(i => i.status === 'converted').length || 18;
-    if (key === "closed") return inquiries.filter(i => i.status === 'closed').length || 6;
+    if (key === "new")
+      return inquiries.filter((i) => i.status === "new").length || 15;
+    if (key === "contacted")
+      return inquiries.filter((i) => i.status === "contacted").length || 28;
+    if (key === "converted")
+      return inquiries.filter((i) => i.status === "converted").length || 18;
+    if (key === "closed")
+      return inquiries.filter((i) => i.status === "closed").length || 6;
     return inquiries.length || 25;
   };
 
@@ -169,7 +233,11 @@ export default function InquiriesPage() {
     try {
       await inquiriesService.update(inq.id, { status } as any);
       toast.success(`Inquiry status updated to ${status.toUpperCase()}`);
-      setInquiries(prev => prev.map(item => item.id === inq.id ? { ...item, status: status as any } : item));
+      setInquiries((prev) =>
+        prev.map((item) =>
+          item.id === inq.id ? { ...item, status: status as any } : item,
+        ),
+      );
       if (selected?.id === inq.id) {
         setSelected({ ...selected, status: status as any });
       }
@@ -182,12 +250,14 @@ export default function InquiriesPage() {
     if (selectedRows.length === inquiries.length) {
       setSelectedRows([]);
     } else {
-      setSelectedRows(inquiries.map(i => i.id));
+      setSelectedRows(inquiries.map((i) => i.id));
     }
   };
 
   const toggleSelectRow = (id: string) => {
-    setSelectedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+    setSelectedRows((prev) =>
+      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id],
+    );
   };
 
   const handleRowEmailClick = (inq: Inquiry) => {
@@ -204,14 +274,13 @@ export default function InquiriesPage() {
 
   return (
     <div className="flex-1 flex overflow-hidden bg-[#F8FAFC] min-h-screen -mx-3 -my-3 sm:-mx-6 sm:-my-6 font-sans text-slate-800">
-      
       {/* ─── MOBILE VIEW (<768px) ─── */}
       <div className="block md:hidden w-full p-3">
-        <MobileCRMLeadsView 
+        <MobileCRMLeadsView
           inquiries={inquiries}
           onSelectInquiry={(inq) => setSelected(inq)}
           onUpdateStatus={(id, status) => {
-            const item = inquiries.find(i => i.id === id);
+            const item = inquiries.find((i) => i.id === id);
             if (item) updateStatus(item, status);
           }}
         />
@@ -219,10 +288,8 @@ export default function InquiriesPage() {
 
       {/* ─── DESKTOP CRM WORKSPACE (>=768px) ─── */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        
         {/* LEFT COLUMN: Main Inquiries Workspace */}
         <div className="flex-1 flex flex-col overflow-y-auto p-5 space-y-4 no-scrollbar">
-          
           {/* Header Action Bar */}
           <div className="flex items-center justify-between flex-shrink-0">
             <div>
@@ -233,22 +300,23 @@ export default function InquiriesPage() {
                 </span>
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Manage, follow up, and convert tour inquiries into confirmed bookings.
+                Manage, follow up, and convert tour inquiries into confirmed
+                bookings.
               </p>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => load(true)} 
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => load(true)}
                 className="h-8 px-3 rounded-lg text-xs font-bold text-slate-700 bg-white border-slate-200 hover:bg-slate-50 shadow-2xs gap-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
                 Sync
               </Button>
-              <Button 
-                onClick={() => navigate("/admin/booking-forms")} 
+              <Button
+                onClick={() => navigate("/admin/booking-forms")}
                 className="h-8 px-3.5 rounded-lg text-xs font-bold bg-[#FF6B00] hover:bg-[#e05e00] text-white shadow-2xs gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -260,16 +328,24 @@ export default function InquiriesPage() {
           {/* Minimal KPI Metric Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 flex-shrink-0">
             {kpiMetrics.map((kpi, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs space-y-1 flex flex-col justify-between hover:border-slate-300 transition-all cursor-default"
               >
                 <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate">
                   {kpi.label}
                 </span>
                 <div className="flex items-baseline justify-between pt-0.5">
-                  <span className="text-lg font-black text-slate-900 tracking-tight">{kpi.count}</span>
-                  <span className={cn("text-[10px] font-black px-1.5 py-0.2 rounded-md uppercase tracking-wider", kpi.bg, kpi.color)}>
+                  <span className="text-lg font-black text-slate-900 tracking-tight">
+                    {kpi.count}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[10px] font-black px-1.5 py-0.2 rounded-md uppercase tracking-wider",
+                      kpi.bg,
+                      kpi.color,
+                    )}
+                  >
                     {kpi.count > 0 ? "Active" : "Zero"}
                   </span>
                 </div>
@@ -279,7 +355,7 @@ export default function InquiriesPage() {
 
           {/* Status Tabs Navigation Bar */}
           <div className="flex items-center gap-1.5 bg-white rounded-xl border border-slate-200/80 p-1 shadow-2xs overflow-x-auto no-scrollbar flex-shrink-0">
-            {STATUS_TABS.map(tab => {
+            {STATUS_TABS.map((tab) => {
               const count = getTabCount(tab.key);
               const isActive = activeTab === tab.key;
               return (
@@ -293,14 +369,18 @@ export default function InquiriesPage() {
                     "px-3.5 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer select-none",
                     isActive
                       ? "bg-[#FF6B00] text-white shadow-2xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80",
                   )}
                 >
                   <span>{tab.label}</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-md font-extrabold",
-                    isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.2 rounded-md font-extrabold",
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-500",
+                    )}
+                  >
                     {count}
                   </span>
                 </button>
@@ -311,13 +391,18 @@ export default function InquiriesPage() {
           {/* Search & Bulk Action Bar */}
           <div className="flex items-center justify-between gap-3 bg-white border border-slate-200/80 p-2.5 rounded-xl shadow-2xs flex-shrink-0">
             <div className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                checked={selectedRows.length === inquiries.length && inquiries.length > 0} 
-                onChange={toggleSelectAll} 
+              <input
+                type="checkbox"
+                checked={
+                  selectedRows.length === inquiries.length &&
+                  inquiries.length > 0
+                }
+                onChange={toggleSelectAll}
                 className="rounded border-slate-300 text-[#FF6B00] focus:ring-[#FF6B00] cursor-pointer ml-1"
               />
-              <span className="text-xs font-bold text-slate-500">{selectedRows.length} Selected</span>
+              <span className="text-xs font-bold text-slate-500">
+                {selectedRows.length} Selected
+              </span>
 
               {selectedRows.length > 0 && (
                 <Button
@@ -350,15 +435,22 @@ export default function InquiriesPage() {
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-3">
                 <div className="w-8 h-8 border-3 border-[#FF6B00] border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Inquiries...</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Loading Inquiries...
+                </span>
               </div>
             ) : inquiries.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center space-y-2">
                 <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
                   <MessageSquare className="w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-800">No Inquiries Found</h3>
-                <p className="text-xs text-slate-400 max-w-sm">No lead records match your search or filter tab. Try clearing your filters or creating a new inquiry link.</p>
+                <h3 className="text-sm font-bold text-slate-800">
+                  No Inquiries Found
+                </h3>
+                <p className="text-xs text-slate-400 max-w-sm">
+                  No lead records match your search or filter tab. Try clearing
+                  your filters or creating a new inquiry link.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto no-scrollbar flex-1">
@@ -366,11 +458,21 @@ export default function InquiriesPage() {
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/70 h-9 select-none">
                       <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider w-8 text-center"></th>
-                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">Customer</th>
-                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">Trip / Package</th>
-                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">Status</th>
-                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">Date</th>
-                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider text-right">Quick Actions</th>
+                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        Trip / Package
+                      </th>
+                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">
+                        Status
+                      </th>
+                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-wider text-right">
+                        Quick Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -378,30 +480,53 @@ export default function InquiriesPage() {
                       const isSelected = selected?.id === inq.id;
                       const status = (inq.status || "new").toLowerCase();
 
-                      const statusConfig: Record<string, { label: string; style: string }> = {
-                        new: { label: "NEW", style: "bg-blue-50 text-blue-700 border-blue-200" },
-                        contacted: { label: "CONTACTED", style: "bg-amber-50 text-amber-700 border-amber-200" },
-                        converted: { label: "BOOKED", style: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-                        closed: { label: "LOST", style: "bg-rose-50 text-rose-700 border-rose-200" },
+                      const statusConfig: Record<
+                        string,
+                        { label: string; style: string }
+                      > = {
+                        new: {
+                          label: "NEW",
+                          style: "bg-blue-50 text-blue-700 border-blue-200",
+                        },
+                        contacted: {
+                          label: "CONTACTED",
+                          style: "bg-amber-50 text-amber-700 border-amber-200",
+                        },
+                        converted: {
+                          label: "BOOKED",
+                          style:
+                            "bg-emerald-50 text-emerald-700 border-emerald-200",
+                        },
+                        closed: {
+                          label: "LOST",
+                          style: "bg-rose-50 text-rose-700 border-rose-200",
+                        },
                       };
 
-                      const currentStatus = statusConfig[status] || { label: status.toUpperCase(), style: "bg-slate-50 text-slate-700 border-slate-200" };
+                      const currentStatus = statusConfig[status] || {
+                        label: status.toUpperCase(),
+                        style: "bg-slate-50 text-slate-700 border-slate-200",
+                      };
 
                       return (
-                        <tr 
-                          key={inq.id} 
+                        <tr
+                          key={inq.id}
                           onClick={() => setSelected(inq)}
                           className={cn(
                             "hover:bg-slate-50/80 transition-colors h-14 cursor-pointer text-xs group",
-                            isSelected && "bg-orange-50/20 border-l-3 border-[#FF6B00]"
+                            isSelected &&
+                              "bg-orange-50/20 border-l-3 border-[#FF6B00]",
                           )}
                         >
                           {/* Checkbox */}
-                          <td className="px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                            <input 
-                              type="checkbox" 
-                              checked={selectedRows.includes(inq.id)} 
-                              onChange={() => toggleSelectRow(inq.id)} 
+                          <td
+                            className="px-3 text-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedRows.includes(inq.id)}
+                              onChange={() => toggleSelectRow(inq.id)}
                               className="rounded border-slate-300 text-[#FF6B00] focus:ring-[#FF6B00] cursor-pointer"
                             />
                           </td>
@@ -410,7 +535,9 @@ export default function InquiriesPage() {
                           <td className="px-3 py-2">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-black text-xs flex items-center justify-center shrink-0">
-                                {inq.name ? inq.name.charAt(0).toUpperCase() : "L"}
+                                {inq.name
+                                  ? inq.name.charAt(0).toUpperCase()
+                                  : "L"}
                               </div>
                               <div className="min-w-0">
                                 <p className="font-bold text-slate-900 truncate leading-tight group-hover:text-[#FF6B00] transition-colors">
@@ -430,25 +557,38 @@ export default function InquiriesPage() {
                                 {inq.tripTitle || "General Tour Inquiry"}
                               </span>
                               {inq.date && (
-                                <p className="text-[10px] text-slate-400 font-medium">Travel: {inq.date}</p>
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                  Travel: {inq.date}
+                                </p>
                               )}
                             </div>
                           </td>
 
                           {/* Status Badge */}
                           <td className="px-3 py-2 text-center">
-                            <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider inline-block", currentStatus.style)}>
+                            <span
+                              className={cn(
+                                "text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider inline-block",
+                                currentStatus.style,
+                              )}
+                            >
                               {currentStatus.label}
                             </span>
                           </td>
 
                           {/* Date */}
                           <td className="px-3 py-2 text-slate-500 font-medium text-xs whitespace-nowrap">
-                            {safeFormatDate(inq.createdAt, { day: '2-digit', month: 'short' })}
+                            {safeFormatDate(inq.createdAt, {
+                              day: "2-digit",
+                              month: "short",
+                            })}
                           </td>
 
                           {/* Actions */}
-                          <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                          <td
+                            className="px-3 py-2 text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="flex items-center gap-1.5 justify-end">
                               {inq.phone && (
                                 <a
@@ -478,20 +618,42 @@ export default function InquiriesPage() {
                                     <MoreHorizontal className="w-3.5 h-3.5" />
                                   </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40 p-1 bg-white border border-slate-200 rounded-xl shadow-xl text-xs font-semibold">
-                                  <DropdownMenuItem onClick={() => setSelected(inq)} className="cursor-pointer">
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-40 p-1 bg-white border border-slate-200 rounded-xl shadow-xl text-xs font-semibold"
+                                >
+                                  <DropdownMenuItem
+                                    onClick={() => setSelected(inq)}
+                                    className="cursor-pointer"
+                                  >
                                     View Details
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => updateStatus(inq, 'contacted')} className="cursor-pointer text-amber-700">
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateStatus(inq, "contacted")
+                                    }
+                                    className="cursor-pointer text-amber-700"
+                                  >
                                     Mark Contacted
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => updateStatus(inq, 'converted')} className="cursor-pointer text-emerald-700">
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      updateStatus(inq, "converted")
+                                    }
+                                    className="cursor-pointer text-emerald-700"
+                                  >
                                     Mark Won (Booked)
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => updateStatus(inq, 'closed')} className="cursor-pointer text-rose-700">
+                                  <DropdownMenuItem
+                                    onClick={() => updateStatus(inq, "closed")}
+                                    className="cursor-pointer text-rose-700"
+                                  >
                                     Mark Lost
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleRowEmailClick(inq)} className="cursor-pointer text-indigo-700">
+                                  <DropdownMenuItem
+                                    onClick={() => handleRowEmailClick(inq)}
+                                    className="cursor-pointer text-indigo-700"
+                                  >
                                     Send Email
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -509,22 +671,26 @@ export default function InquiriesPage() {
             {/* Pagination */}
             {totalCount > 0 && (
               <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-t border-slate-100 text-xs font-medium text-slate-500">
-                <span>Showing {inquiries.length} of {totalCount} inquiries</span>
+                <span>
+                  Showing {inquiries.length} of {totalCount} inquiries
+                </span>
                 <div className="flex items-center gap-1.5">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => setPage(p => Math.max(1, p - 1))} 
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
                     className="h-7 w-7 rounded-lg border-slate-200"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                   </Button>
-                  <span className="font-bold text-slate-800 px-2">{page} / {totalPages || 1}</span>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+                  <span className="font-bold text-slate-800 px-2">
+                    {page} / {totalPages || 1}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                     className="h-7 w-7 rounded-lg border-slate-200"
                   >
@@ -538,8 +704,8 @@ export default function InquiriesPage() {
 
         {/* RIGHT COLUMN: Minimal Context Detail Panel (360px) */}
         {selected && (
-          <InquiryDetailsDrawer 
-            selected={selected} 
+          <InquiryDetailsDrawer
+            selected={selected}
             setSelected={setSelected}
             showFullMessage={showFullMessage}
             setShowFullMessage={setShowFullMessage}
@@ -590,10 +756,12 @@ function InquiryDetailsDrawer({
   setShowFullMessage,
   updateStatus,
   admin,
-  onSendEmail
+  onSendEmail,
 }: DrawerProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"Overview" | "Timeline" | "Customer" | "Notes">("Overview");
+  const [activeTab, setActiveTab] = useState<
+    "Overview" | "Timeline" | "Customer" | "Notes"
+  >("Overview");
   const [noteText, setNoteText] = useState(selected.adminNotes || "");
 
   useEffect(() => {
@@ -602,7 +770,9 @@ function InquiryDetailsDrawer({
 
   const handleSaveNotes = async () => {
     try {
-      await inquiriesService.update(selected.id, { adminNotes: noteText } as any);
+      await inquiriesService.update(selected.id, {
+        adminNotes: noteText,
+      } as any);
       toast.success("Notes saved successfully");
     } catch (err) {
       toast.error("Failed to save notes");
@@ -611,23 +781,27 @@ function InquiryDetailsDrawer({
 
   return (
     <div className="w-full sm:w-[360px] bg-white border-l border-slate-200/80 flex flex-col h-full flex-shrink-0 font-sans shadow-xl lg:shadow-none z-40">
-      
       {/* Header (48px) */}
       <div className="h-12 px-4 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-xs font-mono font-bold text-slate-800">
             INQ-{selected.id.substring(0, 8).toUpperCase()}
           </span>
-          <span className={cn(
-            "text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider",
-            selected.status === 'converted' ? "bg-emerald-100 text-emerald-700" :
-            selected.status === 'closed' ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
-          )}>
+          <span
+            className={cn(
+              "text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider",
+              selected.status === "converted"
+                ? "bg-emerald-100 text-emerald-700"
+                : selected.status === "closed"
+                  ? "bg-rose-100 text-rose-700"
+                  : "bg-amber-100 text-amber-700",
+            )}
+          >
             {selected.status}
           </span>
         </div>
 
-        <button 
+        <button
           onClick={() => setSelected(null)}
           className="w-7 h-7 rounded-lg hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
         >
@@ -637,7 +811,7 @@ function InquiryDetailsDrawer({
 
       {/* Tabs */}
       <div className="flex border-b border-slate-100 bg-white px-2 shrink-0">
-        {(["Overview", "Timeline", "Customer", "Notes"] as const).map(tab => {
+        {(["Overview", "Timeline", "Customer", "Notes"] as const).map((tab) => {
           const isActive = activeTab === tab;
           return (
             <button
@@ -645,7 +819,9 @@ function InquiryDetailsDrawer({
               onClick={() => setActiveTab(tab)}
               className={cn(
                 "flex-1 py-2.5 text-[11px] font-bold text-center border-b-2 transition-all cursor-pointer",
-                isActive ? "border-[#FF6B00] text-[#FF6B00]" : "border-transparent text-slate-400 hover:text-slate-700"
+                isActive
+                  ? "border-[#FF6B00] text-[#FF6B00]"
+                  : "border-transparent text-slate-400 hover:text-slate-700",
               )}
             >
               {tab}
@@ -658,7 +834,6 @@ function InquiryDetailsDrawer({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
         {activeTab === "Overview" && (
           <div className="space-y-4">
-            
             {/* Customer Avatar Card */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
               <div className="w-10 h-10 rounded-full bg-[#FF6B00] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-2xs">
@@ -676,24 +851,36 @@ function InquiryDetailsDrawer({
 
             {/* Tour & Inquiry Summary */}
             <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Inquiry Details</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Inquiry Details
+              </span>
               <div className="bg-white border border-slate-200/80 rounded-xl p-3 space-y-2 text-xs">
                 <div className="flex justify-between items-start">
-                  <span className="text-slate-400 font-medium">Requested Tour:</span>
+                  <span className="text-slate-400 font-medium">
+                    Requested Tour:
+                  </span>
                   <span className="font-bold text-slate-900 text-right truncate max-w-[180px]">
                     {selected.tripTitle || "General Package"}
                   </span>
                 </div>
                 {selected.date && (
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-medium">Travel Date:</span>
-                    <span className="font-bold text-[#FF6B00]">{selected.date}</span>
+                    <span className="text-slate-400 font-medium">
+                      Travel Date:
+                    </span>
+                    <span className="font-bold text-[#FF6B00]">
+                      {selected.date}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 font-medium">Received:</span>
                   <span className="font-bold text-slate-700">
-                    {safeFormatDate(selected.createdAt, { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {safeFormatDate(selected.createdAt, {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </span>
                 </div>
               </div>
@@ -701,13 +888,18 @@ function InquiryDetailsDrawer({
 
             {/* Customer Message */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Customer Message</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Customer Message
+              </span>
               <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700 leading-relaxed italic">
                 <p className={cn(!showFullMessage && "line-clamp-3")}>
-                  "{selected.message || "Hi, I am interested in booking this package. Please share details and pricing."}"
+                  "
+                  {selected.message ||
+                    "Hi, I am interested in booking this package. Please share details and pricing."}
+                  "
                 </p>
                 {selected.message && selected.message.length > 100 && (
-                  <button 
+                  <button
                     onClick={() => setShowFullMessage(!showFullMessage)}
                     className="text-[10px] font-bold text-[#FF6B00] hover:underline mt-1 block"
                   >
@@ -719,7 +911,9 @@ function InquiryDetailsDrawer({
 
             {/* Quick Action Grid */}
             <div className="space-y-2 pt-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Quick Actions</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Quick Actions
+              </span>
               <div className="grid grid-cols-4 gap-1.5 text-center text-[10px] font-bold">
                 {selected.phone && (
                   <a
@@ -749,7 +943,7 @@ function InquiryDetailsDrawer({
                   <span>Email</span>
                 </button>
                 <button
-                  onClick={() => updateStatus(selected, 'converted')}
+                  onClick={() => updateStatus(selected, "converted")}
                   className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-600 text-white hover:bg-emerald-700 flex flex-col items-center gap-1 transition-all shadow-2xs"
                 >
                   <CheckCircle2 className="w-4 h-4" />
@@ -762,26 +956,36 @@ function InquiryDetailsDrawer({
 
         {activeTab === "Timeline" && (
           <div className="space-y-3">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Email &amp; Activity Log</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Email &amp; Activity Log
+            </span>
             <EmailLogsTimeline contextType="inquiry" contextId={selected.id} />
           </div>
         )}
 
         {activeTab === "Customer" && (
           <div className="space-y-3 text-xs">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Customer Specs</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Customer Specs
+            </span>
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-2">
               <div className="flex justify-between">
                 <span className="text-slate-400 font-medium">Name:</span>
-                <span className="font-bold text-slate-800">{selected.name}</span>
+                <span className="font-bold text-slate-800">
+                  {selected.name}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400 font-medium">Email:</span>
-                <span className="font-bold text-slate-800">{selected.email || "N/A"}</span>
+                <span className="font-bold text-slate-800">
+                  {selected.email || "N/A"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400 font-medium">Phone:</span>
-                <span className="font-bold font-mono text-slate-800">{selected.phone || "N/A"}</span>
+                <span className="font-bold font-mono text-slate-800">
+                  {selected.phone || "N/A"}
+                </span>
               </div>
             </div>
           </div>
@@ -789,15 +993,17 @@ function InquiryDetailsDrawer({
 
         {activeTab === "Notes" && (
           <div className="space-y-3">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Admin Notes</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Admin Notes
+            </span>
             <textarea
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               placeholder="Add internal notes about this lead..."
               className="w-full h-32 p-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF6B00] bg-white text-slate-800"
             />
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={handleSaveNotes}
               className="w-full h-8 text-xs font-bold bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-lg"
             >

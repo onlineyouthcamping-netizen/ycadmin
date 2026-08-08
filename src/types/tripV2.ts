@@ -46,7 +46,13 @@ export interface LocationVariantV2 {
 export interface DepartureDateV2 {
   id?: string;
   date: string; // YYYY-MM-DD
-  status: "AVAILABLE" | "GUARANTEED" | "FEW_SEATS" | "SOLD_OUT" | "COMPLETED" | "CANCELLED";
+  status:
+    | "AVAILABLE"
+    | "GUARANTEED"
+    | "FEW_SEATS"
+    | "SOLD_OUT"
+    | "COMPLETED"
+    | "CANCELLED";
   price?: number;
   offerPrice?: number;
   capacity?: number;

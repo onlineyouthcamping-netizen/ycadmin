@@ -26,5 +26,5 @@ export const blogsService = {
   remove: async (id: string) => {
     const res = await api.delete(`/blogs/${id}`);
     return res.data;
-  }
+  },
 };

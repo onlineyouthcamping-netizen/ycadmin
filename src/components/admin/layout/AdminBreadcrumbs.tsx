@@ -12,23 +12,36 @@ export function AdminBreadcrumbs() {
   }
 
   // Match current route or detail route
-  const currentRoute = ADMIN_ROUTES.find(r => {
+  const currentRoute = ADMIN_ROUTES.find((r) => {
     if (r.path === path) return true;
-    if (r.path.includes(":") && path.startsWith(r.path.split(":")[0])) return true;
+    if (r.path.includes(":") && path.startsWith(r.path.split(":")[0]))
+      return true;
     return false;
   });
 
-  const labels = currentRoute?.breadcrumbLabel.split(" / ") || ["Admin", "Page"];
+  const labels = currentRoute?.breadcrumbLabel.split(" / ") || [
+    "Admin",
+    "Page",
+  ];
 
   return (
     <nav className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mb-1 truncate">
-      <Link to="/admin" className="hover:text-slate-800 flex items-center gap-1 transition-colors">
+      <Link
+        to="/admin"
+        className="hover:text-slate-800 flex items-center gap-1 transition-colors"
+      >
         <Home className="w-3.5 h-3.5 text-slate-400" />
       </Link>
       {labels.map((lbl, idx) => (
         <React.Fragment key={idx}>
           <ChevronRight className="w-3 h-3 text-slate-350 shrink-0" />
-          <span className={idx === labels.length - 1 ? "font-bold text-slate-800 truncate" : "hover:text-slate-700"}>
+          <span
+            className={
+              idx === labels.length - 1
+                ? "font-bold text-slate-800 truncate"
+                : "hover:text-slate-700"
+            }
+          >
             {lbl}
           </span>
         </React.Fragment>

@@ -1,7 +1,11 @@
 import api from "./api";
 
 export const quotationsService = {
-  getAll: async (filters?: { search?: string; page?: number; limit?: number }) => {
+  getAll: async (filters?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, val]) => {
@@ -28,5 +32,5 @@ export const quotationsService = {
   extend: async (id: string, hours: number) => {
     const res = await api.patch(`/quotations/${id}/extend`, { hours });
     return res.data.data;
-  }
+  },
 };

@@ -7,7 +7,7 @@ describe("Profile Dropdown Navigation Test Suite", () => {
       { label: "Settings", expectPath: "/admin/settings" },
       { label: "Change Password", expectPath: "/admin/change-password" },
       { label: "Manage Staff Profiles", expectPath: "/admin/people/staff" },
-      { label: "Roles & Permissions", expectPath: "/admin/roles-permissions" }
+      { label: "Roles & Permissions", expectPath: "/admin/roles-permissions" },
     ];
 
     links.forEach(({ label, expectPath }) => {

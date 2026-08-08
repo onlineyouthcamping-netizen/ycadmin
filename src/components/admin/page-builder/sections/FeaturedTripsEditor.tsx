@@ -27,12 +27,42 @@ interface FeaturedTripsEditorProps {
 }
 
 const DEFAULT_TRIPS_LIST: TripItem[] = [
-  { id: "mka-1", title: "Manali Kasol Amritsar Backpacking Trip", location: "Himachal Pradesh & Punjab", price: 12999 },
-  { id: "ladakh-1", title: "Leh Ladakh Road Trip", location: "Ladakh", price: 24999 },
-  { id: "spiti-1", title: "Spiti Valley Road Trip", location: "Spiti Valley", price: 19999 },
-  { id: "kk-1", title: "Kedarkantha Winter Trek", location: "Uttarakhand", price: 6499 },
-  { id: "kerala-1", title: "Kerala Backwaters Trip", location: "Kerala", price: 19999 },
-  { id: "wspiti-1", title: "Winter Spiti Expedition", location: "Spiti Valley", price: 19999 },
+  {
+    id: "mka-1",
+    title: "Manali Kasol Amritsar Backpacking Trip",
+    location: "Himachal Pradesh & Punjab",
+    price: 12999,
+  },
+  {
+    id: "ladakh-1",
+    title: "Leh Ladakh Road Trip",
+    location: "Ladakh",
+    price: 24999,
+  },
+  {
+    id: "spiti-1",
+    title: "Spiti Valley Road Trip",
+    location: "Spiti Valley",
+    price: 19999,
+  },
+  {
+    id: "kk-1",
+    title: "Kedarkantha Winter Trek",
+    location: "Uttarakhand",
+    price: 6499,
+  },
+  {
+    id: "kerala-1",
+    title: "Kerala Backwaters Trip",
+    location: "Kerala",
+    price: 19999,
+  },
+  {
+    id: "wspiti-1",
+    title: "Winter Spiti Expedition",
+    location: "Spiti Valley",
+    price: 19999,
+  },
 ];
 
 export function FeaturedTripsEditor({
@@ -41,7 +71,11 @@ export function FeaturedTripsEditor({
   onChange,
   onReset,
 }: FeaturedTripsEditorProps) {
-  const selectedTripIds: string[] = draft.selectedTripIds || ["mka-1", "ladakh-1", "spiti-1"];
+  const selectedTripIds: string[] = draft.selectedTripIds || [
+    "mka-1",
+    "ladakh-1",
+    "spiti-1",
+  ];
 
   const updateField = (field: string, value: any) => {
     onChange({ ...draft, [field]: value });
@@ -63,7 +97,9 @@ export function FeaturedTripsEditor({
     <div className="space-y-4">
       {/* Section Title */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-bold text-[#0B1528]">Section Title</Label>
+        <Label className="text-xs font-bold text-[#0B1528]">
+          Section Title
+        </Label>
         <Input
           type="text"
           value={draft.title || ""}
@@ -76,7 +112,9 @@ export function FeaturedTripsEditor({
       {/* Grid Columns & Card Style Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold text-[#0B1528]">Grid Columns</Label>
+          <Label className="text-xs font-bold text-[#0B1528]">
+            Grid Columns
+          </Label>
           <Select
             value={String(draft.columns || "3")}
             onValueChange={(val) => updateField("columns", val)}
@@ -93,7 +131,9 @@ export function FeaturedTripsEditor({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold text-[#0B1528]">Trip Card Style</Label>
+          <Label className="text-xs font-bold text-[#0B1528]">
+            Trip Card Style
+          </Label>
           <Select
             value={draft.cardStyle || "card"}
             onValueChange={(val) => updateField("cardStyle", val)}
@@ -134,7 +174,9 @@ export function FeaturedTripsEditor({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Checkbox checked={isChecked} />
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#0B1528] truncate">{t.title}</p>
+                    <p className="text-xs font-bold text-[#0B1528] truncate">
+                      {t.title}
+                    </p>
                     <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
                       <MapPin className="w-2.5 h-2.5" /> {t.location || "India"}
                     </p>
@@ -159,7 +201,8 @@ export function FeaturedTripsEditor({
           onClick={onReset}
           className="h-8 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1 text-slate-400" /> Reset to Default
+          <RotateCcw className="w-3.5 h-3.5 mr-1 text-slate-400" /> Reset to
+          Default
         </Button>
       </div>
     </div>

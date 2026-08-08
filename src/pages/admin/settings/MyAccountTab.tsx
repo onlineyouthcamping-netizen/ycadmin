@@ -3,7 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Save, Loader2, Calendar, Clock, MapPin, User, Mail, Phone } from "lucide-react";
+import {
+  CheckCircle,
+  Save,
+  Loader2,
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+} from "lucide-react";
 import { AvatarUpload } from "./components/AvatarUpload";
 import { ConfirmDeleteModal } from "./components/ConfirmDeleteModal";
 import { Admin } from "@/types";
@@ -34,7 +44,7 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
         phone,
         avatarUrl,
         location,
-        bio
+        bio,
       });
       await checkAuth();
       onRefresh();
@@ -65,24 +75,41 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
         {/* Read-Only Metadata Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border border-slate-200 bg-white">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Account Status</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Account Status
+            </span>
             <div className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
               <CheckCircle className="w-3.5 h-3.5" />
               Active Member
             </div>
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Member Since</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Member Since
+            </span>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) : "July 2024"}
+              {profile.createdAt
+                ? new Date(profile.createdAt).toLocaleDateString([], {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "July 2024"}
             </div>
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Last Active</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Last Active
+            </span>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
-              {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now"}
+              {profile.lastLoginAt
+                ? new Date(profile.lastLoginAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Just now"}
             </div>
           </div>
         </div>
@@ -93,16 +120,29 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
             <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-slate-400" /> Full Name (Locked)
             </Label>
-            <Input value={profile.name} disabled className="bg-slate-100/70 border-slate-200 text-xs font-semibold text-slate-700 cursor-not-allowed" />
-            <p className="text-[10px] text-slate-400">Locked for identity & authorization records</p>
+            <Input
+              value={profile.name}
+              disabled
+              className="bg-slate-100/70 border-slate-200 text-xs font-semibold text-slate-700 cursor-not-allowed"
+            />
+            <p className="text-[10px] text-slate-400">
+              Locked for identity & authorization records
+            </p>
           </div>
 
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-slate-400" /> Email Address (Locked)
+              <Mail className="w-3.5 h-3.5 text-slate-400" /> Email Address
+              (Locked)
             </Label>
-            <Input value={profile.email || ""} disabled className="bg-slate-100/70 border-slate-200 text-xs font-semibold text-slate-700 cursor-not-allowed" />
-            <p className="text-[10px] text-slate-400">Linked to authentication credentials</p>
+            <Input
+              value={profile.email || ""}
+              disabled
+              className="bg-slate-100/70 border-slate-200 text-xs font-semibold text-slate-700 cursor-not-allowed"
+            />
+            <p className="text-[10px] text-slate-400">
+              Linked to authentication credentials
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -131,8 +171,12 @@ export function MyAccountTab({ profile, onRefresh }: MyAccountTabProps) {
 
           <div className="space-y-1.5 md:col-span-2">
             <div className="flex justify-between items-center">
-              <Label className="text-xs font-bold text-slate-700">Bio / About</Label>
-              <span className="text-[10px] text-slate-400">{bio.length}/500</span>
+              <Label className="text-xs font-bold text-slate-700">
+                Bio / About
+              </Label>
+              <span className="text-[10px] text-slate-400">
+                {bio.length}/500
+              </span>
             </div>
             <Textarea
               placeholder="Brief description about your role or specialization..."

@@ -1,33 +1,106 @@
 import React from "react";
 import { User, MapPin } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
-import type { DashboardWidget, DashboardWidgetContextProps } from "@/config/dashboardWidgetRegistry";
+import type {
+  DashboardWidget,
+  DashboardWidgetContextProps,
+} from "@/config/dashboardWidgetRegistry";
 
 // Needs Your Attention Widget
-export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({ stats, navigate }) => (
+export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  navigate,
+}) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Needs Your Attention</span>
-      <span onClick={() => navigate("/admin/approvals-hub")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
+      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
+        Needs Your Attention
+      </span>
+      <span
+        onClick={() => navigate("/admin/approvals-hub")}
+        className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
+      >
+        View All
+      </span>
     </div>
     <div className="p-3.5 flex-1 space-y-2">
-      {(stats?.attentionItems || [
-        { label: "Payments waiting verification", count: 8, color: "bg-[#E23D4D]", urgent: true, path: "/admin/approvals-hub" },
-        { label: "Aadhaar pending", count: 16, color: "bg-[#D97706]", path: "/admin/approvals-hub" },
-        { label: "Hotels pending confirmation", count: 5, color: "bg-[#D97706]", path: "/admin/departure-workspace" },
-        { label: "Vendors with payments due today", count: 3, color: "bg-[#E23D4D]", urgent: true, path: "/admin/accounting-workspace" },
-        { label: "Rooming pending", count: 12, color: "bg-[#D97706]", path: "/admin/departure-workspace" },
-        { label: "Customer complaints", count: 2, color: "bg-[#E23D4D]", urgent: true, path: "/admin/departure-workspace" },
-        { label: "Tasks pending > 24 hours", count: 14, color: "bg-[#E23D4D]", urgent: true, path: "/admin/departure-workspace" },
-        { label: "Missing train tickets", count: 6, color: "bg-[#E23D4D]", urgent: true, path: "/admin/approvals-hub" },
-        { label: "Missing tempo confirmation", count: 4, color: "bg-[#D97706]", path: "/admin/departure-workspace" }
-      ]).map((item: any, idx: number) => (
-        <div key={idx} onClick={() => navigate(item.path)} className="flex items-center justify-between min-h-[22px] text-[12px] hover:bg-[#F8FAFD] px-1 rounded transition-colors cursor-pointer">
+      {(
+        stats?.attentionItems || [
+          {
+            label: "Payments waiting verification",
+            count: 8,
+            color: "bg-[#E23D4D]",
+            urgent: true,
+            path: "/admin/approvals-hub",
+          },
+          {
+            label: "Aadhaar pending",
+            count: 16,
+            color: "bg-[#D97706]",
+            path: "/admin/approvals-hub",
+          },
+          {
+            label: "Hotels pending confirmation",
+            count: 5,
+            color: "bg-[#D97706]",
+            path: "/admin/departure-workspace",
+          },
+          {
+            label: "Vendors with payments due today",
+            count: 3,
+            color: "bg-[#E23D4D]",
+            urgent: true,
+            path: "/admin/accounting-workspace",
+          },
+          {
+            label: "Rooming pending",
+            count: 12,
+            color: "bg-[#D97706]",
+            path: "/admin/departure-workspace",
+          },
+          {
+            label: "Customer complaints",
+            count: 2,
+            color: "bg-[#E23D4D]",
+            urgent: true,
+            path: "/admin/departure-workspace",
+          },
+          {
+            label: "Tasks pending > 24 hours",
+            count: 14,
+            color: "bg-[#E23D4D]",
+            urgent: true,
+            path: "/admin/departure-workspace",
+          },
+          {
+            label: "Missing train tickets",
+            count: 6,
+            color: "bg-[#E23D4D]",
+            urgent: true,
+            path: "/admin/approvals-hub",
+          },
+          {
+            label: "Missing tempo confirmation",
+            count: 4,
+            color: "bg-[#D97706]",
+            path: "/admin/departure-workspace",
+          },
+        ]
+      ).map((item: any, idx: number) => (
+        <div
+          key={idx}
+          onClick={() => navigate(item.path)}
+          className="flex items-center justify-between min-h-[22px] text-[12px] hover:bg-[#F8FAFD] px-1 rounded transition-colors cursor-pointer"
+        >
           <div className="flex items-center gap-2">
             <div className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
             <span className="font-semibold text-[#162B45]">{item.label}</span>
           </div>
-          <span className={`font-bold text-[11px] ${item.urgent ? "text-[#E23D4D]" : "text-[#74839A]"}`}>{item.count}</span>
+          <span
+            className={`font-bold text-[11px] ${item.urgent ? "text-[#E23D4D]" : "text-[#74839A]"}`}
+          >
+            {item.count}
+          </span>
         </div>
       ))}
     </div>
@@ -35,21 +108,41 @@ export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({ st
 );
 
 // Trips Running Now Widget
-export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({ stats, navigate }) => (
+export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  navigate,
+}) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Trips Running Now</span>
-      <span onClick={() => navigate("/admin/departure-workspace")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
+      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
+        Trips Running Now
+      </span>
+      <span
+        onClick={() => navigate("/admin/departure-workspace")}
+        className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
+      >
+        View All
+      </span>
     </div>
     <div className="p-3.5 flex-1 space-y-3.5">
-      {(!stats?.tripsRunningNow || stats.tripsRunningNow.length === 0) ? (
-        <p className="text-xs text-[#74839A] italic text-center py-4">No active trips running today.</p>
+      {!stats?.tripsRunningNow || stats.tripsRunningNow.length === 0 ? (
+        <p className="text-xs text-[#74839A] italic text-center py-4">
+          No active trips running today.
+        </p>
       ) : (
         stats.tripsRunningNow.map((trip: any, idx: number) => (
-          <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
+          <div
+            key={idx}
+            onClick={() => navigate("/admin/departure-workspace")}
+            className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer"
+          >
             <div className="space-y-0.5">
-              <p className="text-[12px] font-bold text-[#162B45]">{trip.code}</p>
-              <p className="text-[10px] text-[#74839A] font-medium leading-none">{trip.name}</p>
+              <p className="text-[12px] font-bold text-[#162B45]">
+                {trip.code}
+              </p>
+              <p className="text-[10px] text-[#74839A] font-medium leading-none">
+                {trip.name}
+              </p>
             </div>
             <div className="text-right space-y-0.5">
               <p className="text-[10.5px] font-semibold text-[#162B45] flex items-center justify-end gap-1">
@@ -67,23 +160,46 @@ export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({ s
 );
 
 // Trips Departing Next 7 Days Widget
-export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({ stats, navigate }) => (
+export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  navigate,
+}) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Trips Departing Next 7 Days</span>
-      <span onClick={() => navigate("/admin/operations")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View All</span>
+      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
+        Trips Departing Next 7 Days
+      </span>
+      <span
+        onClick={() => navigate("/admin/operations")}
+        className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
+      >
+        View All
+      </span>
     </div>
     <div className="p-3.5 flex-1 space-y-3.5">
-      {(!stats?.tripsDepartingNext7Days || stats.tripsDepartingNext7Days.length === 0) ? (
-        <p className="text-xs text-[#74839A] italic text-center py-4">No departures in the next 7 days.</p>
+      {!stats?.tripsDepartingNext7Days ||
+      stats.tripsDepartingNext7Days.length === 0 ? (
+        <p className="text-xs text-[#74839A] italic text-center py-4">
+          No departures in the next 7 days.
+        </p>
       ) : (
         stats.tripsDepartingNext7Days.map((trip: any, idx: number) => (
-          <div key={idx} onClick={() => navigate("/admin/operations")} className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer">
+          <div
+            key={idx}
+            onClick={() => navigate("/admin/operations")}
+            className="flex items-center justify-between min-h-[34px] hover:bg-[#F8FAFD] p-1 rounded transition-colors cursor-pointer"
+          >
             <div className="space-y-0.5">
-              <p className="text-[12px] font-bold text-[#162B45]">{trip.name}</p>
-              <p className="text-[10px] text-[#74839A] font-semibold leading-none">{trip.date}</p>
+              <p className="text-[12px] font-bold text-[#162B45]">
+                {trip.name}
+              </p>
+              <p className="text-[10px] text-[#74839A] font-semibold leading-none">
+                {trip.date}
+              </p>
             </div>
-            <span className={`text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border ${trip.status === "full" ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200" : "bg-[#EFF6FF] text-[#2563EB] border-blue-200"}`}>
+            <span
+              className={`text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border ${trip.status === "full" ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200" : "bg-[#EFF6FF] text-[#2563EB] border-blue-200"}`}
+            >
               {trip.count} Booked
             </span>
           </div>
@@ -94,22 +210,44 @@ export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({ st
 );
 
 // Today's Schedule Widget
-export const TodaysScheduleWidget: React.FC<DashboardWidgetContextProps> = ({ stats, navigate }) => (
+export const TodaysScheduleWidget: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  navigate,
+}) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">Today's Schedule</span>
-      <span onClick={() => navigate("/admin/departure-workspace")} className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer">View Full</span>
+      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
+        Today's Schedule
+      </span>
+      <span
+        onClick={() => navigate("/admin/departure-workspace")}
+        className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
+      >
+        View Full
+      </span>
     </div>
     <div className="p-3.5 flex-1 space-y-3">
-      {(!stats?.todaysSchedule || stats.todaysSchedule.length === 0) ? (
-        <p className="text-xs text-[#74839A] italic text-center py-4">No tasks or departures scheduled today.</p>
+      {!stats?.todaysSchedule || stats.todaysSchedule.length === 0 ? (
+        <p className="text-xs text-[#74839A] italic text-center py-4">
+          No tasks or departures scheduled today.
+        </p>
       ) : (
         stats.todaysSchedule.map((sched: any, idx: number) => (
-          <div key={idx} onClick={() => navigate("/admin/departure-workspace")} className="flex gap-2 items-start min-h-[30px] cursor-pointer hover:bg-slate-50/55 p-0.5 rounded transition-colors">
-            <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#74839A] w-[54px] shrink-0 mt-0.5">{sched.time}</span>
+          <div
+            key={idx}
+            onClick={() => navigate("/admin/departure-workspace")}
+            className="flex gap-2 items-start min-h-[30px] cursor-pointer hover:bg-slate-50/55 p-0.5 rounded transition-colors"
+          >
+            <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#74839A] w-[54px] shrink-0 mt-0.5">
+              {sched.time}
+            </span>
             <div className="flex items-start gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${sched.color}`} />
-              <span className="text-[12px] font-semibold text-[#162B45] leading-tight truncate max-w-[130px]">{sched.label}</span>
+              <div
+                className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${sched.color}`}
+              />
+              <span className="text-[12px] font-semibold text-[#162B45] leading-tight truncate max-w-[130px]">
+                {sched.label}
+              </span>
             </div>
           </div>
         ))

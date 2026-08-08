@@ -28,7 +28,13 @@ export interface DepartureActivityItem {
   dayNumber: number;
   scheduledTime: string;
   endTime?: string;
-  status: "DRAFT" | "CONFIRMED" | "READY" | "STARTED" | "COMPLETED" | "RECONCILED";
+  status:
+    | "DRAFT"
+    | "CONFIRMED"
+    | "READY"
+    | "STARTED"
+    | "COMPLETED"
+    | "RECONCILED";
   vendorId?: string;
   vendorName: string;
   vendorRating?: number;
@@ -49,7 +55,10 @@ export interface DepartureActivityItem {
 
 interface DayWiseCardProps {
   activity: DepartureActivityItem;
-  onUpdateActivity: (id: string, updated: Partial<DepartureActivityItem>) => Promise<void> | void;
+  onUpdateActivity: (
+    id: string,
+    updated: Partial<DepartureActivityItem>,
+  ) => Promise<void> | void;
   onDeleteActivity?: (id: string) => Promise<void> | void;
   availableVendors?: {
     vendorId: string;
@@ -61,12 +70,36 @@ interface DayWiseCardProps {
 }
 
 const SIX_OPERATIONAL_STATUSES = [
-  { value: "DRAFT", label: "Draft", bg: "bg-slate-100 text-slate-700 border-slate-300" },
-  { value: "CONFIRMED", label: "Confirmed", bg: "bg-blue-50 text-blue-700 border-blue-200" },
-  { value: "READY", label: "Ready", bg: "bg-amber-50 text-amber-700 border-amber-200" },
-  { value: "STARTED", label: "Started", bg: "bg-purple-50 text-purple-700 border-purple-200" },
-  { value: "COMPLETED", label: "Completed", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { value: "RECONCILED", label: "Reconciled", bg: "bg-teal-50 text-teal-800 border-teal-300" },
+  {
+    value: "DRAFT",
+    label: "Draft",
+    bg: "bg-slate-100 text-slate-700 border-slate-300",
+  },
+  {
+    value: "CONFIRMED",
+    label: "Confirmed",
+    bg: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  {
+    value: "READY",
+    label: "Ready",
+    bg: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  {
+    value: "STARTED",
+    label: "Started",
+    bg: "bg-purple-50 text-purple-700 border-purple-200",
+  },
+  {
+    value: "COMPLETED",
+    label: "Completed",
+    bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  {
+    value: "RECONCILED",
+    label: "Reconciled",
+    bg: "bg-teal-50 text-teal-800 border-teal-300",
+  },
 ] as const;
 
 export default function DayWiseActivityAccordionCard({
@@ -82,12 +115,22 @@ export default function DayWiseActivityAccordionCard({
   const [activityName, setActivityName] = useState(activity.name);
   const [category, setCategory] = useState(activity.category || "Adventure");
   const [duration, setDuration] = useState("2 Hours");
-  const [status, setStatus] = useState<DepartureActivityItem["status"]>(activity.status || "CONFIRMED");
-  const [guideName, setGuideName] = useState(activity.guideName || "Neel Patel");
-  const [vehicleName, setVehicleName] = useState(activity.vehicleName || "Traveller 2");
-  const [scheduledTime, setScheduledTime] = useState(activity.scheduledTime || "09:30 AM");
+  const [status, setStatus] = useState<DepartureActivityItem["status"]>(
+    activity.status || "CONFIRMED",
+  );
+  const [guideName, setGuideName] = useState(
+    activity.guideName || "Neel Patel",
+  );
+  const [vehicleName, setVehicleName] = useState(
+    activity.vehicleName || "Traveller 2",
+  );
+  const [scheduledTime, setScheduledTime] = useState(
+    activity.scheduledTime || "09:30 AM",
+  );
   const [endTime, setEndTime] = useState(activity.endTime || "12:30 PM");
-  const [mealIncluded, setMealIncluded] = useState(activity.mealIncluded || "Included");
+  const [mealIncluded, setMealIncluded] = useState(
+    activity.mealIncluded || "Included",
+  );
   const [notes, setNotes] = useState(activity.notes || "");
 
   // Inclusion & Pricing
@@ -95,26 +138,26 @@ export default function DayWiseActivityAccordionCard({
     activity.isIncluded !== undefined
       ? activity.isIncluded
       : activity.adultPrice === 0 ||
-        activity.name.toLowerCase().includes("breakfast") ||
-        activity.name.toLowerCase().includes("rafting") ||
-        activity.name.toLowerCase().includes("temple") ||
-        activity.name.toLowerCase().includes("bonfire") ||
-        activity.name.toLowerCase().includes("trek") ||
-        activity.name.toLowerCase().includes("check-in") ||
-        activity.name.toLowerCase().includes("briefing") ||
-        activity.name.toLowerCase().includes("departure") ||
-        activity.name.toLowerCase().includes("arrival") ||
-        activity.name.toLowerCase().includes("shawl") ||
-        activity.name.toLowerCase().includes("ice breaking") ||
-        activity.name.toLowerCase().includes("music") ||
-        activity.name.toLowerCase().includes("station")
+          activity.name.toLowerCase().includes("breakfast") ||
+          activity.name.toLowerCase().includes("rafting") ||
+          activity.name.toLowerCase().includes("temple") ||
+          activity.name.toLowerCase().includes("bonfire") ||
+          activity.name.toLowerCase().includes("trek") ||
+          activity.name.toLowerCase().includes("check-in") ||
+          activity.name.toLowerCase().includes("briefing") ||
+          activity.name.toLowerCase().includes("departure") ||
+          activity.name.toLowerCase().includes("arrival") ||
+          activity.name.toLowerCase().includes("shawl") ||
+          activity.name.toLowerCase().includes("ice breaking") ||
+          activity.name.toLowerCase().includes("music") ||
+          activity.name.toLowerCase().includes("station"),
   );
   const [sellingPrice, setSellingPrice] = useState(
     activity.customerPrice !== undefined
       ? activity.customerPrice
       : activity.adultPrice !== undefined
-      ? activity.adultPrice
-      : 0
+        ? activity.adultPrice
+        : 0,
   );
   const [adultPrice, setAdultPrice] = useState(activity.adultPrice ?? 0);
   const [childPrice, setChildPrice] = useState(activity.childPrice ?? 0);
@@ -122,8 +165,14 @@ export default function DayWiseActivityAccordionCard({
   const [gstPercent, setGstPercent] = useState(activity.gstPercent ?? 5);
 
   const profitPerPax = sellingPrice - vendorCost;
-  const remainingSeats = Math.max(0, activity.maxCapacity - activity.bookedCount);
-  const capacityPercent = Math.min(100, Math.round((activity.bookedCount / activity.maxCapacity) * 100));
+  const remainingSeats = Math.max(
+    0,
+    activity.maxCapacity - activity.bookedCount,
+  );
+  const capacityPercent = Math.min(
+    100,
+    Math.round((activity.bookedCount / activity.maxCapacity) * 100),
+  );
 
   // Passengers Checkbox List
   const [passengers, setPassengers] = useState(
@@ -136,15 +185,33 @@ export default function DayWiseActivityAccordionCard({
       { id: "p6", name: "Ananya Desai", isOpted: true },
       { id: "p7", name: "Rohan Verma", isOpted: true },
       { id: "p8", name: "Priya Nair", isOpted: true },
-    ]
+    ],
   );
   const [manualPaxCount, setManualPaxCount] = useState<number | null>(null);
 
   // Vendor comparison mock defaults if not provided
   const comparisonVendors = availableVendors || [
-    { vendorId: "VND-ABC", vendorName: "ABC Adventures", rating: 4.8, netCost: 700, seasonType: "PEAK" },
-    { vendorId: "VND-XYZ", vendorName: "XYZ Adventure", rating: 4.2, netCost: 650, seasonType: "OFF_SEASON" },
-    { vendorId: "VND-MTN", vendorName: "Mountain Adventure", rating: 4.5, netCost: 680, seasonType: "REGULAR" },
+    {
+      vendorId: "VND-ABC",
+      vendorName: "ABC Adventures",
+      rating: 4.8,
+      netCost: 700,
+      seasonType: "PEAK",
+    },
+    {
+      vendorId: "VND-XYZ",
+      vendorName: "XYZ Adventure",
+      rating: 4.2,
+      netCost: 650,
+      seasonType: "OFF_SEASON",
+    },
+    {
+      vendorId: "VND-MTN",
+      vendorName: "Mountain Adventure",
+      rating: 4.5,
+      netCost: 680,
+      seasonType: "REGULAR",
+    },
   ];
 
   const currentStatusObj =
@@ -153,13 +220,19 @@ export default function DayWiseActivityAccordionCard({
 
   const handleTogglePassenger = (pId: string) => {
     setPassengers((prev) => {
-      const updated = prev.map((p) => (p.id === pId ? { ...p, isOpted: !p.isOpted } : p));
+      const updated = prev.map((p) =>
+        p.id === pId ? { ...p, isOpted: !p.isOpted } : p,
+      );
       setManualPaxCount(updated.filter((p) => p.isOpted).length);
       return updated;
     });
   };
 
-  const handleAssignVendor = (vnd: { vendorId: string; vendorName: string; netCost: number }) => {
+  const handleAssignVendor = (vnd: {
+    vendorId: string;
+    vendorName: string;
+    netCost: number;
+  }) => {
     setVendorCost(vnd.netCost);
     onUpdateActivity(activity.id, {
       vendorId: vnd.vendorId,
@@ -202,8 +275,8 @@ export default function DayWiseActivityAccordionCard({
     manualPaxCount !== null
       ? manualPaxCount
       : isIncluded
-      ? activity.bookedCount || activity.maxCapacity || 40
-      : passengers.filter((p) => p.isOpted).length;
+        ? activity.bookedCount || activity.maxCapacity || 40
+        : passengers.filter((p) => p.isOpted).length;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all overflow-hidden mb-3">
@@ -224,7 +297,7 @@ export default function DayWiseActivityAccordionCard({
                   "px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider border",
                   isIncluded
                     ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                    : "bg-purple-50 text-purple-700 border-purple-300"
+                    : "bg-purple-50 text-purple-700 border-purple-300",
                 )}
               >
                 {isIncluded ? "Included Activity" : "Optional Add-on"}
@@ -235,14 +308,15 @@ export default function DayWiseActivityAccordionCard({
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-full text-xs font-semibold border",
-                  currentStatusObj.bg
+                  currentStatusObj.bg,
                 )}
               >
                 {currentStatusObj.label}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Vendor: <strong className="text-slate-800">{activity.vendorName}</strong>
+              Vendor:{" "}
+              <strong className="text-slate-800">{activity.vendorName}</strong>
             </p>
           </div>
         </div>
@@ -253,16 +327,28 @@ export default function DayWiseActivityAccordionCard({
             vendorCost > 0 ? (
               <>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
-                  <strong className="text-slate-900 font-bold text-sm">₹{vendorCost} / Pax</strong>
+                  <span className="text-slate-400 block text-[11px]">
+                    Vendor Cost
+                  </span>
+                  <strong className="text-slate-900 font-bold text-sm">
+                    ₹{vendorCost} / Pax
+                  </strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Passengers</span>
-                  <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
+                  <span className="text-slate-400 block text-[11px]">
+                    Passengers
+                  </span>
+                  <strong className="text-slate-900 font-bold text-sm">
+                    {optedCount} Pax
+                  </strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Total Vendor Cost</span>
-                  <strong className="text-emerald-700 font-bold text-sm">₹{(optedCount * vendorCost).toLocaleString()}</strong>
+                  <span className="text-slate-400 block text-[11px]">
+                    Total Vendor Cost
+                  </span>
+                  <strong className="text-emerald-700 font-bold text-sm">
+                    ₹{(optedCount * vendorCost).toLocaleString()}
+                  </strong>
                 </div>
               </>
             ) : (
@@ -271,46 +357,66 @@ export default function DayWiseActivityAccordionCard({
                   Included in Package • No Vendor Cost
                 </span>
                 <div className="pl-2 border-l border-slate-200">
-                  <span className="text-slate-400 block text-[11px]">Passengers</span>
-                  <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
+                  <span className="text-slate-400 block text-[11px]">
+                    Passengers
+                  </span>
+                  <strong className="text-slate-900 font-bold text-sm">
+                    {optedCount} Pax
+                  </strong>
                 </div>
               </div>
             )
-          ) : (
-            sellingPrice > 0 || vendorCost > 0 ? (
-              <>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Selling Price</span>
-                  <strong className="text-slate-900 font-bold text-sm">₹{sellingPrice}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Vendor Cost</span>
-                  <strong className="text-slate-700 font-bold text-sm">₹{vendorCost}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Profit</span>
-                  <strong className="text-emerald-600 font-bold text-sm">₹{(sellingPrice - vendorCost).toLocaleString()} / Pax</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Booked</span>
-                  <strong className="text-purple-900 font-bold text-sm">{optedCount} Pax</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Revenue</span>
-                  <strong className="text-purple-900 font-bold text-sm">₹{(optedCount * sellingPrice).toLocaleString()}</strong>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center gap-4">
-                <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-md text-xs font-semibold">
-                  Optional Activity • Price Not Set
+          ) : sellingPrice > 0 || vendorCost > 0 ? (
+            <>
+              <div>
+                <span className="text-slate-400 block text-[11px]">
+                  Selling Price
                 </span>
-                <div className="pl-2 border-l border-slate-200">
-                  <span className="text-slate-400 block text-[11px]">Booked</span>
-                  <strong className="text-slate-900 font-bold text-sm">{optedCount} Pax</strong>
-                </div>
+                <strong className="text-slate-900 font-bold text-sm">
+                  ₹{sellingPrice}
+                </strong>
               </div>
-            )
+              <div>
+                <span className="text-slate-400 block text-[11px]">
+                  Vendor Cost
+                </span>
+                <strong className="text-slate-700 font-bold text-sm">
+                  ₹{vendorCost}
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Profit</span>
+                <strong className="text-emerald-600 font-bold text-sm">
+                  ₹{(sellingPrice - vendorCost).toLocaleString()} / Pax
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Booked</span>
+                <strong className="text-purple-900 font-bold text-sm">
+                  {optedCount} Pax
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">
+                  Revenue
+                </span>
+                <strong className="text-purple-900 font-bold text-sm">
+                  ₹{(optedCount * sellingPrice).toLocaleString()}
+                </strong>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-4">
+              <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-md text-xs font-semibold">
+                Optional Activity • Price Not Set
+              </span>
+              <div className="pl-2 border-l border-slate-200">
+                <span className="text-slate-400 block text-[11px]">Booked</span>
+                <strong className="text-slate-900 font-bold text-sm">
+                  {optedCount} Pax
+                </strong>
+              </div>
+            </div>
           )}
         </div>
 
@@ -353,8 +459,11 @@ export default function DayWiseActivityAccordionCard({
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
                     status === s.value
-                      ? cn(s.bg, "ring-2 ring-orange-500/30 border-orange-400 shadow-sm font-bold")
-                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                      ? cn(
+                          s.bg,
+                          "ring-2 ring-orange-500/30 border-orange-400 shadow-sm font-bold",
+                        )
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100",
                   )}
                 >
                   {s.label}
@@ -474,7 +583,8 @@ export default function DayWiseActivityAccordionCard({
                   Activity Type & Package Inclusion
                 </h5>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Choose whether this activity is included in the company tour package or sold as an optional add-on.
+                  Choose whether this activity is included in the company tour
+                  package or sold as an optional add-on.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -485,7 +595,7 @@ export default function DayWiseActivityAccordionCard({
                     "px-4 py-2 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5",
                     isIncluded
                       ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
-                      : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                      : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                   )}
                 >
                   <span>● Included in Package</span>
@@ -497,7 +607,7 @@ export default function DayWiseActivityAccordionCard({
                     "px-4 py-2 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5",
                     !isIncluded
                       ? "bg-purple-600 text-white border-purple-700 shadow-sm"
-                      : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                      : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                   )}
                 >
                   <span>○ Optional Paid Activity</span>
@@ -513,11 +623,15 @@ export default function DayWiseActivityAccordionCard({
                     Vendor Cost / Pax
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2 text-emerald-700 font-bold text-sm">₹</span>
+                    <span className="absolute left-3 top-2 text-emerald-700 font-bold text-sm">
+                      ₹
+                    </span>
                     <input
                       type="number"
                       value={vendorCost}
-                      onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                      onChange={(e) =>
+                        setVendorCost(Number(e.target.value) || 0)
+                      }
                       className="w-full pl-7 pr-3 py-1.5 text-sm font-black text-emerald-950 rounded-lg border border-emerald-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     />
                   </div>
@@ -531,10 +645,16 @@ export default function DayWiseActivityAccordionCard({
                     <input
                       type="number"
                       value={optedCount}
-                      onChange={(e) => setManualPaxCount(Math.max(0, Number(e.target.value) || 0))}
+                      onChange={(e) =>
+                        setManualPaxCount(
+                          Math.max(0, Number(e.target.value) || 0),
+                        )
+                      }
                       className="w-full pl-3 pr-10 py-1.5 text-sm font-black text-emerald-950 rounded-lg border border-emerald-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     />
-                    <span className="absolute right-3 top-2 text-emerald-700 font-bold text-xs">Pax</span>
+                    <span className="absolute right-3 top-2 text-emerald-700 font-bold text-xs">
+                      Pax
+                    </span>
                   </div>
                 </div>
 
@@ -554,11 +674,15 @@ export default function DayWiseActivityAccordionCard({
                     Selling Price
                   </label>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">₹</span>
+                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">
+                      ₹
+                    </span>
                     <input
                       type="number"
                       value={sellingPrice}
-                      onChange={(e) => setSellingPrice(Number(e.target.value) || 0)}
+                      onChange={(e) =>
+                        setSellingPrice(Number(e.target.value) || 0)
+                      }
                       className="w-full pl-6 pr-2 py-1.5 text-sm font-black text-purple-950 rounded-lg border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                     />
                   </div>
@@ -569,11 +693,15 @@ export default function DayWiseActivityAccordionCard({
                     Vendor Cost
                   </label>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">₹</span>
+                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">
+                      ₹
+                    </span>
                     <input
                       type="number"
                       value={vendorCost}
-                      onChange={(e) => setVendorCost(Number(e.target.value) || 0)}
+                      onChange={(e) =>
+                        setVendorCost(Number(e.target.value) || 0)
+                      }
                       className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-700 rounded-lg border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                     />
                   </div>
@@ -596,10 +724,16 @@ export default function DayWiseActivityAccordionCard({
                     <input
                       type="number"
                       value={optedCount}
-                      onChange={(e) => setManualPaxCount(Math.max(0, Number(e.target.value) || 0))}
+                      onChange={(e) =>
+                        setManualPaxCount(
+                          Math.max(0, Number(e.target.value) || 0),
+                        )
+                      }
                       className="w-full pl-2.5 pr-8 py-1 text-sm font-black text-purple-950 rounded border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                     />
-                    <span className="absolute right-2 top-1.5 text-purple-700 font-bold text-xs">Pax</span>
+                    <span className="absolute right-2 top-1.5 text-purple-700 font-bold text-xs">
+                      Pax
+                    </span>
                   </div>
                 </div>
 
@@ -622,7 +756,9 @@ export default function DayWiseActivityAccordionCard({
             </h5>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {comparisonVendors.map((vnd) => {
-                const isCurrent = activity.vendorName === vnd.vendorName || vnd.netCost === vendorCost;
+                const isCurrent =
+                  activity.vendorName === vnd.vendorName ||
+                  vnd.netCost === vendorCost;
                 return (
                   <div
                     key={vnd.vendorId}
@@ -630,7 +766,7 @@ export default function DayWiseActivityAccordionCard({
                       "p-3 rounded-xl border transition-all flex items-center justify-between",
                       isCurrent
                         ? "bg-orange-50/70 border-orange-300 ring-1 ring-orange-500/20"
-                        : "bg-white border-slate-200 hover:border-slate-300"
+                        : "bg-white border-slate-200 hover:border-slate-300",
                     )}
                   >
                     <div>
@@ -648,7 +784,9 @@ export default function DayWiseActivityAccordionCard({
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
                         <span className="font-medium">{vnd.rating}</span>
                         <span className="text-slate-400">•</span>
-                        <span className="font-bold text-slate-900">₹{vnd.netCost}</span>
+                        <span className="font-bold text-slate-900">
+                          ₹{vnd.netCost}
+                        </span>
                         <span className="text-slate-500">/pax</span>
                       </div>
                     </div>
@@ -659,7 +797,8 @@ export default function DayWiseActivityAccordionCard({
                       onClick={() => handleAssignVendor(vnd)}
                       className={cn(
                         "h-8 px-3 text-xs font-semibold",
-                        isCurrent && "bg-orange-600 hover:bg-orange-700 text-white"
+                        isCurrent &&
+                          "bg-orange-600 hover:bg-orange-700 text-white",
                       )}
                     >
                       {isCurrent ? "Assigned" : "Assign"}
@@ -677,17 +816,24 @@ export default function DayWiseActivityAccordionCard({
               <button
                 type="button"
                 onClick={() => {
-                  const name = window.prompt("Enter Vendor Name or Miscellaneous Cost Label:", "Miscellaneous Expense");
+                  const name = window.prompt(
+                    "Enter Vendor Name or Miscellaneous Cost Label:",
+                    "Miscellaneous Expense",
+                  );
                   if (!name) return;
-                  const costStr = window.prompt("Enter Net Cost per passenger (₹):", "0");
+                  const costStr = window.prompt(
+                    "Enter Net Cost per passenger (₹):",
+                    "0",
+                  );
                   const cost = Number(costStr) || 0;
                   setVendorCost(cost);
-                  toast.success(`Assigned custom vendor "${name}" at ₹${cost}/pax`);
+                  toast.success(
+                    `Assigned custom vendor "${name}" at ₹${cost}/pax`,
+                  );
                 }}
                 className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-200 transition-all flex items-center gap-1.5"
               >
-                <Plus className="w-3.5 h-3.5" />
-                + Add Custom Vendor / Misc Cost
+                <Plus className="w-3.5 h-3.5" />+ Add Custom Vendor / Misc Cost
               </button>
             </div>
           </div>
@@ -697,7 +843,8 @@ export default function DayWiseActivityAccordionCard({
             <div className="p-4 bg-white rounded-xl border border-slate-200">
               <div className="flex items-center justify-between mb-3">
                 <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Booked Passengers — Check Opt-In ({optedCount}/{activity.maxCapacity})
+                  Booked Passengers — Check Opt-In ({optedCount}/
+                  {activity.maxCapacity})
                 </h5>
                 <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                   Remaining Seats: {remainingSeats}
@@ -714,7 +861,7 @@ export default function DayWiseActivityAccordionCard({
                       "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5",
                       p.isOpted
                         ? "bg-purple-600 text-white border-purple-600 shadow-sm font-bold"
-                        : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                        : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200",
                     )}
                   >
                     <span>{p.name}</span>
@@ -728,7 +875,8 @@ export default function DayWiseActivityAccordionCard({
               <div className="flex items-center gap-2 text-emerald-900 font-medium text-xs">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>
-                  <strong>Included in Tour Package:</strong> All {optedCount} manifested passengers are automatically covered.
+                  <strong>Included in Tour Package:</strong> All {optedCount}{" "}
+                  manifested passengers are automatically covered.
                 </span>
               </div>
               <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg">

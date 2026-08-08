@@ -1,8 +1,10 @@
-import axios from 'axios';
-import { ENV } from '../config/environment';
+import axios from "axios";
+import { ENV } from "../config/environment";
 
 const api = axios.create({
-  baseURL: ENV.API_BASE_URL.endsWith('/api') ? ENV.API_BASE_URL : `${ENV.API_BASE_URL}/api`,
+  baseURL: ENV.API_BASE_URL.endsWith("/api")
+    ? ENV.API_BASE_URL
+    : `${ENV.API_BASE_URL}/api`,
   timeout: ENV.API_TIMEOUT_MS,
   withCredentials: true, // Support httpOnly secure session cookies
 });
@@ -10,26 +12,31 @@ const api = axios.create({
 let requestIdCounter = 0;
 let adminRedirectInProgress = false;
 
-const TRACE_REQUESTS = ENV.IS_DEVELOPMENT && import.meta.env.VITE_TRACE_REQUESTS === "true";
+const TRACE_REQUESTS =
+  ENV.IS_DEVELOPMENT && import.meta.env.VITE_TRACE_REQUESTS === "true";
 
 api.interceptors.request.use((config) => {
   // Ensure relative endpoints don't get double prefixed if baseURL is fully configured
-  if (config.url && !config.url.startsWith('/') && !config.url.startsWith('http')) {
+  if (
+    config.url &&
+    !config.url.startsWith("/") &&
+    !config.url.startsWith("http")
+  ) {
     config.url = `/${config.url}`;
   }
 
   // Token injection with Axios 1.x compatibility and sanitization
-  const rawToken = localStorage.getItem('token');
-  if (rawToken && rawToken !== 'undefined' && rawToken !== 'null') {
-    let cleanToken = rawToken.trim().replace(/^["'\\]+|["'\\]+$/g, '');
-    if (cleanToken.startsWith('Bearer ')) {
+  const rawToken = localStorage.getItem("token");
+  if (rawToken && rawToken !== "undefined" && rawToken !== "null") {
+    let cleanToken = rawToken.trim().replace(/^["'\\]+|["'\\]+$/g, "");
+    if (cleanToken.startsWith("Bearer ")) {
       cleanToken = cleanToken.slice(7).trim();
     }
     const bearerValue = `Bearer ${cleanToken}`;
-    if (config.headers && typeof (config.headers as any).set === 'function') {
-      (config.headers as any).set('Authorization', bearerValue);
+    if (config.headers && typeof (config.headers as any).set === "function") {
+      (config.headers as any).set("Authorization", bearerValue);
     } else if (config.headers) {
-      (config.headers as any)['Authorization'] = bearerValue;
+      (config.headers as any)["Authorization"] = bearerValue;
     }
     adminRedirectInProgress = false;
   }
@@ -52,7 +59,9 @@ api.interceptors.response.use(
       const config = res.config as any;
       if (config._reqId) {
         const duration = Date.now() - (config._startTime || Date.now());
-        console.log(`[TRACE][DONE] ID: ${config._reqId} | Duration: ${duration}ms | Status: ${res.status}`);
+        console.log(
+          `[TRACE][DONE] ID: ${config._reqId} | Duration: ${duration}ms | Status: ${res.status}`,
+        );
       }
     }
     return res;
@@ -63,17 +72,20 @@ api.interceptors.response.use(
 
     // 401 Handling: Session expired or unauthorized
     if (status === 401 && !axios.isCancel(err)) {
-      const isLoginRequest = url?.includes("/admin/login") || url?.includes("/login");
+      const isLoginRequest =
+        url?.includes("/admin/login") || url?.includes("/login");
       const isIdentityCheck = url?.includes("/admin/me");
 
       // Only evict stored token if the primary identity check (/admin/me) fails with 401
       if (!isLoginRequest && isIdentityCheck) {
-        console.warn(`[AUTH] Primary identity check (/admin/me) failed (401). Clearing token.`);
-        localStorage.removeItem('token');
+        console.warn(
+          `[AUTH] Primary identity check (/admin/me) failed (401). Clearing token.`,
+        );
+        localStorage.removeItem("token");
       }
     }
     return Promise.reject(err);
-  }
+  },
 );
 
 export { api };

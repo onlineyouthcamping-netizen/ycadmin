@@ -1,5 +1,5 @@
-import api from './api';
-import { Trip } from '../types';
+import api from "./api";
+import { Trip } from "../types";
 
 export interface TravelDeskWorkspace {
   id: string;
@@ -191,29 +191,47 @@ export const travelDeskService = {
     const res = await api.post(`/travel-desk/workspaces/feed`, { tripIds });
     return res.data.data;
   },
-  getWorkspace: async (tripId: string, signal?: AbortSignal): Promise<TravelDeskWorkspace> => {
+  getWorkspace: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<TravelDeskWorkspace> => {
     const res = await api.get(`/travel-desk/workspaces/${tripId}`, { signal });
     return res.data.data;
   },
-  getTripOverview: async (tripId: string, signal?: AbortSignal): Promise<Trip> => {
+  getTripOverview: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<Trip> => {
     const res = await api.get(`/travel-desk/${tripId}/overview`, { signal });
     return res.data.data;
   },
-  getOfficialItinerary: async (tripId: string, signal?: AbortSignal): Promise<any> => {
+  getOfficialItinerary: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<any> => {
     const res = await api.get(`/travel-desk/${tripId}/itinerary`, { signal });
     return res.data.data;
   },
-  getDepartures: async (tripId: string, signal?: AbortSignal): Promise<DepartureSummary[]> => {
+  getDepartures: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<DepartureSummary[]> => {
     const res = await api.get(`/travel-desk/${tripId}/departures`, { signal });
     return res.data.data;
   },
-  
+
   // ── VENDORS ──
-  getVendors: async (tripId: string, signal?: AbortSignal): Promise<TravelDeskVendorLink[]> => {
+  getVendors: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<TravelDeskVendorLink[]> => {
     const res = await api.get(`/travel-desk/${tripId}/vendors`, { signal });
     return res.data.data;
   },
-  linkVendor: async (tripId: string, data: any): Promise<TravelDeskVendorLink> => {
+  linkVendor: async (
+    tripId: string,
+    data: any,
+  ): Promise<TravelDeskVendorLink> => {
     const res = await api.post(`/travel-desk/${tripId}/vendors/link`, data);
     return res.data.data;
   },
@@ -222,56 +240,99 @@ export const travelDeskService = {
   },
 
   // ── ARTICLES ──
-  getArticles: async (tripId: string, signal?: AbortSignal): Promise<TravelDeskArticle[]> => {
+  getArticles: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<TravelDeskArticle[]> => {
     const res = await api.get(`/travel-desk/${tripId}/articles`, { signal });
     return res.data.data;
   },
-  createArticle: async (tripId: string, data: any): Promise<TravelDeskArticle> => {
+  createArticle: async (
+    tripId: string,
+    data: any,
+  ): Promise<TravelDeskArticle> => {
     const res = await api.post(`/travel-desk/${tripId}/articles`, data);
     return res.data.data;
   },
-  updateArticle: async (tripId: string, articleId: string, data: any): Promise<TravelDeskArticle> => {
-    const res = await api.patch(`/travel-desk/${tripId}/articles/${articleId}`, data);
+  updateArticle: async (
+    tripId: string,
+    articleId: string,
+    data: any,
+  ): Promise<TravelDeskArticle> => {
+    const res = await api.patch(
+      `/travel-desk/${tripId}/articles/${articleId}`,
+      data,
+    );
     return res.data.data;
   },
-  approveArticle: async (tripId: string, articleId: string): Promise<TravelDeskArticle> => {
-    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/approve`);
+  approveArticle: async (
+    tripId: string,
+    articleId: string,
+  ): Promise<TravelDeskArticle> => {
+    const res = await api.post(
+      `/travel-desk/${tripId}/articles/${articleId}/approve`,
+    );
     return res.data.data;
   },
-  publishArticle: async (tripId: string, articleId: string): Promise<TravelDeskArticle> => {
-    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/publish`);
+  publishArticle: async (
+    tripId: string,
+    articleId: string,
+  ): Promise<TravelDeskArticle> => {
+    const res = await api.post(
+      `/travel-desk/${tripId}/articles/${articleId}/publish`,
+    );
     return res.data.data;
   },
-  archiveArticle: async (tripId: string, articleId: string): Promise<TravelDeskArticle> => {
-    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/archive`);
+  archiveArticle: async (
+    tripId: string,
+    articleId: string,
+  ): Promise<TravelDeskArticle> => {
+    const res = await api.post(
+      `/travel-desk/${tripId}/articles/${articleId}/archive`,
+    );
     return res.data.data;
   },
-  getReadiness: async (tripId: string, signal?: AbortSignal): Promise<{ readinessScore: number }> => {
+  getReadiness: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<{ readinessScore: number }> => {
     const res = await api.get(`/travel-desk/${tripId}/readiness`, { signal });
     return res.data.data;
   },
 
   // ── TICKETING ──
-  getTicketing: async (tripId: string): Promise<{ sops: TicketingSop[]; links: TicketingLink[] }> => {
+  getTicketing: async (
+    tripId: string,
+  ): Promise<{ sops: TicketingSop[]; links: TicketingLink[] }> => {
     const res = await api.get(`/travel-desk/ticketing/${tripId}`);
     return res.data.data;
   },
-  createTicketingSop: async (data: Partial<TicketingSop>): Promise<TicketingSop> => {
+  createTicketingSop: async (
+    data: Partial<TicketingSop>,
+  ): Promise<TicketingSop> => {
     const res = await api.post(`/travel-desk/ticketing/sops`, data);
     return res.data.data;
   },
-  updateTicketingSop: async (id: string, data: Partial<TicketingSop>): Promise<TicketingSop> => {
+  updateTicketingSop: async (
+    id: string,
+    data: Partial<TicketingSop>,
+  ): Promise<TicketingSop> => {
     const res = await api.put(`/travel-desk/ticketing/sops/${id}`, data);
     return res.data.data;
   },
   deleteTicketingSop: async (id: string): Promise<void> => {
     await api.delete(`/travel-desk/ticketing/sops/${id}`);
   },
-  createTicketingLink: async (data: Partial<TicketingLink>): Promise<TicketingLink> => {
+  createTicketingLink: async (
+    data: Partial<TicketingLink>,
+  ): Promise<TicketingLink> => {
     const res = await api.post(`/travel-desk/ticketing/links`, data);
     return res.data.data;
   },
-  updateTicketingLink: async (id: string, data: Partial<TicketingLink>): Promise<TicketingLink> => {
+  updateTicketingLink: async (
+    id: string,
+    data: Partial<TicketingLink>,
+  ): Promise<TicketingLink> => {
     const res = await api.put(`/travel-desk/ticketing/links/${id}`, data);
     return res.data.data;
   },
@@ -292,7 +353,10 @@ export const travelDeskService = {
     const res = await api.post(`/travel-desk/itineraries/${id}/duplicate`);
     return res.data.data;
   },
-  updateItinerary: async (id: string, data: Partial<Itinerary>): Promise<Itinerary> => {
+  updateItinerary: async (
+    id: string,
+    data: Partial<Itinerary>,
+  ): Promise<Itinerary> => {
     const res = await api.put(`/travel-desk/itineraries/${id}`, data);
     return res.data.data;
   },
@@ -322,7 +386,9 @@ export const travelDeskService = {
   },
 
   // ── DOCUMENTS ──
-  getDocuments: async (tripId: string): Promise<{ data: TripDocument[]; summary: Record<string, number> }> => {
+  getDocuments: async (
+    tripId: string,
+  ): Promise<{ data: TripDocument[]; summary: Record<string, number> }> => {
     const res = await api.get(`/travel-desk/documents/${tripId}`);
     return res.data;
   },
@@ -332,26 +398,33 @@ export const travelDeskService = {
     category?: string,
     visibility?: string,
     validFrom?: string,
-    validUntil?: string
+    validUntil?: string,
   ): Promise<any> => {
     const formData = new FormData();
-    formData.append('tripId', tripId);
-    if (category) formData.append('category', category);
-    if (visibility) formData.append('visibility', visibility);
-    if (validFrom) formData.append('validFrom', validFrom);
-    if (validUntil) formData.append('validUntil', validUntil);
-    files.forEach(file => {
-      formData.append('files', file);
+    formData.append("tripId", tripId);
+    if (category) formData.append("category", category);
+    if (visibility) formData.append("visibility", visibility);
+    if (validFrom) formData.append("validFrom", validFrom);
+    if (validUntil) formData.append("validUntil", validUntil);
+    files.forEach((file) => {
+      formData.append("files", file);
     });
     const res = await api.post(`/travel-desk/documents/upload`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        "Content-Type": "multipart/form-data",
+      },
     });
     return res.data;
   },
-  reviewDocument: async (id: string, status: string, approvalDetails?: any): Promise<TripDocument> => {
-    const res = await api.put(`/travel-desk/documents/${id}/status`, { status, approvalDetails });
+  reviewDocument: async (
+    id: string,
+    status: string,
+    approvalDetails?: any,
+  ): Promise<TripDocument> => {
+    const res = await api.put(`/travel-desk/documents/${id}/status`, {
+      status,
+      approvalDetails,
+    });
     return res.data.data;
   },
   deleteDocument: async (id: string): Promise<void> => {
@@ -370,8 +443,8 @@ export const travelDeskService = {
   uploadGallery: async (formData: FormData): Promise<any> => {
     const res = await api.post(`/travel-desk/gallery`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        "Content-Type": "multipart/form-data",
+      },
     });
     return res.data;
   },
@@ -380,7 +453,9 @@ export const travelDeskService = {
   },
 
   // ── NOTES & UPDATES ──
-  getNotes: async (tripId: string): Promise<{ data: TripNote[]; summary: Record<string, number> }> => {
+  getNotes: async (
+    tripId: string,
+  ): Promise<{ data: TripNote[]; summary: Record<string, number> }> => {
     const res = await api.get(`/travel-desk/notes/${tripId}`);
     return res.data;
   },
@@ -388,7 +463,10 @@ export const travelDeskService = {
     const res = await api.post(`/travel-desk/notes`, data);
     return res.data.data;
   },
-  updateNote: async (id: string, data: Partial<TripNote>): Promise<TripNote> => {
+  updateNote: async (
+    id: string,
+    data: Partial<TripNote>,
+  ): Promise<TripNote> => {
     const res = await api.put(`/travel-desk/notes/${id}`, data);
     return res.data.data;
   },
@@ -397,8 +475,13 @@ export const travelDeskService = {
   },
 
   // ── KNOWLEDGE BASE ITEMS ──
-  getKnowledgeItems: async (tripId: string, filters?: { category?: string; search?: string; status?: string }): Promise<any[]> => {
-    const res = await api.get(`/travel-desk/knowledge-items/${tripId}`, { params: filters });
+  getKnowledgeItems: async (
+    tripId: string,
+    filters?: { category?: string; search?: string; status?: string },
+  ): Promise<any[]> => {
+    const res = await api.get(`/travel-desk/knowledge-items/${tripId}`, {
+      params: filters,
+    });
     return res.data.data;
   },
   updateKnowledgeItem: async (id: string, data: any): Promise<any> => {
@@ -407,7 +490,10 @@ export const travelDeskService = {
   },
 
   // ── TRAVEL AI ──
-  askTravelAi: async (tripId: string, message: string): Promise<{ answer: string; answerUnavailable?: boolean }> => {
+  askTravelAi: async (
+    tripId: string,
+    message: string,
+  ): Promise<{ answer: string; answerUnavailable?: boolean }> => {
     const res = await api.post(`/travel-desk/ai/chat`, { tripId, message });
     return res.data;
   },
@@ -417,12 +503,27 @@ export const travelDeskService = {
     const res = await api.get(`/travel-desk/questions/${tripId}`);
     return res.data.data;
   },
-  createEscalatedQuestion: async (tripId: string, question: string, escalatedTo: string): Promise<any> => {
-    const res = await api.post(`/travel-desk/questions`, { tripId, question, escalatedTo });
+  createEscalatedQuestion: async (
+    tripId: string,
+    question: string,
+    escalatedTo: string,
+  ): Promise<any> => {
+    const res = await api.post(`/travel-desk/questions`, {
+      tripId,
+      question,
+      escalatedTo,
+    });
     return res.data.data;
   },
-  answerEscalatedQuestion: async (id: string, answer: string, status: string): Promise<any> => {
-    const res = await api.put(`/travel-desk/questions/${id}/answer`, { answer, status });
+  answerEscalatedQuestion: async (
+    id: string,
+    answer: string,
+    status: string,
+  ): Promise<any> => {
+    const res = await api.put(`/travel-desk/questions/${id}/answer`, {
+      answer,
+      status,
+    });
     return res.data.data;
   },
 
@@ -438,7 +539,7 @@ export const travelDeskService = {
 
   // ── QUICK SALES ACTION ──
   createSalesRecord: async (data: {
-    type: 'inquiry' | 'quotation' | 'booking';
+    type: "inquiry" | "quotation" | "booking";
     tripId: string;
     departureDate?: string;
     joiningCity?: string;
@@ -457,23 +558,44 @@ export const travelDeskService = {
   },
 
   // ── CONTENT MANAGEMENT & APPROVALS (STAGE 4) ──
-  requestArticleChanges: async (tripId: string, articleId: string, comment: string): Promise<any> => {
-    const res = await api.post(`/travel-desk/${tripId}/articles/${articleId}/request-changes`, { comment });
+  requestArticleChanges: async (
+    tripId: string,
+    articleId: string,
+    comment: string,
+  ): Promise<any> => {
+    const res = await api.post(
+      `/travel-desk/${tripId}/articles/${articleId}/request-changes`,
+      { comment },
+    );
     return res.data.data;
   },
-  changeArticleStatus: async (tripId: string, articleId: string, status: string): Promise<any> => {
-    const res = await api.patch(`/travel-desk/${tripId}/articles/${articleId}/status`, { status });
+  changeArticleStatus: async (
+    tripId: string,
+    articleId: string,
+    status: string,
+  ): Promise<any> => {
+    const res = await api.patch(
+      `/travel-desk/${tripId}/articles/${articleId}/status`,
+      { status },
+    );
     return res.data.data;
   },
-  getPendingApprovals: async (tripId: string, signal?: AbortSignal): Promise<any> => {
+  getPendingApprovals: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<any> => {
     const res = await api.get(`/travel-desk/${tripId}/approvals`, { signal });
     return res.data.data;
   },
 
   // ── ACTIVITY LOG ──
-  getActivityLog: async (tripId: string, signal?: AbortSignal): Promise<any> => {
-    const res = await api.get(`/travel-desk/${tripId}/activity-log`, { signal });
+  getActivityLog: async (
+    tripId: string,
+    signal?: AbortSignal,
+  ): Promise<any> => {
+    const res = await api.get(`/travel-desk/${tripId}/activity-log`, {
+      signal,
+    });
     return res.data.data;
-  }
+  },
 };
-

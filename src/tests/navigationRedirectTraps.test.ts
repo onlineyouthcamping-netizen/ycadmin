@@ -10,7 +10,9 @@ describe("Navigation Redirect Traps & Route Mapping Validation", () => {
   });
 
   it("should NOT redirect /admin/settings to /admin/website", () => {
-    const settingsRoute = ADMIN_ROUTES.find((r) => r.path === "/admin/settings");
+    const settingsRoute = ADMIN_ROUTES.find(
+      (r) => r.path === "/admin/settings",
+    );
     expect(settingsRoute).toBeDefined();
     expect(settingsRoute?.path).toBe("/admin/settings");
     expect(settingsRoute?.path).not.toBe("/admin/website");

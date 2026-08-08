@@ -4,28 +4,32 @@ import type { Booking, BookingTrip } from "@/types";
 
 export const bookingsService = {
   // ── BOOKINGS ──
-  
-  async getAll(filters?: {
-    status?: string;
-    tripId?: string;
-    paymentStatus?: string;
-    payment_status?: string;
-    search?: string;
-    salesAdminId?: string;
-    balanceOnly?: boolean | string;
-    bookingStart?: string;
-    bookingEnd?: string;
-    depStart?: string;
-    depEnd?: string;
-    page?: number;
-    limit?: number;
-  }, signal?: AbortSignal): Promise<any> {
+
+  async getAll(
+    filters?: {
+      status?: string;
+      tripId?: string;
+      paymentStatus?: string;
+      payment_status?: string;
+      search?: string;
+      salesAdminId?: string;
+      balanceOnly?: boolean | string;
+      bookingStart?: string;
+      bookingEnd?: string;
+      depStart?: string;
+      depEnd?: string;
+      page?: number;
+      limit?: number;
+    },
+    signal?: AbortSignal,
+  ): Promise<any> {
     try {
       const params = new URLSearchParams();
       if (filters) {
         Object.entries(filters).forEach(([key, val]) => {
           if (val !== undefined && val !== null && val !== "") {
-            const isAllSentinel = (String(val).toLowerCase() === "all" && key !== "search");
+            const isAllSentinel =
+              String(val).toLowerCase() === "all" && key !== "search";
             if (!isAllSentinel) {
               params.append(key, String(val));
             }
@@ -36,7 +40,11 @@ export const bookingsService = {
       const res = await api.get(`/bookings?${params.toString()}`, { signal });
       return res.data;
     } catch (err) {
-      if (axios.isCancel?.(err) || (err as any)?.name === 'CanceledError' || (err as any)?.name === 'AbortError') {
+      if (
+        axios.isCancel?.(err) ||
+        (err as any)?.name === "CanceledError" ||
+        (err as any)?.name === "AbortError"
+      ) {
         console.log("ℹ️ Request cancelled");
         throw err;
       }
@@ -60,7 +68,17 @@ export const bookingsService = {
     return res.data.data;
   },
 
-  async confirm(id: string, data: { totalAmount: number; advancePaid: number; paymentMode: string; paymentStatus: string; email?: string; trainTicketStatus?: string }): Promise<Booking> {
+  async confirm(
+    id: string,
+    data: {
+      totalAmount: number;
+      advancePaid: number;
+      paymentMode: string;
+      paymentStatus: string;
+      email?: string;
+      trainTicketStatus?: string;
+    },
+  ): Promise<Booking> {
     const res = await api.put(`/bookings/${id}/confirm`, data);
     return res.data.data;
   },
@@ -74,7 +92,15 @@ export const bookingsService = {
     await api.delete(`/bookings/${id}`);
   },
 
-  async cancelWithRefund(id: string, data: { reason: string; cancellationCharges: number; refundAmount: number; refundPaymentMode: string }): Promise<Booking> {
+  async cancelWithRefund(
+    id: string,
+    data: {
+      reason: string;
+      cancellationCharges: number;
+      refundAmount: number;
+      refundPaymentMode: string;
+    },
+  ): Promise<Booking> {
     const res = await api.post(`/bookings/${id}/cancel`, data);
     return res.data.booking;
   },
@@ -91,12 +117,19 @@ export const bookingsService = {
     }
   },
 
-  async createTrip(data: { tripCode: string; tripName: string; price?: number }): Promise<BookingTrip> {
+  async createTrip(data: {
+    tripCode: string;
+    tripName: string;
+    price?: number;
+  }): Promise<BookingTrip> {
     const res = await api.post("/bookings/trips", data);
     return res.data.data;
   },
 
-  async updateTrip(id: string, data: { tripCode?: string; tripName?: string; price?: number }): Promise<BookingTrip> {
+  async updateTrip(
+    id: string,
+    data: { tripCode?: string; tripName?: string; price?: number },
+  ): Promise<BookingTrip> {
     const res = await api.put(`/bookings/trips/${id}`, data);
     return res.data.data;
   },
@@ -108,28 +141,36 @@ export const bookingsService = {
   // ── EMAILS ──
 
   async sendEmail(
-    bookingId: string, 
-    type: 'confirmation' | 'payment' | 'reminder' | 'cancellation' | 'invoice', 
-    amount?: number, 
-    includeTicket?: boolean, 
-    ticketFile?: string | null, 
-    ticketFileName?: string | null, 
+    bookingId: string,
+    type: "confirmation" | "payment" | "reminder" | "cancellation" | "invoice",
+    amount?: number,
+    includeTicket?: boolean,
+    ticketFile?: string | null,
+    ticketFileName?: string | null,
     trainTicketStatus?: string,
-    ticketFiles?: Array<{ name: string; content: string }>
+    ticketFiles?: Array<{ name: string; content: string }>,
   ): Promise<void> {
-    console.log("📡 [bookingsService] Sending email request:", { bookingId, type, amount, includeTicket, ticketFileName, trainTicketStatus, filesCount: ticketFiles?.length });
-    if (type === 'invoice' && amount === undefined) {
+    console.log("📡 [bookingsService] Sending email request:", {
+      bookingId,
+      type,
+      amount,
+      includeTicket,
+      ticketFileName,
+      trainTicketStatus,
+      filesCount: ticketFiles?.length,
+    });
+    if (type === "invoice" && amount === undefined) {
       throw new Error("Amount is required for invoice emails");
     }
-    await api.post("/emails/send", { 
-      bookingId, 
-      type, 
+    await api.post("/emails/send", {
+      bookingId,
+      type,
       amount,
       includeTicket,
       ticketFile,
       ticketFileName,
       ticketFiles,
-      trainTicketStatus
+      trainTicketStatus,
     });
   },
 
@@ -159,33 +200,53 @@ export const bookingsService = {
   },
 
   async getColleagues(): Promise<any[]> {
-    const res = await api.get('/bookings/colleagues/list');
+    const res = await api.get("/bookings/colleagues/list");
     return res.data.data;
   },
 
-  async uploadDocument(bookingId: string, passengerId: string, file: File): Promise<any> {
+  async uploadDocument(
+    bookingId: string,
+    passengerId: string,
+    file: File,
+  ): Promise<any> {
     const formData = new FormData();
     formData.append("document", file);
     formData.append("documentType", "ID Document");
-    const res = await api.post(`/bookings/${bookingId}/passengers/${passengerId}/document`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data"
-      }
-    });
+    const res = await api.post(
+      `/bookings/${bookingId}/passengers/${passengerId}/document`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
     return res.data.data;
   },
 
-  async downloadDocument(bookingId: string, passengerId: string, docId?: string): Promise<Blob> {
-    const url = docId ? `/bookings/${bookingId}/documents/${docId}` : `/bookings/${bookingId}/passengers/${passengerId}/document`;
+  async downloadDocument(
+    bookingId: string,
+    passengerId: string,
+    docId?: string,
+  ): Promise<Blob> {
+    const url = docId
+      ? `/bookings/${bookingId}/documents/${docId}`
+      : `/bookings/${bookingId}/passengers/${passengerId}/document`;
     const res = await api.get(url, {
-      responseType: "blob"
+      responseType: "blob",
     });
     return res.data;
   },
 
-  async deleteDocument(bookingId: string, passengerId: string, docId?: string): Promise<any> {
-    const url = docId ? `/bookings/${bookingId}/documents/${docId}` : `/bookings/${bookingId}/passengers/${passengerId}/document`;
+  async deleteDocument(
+    bookingId: string,
+    passengerId: string,
+    docId?: string,
+  ): Promise<any> {
+    const url = docId
+      ? `/bookings/${bookingId}/documents/${docId}`
+      : `/bookings/${bookingId}/passengers/${passengerId}/document`;
     const res = await api.delete(url);
     return res.data;
-  }
+  },
 };

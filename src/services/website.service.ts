@@ -106,7 +106,10 @@ export const websiteService = {
 
   // Upsert setting
   async upsertSetting(key: string, value: any): Promise<WebsiteSetting> {
-    const res = await api.patch(`/website/settings/${encodeURIComponent(key)}`, { value });
+    const res = await api.patch(
+      `/website/settings/${encodeURIComponent(key)}`,
+      { value },
+    );
     return res.data.data;
   },
 };

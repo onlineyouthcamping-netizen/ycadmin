@@ -9,5 +9,5 @@ export const seoService = {
   async update(page: string, data: any) {
     const res = await api.put(`/seo/${page}`, data);
     return res.data.data;
-  }
+  },
 };

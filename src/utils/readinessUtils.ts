@@ -14,7 +14,9 @@ export interface ReadinessParams {
  * Single source of truth for departure readiness calculation.
  * Safely handles null, undefined, empty, and partial data states.
  */
-export function calculateReadinessScore(params?: ReadinessParams | null): number {
+export function calculateReadinessScore(
+  params?: ReadinessParams | null,
+): number {
   if (!params) return 0;
   let score = 0;
 
@@ -40,31 +42,41 @@ export function calculateReadinessScore(params?: ReadinessParams | null): number
 
   // 3. Hotel confirmation check (+15%)
   const safeVendors = Array.isArray(vendors) ? vendors : [];
-  const hotels = safeVendors.filter((v: any) => v && v.vendorType === 'hotel');
+  const hotels = safeVendors.filter((v: any) => v && v.vendorType === "hotel");
   if (hotels.length > 0) {
-    const confirmed = hotels.filter((h: any) => 
-      h && (h.paymentStatus === 'paid' || h.status === 'CONFIRMED' || h.status === 'Confirmed' || h.confirmed === true)
+    const confirmed = hotels.filter(
+      (h: any) =>
+        h &&
+        (h.paymentStatus === "paid" ||
+          h.status === "CONFIRMED" ||
+          h.status === "Confirmed" ||
+          h.confirmed === true),
     ).length;
     score += Math.round((confirmed / hotels.length) * 15);
   }
 
   // 4. Guide / Tour leader assignment (+15%)
-  const guides = safeVendors.filter((v: any) => v && (v.vendorType === 'guide' || v.vendorType === 'tour_lead'));
+  const guides = safeVendors.filter(
+    (v: any) => v && (v.vendorType === "guide" || v.vendorType === "tour_lead"),
+  );
   if (guides.length > 0) {
     score += 15;
   }
 
   // 5. Vehicle / Transport allocation (+10%)
   const safeFleet = Array.isArray(fleet) ? fleet : [];
-  const transports = safeVendors.filter((v: any) => v && v.vendorType === 'transport');
+  const transports = safeVendors.filter(
+    (v: any) => v && v.vendorType === "transport",
+  );
   if (transports.length > 0 || safeFleet.length > 0) {
     score += 10;
   }
 
   // 6. Documents verification (+10%)
   const safeDocs = Array.isArray(documents) ? documents : [];
-  const verifiedDocs = safeDocs.filter((d: any) => 
-    d && (d.status === 'VERIFIED' || d.verificationStatus === 'VERIFIED')
+  const verifiedDocs = safeDocs.filter(
+    (d: any) =>
+      d && (d.status === "VERIFIED" || d.verificationStatus === "VERIFIED"),
   ).length;
   if (verifiedDocs > 0) {
     score += 10;

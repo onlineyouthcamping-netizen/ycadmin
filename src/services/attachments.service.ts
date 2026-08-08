@@ -34,22 +34,32 @@ export const attachmentsService = {
     return res.data?.data || [];
   },
 
-  async upload(bookingId: string, formData: FormData): Promise<BookingAttachment[]> {
+  async upload(
+    bookingId: string,
+    formData: FormData,
+  ): Promise<BookingAttachment[]> {
     const res = await api.post(`/attachments/booking/${bookingId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data?.data || [];
   },
 
   async replace(id: string, formData: FormData): Promise<BookingAttachment> {
     const res = await api.put(`/attachments/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data?.data;
   },
 
-  async updateMetadata(id: string, title: string, description: string): Promise<BookingAttachment> {
-    const res = await api.patch(`/attachments/${id}/metadata`, { title, description });
+  async updateMetadata(
+    id: string,
+    title: string,
+    description: string,
+  ): Promise<BookingAttachment> {
+    const res = await api.patch(`/attachments/${id}/metadata`, {
+      title,
+      description,
+    });
     return res.data?.data;
   },
 
@@ -57,24 +67,30 @@ export const attachmentsService = {
     await api.delete(`/attachments/${id}`);
   },
 
-  async send(bookingId: string, payload: {
-    attachmentIds?: string[];
-    channel: "EMAIL" | "WHATSAPP" | "BOTH";
-    customEmail?: string;
-    customSubject?: string;
-    customMessage?: string;
-  }): Promise<{
+  async send(
+    bookingId: string,
+    payload: {
+      attachmentIds?: string[];
+      channel: "EMAIL" | "WHATSAPP" | "BOTH";
+      customEmail?: string;
+      customSubject?: string;
+      customMessage?: string;
+    },
+  ): Promise<{
     emailSent: boolean;
     whatsappGenerated: boolean;
     whatsappLink?: string;
     sentCount: number;
   }> {
-    const res = await api.post(`/attachments/send/booking/${bookingId}`, payload);
+    const res = await api.post(
+      `/attachments/send/booking/${bookingId}`,
+      payload,
+    );
     return res.data?.data;
   },
 
   getDownloadUrl(id: string): string {
     const baseURL = (api.defaults.baseURL || "").replace(/\/api\/?$/, "");
     return `${baseURL}/api/attachments/download/${id}`;
-  }
+  },
 };

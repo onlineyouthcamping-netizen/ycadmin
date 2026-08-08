@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +25,11 @@ interface DataTableProps<T> {
   loading?: boolean;
   searchPlaceholder?: string;
   searchKey?: keyof T;
-  filters?: { key: string; label: string; options: { label: string; value: string }[] }[];
+  filters?: {
+    key: string;
+    label: string;
+    options: { label: string; value: string }[];
+  }[];
   onFilterChange?: (key: string, value: string) => void;
   pageSize?: number;
   emptyMessage?: string;
@@ -35,8 +45,16 @@ interface DataTableProps<T> {
 }
 
 export function DataTable<T extends Record<string, any>>({
-  columns, data = [], loading, searchPlaceholder = "Search records...", searchKey,
-  filters, onFilterChange, pageSize = 10, emptyMessage = "No records found", emptyIcon,
+  columns,
+  data = [],
+  loading,
+  searchPlaceholder = "Search records...",
+  searchKey,
+  filters,
+  onFilterChange,
+  pageSize = 10,
+  emptyMessage = "No records found",
+  emptyIcon,
   rowKey = "id" as keyof T,
   serverSide = false,
   totalCount = 0,
@@ -58,14 +76,23 @@ export function DataTable<T extends Record<string, any>>({
       : (data || []).filter((item) => {
           if (!searchKey || !localSearch) return true;
           const value = item[searchKey];
-          return String(value || "").toLowerCase().includes(localSearch.toLowerCase());
+          return String(value || "")
+            .toLowerCase()
+            .includes(localSearch.toLowerCase());
         });
   }, [serverSide, data, searchKey, localSearch]);
 
-  const computedTotalPages = serverSide ? totalPages : Math.ceil(filtered.length / activePageSize);
-  
+  const computedTotalPages = serverSide
+    ? totalPages
+    : Math.ceil(filtered.length / activePageSize);
+
   const paged = useMemo(() => {
-    return serverSide ? data : filtered.slice(activePage * activePageSize, (activePage + 1) * activePageSize);
+    return serverSide
+      ? data
+      : filtered.slice(
+          activePage * activePageSize,
+          (activePage + 1) * activePageSize,
+        );
   }, [serverSide, data, filtered, activePage, activePageSize]);
 
   const totalItemsCount = serverSide ? totalCount : filtered.length;
@@ -107,23 +134,33 @@ export function DataTable<T extends Record<string, any>>({
         {searchKey && (
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input 
-              placeholder={searchPlaceholder} 
-              value={localSearch} 
-              onChange={(e) => handleSearchChange(e.target.value)} 
-              className="pl-11 h-10 rounded-xl bg-white border-slate-200 focus-visible:ring-primary font-normal text-sm" 
+            <Input
+              placeholder={searchPlaceholder}
+              value={localSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-11 h-10 rounded-xl bg-white border-slate-200 focus-visible:ring-primary font-normal text-sm"
             />
           </div>
         )}
         {filters?.map((f) => (
-          <Select key={f.key} defaultValue="all" onValueChange={(v) => onFilterChange?.(f.key, v)}>
+          <Select
+            key={f.key}
+            defaultValue="all"
+            onValueChange={(v) => onFilterChange?.(f.key, v)}
+          >
             <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl bg-white border-slate-200 font-medium text-xs text-slate-600">
               <SelectValue placeholder={f.label} />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-200">
-              <SelectItem value="all" className="font-medium text-xs">All {f.label}</SelectItem>
+              <SelectItem value="all" className="font-medium text-xs">
+                All {f.label}
+              </SelectItem>
               {f.options.map((o) => (
-                <SelectItem key={o.value} value={o.value} className="font-medium text-xs">
+                <SelectItem
+                  key={o.value}
+                  value={o.value}
+                  className="font-medium text-xs"
+                >
                   {o.label}
                 </SelectItem>
               ))}
@@ -138,7 +175,13 @@ export function DataTable<T extends Record<string, any>>({
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 {columns.map((col) => (
-                  <th key={col.key} className={cn("px-6 py-4 text-left text-xs font-semibold text-slate-500 tracking-tight", col.className)}>
+                  <th
+                    key={col.key}
+                    className={cn(
+                      "px-6 py-4 text-left text-xs font-semibold text-slate-500 tracking-tight",
+                      col.className,
+                    )}
+                  >
                     {col.header}
                   </th>
                 ))}
@@ -157,20 +200,34 @@ export function DataTable<T extends Record<string, any>>({
                 ))
               ) : paged.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-6 py-16 text-center">
+                  <td
+                    colSpan={columns.length}
+                    className="px-6 py-16 text-center"
+                  >
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300">
                         {emptyIcon || <Search className="w-6 h-6" />}
                       </div>
-                      <p className="text-xs font-medium text-slate-400 italic">{emptyMessage}</p>
+                      <p className="text-xs font-medium text-slate-400 italic">
+                        {emptyMessage}
+                      </p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 paged.map((item, i) => (
-                  <tr key={String(item[rowKey] || i)} className="hover:bg-slate-50/50 transition-all group">
+                  <tr
+                    key={String(item[rowKey] || i)}
+                    className="hover:bg-slate-50/50 transition-all group"
+                  >
                     {columns.map((col) => (
-                      <td key={col.key} className={cn("px-6 py-4 text-slate-600 font-normal text-sm", col.className)}>
+                      <td
+                        key={col.key}
+                        className={cn(
+                          "px-6 py-4 text-slate-600 font-normal text-sm",
+                          col.className,
+                        )}
+                      >
                         {renderCellValue(item, col)}
                       </td>
                     ))}
@@ -185,12 +242,29 @@ export function DataTable<T extends Record<string, any>>({
       {(serverSide ? totalItemsCount > 0 : computedTotalPages > 1) && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4">
           <p className="text-xs font-normal text-slate-500">
-            Showing {serverSide ? (totalItemsCount === 0 ? 0 : (activePage - 1) * activePageSize + 1) : (filtered.length === 0 ? 0 : activePage * activePageSize + 1)}–{serverSide ? Math.min(activePage * activePageSize, totalItemsCount) : Math.min((activePage + 1) * activePageSize, filtered.length)} of {totalItemsCount}
+            Showing{" "}
+            {serverSide
+              ? totalItemsCount === 0
+                ? 0
+                : (activePage - 1) * activePageSize + 1
+              : filtered.length === 0
+                ? 0
+                : activePage * activePageSize + 1}
+            –
+            {serverSide
+              ? Math.min(activePage * activePageSize, totalItemsCount)
+              : Math.min(
+                  (activePage + 1) * activePageSize,
+                  filtered.length,
+                )}{" "}
+            of {totalItemsCount}
           </p>
           <div className="flex items-center gap-4">
             {serverSide && onPageSizeChange && (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-slate-500">Rows per page:</span>
+                <span className="text-xs font-medium text-slate-500">
+                  Rows per page:
+                </span>
                 <Select
                   value={String(pageSize)}
                   onValueChange={(val) => onPageSizeChange(Number(val))}
@@ -199,28 +273,38 @@ export function DataTable<T extends Record<string, any>>({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
-                    <SelectItem value="25" className="font-medium text-xs">25</SelectItem>
-                    <SelectItem value="50" className="font-medium text-xs">50</SelectItem>
-                    <SelectItem value="100" className="font-medium text-xs">100</SelectItem>
+                    <SelectItem value="25" className="font-medium text-xs">
+                      25
+                    </SelectItem>
+                    <SelectItem value="50" className="font-medium text-xs">
+                      50
+                    </SelectItem>
+                    <SelectItem value="100" className="font-medium text-xs">
+                      100
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={() => handlePageChange(activePage - 1)} 
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(activePage - 1)}
                 disabled={serverSide ? activePage <= 1 : activePage === 0}
                 className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-50"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={() => handlePageChange(activePage + 1)} 
-                disabled={serverSide ? activePage >= computedTotalPages : activePage >= computedTotalPages - 1}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(activePage + 1)}
+                disabled={
+                  serverSide
+                    ? activePage >= computedTotalPages
+                    : activePage >= computedTotalPages - 1
+                }
                 className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-50"
               >
                 <ChevronRight className="h-4 w-4" />

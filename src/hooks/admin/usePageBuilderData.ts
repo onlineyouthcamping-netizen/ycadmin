@@ -1,12 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { pageBuilderApi, PageSectionConfig } from "@/lib/admin/page-builder-api";
+import {
+  pageBuilderApi,
+  PageSectionConfig,
+} from "@/lib/admin/page-builder-api";
 import { tripsService } from "@/services/trips.service";
 import { toast } from "sonner";
 
 export function usePageBuilderData(initialPageId: string = "home") {
   const [currentPage, setCurrentPage] = useState(initialPageId);
   const [sections, setSections] = useState<PageSectionConfig[]>([]);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+    null,
+  );
   const [dbTrips, setDbTrips] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -81,7 +86,7 @@ export function usePageBuilderData(initialPageId: string = "home") {
       setSections(newSections);
       setStatus("draft");
     },
-    [sections, pushHistory]
+    [sections, pushHistory],
   );
 
   const save = useCallback(async () => {

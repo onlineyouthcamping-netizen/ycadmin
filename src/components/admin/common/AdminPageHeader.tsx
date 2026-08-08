@@ -16,15 +16,25 @@ export function AdminPageHeader({
   badgeText,
   badgeColor = "bg-orange-100 text-[#FF6B00] border-orange-200/60",
   actions,
-  className
+  className,
 }: AdminPageHeaderProps) {
   return (
-    <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 pb-1", className)}>
+    <div
+      className={cn(
+        "flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 pb-1",
+        className,
+      )}
+    >
       <div>
         <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
           {title}
           {badgeText && (
-            <span className={cn("text-[10px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider", badgeColor)}>
+            <span
+              className={cn(
+                "text-[10px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider",
+                badgeColor,
+              )}
+            >
               {badgeText}
             </span>
           )}
@@ -37,9 +47,7 @@ export function AdminPageHeader({
       </div>
 
       {actions && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {actions}
-        </div>
+        <div className="flex items-center gap-2 flex-wrap">{actions}</div>
       )}
     </div>
   );

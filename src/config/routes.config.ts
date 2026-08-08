@@ -36,42 +36,42 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin",
     permission: "dashboard.view",
     navigation: { visible: true, group: "Dashboard", iconName: "BarChart3" },
-    breadcrumbLabel: "Dashboard"
+    breadcrumbLabel: "Dashboard",
   },
   {
     id: "profile",
     label: "My Profile",
     path: "/admin/profile",
     authenticatedOnly: true,
-    breadcrumbLabel: "My Profile"
+    breadcrumbLabel: "My Profile",
   },
   {
     id: "my-profile",
     label: "My Profile",
     path: "/admin/my-profile",
     authenticatedOnly: true,
-    breadcrumbLabel: "My Profile"
+    breadcrumbLabel: "My Profile",
   },
   {
     id: "settings",
     label: "Settings",
     path: "/admin/settings",
     authenticatedOnly: true,
-    breadcrumbLabel: "Settings"
+    breadcrumbLabel: "Settings",
   },
   {
     id: "change-password",
     label: "Change Password",
     path: "/admin/change-password",
     authenticatedOnly: true,
-    breadcrumbLabel: "Change Password"
+    breadcrumbLabel: "Change Password",
   },
   {
     id: "security",
     label: "Security & Password",
     path: "/admin/security",
     authenticatedOnly: true,
-    breadcrumbLabel: "Security"
+    breadcrumbLabel: "Security",
   },
 
   // Sales Module
@@ -81,15 +81,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/inquiries",
     permission: "inquiries.view",
     navigation: { visible: true, group: "Sales", iconName: "MessageSquare" },
-    breadcrumbLabel: "Sales / Inquiries"
-  },
-  {
-    id: "package-builder",
-    label: "Package Builder",
-    path: "/admin/package-builder",
-    permission: "quotations.view",
-    navigation: { visible: true, group: "Sales", iconName: "Sparkles" },
-    breadcrumbLabel: "Sales / Package Builder"
+    breadcrumbLabel: "Sales / Inquiries",
   },
   {
     id: "quotations",
@@ -97,22 +89,27 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/quotations",
     permission: "quotations.view",
     navigation: { visible: true, group: "Sales", iconName: "FileText" },
-    breadcrumbLabel: "Sales / Quotations"
+    breadcrumbLabel: "Sales / Quotations",
   },
   {
     id: "quotation-detail",
     label: "Quotation Form",
     path: "/admin/quotations/:id",
     permission: "quotations.view",
-    breadcrumbLabel: "Sales / Quotation Detail"
+    breadcrumbLabel: "Sales / Quotation Detail",
   },
   {
     id: "booking-forms",
     label: "Booking Links",
     path: "/admin/booking-forms",
     permission: "bookings.view",
-    navigation: { visible: true, group: "Sales", iconName: "Link2", isNew: true },
-    breadcrumbLabel: "Sales / Booking Links"
+    navigation: {
+      visible: true,
+      group: "Sales",
+      iconName: "Link2",
+      isNew: true,
+    },
+    breadcrumbLabel: "Sales / Booking Links",
   },
   {
     id: "bookings",
@@ -120,7 +117,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/bookings",
     permission: "bookings.view",
     navigation: { visible: true, group: "Sales", iconName: "CalendarCheck" },
-    breadcrumbLabel: "Sales / Bookings"
+    breadcrumbLabel: "Sales / Bookings",
   },
 
   // Operations Module
@@ -130,14 +127,14 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/operations",
     permission: "ops.view",
     navigation: { visible: true, group: "Operations", iconName: "Compass" },
-    breadcrumbLabel: "Operations / Departures Hub"
+    breadcrumbLabel: "Operations / Departures Hub",
   },
   {
     id: "departure-workspace",
     label: "Departure Workspace (360°)",
     path: "/admin/departure-workspace",
     permission: "ops.view",
-    breadcrumbLabel: "Operations / Departure Workspace"
+    breadcrumbLabel: "Operations / Departure Workspace",
   },
   {
     id: "vendors",
@@ -145,14 +142,14 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/vendors",
     permission: "vendors.view",
     navigation: { visible: true, group: "Operations", iconName: "Building2" },
-    breadcrumbLabel: "Operations / Vendors"
+    breadcrumbLabel: "Operations / Vendors",
   },
   {
     id: "vendor-directory",
     label: "Vendor Directory",
     path: "/admin/vendor-directory",
     permission: "vendors.view",
-    breadcrumbLabel: "Operations / Vendor Directory"
+    breadcrumbLabel: "Operations / Vendor Directory",
   },
   {
     id: "guides-hub",
@@ -160,7 +157,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/guides-hub",
     permission: "guides.view",
     navigation: { visible: true, group: "Operations", iconName: "User" },
-    breadcrumbLabel: "Operations / Guide Management"
+    breadcrumbLabel: "Operations / Guide Management",
   },
   {
     id: "company-documents-ops",
@@ -168,7 +165,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/company-documents",
     permission: "company_documents.view",
     navigation: { visible: true, group: "Operations", iconName: "FileText" },
-    breadcrumbLabel: "Operations / Documents"
+    breadcrumbLabel: "Operations / Documents",
   },
   {
     id: "reports-ops",
@@ -176,7 +173,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/reports",
     permission: "reports.view",
     navigation: { visible: true, group: "Operations", iconName: "BarChart3" },
-    breadcrumbLabel: "Operations / Reports"
+    breadcrumbLabel: "Operations / Reports",
   },
 
   // Approval Center Module
@@ -185,8 +182,12 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     label: "Booking Verification",
     path: "/admin/approvals-hub",
     permission: "bookings.view",
-    navigation: { visible: true, group: "Approval Center", iconName: "ClipboardCheck" },
-    breadcrumbLabel: "Approval Center / Booking Verification"
+    navigation: {
+      visible: true,
+      group: "Approval Center",
+      iconName: "ClipboardCheck",
+    },
+    breadcrumbLabel: "Approval Center / Booking Verification",
   },
   {
     id: "ticket-approvals",
@@ -194,7 +195,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/ticket-approvals",
     permission: "tickets.approve",
     navigation: { visible: true, group: "Approval Center", iconName: "Ticket" },
-    breadcrumbLabel: "Approval Center / Ticket Approvals"
+    breadcrumbLabel: "Approval Center / Ticket Approvals",
   },
 
   // Finance Module
@@ -204,7 +205,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/accounting",
     permission: "accounting.view",
     navigation: { visible: true, group: "Finance", iconName: "Banknote" },
-    breadcrumbLabel: "Finance / Accounting"
+    breadcrumbLabel: "Finance / Accounting",
   },
 
   // Travel Desk
@@ -214,7 +215,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/travel-desk",
     authenticatedOnly: true,
     navigation: { visible: true, group: "Travel Desk", iconName: "Plane" },
-    breadcrumbLabel: "Travel Desk"
+    breadcrumbLabel: "Travel Desk",
   },
 
   // People / HR Module
@@ -224,7 +225,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/hr",
     permission: "hr.view",
     navigation: { visible: true, group: "People", iconName: "Users" },
-    breadcrumbLabel: "People / Employees & Tasks"
+    breadcrumbLabel: "People / Employees & Tasks",
   },
   {
     id: "attendance-logs",
@@ -232,7 +233,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/attendance-logs",
     permission: "attendance.view",
     navigation: { visible: true, group: "People", iconName: "Clock" },
-    breadcrumbLabel: "People / Attendance Logs"
+    breadcrumbLabel: "People / Attendance Logs",
   },
   {
     id: "payroll",
@@ -240,7 +241,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/payroll",
     permission: "payroll.view",
     navigation: { visible: true, group: "People", iconName: "CreditCard" },
-    breadcrumbLabel: "People / Payroll"
+    breadcrumbLabel: "People / Payroll",
   },
 
   // Business Module
@@ -250,7 +251,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/trips",
     permission: "trips.view",
     navigation: { visible: true, group: "Business", iconName: "Compass" },
-    breadcrumbLabel: "Business / Trips & Products"
+    breadcrumbLabel: "Business / Trips & Products",
   },
   {
     id: "master-database",
@@ -258,7 +259,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/master-database",
     permission: "settings.view",
     navigation: { visible: true, group: "Business", iconName: "Building2" },
-    breadcrumbLabel: "Business / Master Database"
+    breadcrumbLabel: "Business / Master Database",
   },
   {
     id: "website",
@@ -266,7 +267,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/website",
     permission: "settings.view",
     navigation: { visible: true, group: "Business", iconName: "Globe" },
-    breadcrumbLabel: "Business / Website Control"
+    breadcrumbLabel: "Business / Website Control",
   },
   {
     id: "page-builder",
@@ -274,7 +275,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/page-builder",
     permission: "settings.view",
     navigation: { visible: true, group: "Business", iconName: "Layout" },
-    breadcrumbLabel: "Business / Page Builder"
+    breadcrumbLabel: "Business / Page Builder",
   },
   {
     id: "pages",
@@ -282,7 +283,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/pages",
     permission: "settings.view",
     navigation: { visible: false, group: "Business", iconName: "FileText" },
-    breadcrumbLabel: "Business / Website Pages"
+    breadcrumbLabel: "Business / Website Pages",
   },
 
   // Marketing Module
@@ -292,7 +293,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/marketing/overview",
     permission: "settings.view",
     navigation: { visible: true, group: "Marketing", iconName: "Megaphone" },
-    breadcrumbLabel: "Marketing / Overview"
+    breadcrumbLabel: "Marketing / Overview",
   },
   {
     id: "content-studio",
@@ -300,7 +301,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/marketing/content-studio",
     permission: "marketing.social",
     navigation: { visible: true, group: "Marketing", iconName: "Sparkles" },
-    breadcrumbLabel: "Marketing / Content Studio"
+    breadcrumbLabel: "Marketing / Content Studio",
   },
   {
     id: "blogs",
@@ -308,7 +309,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/blogs",
     permission: "settings.view",
     navigation: { visible: true, group: "Marketing", iconName: "FileText" },
-    breadcrumbLabel: "Marketing / Blogs"
+    breadcrumbLabel: "Marketing / Blogs",
   },
   {
     id: "reviews",
@@ -316,7 +317,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/reviews",
     permission: "marketing.social",
     navigation: { visible: true, group: "Marketing", iconName: "Star" },
-    breadcrumbLabel: "Marketing / Reviews"
+    breadcrumbLabel: "Marketing / Reviews",
   },
 
   // Founder Only Administration Module
@@ -327,7 +328,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     founderOnly: true,
     permission: "staff_profiles.view",
     navigation: { visible: true, group: "Administration", iconName: "Users" },
-    breadcrumbLabel: "Administration / Staff Profiles"
+    breadcrumbLabel: "Administration / Staff Profiles",
   },
   {
     id: "staff-profiles-alt",
@@ -335,7 +336,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/people/staff",
     founderOnly: true,
     permission: "staff_profiles.view",
-    breadcrumbLabel: "Administration / Staff Profiles"
+    breadcrumbLabel: "Administration / Staff Profiles",
   },
   {
     id: "staff-profile-detail",
@@ -343,7 +344,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/staff-profiles/:staffId",
     founderOnly: true,
     permission: "staff_profiles.view",
-    breadcrumbLabel: "Administration / Staff Detail"
+    breadcrumbLabel: "Administration / Staff Detail",
   },
   {
     id: "roles-permissions",
@@ -351,8 +352,12 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/roles-permissions",
     founderOnly: true,
     permission: "roles_permissions.manage",
-    navigation: { visible: true, group: "Administration", iconName: "ShieldCheck" },
-    breadcrumbLabel: "Administration / Roles & Permissions"
+    navigation: {
+      visible: true,
+      group: "Administration",
+      iconName: "ShieldCheck",
+    },
+    breadcrumbLabel: "Administration / Roles & Permissions",
   },
   {
     id: "email-templates",
@@ -360,7 +365,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     path: "/admin/email-templates",
     permission: "emails.manage_templates",
     navigation: { visible: true, group: "Administration", iconName: "Mail" },
-    breadcrumbLabel: "Administration / Email Templates"
+    breadcrumbLabel: "Administration / Email Templates",
   },
   {
     id: "audit-logs",
@@ -369,6 +374,6 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     founderOnly: true,
     permission: "audit.view",
     navigation: { visible: true, group: "Administration", iconName: "History" },
-    breadcrumbLabel: "Administration / Audit Logs"
-  }
+    breadcrumbLabel: "Administration / Audit Logs",
+  },
 ];

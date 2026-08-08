@@ -1,13 +1,26 @@
 import React, { useState } from "react";
-import { Upload, AlertTriangle, CheckCircle2, RefreshCw, Trash2, ArrowRight } from "lucide-react";
+import {
+  Upload,
+  AlertTriangle,
+  CheckCircle2,
+  RefreshCw,
+  Trash2,
+  ArrowRight,
+} from "lucide-react";
 import { vendorsService } from "@/services/vendors.service";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export default function VendorImportWizard({ onComplete }: { onComplete: () => void }) {
+export default function VendorImportWizard({
+  onComplete,
+}: {
+  onComplete: () => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [previewData, setPreviewData] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<"hotels" | "transport" | "charges">("hotels");
+  const [activeTab, setActiveTab] = useState<
+    "hotels" | "transport" | "charges"
+  >("hotels");
   const [report, setReport] = useState<any | null>(null);
 
   const handleUpload = async () => {
@@ -16,7 +29,9 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
       // Trigger preview extraction from backend
       const data = await vendorsService.getImportPreview();
       setPreviewData(data);
-      toast.success("Workbook parsed successfully! Review the normalized preview below.");
+      toast.success(
+        "Workbook parsed successfully! Review the normalized preview below.",
+      );
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to parse workbook");
     } finally {
@@ -31,11 +46,13 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
       const res = await vendorsService.confirmImport({
         hotels: previewData.hotels,
         transport: previewData.transport,
-        additionalCharges: previewData.additionalCharges
+        additionalCharges: previewData.additionalCharges,
       });
       if (res.success) {
         setReport(res.report);
-        toast.success("Successfully imported all directory entries as DRAFT records!");
+        toast.success(
+          "Successfully imported all directory entries as DRAFT records!",
+        );
         if (onComplete) onComplete();
       }
     } catch (err: any) {
@@ -45,15 +62,22 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
     }
   };
 
-  const handleRemoveItem = (type: "hotels" | "transport" | "charges", index: number) => {
+  const handleRemoveItem = (
+    type: "hotels" | "transport" | "charges",
+    index: number,
+  ) => {
     if (!previewData) return;
     const next = { ...previewData };
     if (type === "hotels") {
       next.hotels = next.hotels.filter((_: any, i: number) => i !== index);
     } else if (type === "transport") {
-      next.transport = next.transport.filter((_: any, i: number) => i !== index);
+      next.transport = next.transport.filter(
+        (_: any, i: number) => i !== index,
+      );
     } else {
-      next.additionalCharges = next.additionalCharges.filter((_: any, i: number) => i !== index);
+      next.additionalCharges = next.additionalCharges.filter(
+        (_: any, i: number) => i !== index,
+      );
     }
     setPreviewData(next);
   };
@@ -62,8 +86,13 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
     <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-5 shadow-xs space-y-4 font-sans text-xs">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
-          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Himachal Trip Details Excel Importer</h2>
-          <p className="text-[10px] text-slate-450 mt-0.5">Normalize and batch-import hotels, transport fleets and guide charges into the vendor directory.</p>
+          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+            Himachal Trip Details Excel Importer
+          </h2>
+          <p className="text-[10px] text-slate-450 mt-0.5">
+            Normalize and batch-import hotels, transport fleets and guide
+            charges into the vendor directory.
+          </p>
         </div>
         {!previewData && (
           <Button
@@ -71,7 +100,11 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
             disabled={loading}
             className="h-8.5 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase flex items-center gap-1.5 rounded"
           >
-            {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            {loading ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Upload className="w-3.5 h-3.5" />
+            )}
             {loading ? "Parsing..." : "Upload & Parse Workbook"}
           </Button>
         )}
@@ -82,18 +115,30 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
           <div className="flex justify-between items-center bg-slate-50 border border-slate-150 p-3.5 rounded-[4px]">
             <div className="flex gap-6">
               <div>
-                <span className="text-[10px] text-slate-400 block font-bold">HOTELS DETECTED</span>
-                <span className="text-sm font-black text-slate-800">{previewData.hotels?.length || 0} Rooms / Sharing</span>
+                <span className="text-[10px] text-slate-400 block font-bold">
+                  HOTELS DETECTED
+                </span>
+                <span className="text-sm font-black text-slate-800">
+                  {previewData.hotels?.length || 0} Rooms / Sharing
+                </span>
               </div>
               <div className="w-px bg-slate-200" />
               <div>
-                <span className="text-[10px] text-slate-400 block font-bold">VEHICLE FLEETS</span>
-                <span className="text-sm font-black text-slate-800">{previewData.transport?.length || 0} Routes / Vehicles</span>
+                <span className="text-[10px] text-slate-400 block font-bold">
+                  VEHICLE FLEETS
+                </span>
+                <span className="text-sm font-black text-slate-800">
+                  {previewData.transport?.length || 0} Routes / Vehicles
+                </span>
               </div>
               <div className="w-px bg-slate-200" />
               <div>
-                <span className="text-[10px] text-slate-400 block font-bold">MISC / ADDON COSTS</span>
-                <span className="text-sm font-black text-slate-800">{previewData.additionalCharges?.length || 0} Charges</span>
+                <span className="text-[10px] text-slate-400 block font-bold">
+                  MISC / ADDON COSTS
+                </span>
+                <span className="text-sm font-black text-slate-800">
+                  {previewData.additionalCharges?.length || 0} Charges
+                </span>
               </div>
             </div>
             <div className="flex gap-2">
@@ -123,10 +168,16 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 border-b-2 text-xs font-black uppercase tracking-wider transition-all ${
-                  activeTab === tab ? "border-[#F97316] text-[#F97316]" : "border-transparent text-slate-400 hover:text-slate-600"
+                  activeTab === tab
+                    ? "border-[#F97316] text-[#F97316]"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
-                {tab === "hotels" ? "Hotels & Stays" : tab === "transport" ? "Transporters & Routes" : "Addons & Extra Charges"}
+                {tab === "hotels"
+                  ? "Hotels & Stays"
+                  : tab === "transport"
+                    ? "Transporters & Routes"
+                    : "Addons & Extra Charges"}
               </button>
             ))}
           </div>
@@ -137,30 +188,55 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-150 sticky top-0">
                   <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="p-2.5 border-r border-slate-100">Hotel Name</th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Hotel Name
+                    </th>
                     <th className="p-2.5 border-r border-slate-100">City</th>
                     <th className="p-2.5 border-r border-slate-100">Phone</th>
                     <th className="p-2.5 border-r border-slate-100">Sharing</th>
-                    <th className="p-2.5 border-r border-slate-100">Rate Basis</th>
-                    <th className="p-2.5 border-r border-slate-100 text-right">Amount</th>
-                    <th className="p-2.5 border-r border-slate-100">Source Row</th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Rate Basis
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100 text-right">
+                      Amount
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Source Row
+                    </th>
                     <th className="p-2.5 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
                   {previewData.hotels.map((h: any, idx: number) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">{h.vendorName}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-semibold text-slate-650">{h.city}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10.5px]">{h.primaryPhone || "—"}</td>
-                      <td className="p-2.5 border-r border-slate-100">
-                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold text-[9px] border border-blue-100">{h.rate.sharingType}</span>
+                      <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">
+                        {h.vendorName}
                       </td>
-                      <td className="p-2.5 border-r border-slate-100 font-semibold">{h.rate.rateBasis}</td>
-                      <td className="p-2.5 border-r border-slate-100 text-right font-black text-slate-850">₹{Number(h.rate.amount).toLocaleString("en-IN")}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10px] text-slate-400">{h.sourceSheet} (Row {h.sourceRow})</td>
+                      <td className="p-2.5 border-r border-slate-100 font-semibold text-slate-650">
+                        {h.city}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10.5px]">
+                        {h.primaryPhone || "—"}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100">
+                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold text-[9px] border border-blue-100">
+                          {h.rate.sharingType}
+                        </span>
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 font-semibold">
+                        {h.rate.rateBasis}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 text-right font-black text-slate-850">
+                        ₹{Number(h.rate.amount).toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10px] text-slate-400">
+                        {h.sourceSheet} (Row {h.sourceRow})
+                      </td>
                       <td className="p-2.5 text-center">
-                        <button onClick={() => handleRemoveItem("hotels", idx)} className="text-red-400 hover:text-red-600 transition-colors">
+                        <button
+                          onClick={() => handleRemoveItem("hotels", idx)}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
@@ -174,26 +250,49 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-150 sticky top-0">
                   <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="p-2.5 border-r border-slate-100">Transporter</th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Transporter
+                    </th>
                     <th className="p-2.5 border-r border-slate-100">Route</th>
                     <th className="p-2.5 border-r border-slate-100">Vehicle</th>
-                    <th className="p-2.5 border-r border-slate-100 text-center">Sellable Seats</th>
-                    <th className="p-2.5 border-r border-slate-100 text-right">Total Cost</th>
-                    <th className="p-2.5 border-r border-slate-100">Source Row</th>
+                    <th className="p-2.5 border-r border-slate-100 text-center">
+                      Sellable Seats
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100 text-right">
+                      Total Cost
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Source Row
+                    </th>
                     <th className="p-2.5 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
                   {previewData.transport.map((t: any, idx: number) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">{t.vendorName}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-semibold text-slate-650">{t.routeName}</td>
-                      <td className="p-2.5 border-r border-slate-100">{t.vehicleType}</td>
-                      <td className="p-2.5 border-r border-slate-100 text-center font-bold text-slate-600">{t.sellableSeats}</td>
-                      <td className="p-2.5 border-r border-slate-100 text-right font-black text-slate-850">₹{Number(t.totalVehicleCost).toLocaleString("en-IN")}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10px] text-slate-400">{t.sourceSheet} (Row {t.sourceRow})</td>
+                      <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">
+                        {t.vendorName}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 font-semibold text-slate-650">
+                        {t.routeName}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100">
+                        {t.vehicleType}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 text-center font-bold text-slate-600">
+                        {t.sellableSeats}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 text-right font-black text-slate-850">
+                        ₹{Number(t.totalVehicleCost).toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10px] text-slate-400">
+                        {t.sourceSheet} (Row {t.sourceRow})
+                      </td>
                       <td className="p-2.5 text-center">
-                        <button onClick={() => handleRemoveItem("transport", idx)} className="text-red-400 hover:text-red-600 transition-colors">
+                        <button
+                          onClick={() => handleRemoveItem("transport", idx)}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
@@ -207,26 +306,49 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-150 sticky top-0">
                   <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="p-2.5 border-r border-slate-100">Charge Name</th>
-                    <th className="p-2.5 border-r border-slate-100">Rate Basis</th>
-                    <th className="p-2.5 border-r border-slate-100 text-right">Amount</th>
-                    <th className="p-2.5 border-r border-slate-100">Trip Code</th>
-                    <th className="p-2.5 border-r border-slate-100">Source Row</th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Charge Name
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Rate Basis
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100 text-right">
+                      Amount
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Trip Code
+                    </th>
+                    <th className="p-2.5 border-r border-slate-100">
+                      Source Row
+                    </th>
                     <th className="p-2.5 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
                   {previewData.additionalCharges.map((c: any, idx: number) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">{c.chargeName}</td>
-                      <td className="p-2.5 border-r border-slate-100">
-                        <span className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 font-bold text-[9px] border border-orange-100">{c.rateBasis}</span>
+                      <td className="p-2.5 border-r border-slate-100 font-bold text-slate-800">
+                        {c.chargeName}
                       </td>
-                      <td className="p-2.5 border-r border-slate-100 text-right font-black text-slate-850">₹{Number(c.amount).toLocaleString("en-IN")}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-semibold">{c.tripCode}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10px] text-slate-400">{c.sourceSheet} (Row {c.sourceRow})</td>
+                      <td className="p-2.5 border-r border-slate-100">
+                        <span className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 font-bold text-[9px] border border-orange-100">
+                          {c.rateBasis}
+                        </span>
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 text-right font-black text-slate-850">
+                        ₹{Number(c.amount).toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 font-semibold">
+                        {c.tripCode}
+                      </td>
+                      <td className="p-2.5 border-r border-slate-100 font-mono text-[10px] text-slate-400">
+                        {c.sourceSheet} (Row {c.sourceRow})
+                      </td>
                       <td className="p-2.5 text-center">
-                        <button onClick={() => handleRemoveItem("charges", idx)} className="text-red-400 hover:text-red-600 transition-colors">
+                        <button
+                          onClick={() => handleRemoveItem("charges", idx)}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
@@ -243,20 +365,34 @@ export default function VendorImportWizard({ onComplete }: { onComplete: () => v
         <div className="bg-emerald-50 border border-emerald-200 rounded-[6px] p-4 space-y-3">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <h4 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Import Completed Successfully</h4>
+            <h4 className="text-xs font-black text-emerald-800 uppercase tracking-wider">
+              Import Completed Successfully
+            </h4>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-semibold mt-2">
             <div className="bg-white p-3 rounded border border-emerald-100">
-              <span className="text-[10px] text-slate-400 block font-bold">CREATED</span>
-              <span className="text-lg font-black text-emerald-600">{report.created} Records</span>
+              <span className="text-[10px] text-slate-400 block font-bold">
+                CREATED
+              </span>
+              <span className="text-lg font-black text-emerald-600">
+                {report.created} Records
+              </span>
             </div>
             <div className="bg-white p-3 rounded border border-emerald-100">
-              <span className="text-[10px] text-slate-400 block font-bold">DUPLICATES DRAFTED</span>
-              <span className="text-lg font-black text-blue-600">{report.duplicates} Records</span>
+              <span className="text-[10px] text-slate-400 block font-bold">
+                DUPLICATES DRAFTED
+              </span>
+              <span className="text-lg font-black text-blue-600">
+                {report.duplicates} Records
+              </span>
             </div>
             <div className="bg-white p-3 rounded border border-emerald-100">
-              <span className="text-[10px] text-slate-400 block font-bold">SKIPPED / ERRORS</span>
-              <span className="text-lg font-black text-slate-500">{report.skipped + report.errors} Records</span>
+              <span className="text-[10px] text-slate-400 block font-bold">
+                SKIPPED / ERRORS
+              </span>
+              <span className="text-lg font-black text-slate-500">
+                {report.skipped + report.errors} Records
+              </span>
             </div>
           </div>
           <div className="flex justify-end pt-2">

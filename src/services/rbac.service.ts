@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from "./api";
 
 export interface Role {
   id: string;
@@ -84,9 +84,9 @@ export interface RbacAuditLogItem {
 }
 
 export const rbacService = {
-  getRoles: async (includeArchived = false, search = ''): Promise<Role[]> => {
-    const res = await api.get('/admin/rbac/roles', {
-      params: { includeArchived, search }
+  getRoles: async (includeArchived = false, search = ""): Promise<Role[]> => {
+    const res = await api.get("/admin/rbac/roles", {
+      params: { includeArchived, search },
     });
     return res.data.data;
   },
@@ -96,12 +96,19 @@ export const rbacService = {
     return res.data.data;
   },
 
-  createRole: async (payload: { name: string; description?: string; permissionIds?: string[] }): Promise<Role> => {
-    const res = await api.post('/admin/rbac/roles', payload);
+  createRole: async (payload: {
+    name: string;
+    description?: string;
+    permissionIds?: string[];
+  }): Promise<Role> => {
+    const res = await api.post("/admin/rbac/roles", payload);
     return res.data.data;
   },
 
-  updateRole: async (id: string, payload: { name?: string; description?: string; permissionIds?: string[] }): Promise<Role> => {
+  updateRole: async (
+    id: string,
+    payload: { name?: string; description?: string; permissionIds?: string[] },
+  ): Promise<Role> => {
     const res = await api.put(`/admin/rbac/roles/${id}`, payload);
     return res.data.data;
   },
@@ -111,18 +118,26 @@ export const rbacService = {
     return res.data.data;
   },
 
-  deleteRole: async (id: string): Promise<{ success: boolean; message: string }> => {
+  deleteRole: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     const res = await api.delete(`/admin/rbac/roles/${id}`);
     return res.data;
   },
 
-  getPermissions: async (): Promise<{ permissions: Permission[]; grouped: Record<string, Permission[]> }> => {
-    const res = await api.get('/admin/rbac/permissions');
+  getPermissions: async (): Promise<{
+    permissions: Permission[];
+    grouped: Record<string, Permission[]>;
+  }> => {
+    const res = await api.get("/admin/rbac/permissions");
     return res.data.data;
   },
 
-  getPermissionMatrix: async (): Promise<{ roles: Array<{ id: string; name: string; isSystem: boolean }>; matrix: PermissionMatrixRow[] }> => {
-    const res = await api.get('/admin/rbac/matrix');
+  getPermissionMatrix: async (): Promise<{
+    roles: Array<{ id: string; name: string; isSystem: boolean }>;
+    matrix: PermissionMatrixRow[];
+  }> => {
+    const res = await api.get("/admin/rbac/matrix");
     return res.data.data;
   },
 
@@ -131,33 +146,63 @@ export const rbacService = {
     return res.data.data;
   },
 
-  updateUserRoles: async (userId: string, roleIds: string[], primaryRoleId?: string): Promise<{ success: boolean }> => {
-    const res = await api.put(`/admin/rbac/users/${userId}/roles`, { roleIds, primaryRoleId });
+  updateUserRoles: async (
+    userId: string,
+    roleIds: string[],
+    primaryRoleId?: string,
+  ): Promise<{ success: boolean }> => {
+    const res = await api.put(`/admin/rbac/users/${userId}/roles`, {
+      roleIds,
+      primaryRoleId,
+    });
     return res.data;
   },
 
-  setUserCustomPermission: async (userId: string, payload: { permissionId: string; isDenied?: boolean; expiresAt?: string }): Promise<any> => {
-    const res = await api.post(`/admin/rbac/users/${userId}/custom-permissions`, payload);
+  setUserCustomPermission: async (
+    userId: string,
+    payload: { permissionId: string; isDenied?: boolean; expiresAt?: string },
+  ): Promise<any> => {
+    const res = await api.post(
+      `/admin/rbac/users/${userId}/custom-permissions`,
+      payload,
+    );
     return res.data.data;
   },
 
-  removeUserCustomPermission: async (userId: string, permissionId: string): Promise<{ success: boolean }> => {
-    const res = await api.delete(`/admin/rbac/users/${userId}/custom-permissions/${permissionId}`);
+  removeUserCustomPermission: async (
+    userId: string,
+    permissionId: string,
+  ): Promise<{ success: boolean }> => {
+    const res = await api.delete(
+      `/admin/rbac/users/${userId}/custom-permissions/${permissionId}`,
+    );
     return res.data;
   },
 
-  delegatePermission: async (payload: { toUserId: string; permissionId: string; expiresAt: string }): Promise<any> => {
-    const res = await api.post('/admin/rbac/delegations', payload);
+  delegatePermission: async (payload: {
+    toUserId: string;
+    permissionId: string;
+    expiresAt: string;
+  }): Promise<any> => {
+    const res = await api.post("/admin/rbac/delegations", payload);
     return res.data.data;
   },
 
-  revokeDelegation: async (delegationId: string): Promise<{ success: boolean }> => {
+  revokeDelegation: async (
+    delegationId: string,
+  ): Promise<{ success: boolean }> => {
     const res = await api.delete(`/admin/rbac/delegations/${delegationId}`);
     return res.data;
   },
 
-  getAuditLog: async (params?: { userId?: string; action?: string; resourceType?: string; page?: number; limit?: number }): Promise<{ logs: RbacAuditLogItem[]; pagination: any }> => {
-    const res = await api.get('/admin/rbac/audit-log', { params });
+  getAuditLog: async (params?: {
+    userId?: string;
+    action?: string;
+    resourceType?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ logs: RbacAuditLogItem[]; pagination: any }> => {
+    const res = await api.get("/admin/rbac/audit-log", { params });
     return res.data.data;
-  }
+  },
 };

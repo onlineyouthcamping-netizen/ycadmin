@@ -1,23 +1,41 @@
 import React from "react";
-import { BarChart2, Users, Building, Briefcase, Calendar, DollarSign } from "lucide-react";
+import {
+  BarChart2,
+  Users,
+  Building,
+  Briefcase,
+  Calendar,
+  DollarSign,
+} from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
-import type { DashboardWidget, DashboardWidgetContextProps } from "@/config/dashboardWidgetRegistry";
+import type {
+  DashboardWidget,
+  DashboardWidgetContextProps,
+} from "@/config/dashboardWidgetRegistry";
 
 // KPI 1: Total Revenue Widget
-export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({ stats, loading, navigate }) => (
-  <div 
+export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  loading,
+  navigate,
+}) => (
+  <div
     onClick={() => navigate("/admin/accounting")}
     className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all h-full min-h-[108px]"
   >
     <div className="flex items-start justify-between">
-      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Total Revenue</span>
+      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">
+        Total Revenue
+      </span>
       <div className="w-[26px] h-[26px] rounded bg-emerald-50 flex items-center justify-center text-emerald-600">
         <DollarSign className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
       <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-        {loading ? "Loading..." : `₹ ${(stats?.totalRevenue || 0).toLocaleString('en-IN')}`}
+        {loading
+          ? "Loading..."
+          : `₹ ${(stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
       </h3>
       <p className="text-[9.5px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
         ▲ Gross <span className="text-[#74839A] font-medium">all-time</span>
@@ -27,20 +45,28 @@ export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({ stats,
 );
 
 // KPI 2: Monthly Revenue Widget
-export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({ stats, loading, navigate }) => (
-  <div 
+export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  loading,
+  navigate,
+}) => (
+  <div
     onClick={() => navigate("/admin/accounting")}
     className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all h-full min-h-[108px]"
   >
     <div className="flex items-start justify-between">
-      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Monthly Revenue</span>
+      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">
+        Monthly Revenue
+      </span>
       <div className="w-[26px] h-[26px] rounded bg-blue-50 flex items-center justify-center text-blue-600">
         <BarChart2 className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
       <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-        {loading ? "Loading..." : `₹ ${(stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue || stats?.totalRevenue || 0).toLocaleString('en-IN')}`}
+        {loading
+          ? "Loading..."
+          : `₹ ${(stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue || stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
       </h3>
       <p className="text-[9.5px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
         ▲ Active <span className="text-[#74839A] font-medium">this month</span>
@@ -50,59 +76,83 @@ export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({ stat
 );
 
 // KPI 3: Pending Customers Widget
-export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({ stats, loading, navigate }) => (
-  <div 
+export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  loading,
+  navigate,
+}) => (
+  <div
     onClick={() => navigate("/admin/accounting?tab=payments")}
     className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all h-full min-h-[108px]"
   >
     <div className="flex items-start justify-between">
-      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Pending Customers</span>
+      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">
+        Pending Customers
+      </span>
       <div className="w-[26px] h-[26px] rounded bg-amber-50 flex items-center justify-center text-amber-600">
         <Users className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
       <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-        {loading ? "Loading..." : `₹ ${(stats?.pendingPayments || 0).toLocaleString('en-IN')}`}
+        {loading
+          ? "Loading..."
+          : `₹ ${(stats?.pendingPayments || 0).toLocaleString("en-IN")}`}
       </h3>
       <p className="text-[9.5px] font-semibold text-[#74839A] flex items-center gap-0.5 mt-1">
-        {loading ? "..." : stats?.totalBookings || 0} <span className="text-[#74839A] font-medium">bookings</span>
+        {loading ? "..." : stats?.totalBookings || 0}{" "}
+        <span className="text-[#74839A] font-medium">bookings</span>
       </p>
     </div>
   </div>
 );
 
 // KPI 4: Pending Vendors Widget
-export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({ stats, loading, navigate }) => (
-  <div 
+export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  loading,
+  navigate,
+}) => (
+  <div
     onClick={() => navigate("/admin/accounting?tab=vendor_payments")}
     className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all h-full min-h-[108px]"
   >
     <div className="flex items-start justify-between">
-      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Pending Vendors</span>
+      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">
+        Pending Vendors
+      </span>
       <div className="w-[26px] h-[26px] rounded bg-rose-50 flex items-center justify-center text-rose-600">
         <Building className="w-3.5 h-3.5" />
       </div>
     </div>
     <div className="space-y-0.5">
       <h3 className="text-[18px] font-bold text-[#162B45] leading-none">
-        {loading ? "Loading..." : `₹ ${(stats?.pendingVendorsCost || 0).toLocaleString('en-IN')}`}
+        {loading
+          ? "Loading..."
+          : `₹ ${(stats?.pendingVendorsCost || 0).toLocaleString("en-IN")}`}
       </h3>
       <p className="text-[9.5px] font-semibold text-[#74839A] flex items-center gap-0.5 mt-1">
-        {loading ? "..." : stats?.pendingVendorsCount || 0} <span className="text-[#74839A] font-medium">vendors</span>
+        {loading ? "..." : stats?.pendingVendorsCount || 0}{" "}
+        <span className="text-[#74839A] font-medium">vendors</span>
       </p>
     </div>
   </div>
 );
 
 // KPI 5: Trips Running Widget
-export const TripsRunningCard: React.FC<DashboardWidgetContextProps> = ({ stats, loading, navigate }) => (
-  <div 
+export const TripsRunningCard: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  loading,
+  navigate,
+}) => (
+  <div
     onClick={() => navigate("/admin/live-operations")}
     className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all h-full min-h-[108px]"
   >
     <div className="flex items-start justify-between">
-      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Trips Running</span>
+      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">
+        Trips Running
+      </span>
       <div className="w-[26px] h-[26px] rounded bg-indigo-50 flex items-center justify-center text-indigo-600">
         <Briefcase className="w-3.5 h-3.5" />
       </div>
@@ -119,13 +169,19 @@ export const TripsRunningCard: React.FC<DashboardWidgetContextProps> = ({ stats,
 );
 
 // KPI 6: Bookings Month Widget
-export const BookingsMonthCard: React.FC<DashboardWidgetContextProps> = ({ stats, loading, navigate }) => (
-  <div 
+export const BookingsMonthCard: React.FC<DashboardWidgetContextProps> = ({
+  stats,
+  loading,
+  navigate,
+}) => (
+  <div
     onClick={() => navigate("/admin/bookings")}
     className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between cursor-pointer hover:bg-slate-50 transition-all h-full min-h-[108px]"
   >
     <div className="flex items-start justify-between">
-      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">Bookings Month</span>
+      <span className="text-[10px] font-bold text-[#74839A] uppercase tracking-[0.4px]">
+        Bookings Month
+      </span>
       <div className="w-[26px] h-[26px] rounded bg-teal-50 flex items-center justify-center text-teal-600">
         <Calendar className="w-3.5 h-3.5" />
       </div>
@@ -135,7 +191,8 @@ export const BookingsMonthCard: React.FC<DashboardWidgetContextProps> = ({ stats
         {loading ? "..." : stats?.totalBookings || 0}
       </h3>
       <p className="text-[9.5px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-1">
-        ▲ Overall <span className="text-[#74839A] font-medium">reservations</span>
+        ▲ Overall{" "}
+        <span className="text-[#74839A] font-medium">reservations</span>
       </p>
     </div>
   </div>

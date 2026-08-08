@@ -19,7 +19,10 @@ interface FocusedSectionModalProps {
   sectionType: string | null;
   sections: PageSectionConfig[];
   dbTrips?: any[];
-  onSaveSection: (sectionId: string, updatedDraft: Record<string, any>) => Promise<void>;
+  onSaveSection: (
+    sectionId: string,
+    updatedDraft: Record<string, any>,
+  ) => Promise<void>;
 }
 
 export function FocusedSectionModal({
@@ -30,16 +33,19 @@ export function FocusedSectionModal({
   dbTrips = [],
   onSaveSection,
 }: FocusedSectionModalProps) {
-  const [activeSection, setActiveSection] = useState<PageSectionConfig | null>(null);
+  const [activeSection, setActiveSection] = useState<PageSectionConfig | null>(
+    null,
+  );
   const [currentDraft, setCurrentDraft] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen && sectionType && sections && sections.length > 0) {
       // Find matching section in list or fallback to first matching type
-      const target = sections.find(
-        (s) => s.type === sectionType || s.id === sectionType
-      ) || sections.find((s) => s.type.includes(sectionType)) || null;
+      const target =
+        sections.find((s) => s.type === sectionType || s.id === sectionType) ||
+        sections.find((s) => s.type.includes(sectionType)) ||
+        null;
 
       if (target) {
         setActiveSection(target);
@@ -63,7 +69,9 @@ export function FocusedSectionModal({
 
   const handleChangeDraft = (_: string, updatedDraft: Record<string, any>) => {
     setCurrentDraft(updatedDraft);
-    setActiveSection((prev) => (prev ? { ...prev, draft: updatedDraft } : null));
+    setActiveSection((prev) =>
+      prev ? { ...prev, draft: updatedDraft } : null,
+    );
   };
 
   const handleResetSection = () => {
@@ -94,7 +102,8 @@ export function FocusedSectionModal({
               <span>Edit Section</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
-              Isolated editor for single section configuration. Changes sync directly to live website.
+              Isolated editor for single section configuration. Changes sync
+              directly to live website.
             </DialogDescription>
           </div>
         </DialogHeader>

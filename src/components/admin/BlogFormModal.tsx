@@ -3,12 +3,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import type { Blog, BlogFormData, BlogHighlight } from "@/types";
-import { Plus, Trash2, Sparkles, MapPin, ShieldCheck, Quote } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Sparkles,
+  MapPin,
+  ShieldCheck,
+  Quote,
+} from "lucide-react";
 
 const defaultForm: BlogFormData = {
   title: "",
@@ -22,18 +40,27 @@ const defaultForm: BlogFormData = {
   image: "",
   gallery: [],
   highlights: [
-    { title: "Breathtaking Mountain Vistas", desc: "Experience 360-degree panoramic views of Himalayan alpine valleys." },
-    { title: "Guided Mountain Expeditions", desc: "Lead by certified safety professionals and local expedition guides." },
-    { title: "Curated Stays & Local Culture", desc: "Cozy fireside stays, regional cuisine, and authentic hospitality." }
+    {
+      title: "Breathtaking Mountain Vistas",
+      desc: "Experience 360-degree panoramic views of Himalayan alpine valleys.",
+    },
+    {
+      title: "Guided Mountain Expeditions",
+      desc: "Lead by certified safety professionals and local expedition guides.",
+    },
+    {
+      title: "Curated Stays & Local Culture",
+      desc: "Cozy fireside stays, regional cuisine, and authentic hospitality.",
+    },
   ],
   tips: [
     "Layering is key: Pack high-density thermals, a windproof outer jacket, and fleece gloves.",
     "Footwear matters: Sturdy waterproof trekking boots with good ankle support are essential.",
-    "Stay Hydrated: Cold weather masks dehydration; carry a thermal thermos flask on day hikes."
+    "Stay Hydrated: Cold weather masks dehydration; carry a thermal thermos flask on day hikes.",
   ],
   readTime: "5 MIN READ",
   hasVideo: false,
-  status: "draft"
+  status: "draft",
 };
 
 interface BlogFormModalProps {
@@ -43,7 +70,12 @@ interface BlogFormModalProps {
   onSave: (data: BlogFormData, editingId?: string) => Promise<void>;
 }
 
-export default function BlogFormModal({ open, onOpenChange, editing, onSave }: BlogFormModalProps) {
+export default function BlogFormModal({
+  open,
+  onOpenChange,
+  editing,
+  onSave,
+}: BlogFormModalProps) {
   const [form, setForm] = useState<BlogFormData>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
@@ -61,15 +93,22 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
         intro: editing.intro || "",
         author: editing.author || "Expedition Team",
         authorImage: editing.authorImage || "",
-        authorRole: editing.authorRole || "Lead Himalayan Expedition Specialist",
+        authorRole:
+          editing.authorRole || "Lead Himalayan Expedition Specialist",
         content: editing.content || "",
         image: editing.image || "",
         gallery: editing.gallery || [],
-        highlights: editing.highlights && editing.highlights.length > 0 ? editing.highlights : defaultForm.highlights,
-        tips: editing.tips && editing.tips.length > 0 ? editing.tips : defaultForm.tips,
+        highlights:
+          editing.highlights && editing.highlights.length > 0
+            ? editing.highlights
+            : defaultForm.highlights,
+        tips:
+          editing.tips && editing.tips.length > 0
+            ? editing.tips
+            : defaultForm.tips,
         readTime: editing.readTime || "5 MIN READ",
         hasVideo: !!editing.hasVideo,
-        status: editing.status || "draft"
+        status: editing.status || "draft",
       });
     } else {
       setForm(defaultForm);
@@ -78,21 +117,25 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
 
   const handleAddGalleryImage = (url: string) => {
     if (!url) return;
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      gallery: [...(prev.gallery || []), url]
+      gallery: [...(prev.gallery || []), url],
     }));
     setNewGalleryUrl("");
   };
 
   const handleRemoveGalleryImage = (index: number) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      gallery: (prev.gallery || []).filter((_, i) => i !== index)
+      gallery: (prev.gallery || []).filter((_, i) => i !== index),
     }));
   };
 
-  const handleHighlightChange = (index: number, field: "title" | "desc", val: string) => {
+  const handleHighlightChange = (
+    index: number,
+    field: "title" | "desc",
+    val: string,
+  ) => {
     const list = [...(form.highlights || [])];
     if (list[index]) {
       list[index][field] = val;
@@ -102,12 +145,18 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
 
   const handleAddTip = () => {
     if (!newTip.trim()) return;
-    setForm(prev => ({ ...prev, tips: [...(prev.tips || []), newTip.trim()] }));
+    setForm((prev) => ({
+      ...prev,
+      tips: [...(prev.tips || []), newTip.trim()],
+    }));
     setNewTip("");
   };
 
   const handleRemoveTip = (index: number) => {
-    setForm(prev => ({ ...prev, tips: (prev.tips || []).filter((_, i) => i !== index) }));
+    setForm((prev) => ({
+      ...prev,
+      tips: (prev.tips || []).filter((_, i) => i !== index),
+    }));
   };
 
   const handleSave = async () => {
@@ -127,10 +176,13 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
         <div className="p-6 sm:p-8 border-b bg-slate-50 flex items-center justify-between">
           <div>
             <DialogTitle className="text-xl font-extrabold uppercase tracking-tight text-slate-900 font-montserrat">
-              {editing ? "Edit Travel Story & Modules" : "Compose New Expedition Story"}
+              {editing
+                ? "Edit Travel Story & Modules"
+                : "Compose New Expedition Story"}
             </DialogTitle>
             <p className="text-xs font-semibold text-slate-500 mt-1">
-              Manage story hero quote, highlights, visual storyboard gallery, and travel tips
+              Manage story hero quote, highlights, visual storyboard gallery,
+              and travel tips
             </p>
           </div>
         </div>
@@ -144,19 +196,27 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Category / Badge</Label>
+                <Label className="text-xs font-bold text-slate-700">
+                  Category / Badge
+                </Label>
                 <Input
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value.toUpperCase() })}
+                  onChange={(e) =>
+                    setForm({ ...form, category: e.target.value.toUpperCase() })
+                  }
                   placeholder="EXPEDITION GUIDE"
                   className="rounded-xl h-11 border-slate-200 text-xs font-bold"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Reading Time</Label>
+                <Label className="text-xs font-bold text-slate-700">
+                  Reading Time
+                </Label>
                 <Input
                   value={form.readTime}
-                  onChange={(e) => setForm({ ...form, readTime: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, readTime: e.target.value })
+                  }
                   placeholder="7 MIN READ"
                   className="rounded-xl h-11 border-slate-200 text-xs font-bold uppercase"
                 />
@@ -164,7 +224,9 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-slate-700">Story Headline *</Label>
+              <Label className="text-xs font-bold text-slate-700">
+                Story Headline *
+              </Label>
               <Input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -174,10 +236,17 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-slate-700">URL Slug *</Label>
+              <Label className="text-xs font-bold text-slate-700">
+                URL Slug *
+              </Label>
               <Input
                 value={form.slug}
-                onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/ /g, '-') })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    slug: e.target.value.toLowerCase().replace(/ /g, "-"),
+                  })
+                }
                 placeholder="the-pristine-colors-of-kasol"
                 className="rounded-xl h-10 border-slate-200 bg-slate-50 px-4 text-xs font-bold"
               />
@@ -208,22 +277,32 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
           {/* SECTION 3: EXPEDITION HIGHLIGHTS */}
           <div className="space-y-4 pt-4 border-t border-slate-100">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#FF5400] flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4" /> 3. Expedition Highlights Cards (3 Cards)
+              <Sparkles className="w-4 h-4" /> 3. Expedition Highlights Cards (3
+              Cards)
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {(form.highlights || []).slice(0, 3).map((h, hIdx) => (
-                <div key={hIdx} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Card #{hIdx + 1}</span>
+                <div
+                  key={hIdx}
+                  className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2"
+                >
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                    Card #{hIdx + 1}
+                  </span>
                   <Input
                     value={h.title}
-                    onChange={(e) => handleHighlightChange(hIdx, "title", e.target.value)}
+                    onChange={(e) =>
+                      handleHighlightChange(hIdx, "title", e.target.value)
+                    }
                     placeholder="Highlight Title"
                     className="rounded-lg h-9 border-slate-200 text-xs font-bold bg-white"
                   />
                   <Textarea
                     value={h.desc}
-                    onChange={(e) => handleHighlightChange(hIdx, "desc", e.target.value)}
+                    onChange={(e) =>
+                      handleHighlightChange(hIdx, "desc", e.target.value)
+                    }
                     placeholder="Highlight Description..."
                     className="rounded-lg min-h-[60px] border-slate-200 text-[11px] font-medium bg-white p-2.5"
                   />
@@ -248,15 +327,23 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
           {/* SECTION 5: VISUAL STORYBOARD GALLERY */}
           <div className="space-y-4 pt-4 border-t border-slate-100">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#FF5400] flex items-center gap-1.5">
-              <MapPin className="w-4 h-4" /> 5. Visual Storyboard (Gallery Photos)
+              <MapPin className="w-4 h-4" /> 5. Visual Storyboard (Gallery
+              Photos)
             </h3>
 
             {/* Gallery Thumbnails */}
             {form.gallery && form.gallery.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {form.gallery.map((gUrl, gIdx) => (
-                  <div key={gIdx} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 group">
-                    <img src={gUrl} alt="" className="w-full h-full object-cover" />
+                  <div
+                    key={gIdx}
+                    className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 group"
+                  >
+                    <img
+                      src={gUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                     <button
                       type="button"
                       onClick={() => handleRemoveGalleryImage(gIdx)}
@@ -290,12 +377,16 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
           {/* SECTION 6: PACKING & TRAVEL TIPS */}
           <div className="space-y-4 pt-4 border-t border-slate-100">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#FF5400] flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4" /> 6. Essential Travel & Packing Tips
+              <ShieldCheck className="w-4 h-4" /> 6. Essential Travel & Packing
+              Tips
             </h3>
 
             <div className="space-y-2">
               {(form.tips || []).map((t, tIdx) => (
-                <div key={tIdx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700">
+                <div
+                  key={tIdx}
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700"
+                >
                   <span>• {t}</span>
                   <button
                     type="button"
@@ -329,7 +420,9 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
           {/* SECTION 7: AUTHOR & PUBLICATION */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-slate-700">Author / Explorer Name</Label>
+              <Label className="text-xs font-bold text-slate-700">
+                Author / Explorer Name
+              </Label>
               <Input
                 value={form.author}
                 onChange={(e) => setForm({ ...form, author: e.target.value })}
@@ -338,10 +431,14 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-slate-700">Author Designation / Role</Label>
+              <Label className="text-xs font-bold text-slate-700">
+                Author Designation / Role
+              </Label>
               <Input
                 value={form.authorRole}
-                onChange={(e) => setForm({ ...form, authorRole: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, authorRole: e.target.value })
+                }
                 placeholder="Lead Himalayan Expedition Specialist"
                 className="rounded-xl h-11 border-slate-200 text-xs font-bold"
               />
@@ -357,14 +454,31 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-slate-700">Publication Status</Label>
-              <Select value={form.status} onValueChange={(v: "draft" | "published") => setForm({ ...form, status: v })}>
+              <Label className="text-xs font-bold text-slate-700">
+                Publication Status
+              </Label>
+              <Select
+                value={form.status}
+                onValueChange={(v: "draft" | "published") =>
+                  setForm({ ...form, status: v })
+                }
+              >
                 <SelectTrigger className="rounded-xl h-11 border-slate-200 font-bold uppercase text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-200">
-                  <SelectItem value="draft" className="font-bold uppercase text-xs">Save as Draft</SelectItem>
-                  <SelectItem value="published" className="font-bold uppercase text-xs text-emerald-600">Go Live (Public)</SelectItem>
+                  <SelectItem
+                    value="draft"
+                    className="font-bold uppercase text-xs"
+                  >
+                    Save as Draft
+                  </SelectItem>
+                  <SelectItem
+                    value="published"
+                    className="font-bold uppercase text-xs text-emerald-600"
+                  >
+                    Go Live (Public)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -373,7 +487,11 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
 
         {/* Footer Actions */}
         <div className="p-6 sm:p-8 border-t bg-slate-50 flex items-center justify-end gap-3">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-11 px-6 font-bold text-xs">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="rounded-xl h-11 px-6 font-bold text-xs"
+          >
             Cancel
           </Button>
           <Button
@@ -381,11 +499,14 @@ export default function BlogFormModal({ open, onOpenChange, editing, onSave }: B
             disabled={saving || !form.title || !form.content || !form.image}
             className="rounded-xl h-11 px-8 bg-[#FF5400] hover:bg-[#D4541A] text-white font-extrabold text-xs shadow-lg shadow-orange-500/20"
           >
-            {saving ? "Saving..." : editing ? "Update Story Modules" : "Publish Story"}
+            {saving
+              ? "Saving..."
+              : editing
+                ? "Update Story Modules"
+                : "Publish Story"}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

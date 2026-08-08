@@ -18,12 +18,15 @@ interface UseWebsitePagesReturn {
   error: string | null;
   refetch: () => Promise<void>;
   createPage: (data: CreatePagePayload) => Promise<WebsitePage | null>;
-  updatePage: (id: string, data: UpdatePagePayload) => Promise<WebsitePage | null>;
+  updatePage: (
+    id: string,
+    data: UpdatePagePayload,
+  ) => Promise<WebsitePage | null>;
   deletePage: (id: string) => Promise<boolean>;
 }
 
 export function useWebsitePages(
-  options: UseWebsitePagesOptions = {}
+  options: UseWebsitePagesOptions = {},
 ): UseWebsitePagesReturn {
   const { pollInterval = 0 } = options;
 
@@ -40,7 +43,8 @@ export function useWebsitePages(
         setError(null);
       }
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Failed to load pages";
+      const message =
+        err?.response?.data?.message || err?.message || "Failed to load pages";
       if (mountedRef.current) {
         setError(message);
       }
@@ -82,11 +86,14 @@ export function useWebsitePages(
         return null;
       }
     },
-    [fetchPages]
+    [fetchPages],
   );
 
   const updatePage = useCallback(
-    async (id: string, data: UpdatePagePayload): Promise<WebsitePage | null> => {
+    async (
+      id: string,
+      data: UpdatePagePayload,
+    ): Promise<WebsitePage | null> => {
       try {
         const page = await websiteService.updatePage(id, data);
         toast.success(`Page "${page.title}" updated`);
@@ -98,7 +105,7 @@ export function useWebsitePages(
         return null;
       }
     },
-    [fetchPages]
+    [fetchPages],
   );
 
   const deletePage = useCallback(
@@ -114,7 +121,7 @@ export function useWebsitePages(
         return false;
       }
     },
-    [fetchPages]
+    [fetchPages],
   );
 
   return {

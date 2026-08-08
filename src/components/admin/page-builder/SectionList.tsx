@@ -14,7 +14,12 @@ import {
   Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 
 export interface SectionItem {
   id: string;
@@ -155,7 +160,9 @@ export function SectionList({
                             ? "bg-orange-50/60 border-[#D4541A] shadow-xs"
                             : "bg-slate-50/50 hover:bg-white border-slate-200/80 hover:border-slate-300"
                         } ${!isVisible ? "opacity-60 bg-slate-100/50" : ""} ${
-                          snapshot.isDragging ? "shadow-xl border-[#D4541A] bg-white z-50 scale-[1.02]" : ""
+                          snapshot.isDragging
+                            ? "shadow-xl border-[#D4541A] bg-white z-50 scale-[1.02]"
+                            : ""
                         }`}
                       >
                         {/* Selected Left Accent Bar */}
@@ -208,7 +215,9 @@ export function SectionList({
                               onToggleVisibility(item.id);
                             }}
                             className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-white/80 transition-all cursor-pointer ${
-                              !isVisible ? "text-amber-500 hover:text-amber-600" : ""
+                              !isVisible
+                                ? "text-amber-500 hover:text-amber-600"
+                                : ""
                             }`}
                             title={isVisible ? "Hide section" : "Show section"}
                           >

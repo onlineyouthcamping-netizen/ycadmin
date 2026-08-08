@@ -1,25 +1,34 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plane, Eye, EyeOff, Star, ArrowRight, ChevronLeft } from "lucide-react";
+import {
+  Loader2,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  ChevronLeft,
+  AlertCircle,
+  Lock,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import api from "@/services/api";
 
 export default function LoginPage() {
-  const [loginType, setLoginType] = useState<"admin" | "guide">("admin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"login" | "forgot">("login");
-  const [notification, setNotification] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [forgotEmail, setForgotEmail] = useState("");
 
-  const { admin, isAuthenticated, login, loginAsGuide } = useAuthStore();
+  const { admin, isAuthenticated, login } = useAuthStore();
   const navigate = useNavigate();
 
   // Auto-redirect if user is already authenticated
@@ -32,36 +41,22 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setNotification(null);
+    setErrorMessage(null);
     try {
-      if (loginType === "admin") {
-        await login(email, password);
-        toast.success("Welcome back!");
-        navigate("/admin");
-      } else {
-        if (!phone) {
-          toast.error("Phone number is required");
-          setLoading(false);
-          return;
-        }
-        await loginAsGuide(phone);
-        toast.success("Welcome back, Guide!");
-        navigate("/admin/guide-portal");
-      }
+      await login(email, password);
+      toast.success("Welcome back!");
+      navigate("/admin");
     } catch (error: any) {
       console.error("Login attempt failed:", error);
-      let message = "Something went wrong";
+      let message = "Incorrect email or password.";
       if (!error.response) {
-        message = "Cannot connect to server. Is the backend running?";
+        message = "Cannot connect to server. Please check your network connection.";
       } else if (error.response.status === 401) {
-        message = loginType === "admin" ? "Invalid email or password" : "Unauthorized role mismatch";
-      } else if (error.response.status === 404) {
-        message = "User not found. Verify phone number registration.";
-      } else {
-        message = error.response.data?.message || message;
+        message = "Incorrect email or password.";
+      } else if (error.response.data?.message) {
+        message = error.response.data.message;
       }
-      toast.error(message);
-      setNotification(message);
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -70,261 +65,278 @@ export default function LoginPage() {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(null);
     try {
-      const res = await api.post("/admin/forgot-password", { email: forgotEmail });
-      toast.success(res.data?.message || "Password reset instructions pushed to email!");
+      const res = await api.post("/admin/forgot-password", {
+        email: forgotEmail,
+      });
+      toast.success(
+        res.data?.message || "Password reset instructions sent to your email!",
+      );
       setView("login");
-      setNotification("Verification instructions sent. Check your inbox.");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to process forgot password request.");
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to process forgot password request.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-50 text-xs text-slate-650 font-sans">
-      
-      {/* ─── Main Content Split Panes ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 flex-1">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#ECECF0] font-sans p-3 sm:p-6 md:p-10 select-none">
+      {/* Outer Card Wrapper */}
+      <div className="w-full max-w-[1080px] bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-white/60 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
         
-        {/* LEFT COLUMN: Clean Login/Forgot Forms */}
-        <div className="flex flex-col justify-between bg-white p-6 sm:p-12 md:p-16 lg:p-20 relative shadow-lg">
-          
-          {/* Logo Bar */}
-          <div className="flex items-center gap-2 mb-6">
-            <img src="/logo.png" alt="YouthCamping Logo" className="h-8 w-auto object-contain" />
-            <span className="text-[8px] bg-slate-100 text-slate-400 font-mono px-1 rounded">PORTAL</span>
+        {/* ─── LEFT HERO PANEL (Scenic Dusk Mountain + Tent) ─── */}
+        <div
+          className="lg:col-span-6 relative bg-cover bg-center p-8 sm:p-12 flex flex-col justify-between text-white min-h-[380px] lg:min-h-full"
+          style={{ backgroundImage: `url('/camping_mountain_bg.png')` }}
+        >
+          {/* Dark Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/20 pointer-events-none" />
+
+          {/* Top Hero Text */}
+          <div className="relative z-10 space-y-1">
+            <h1 className="text-4xl sm:text-5xl font-light tracking-tight text-white/90">
+              One trip
+            </h1>
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#FF5400]">
+              at a time.
+            </h1>
+
+            <div className="w-10 h-1 bg-[#FF5400] rounded-full my-4" />
+
+            <p className="text-xs sm:text-sm font-medium text-white/80 max-w-xs leading-relaxed">
+              The all-in-one ERP built for YouthCamping operations.
+            </p>
           </div>
 
-          {/* Form Content Area */}
-          <div className="w-full max-w-sm mx-auto my-auto space-y-6">
-            
-            {view === "login" ? (
-              /* ─── LOGIN PANEL VIEW ─── */
-              <div className="space-y-6">
-                <div className="space-y-1.5">
-                  <h2 className="text-xl font-bold text-slate-900 leading-tight">Log in to your account</h2>
-                  <p className="text-slate-400 text-[11px] font-medium">All-in-one tour operator management platform</p>
-                </div>
 
-                {/* Login Type Tab Swapping */}
-                <div className="flex bg-slate-100 rounded-lg p-0.5 w-full">
-                  <button
-                    type="button"
-                    onClick={() => { setLoginType("admin"); setNotification(null); }}
-                    className={`flex-1 text-center py-1.5 text-xs font-semibold rounded transition-all ${loginType === "admin" ? "bg-white shadow-sm text-slate-850" : "text-slate-450"}`}
-                  >
-                    Admin Login
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setLoginType("guide"); setNotification(null); }}
-                    className={`flex-1 text-center py-1.5 text-xs font-semibold rounded transition-all ${loginType === "guide" ? "bg-white shadow-sm text-slate-850" : "text-slate-450"}`}
-                  >
-                    Guide Portal Login
-                  </button>
-                </div>
+        </div>
 
-                {/* Notifications Banner */}
-                {notification && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-[10.5px] font-medium flex items-center justify-between">
-                    <span>{notification}</span>
-                    <button onClick={() => setNotification(null)} className="text-red-400 hover:text-red-700 font-bold">&times;</button>
-                  </div>
-                )}
+        {/* ─── RIGHT FORM PANEL (Crisp White Overlapping Card Layout) ─── */}
+        <div className="lg:col-span-6 bg-white p-8 sm:p-12 md:p-14 flex flex-col justify-between relative">
+          
+          {/* Brand Header */}
+          <div className="text-center space-y-2">
+            <div className="flex justify-center items-center">
+              <img
+                src="/logo.png"
+                alt="YouthCamping Logo"
+                className="h-10 w-auto object-contain"
+              />
+            </div>
+            <div className="inline-block">
+              <span className="text-[10px] font-extrabold tracking-widest text-[#FF5400] bg-orange-50/80 uppercase px-3.5 py-1 rounded-full border border-orange-200/50">
+                ADMIN PORTAL
+              </span>
+            </div>
+          </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {loginType === "admin" ? (
-                    <>
-                      {/* Email */}
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-bold uppercase text-slate-400">Email</Label>
-                        <Input 
-                          type="email" 
-                          value={email} 
-                          onChange={(e) => setEmail(e.target.value)} 
-                          placeholder="you@company.com"
-                          className="h-9.5 text-xs rounded border-slate-200 focus-visible:ring-primary focus-visible:border-primary bg-white"
-                          required 
-                        />
-                      </div>
-
-                      {/* Password */}
-                      <div className="space-y-1">
-                        <Label className="text-[10px] font-bold uppercase text-slate-400">Password</Label>
-                        <div className="relative">
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            placeholder="Enter your password"
-                            className="h-9.5 text-xs rounded border-slate-200 focus-visible:ring-primary focus-visible:border-primary pr-9 bg-white"
-                            required 
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                          >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    /* Guide Login - phone number based */
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-bold uppercase text-slate-450">Registered Phone Number</Label>
-                      <div className="flex h-9.5 rounded border border-slate-200 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
-                        <div className="w-12 h-full bg-slate-50 border-r border-slate-200 flex items-center justify-center text-xs font-black text-slate-400">
-                          +91
-                        </div>
-                        <Input 
-                          type="text" 
-                          value={phone} 
-                          onChange={(e) => setPhone(e.target.value)} 
-                          placeholder="10-digit number"
-                          className="h-full border-none rounded-none flex-1 focus-visible:ring-0 shadow-none pl-3 bg-white"
-                          required 
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400 italic mt-1.5 ml-1">Use the phone number registered in the guide directory.</p>
-                    </div>
-                  )}
-
-                  {/* Helpers row */}
-                  {loginType === "admin" && (
-                    <div className="flex items-center justify-between text-[11px] pt-1">
-                      <label className="flex items-center gap-1.5 font-medium cursor-pointer text-slate-500 hover:text-slate-800">
-                        <input type="checkbox" className="rounded border-slate-300 text-primary focus:ring-primary w-3.5 h-3.5" defaultChecked />
-                        <span>Remember me</span>
-                      </label>
-                      <button 
-                        type="button"
-                        onClick={() => { setView("forgot"); setNotification(null); }}
-                        className="text-primary font-semibold hover:underline"
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Login Button */}
-                  <Button type="submit" className="w-full h-9.5 rounded bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-sm transition-all" disabled={loading}>
-                    {loading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>Log in <ArrowRight className="w-3.5 h-3.5" /></>
-                    )}
-                  </Button>
-                </form>
-
-                {loginType === "admin" && (
-                  <div className="text-center pt-2">
-                    <span className="text-slate-450">Don't have an account? </span>
-                    <a href="#" onClick={(e) => { e.preventDefault(); toast.info("Contact system administrator to request an admin profile."); }} className="text-primary font-semibold hover:underline">
-                      Contact Administrator &rarr;
-                    </a>
-                  </div>
-                )}
+          {view === "login" ? (
+            /* ─── LOGIN FORM VIEW ─── */
+            <div className="space-y-6 my-auto py-4">
+              {/* Heading */}
+              <div className="text-center space-y-1">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Welcome back!
+                </h2>
+                <p className="text-xs font-medium text-slate-500">
+                  Sign in to access the YouthCamping ERP
+                </p>
               </div>
-            ) : (
-              /* ─── FORGOT PASSWORD PANEL VIEW ─── */
-              <div className="space-y-6 animate-fade-in">
-                <div className="space-y-1.5 text-center">
-                  <h2 className="text-xl font-black text-slate-900 leading-tight">Forgot your password?</h2>
-                  <p className="text-slate-400 text-[11px]">We will send you link instructions to reset your password credentials.</p>
+
+              {/* Error Alert */}
+              {errorMessage && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-3 text-xs font-medium flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-bold text-rose-900">Unable to sign in</p>
+                    <p className="text-[11px] text-rose-700 mt-0.5">{errorMessage}</p>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email address */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="admin-email" className="text-xs font-semibold text-slate-700">
+                    Email address
+                  </Label>
+                  <div className="relative flex items-center">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      className="pl-10 h-11 text-xs rounded-xl border-slate-200 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400] bg-white font-medium text-slate-900 placeholder:text-slate-400 shadow-2xs"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                  <form onSubmit={handleForgotPassword} className="space-y-4">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-bold uppercase text-slate-400">Email Address</Label>
-                      <Input 
-                        type="email" 
-                        placeholder="you@company.com"
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        className="h-9 text-xs rounded border-slate-200 bg-white"
-                        required 
-                      />
-                    </div>
-                    <Button type="submit" className="w-full h-9.5 rounded bg-primary hover:bg-primary/90 text-white font-bold text-xs">
-                      Help me via email &rarr;
-                    </Button>
-                  </form>
-                  
-                  <div className="text-center text-[10.5px] border-t border-slate-100 pt-3">
-                    <span className="text-slate-450">Already registered? </span>
-                    <button 
-                      type="button" 
-                      onClick={() => setView("login")} 
-                      className="text-primary font-bold hover:underline"
+                {/* Password */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="admin-password" className="text-xs font-semibold text-slate-700">
+                    Password
+                  </Label>
+                  <div className="relative flex items-center">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <Input
+                      id="admin-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="pl-10 pr-10 h-11 text-xs rounded-xl border-slate-200 focus-visible:ring-[#FF5400] focus-visible:border-[#FF5400] bg-white font-medium text-slate-900 placeholder:text-slate-400 shadow-2xs"
+                      required
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-3.5 text-slate-400 hover:text-slate-700 transition-colors p-1"
                     >
-                      Login now &rarr;
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
 
-                <div className="text-center">
-                  <button 
-                    onClick={() => setView("login")}
-                    className="flex items-center gap-1.5 text-slate-450 hover:text-slate-800 text-[11px] font-semibold mx-auto transition-colors"
+                {/* Remember Me & Forgot Password */}
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-600 select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded border-slate-300 text-[#FF5400] focus:ring-[#FF5400] w-4 h-4 accent-[#FF5400]"
+                    />
+                    <span>Remember me</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setView("forgot");
+                      setErrorMessage(null);
+                    }}
+                    className="text-[#FF5400] font-semibold hover:underline"
                   >
-                    <ChevronLeft className="w-4 h-4" /> Back to login
+                    Forgot password?
                   </button>
                 </div>
+
+                {/* Sign In Button */}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#FF5400] to-[#FF3B00] hover:from-[#E04800] hover:to-[#E03300] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all active:scale-[0.99] disabled:opacity-70 mt-2 cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>SIGNING IN...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>SIGN IN</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </div>
+          ) : (
+            /* ─── FORGOT PASSWORD VIEW ─── */
+            <div className="space-y-6 my-auto py-4 animate-in fade-in">
+              <div className="text-center space-y-1">
+                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Reset password
+                </h2>
+                <p className="text-xs font-medium text-slate-500">
+                  Enter your admin email to receive reset instructions.
+                </p>
               </div>
-            )}
-            
+
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="forgot-email" className="text-xs font-semibold text-slate-700">
+                    Email address
+                  </Label>
+                  <div className="relative flex items-center">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="pl-10 h-11 text-xs rounded-xl border-slate-200 focus-visible:ring-[#FF5400] bg-white font-medium text-slate-900"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#FF5400] to-[#FF3B00] hover:from-[#E04800] hover:to-[#E03300] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <span>SEND RESET INSTRUCTIONS</span>
+                  )}
+                </Button>
+              </form>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setView("login");
+                    setErrorMessage(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#FF5400] transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Back to sign in
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Card Footer Divider & Lock Badge */}
+          <div className="pt-4 space-y-3">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-100" />
+              </div>
+              <div className="relative flex justify-center text-[10.5px]">
+                <span className="bg-white px-3 text-slate-400 font-medium">
+                  Secure access for authorized YouthCamping personnel
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <div className="w-8 h-8 rounded-full bg-orange-50 border border-orange-100 text-[#FF5400] flex items-center justify-center shadow-2xs">
+                <Lock className="w-3.5 h-3.5" />
+              </div>
+            </div>
           </div>
 
-          {/* Developer notes / credentials footer */}
-          <div className="text-center text-[10px] text-slate-400 select-none">
-            🔒 Official credentials verified via system database configurations.
-          </div>
         </div>
-
-        {/* RIGHT COLUMN: Scenic Mountain Cover Pane with What's New Card */}
-        <div 
-          className="hidden md:flex relative bg-cover bg-center items-center justify-center p-8 select-none"
-          style={{ backgroundImage: `url('/login_bg.png')` }}
-        >
-          {/* Cover Dark Glass Overlay */}
-          <div className="absolute inset-0 bg-slate-900/30 backdrop-brightness-95" />
-          
-          {/* "What's New" Glass container */}
-          <div className="relative z-10 bg-slate-950/70 backdrop-blur-md rounded-xl p-8 max-w-sm text-white border border-white/10 shadow-2xl space-y-3.5 transform hover:scale-[1.01] transition-transform duration-300">
-            <span className="text-[9px] font-bold text-primary uppercase tracking-widest block">
-              Guides Operations
-            </span>
-            <h3 className="text-base font-bold tracking-tight text-white leading-tight">
-              Real-time synchronization and live status tracking
-            </h3>
-            <p className="text-[10.5px] text-white/70 leading-relaxed font-medium">
-              Guides can now log in directly from this portal to see assigned assignments, sync booking travelers, record milestone updates, and log trip expenses. Admins receive all logs instantly on their dashboard.
-            </p>
-            <a href="#" onClick={(e) => { e.preventDefault(); toast.info("Guide management portal active."); }} className="text-[10.5px] font-bold text-primary hover:underline flex items-center gap-1 pt-1">
-              Read guide manual &rarr;
-            </a>
-          </div>
-        </div>
-
       </div>
-
-      {/* ─── Bottom strip ─── */}
-      <footer className="bg-white border-t border-slate-200 py-3 text-center text-[10px] text-slate-450 select-none flex items-center justify-center gap-1.5 flex-wrap px-4">
-        <div className="flex gap-0.5 text-amber-400 mr-1">
-          {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
-        </div>
-        <span className="font-bold text-slate-700">Guide Operations Dashboard</span>
-        <span>•</span>
-        <span>Trusted by guides and coordinators across the Himalayas</span>
-        <span>•</span>
-        <span>Made with ❤️ in Goa</span>
-      </footer>
-
     </div>
   );
 }

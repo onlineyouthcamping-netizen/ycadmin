@@ -2,7 +2,12 @@ import api from "./api";
 import type { Inquiry } from "@/types";
 
 export const inquiriesService = {
-  async getAll(filters?: { status?: string; search?: string; page?: number; limit?: number }): Promise<any> {
+  async getAll(filters?: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, val]) => {

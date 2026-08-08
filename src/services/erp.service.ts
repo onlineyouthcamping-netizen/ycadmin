@@ -4,7 +4,7 @@ export interface ErpNotification {
   id: string;
   title: string;
   message: string;
-  priority: 'Low' | 'Medium' | 'High';
+  priority: "Low" | "Medium" | "High";
   module: string;
   link: string;
   read: boolean;
@@ -27,7 +27,7 @@ export interface CompanyDocument {
 export interface RecurringTask {
   id: string;
   title: string;
-  schedule: 'Daily' | 'Weekly' | 'Monthly' | 'Custom';
+  schedule: "Daily" | "Weekly" | "Monthly" | "Custom";
   department: string;
   assignedTo: string;
   dayOfWeek?: string;
@@ -41,7 +41,7 @@ export interface EmployeeMistake {
   employeeId: string;
   employeeName: string;
   date: string;
-  severity: 'Minor' | 'Major' | 'Critical';
+  severity: "Minor" | "Major" | "Critical";
   description: string;
   actionTaken: string;
   managerComment?: string;
@@ -71,7 +71,9 @@ export const erpService = {
     await api.put("/erp/notifications/read-all", { role });
   },
 
-  async searchAll(q: string): Promise<Record<string, { title: string; path: string }[]>> {
+  async searchAll(
+    q: string,
+  ): Promise<Record<string, { title: string; path: string }[]>> {
     const res = await api.get(`/erp/search?q=${encodeURIComponent(q)}`);
     return res.data.data;
   },
@@ -123,5 +125,5 @@ export const erpService = {
   async getCustomerTimeline(id: string): Promise<ActivityLog[]> {
     const res = await api.get(`/erp/customer-timeline/${id}`);
     return res.data.data;
-  }
+  },
 };

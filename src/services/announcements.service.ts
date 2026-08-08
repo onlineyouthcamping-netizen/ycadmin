@@ -16,5 +16,5 @@ export const announcementsService = {
   async create(title: string): Promise<Announcement> {
     const res = await api.post("/announcements", { title });
     return res.data.data;
-  }
+  },
 };

@@ -19,7 +19,15 @@ import {
 import { Button } from "@/components/ui/button";
 
 export interface FrontendSectionDefinition {
-  id: "hero" | "featured_trips" | "destinations" | "recent_photos" | "reviews" | "stories" | "footer" | string;
+  id:
+    | "hero"
+    | "featured_trips"
+    | "destinations"
+    | "recent_photos"
+    | "reviews"
+    | "stories"
+    | "footer"
+    | string;
   name: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -32,22 +40,47 @@ export const FRONTEND_7_SECTIONS: FrontendSectionDefinition[] = [
   {
     id: "hero",
     name: "Hero Section",
-    description: "Full-width hero banner with tagline, heading, background image & month filter bar.",
+    description:
+      "Full-width hero banner with tagline, heading, background image & month filter bar.",
     icon: Layout,
     defaultDraft: {
       tagline: "• EXPLORE. CONNECT. BELONG.",
       headlinePrefix: "Trips for the",
       strikethroughWord: "Ordinary",
-      rotatingWords: ["Curious", "Adventurous", "Wanderlust-Struck", "Colleagues", "Strangers", "Restless"],
-      subheadline: "Pick a month and explore group adventures that bring stories to life.",
-      backgroundImage: "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=1800&q=85",
-      months: ["All", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr"],
+      rotatingWords: [
+        "Curious",
+        "Adventurous",
+        "Wanderlust-Struck",
+        "Colleagues",
+        "Strangers",
+        "Restless",
+      ],
+      subheadline:
+        "Pick a month and explore group adventures that bring stories to life.",
+      backgroundImage:
+        "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=1800&q=85",
+      months: [
+        "All",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+      ],
     },
   },
   {
     id: "featured_trips",
     name: "Upcoming Group Trips",
-    description: "Carousel or grid of trip cards with location badge, duration, price & View Trip CTA.",
+    description:
+      "Carousel or grid of trip cards with location badge, duration, price & View Trip CTA.",
     icon: Megaphone,
     defaultDraft: {
       title: "Upcoming Group Trips",
@@ -60,18 +93,26 @@ export const FRONTEND_7_SECTIONS: FrontendSectionDefinition[] = [
   {
     id: "destinations",
     name: "Popular Destinations",
-    description: "Horizontal carousel of destination cards with portrait images & italic orange heading.",
+    description:
+      "Horizontal carousel of destination cards with portrait images & italic orange heading.",
     icon: Compass,
     defaultDraft: {
       titlePrimary: "Popular",
       titleAccent: "Destinations",
-      selectedDestinations: ["Himachal Pradesh", "Uttarakhand", "Spiti Valley", "Ladakh", "Kerala"],
+      selectedDestinations: [
+        "Himachal Pradesh",
+        "Uttarakhand",
+        "Spiti Valley",
+        "Ladakh",
+        "Kerala",
+      ],
     },
   },
   {
     id: "recent_photos",
     name: "Recent Photos From Our Trips",
-    description: "Masonry or 6-column photo grid showcasing travel memories with lightbox support.",
+    description:
+      "Masonry or 6-column photo grid showcasing travel memories with lightbox support.",
     icon: ImageIcon,
     defaultDraft: {
       titlePrimary: "Recent Photos",
@@ -79,17 +120,34 @@ export const FRONTEND_7_SECTIONS: FrontendSectionDefinition[] = [
       showViewAllLink: true,
       layout: "grid",
       photos: [
-        { id: "p1", src: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800&q=80", caption: "Snow Peak Camp" },
-        { id: "p2", src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80", caption: "Valley Trail" },
-        { id: "p3", src: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80", caption: "Spiti Pass" },
-        { id: "p4", src: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80", caption: "Campfire Night" },
+        {
+          id: "p1",
+          src: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800&q=80",
+          caption: "Snow Peak Camp",
+        },
+        {
+          id: "p2",
+          src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+          caption: "Valley Trail",
+        },
+        {
+          id: "p3",
+          src: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80",
+          caption: "Spiti Pass",
+        },
+        {
+          id: "p4",
+          src: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&q=80",
+          caption: "Campfire Night",
+        },
       ],
     },
   },
   {
     id: "reviews",
     name: "What Travelers Say",
-    description: "Carousel of traveler reviews with avatars, trip links, 5-star rating & Read More.",
+    description:
+      "Carousel of traveler reviews with avatars, trip links, 5-star rating & Read More.",
     icon: MessageSquare,
     defaultDraft: {
       title: "What Travelers Say",
@@ -100,7 +158,8 @@ export const FRONTEND_7_SECTIONS: FrontendSectionDefinition[] = [
   {
     id: "stories",
     name: "Stories From The Road",
-    description: "Story card carousel with cover photo, bookmark icon, author avatar & read time.",
+    description:
+      "Story card carousel with cover photo, bookmark icon, author avatar & read time.",
     icon: BookOpen,
     defaultDraft: {
       titlePrimary: "Stories",
@@ -112,11 +171,13 @@ export const FRONTEND_7_SECTIONS: FrontendSectionDefinition[] = [
   {
     id: "footer",
     name: "Footer",
-    description: "Dark navy footer with logo, address, 3 link columns, newsletter signup & social links.",
+    description:
+      "Dark navy footer with logo, address, 3 link columns, newsletter signup & social links.",
     icon: Layers,
     defaultDraft: {
       logoUrl: "/logo-white.png",
-      address: "Money Plant High Street, A 738, Jagatpur Rd, Gota, Ahmedabad, Gujarat 382470",
+      address:
+        "Money Plant High Street, A 738, Jagatpur Rd, Gota, Ahmedabad, Gujarat 382470",
       quickLinks: [
         { text: "All Trips", url: "/trips" },
         { text: "About Us", url: "/about-us" },
@@ -128,7 +189,8 @@ export const FRONTEND_7_SECTIONS: FrontendSectionDefinition[] = [
         { text: "Privacy Policy", url: "/privacy-policy" },
       ],
       newsletterHeading: "STAY UPDATED",
-      newsletterDescription: "Get travel stories, updates and exclusive offers...",
+      newsletterDescription:
+        "Get travel stories, updates and exclusive offers...",
       socialLinks: {
         instagram: "https://instagram.com/youthcamping",
         facebook: "https://facebook.com/youthcamping",

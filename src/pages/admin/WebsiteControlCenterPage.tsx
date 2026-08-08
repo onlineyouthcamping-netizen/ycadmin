@@ -29,7 +29,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 import api from "@/services/api";
-import { pageBuilderApi, PageSectionConfig } from "@/lib/admin/page-builder-api";
+import {
+  pageBuilderApi,
+  PageSectionConfig,
+} from "@/lib/admin/page-builder-api";
 import { tripsService } from "@/services/trips.service";
 
 import { WebsiteHeader } from "@/components/admin/website/WebsiteHeader";
@@ -49,7 +52,8 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     id: "hero",
     name: "Hero Section",
     badge: "HERO",
-    description: "Main hero banner, tagline, rotating headline & month filter bar.",
+    description:
+      "Main hero banner, tagline, rotating headline & month filter bar.",
     icon: Layout,
     color: "bg-blue-50 text-blue-600 border-blue-100",
   },
@@ -57,7 +61,8 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     id: "featured_trips",
     name: "Upcoming Group Trips",
     badge: "TRIPS",
-    description: "Featured trip cards carousel with duration, price & View Trip CTA.",
+    description:
+      "Featured trip cards carousel with duration, price & View Trip CTA.",
     icon: Megaphone,
     color: "bg-emerald-50 text-emerald-600 border-emerald-100",
   },
@@ -65,7 +70,8 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     id: "destinations",
     name: "Popular Destinations",
     badge: "DESTINATIONS",
-    description: "Portrait photo cards & inquiry popup modal for top locations.",
+    description:
+      "Portrait photo cards & inquiry popup modal for top locations.",
     icon: Compass,
     color: "bg-orange-50 text-[#D4541A] border-orange-100",
   },
@@ -89,7 +95,8 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     id: "stories",
     name: "Stories From The Road",
     badge: "JOURNAL",
-    description: "Blog & travel journal story cards with author avatars & read time.",
+    description:
+      "Blog & travel journal story cards with author avatars & read time.",
     icon: BookOpen,
     color: "bg-indigo-50 text-indigo-600 border-indigo-100",
   },
@@ -109,21 +116,31 @@ export default function WebsiteControlCenterPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
-  const [websiteStatus, setWebsiteStatus] = useState<"live" | "draft" | "review_needed">("live");
+  const [websiteStatus, setWebsiteStatus] = useState<
+    "live" | "draft" | "review_needed"
+  >("live");
   const [lastPublished, setLastPublished] = useState("July 26, 2:30 PM");
 
   const [sections, setSections] = useState<PageSectionConfig[]>([]);
   const [dbTrips, setDbTrips] = useState<any[]>([]);
-  const [focusedSectionType, setFocusedSectionType] = useState<string | null>(null);
+  const [focusedSectionType, setFocusedSectionType] = useState<string | null>(
+    null,
+  );
 
   // Data-driven website pages from DB
-  const { pages: dbPages, loading: pagesLoading, error: pagesError, refetch: refetchPages } = useWebsitePages({ pollInterval: 5000 });
+  const {
+    pages: dbPages,
+    loading: pagesLoading,
+    error: pagesError,
+    refetch: refetchPages,
+  } = useWebsitePages({ pollInterval: 5000 });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPageTitle, setNewPageTitle] = useState("");
   const [newPageSlug, setNewPageSlug] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
+  const frontendUrl =
+    import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
 
   useEffect(() => {
     loadData();
@@ -165,8 +182,13 @@ export default function WebsiteControlCenterPage() {
     }
   };
 
-  const handleSaveFocusedSection = async (sectionId: string, updatedDraft: Record<string, any>) => {
-    let updated = sections.map((s) => (s.id === sectionId ? { ...s, draft: updatedDraft } : s));
+  const handleSaveFocusedSection = async (
+    sectionId: string,
+    updatedDraft: Record<string, any>,
+  ) => {
+    const updated = sections.map((s) =>
+      s.id === sectionId ? { ...s, draft: updatedDraft } : s,
+    );
     if (!sections.some((s) => s.id === sectionId)) {
       const targetType = focusedSectionType || "section";
       updated.push({
@@ -211,7 +233,8 @@ export default function WebsiteControlCenterPage() {
               <span>Homepage Section Editors</span>
             </h2>
             <p className="text-xs text-slate-500 font-medium">
-              Click any section to edit it directly in place without losing your spot
+              Click any section to edit it directly in place without losing your
+              spot
             </p>
           </div>
 
@@ -236,7 +259,9 @@ export default function WebsiteControlCenterPage() {
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className={`w-8 h-8 rounded-xl ${sec.color} flex items-center justify-center border font-bold shrink-0`}>
+                    <div
+                      className={`w-8 h-8 rounded-xl ${sec.color} flex items-center justify-center border font-bold shrink-0`}
+                    >
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase tracking-wider">
@@ -273,7 +298,8 @@ export default function WebsiteControlCenterPage() {
               <span>Website Pages & Sub-Pages ({dbPages.length})</span>
             </h2>
             <p className="text-xs text-slate-500 font-medium">
-              Manage public website routes, landing pages, policy documents and live URLs
+              Manage public website routes, landing pages, policy documents and
+              live URLs
             </p>
           </div>
 
@@ -290,7 +316,9 @@ export default function WebsiteControlCenterPage() {
         {pagesLoading && dbPages.length === 0 && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-[#D4541A]" />
-            <span className="ml-2 text-xs font-bold text-slate-400">Loading pages...</span>
+            <span className="ml-2 text-xs font-bold text-slate-400">
+              Loading pages...
+            </span>
           </div>
         )}
 
@@ -299,7 +327,12 @@ export default function WebsiteControlCenterPage() {
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <AlertCircle className="w-8 h-8 text-red-400" />
             <p className="text-sm font-bold text-red-600">{pagesError}</p>
-            <button onClick={refetchPages} className="text-xs font-bold text-[#D4541A] hover:underline cursor-pointer">Retry</button>
+            <button
+              onClick={refetchPages}
+              className="text-xs font-bold text-[#D4541A] hover:underline cursor-pointer"
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -308,7 +341,9 @@ export default function WebsiteControlCenterPage() {
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <FileText className="w-10 h-10 text-slate-300" />
             <p className="text-sm font-bold text-slate-500">No pages yet</p>
-            <p className="text-xs text-slate-400">Create your first website page to get started</p>
+            <p className="text-xs text-slate-400">
+              Create your first website page to get started
+            </p>
           </div>
         )}
 
@@ -342,13 +377,17 @@ export default function WebsiteControlCenterPage() {
                           : "bg-amber-50 text-amber-700 border-amber-200"
                       }`}
                     >
-                      <CheckCircle2 className={`w-3 h-3 ${isPublished ? "text-emerald-600" : "text-amber-500"}`} />
+                      <CheckCircle2
+                        className={`w-3 h-3 ${isPublished ? "text-emerald-600" : "text-amber-500"}`}
+                      />
                       <span>{isPublished ? "Live" : "Draft"}</span>
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-base font-extrabold text-[#0B1528]">{page.title}</h3>
+                    <h3 className="text-base font-extrabold text-[#0B1528]">
+                      {page.title}
+                    </h3>
                     <p className="text-xs text-slate-400 font-medium mt-1 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       <span>Updated {updatedAt}</span>
@@ -368,7 +407,9 @@ export default function WebsiteControlCenterPage() {
                   </a>
 
                   <button
-                    onClick={() => navigate(`/admin/website/editor/${page.slug}`)}
+                    onClick={() =>
+                      navigate(`/admin/website/editor/${page.slug}`)
+                    }
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-[#0B1528] hover:text-white text-[#0B1528] text-xs font-extrabold rounded-xl transition-all cursor-pointer"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -386,32 +427,54 @@ export default function WebsiteControlCenterPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-5">
             <div>
-              <h3 className="text-lg font-black text-[#0B1528]">Create New Page</h3>
-              <p className="text-xs text-slate-500 font-medium mt-1">Add a new website page that you can edit and publish</p>
+              <h3 className="text-lg font-black text-[#0B1528]">
+                Create New Page
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                Add a new website page that you can edit and publish
+              </p>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Page Title</label>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Page Title
+                </label>
                 <input
                   type="text"
                   value={newPageTitle}
                   onChange={(e) => {
                     setNewPageTitle(e.target.value);
-                    setNewPageSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
+                    setNewPageSlug(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/(^-|-$)/g, ""),
+                    );
                   }}
                   placeholder="e.g. Privacy Policy"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-[#0B1528] placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#D4541A]/30 focus:border-[#D4541A] transition-all"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">URL Slug</label>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  URL Slug
+                </label>
                 <div className="flex items-center">
-                  <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs font-mono text-slate-400">/</span>
+                  <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs font-mono text-slate-400">
+                    /
+                  </span>
                   <input
                     type="text"
                     value={newPageSlug}
-                    onChange={(e) => setNewPageSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-"))}
+                    onChange={(e) =>
+                      setNewPageSlug(
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, "-")
+                          .replace(/-+/g, "-"),
+                      )
+                    }
                     placeholder="privacy-policy"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-r-xl text-sm font-mono font-semibold text-[#0B1528] placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#D4541A]/30 focus:border-[#D4541A] transition-all"
                   />
@@ -421,7 +484,11 @@ export default function WebsiteControlCenterPage() {
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
-                onClick={() => { setShowCreateModal(false); setNewPageTitle(""); setNewPageSlug(""); }}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewPageTitle("");
+                  setNewPageSlug("");
+                }}
                 className="px-4 py-2 text-xs font-extrabold text-slate-600 hover:text-[#0B1528] transition-all cursor-pointer"
               >
                 Cancel
@@ -434,7 +501,8 @@ export default function WebsiteControlCenterPage() {
                   }
                   setCreating(true);
                   try {
-                    const { websiteService } = await import("@/services/website.service");
+                    const { websiteService } =
+                      await import("@/services/website.service");
                     await websiteService.createPage({
                       title: newPageTitle.trim(),
                       slug: newPageSlug.trim(),
@@ -447,12 +515,16 @@ export default function WebsiteControlCenterPage() {
                     setNewPageSlug("");
                     refetchPages();
                   } catch (err: any) {
-                    toast.error(err?.response?.data?.message || "Failed to create page");
+                    toast.error(
+                      err?.response?.data?.message || "Failed to create page",
+                    );
                   } finally {
                     setCreating(false);
                   }
                 }}
-                disabled={creating || !newPageTitle.trim() || !newPageSlug.trim()}
+                disabled={
+                  creating || !newPageTitle.trim() || !newPageSlug.trim()
+                }
                 className={`inline-flex items-center gap-1.5 px-5 py-2 text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-sm ${
                   creating || !newPageTitle.trim()
                     ? "bg-slate-200 text-slate-400 cursor-not-allowed"
@@ -481,7 +553,9 @@ export default function WebsiteControlCenterPage() {
             <h4 className="text-sm font-extrabold text-[#0B1528] group-hover:text-blue-600 transition-colors">
               SEO & Meta Tags
             </h4>
-            <p className="text-xs text-slate-500 font-medium">Search titles, meta descriptions & OG tags</p>
+            <p className="text-xs text-slate-500 font-medium">
+              Search titles, meta descriptions & OG tags
+            </p>
           </div>
         </div>
 
@@ -497,7 +571,9 @@ export default function WebsiteControlCenterPage() {
             <h4 className="text-sm font-extrabold text-[#0B1528] group-hover:text-emerald-600 transition-colors">
               Flush & Sync Cache
             </h4>
-            <p className="text-xs text-slate-500 font-medium">Instant edge revalidation to live site</p>
+            <p className="text-xs text-slate-500 font-medium">
+              Instant edge revalidation to live site
+            </p>
           </div>
         </div>
       </div>

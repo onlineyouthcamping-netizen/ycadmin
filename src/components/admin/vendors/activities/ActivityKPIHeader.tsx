@@ -1,5 +1,12 @@
 import React from "react";
-import { Activity, DollarSign, TrendingUp, AlertCircle, Users, CreditCard } from "lucide-react";
+import {
+  Activity,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  Users,
+  CreditCard,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ActivityKPIProps {
@@ -23,9 +30,10 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
     grossProfit: 0,
   };
 
-  const margin = data.totalRevenue > 0
-    ? Math.round((data.grossProfit / data.totalRevenue) * 100)
-    : 0;
+  const margin =
+    data.totalRevenue > 0
+      ? Math.round((data.grossProfit / data.totalRevenue) * 100)
+      : 0;
 
   const kpis = [
     {
@@ -99,9 +107,7 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
               <div className="text-xl font-bold text-slate-900 tracking-tight">
                 {kpi.value}
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {kpi.subtext}
-              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5">{kpi.subtext}</p>
             </div>
           </div>
         );

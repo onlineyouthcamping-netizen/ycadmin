@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AdminPageContainer } from "@/components/admin/layout/AdminPageContainer";
-import { SETTINGS_TABS, SettingsTabId, isTabVisible } from "./settings/constants/tabs";
 import { MyAccountTab } from "./settings/MyAccountTab";
-import { UINotificationsTab } from "./settings/UINotificationsTab";
 import { SecurityPasswordTab } from "./settings/SecurityPasswordTab";
-import { ConnectedDevicesTab } from "./settings/ConnectedDevicesTab";
-import { PreferencesTab } from "./settings/PreferencesTab";
-import { AuditActivityTab } from "./settings/AuditActivityTab";
-import { APIKeysTab } from "./settings/APIKeysTab";
-import { DataPrivacyTab } from "./settings/DataPrivacyTab";
-import { BillingTab } from "./settings/BillingTab";
-import { IntegrationsTab } from "./settings/IntegrationsTab";
 import { settingsService } from "@/services/settings.service";
 import { useAuthStore } from "@/store/auth.store";
 import { Admin } from "@/types";
-import { Loader2, Settings, Save, RotateCcw } from "lucide-react";
+import { Loader2, Save, RotateCcw, User, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+
+type SettingsTabId = "account" | "security";
+
+const SETTINGS_TABS = [
+  { id: "account", label: "My Profile", icon: User },
+  { id: "security", label: "Security & Password", icon: Shield },
+];
 
 export default function SettingsPage() {
   const { admin: authAdmin } = useAuthStore();
@@ -42,7 +40,7 @@ export default function SettingsPage() {
       setActiveTab(tabParam);
     } else if (path.includes("security") || path.includes("change-password")) {
       setActiveTab("security");
-    } else if (path.includes("profile")) {
+    } else if (path.includes("profile") || path.includes("my-profile")) {
       setActiveTab("account");
     } else {
       setActiveTab("account");
@@ -77,15 +75,13 @@ export default function SettingsPage() {
       <AdminPageContainer fullWidth={true}>
         <div className="h-96 flex items-center justify-center space-x-2 text-slate-400">
           <Loader2 className="w-6 h-6 animate-spin text-[#F97316]" />
-          <span className="text-sm font-semibold">Loading YouthCamping OS Settings...</span>
+          <span className="text-sm font-semibold">
+            Loading YouthCamping OS Settings...
+          </span>
         </div>
       </AdminPageContainer>
     );
   }
-
-  const role = profile.role || authAdmin?.role || "admin";
-  const email = profile.email || authAdmin?.email || "";
-  const visibleTabs = SETTINGS_TABS.filter((t) => isTabVisible(t, role, email));
 
   return (
     <AdminPageContainer fullWidth={true}>
@@ -96,7 +92,7 @@ export default function SettingsPage() {
             Settings & System Preferences
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
-            Manage your account, UI themes, security, connected devices, and system defaults.
+            Manage your account and security settings.
           </p>
         </div>
 
@@ -116,7 +112,9 @@ export default function SettingsPage() {
             type="button"
             onClick={() => {
               // Trigger click on tab form submit or refresh
-              const submitBtn = document.getElementById("settings-tab-save-btn");
+              const submitBtn = document.getElementById(
+                "settings-tab-save-btn",
+              );
               if (submitBtn) {
                 submitBtn.click();
               } else {
@@ -134,21 +132,23 @@ export default function SettingsPage() {
       {/* ─── Top Tab Navigation Bar (Horizontal desktop, scrollable mobile) ─── */}
       <div className="bg-white rounded-[16px] border border-slate-200/80 shadow-xs mb-6 overflow-x-auto no-scrollbar">
         <div className="flex items-center flex-nowrap min-w-max px-3 border-b border-slate-100">
-          {visibleTabs.map((tab) => {
+          {SETTINGS_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => handleTabChange(tab.id)}
+                onClick={() => handleTabChange(tab.id as SettingsTabId)}
                 className={`flex items-center gap-2 px-4 py-3.5 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
                   isActive
                     ? "border-[#F97316] text-[#F97316] bg-orange-50/50"
                     : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50/60"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-[#F97316]" : "text-slate-400"}`} />
+                <Icon
+                  className={`w-4 h-4 ${isActive ? "text-[#F97316]" : "text-slate-400"}`}
+                />
                 <span>{tab.label}</span>
               </button>
             );
@@ -158,16 +158,12 @@ export default function SettingsPage() {
 
       {/* ─── Active Tab Section Module ─── */}
       <div className="transition-all">
-        {activeTab === "account" && <MyAccountTab profile={profile} onRefresh={fetchProfile} />}
-        {activeTab === "ui-notifications" && <UINotificationsTab profile={profile} onRefresh={fetchProfile} />}
-        {activeTab === "security" && <SecurityPasswordTab profile={profile} onRefresh={fetchProfile} />}
-        {activeTab === "devices" && <ConnectedDevicesTab />}
-        {activeTab === "preferences" && <PreferencesTab profile={profile} onRefresh={fetchProfile} />}
-        {activeTab === "audit" && <AuditActivityTab />}
-        {activeTab === "api-keys" && <APIKeysTab />}
-        {activeTab === "privacy" && <DataPrivacyTab profile={profile} onRefresh={fetchProfile} />}
-        {activeTab === "billing" && <BillingTab />}
-        {activeTab === "integrations" && <IntegrationsTab />}
+        {activeTab === "account" && (
+          <MyAccountTab profile={profile} onRefresh={fetchProfile} />
+        )}
+        {activeTab === "security" && (
+          <SecurityPasswordTab profile={profile} onRefresh={fetchProfile} />
+        )}
       </div>
     </AdminPageContainer>
   );

@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
-import { Eye, Download, Trash2, FileText, CheckCircle2, Clock, XCircle } from 'lucide-react';
-import DocumentViewer from './DocumentViewer';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import {
+  Eye,
+  Download,
+  Trash2,
+  FileText,
+  CheckCircle2,
+  Clock,
+  XCircle,
+} from "lucide-react";
+import DocumentViewer from "./DocumentViewer";
+import { cn } from "@/lib/utils";
 
 export interface DocumentItem {
   id: string;
@@ -32,7 +40,10 @@ export interface DocumentListProps {
   onRefresh?: () => void;
 }
 
-export const DocumentList: React.FC<DocumentListProps> = ({ documents, onDelete }) => {
+export const DocumentList: React.FC<DocumentListProps> = ({
+  documents,
+  onDelete,
+}) => {
   const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false);
 
@@ -42,17 +53,17 @@ export const DocumentList: React.FC<DocumentListProps> = ({ documents, onDelete 
   };
 
   const handleDownload = (fileUrl: string, fileName?: string) => {
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = fileUrl;
-    link.download = fileName || 'document';
-    link.target = '_blank';
+    link.download = fileName || "document";
+    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this document?')) {
+    if (confirm("Are you sure you want to delete this document?")) {
       if (onDelete) {
         onDelete(id);
       }
@@ -61,16 +72,28 @@ export const DocumentList: React.FC<DocumentListProps> = ({ documents, onDelete 
 
   const getStatusConfig = (status?: string) => {
     switch (status) {
-      case 'APPROVED':
-      case 'published':
-        return { color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: CheckCircle2 };
-      case 'UNDER_REVIEW':
-      case 'draft':
-        return { color: 'text-amber-700 bg-amber-50 border-amber-200', icon: Clock };
-      case 'REJECTED':
-        return { color: 'text-rose-700 bg-rose-50 border-rose-200', icon: XCircle };
+      case "APPROVED":
+      case "published":
+        return {
+          color: "text-emerald-700 bg-emerald-50 border-emerald-200",
+          icon: CheckCircle2,
+        };
+      case "UNDER_REVIEW":
+      case "draft":
+        return {
+          color: "text-amber-700 bg-amber-50 border-amber-200",
+          icon: Clock,
+        };
+      case "REJECTED":
+        return {
+          color: "text-rose-700 bg-rose-50 border-rose-200",
+          icon: XCircle,
+        };
       default:
-        return { color: 'text-slate-700 bg-slate-50 border-slate-200', icon: FileText };
+        return {
+          color: "text-slate-700 bg-slate-50 border-slate-200",
+          icon: FileText,
+        };
     }
   };
 
@@ -79,7 +102,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({ documents, onDelete 
       <div className="p-12 text-center border border-slate-200 rounded-xl bg-slate-50/40 space-y-2">
         <FileText className="w-10 h-10 text-slate-300 mx-auto" />
         <h4 className="text-xs font-bold text-slate-700">No documents found</h4>
-        <p className="text-[11px] text-slate-400 font-medium">No documents have been uploaded for this trip yet.</p>
+        <p className="text-[11px] text-slate-400 font-medium">
+          No documents have been uploaded for this trip yet.
+        </p>
       </div>
     );
   }
@@ -101,39 +126,64 @@ export const DocumentList: React.FC<DocumentListProps> = ({ documents, onDelete 
             </thead>
             <tbody className="text-sm font-semibold text-slate-700 divide-y divide-slate-100">
               {documents.map((doc) => {
-                const docTitle = doc.title || doc.name || doc.fileName || 'Untitled Document';
+                const docTitle =
+                  doc.title || doc.name || doc.fileName || "Untitled Document";
                 const statusConfig = getStatusConfig(doc.status);
                 const StatusIcon = statusConfig.icon;
-                const formattedDate = doc.createdAt || doc.dateAdded 
-                  ? new Date(doc.createdAt || doc.dateAdded!).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                  : 'N/A';
+                const formattedDate =
+                  doc.createdAt || doc.dateAdded
+                    ? new Date(
+                        doc.createdAt || doc.dateAdded!,
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "N/A";
 
                 return (
-                  <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+                  <tr
+                    key={doc.id}
+                    className="hover:bg-slate-50 transition-colors"
+                  >
                     <td className="p-4 pl-6">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-orange-50 text-[#F97316] flex items-center justify-center shrink-0">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>
-                          <p className="text-slate-800 font-bold text-xs">{docTitle}</p>
+                          <p className="text-slate-800 font-bold text-xs">
+                            {docTitle}
+                          </p>
                           <p className="text-[11px] text-slate-400 font-normal mt-0.5">
-                            v{doc.version || 1} • {doc.size || (doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : 'N/A')}
+                            v{doc.version || 1} •{" "}
+                            {doc.size ||
+                              (doc.fileSize
+                                ? `${(doc.fileSize / 1024).toFixed(1)} KB`
+                                : "N/A")}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="p-4 text-xs font-bold text-slate-600 uppercase">
-                      {doc.category || 'Other'}
+                      {doc.category || "Other"}
                     </td>
                     <td className="p-4">
-                      <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border", statusConfig.color)}>
+                      <div
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border",
+                          statusConfig.color,
+                        )}
+                      >
                         <StatusIcon className="w-3 h-3" />
-                        {doc.status || 'published'}
+                        {doc.status || "published"}
                       </div>
                     </td>
                     <td className="p-4 text-xs text-slate-500 font-medium">
-                      {doc.uploader?.name || doc.uploadedBy || doc.addedBy || 'System'}
+                      {doc.uploader?.name ||
+                        doc.uploadedBy ||
+                        doc.addedBy ||
+                        "System"}
                     </td>
                     <td className="p-4 text-xs text-slate-500 font-medium">
                       {formattedDate}

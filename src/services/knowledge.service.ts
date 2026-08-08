@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 export interface KnowledgeSection {
   id: string;
@@ -38,20 +38,20 @@ export const knowledgeService = {
   // Navigation persistence state in DB
   getNavState: async (): Promise<string | null> => {
     try {
-      const res = await api.get('/knowledge/nav-state');
+      const res = await api.get("/knowledge/nav-state");
       return res.data.success ? res.data.data : null;
     } catch (e) {
-      console.error('Failed to get nav state from DB:', e);
+      console.error("Failed to get nav state from DB:", e);
       return null;
     }
   },
 
   saveNavState: async (expandedModule: string): Promise<boolean> => {
     try {
-      const res = await api.post('/knowledge/nav-state', { expandedModule });
+      const res = await api.post("/knowledge/nav-state", { expandedModule });
       return res.data.success;
     } catch (e) {
-      console.error('Failed to save nav state to DB:', e);
+      console.error("Failed to save nav state to DB:", e);
       return false;
     }
   },
@@ -62,7 +62,7 @@ export const knowledgeService = {
       const res = await api.get(`/knowledge/sections/${tripId}`);
       return res.data.success ? res.data.data : [];
     } catch (e) {
-      console.error('Failed to fetch sections:', e);
+      console.error("Failed to fetch sections:", e);
       return [];
     }
   },
@@ -73,7 +73,7 @@ export const knowledgeService = {
       const res = await api.get(`/knowledge/notices/${tripId}`);
       return res.data.success ? res.data.data : [];
     } catch (e) {
-      console.error('Failed to fetch notices:', e);
+      console.error("Failed to fetch notices:", e);
       return [];
     }
   },
@@ -81,34 +81,47 @@ export const knowledgeService = {
   // Search knowledge base
   search: async (query: string): Promise<SearchResult> => {
     try {
-      const res = await api.get(`/knowledge/search?q=${encodeURIComponent(query)}`);
-      return res.data.success ? res.data.data : { trips: [], sections: [], notices: [], vendors: [] };
+      const res = await api.get(
+        `/knowledge/search?q=${encodeURIComponent(query)}`,
+      );
+      return res.data.success
+        ? res.data.data
+        : { trips: [], sections: [], notices: [], vendors: [] };
     } catch (e) {
-      console.error('Failed to search knowledge base:', e);
+      console.error("Failed to search knowledge base:", e);
       return { trips: [], sections: [], notices: [], vendors: [] };
     }
   },
 
   // Create or Update section
-  upsertSection: async (data: { tripId: string; tabKey: string; title: string; description: string; itemCount: number }): Promise<KnowledgeSection | null> => {
+  upsertSection: async (data: {
+    tripId: string;
+    tabKey: string;
+    title: string;
+    description: string;
+    itemCount: number;
+  }): Promise<KnowledgeSection | null> => {
     try {
-      const res = await api.post('/knowledge/sections', data);
+      const res = await api.post("/knowledge/sections", data);
       return res.data.success ? res.data.data : null;
     } catch (e) {
-      console.error('Failed to upsert section:', e);
+      console.error("Failed to upsert section:", e);
       return null;
     }
   },
 
   // Create notice
-  createNotice: async (data: { tripId: string; title: string; body: string }): Promise<TripNotice | null> => {
+  createNotice: async (data: {
+    tripId: string;
+    title: string;
+    body: string;
+  }): Promise<TripNotice | null> => {
     try {
-      const res = await api.post('/knowledge/notices', data);
+      const res = await api.post("/knowledge/notices", data);
       return res.data.success ? res.data.data : null;
     } catch (e) {
-      console.error('Failed to create notice:', e);
+      console.error("Failed to create notice:", e);
       return null;
     }
-  }
+  },
 };
-

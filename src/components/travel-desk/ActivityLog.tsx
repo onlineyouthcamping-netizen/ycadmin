@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import api from '../../services/api';
-import { formatDistanceToNow } from 'date-fns';
-import { 
-  PlusCircle, Edit3, CheckCircle2, Trash2, UploadCloud, 
-  History, Filter, AlertCircle, User, ChevronDown
-} from 'lucide-react';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../services/api";
+import { formatDistanceToNow } from "date-fns";
+import {
+  PlusCircle,
+  Edit3,
+  CheckCircle2,
+  Trash2,
+  UploadCloud,
+  History,
+  Filter,
+  AlertCircle,
+  User,
+  ChevronDown,
+} from "lucide-react";
 
 export interface ActivityLogEntry {
   id: string;
   tripId: string;
-  action: 'create' | 'edit' | 'publish' | 'delete' | 'upload' | string;
+  action: "create" | "edit" | "publish" | "delete" | "upload" | string;
   section: string;
   itemId?: string;
   changes?: any;
@@ -29,34 +37,28 @@ export interface ActivityLogProps {
 }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
-  const [filterAction, setFilterAction] = useState<string>('all');
-  const [filterSection, setFilterSection] = useState<string>('all');
+  const [filterAction, setFilterAction] = useState<string>("all");
+  const [filterSection, setFilterSection] = useState<string>("all");
   const [limit, setLimit] = useState<number>(20);
 
   // Fetch Activity Log Query
-  const {
-    data,
-    isLoading,
-    isError,
-    isFetching,
-    refetch
-  } = useQuery({
-    queryKey: ['trip-activity-log', tripId, filterAction, filterSection, limit],
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
+    queryKey: ["trip-activity-log", tripId, filterAction, filterSection, limit],
     queryFn: async () => {
       let url = `/trips/${tripId}/activity?limit=${limit}`;
-      if (filterAction !== 'all') {
+      if (filterAction !== "all") {
         url += `&action=${filterAction}`;
       }
-      if (filterSection !== 'all') {
+      if (filterSection !== "all") {
         url += `&section=${filterSection}`;
       }
       const res = await api.get(url);
       return {
         activities: (res.data?.data?.activities || []) as ActivityLogEntry[],
-        total: res.data?.data?.total || 0
+        total: res.data?.data?.total || 0,
       };
     },
-    enabled: !!tripId
+    enabled: !!tripId,
   });
 
   const activitiesList = data?.activities || [];
@@ -65,54 +67,54 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
 
   const getActionConfig = (action: string) => {
     switch (action.toLowerCase()) {
-      case 'create':
+      case "create":
         return {
-          label: 'Create',
-          badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+          label: "Create",
+          badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
           icon: PlusCircle,
-          iconColor: 'text-blue-600'
+          iconColor: "text-blue-600",
         };
-      case 'edit':
+      case "edit":
         return {
-          label: 'Edit',
-          badgeClass: 'bg-orange-50 text-orange-700 border-orange-200',
+          label: "Edit",
+          badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
           icon: Edit3,
-          iconColor: 'text-[#F97316]'
+          iconColor: "text-[#F97316]",
         };
-      case 'publish':
+      case "publish":
         return {
-          label: 'Publish',
-          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          label: "Publish",
+          badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
           icon: CheckCircle2,
-          iconColor: 'text-emerald-600'
+          iconColor: "text-emerald-600",
         };
-      case 'delete':
+      case "delete":
         return {
-          label: 'Delete',
-          badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+          label: "Delete",
+          badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
           icon: Trash2,
-          iconColor: 'text-rose-600'
+          iconColor: "text-rose-600",
         };
-      case 'upload':
+      case "upload":
         return {
-          label: 'Upload',
-          badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
+          label: "Upload",
+          badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
           icon: UploadCloud,
-          iconColor: 'text-purple-600'
+          iconColor: "text-purple-600",
         };
       default:
         return {
           label: action,
-          badgeClass: 'bg-slate-50 text-slate-700 border-slate-200',
+          badgeClass: "bg-slate-50 text-slate-700 border-slate-200",
           icon: History,
-          iconColor: 'text-slate-600'
+          iconColor: "text-slate-600",
         };
     }
   };
 
   // Diff Preview Helper
   const renderDiffPreview = (changes: any) => {
-    if (!changes || typeof changes !== 'object') return null;
+    if (!changes || typeof changes !== "object") return null;
 
     if (changes.before && changes.after) {
       return (
@@ -124,8 +126,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
               return (
                 <div key={key} className="space-y-0.5">
                   <span className="font-bold text-slate-500">{key}:</span>
-                  <div className="text-rose-600 line-through pl-2">- {String(beforeVal ?? 'null')}</div>
-                  <div className="text-emerald-600 font-bold pl-2">+ {String(afterVal ?? 'null')}</div>
+                  <div className="text-rose-600 line-through pl-2">
+                    - {String(beforeVal ?? "null")}
+                  </div>
+                  <div className="text-emerald-600 font-bold pl-2">
+                    + {String(afterVal ?? "null")}
+                  </div>
                 </div>
               );
             }
@@ -139,8 +145,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
     return (
       <div className="mt-1.5 text-[11px] text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5">
         {Object.entries(changes).map(([k, v]) => (
-          <span key={k} className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
-            <strong className="text-slate-700">{k}:</strong> {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+          <span
+            key={k}
+            className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]"
+          >
+            <strong className="text-slate-700">{k}:</strong>{" "}
+            {typeof v === "object" ? JSON.stringify(v) : String(v)}
           </span>
         ))}
       </div>
@@ -156,8 +166,13 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
             <History className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-black text-[#0A192F]">Trip Audit Activity Log</h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Chronological audit trail of all changes, uploads, and publications</p>
+            <h2 className="text-base font-black text-[#0A192F]">
+              Trip Audit Activity Log
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Chronological audit trail of all changes, uploads, and
+              publications
+            </p>
           </div>
         </div>
 
@@ -165,7 +180,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-bold text-slate-500 text-[11px] uppercase">Action:</span>
+            <span className="font-bold text-slate-500 text-[11px] uppercase">
+              Action:
+            </span>
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
@@ -185,20 +202,31 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
       {/* ─── Activity Log Timeline List ─── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <span className="text-xs font-bold text-slate-700">Showing {activitiesList.length} of {total} entries</span>
-          {isFetching && <span className="text-[11px] text-[#F97316] font-bold animate-pulse">Refreshing...</span>}
+          <span className="text-xs font-bold text-slate-700">
+            Showing {activitiesList.length} of {total} entries
+          </span>
+          {isFetching && (
+            <span className="text-[11px] text-[#F97316] font-bold animate-pulse">
+              Refreshing...
+            </span>
+          )}
         </div>
 
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-16 bg-slate-50 rounded-xl border border-slate-100 animate-pulse"></div>
+              <div
+                key={i}
+                className="h-16 bg-slate-50 rounded-xl border border-slate-100 animate-pulse"
+              ></div>
             ))}
           </div>
         ) : isError ? (
           <div className="p-8 text-center border border-rose-200 rounded-xl bg-rose-50/20 space-y-2">
             <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
-            <p className="text-xs font-bold text-slate-800">Failed to load activity log</p>
+            <p className="text-xs font-bold text-slate-800">
+              Failed to load activity log
+            </p>
             <button
               onClick={() => refetch()}
               className="px-3.5 py-1.5 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700"
@@ -209,17 +237,24 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
         ) : activitiesList.length === 0 ? (
           <div className="p-12 text-center border border-slate-200 rounded-xl bg-slate-50/40 space-y-2">
             <History className="w-10 h-10 text-slate-300 mx-auto" />
-            <h4 className="text-xs font-bold text-slate-700">No activity recorded yet</h4>
-            <p className="text-[11px] text-slate-400 font-medium">Actions like adding knowledge items, uploading documents, or editing SOPs will appear here.</p>
+            <h4 className="text-xs font-bold text-slate-700">
+              No activity recorded yet
+            </h4>
+            <p className="text-[11px] text-slate-400 font-medium">
+              Actions like adding knowledge items, uploading documents, or
+              editing SOPs will appear here.
+            </p>
           </div>
         ) : (
           <div className="relative pl-4 sm:pl-6 border-l-2 border-slate-200 space-y-6">
             {activitiesList.map((entry) => {
               const config = getActionConfig(entry.action);
               const ActionIcon = config.icon;
-              const formattedDate = entry.createdAt 
-                ? formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })
-                : 'Just now';
+              const formattedDate = entry.createdAt
+                ? formatDistanceToNow(new Date(entry.createdAt), {
+                    addSuffix: true,
+                  })
+                : "Just now";
 
               return (
                 <div key={entry.id} className="relative group">
@@ -232,11 +267,13 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
                   <div className="bg-slate-50/60 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-4 transition-all space-y-2">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${config.badgeClass}`}>
+                        <span
+                          className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${config.badgeClass}`}
+                        >
                           {config.label}
                         </span>
                         <span className="text-xs font-bold text-slate-900">
-                          {entry.section.replace('_', ' ').toUpperCase()}
+                          {entry.section.replace("_", " ").toUpperCase()}
                         </span>
                         {entry.changes?.title || entry.changes?.fileName ? (
                           <span className="text-xs font-medium text-slate-600">
@@ -253,7 +290,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
                     {/* Actor details */}
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                       <User className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Performed by <strong className="text-slate-800 font-bold">{entry.actor?.name || entry.performedBy}</strong></span>
+                      <span>
+                        Performed by{" "}
+                        <strong className="text-slate-800 font-bold">
+                          {entry.actor?.name || entry.performedBy}
+                        </strong>
+                      </span>
                     </div>
 
                     {/* Diff Preview */}

@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { useAuth } from './AuthContext';
-import { rbacService, UserAccessDetails } from '@/services/rbac.service';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
+import { useAuth } from "./AuthContext";
+import { rbacService, UserAccessDetails } from "@/services/rbac.service";
 
 interface PermissionContextType {
   userPermissions: string[];
@@ -13,12 +19,17 @@ interface PermissionContextType {
   refreshPermissions: () => Promise<void>;
 }
 
-const PermissionContext = createContext<PermissionContextType | undefined>(undefined);
+const PermissionContext = createContext<PermissionContextType | undefined>(
+  undefined,
+);
 
-export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { currentAdmin } = useAuth();
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
-  const [userAccessDetails, setUserAccessDetails] = useState<UserAccessDetails | null>(null);
+  const [userAccessDetails, setUserAccessDetails] =
+    useState<UserAccessDetails | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refreshPermissions = async () => {
@@ -31,12 +42,16 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     try {
       setIsLoading(true);
-      const accessDetails = await rbacService.getUserAccessDetails(currentAdmin.id);
+      const accessDetails = await rbacService.getUserAccessDetails(
+        currentAdmin.id,
+      );
       setUserAccessDetails(accessDetails);
       setUserPermissions(accessDetails.effectivePermissions || []);
     } catch (err) {
       // Fallback permission calculation from AuthContext currentAdmin role
-      const tokenPerms = Array.isArray((currentAdmin as any)?.permissions) ? (currentAdmin as any).permissions : [];
+      const tokenPerms = Array.isArray((currentAdmin as any)?.permissions)
+        ? (currentAdmin as any).permissions
+        : [];
       const custom = (currentAdmin as any)?.customPermissions || [];
       const unionSet = new Set([...tokenPerms, ...custom]);
       setUserPermissions(Array.from(unionSet));
@@ -50,7 +65,8 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [currentAdmin?.id, currentAdmin?.role]);
 
   const value = useMemo(() => {
-    const isSuperAdmin = (currentAdmin?.role || '').toLowerCase() === 'superadmin';
+    const isSuperAdmin =
+      (currentAdmin?.role || "").toLowerCase() === "superadmin";
 
     const hasPermission = (required: string): boolean => {
       if (isSuperAdmin) return true;
@@ -59,12 +75,12 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const hasAnyPermission = (requiredList: string[]): boolean => {
       if (isSuperAdmin) return true;
-      return requiredList.some(req => userPermissions.includes(req));
+      return requiredList.some((req) => userPermissions.includes(req));
     };
 
     const hasAllPermissions = (requiredList: string[]): boolean => {
       if (isSuperAdmin) return true;
-      return requiredList.every(req => userPermissions.includes(req));
+      return requiredList.every((req) => userPermissions.includes(req));
     };
 
     const can = (action: string): boolean => {
@@ -79,7 +95,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       hasAnyPermission,
       hasAllPermissions,
       can,
-      refreshPermissions
+      refreshPermissions,
     };
   }, [userPermissions, isLoading, userAccessDetails, currentAdmin?.role]);
 
@@ -93,7 +109,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 export const usePermission = (): PermissionContextType => {
   const context = useContext(PermissionContext);
   if (!context) {
-    throw new Error('usePermission must be used within a PermissionProvider');
+    throw new Error("usePermission must be used within a PermissionProvider");
   }
   return context;
 };

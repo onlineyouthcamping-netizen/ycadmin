@@ -1,8 +1,25 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { 
-  Users, Calendar, User, Compass, Download, FileText, 
-  ClipboardList, CheckCircle2, MessageSquare, ChevronDown, Info, Search, 
-  X, Printer, Bed, Bus, Sliders, FileSpreadsheet, ClipboardCheck, Check
+import {
+  Users,
+  Calendar,
+  User,
+  Compass,
+  Download,
+  FileText,
+  ClipboardList,
+  CheckCircle2,
+  MessageSquare,
+  ChevronDown,
+  Info,
+  Search,
+  X,
+  Printer,
+  Bed,
+  Bus,
+  Sliders,
+  FileSpreadsheet,
+  ClipboardCheck,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/services/api";
@@ -11,66 +28,376 @@ import { Button } from "@/components/ui/button";
 
 // Static categories and field definitions for reports
 const reportTypes = [
-  { icon: Users, label: "Passenger List", description: "List of all passengers with details", id: "passenger_list", color: "indigo" },
-  { icon: FileText, label: "Payment Report", description: "All payments received and pending", id: "payment_report", color: "emerald" },
-  { icon: ClipboardList, label: "Accounts Report", description: "Revenue, expenses & profit details", id: "accounts_report", color: "blue" },
-  { icon: Download, label: "Vendor Payments", description: "Payments made to all vendors", id: "vendor_payments", color: "teal" },
-  { icon: Bed, label: "Hotel Report", description: "Hotel bookings and payments", id: "hotel_report", color: "amber" },
-  { icon: Bus, label: "Transport Report", description: "Vehicle, driver and transport details", id: "transport_report", color: "green" },
-  { icon: User, label: "Guide Report", description: "Guide allocation and payments", id: "guide_report", color: "rose" },
-  { icon: CheckCircle2, label: "Activity Report", description: "Activities list and payments", id: "activity_report", color: "orange" },
-  { icon: FileSpreadsheet, label: "Document Report", description: "Documents checklist and status", id: "document_report", color: "sky" },
-  { icon: ClipboardCheck, label: "Task Report", description: "Tasks status and assigned to", id: "task_report", color: "violet" },
-  { icon: MessageSquare, label: "Communication Report", description: "Messages and announcements", id: "communication_report", color: "fuchsia" },
-  { icon: Sliders, label: "Other / Custom", description: "Build your own report", id: "custom_report", color: "slate" },
+  {
+    icon: Users,
+    label: "Passenger List",
+    description: "List of all passengers with details",
+    id: "passenger_list",
+    color: "indigo",
+  },
+  {
+    icon: FileText,
+    label: "Payment Report",
+    description: "All payments received and pending",
+    id: "payment_report",
+    color: "emerald",
+  },
+  {
+    icon: ClipboardList,
+    label: "Accounts Report",
+    description: "Revenue, expenses & profit details",
+    id: "accounts_report",
+    color: "blue",
+  },
+  {
+    icon: Download,
+    label: "Vendor Payments",
+    description: "Payments made to all vendors",
+    id: "vendor_payments",
+    color: "teal",
+  },
+  {
+    icon: Bed,
+    label: "Hotel Report",
+    description: "Hotel bookings and payments",
+    id: "hotel_report",
+    color: "amber",
+  },
+  {
+    icon: Bus,
+    label: "Transport Report",
+    description: "Vehicle, driver and transport details",
+    id: "transport_report",
+    color: "green",
+  },
+  {
+    icon: User,
+    label: "Guide Report",
+    description: "Guide allocation and payments",
+    id: "guide_report",
+    color: "rose",
+  },
+  {
+    icon: CheckCircle2,
+    label: "Activity Report",
+    description: "Activities list and payments",
+    id: "activity_report",
+    color: "orange",
+  },
+  {
+    icon: FileSpreadsheet,
+    label: "Document Report",
+    description: "Documents checklist and status",
+    id: "document_report",
+    color: "sky",
+  },
+  {
+    icon: ClipboardCheck,
+    label: "Task Report",
+    description: "Tasks status and assigned to",
+    id: "task_report",
+    color: "violet",
+  },
+  {
+    icon: MessageSquare,
+    label: "Communication Report",
+    description: "Messages and announcements",
+    id: "communication_report",
+    color: "fuchsia",
+  },
+  {
+    icon: Sliders,
+    label: "Other / Custom",
+    description: "Build your own report",
+    id: "custom_report",
+    color: "slate",
+  },
 ];
 
-const colorMap: Record<string, { bg: string, text: string, border: string, lightBg: string }> = {
-  indigo: { bg: "bg-indigo-600", text: "text-indigo-600", border: "border-indigo-100", lightBg: "bg-indigo-50" },
-  emerald: { bg: "bg-emerald-600", text: "text-emerald-600", border: "border-emerald-100", lightBg: "bg-emerald-50" },
-  blue: { bg: "bg-blue-600", text: "text-blue-600", border: "border-blue-100", lightBg: "bg-blue-50" },
-  teal: { bg: "bg-teal-600", text: "text-teal-600", border: "border-teal-100", lightBg: "bg-teal-50" },
-  amber: { bg: "bg-amber-600", text: "text-amber-600", border: "border-amber-100", lightBg: "bg-amber-50" },
-  green: { bg: "bg-green-600", text: "text-green-600", border: "border-green-100", lightBg: "bg-green-50" },
-  rose: { bg: "bg-rose-600", text: "text-rose-600", border: "border-rose-100", lightBg: "bg-rose-50" },
-  orange: { bg: "bg-orange-600", text: "text-orange-600", border: "border-orange-100", lightBg: "bg-orange-50" },
-  sky: { bg: "bg-sky-600", text: "text-sky-600", border: "border-sky-100", lightBg: "bg-sky-50" },
-  violet: { bg: "bg-violet-600", text: "text-violet-600", border: "border-violet-100", lightBg: "bg-violet-50" },
-  fuchsia: { bg: "bg-fuchsia-600", text: "text-fuchsia-600", border: "border-fuchsia-100", lightBg: "bg-fuchsia-50" },
-  slate: { bg: "bg-slate-600", text: "text-slate-600", border: "border-slate-100", lightBg: "bg-slate-50" },
+const colorMap: Record<
+  string,
+  { bg: string; text: string; border: string; lightBg: string }
+> = {
+  indigo: {
+    bg: "bg-indigo-600",
+    text: "text-indigo-600",
+    border: "border-indigo-100",
+    lightBg: "bg-indigo-50",
+  },
+  emerald: {
+    bg: "bg-emerald-600",
+    text: "text-emerald-600",
+    border: "border-emerald-100",
+    lightBg: "bg-emerald-50",
+  },
+  blue: {
+    bg: "bg-blue-600",
+    text: "text-blue-600",
+    border: "border-blue-100",
+    lightBg: "bg-blue-50",
+  },
+  teal: {
+    bg: "bg-teal-600",
+    text: "text-teal-600",
+    border: "border-teal-100",
+    lightBg: "bg-teal-50",
+  },
+  amber: {
+    bg: "bg-amber-600",
+    text: "text-amber-600",
+    border: "border-amber-100",
+    lightBg: "bg-amber-50",
+  },
+  green: {
+    bg: "bg-green-600",
+    text: "text-green-600",
+    border: "border-green-100",
+    lightBg: "bg-green-50",
+  },
+  rose: {
+    bg: "bg-rose-600",
+    text: "text-rose-600",
+    border: "border-rose-100",
+    lightBg: "bg-rose-50",
+  },
+  orange: {
+    bg: "bg-orange-600",
+    text: "text-orange-600",
+    border: "border-orange-100",
+    lightBg: "bg-orange-50",
+  },
+  sky: {
+    bg: "bg-sky-600",
+    text: "text-sky-600",
+    border: "border-sky-100",
+    lightBg: "bg-sky-50",
+  },
+  violet: {
+    bg: "bg-violet-600",
+    text: "text-violet-600",
+    border: "border-violet-100",
+    lightBg: "bg-violet-50",
+  },
+  fuchsia: {
+    bg: "bg-fuchsia-600",
+    text: "text-fuchsia-600",
+    border: "border-fuchsia-100",
+    lightBg: "bg-fuchsia-50",
+  },
+  slate: {
+    bg: "bg-slate-600",
+    text: "text-slate-600",
+    border: "border-slate-100",
+    lightBg: "bg-slate-50",
+  },
 };
 
 const fieldGroups: Record<string, string[]> = {
-  "Personal Details": ["Full Name", "Phone Number", "Email", "Age", "Gender", "City"],
-  "Booking Details": ["Booking ID", "Booking Date", "Departure Date", "Batch / Group", "Seat / Room No."],
-  "Travel Details": ["Pickup Point", "Drop Point", "Room Sharing", "Room Type", "Emergency Contact"],
-  "Payment Details": ["Total Amount", "Paid Amount", "Pending Amount", "Payment Mode", "Payment Status", "Payment Date"],
-  "Other Details": ["ID Proof Number", "ID Proof Type", "Guide Name", "Transport Details", "Notes"]
+  "Personal Details": [
+    "Full Name",
+    "Phone Number",
+    "Email",
+    "Age",
+    "Gender",
+    "City",
+  ],
+  "Booking Details": [
+    "Booking ID",
+    "Booking Date",
+    "Departure Date",
+    "Batch / Group",
+    "Seat / Room No.",
+  ],
+  "Travel Details": [
+    "Pickup Point",
+    "Drop Point",
+    "Room Sharing",
+    "Room Type",
+    "Emergency Contact",
+  ],
+  "Payment Details": [
+    "Total Amount",
+    "Paid Amount",
+    "Pending Amount",
+    "Payment Mode",
+    "Payment Status",
+    "Payment Date",
+  ],
+  "Other Details": [
+    "ID Proof Number",
+    "ID Proof Type",
+    "Guide Name",
+    "Transport Details",
+    "Notes",
+  ],
 };
 
 // Helper to generate exactly 57 detailed mock bookings for demo/reports
-export const generateMockBookings = (tripId: string, departureDateStr: string) => {
+export const generateMockBookings = (
+  tripId: string,
+  departureDateStr: string,
+) => {
   const mockNames = [
-    { name: "Aarav Mehta", gender: "Male", age: 24, phone: "9876543210", pickup: "Ahmedabad", email: "aarav.mehta@example.com" },
-    { name: "Priya Sharma", gender: "Female", age: 22, phone: "9812345678", pickup: "Delhi", email: "priya.sharma@example.com" },
-    { name: "Rahul Patel", gender: "Male", age: 27, phone: "9901234567", pickup: "Mumbai", email: "rahul.patel@example.com" },
-    { name: "Sneha Reddy", gender: "Female", age: 23, phone: "8899887766", pickup: "Bangalore", email: "sneha.reddy@example.com" },
-    { name: "Rohan Gupta", gender: "Male", age: 25, phone: "7766554433", pickup: "Vadodara", email: "rohan.gupta@example.com" },
-    { name: "Ananya Rao", gender: "Female", age: 21, phone: "9012345678", pickup: "Delhi", email: "ananya.rao@example.com" },
-    { name: "Vicky Singh", gender: "Male", age: 29, phone: "9123456789", pickup: "Surat", email: "vicky.singh@example.com" },
-    { name: "Pooja Nair", gender: "Female", age: 26, phone: "9234567890", pickup: "Mumbai", email: "pooja.nair@example.com" },
-    { name: "Amit Verma", gender: "Male", age: 28, phone: "9345678901", pickup: "Delhi", email: "amit.verma@example.com" },
-    { name: "Neha Joshi", gender: "Female", age: 24, phone: "9456789012", pickup: "Ahmedabad", email: "neha.joshi@example.com" },
-    { name: "Kunal Shah", gender: "Male", age: 30, phone: "9567890123", pickup: "Mumbai", email: "kunal.shah@example.com" },
-    { name: "Divya Teja", gender: "Female", age: 23, phone: "9678901234", pickup: "Bangalore", email: "divya.teja@example.com" },
-    { name: "Suresh Kumar", gender: "Male", age: 32, phone: "9789012345", pickup: "Delhi", email: "suresh.kumar@example.com" },
-    { name: "Ritu Kapoor", gender: "Female", age: 25, phone: "9890123456", pickup: "Mumbai", email: "ritu.kapoor@example.com" },
-    { name: "Manish Pandey", gender: "Male", age: 26, phone: "9901234567", pickup: "Vadodara", email: "manish.pandey@example.com" },
-    { name: "Aditi Bose", gender: "Female", age: 24, phone: "9012345678", pickup: "Kolkata", email: "aditi.bose@example.com" },
-    { name: "Sameer Sen", gender: "Male", age: 27, phone: "9123456789", pickup: "Mumbai", email: "sameer.sen@example.com" },
-    { name: "Tanvi Hegde", gender: "Female", age: 22, phone: "9234567890", pickup: "Bangalore", email: "tanvi.hegde@example.com" },
-    { name: "Karan Johar", gender: "Male", age: 28, phone: "9345678901", pickup: "Delhi", email: "karan.johar@example.com" },
-    { name: "Kavya Madhavan", gender: "Female", age: 23, phone: "9456789012", pickup: "Chennai", email: "kavya.madhavan@example.com" },
+    {
+      name: "Aarav Mehta",
+      gender: "Male",
+      age: 24,
+      phone: "9876543210",
+      pickup: "Ahmedabad",
+      email: "aarav.mehta@example.com",
+    },
+    {
+      name: "Priya Sharma",
+      gender: "Female",
+      age: 22,
+      phone: "9812345678",
+      pickup: "Delhi",
+      email: "priya.sharma@example.com",
+    },
+    {
+      name: "Rahul Patel",
+      gender: "Male",
+      age: 27,
+      phone: "9901234567",
+      pickup: "Mumbai",
+      email: "rahul.patel@example.com",
+    },
+    {
+      name: "Sneha Reddy",
+      gender: "Female",
+      age: 23,
+      phone: "8899887766",
+      pickup: "Bangalore",
+      email: "sneha.reddy@example.com",
+    },
+    {
+      name: "Rohan Gupta",
+      gender: "Male",
+      age: 25,
+      phone: "7766554433",
+      pickup: "Vadodara",
+      email: "rohan.gupta@example.com",
+    },
+    {
+      name: "Ananya Rao",
+      gender: "Female",
+      age: 21,
+      phone: "9012345678",
+      pickup: "Delhi",
+      email: "ananya.rao@example.com",
+    },
+    {
+      name: "Vicky Singh",
+      gender: "Male",
+      age: 29,
+      phone: "9123456789",
+      pickup: "Surat",
+      email: "vicky.singh@example.com",
+    },
+    {
+      name: "Pooja Nair",
+      gender: "Female",
+      age: 26,
+      phone: "9234567890",
+      pickup: "Mumbai",
+      email: "pooja.nair@example.com",
+    },
+    {
+      name: "Amit Verma",
+      gender: "Male",
+      age: 28,
+      phone: "9345678901",
+      pickup: "Delhi",
+      email: "amit.verma@example.com",
+    },
+    {
+      name: "Neha Joshi",
+      gender: "Female",
+      age: 24,
+      phone: "9456789012",
+      pickup: "Ahmedabad",
+      email: "neha.joshi@example.com",
+    },
+    {
+      name: "Kunal Shah",
+      gender: "Male",
+      age: 30,
+      phone: "9567890123",
+      pickup: "Mumbai",
+      email: "kunal.shah@example.com",
+    },
+    {
+      name: "Divya Teja",
+      gender: "Female",
+      age: 23,
+      phone: "9678901234",
+      pickup: "Bangalore",
+      email: "divya.teja@example.com",
+    },
+    {
+      name: "Suresh Kumar",
+      gender: "Male",
+      age: 32,
+      phone: "9789012345",
+      pickup: "Delhi",
+      email: "suresh.kumar@example.com",
+    },
+    {
+      name: "Ritu Kapoor",
+      gender: "Female",
+      age: 25,
+      phone: "9890123456",
+      pickup: "Mumbai",
+      email: "ritu.kapoor@example.com",
+    },
+    {
+      name: "Manish Pandey",
+      gender: "Male",
+      age: 26,
+      phone: "9901234567",
+      pickup: "Vadodara",
+      email: "manish.pandey@example.com",
+    },
+    {
+      name: "Aditi Bose",
+      gender: "Female",
+      age: 24,
+      phone: "9012345678",
+      pickup: "Kolkata",
+      email: "aditi.bose@example.com",
+    },
+    {
+      name: "Sameer Sen",
+      gender: "Male",
+      age: 27,
+      phone: "9123456789",
+      pickup: "Mumbai",
+      email: "sameer.sen@example.com",
+    },
+    {
+      name: "Tanvi Hegde",
+      gender: "Female",
+      age: 22,
+      phone: "9234567890",
+      pickup: "Bangalore",
+      email: "tanvi.hegde@example.com",
+    },
+    {
+      name: "Karan Johar",
+      gender: "Male",
+      age: 28,
+      phone: "9345678901",
+      pickup: "Delhi",
+      email: "karan.johar@example.com",
+    },
+    {
+      name: "Kavya Madhavan",
+      gender: "Female",
+      age: 23,
+      phone: "9456789012",
+      pickup: "Chennai",
+      email: "kavya.madhavan@example.com",
+    },
   ];
 
   const bookingsArray = [];
@@ -88,7 +415,12 @@ export const generateMockBookings = (tripId: string, departureDateStr: string) =
       advancePaid = 0;
     }
 
-    const coTravelersCount = (i % 5 === 0 && passengerCount < 55) ? 2 : (i % 3 === 0 && passengerCount < 56) ? 1 : 0;
+    const coTravelersCount =
+      i % 5 === 0 && passengerCount < 55
+        ? 2
+        : i % 3 === 0 && passengerCount < 56
+          ? 1
+          : 0;
     const coTravelersList = [];
     for (let c = 0; c < coTravelersCount; c++) {
       const coName = mockNames[(i + c + 7) % mockNames.length];
@@ -98,7 +430,7 @@ export const generateMockBookings = (tripId: string, departureDateStr: string) =
         age: coName.age + (c % 2 === 0 ? 1 : -1),
         phone: coName.phone,
         pickupPoint: coName.pickup,
-        email: coName.email
+        email: coName.email,
       });
       passengerCount++;
     }
@@ -120,10 +452,10 @@ export const generateMockBookings = (tripId: string, departureDateStr: string) =
       passengers: {
         details: {
           roomAllocation: `Room ${101 + Math.floor(i / 3)}`,
-          idProof: "Uploaded"
+          idProof: "Uploaded",
         },
-        persons: coTravelersList
-      }
+        persons: coTravelersList,
+      },
     });
   }
 
@@ -156,10 +488,10 @@ export const generateMockBookings = (tripId: string, departureDateStr: string) =
       passengers: {
         details: {
           roomAllocation: `Room ${101 + Math.floor(i / 3)}`,
-          idProof: "Uploaded"
+          idProof: "Uploaded",
         },
-        persons: []
-      }
+        persons: [],
+      },
     });
     passengerCount++;
   }
@@ -172,16 +504,31 @@ interface ReportsConsoleProps {
   departureDateStr: string;
 }
 
-export default function ReportsConsole({ tripId, departureDateStr }: ReportsConsoleProps) {
+export default function ReportsConsole({
+  tripId,
+  departureDateStr,
+}: ReportsConsoleProps) {
   // Real Database Data States
   const [bookings, setBookings] = useState<any[]>([]);
   const [, setItineraryList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Filter States inside Reports console
-  const [selectedReportType, setSelectedReportType] = useState("passenger_list");
+  const [selectedReportType, setSelectedReportType] =
+    useState("passenger_list");
   const [selectedFields, setSelectedFields] = useState<string[]>([
-    "Full Name", "Phone Number", "Email", "Age", "Gender", "Booking ID", "Booking Date", "Pickup Point", "Drop Point", "Total Amount", "Paid Amount", "Payment Status"
+    "Full Name",
+    "Phone Number",
+    "Email",
+    "Age",
+    "Gender",
+    "Booking ID",
+    "Booking Date",
+    "Pickup Point",
+    "Drop Point",
+    "Total Amount",
+    "Paid Amount",
+    "Payment Status",
   ]);
   const [fileFormat, setFileFormat] = useState("Excel");
   const [companyFilter, setCompanyFilter] = useState("All");
@@ -198,10 +545,12 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
       try {
         const bookingsRes = await api.get(`/bookings?status=all`);
         const allBookings = bookingsRes.data?.data || [];
-        
+
         let filtered = allBookings.filter((b: any) => {
           const matchTrip = b.tripId === tripId;
-          const matchDate = b.departureDate && b.departureDate.substring(0, 10) === departureDateStr;
+          const matchDate =
+            b.departureDate &&
+            b.departureDate.substring(0, 10) === departureDateStr;
           return matchTrip && matchDate;
         });
 
@@ -210,7 +559,9 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
         }
         setBookings(filtered);
 
-        const itinRes = await api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`);
+        const itinRes = await api.get(
+          `/ops/itinerary/${tripId}?departureDate=${departureDateStr}`,
+        );
         setItineraryList(itinRes.data?.data || []);
       } catch (err) {
         console.error("Failed to load departure data:", err);
@@ -237,13 +588,17 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
         id: b.id,
         bookingId: b.id,
         bookingDate: b.createdAt ? b.createdAt.substring(0, 10) : "2027-06-15",
-        departureDate: b.departureDate ? b.departureDate.substring(0, 10) : departureDateStr,
+        departureDate: b.departureDate
+          ? b.departureDate.substring(0, 10)
+          : departureDateStr,
         batchGroup: "Batch 1",
         name: b.fullName || b.name,
         gender: b.gender || "Male",
         age: b.age || 24,
         phone: b.phone || b.mobile || "—",
-        email: b.email || `${(b.fullName || b.name || "user").toLowerCase().replace(/ /g, ".")}@example.com`,
+        email:
+          b.email ||
+          `${(b.fullName || b.name || "user").toLowerCase().replace(/ /g, ".")}@example.com`,
         pickupPoint: b.pickupCity || "Ahmedabad",
         dropPoint: "Manali",
         roomSharing: "Triple",
@@ -262,7 +617,7 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
         transportDetails: "Tempo Traveller AC",
         notes: "No special requirements",
         hasDocs: !!b.passengers?.details?.idProof,
-        whatsapp: b.phone || b.mobile
+        whatsapp: b.phone || b.mobile,
       });
 
       if (b.passengers && Array.isArray(b.passengers.persons)) {
@@ -270,14 +625,20 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
           arr.push({
             id: `${b.id}-co-${pIdx}`,
             bookingId: b.id,
-            bookingDate: b.createdAt ? b.createdAt.substring(0, 10) : "2027-06-15",
-            departureDate: b.departureDate ? b.departureDate.substring(0, 10) : departureDateStr,
+            bookingDate: b.createdAt
+              ? b.createdAt.substring(0, 10)
+              : "2027-06-15",
+            departureDate: b.departureDate
+              ? b.departureDate.substring(0, 10)
+              : departureDateStr,
             batchGroup: "Batch 1",
             name: person.name,
             gender: person.gender || "Male",
             age: person.age || 24,
             phone: person.phone || b.phone || "—",
-            email: person.email || `${person.name.toLowerCase().replace(/ /g, ".")}@example.com`,
+            email:
+              person.email ||
+              `${person.name.toLowerCase().replace(/ /g, ".")}@example.com`,
             pickupPoint: person.pickupPoint || b.pickupCity || "Ahmedabad",
             dropPoint: "Manali",
             roomSharing: "Triple",
@@ -296,7 +657,7 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
             transportDetails: "Tempo Traveller AC",
             notes: "Co-traveler",
             hasDocs: !!b.passengers?.details?.idProof,
-            whatsapp: person.phone || b.phone
+            whatsapp: person.phone || b.phone,
           });
         });
       }
@@ -305,19 +666,34 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
   }, [bookings, departureDateStr]);
 
   const filteredPassengers = useMemo(() => {
-    return allPassengersFlattened.filter(p => {
-      const matchPayment = paymentStatusFilter === "All" || p.paymentStatus === paymentStatusFilter;
-      const matchGender = genderFilter === "All" || p.gender.toLowerCase() === genderFilter.toLowerCase();
-      const matchRoomType = roomTypeFilter === "All" || p.roomType.toLowerCase().includes(roomTypeFilter.toLowerCase());
-      const matchCompany = companyFilter === "All" || (companyFilter === "YouthCamping" && !p.name.includes("Jr")) || (companyFilter === "Netizen" && p.name.includes("Jr"));
+    return allPassengersFlattened.filter((p) => {
+      const matchPayment =
+        paymentStatusFilter === "All" ||
+        p.paymentStatus === paymentStatusFilter;
+      const matchGender =
+        genderFilter === "All" ||
+        p.gender.toLowerCase() === genderFilter.toLowerCase();
+      const matchRoomType =
+        roomTypeFilter === "All" ||
+        p.roomType.toLowerCase().includes(roomTypeFilter.toLowerCase());
+      const matchCompany =
+        companyFilter === "All" ||
+        (companyFilter === "YouthCamping" && !p.name.includes("Jr")) ||
+        (companyFilter === "Netizen" && p.name.includes("Jr"));
 
       return matchPayment && matchGender && matchRoomType && matchCompany;
     });
-  }, [allPassengersFlattened, paymentStatusFilter, genderFilter, roomTypeFilter, companyFilter]);
+  }, [
+    allPassengersFlattened,
+    paymentStatusFilter,
+    genderFilter,
+    roomTypeFilter,
+    companyFilter,
+  ]);
 
   const handleToggleField = (f: string) => {
     if (selectedFields.includes(f)) {
-      setSelectedFields(selectedFields.filter(x => x !== f));
+      setSelectedFields(selectedFields.filter((x) => x !== f));
     } else {
       setSelectedFields([...selectedFields, f]);
     }
@@ -325,7 +701,7 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
 
   const handleSelectAllFields = () => {
     const all: string[] = [];
-    Object.values(fieldGroups).forEach(group => all.push(...group));
+    Object.values(fieldGroups).forEach((group) => all.push(...group));
     setSelectedFields(all);
   };
 
@@ -340,14 +716,14 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
     }
 
     const headers = selectedFields;
-    
+
     const fieldToKeyMap: Record<string, string> = {
       "Full Name": "name",
       "Phone Number": "phone",
-      "Email": "email",
-      "Age": "age",
-      "Gender": "gender",
-      "City": "pickupPoint",
+      Email: "email",
+      Age: "age",
+      Gender: "gender",
+      City: "pickupPoint",
       "Booking ID": "bookingId",
       "Booking Date": "bookingDate",
       "Departure Date": "departureDate",
@@ -368,10 +744,10 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
       "ID Proof Type": "idProofType",
       "Guide Name": "guideName",
       "Transport Details": "transportDetails",
-      "Notes": "notes"
+      Notes: "notes",
     };
 
-    let sortedPassengers = [...filteredPassengers];
+    const sortedPassengers = [...filteredPassengers];
     if (sortBy === "name_asc") {
       sortedPassengers.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === "name_desc") {
@@ -402,12 +778,16 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
               <h3>Trip: ${tripId} | Date: ${departureDateStr} | Generated: ${new Date().toLocaleDateString()}</h3>
               <table>
                 <thead>
-                  <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+                  <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
                 </thead>
                 <tbody>
-                  ${sortedPassengers.map(p => `
-                    <tr>${headers.map(h => `<td>${p[fieldToKeyMap[h]] !== undefined ? p[fieldToKeyMap[h]] : "—"}</td>`).join("")}</tr>
-                  `).join("")}
+                  ${sortedPassengers
+                    .map(
+                      (p) => `
+                    <tr>${headers.map((h) => `<td>${p[fieldToKeyMap[h]] !== undefined ? p[fieldToKeyMap[h]] : "—"}</td>`).join("")}</tr>
+                  `,
+                    )
+                    .join("")}
                 </tbody>
               </table>
               <script>window.print();</script>
@@ -423,7 +803,7 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
       csvRows.push(headers.join(","));
 
       sortedPassengers.forEach((p) => {
-        const values = headers.map(header => {
+        const values = headers.map((header) => {
           const key = fieldToKeyMap[header];
           let val = p[key] !== undefined ? p[key] : "—";
           if (typeof val === "string") {
@@ -437,39 +817,52 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
         csvRows.push(values.join(","));
       });
 
-      const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([csvRows.join("\n")], {
+        type: "text/csv;charset=utf-8;",
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       const sanitizedReportName = selectedReportType.replace(/_/g, "-");
       const fileExtension = fileFormat === "Excel" ? "xlsx" : "csv";
 
       link.setAttribute("href", url);
-      link.setAttribute("download", `${sanitizedReportName}-${tripId}.${fileExtension}`);
+      link.setAttribute(
+        "download",
+        `${sanitizedReportName}-${tripId}.${fileExtension}`,
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success(`Successfully generated and downloaded ${selectedReportType} in ${fileFormat} format!`);
+      toast.success(
+        `Successfully generated and downloaded ${selectedReportType} in ${fileFormat} format!`,
+      );
     }
   };
 
   return (
     <div className="space-y-4">
       {loading && (
-        <div className="text-xs text-slate-400 font-semibold animate-pulse">Loading data...</div>
+        <div className="text-xs text-slate-400 font-semibold animate-pulse">
+          Loading data...
+        </div>
       )}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
         {/* Report builder card layout */}
         <div className="lg:col-span-3 space-y-5">
-          
           {/* 1. Choose Report Type */}
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs">
             <div className="mb-4">
               <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">1</span>
-                <p className="text-sm font-bold text-slate-800">Choose Report Type</p>
+                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                  1
+                </span>
+                <p className="text-sm font-bold text-slate-800">
+                  Choose Report Type
+                </p>
               </div>
-              <p className="text-[11px] text-slate-455 ml-7 mt-0.5">Select the type of report you want to generate</p>
+              <p className="text-[11px] text-slate-455 ml-7 mt-0.5">
+                Select the type of report you want to generate
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -483,33 +876,47 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
                     onClick={() => setSelectedReportType(rpt.id)}
                     className={cn(
                       "border rounded-lg p-3 cursor-pointer transition-all flex flex-col justify-between relative min-h-[96px]",
-                      isSelected 
-                        ? "border-[#F97316] bg-[#F97316]/5 ring-1 ring-[#F97316]/10" 
-                        : "border-slate-200 hover:bg-slate-50/50 bg-white"
+                      isSelected
+                        ? "border-[#F97316] bg-[#F97316]/5 ring-1 ring-[#F97316]/10"
+                        : "border-slate-200 hover:bg-slate-50/50 bg-white",
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className={cn(
-                        "w-8 h-8 rounded-[6px] flex items-center justify-center shrink-0",
-                        isSelected ? `${theme.lightBg} ${theme.text}` : "bg-slate-50 text-slate-500"
-                      )}>
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-[6px] flex items-center justify-center shrink-0",
+                          isSelected
+                            ? `${theme.lightBg} ${theme.text}`
+                            : "bg-slate-50 text-slate-500",
+                        )}
+                      >
                         <IconComponent className="w-4 h-4" />
                       </div>
-                      
+
                       {/* Selected Radio Indicator in top right */}
                       <div className="pt-0.5">
-                        <div className={cn(
-                          "w-4 h-4 rounded-full border flex items-center justify-center",
-                          isSelected ? "border-[#F97316] bg-[#F97316]" : "border-slate-300 bg-white"
-                        )}>
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        <div
+                          className={cn(
+                            "w-4 h-4 rounded-full border flex items-center justify-center",
+                            isSelected
+                              ? "border-[#F97316] bg-[#F97316]"
+                              : "border-slate-300 bg-white",
+                          )}
+                        >
+                          {isSelected && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-2.5">
-                      <p className="text-xs font-bold text-slate-800">{rpt.label}</p>
-                      <p className="text-[10px] text-slate-400 font-medium leading-normal mt-0.5">{rpt.description}</p>
+                      <p className="text-xs font-bold text-slate-800">
+                        {rpt.label}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-medium leading-normal mt-0.5">
+                        {rpt.description}
+                      </p>
                     </div>
                   </div>
                 );
@@ -521,8 +928,12 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs">
             <div className="mb-4">
               <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">2</span>
-                <p className="text-sm font-bold text-slate-800">Apply Filters (Optional)</p>
+                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                  2
+                </span>
+                <p className="text-sm font-bold text-slate-800">
+                  Apply Filters (Optional)
+                </p>
               </div>
             </div>
 
@@ -530,7 +941,11 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
               {/* Date Range Selector */}
               <div className="relative flex items-center h-8.5 border border-slate-200 rounded-[6px] px-2.5 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer text-[11px] font-semibold">
                 <Calendar className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
-                <span className="truncate">{departureDateStr === "2027-07-05" ? "05 Jul 2027 - 13 Jul 2027" : departureDateStr}</span>
+                <span className="truncate">
+                  {departureDateStr === "2027-07-05"
+                    ? "05 Jul 2027 - 13 Jul 2027"
+                    : departureDateStr}
+                </span>
               </div>
 
               {/* Company Dropdown */}
@@ -585,7 +1000,8 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
                 onClick={() => toast.info("Additional filters panel opened")}
                 className="h-8.5 text-[11px] font-bold border border-slate-200 rounded-[6px] px-2.5 bg-white hover:bg-slate-50 text-slate-750 flex items-center justify-center gap-1.5 transition-colors"
               >
-                <Sliders className="w-3.5 h-3.5 text-slate-400 shrink-0" /> More Filters
+                <Sliders className="w-3.5 h-3.5 text-slate-400 shrink-0" /> More
+                Filters
               </button>
             </div>
           </div>
@@ -594,13 +1010,19 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">3</span>
+                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                  3
+                </span>
                 <div>
-                  <p className="text-sm font-bold text-slate-800">Select Fields</p>
-                  <p className="text-[10px] text-slate-455 mt-0.5">Choose the columns/fields to include in your report</p>
+                  <p className="text-sm font-bold text-slate-800">
+                    Select Fields
+                  </p>
+                  <p className="text-[10px] text-slate-455 mt-0.5">
+                    Choose the columns/fields to include in your report
+                  </p>
                 </div>
               </div>
-              
+
               {/* Search box for fields */}
               <div className="relative w-full sm:w-56">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -616,16 +1038,23 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
               {Object.entries(fieldGroups).map(([groupName, fields]) => {
-                const filteredFields = fields.filter(f => f.toLowerCase().includes(fieldsSearch.toLowerCase()));
+                const filteredFields = fields.filter((f) =>
+                  f.toLowerCase().includes(fieldsSearch.toLowerCase()),
+                );
                 if (filteredFields.length === 0) return null;
                 return (
                   <div key={groupName} className="space-y-2">
-                    <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest">{groupName}</p>
+                    <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest">
+                      {groupName}
+                    </p>
                     <div className="space-y-1.5">
                       {filteredFields.map((f) => {
                         const isChecked = selectedFields.includes(f);
                         return (
-                          <label key={f} className="flex items-center gap-2 text-[11px] font-semibold text-slate-650 hover:text-slate-900 cursor-pointer select-none">
+                          <label
+                            key={f}
+                            className="flex items-center gap-2 text-[11px] font-semibold text-slate-650 hover:text-slate-900 cursor-pointer select-none"
+                          >
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -665,14 +1094,20 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
           <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 shadow-xs flex flex-col justify-between min-h-[420px] sticky top-20">
             <div>
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">4</span>
-                <p className="text-sm font-bold text-slate-800">Report Summary</p>
+                <span className="h-5 w-5 rounded-full bg-[#F97316] text-white flex items-center justify-center font-bold text-[10px]">
+                  4
+                </span>
+                <p className="text-sm font-bold text-slate-800">
+                  Report Summary
+                </p>
               </div>
 
               <div className="space-y-4">
                 {/* Selected Report Type */}
                 <div>
-                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-1.5">Report Type</p>
+                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-1.5">
+                    Report Type
+                  </p>
                   <p className="text-xs font-bold text-slate-850 bg-slate-50 border border-slate-150 rounded-[6px] px-3 py-2 select-none capitalize">
                     {selectedReportType.replace(/_/g, " ")}
                   </p>
@@ -680,22 +1115,34 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
 
                 {/* Applied Filters Summary */}
                 <div>
-                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-1.5">Applied Filters</p>
+                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-1.5">
+                    Applied Filters
+                  </p>
                   <div className="space-y-1 text-[11px] font-semibold text-slate-600">
                     <p className="flex items-center justify-between border-b border-slate-50 py-1">
-                      <span className="text-slate-400 font-medium">Company:</span>
+                      <span className="text-slate-400 font-medium">
+                        Company:
+                      </span>
                       <span className="text-slate-800">{companyFilter}</span>
                     </p>
                     <p className="flex items-center justify-between border-b border-slate-50 py-1">
-                      <span className="text-slate-400 font-medium">Payments:</span>
-                      <span className="text-slate-800">{paymentStatusFilter}</span>
+                      <span className="text-slate-400 font-medium">
+                        Payments:
+                      </span>
+                      <span className="text-slate-800">
+                        {paymentStatusFilter}
+                      </span>
                     </p>
                     <p className="flex items-center justify-between border-b border-slate-50 py-1">
-                      <span className="text-slate-400 font-medium">Gender:</span>
+                      <span className="text-slate-400 font-medium">
+                        Gender:
+                      </span>
                       <span className="text-slate-800">{genderFilter}</span>
                     </p>
                     <p className="flex items-center justify-between border-b border-slate-50 py-1">
-                      <span className="text-slate-400 font-medium">Room Type:</span>
+                      <span className="text-slate-400 font-medium">
+                        Room Type:
+                      </span>
                       <span className="text-slate-800">{roomTypeFilter}</span>
                     </p>
                   </div>
@@ -704,19 +1151,29 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
                 {/* Selected Fields tags */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[10px] font-extrabold text-slate-455 uppercase tracking-widest">Selected Fields</p>
+                    <p className="text-[10px] font-extrabold text-slate-455 uppercase tracking-widest">
+                      Selected Fields
+                    </p>
                     <span className="text-[10px] font-extrabold text-[#F97316] bg-[#F97316]/10 px-2 py-0.5 rounded-full">
                       {selectedFields.length} selected
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1 max-h-36 overflow-y-auto pr-1 no-scrollbar border border-slate-100 rounded-lg p-2 bg-slate-50/50">
                     {selectedFields.length === 0 ? (
-                      <p className="text-[10.5px] text-slate-400 font-medium italic p-1">No fields selected.</p>
+                      <p className="text-[10.5px] text-slate-400 font-medium italic p-1">
+                        No fields selected.
+                      </p>
                     ) : (
-                      selectedFields.map(f => (
-                        <span key={f} className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-full select-none shadow-3xs">
+                      selectedFields.map((f) => (
+                        <span
+                          key={f}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-full select-none shadow-3xs"
+                        >
                           {f}
-                          <X className="w-2.5 h-2.5 text-slate-450 hover:text-red-500 cursor-pointer" onClick={() => handleToggleField(f)} />
+                          <X
+                            className="w-2.5 h-2.5 text-slate-450 hover:text-red-500 cursor-pointer"
+                            onClick={() => handleToggleField(f)}
+                          />
                         </span>
                       ))
                     )}
@@ -725,7 +1182,9 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
 
                 {/* Sort By Dropdown */}
                 <div>
-                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-1.5">Sort Report By</p>
+                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-1.5">
+                    Sort Report By
+                  </p>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
@@ -739,7 +1198,9 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
 
                 {/* File Format Options */}
                 <div>
-                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-2">Download File Format</p>
+                  <p className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest mb-2">
+                    Download File Format
+                  </p>
                   <div className="grid grid-cols-3 gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
                     {["Excel", "CSV", "PDF"].map((fmt) => {
                       const isFormatSelected = fileFormat === fmt;
@@ -749,13 +1210,13 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
                           onClick={() => setFileFormat(fmt)}
                           className={cn(
                             "py-1.5 text-[11px] font-bold rounded transition-colors text-center shadow-3xs",
-                            isFormatSelected 
-                              ? fmt === "Excel" 
-                                ? "bg-emerald-600 text-white font-extrabold" 
-                                : fmt === "CSV" 
-                                  ? "bg-slate-700 text-white font-extrabold" 
+                            isFormatSelected
+                              ? fmt === "Excel"
+                                ? "bg-emerald-600 text-white font-extrabold"
+                                : fmt === "CSV"
+                                  ? "bg-slate-700 text-white font-extrabold"
                                   : "bg-red-600 text-white font-extrabold"
-                              : "text-slate-650 hover:bg-slate-100 hover:text-slate-900 bg-white"
+                              : "text-slate-650 hover:bg-slate-100 hover:text-slate-900 bg-white",
                           )}
                         >
                           {fmt}
@@ -778,7 +1239,6 @@ export default function ReportsConsole({ tripId, departureDateStr }: ReportsCons
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

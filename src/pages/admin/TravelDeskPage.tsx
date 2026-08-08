@@ -1,7 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
-import { travelDeskService, TravelDeskWorkspace, DepartureSummary } from "@/services/travelDesk.service";
+import {
+  travelDeskService,
+  TravelDeskWorkspace,
+  DepartureSummary,
+} from "@/services/travelDesk.service";
 import { Trip } from "@/types";
 import { Compass, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -11,7 +15,12 @@ import { TravelDeskTripSidebar } from "@/components/travel-desk/TravelDeskTripSi
 import { TravelDeskQuickActions } from "@/components/travel-desk/TravelDeskQuickActions";
 import { FeedTripsDrawer } from "@/components/travel-desk/FeedTripsDrawer";
 import { TravelDeskCreateTripModal } from "@/components/travel-desk/TravelDeskCreateTripModal";
-import { TravelDeskLoadingState, TravelDeskErrorState, TravelDeskEmptyState, TravelDeskActivationState } from "@/components/travel-desk/TravelDeskStateComponents";
+import {
+  TravelDeskLoadingState,
+  TravelDeskErrorState,
+  TravelDeskEmptyState,
+  TravelDeskActivationState,
+} from "@/components/travel-desk/TravelDeskStateComponents";
 import { TravelDeskKnowledgeHub } from "@/components/travel-desk/TravelDeskKnowledgeHub";
 import { TravelDeskDepartures } from "@/components/travel-desk/TravelDeskDepartures";
 import { TravelDeskItinerary } from "@/components/travel-desk/TravelDeskItinerary";
@@ -27,13 +36,13 @@ export default function TravelDeskPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const tripId = searchParams.get('tripId');
-  const tab = searchParams.get('tab') || 'knowledge';
+  const tripId = searchParams.get("tripId");
+  const tab = searchParams.get("tab") || "knowledge";
 
   // Master Lists
   const [trips, setTrips] = useState<any[]>([]);
   const [isSidebarLoading, setIsSidebarLoading] = useState(true);
-  
+
   // Selected Trip State
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
   const [workspace, setWorkspace] = useState<TravelDeskWorkspace | null>(null);
@@ -56,18 +65,20 @@ export default function TravelDeskPage() {
     try {
       await travelDeskService.feedWorkspaces([tripId]);
       toast.success("Workspace activated successfully!");
-      
+
       // Reload Workspace Data
       setIsMainLoading(true);
       const ws = await travelDeskService.getWorkspace(tripId);
       setWorkspace(ws);
-      
+
       // Also update sidebar list to show it's active
       const loadedTrips = await travelDeskService.getTravelDeskTrips();
       setTrips(loadedTrips || []);
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to activate workspace");
+      toast.error(
+        err?.response?.data?.message || "Failed to activate workspace",
+      );
     } finally {
       setIsActivating(false);
       setIsMainLoading(false);
@@ -80,10 +91,13 @@ export default function TravelDeskPage() {
       try {
         const loadedTrips = await travelDeskService.getTravelDeskTrips();
         setTrips(loadedTrips || []);
-        
+
         // Fallback Logic: If no tripId in URL, but we have trips, navigate to the first one
         if (!tripId && loadedTrips && loadedTrips.length > 0) {
-          setSearchParams({ tripId: loadedTrips[0].id, tab: 'knowledge' }, { replace: true });
+          setSearchParams(
+            { tripId: loadedTrips[0].id, tab: "knowledge" },
+            { replace: true },
+          );
         }
       } catch (err) {
         console.error("Failed to load sidebar trips", err);
@@ -112,14 +126,17 @@ export default function TravelDeskPage() {
       try {
         const [overviewData, departuresData] = await Promise.all([
           travelDeskService.getTripOverview(tripId, abortController.signal),
-          travelDeskService.getDepartures(tripId, abortController.signal)
+          travelDeskService.getDepartures(tripId, abortController.signal),
         ]);
 
         let workspaceData = null;
         try {
-          workspaceData = await travelDeskService.getWorkspace(tripId, abortController.signal);
+          workspaceData = await travelDeskService.getWorkspace(
+            tripId,
+            abortController.signal,
+          );
         } catch (err: any) {
-          if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+          if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
             return;
           }
           if (err?.response?.status !== 404) {
@@ -131,10 +148,12 @@ export default function TravelDeskPage() {
         setWorkspace(workspaceData);
         setDepartures(departuresData);
       } catch (err: any) {
-        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+        if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
           return; // Expected cancellation
         }
-        setMainError(err?.response?.data?.message || 'Failed to load trip workspace');
+        setMainError(
+          err?.response?.data?.message || "Failed to load trip workspace",
+        );
         setActiveTrip(null);
         setWorkspace(null);
       } finally {
@@ -163,9 +182,14 @@ export default function TravelDeskPage() {
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight flex items-center gap-2">
-              YouthCamping OS <span className="text-[10px] bg-slate-800 text-[#FF6B00] px-2 py-0.5 rounded-[4px] font-bold border border-slate-700 tracking-wider">TRAVEL DESK</span>
+              YouthCamping OS{" "}
+              <span className="text-[10px] bg-slate-800 text-[#FF6B00] px-2 py-0.5 rounded-[4px] font-bold border border-slate-700 tracking-wider">
+                TRAVEL DESK
+              </span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Centralizing Departures, Itineraries, SOPs and Trip Documents</p>
+            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              Centralizing Departures, Itineraries, SOPs and Trip Documents
+            </p>
           </div>
         </div>
 
@@ -179,18 +203,17 @@ export default function TravelDeskPage() {
             />
           </div>
           <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 text-xs font-bold text-[#FF6B00]">
-            {admin?.name?.substring(0,2).toUpperCase() || "AD"}
+            {admin?.name?.substring(0, 2).toUpperCase() || "AD"}
           </div>
         </div>
       </div>
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex overflow-hidden">
-        
         {/* SIDEBAR */}
-        <TravelDeskTripSidebar 
-          trips={trips} 
-          activeTripId={tripId || undefined} 
+        <TravelDeskTripSidebar
+          trips={trips}
+          activeTripId={tripId || undefined}
           isLoading={isSidebarLoading}
           onFeedClick={() => setIsDrawerOpen(true)}
           onAddTripClick={() => setIsCreateModalOpen(true)}
@@ -203,50 +226,65 @@ export default function TravelDeskPage() {
           ) : mainError ? (
             <TravelDeskErrorState message={mainError} />
           ) : !activeTrip ? (
-            <TravelDeskEmptyState title="No Workspace Selected" description="Please select an active trip from the sidebar to view its workspace." />
+            <TravelDeskEmptyState
+              title="No Workspace Selected"
+              description="Please select an active trip from the sidebar to view its workspace."
+            />
           ) : !workspace ? (
-            <TravelDeskActivationState 
-              tripTitle={activeTrip.title} 
-              onActivate={handleActivateWorkspace} 
-              isActivating={isActivating} 
+            <TravelDeskActivationState
+              tripTitle={activeTrip.title}
+              onActivate={handleActivateWorkspace}
+              isActivating={isActivating}
             />
           ) : (
             <>
-              <TravelDeskHeader 
-                trip={activeTrip} 
-                readinessScore={workspace.readinessScore} 
+              <TravelDeskHeader
+                trip={activeTrip}
+                readinessScore={workspace.readinessScore}
                 departures={departures}
                 onTripUpdated={(updatedTrip) => setActiveTrip(updatedTrip)}
               />
-              
+
               <TravelDeskTabs tripId={tripId!} />
-              
+
               {/* TAB CONTENT SHELL */}
-              {tab === 'knowledge' ? (
-                <TravelDeskKnowledgeHub trip={activeTrip} workspace={workspace} />
-              ) : tab === 'departures' ? (
-                <TravelDeskDepartures trip={activeTrip} departures={departures} />
-              ) : tab === 'vendors' ? (
+              {tab === "knowledge" ? (
+                <TravelDeskKnowledgeHub
+                  trip={activeTrip}
+                  workspace={workspace}
+                />
+              ) : tab === "departures" ? (
+                <TravelDeskDepartures
+                  trip={activeTrip}
+                  departures={departures}
+                />
+              ) : tab === "vendors" ? (
                 <TravelDeskVendors trip={activeTrip} />
-              ) : tab === 'itinerary' ? (
+              ) : tab === "itinerary" ? (
                 <TravelDeskItinerary trip={activeTrip} />
-              ) : tab === 'documents' ? (
+              ) : tab === "documents" ? (
                 <TravelDeskDocuments trip={activeTrip} />
-              ) : tab === 'sops' ? (
+              ) : tab === "sops" ? (
                 <TravelDeskSops trip={activeTrip} />
-              ) : tab === 'ticketing' ? (
+              ) : tab === "ticketing" ? (
                 <TravelDeskTicketing trip={activeTrip} />
-              ) : tab === 'gallery' ? (
+              ) : tab === "gallery" ? (
                 <TravelDeskGallery trip={activeTrip} />
-              ) : tab === 'activity' ? (
+              ) : tab === "activity" ? (
                 <TravelDeskActivityLog trip={activeTrip} />
               ) : (
                 <div className="flex-1 overflow-y-auto p-4">
                   <div className="bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm">
-                    <h2 className="text-xl font-bold text-slate-800 mb-2 capitalize">{tab} Module</h2>
+                    <h2 className="text-xl font-bold text-slate-800 mb-2 capitalize">
+                      {tab} Module
+                    </h2>
                     <p className="text-slate-500 font-semibold text-sm">
-                      This module is connected to <span className="text-[#FF6B00] font-bold">{activeTrip.title}</span>. 
-                      Content loading for the {tab} tab will be implemented in subsequent stages.
+                      This module is connected to{" "}
+                      <span className="text-[#FF6B00] font-bold">
+                        {activeTrip.title}
+                      </span>
+                      . Content loading for the {tab} tab will be implemented in
+                      subsequent stages.
                     </p>
                   </div>
                 </div>
@@ -257,19 +295,18 @@ export default function TravelDeskPage() {
 
         {/* RIGHT QUICK ACTIONS */}
         <TravelDeskQuickActions />
-
       </div>
 
       {/* FEED TRIPS DRAWER */}
       <FeedTripsDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        activeTripIds={trips.map(t => t.id)}
+        activeTripIds={trips.map((t) => t.id)}
         onActivated={async (newTripId) => {
           // Refresh trips and navigate to new trip
           const loadedTrips = await travelDeskService.getTravelDeskTrips();
           setTrips(loadedTrips || []);
-          setSearchParams({ tripId: newTripId, tab: 'knowledge' });
+          setSearchParams({ tripId: newTripId, tab: "knowledge" });
         }}
       />
 
@@ -280,7 +317,7 @@ export default function TravelDeskPage() {
         onTripCreated={async (newTripId) => {
           const loadedTrips = await travelDeskService.getTravelDeskTrips();
           setTrips(loadedTrips || []);
-          setSearchParams({ tripId: newTripId, tab: 'knowledge' });
+          setSearchParams({ tripId: newTripId, tab: "knowledge" });
         }}
       />
     </div>

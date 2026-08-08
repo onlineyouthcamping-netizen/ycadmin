@@ -1,11 +1,11 @@
-import api from './api';
+import api from "./api";
 
 export interface PaymentReceivingAccount {
   id: string;
   accountName: string;
   accountHolderName: string;
-  accountType: 'BANK' | 'UPI';
-  ownershipType: 'COMPANY' | 'STAFF' | 'PARTNER';
+  accountType: "BANK" | "UPI";
+  ownershipType: "COMPANY" | "STAFF" | "PARTNER";
   bankName?: string;
   maskedAccountNumber?: string;
   upiId?: string;
@@ -23,7 +23,7 @@ export interface StationPaymentCollection {
   departureDate: string;
   station: string;
   platform?: string;
-  paymentMode: 'CASH' | 'UPI';
+  paymentMode: "CASH" | "UPI";
   amount: number;
   previousPaid: number;
   newTotalPaid: number;
@@ -39,10 +39,10 @@ export interface StationPaymentCollection {
   utrNumber?: string;
   receivingAccountId?: string;
   receivingAccount?: PaymentReceivingAccount;
-  upiVerificationStatus?: 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
+  upiVerificationStatus?: "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED";
   verifiedBy?: { id: string; name: string };
   verifiedAt?: string;
-  collectionStatus: 'COLLECTED' | 'CANCELLED' | 'REVERSED';
+  collectionStatus: "COLLECTED" | "CANCELLED" | "REVERSED";
   emailStatus: string;
   isReversed: boolean;
   createdAt: string;
@@ -57,7 +57,7 @@ export interface StationCashHandover {
   station: string;
   amountExpected: number;
   amountHandedOver: number;
-  handoverStatus: 'PENDING' | 'HANDED_OVER' | 'CONFIRMED' | 'RECONCILED';
+  handoverStatus: "PENDING" | "HANDED_OVER" | "CONFIRMED" | "RECONCILED";
   handoverRecipientId?: string;
   handoverRecipient?: { id: string; name: string };
   handoverAt?: string;
@@ -89,7 +89,12 @@ export interface DashboardStats {
   cashHandedOver: number;
   cashReconciled: number;
   collectorCashSummary: Array<{ id: string; name: string; cash: number }>;
-  collectorUpiSummary: Array<{ id: string; name: string; upi: number; verified: number }>;
+  collectorUpiSummary: Array<{
+    id: string;
+    name: string;
+    upi: number;
+    verified: number;
+  }>;
 }
 
 export interface BookingRow {
@@ -124,7 +129,7 @@ export interface CollectPayload {
   departureDate: string;
   station: string;
   platform?: string;
-  paymentMode: 'CASH' | 'UPI';
+  paymentMode: "CASH" | "UPI";
   amount: number;
   collectedFrom: string;
   collectedFromMobile?: string;
@@ -137,31 +142,43 @@ export interface CollectPayload {
 
 export const stationPaymentService = {
   // Dashboard
-  getDashboard: async (params: { tripId: string; departureDate: string; [key: string]: string }) => {
+  getDashboard: async (params: {
+    tripId: string;
+    departureDate: string;
+    [key: string]: string;
+  }) => {
     const qs = new URLSearchParams(params as Record<string, string>).toString();
     const r = await api.get(`/station-payments?${qs}`);
-    return r.data as { success: boolean; stats: DashboardStats; bookings: BookingRow[]; handovers: StationCashHandover[] };
+    return r.data as {
+      success: boolean;
+      stats: DashboardStats;
+      bookings: BookingRow[];
+      handovers: StationCashHandover[];
+    };
   },
 
   // Accounts
   getAccounts: async () => {
-    const r = await api.get('/station-payments/accounts');
+    const r = await api.get("/station-payments/accounts");
     return r.data.data as PaymentReceivingAccount[];
   },
 
   createAccount: async (payload: Partial<PaymentReceivingAccount>) => {
-    const r = await api.post('/station-payments/accounts', payload);
+    const r = await api.post("/station-payments/accounts", payload);
     return r.data;
   },
 
-  approveAccount: async (id: string, data: { isApproved?: boolean; isActive?: boolean }) => {
+  approveAccount: async (
+    id: string,
+    data: { isApproved?: boolean; isActive?: boolean },
+  ) => {
     const r = await api.patch(`/station-payments/accounts/${id}/approve`, data);
     return r.data;
   },
 
   // Collection
   collect: async (payload: CollectPayload) => {
-    const r = await api.post('/station-payments/collect', payload);
+    const r = await api.post("/station-payments/collect", payload);
     return r.data;
   },
 
@@ -171,12 +188,21 @@ export const stationPaymentService = {
   },
 
   cancel: async (id: string, reversalReason: string) => {
-    const r = await api.post(`/station-payments/${id}/cancel`, { reversalReason });
+    const r = await api.post(`/station-payments/${id}/cancel`, {
+      reversalReason,
+    });
     return r.data;
   },
 
-  verifyUpi: async (id: string, action: 'VERIFY' | 'REJECT', rejectionReason?: string) => {
-    const r = await api.post(`/station-payments/${id}/verify-upi`, { action, rejectionReason });
+  verifyUpi: async (
+    id: string,
+    action: "VERIFY" | "REJECT",
+    rejectionReason?: string,
+  ) => {
+    const r = await api.post(`/station-payments/${id}/verify-upi`, {
+      action,
+      rejectionReason,
+    });
     return r.data;
   },
 
@@ -191,8 +217,16 @@ export const stationPaymentService = {
   },
 
   // Handover
-  createHandover: async (payload: { tripId: string; departureDate: string; station: string; amountHandedOver: number; handoverRecipientId: string; handoverReference?: string; remarks?: string }) => {
-    const r = await api.post('/station-payments/handover', payload);
+  createHandover: async (payload: {
+    tripId: string;
+    departureDate: string;
+    station: string;
+    amountHandedOver: number;
+    handoverRecipientId: string;
+    handoverReference?: string;
+    remarks?: string;
+  }) => {
+    const r = await api.post("/station-payments/handover", payload);
     return r.data;
   },
 
@@ -211,5 +245,5 @@ export const stationPaymentService = {
     const qs = new URLSearchParams(params).toString();
     const r = await api.get(`/station-payments/reports?${qs}`);
     return r.data.data;
-  }
+  },
 };

@@ -95,13 +95,18 @@ export const vendorsService = {
   },
 
   // ─── Trip-Vendor Assignments ──────────────
-  async getForTrip(tripId: string): Promise<{ assignments: TripVendor[]; summary: TripVendorSummary }> {
+  async getForTrip(
+    tripId: string,
+  ): Promise<{ assignments: TripVendor[]; summary: TripVendorSummary }> {
     const res = await api.get(`/vendors/trip/${tripId}`);
     return { assignments: res.data.data, summary: res.data.summary };
   },
 
-  async getBulkForTrips(tripIds?: string[]): Promise<Record<string, TripVendor[]>> {
-    const query = tripIds && tripIds.length > 0 ? `?tripIds=${tripIds.join(",")}` : "";
+  async getBulkForTrips(
+    tripIds?: string[],
+  ): Promise<Record<string, TripVendor[]>> {
+    const query =
+      tripIds && tripIds.length > 0 ? `?tripIds=${tripIds.join(",")}` : "";
     const res = await api.get(`/vendors/bulk${query}`);
     return res.data.data;
   },
@@ -116,7 +121,10 @@ export const vendorsService = {
     return res.data.data;
   },
 
-  async updateAssignment(id: string, data: Partial<TripVendor>): Promise<TripVendor> {
+  async updateAssignment(
+    id: string,
+    data: Partial<TripVendor>,
+  ): Promise<TripVendor> {
     const res = await api.put(`/vendors/trip-assign/${id}`, data);
     return res.data.data;
   },
@@ -131,8 +139,13 @@ export const vendorsService = {
     return res.data.data || [];
   },
 
-  async getVendorsByTripAndCategory(tripId: string, category: string): Promise<any[]> {
-    const res = await api.get(`/vendors/trips/${tripId}/categories/${category}`);
+  async getVendorsByTripAndCategory(
+    tripId: string,
+    category: string,
+  ): Promise<any[]> {
+    const res = await api.get(
+      `/vendors/trips/${tripId}/categories/${category}`,
+    );
     return res.data.data || [];
   },
 
@@ -161,7 +174,12 @@ export const vendorsService = {
     return res.data.data;
   },
 
-  async getOpsVendors(params?: { type?: string; city?: string; active?: boolean; search?: string }): Promise<any[]> {
+  async getOpsVendors(params?: {
+    type?: string;
+    city?: string;
+    active?: boolean;
+    search?: string;
+  }): Promise<any[]> {
     const res = await api.get("/vendors/ops", { params });
     return res.data.data;
   },
@@ -187,7 +205,11 @@ export const vendorsService = {
   },
 
   // Rates Directory search
-  async getAccommodationRates(params?: { city?: string; sharingType?: string; seasonType?: string }): Promise<any[]> {
+  async getAccommodationRates(params?: {
+    city?: string;
+    sharingType?: string;
+    seasonType?: string;
+  }): Promise<any[]> {
     const res = await api.get("/vendors/rates/accommodation", { params });
     return res.data.data;
   },
@@ -197,7 +219,10 @@ export const vendorsService = {
     return res.data.data;
   },
 
-  async getTransportRates(params?: { tripCode?: string; vehicleType?: string }): Promise<any[]> {
+  async getTransportRates(params?: {
+    tripCode?: string;
+    vehicleType?: string;
+  }): Promise<any[]> {
     const res = await api.get("/vendors/rates/transport", { params });
     return res.data.data;
   },
@@ -207,7 +232,10 @@ export const vendorsService = {
     return res.data.data;
   },
 
-  async getAdditionalCharges(params?: { tripCode?: string; city?: string }): Promise<any[]> {
+  async getAdditionalCharges(params?: {
+    tripCode?: string;
+    city?: string;
+  }): Promise<any[]> {
     const res = await api.get("/vendors/rates/additional-charges", { params });
     return res.data.data;
   },
@@ -223,7 +251,11 @@ export const vendorsService = {
     return res.data.data;
   },
 
-  async confirmImport(data: { hotels: any[]; transport: any[]; additionalCharges: any[] }): Promise<any> {
+  async confirmImport(data: {
+    hotels: any[];
+    transport: any[];
+    additionalCharges: any[];
+  }): Promise<any> {
     const res = await api.post("/vendors/import/confirm", data);
     return res.data;
   },
@@ -234,8 +266,14 @@ export const vendorsService = {
     return res.data.data;
   },
 
-  async saveDepartureAllocations(departureId: string, allocations: any[]): Promise<any> {
-    const res = await api.post(`/vendors/departures/${departureId}/allocations`, { allocations });
+  async saveDepartureAllocations(
+    departureId: string,
+    allocations: any[],
+  ): Promise<any> {
+    const res = await api.post(
+      `/vendors/departures/${departureId}/allocations`,
+      { allocations },
+    );
     return res.data;
-  }
+  },
 };

@@ -47,460 +47,6 @@ export default function DepartureActivities({
   // Modals
   const [wizardOpen, setWizardOpen] = useState(false);
 
-  // Default sample activities if none exist yet for rich preview
-  const defaultSampleActivities: DepartureActivityItem[] = [
-    // DAY 1: Train Journey
-    {
-      id: "dep-act-1",
-      name: "Ahmedabad Station Check-in",
-      dayNumber: 1,
-      scheduledTime: "09:00 AM",
-      endTime: "10:00 AM",
-      status: "CONFIRMED",
-      vendorName: "Indian Railways",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Neel Patel",
-      vehicleName: "Train 19223",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-2",
-      name: "Group Briefing",
-      dayNumber: 1,
-      scheduledTime: "11:30 AM",
-      endTime: "12:00 PM",
-      status: "CONFIRMED",
-      vendorName: "YouthCamping Core",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Neel Patel",
-      vehicleName: "Train Coach B4",
-      mealIncluded: "Included",
-    },
-    {
-      id: "dep-act-3",
-      name: "Ice Breaking Session",
-      dayNumber: 1,
-      scheduledTime: "12:00 PM",
-      endTime: "01:30 PM",
-      status: "READY",
-      vendorName: "YouthCamping Core",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Anand Verma",
-      vehicleName: "Train Coach B4",
-      mealIncluded: "Included",
-    },
-    // DAY 2: Amritsar
-    {
-      id: "dep-act-4",
-      name: "Punjabi Breakfast",
-      dayNumber: 2,
-      scheduledTime: "08:00 AM",
-      endTime: "09:00 AM",
-      status: "CONFIRMED",
-      vendorName: "Kesar Da Dhaba",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Included",
-    },
-    {
-      id: "dep-act-5",
-      name: "Golden Temple Visit",
-      dayNumber: 2,
-      scheduledTime: "11:00 AM",
-      endTime: "01:00 PM",
-      status: "CONFIRMED",
-      vendorName: "SGPC Heritage",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Langar Included",
-    },
-    {
-      id: "dep-act-6",
-      name: "Jallianwala Bagh",
-      dayNumber: 2,
-      scheduledTime: "01:00 PM",
-      endTime: "02:30 PM",
-      status: "CONFIRMED",
-      vendorName: "Heritage Trust",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-7",
-      name: "Wagah Border Excursion",
-      dayNumber: 2,
-      scheduledTime: "04:00 PM",
-      endTime: "06:30 PM",
-      status: "READY",
-      vendorName: "Punjab Tourism",
-      maxCapacity: 40,
-      bookedCount: 38,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Anand Verma",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-8",
-      name: "Amritsar Market Walk",
-      dayNumber: 2,
-      scheduledTime: "07:00 PM",
-      endTime: "09:30 PM",
-      status: "CONFIRMED",
-      vendorName: "Self Guided",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-9",
-      name: "Departure to Kasol",
-      dayNumber: 2,
-      scheduledTime: "10:00 PM",
-      endTime: "06:00 AM",
-      status: "CONFIRMED",
-      vendorName: "Himachal Wheels",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Neel Patel",
-      vehicleName: "Volvo 2+2 Bus",
-      mealIncluded: "Not Included",
-    },
-    // DAY 3: Kasol
-    {
-      id: "dep-act-10",
-      name: "Check-in & Refresh",
-      dayNumber: 3,
-      scheduledTime: "08:00 AM",
-      endTime: "09:30 AM",
-      status: "CONFIRMED",
-      vendorName: "Parvati Woods Camp",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Neel Patel",
-      vehicleName: "Kasol Shuttle",
-      mealIncluded: "Included",
-    },
-    {
-      id: "dep-act-11",
-      name: "Manikaran Sahib Visit",
-      dayNumber: 3,
-      scheduledTime: "11:00 AM",
-      endTime: "01:30 PM",
-      status: "CONFIRMED",
-      vendorName: "Parvati Valley Tours",
-      maxCapacity: 40,
-      bookedCount: 36,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Kasol Shuttle",
-      mealIncluded: "Langar Included",
-    },
-    {
-      id: "dep-act-12",
-      name: "Chalal Trek & Cafe Walk",
-      dayNumber: 3,
-      scheduledTime: "05:30 PM",
-      endTime: "07:30 PM",
-      status: "READY",
-      vendorName: "Local Mountain Guides",
-      maxCapacity: 40,
-      bookedCount: 35,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Anand Verma",
-      vehicleName: "Self Guided",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-13",
-      name: "Campfire & Acoustic Music",
-      dayNumber: 3,
-      scheduledTime: "08:00 PM",
-      endTime: "10:30 PM",
-      status: "CONFIRMED",
-      vendorName: "Parvati Woods Camp",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Camp Ground",
-      mealIncluded: "Dinner Included",
-    },
-    // DAY 4: Bijli Mahadev
-    {
-      id: "dep-act-14",
-      name: "Bijli Mahadev Trek",
-      dayNumber: 4,
-      scheduledTime: "12:00 PM",
-      endTime: "04:30 PM",
-      status: "READY",
-      vendorName: "Kullu Trekking Co.",
-      maxCapacity: 40,
-      bookedCount: 32,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Anand Verma",
-      vehicleName: "Traveller 2",
-      mealIncluded: "Packed Lunch",
-    },
-    // DAY 5: Adventure Day (Manali)
-    {
-      id: "dep-act-15",
-      name: "Paragliding High Fly",
-      dayNumber: 5,
-      scheduledTime: "10:00 AM",
-      endTime: "12:30 PM",
-      status: "READY",
-      vendorName: "Sky Riders Manali",
-      maxCapacity: 35,
-      bookedCount: 12,
-      adultPrice: 2500,
-      childPrice: 2000,
-      vendorCost: 1900,
-      isIncluded: false,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-16",
-      name: "River Rafting (Beas River)",
-      dayNumber: 5,
-      scheduledTime: "01:00 PM",
-      endTime: "03:30 PM",
-      status: "CONFIRMED",
-      vendorName: "ABC Adventures",
-      maxCapacity: 40,
-      bookedCount: 32,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 200,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-17",
-      name: "Kullu Shawl Factory Visit",
-      dayNumber: 5,
-      scheduledTime: "04:00 PM",
-      endTime: "06:00 PM",
-      status: "CONFIRMED",
-      vendorName: "Bhuntar Weavers",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Anand Verma",
-      vehicleName: "Traveller 1",
-      mealIncluded: "Not Included",
-    },
-    // DAY 6: Solang
-    {
-      id: "dep-act-18",
-      name: "ATV & Bike Ride",
-      dayNumber: 6,
-      scheduledTime: "10:00 AM",
-      endTime: "11:30 AM",
-      status: "CONFIRMED",
-      vendorName: "Mountain Trails ATV",
-      maxCapacity: 30,
-      bookedCount: 8,
-      adultPrice: 1500,
-      childPrice: 1200,
-      vendorCost: 1100,
-      isIncluded: false,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 2",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-19",
-      name: "Solang Valley Snow Activities",
-      dayNumber: 6,
-      scheduledTime: "11:30 AM",
-      endTime: "01:00 PM",
-      status: "CONFIRMED",
-      vendorName: "Solang Snow Club",
-      maxCapacity: 40,
-      bookedCount: 15,
-      adultPrice: 800,
-      childPrice: 600,
-      vendorCost: 600,
-      isIncluded: false,
-      guideName: "Neel Patel",
-      vehicleName: "Traveller 2",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-20",
-      name: "Atal Tunnel & Sissu Visit",
-      dayNumber: 6,
-      scheduledTime: "01:00 PM",
-      endTime: "05:00 PM",
-      status: "READY",
-      vendorName: "Lahaul Eco Tourism",
-      maxCapacity: 40,
-      bookedCount: 36,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Anand Verma",
-      vehicleName: "4x4 Tempo Traveller",
-      mealIncluded: "Not Included",
-    },
-    // DAY 7: Manali
-    {
-      id: "dep-act-21",
-      name: "Jogini Waterfall Trek",
-      dayNumber: 7,
-      scheduledTime: "08:00 AM",
-      endTime: "11:30 AM",
-      status: "CONFIRMED",
-      vendorName: "Vashisht Trekking",
-      maxCapacity: 40,
-      bookedCount: 30,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Self Guided",
-      mealIncluded: "Breakfast Included",
-    },
-    {
-      id: "dep-act-22",
-      name: "Hadimba Temple & Club House",
-      dayNumber: 7,
-      scheduledTime: "01:00 PM",
-      endTime: "04:30 PM",
-      status: "CONFIRMED",
-      vendorName: "Manali Cultural Trust",
-      maxCapacity: 40,
-      bookedCount: 38,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      isIncluded: true,
-      guideName: "Neel Patel",
-      vehicleName: "Manali Shuttle",
-      mealIncluded: "Not Included",
-    },
-    {
-      id: "dep-act-23",
-      name: "Mall Road Shopping & Cafe Hop",
-      dayNumber: 7,
-      scheduledTime: "05:00 PM",
-      endTime: "09:00 PM",
-      status: "CONFIRMED",
-      vendorName: "Self Guided",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Anand Verma",
-      vehicleName: "Self Guided",
-      mealIncluded: "Not Included",
-    },
-    // DAY 8: Return Journey
-    {
-      id: "dep-act-24",
-      name: "Train Boarding — Return Journey",
-      dayNumber: 8,
-      scheduledTime: "09:00 AM",
-      endTime: "10:00 AM",
-      status: "CONFIRMED",
-      vendorName: "Indian Railways",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Neel Patel",
-      vehicleName: "Train 19224",
-      mealIncluded: "Included",
-    },
-    // DAY 9: Arrival
-    {
-      id: "dep-act-25",
-      name: "Arrival & Trip Conclusion",
-      dayNumber: 9,
-      scheduledTime: "08:00 AM",
-      endTime: "09:00 AM",
-      status: "CONFIRMED",
-      vendorName: "YouthCamping Core",
-      maxCapacity: 40,
-      bookedCount: 40,
-      adultPrice: 0,
-      childPrice: 0,
-      vendorCost: 0,
-      guideName: "Neel Patel",
-      vehicleName: "Train 19224",
-      mealIncluded: "Not Included",
-    },
-  ];
-
   const currentActivities: DepartureActivityItem[] = useMemo(() => {
     if (activitiesList && activitiesList.length > 0) {
       return activitiesList.map((a, idx) => ({
@@ -516,37 +62,33 @@ export default function DepartureActivities({
         status: (a.status?.toUpperCase() as any) || "CONFIRMED",
         vendorName: a.vendorName || "Contracted Supplier",
         maxCapacity: Number(a.maxParticipants) || 40,
-        bookedCount:
-          a.bookedCount !== undefined ? Number(a.bookedCount) : 40,
+        bookedCount: a.bookedCount !== undefined ? Number(a.bookedCount) : 40,
         isIncluded:
           a.isIncluded !== undefined
             ? a.isIncluded
             : a.inc !== undefined
-            ? a.inc
-            : true,
+              ? a.inc
+              : true,
         adultPrice:
           a.adultPrice !== undefined
             ? Number(a.adultPrice)
             : a.sellingPrice !== undefined
-            ? Number(a.sellingPrice)
-            : 0,
-        childPrice:
-          a.childPrice !== undefined
-            ? Number(a.childPrice)
-            : 0,
+              ? Number(a.sellingPrice)
+              : 0,
+        childPrice: a.childPrice !== undefined ? Number(a.childPrice) : 0,
         vendorCost:
           a.vendorCost !== undefined
             ? Number(a.vendorCost)
             : a.estimatedCost !== undefined
-            ? Number(a.estimatedCost)
-            : 0,
+              ? Number(a.estimatedCost)
+              : 0,
         guideName: a.responsibleGuide || "Neel Patel",
         vehicleName: a.vehicleName || "Traveller 2",
         mealIncluded: "Included",
         notes: a.remarks || a.sub || "",
       }));
     }
-    return defaultSampleActivities;
+    return [];
   }, [activitiesList]);
 
   const computedActivities = useMemo(() => {
@@ -590,10 +132,10 @@ export default function DepartureActivities({
 
   const handleUpdateActivityItem = async (
     id: string,
-    updated: Partial<DepartureActivityItem>
+    updated: Partial<DepartureActivityItem>,
   ) => {
     const nextList = currentActivities.map((item) =>
-      item.id === id ? { ...item, ...updated } : item
+      item.id === id ? { ...item, ...updated } : item,
     );
     setActivitiesList(nextList);
     try {
@@ -620,7 +162,7 @@ export default function DepartureActivities({
     try {
       await api.post(
         `/ops/activities/${tripId}?departureDate=${departureDateStr}`,
-        newActivity
+        newActivity,
       );
     } catch (e) {
       // Offline fallback still updates UI
@@ -642,11 +184,15 @@ export default function DepartureActivities({
   const kpiStats = useMemo(() => {
     const totalActivities = currentActivities.length;
     const pendingVendorConfirmations = currentActivities.filter(
-      (a) => a.status === "DRAFT" || a.status === "READY" || a.status === "PENDING" || !a.status
+      (a) =>
+        a.status === "DRAFT" ||
+        a.status === "READY" ||
+        a.status === "PENDING" ||
+        !a.status,
     ).length;
     const passengersBooked = Math.max(
       40,
-      ...currentActivities.map((a) => a.maxCapacity || a.bookedCount || 0)
+      ...currentActivities.map((a) => a.maxCapacity || a.bookedCount || 0),
     );
     const totalRevenue = currentActivities.reduce(
       (acc, a) =>
@@ -654,20 +200,23 @@ export default function DepartureActivities({
         (a.isIncluded
           ? 0
           : (a.adultPrice || a.sellingPrice || 0) * (a.bookedCount || 0)),
-      0
+      0,
     );
     const totalVendorCost = currentActivities.reduce(
       (acc, a) =>
         acc + (a.vendorCost || 0) * (a.bookedCount || (a.isIncluded ? 40 : 0)),
-      0
+      0,
     );
     const grossProfit = currentActivities.reduce(
       (acc, a) =>
         acc +
         (a.isIncluded
           ? 0
-          : Math.max(0, (a.adultPrice || a.sellingPrice || 0) - (a.vendorCost || 0)) * (a.bookedCount || 0)),
-      0
+          : Math.max(
+              0,
+              (a.adultPrice || a.sellingPrice || 0) - (a.vendorCost || 0),
+            ) * (a.bookedCount || 0)),
+      0,
     );
 
     return {
@@ -759,7 +308,8 @@ export default function DepartureActivities({
                     {DAY_TITLES[day] || `Day ${day} Scheduled Activities`}
                   </span>
                   <span className="ml-auto text-xs font-semibold text-slate-400">
-                    {dayItems.length} {dayItems.length === 1 ? "Activity" : "Activities"}
+                    {dayItems.length}{" "}
+                    {dayItems.length === 1 ? "Activity" : "Activities"}
                   </span>
                 </div>
 
@@ -800,7 +350,8 @@ export default function DepartureActivities({
               No activities match your filters
             </h4>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Try adjusting your day or status filters, or click "+ Add Activity" to schedule a new experience for this departure.
+              Try adjusting your day or status filters, or click "+ Add
+              Activity" to schedule a new experience for this departure.
             </p>
             <Button
               variant="outline"

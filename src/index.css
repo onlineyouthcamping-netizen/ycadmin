@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -7,16 +7,16 @@
 @layer base {
   :root {
     /* Brand Color Palette */
-    --color-primary-orange: #FF4D00;
-    --color-navy: #0A2463;
-    --color-text-charcoal: #2D3748;
-    --color-white: #FFFFFF;
+    --color-primary-orange: #ff4d00;
+    --color-navy: #0a2463;
+    --color-text-charcoal: #2d3748;
+    --color-white: #ffffff;
 
     /* Premium Minimalist Palette */
-    --primary-hex: #0A2463; /* Dark Navy Backgrounds */
-    --background-hex: #FFFFFF;
-    --foreground-hex: #2D3748; /* Charcoal Text */
-    
+    --primary-hex: #0a2463; /* Dark Navy Backgrounds */
+    --background-hex: #ffffff;
+    --foreground-hex: #2d3748; /* Charcoal Text */
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -54,12 +54,13 @@
     --sidebar-border: 215 47% 20%;
     --sidebar-ring: 222.2 47.4% 11.2%;
 
-    --secondary-hex: #F8FAFC;
+    --secondary-hex: #f8fafc;
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
   }
 
-  [data-theme='dark'], html.dark {
+  [data-theme="dark"],
+  html.dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -71,53 +72,56 @@
     color-scheme: dark;
   }
 
-  [data-theme='dark'] body, html.dark body {
+  [data-theme="dark"] body,
+  html.dark body {
     background-color: #0f172a !important;
     color: #f8fafc !important;
   }
 
   /* Color presets */
-  [data-color='ocean-blue'] {
+  [data-color="ocean-blue"] {
     --accent-color: #2563eb;
     --accent-light: #dbeafe;
   }
 
-  [data-color='forest-green'] {
+  [data-color="forest-green"] {
     --accent-color: #16a34a;
     --accent-light: #dcfce7;
   }
 
-  [data-color='sunset-orange'] {
+  [data-color="sunset-orange"] {
     --accent-color: #ea580c;
     --accent-light: #fed7aa;
   }
 
-  [data-color='modern-purple'] {
+  [data-color="modern-purple"] {
     --accent-color: #a855f7;
     --accent-light: #f3e8ff;
   }
 
   /* Font sizes */
-  [data-font-size='small'] {
+  [data-font-size="small"] {
     font-size: 12px;
   }
 
-  [data-font-size='normal'] {
+  [data-font-size="normal"] {
     font-size: 14px;
   }
 
-  [data-font-size='large'] {
+  [data-font-size="large"] {
     font-size: 16px;
   }
 
   /* Table density */
-  [data-density='compact'] table tr, [data-density='compact'] [role="grid"] [role="row"] {
+  [data-density="compact"] table tr,
+  [data-density="compact"] [role="grid"] [role="row"] {
     height: 38px !important;
     padding-top: 2px !important;
     padding-bottom: 2px !important;
   }
 
-  [data-density='detailed'] table tr, [data-density='detailed'] [role="grid"] [role="row"] {
+  [data-density="detailed"] table tr,
+  [data-density="detailed"] [role="grid"] [role="row"] {
     height: 56px !important;
     padding-top: 10px !important;
     padding-bottom: 10px !important;
@@ -130,7 +134,7 @@
 
   body {
     @apply bg-[#F4F7FB] text-[#162B45] antialiased;
-    font-family: 'Montserrat', sans-serif !important;
+    font-family: "Montserrat", sans-serif !important;
   }
 
   ::selection {
@@ -138,9 +142,14 @@
     color: hsl(var(--primary));
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-bold tracking-tight text-[#162B45];
-    font-family: 'Montserrat', sans-serif !important;
+    font-family: "Montserrat", sans-serif !important;
   }
 }
 
@@ -148,9 +157,11 @@
   .glass {
     @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-premium;
   }
-  
+
   .shadow-premium {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.02),
+      0 4px 12px rgba(0, 0, 0, 0.03);
   }
 
   .shadow-2xs {
@@ -160,9 +171,11 @@
   .shadow-xs {
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
-  
+
   .shadow-luxury {
-    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.01);
+    box-shadow:
+      0 4px 20px -5px rgba(0, 0, 0, 0.05),
+      0 2px 6px -2px rgba(0, 0, 0, 0.01);
   }
 
   .modern-card {
@@ -176,7 +189,7 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -186,19 +199,19 @@
   .admin-title {
     @apply text-[28px] font-semibold tracking-tight text-slate-900;
   }
-  
+
   .admin-heading {
     @apply text-[20px] font-medium tracking-tight text-slate-900;
   }
-  
+
   .admin-card-title {
     @apply text-[16px] font-medium text-slate-900;
   }
-  
+
   .admin-body {
     @apply text-[14px] font-normal text-slate-500 leading-relaxed;
   }
-  
+
   .admin-label {
     @apply text-[12px] font-normal text-slate-400;
   }
@@ -267,8 +280,14 @@
 
 /* Animations */
 @keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.99); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .animate-premium {
@@ -329,4 +348,3 @@
     margin-top: -0.75rem !important;
   }
 }
-

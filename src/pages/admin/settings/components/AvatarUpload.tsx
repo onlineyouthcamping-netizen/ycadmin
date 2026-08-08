@@ -8,7 +8,11 @@ interface AvatarUploadProps {
   onAvatarChange: (newUrl: string) => void;
 }
 
-export function AvatarUpload({ currentAvatarUrl, name, onAvatarChange }: AvatarUploadProps) {
+export function AvatarUpload({
+  currentAvatarUrl,
+  name,
+  onAvatarChange,
+}: AvatarUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,14 +37,25 @@ export function AvatarUpload({ currentAvatarUrl, name, onAvatarChange }: AvatarU
     onAvatarChange("");
   };
 
-  const initials = name ? name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "YC";
+  const initials = name
+    ? name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "YC";
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
       <div className="relative group shrink-0">
         <div className="w-20 h-20 rounded-full border-2 border-orange-500 bg-orange-100 flex items-center justify-center text-orange-600 text-2xl font-bold uppercase overflow-hidden shadow-xs">
           {currentAvatarUrl ? (
-            <img src={currentAvatarUrl} alt={name} className="w-full h-full object-cover" />
+            <img
+              src={currentAvatarUrl}
+              alt={name}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <span>{initials}</span>
           )}
