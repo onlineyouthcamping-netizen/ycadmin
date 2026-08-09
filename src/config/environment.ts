@@ -46,13 +46,11 @@ const defaultApiUrl = IS_DEVELOPMENT
 
 const rawApiUrl = import.meta.env.VITE_API_URL;
 
-// In production, enforce that configuration exists
-if (IS_PRODUCTION) {
-  if (!rawApiUrl) {
-    console.error(
-      "❌ Critical: VITE_API_URL is missing in production environment!",
-    );
-  }
+// In production, enforce that configuration exists (fail-fast)
+if (IS_PRODUCTION && !rawApiUrl) {
+  throw new Error(
+    "❌ Configuration Error: VITE_API_URL environment variable is required for production builds!",
+  );
 }
 
 const API_BASE_URL = normalizeUrl(rawApiUrl, defaultApiUrl);

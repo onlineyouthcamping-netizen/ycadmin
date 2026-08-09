@@ -1,5 +1,10 @@
 import { normalizePassenger } from "@/utils/passengerUtils";
 import { calculateReadinessScore } from "@/utils/readinessUtils";
+import { isPassengerCancelled, filterActivePassengers } from "@/utils/departure/passengerStatus";
+import { getBookingGroupKey, groupPassengersByBooking } from "@/utils/departure/passengerAllocation";
+import { calculateBookingFinancialStatus, safeNumber } from "@/utils/departure/paymentCalculator";
+import { calculateRoomOccupancy } from "@/utils/departure/accommodationCalculator";
+import { saveActivityToBackend } from "@/utils/departure/activityMapper";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -82,6 +87,8 @@ import DepartureTicketing from "@/components/admin/DepartureTicketing";
 import StationPaymentCollection from "@/components/admin/StationPaymentCollection";
 import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import HotelCalculator from "@/components/admin/hotels/HotelCalculator";
+import AccommodationWorkspace from "@/components/admin/departure/AccommodationWorkspace";
+import HotelAssignmentWizardModal from "@/components/admin/departure/HotelAssignmentWizardModal";
 import { MobileDepartureWorkspace } from "@/components/mobile/MobileDepartureWorkspace";
 import {
   Dialog,
@@ -1161,10 +1168,13 @@ export default function DepartureHubPage() {
   const tripId = resolvedTripId;
   const departureDateStr = resolvedDepartureDateStr;
 
-  let activeTab = searchParams.get("tab") || "overview";
-  if (activeTab === "manifest") {
-    activeTab = "passengers";
+  let rawTab = (searchParams.get("tab") || "overview").toLowerCase().trim();
+  if (rawTab === "hotels" || rawTab === "hotel" || rawTab === "accommodations") {
+    rawTab = "accommodation";
+  } else if (rawTab === "manifest") {
+    rawTab = "passengers";
   }
+  const activeTab = rawTab;
 
   const setActiveTab = (tab: string) => {
     const nextParams: Record<string, string> = { tab };
@@ -1184,7 +1194,7 @@ export default function DepartureHubPage() {
   const allPassengers = useMemo(() => {
     const arr: any[] = [];
     bookings
-      .filter((b: any) => b.status !== "cancelled")
+      .filter((b: any) => !isPassengerCancelled(null, b))
       .forEach((b: any) => {
         let passengersObj = b.passengers;
         if (typeof passengersObj === "string") {
@@ -1195,19 +1205,16 @@ export default function DepartureHubPage() {
           }
         }
 
-        const due =
-          b.remainingAmount !== undefined
-            ? b.remainingAmount
-            : (b.totalAmount || 0) - (b.advancePaid || 0);
-        const paymentStatusStr = (b.paymentStatus || "").toLowerCase();
+        const fin = calculateBookingFinancialStatus(b);
+        const due = fin.remainingAmount;
         const paymentLabel =
-          due <= 0
+          fin.paymentStatus === "PAID"
             ? "Paid in Full"
-            : paymentStatusStr.includes("pending") ||
-                b.advancePaid === 0 ||
-                b.advancePaid === null
-              ? "Payment Pending"
-              : "Partial Payment";
+            : fin.paymentStatus === "OVERPAID"
+              ? "Overpaid"
+              : fin.paymentStatus === "PARTIAL"
+                ? "Partial Payment"
+                : "Payment Pending";
 
         const roomDetailsObj = b.roomDetails || passengersObj?.details || {};
         const personsRoomDetails = roomDetailsObj.personsRoomDetails || {};
@@ -1248,6 +1255,14 @@ export default function DepartureHubPage() {
         const perPersonPaid = (b.advancePaid || 0) / passengerCount;
         const perPersonBalance = due > 0 ? due / passengerCount : 0;
 
+        const trainOpt =
+          b.trainOption ||
+          b.trainClass ||
+          passengersObj?.details?.trainClass ||
+          passengersObj?.details?.trainOption ||
+          (passengersObj?.persons && Array.isArray(passengersObj.persons) && passengersObj.persons[0]?.trainOption) ||
+          "3 TIER AC TRAIN";
+
         const base = {
           bookingId: b.id,
           bookingRef: b.bookingId || b.id,
@@ -1263,6 +1278,8 @@ export default function DepartureHubPage() {
           roomSharing: b.roomSharing || b.roomType || passengersObj?.details?.roomType || "Double Sharing",
           roomType: leadRoomType,
           coupleWith: leadCoupleWith,
+          trainOption: trainOpt,
+          trainClass: trainOpt,
           emergencyContact: "9876543211",
           roomNo: leadRoomNo,
           paymentStatus: paymentLabel,
@@ -1299,6 +1316,7 @@ export default function DepartureHubPage() {
               passengersObj?.details?.roomType ||
               "Double Sharing";
             const coCoupleWith = coRoomInfo.coupleWith || "";
+            const coTrainOpt = p.trainOption || p.trainClass || trainOpt;
 
             arr.push({
               id: `${b.id}-co-${idx}`,
@@ -1307,6 +1325,8 @@ export default function DepartureHubPage() {
               roomNo: coRoomNo,
               roomType: coRoomType,
               coupleWith: coCoupleWith,
+              trainOption: coTrainOpt,
+              trainClass: coTrainOpt,
               phone: p.phone || b.phone || "—",
               email: p.email || "—",
               pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
@@ -1442,19 +1462,21 @@ export default function DepartureHubPage() {
 
       // Map passengerAllocations to proper DB format
       allPassengers.forEach((p: any) => {
-        const alloc = passengerAllocations[p.name];
+        const alloc = passengerAllocations[p.id] || passengerAllocations[p.name];
         if (!alloc) return;
-        if (alloc.room && alloc.room !== "—") {
+        const bookingId = p.bookingId || p.rawBooking?.bookingId || p.bookingRef || p.rawBooking?.id || `BK-${(p.name || "PAX").replace(/\s+/g, "").toUpperCase()}`;
+
+        if (alloc.room && alloc.room !== "—" && alloc.room !== "Unassigned") {
           roomAllocations.push({
             roomNumber: alloc.room,
-            roomType: "STANDARD",
+            roomType: p.roomType || "STANDARD",
             genderGroup: p.gender === "Female" ? "GIRLS" : "BOYS",
-            bookingId: p.bookingRef,
+            bookingId: bookingId,
             travelerName: p.name,
-            sharingType: "STANDARD",
+            sharingType: p.roomType || "STANDARD",
           });
         }
-        if (alloc.vehicle && alloc.vehicle !== "—") {
+        if (alloc.vehicle && alloc.vehicle !== "—" && alloc.vehicle !== "Unassigned") {
           const fleet = allocFleet.find(
             (f) =>
               f.name === alloc.vehicle ||
@@ -1464,7 +1486,7 @@ export default function DepartureHubPage() {
           if (fleet) {
             vehicleAllocations.push({
               fleetId: fleet.id,
-              bookingId: p.bookingRef,
+              bookingId: bookingId,
               travelerName: p.name,
               seatNumber:
                 alloc.seat && alloc.seat !== "—"
@@ -1680,6 +1702,7 @@ export default function DepartureHubPage() {
   // Multi-Vendor Hotel & Stay Assignment Architecture State
   const [hotelViewMode, setHotelViewMode] = useState<"card" | "table">("card");
   const [isAddHotelWizardOpen, setIsAddHotelWizardOpen] = useState(false);
+  const [selectedWizardDayInfo, setSelectedWizardDayInfo] = useState<any | null>(null);
   const [hotelWizardStep, setHotelWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [hotelWizardData, setHotelWizardData] = useState({
     destination: "Shimla",
@@ -1704,88 +1727,115 @@ export default function DepartureHubPage() {
   const [selectedStayForDrawer, setSelectedStayForDrawer] = useState<
     any | null
   >(null);
+  const [opsHotels, setOpsHotels] = useState<any[]>([]);
+  const loadGenerationRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchPageData = async () => {
+    // 1. Abort previous pending requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // 2. Increment request generation token
+    loadGenerationRef.current++;
+    const currentGen = loadGenerationRef.current;
+
     setLoading(true);
+    // Explicit state reset when changing departure to prevent stale data flashing
+    setBookings([]);
+    setDepartureRecord(null);
+    setReadinessData(null);
+    setEngineStats(null);
+    setOpsHotels([]);
+    setPassengerAllocations({});
+    setActivitiesList([]);
+    setDbGuides([]);
+    setChecklistTasks([]);
+    setItineraryList([]);
     try {
-      const bookingsRes = await api.get(
-        `/bookings?status=all&tripId=${tripId}&limit=100`,
-      );
-      const allBookings = bookingsRes.data?.data || [];
-      const filtered = allBookings.filter(
-        (b: any) =>
-          b.tripId === tripId &&
-          b.departureDate?.substring(0, 10) === departureDateStr,
-      );
-      setBookings(filtered);
+      const signal = controller.signal;
+      const [
+        bookingsRes,
+        depRes,
+        engineRes,
+        itinRes,
+        vendorsRes,
+        tripRes,
+        hotelsRes,
+        transportRes,
+        guidesRes,
+      ] = await Promise.allSettled([
+        api.get(`/bookings?status=all&tripId=${tripId}&limit=100`, { signal }),
+        api.get(`/departures/resolve?tripId=${tripId}&date=${departureDateStr}`, { signal }),
+        api.get(`/departure-engine/${tripId}/${departureDateStr}/passenger-stats`, { signal }),
+        api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`, { signal }),
+        api.get(`/vendors/directory?limit=100`, { signal }),
+        api.get(`/trips/${tripId}`, { signal }),
+        api.get(`/ops/hotels/${tripId}?departureDate=${departureDateStr}`, { signal }),
+        api.get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`, { signal }),
+        api.get(`/ops/guides/${tripId}?departureDate=${departureDateStr}`, { signal }),
+      ]);
 
-      try {
-        const depRes = await api.get(`/api/departures/resolve?tripId=${tripId}&date=${departureDateStr}`);
-        if (depRes.data?.success) {
-          setDepartureRecord(depRes.data.data.departure);
-          setReadinessData(depRes.data.data.readiness);
-        }
-      } catch (err) {
-        console.error("Failed to resolve departure record and readiness", err);
+      // Stale response check — ignore if user switched departure while fetching
+      if (currentGen !== loadGenerationRef.current) return;
+
+      // 1. Bookings
+      if (bookingsRes.status === "fulfilled" && bookingsRes.value?.data?.data) {
+        const allBookings = bookingsRes.value.data.data;
+        const filtered = allBookings.filter(
+          (b: any) =>
+            b.tripId === tripId &&
+            b.departureDate?.substring(0, 10) === departureDateStr,
+        );
+        setBookings(filtered);
       }
 
-      try {
-        const engineRes = await api.get(`/departure-engine/${tripId}/${departureDateStr}/passenger-stats`);
-        if (engineRes.data.success) {
-          setEngineStats(engineRes.data.data);
-        }
-      } catch (err) {
-        console.error("Failed to load engine stats", err);
+      // 2. Departure resolve
+      if (depRes.status === "fulfilled" && depRes.value?.data?.success) {
+        setDepartureRecord(depRes.value.data.data.departure);
+        setReadinessData(depRes.value.data.data.readiness);
       }
 
-      const itinRes = await api.get(
-        `/ops/itinerary/${tripId}?departureDate=${departureDateStr}`,
-      );
-      setItineraryList(itinRes.data?.data || []);
-
-      // Load vendors from Directory (has room rates + trip mappings)
-      const vendorsRes = await api
-        .get("/vendors/directory")
-        .catch(() => ({ data: { data: [] } }));
-      const allVendors = vendorsRes.data?.data || [];
-      // Hotel/homestay/camp vendors — trip-mapped ones shown first
-      const tripHotelVendors = allVendors.filter((v: any) =>
-        ["hotel", "homestay", "camp"].includes(v.type?.toLowerCase()),
-      );
-      tripHotelVendors.sort((a: any, b: any) => {
-        const aMap = a.tripMappings?.find((m: any) => m.tripId === tripId);
-        const bMap = b.tripMappings?.find((m: any) => m.tripId === tripId);
-        if (aMap && !bMap) return -1;
-        if (!aMap && bMap) return 1;
-        if (aMap?.isPrimary && !bMap?.isPrimary) return -1;
-        if (!aMap?.isPrimary && bMap?.isPrimary) return 1;
-        return 0;
-      });
-      setDbVendors(tripHotelVendors);
-
-      // Load trip details
-      const tripRes = await api.get(`/trips/${tripId}`).catch(() => null);
-      if (tripRes?.data?.success) {
-        setTripDetails(tripRes.data.data);
+      // 3. Engine stats
+      if (engineRes.status === "fulfilled" && engineRes.value?.data?.success) {
+        setEngineStats(engineRes.value.data.data);
       }
 
-      // Load operations hotels, transport, and guides
-      const hotelsRes = await api
-        .get(`/ops/hotels/${tripId}?departureDate=${departureDateStr}`)
-        .catch(() => ({ data: { data: [] } }));
-      const transportRes = await api
-        .get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`)
-        .catch(() => ({ data: { data: [] } }));
-      const guidesRes = await api
-        .get(`/ops/guides/${tripId}?departureDate=${departureDateStr}`)
-        .catch(() => ({ data: { data: [] } }));
+      // 4. Itinerary
+      if (itinRes.status === "fulfilled" && itinRes.value?.data?.data) {
+        setItineraryList(itinRes.value.data.data);
+      }
 
-      const hotels = hotelsRes.data?.data || [];
-      const transports = transportRes.data?.data || [];
-      const guides = guidesRes.data?.data || [];
+      // 5. Vendors directory
+      if (vendorsRes.status === "fulfilled" && vendorsRes.value?.data?.data) {
+        const allVendors = vendorsRes.value.data.data || [];
+        const tripHotelVendors = allVendors.filter((v: any) =>
+          ["hotel", "homestay", "camp"].includes(v.type?.toLowerCase()),
+        );
+        setDbVendors(tripHotelVendors);
+      }
+
+      // 6. Trip details
+      if (tripRes.status === "fulfilled" && tripRes.value?.data?.data) {
+        setTripDetails(tripRes.value.data.data);
+      }
+
+      // 7. Ops Hotels
+      const hotels =
+        hotelsRes.status === "fulfilled" ? hotelsRes.value?.data?.data || [] : [];
+      setOpsHotels(hotels);
+
+      // 8. Ops Transports & Guides
+      const transports =
+        transportRes.status === "fulfilled" ? transportRes.value?.data?.data || [] : [];
+      const guides =
+        guidesRes.status === "fulfilled" ? guidesRes.value?.data?.data || [] : [];
       setDbGuides(guides);
 
-      // Populate allocFleet from database
+      // Fleet
       const initialFleet = transports.map((t: any) => ({
         id: t.id,
         name: t.driverName || "Tempo 1",
@@ -1796,7 +1846,7 @@ export default function DepartureHubPage() {
       }));
       setAllocFleet(initialFleet);
 
-      // Combine them into tripVendors structure
+      // Mapped tripVendors
       const mappedVendors = [
         ...hotels.map((h: any) => ({
           id: h.id,
@@ -1819,24 +1869,16 @@ export default function DepartureHubPage() {
           id: t.id,
           vendorType: "transport",
           vendorId: {
-            name: t.vehicleType,
-            location: t.driverName || "Driver",
-            notes: t.notes,
+            name: t.driverName || "Transport Partner",
+            location: t.notes || "Local",
           },
-          paymentStatus: t.balanceAmount === 0 ? "paid" : "pending",
-          notes: t.notes,
+          paymentStatus: "paid",
           agreedCost: t.totalAmount,
-          paidAmount: t.advancePaid,
-          balanceDue: t.balanceAmount,
+          rawAssignment: t,
         })),
         ...guides.map((g: any) => ({
           id: g.id,
           vendorType: "guide",
-          vendor: {
-            name: g.guideName,
-            type: "guide",
-          },
-          paymentStatus: g.paymentStatus === "PAID" ? "paid" : "pending",
           agreedCost: g.agreedAmount,
           paidAmount: g.advancePaid,
           balanceDue: g.balanceAmount,
@@ -1877,31 +1919,59 @@ export default function DepartureHubPage() {
       if (allocRes?.data?.success) {
         const { rooms = [], vehicles = [] } = allocRes.data.data;
         if (rooms.length > 0 || vehicles.length > 0) {
-          setPassengerAllocations((prev: any) => {
-            const next = { ...prev };
+          // Build name→passenger map for dual-key write (by both id and name)
+          const nameToPassenger: Record<string, any> = {};
+          (allPassengers as any[]).forEach((p: any) => {
+            if (p.name) nameToPassenger[p.name] = p;
+          });
+
+          // Build fleetId-to-name map from initialFleet
+          const fleetNameMap: Record<string, string> = {};
+          initialFleet.forEach((f: any) => {
+            fleetNameMap[f.id] = f.name;
+          });
+
+          setPassengerAllocations((_prev: any) => {
+            const next: Record<string, any> = {};
+
+            // Write room allocations by BOTH travelerName and passenger.id
             rooms.forEach((r: any) => {
-              const key = r.travelerName;
-              next[key] = {
-                ...(next[key] || { vehicle: "—", seat: "—" }),
+              const nameKey = r.travelerName;
+              const pObj = nameToPassenger[nameKey];
+              const entry = {
+                ...(next[nameKey] || { vehicle: "—", seat: "—" }),
                 room: r.roomNumber,
               };
+              next[nameKey] = entry;
+              // Also key by passenger id so computedRoomAllocations can find it
+              if (pObj?.id) {
+                next[pObj.id] = { ...entry };
+              }
             });
-            // Build fleetId-to-name map from initialFleet
-            const fleetNameMap: Record<string, string> = {};
-            initialFleet.forEach((f: any) => {
-              fleetNameMap[f.id] = f.name;
-            });
+
             vehicles.forEach((v: any) => {
-              const key = v.travelerName;
+              const nameKey = v.travelerName;
+              const pObj = nameToPassenger[nameKey];
               const vName = fleetNameMap[v.fleetId] || v.fleetId;
-              next[key] = {
-                ...(next[key] || { room: "—" }),
+              const entry = {
+                ...(next[nameKey] || { room: "—" }),
                 vehicle: vName,
                 seat: v.seatNumber ? String(v.seatNumber) : "—",
               };
+              next[nameKey] = entry;
+              if (pObj?.id) {
+                next[pObj.id] = { ...entry };
+              }
             });
+
             return next;
           });
+
+          // Also restore manualRooms from saved allocation room numbers
+          const savedRoomNumbers = [...new Set(rooms.map((r: any) => r.roomNumber as string))];
+          if (savedRoomNumbers.length > 0) {
+            setManualRooms(savedRoomNumbers);
+          }
         }
       }
     } catch {
@@ -2177,6 +2247,7 @@ export default function DepartureHubPage() {
   const [tripleRate, setTripleRate] = useState(3000);
   const [quadRate, setQuadRate] = useState(3800);
   const [extraPersonRate, setExtraPersonRate] = useState(700);
+  const [extraChildRate, setExtraChildRate] = useState(0);
 
   // Per Person Rates
   const [adultRate, setAdultRate] = useState(950);
@@ -3004,9 +3075,15 @@ export default function DepartureHubPage() {
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
 
   useEffect(() => {
-    const lead = tripVendors.find((v) => v.vendorType === "guide");
+    const lead = tripVendors.find((v) => v.vendorType === "guide" || v.assignmentType?.includes("GUIDE"));
     if (lead) {
-      setLeadGuideName(lead.vendor.name);
+      setLeadGuideName(
+        lead?.vendor?.name ||
+          lead?.vendorName ||
+          lead?.guideName ||
+          lead?.name ||
+          "",
+      );
     }
   }, [tripVendors]);
 
@@ -3842,9 +3919,64 @@ export default function DepartureHubPage() {
     printWindow.document.close();
   };
 
-  const handleDownloadGuideSheet = (hotelName: string) => {
+  const handleDownloadGuideSheet = (hotelName: string, hotelBookingInput?: any) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
+
+    // Find real OpsHotelBooking if not explicitly passed
+    const booking =
+      hotelBookingInput ||
+      opsHotels.find(
+        (b: any) =>
+          b.hotelName === hotelName ||
+          b.vendor?.name === hotelName ||
+          b.vendorName === hotelName,
+      );
+
+    const activePax = filterActivePassengers(allPassengers);
+
+    const category = booking?.category || booking?.vendor?.category || "Not configured";
+    const address = booking?.address || booking?.vendor?.address || booking?.location || "Not configured";
+    const checkIn = booking?.checkInDate || booking?.checkIn || "Not configured";
+    const checkOut = booking?.checkOutDate || booking?.checkOut || "Not configured";
+    const phone = booking?.phone || booking?.vendor?.phone || booking?.vendor?.contactNumber || "Not configured";
+    const manager = booking?.contactPerson || booking?.vendor?.contactPerson || "Not configured";
+    const mealPlan = booking?.mealPlan || booking?.mealPlanType || "Not configured";
+
+    const dRooms = safeNumber(booking?.doubleRoomsCount || booking?.doubleRooms);
+    const tRooms = safeNumber(booking?.tripleRoomsCount || booking?.tripleRooms);
+    const qRooms = safeNumber(booking?.quadRoomsCount || booking?.quadRooms);
+
+    const roomDetailsText = [
+      dRooms > 0 ? `${dRooms} Double` : "",
+      tRooms > 0 ? `${tRooms} Triple` : "",
+      qRooms > 0 ? `${qRooms} Quad` : "",
+    ]
+      .filter(Boolean)
+      .join(", ") || "Not configured";
+
+    // Group active passengers into rooms by room allocation
+    const roomGroups: Record<string, string[]> = {};
+    activePax.forEach((p) => {
+      const alloc = passengerAllocations[p.id] || passengerAllocations[p.name];
+      const rNum = alloc?.room || "Unassigned";
+      if (!roomGroups[rNum]) roomGroups[rNum] = [];
+      roomGroups[rNum].push(p.name);
+    });
+
+    const tableRowsHtml = Object.keys(roomGroups).length > 0
+      ? Object.entries(roomGroups)
+          .map(
+            ([roomNo, paxNames]) => `
+              <tr>
+                <td>${roomNo}</td>
+                <td>${paxNames.join(", ")}</td>
+                <td>Not configured</td>
+              </tr>
+            `,
+          )
+          .join("")
+      : `<tr><td colSpan="3" style="text-align:center; color:#94a3b8;">No room assignments configured</td></tr>`;
 
     const html = `
       <!DOCTYPE html>
@@ -3887,15 +4019,15 @@ export default function DepartureHubPage() {
           <div class="grid">
             <div class="card">
               <div class="label">Hotel Name & Category</div>
-              <div class="value">${hotelName} (3 Star Deluxe)</div>
+              <div class="value">${hotelName} (${category})</div>
               <div class="label">Full Address</div>
-              <div class="value">Mall Road, Near City Center, ${hotelName}</div>
+              <div class="value">${address}</div>
             </div>
             <div class="card">
               <div class="label">Check-in</div>
-              <div class="value">Aug 04, 2026 - 12:00 PM</div>
+              <div class="value">${checkIn}</div>
               <div class="label">Check-out</div>
-              <div class="value">Aug 06, 2026 - 10:00 AM</div>
+              <div class="value">${checkOut}</div>
             </div>
           </div>
 
@@ -3903,56 +4035,40 @@ export default function DepartureHubPage() {
           <div class="grid">
             <div class="card">
               <div class="label">Reception Number</div>
-              <div class="value">+91 98765 43210</div>
+              <div class="value">${phone}</div>
               <div class="label">Hotel Manager</div>
-              <div class="value">Mr. Sharma (+91 98765 12345)</div>
+              <div class="value">${manager}</div>
             </div>
             <div class="card">
               <div class="label">Emergency Contact</div>
-              <div class="value">+91 99999 00000</div>
+              <div class="value">${phone}</div>
               <div class="label">Google Maps Link</div>
-              <div class="value">https://maps.google.com/?q=...</div>
+              <div class="value">${booking?.mapUrl || booking?.vendor?.mapUrl || "Not configured"}</div>
             </div>
           </div>
 
           <div class="section-title">Stay & Rooming Information</div>
           <div class="grid" style="grid-template-columns: 1fr;">
             <div class="card">
-              <div class="label">Total Passengers</div>
-              <div class="value">17 Passengers (12 Twin, 5 Triple)</div>
+              <div class="label">Total Active Passengers</div>
+              <div class="value">${activePax.length} Passengers (${roomDetailsText})</div>
               <div class="label">Meal Plan</div>
-              <div class="value">MAP (Breakfast + Dinner)</div>
+              <div class="value">${mealPlan}</div>
             </div>
           </div>
           
           <table>
             <thead>
               <tr>
-                <th>Room Type</th>
-                <th>Passengers (Sharing With)</th>
+                <th>Room Number / Group</th>
+                <th>Passengers</th>
                 <th>Special Requests</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>Twin</td>
-                <td>Rahul & Amit</td>
-                <td>Early Check-in</td>
-              </tr>
-              <tr>
-                <td>Triple</td>
-                <td>Neha, Priya & Riya</td>
-                <td>Extra Bed</td>
-              </tr>
+              ${tableRowsHtml}
             </tbody>
           </table>
-
-          <div class="section-title">Important Notes</div>
-          <ul style="font-size: 13px; color: #1e293b; padding-left: 20px;">
-            <li style="margin-bottom: 5px;"><strong>Early Check-in:</strong> Requested for 3 rooms at 10:00 AM.</li>
-            <li style="margin-bottom: 5px;"><strong>Vehicle Parking:</strong> Available for 1 Tempo Traveller.</li>
-            <li style="margin-bottom: 5px;"><strong>Driver Stay:</strong> Arranged in Dormitory.</li>
-          </ul>
 
           <script>
             window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 800); };
@@ -3965,21 +4081,11 @@ export default function DepartureHubPage() {
   };
 
   const computedPayments = useMemo(() => {
-    const confirmedBookings = bookings.filter(
-      (b: any) => b.status !== "cancelled",
+    const activeBookings = bookings.filter(
+      (b: any) => !isPassengerCancelled(null, b),
     );
-    return confirmedBookings.map((b: any) => {
-      let status = "UNPAID";
-      if (
-        b.paymentStatus === "Paid" ||
-        b.paymentStatus === "paid" ||
-        b.paymentStatus === "Paid in Full" ||
-        b.remainingAmount === 0
-      ) {
-        status = "PAID";
-      } else if (b.advancePaid > 0) {
-        status = "PARTIALLY PAID";
-      }
+    return activeBookings.map((b: any) => {
+      const fin = calculateBookingFinancialStatus(b);
 
       return {
         id: b.bookingId || `BK-${b.id.substring(0, 6).toUpperCase()}`,
@@ -3987,12 +4093,14 @@ export default function DepartureHubPage() {
         pax: b.numberOfTravelers || 1,
         phone: b.mobile || b.phone || "—",
         plan: b.tripName || "Standard Plan",
-        amount: b.totalAmount || b.amount || 0,
-        paid: b.advancePaid || 0,
-        pending: b.remainingAmount || 0,
+        amount: fin.totalAmount,
+        paid: fin.netPaidAmount,
+        pending: fin.remainingAmount,
+        overpayment: fin.overpaymentAmount,
+        refund: fin.refundAmount,
         mode: b.paymentMode || b.payment_method || "UPI",
         modeDetail: b.upi_reference ? `UPI Ref: ${b.upi_reference}` : "—",
-        status: status,
+        status: fin.paymentStatus,
         lastPayment: b.createdAt
           ? new Date(b.createdAt).toLocaleDateString("en-IN", {
               day: "numeric",
@@ -4145,113 +4253,36 @@ export default function DepartureHubPage() {
   }, [checklistTasks]);
 
   const computedConversations = useMemo(() => {
-    return [
-      {
-        id: "g1",
-        name: `${tripId} – General Group`,
-        sub: `${leadGuideName || "Guide"}: Meeting point details...`,
-        time: "10:30 AM",
-        unread: 1,
-        type: "group",
-        icon: "🏕️",
-      },
-      {
-        id: "g2",
-        name: "Pre-Departure Info",
-        sub: "Operations: Please carry original ID proofs.",
-        time: "Yesterday",
-        unread: 3,
-        type: "group",
-        icon: "📋",
-      },
-      {
-        id: "g3",
-        name: `${leadGuideName || "Guide"} (Lead Guide)`,
-        sub: "You: Please share the expected weather...",
-        time: "Yesterday",
-        unread: 0,
-        type: "direct",
-        icon: "👤",
-      },
-      {
-        id: "g4",
-        name: "Suresh Kumar (Accounting)",
-        sub: "Suresh: Payment received from travelers",
-        time: "28 Jun",
-        unread: 0,
-        type: "direct",
-        icon: "💼",
-      },
-      {
-        id: "g5",
-        name: "Important Updates",
-        sub: "Ops Desk: Hotel updates for trip",
-        time: "27 Jun",
-        unread: 0,
-        type: "group",
-        icon: "📢",
-      },
-    ];
-  }, [tripId, leadGuideName]);
+    if (Array.isArray(tripDetails?.conversations) && tripDetails.conversations.length > 0) {
+      return tripDetails.conversations.map((c: any, idx: number) => ({
+        id: c.id || `conv-${idx}`,
+        name: c.name || c.title || `Group ${idx + 1}`,
+        sub: c.lastMessage || c.sub || "",
+        time: c.updatedAt ? new Date(c.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+        unread: c.unreadCount || 0,
+        type: c.type || "group",
+        icon: c.type === "direct" ? "👤" : "🏕️",
+      }));
+    }
+    return [];
+  }, [tripDetails]);
 
   const computedMessages = useMemo(() => {
-    const travelerNames = bookings
-      .filter((b: any) => b.status !== "cancelled")
-      .map((b: any) => b.fullName || b.name);
-    const primaryTraveler = travelerNames[0] || "Jeel";
-    const secondaryTraveler = travelerNames[1] || "Vatsal";
-    const guideName = leadGuideName || "Dikshu Sharma";
-
-    return [
-      {
-        id: "m1",
-        convId: "g1",
-        sender: guideName,
-        role: "Lead Guide",
-        avatar: "DS",
-        time: "10:10 AM",
-        text: `Good morning everyone! 👋\nWelcome to the ${tripDetails?.title || "Spiti Valley Road Trip"} group.\nReach at 6:00 AM sharp at the meeting point.\nOur team will be there with the vehicles.`,
-        reactions: [{ emoji: "👍", count: 8 }],
-        isMine: false,
-      },
-      {
-        id: "m2",
-        convId: "g1",
-        sender: primaryTraveler,
-        role: "Traveler",
-        avatar: "PT",
-        time: "10:22 AM",
-        text: "Thanks team! Excited for the trip en route.",
-        reactions: [{ emoji: "👍", count: 6 }],
-        isMine: false,
-      },
-      {
-        id: "m3",
-        convId: "g2",
-        sender: "Ops Desk",
-        role: "Operations",
-        avatar: "OD",
-        time: "10:28 AM",
-        text: "Please carry your original ID proofs.\nAlso ensure your luggage is not more than 15 kg.",
-        reactions: [],
-        isMine: false,
-      },
-      {
-        id: "m4",
-        convId: "g1",
-        sender: "Suresh Kumar",
-        role: "You",
-        avatar: "SK",
-        time: "10:30 AM",
-        text: "Thanks team! Have a safe journey everyone. See you all tomorrow! 😊",
-        reactions: [
-          { emoji: "❤️", count: 1 },
-          { emoji: "👍", count: 2 },
-        ],
-        isMine: true,
-      },
-    ];
-  }, [bookings, leadGuideName, tripDetails]);
+    if (Array.isArray(tripDetails?.messages) && tripDetails.messages.length > 0) {
+      return tripDetails.messages.map((m: any, idx: number) => ({
+        id: m.id || `msg-${idx}`,
+        convId: m.conversationId || m.convId || "g1",
+        sender: m.senderName || m.sender || "Operations",
+        role: m.senderRole || m.role || "Admin",
+        avatar: (m.senderName || "OP").substring(0, 2).toUpperCase(),
+        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+        text: m.text || m.content || "",
+        reactions: m.reactions || [],
+        isMine: m.isMine || false,
+      }));
+    }
+    return [];
+  }, [tripDetails]);
 
   useEffect(() => {
     if (bookings.length > 0) {
@@ -4260,40 +4291,34 @@ export default function DepartureHubPage() {
   }, [bookings, computedMessages]);
 
   const hotelStats = useMemo(() => {
-    const hotels = tripVendors.filter((v: any) => v.vendorType === "hotel");
-    const totalNights = hotels.length || 9;
-    const confirmedNights = hotels.filter(
-      (h: any) =>
-        h.paymentStatus === "paid" ||
-        h.notes?.toLowerCase().includes("confirm"),
-    ).length;
-    const pendingNights = totalNights - confirmedNights;
-    const paxCount = bookings.reduce(
-      (sum: number, b: any) => sum + (b.numberOfTravelers || 1),
-      0,
-    );
-    const totalRooms = totalNights * 12 || 120;
-    const roomsBooked = Math.min(paxCount, totalRooms);
-    const occupancy =
-      totalRooms > 0 ? ((roomsBooked / totalRooms) * 100).toFixed(1) : "0";
+    const activePax = filterActivePassengers(allPassengers);
+    const summary = calculateRoomOccupancy(opsHotels, activePax, passengerAllocations);
 
     return {
-      totalNights,
-      confirmedNights,
-      pendingNights,
-      totalRooms,
-      roomsBooked,
-      occupancy,
+      totalNights: summary.configuredNights,
+      confirmedNights: summary.configuredNights,
+      pendingNights: 0,
+      totalRooms: summary.totalRooms,
+      roomCapacity: summary.roomCapacity,
+      totalPax: summary.totalActivePax,
+      allocatedPax: summary.allocatedPax,
+      unallocatedPax: summary.unallocatedPax,
+      isCapacityShortfall: summary.isCapacityShortfall,
+      shortfallPax: summary.shortfallPax,
+      hasAccommodationConfigured: summary.hasAccommodationConfigured,
+      occupancy: summary.roomCapacity > 0 ? ((summary.totalActivePax / summary.roomCapacity) * 100).toFixed(1) : "0",
     };
-  }, [tripVendors, bookings]);
+  }, [opsHotels, allPassengers, passengerAllocations]);
 
   useEffect(() => {
     if (allPassengers && allPassengers.length > 0) {
       setPassengerAllocations((prev) => {
         const next = { ...prev };
         allPassengers.forEach((p) => {
-          if (!next[p.name]) {
-            next[p.name] = {
+          if (isPassengerCancelled(p)) return;
+          const key = p.id;
+          if (!next[key]) {
+            next[key] = {
               room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
               vehicle: "—",
               seat: "—",
@@ -4308,22 +4333,28 @@ export default function DepartureHubPage() {
   const computedRoomAllocations = useMemo(() => {
     const list: any[] = [];
 
-    // 1. Gather all traveler allocations
-    Object.entries(passengerAllocations).forEach(([name, alloc]) => {
-      if (alloc.room && alloc.room !== "Unassigned" && alloc.room !== "—") {
-        const pObj = allPassengers.find((p) => p.name === name);
-        const gender = pObj && pObj.gender === "Female" ? "GIRLS" : "BOYS";
-        list.push({
-          roomNumber: alloc.room,
-          travelerName: name,
-          genderGroup: gender,
-          rawGender: pObj?.gender || "Unknown",
-          roomType: "Double",
-        });
-      }
+    // Iterate allPassengers as the canonical source (one entry per person),
+    // not Object.entries(passengerAllocations) which now has dual id+name keys
+    // and would produce duplicates.
+    allPassengers.forEach((pObj: any) => {
+      const alloc = passengerAllocations[pObj.id] || passengerAllocations[pObj.name];
+      if (!alloc || !alloc.room || alloc.room === "Unassigned" || alloc.room === "—") return;
+      if (isPassengerCancelled(pObj)) return;
+
+      const travelerName = pObj.name;
+      const gender = pObj.gender === "Female" ? "GIRLS" : "BOYS";
+      list.push({
+        roomNumber: alloc.room,
+        travelerName,
+        passengerId: pObj.id,
+        genderGroup: gender,
+        rawGender: pObj.gender || "Unknown",
+        roomType: pObj.roomType || "Double",
+      });
     });
 
-    // 2. Add empty placeholder rooms for manually added room values
+    // Add empty placeholder rooms for manually added room values
+
     manualRooms.forEach((rNum) => {
       const hasMembers = list.some((x) => x.roomNumber === rNum);
       if (!hasMembers) {
@@ -4342,27 +4373,30 @@ export default function DepartureHubPage() {
 
   const computedVehicleAllocations = useMemo(() => {
     const list: any[] = [];
-    Object.entries(passengerAllocations).forEach(([name, alloc]) => {
+    // Iterate allPassengers as canonical source (one per person) to avoid duplicates
+    // from dual id+name keys in passengerAllocations
+    allPassengers.forEach((pObj: any) => {
+      const alloc = passengerAllocations[pObj.id] || passengerAllocations[pObj.name];
       if (
-        alloc.vehicle &&
+        alloc?.vehicle &&
         alloc.vehicle !== "Unassigned" &&
         alloc.vehicle !== "—"
       ) {
         const fleetItem = allocFleet.find(
           (f) => f.name === alloc.vehicle || f.id === alloc.vehicle,
         );
-        const pObj = allPassengers.find((p) => p.name === name);
         list.push({
           fleetId: fleetItem?.id || "tempo-1",
           vehicleType: alloc.vehicle,
           seatNumber: alloc.seat,
-          travelerName: name,
-          rawGender: pObj?.gender || "Unknown",
+          travelerName: pObj.name,
+          rawGender: pObj.gender || "Unknown",
         });
       }
     });
     return list;
-  }, [passengerAllocations, allocFleet]);
+  }, [passengerAllocations, allocFleet, allPassengers]);
+
 
   const allocWarnings = useMemo(() => {
     const warnings: string[] = [];
@@ -4414,26 +4448,20 @@ export default function DepartureHubPage() {
     status: "CONFIRMED",
   });
 
-  const handleAddActivitySubmit = (e: React.FormEvent) => {
+  const handleAddActivitySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setActivitiesList((prev) => [
-      ...prev,
-      {
+    try {
+      const payload = {
         ...newActivityData,
-        wd: newActivityData.day === "Optional" ? "" : "07 Jul, Mon",
-        inc: newActivityData.status === "CONFIRMED",
-        statusClass:
-          newActivityData.status === "CONFIRMED"
-            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-            : newActivityData.status === "PENDING"
-              ? "bg-amber-50 text-amber-600 border-amber-100"
-              : newActivityData.status === "CANCELLED"
-                ? "bg-red-50 text-red-650 border-red-100"
-                : "bg-blue-50 text-blue-600 border-blue-100",
-      },
-    ]);
-    setActivityModalOpen(false);
-    toast.success("Activity added successfully!");
+        name: newActivityData.act,
+        dayNumber: Number(String(newActivityData.day).replace(/\D/g, "")) || 1,
+      };
+      const persisted = await saveActivityToBackend(api, tripId, departureDateStr, payload);
+      setActivitiesList((prev) => [...prev, persisted]);
+      setActivityModalOpen(false);
+    } catch (err) {
+      // API error toast is shown by saveActivityToBackend; UI state is not mutated on failure
+    }
   };
 
   useEffect(() => {
@@ -4967,22 +4995,17 @@ export default function DepartureHubPage() {
     const newAllocs: Record<string, any> = {};
     let roomNum = 1;
     const activeTravelers = allPassengers.filter(
-      (p) => p.notes !== "Cancelled",
+      (p) => !isPassengerCancelled(p),
     );
     const allocated = new Set<string>();
 
     // Step 1: Identify couples/groups — travelers sharing the same bookingId
-    const bookingGroups: Record<string, any[]> = {};
-    activeTravelers.forEach((p) => {
-      const bId = String(p.bookingId).replace(/-co-\d+$/, "");
-      if (!bookingGroups[bId]) bookingGroups[bId] = [];
-      bookingGroups[bId].push(p);
-    });
+    const bookingGroups = groupPassengersByBooking(activeTravelers);
 
     // Step 1: Allocate Same-Booking Groups (Same booking co-travelers stay together!)
     if (prioritizeCouples) {
       Object.values(bookingGroups).forEach((group) => {
-        const unallocated = group.filter((p) => !allocated.has(p.name));
+        const unallocated = group.filter((p) => !allocated.has(p.id));
         if (unallocated.length >= 2) {
           let list = [...unallocated];
           while (list.length >= 2) {
@@ -4998,8 +5021,8 @@ export default function DepartureHubPage() {
 
             const chunk = list.slice(0, chunkSize);
             chunk.forEach((p) => {
-              newAllocs[p.name] = { room: `Room ${roomNum}` };
-              allocated.add(p.name);
+              newAllocs[p.id] = { room: `Room ${roomNum}` };
+              allocated.add(p.id);
             });
             roomNum++;
             list = list.slice(chunkSize);
@@ -5017,14 +5040,14 @@ export default function DepartureHubPage() {
       const capMap: Record<string, number> = { Single: 1, Double: 2, Triple: 3, Quad: 4, Family: 4, Dorm: 6 };
       
       preferences.forEach(pref => {
-        const list = travelersList.filter(p => p.roomType === pref && !allocated.has(p.name));
+        const list = travelersList.filter(p => p.roomType === pref && !allocated.has(p.id));
         const cap = capMap[pref];
         let index = 0;
         while (index + cap <= list.length) {
           const chunk = list.slice(index, index + cap);
           chunk.forEach((p) => {
-            newAllocs[p.name] = { room: `Room ${roomNum}` };
-            allocated.add(p.name);
+            newAllocs[p.id] = { room: `Room ${roomNum}` };
+            allocated.add(p.id);
           });
           roomNum++;
           index += cap;
@@ -5034,16 +5057,16 @@ export default function DepartureHubPage() {
 
     // Phase 1: Execute Explicit Preferences
     if (sameGenderEnforced) {
-      const remainingMales = activeTravelers.filter(p => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.name));
+      const remainingMales = activeTravelers.filter(p => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.id));
       allocatePass1(remainingMales);
       
-      const remainingFemales = activeTravelers.filter(p => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.name));
+      const remainingFemales = activeTravelers.filter(p => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.id));
       allocatePass1(remainingFemales);
       
-      const remainingUnknowns = activeTravelers.filter(p => !allocated.has(p.name) && (p.gender || "").toLowerCase() !== "male" && (p.gender || "").toLowerCase() !== "female");
+      const remainingUnknowns = activeTravelers.filter(p => !allocated.has(p.id) && (p.gender || "").toLowerCase() !== "male" && (p.gender || "").toLowerCase() !== "female");
       allocatePass1(remainingUnknowns);
     } else {
-      const remainingAll = activeTravelers.filter(p => !allocated.has(p.name));
+      const remainingAll = activeTravelers.filter(p => !allocated.has(p.id));
       allocatePass1(remainingAll);
     }
 
@@ -5056,8 +5079,8 @@ export default function DepartureHubPage() {
         const chunk = pool.splice(0, chunkSize);
         chunk.forEach((p) => {
           if (p) {
-            newAllocs[p.name] = { room: `Room ${roomNum}` };
-            allocated.add(p.name);
+            newAllocs[p.id] = { room: `Room ${roomNum}` };
+            allocated.add(p.id);
           }
         });
         roomNum++;
@@ -5066,21 +5089,21 @@ export default function DepartureHubPage() {
 
     if (sameGenderEnforced) {
       const leftoverFemales = activeTravelers.filter(
-        (p) => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.name),
+        (p) => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.id),
       );
       allocatePoolByGender(leftoverFemales);
 
       const leftoverMales = activeTravelers.filter(
-        (p) => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.name),
+        (p) => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.id),
       );
       allocatePoolByGender(leftoverMales);
 
       const leftoverOthers = activeTravelers.filter(
-        (p) => !allocated.has(p.name),
+        (p) => !allocated.has(p.id),
       );
       allocatePoolByGender(leftoverOthers);
     } else {
-      const remainingAll = activeTravelers.filter((p) => !allocated.has(p.name));
+      const remainingAll = activeTravelers.filter((p) => !allocated.has(p.id));
       allocatePoolByGender(remainingAll);
     }
 
@@ -5125,8 +5148,9 @@ export default function DepartureHubPage() {
       if (vehicle) {
         groupMembers.forEach((p) => {
           const seatIndex = vehicle.capacity - vehicle.remainingSeats + 1;
-          newAllocs[p.name] = {
-            ...newAllocs[p.name],
+          // Key by p.id (same as room allocation) so computedVehicleAllocations can find it
+          newAllocs[p.id] = {
+            ...newAllocs[p.id],      // preserve room assignment written above
             vehicle: vehicle.name,
             seat: String(seatIndex),
           };
@@ -5676,7 +5700,7 @@ export default function DepartureHubPage() {
     overview: "Edit Departure",
     passengers: "+ Add Passenger",
     itinerary: "+ Add Day",
-    hotels: "+ Add Hotel",
+    accommodation: "+ Add Hotel",
     allocation: "+ Add Vehicle",
     guides: "+ Assign Guide",
     reports: "Download Report",
@@ -5885,7 +5909,7 @@ export default function DepartureHubPage() {
                     input.click();
                   } else if (activeTab === "activities") {
                     setActivityModalOpen(true);
-                  } else if (activeTab === "hotels") {
+                  } else if (activeTab === "accommodation") {
                     setHotelWizardStep(1);
                     setIsAddHotelWizardOpen(true);
                   } else {
@@ -7505,24 +7529,6 @@ export default function DepartureHubPage() {
                           </div>
                         ))}
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="bg-slate-800 rounded-lg p-4 text-white shadow-sm">
-                          <div className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Est. Hotel Cost</div>
-                          <div className="text-2xl font-black text-emerald-400 mt-1">₹{totalHotelCost.toLocaleString("en-IN")}</div>
-                          <div className="text-[10px] text-slate-500 font-semibold mt-1">Includes 5% GST</div>
-                        </div>
-                        <div className="bg-white border border-[#E2E8F0] rounded-lg p-4 shadow-sm">
-                          <div className="text-slate-500 text-[10px] font-black uppercase tracking-wider">Total Nights</div>
-                          <div className="text-2xl font-black text-slate-800 mt-1">{nightCount} Nights</div>
-                          <div className="text-[10px] text-slate-400 font-semibold mt-1">Across {destCount} destinations</div>
-                        </div>
-                        <div className="bg-white border border-[#E2E8F0] rounded-lg p-4 shadow-sm">
-                          <div className="text-slate-500 text-[10px] font-black uppercase tracking-wider">Confirmed Hotels</div>
-                          <div className="text-2xl font-black text-slate-800 mt-1">{hotelVendorCount} / {hotelVendorCount || 1}</div>
-                          <div className="text-[10px] text-slate-400 font-semibold mt-1">All stays mapped</div>
-                        </div>
-                      </div>
                     </>
                   );
                 })()}
@@ -8378,462 +8384,17 @@ export default function DepartureHubPage() {
           </Dialog>
 
           {/* 4-Step Add Hotel / Stay Assignment Wizard Modal */}
-          <Dialog
-            open={isAddHotelWizardOpen}
-            onOpenChange={setIsAddHotelWizardOpen}
-          >
-            <DialogContent className="max-w-2xl bg-white p-6 rounded-[12px] shadow-xl border border-slate-200 overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <h3 className="text-base font-black text-slate-800">
-                    Add Hotel & Stay Assignment
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Step {hotelWizardStep} of 4:{" "}
-                    {hotelWizardStep === 1
-                      ? "Choose Destination"
-                      : hotelWizardStep === 2
-                        ? "Select Hotel Property"
-                        : hotelWizardStep === 3
-                          ? "Choose Vendor Contract"
-                          : "Configure Stay & Pricing"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {[1, 2, 3, 4].map((s) => (
-                    <div
-                      key={s}
-                      className={cn(
-                        "w-6 h-1.5 rounded-full transition-all",
-                        hotelWizardStep === s
-                          ? "bg-[#F97316]"
-                          : hotelWizardStep > s
-                            ? "bg-emerald-500"
-                            : "bg-slate-200",
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="py-4">
-                {hotelWizardStep === 1 && (
-                  <div className="space-y-4">
-                    <p className="text-xs font-bold text-slate-700">
-                      Select destination for this stay:
-                    </p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        "Shimla",
-                        "Sangla",
-                        "Tabo",
-                        "Kaza",
-                        "Manali",
-                        "Chandigarh",
-                      ].map((dest) => (
-                        <button
-                          key={dest}
-                          type="button"
-                          onClick={() => {
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              destination: dest,
-                            }));
-                            setHotelWizardStep(2);
-                          }}
-                          className={cn(
-                            "p-4 rounded-[8px] border text-left font-black transition-all flex items-center justify-between",
-                            hotelWizardData.destination === dest
-                              ? "bg-[#FFF7ED] border-[#F97316] text-[#F97316] shadow-xs"
-                              : "bg-white border-slate-200 text-slate-750 hover:bg-slate-50",
-                          )}
-                        >
-                          <span className="text-sm">{dest}</span>
-                          <MapPin className="w-4 h-4 text-slate-400" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {hotelWizardStep === 2 && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-slate-700">
-                        Select hotel in{" "}
-                        <span className="text-[#F97316]">
-                          {hotelWizardData.destination}
-                        </span>
-                        :
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toast.success("Opening Create New Hotel form")
-                        }
-                        className="text-[11px] font-bold text-[#F97316] hover:underline flex items-center gap-1"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Create New Hotel
-                      </button>
-                    </div>
-                    <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                      {[
-                        {
-                          id: "HTL-1",
-                          name: "Apple Blossom",
-                          city: "Sangla",
-                          category: "Standard",
-                          rating: "★★★★",
-                        },
-                        {
-                          id: "HTL-2",
-                          name: "Hotel Snow View",
-                          city: "Shimla",
-                          category: "Deluxe",
-                          rating: "★★★★★",
-                        },
-                        {
-                          id: "HTL-3",
-                          name: "Mehak Resort",
-                          city: "Sangla",
-                          category: "Luxury",
-                          rating: "★★★★",
-                        },
-                        {
-                          id: "HTL-4",
-                          name: "Spiti Siddharth",
-                          city: "Kaza",
-                          category: "Standard",
-                          rating: "★★★★",
-                        },
-                        {
-                          id: "HTL-5",
-                          name: "Mountain Vista",
-                          city: "Tabo",
-                          category: "Deluxe",
-                          rating: "★★★★★",
-                        },
-                      ].map((h) => (
-                        <div
-                          key={h.id}
-                          onClick={() => {
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              hotelId: h.id,
-                              hotelName: h.name,
-                              hotelRating: h.rating,
-                            }));
-                            setHotelWizardStep(3);
-                          }}
-                          className={cn(
-                            "p-3.5 rounded-[8px] border cursor-pointer transition-all flex items-center justify-between",
-                            hotelWizardData.hotelId === h.id
-                              ? "bg-[#FFF7ED] border-[#F97316] shadow-xxs"
-                              : "bg-white border-slate-200 hover:bg-slate-50",
-                          )}
-                        >
-                          <div>
-                            <p className="text-sm font-black text-slate-800">
-                              {h.name}{" "}
-                              <span className="text-amber-400 font-normal">
-                                {h.rating}
-                              </span>
-                            </p>
-                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                              {h.city} • {h.category} Property
-                            </p>
-                          </div>
-                          <span className="text-[10px] font-extrabold px-2 py-1 rounded bg-slate-100 text-slate-700">
-                            Select →
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {hotelWizardStep === 3 && (
-                  <div className="space-y-4">
-                    <p className="text-xs font-bold text-slate-700">
-                      Choose Vendor Contract for{" "}
-                      <span className="text-[#F97316]">
-                        {hotelWizardData.hotelName}
-                      </span>
-                      :
-                    </p>
-                    <div className="space-y-2.5">
-                      {[
-                        {
-                          id: "VND-1",
-                          name: "Direct Hotel",
-                          rate: 3200,
-                          terms: "100% at Check-in",
-                          default: true,
-                          outstanding: 0,
-                        },
-                        {
-                          id: "VND-2",
-                          name: "Mountain Hospitality",
-                          rate: 2950,
-                          terms: "50% Advance, 50% Post-Trip",
-                          default: false,
-                          outstanding: 45000,
-                        },
-                        {
-                          id: "VND-3",
-                          name: "XYZ Travels",
-                          rate: 3100,
-                          terms: "7 Days Credit",
-                          default: false,
-                          outstanding: 12000,
-                        },
-                      ].map((v) => (
-                        <div
-                          key={v.id}
-                          onClick={() => {
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              vendorId: v.id,
-                              vendorName: v.name,
-                              vendorRate: v.rate,
-                              totalAmount: v.rate * 5,
-                            }));
-                            setHotelWizardStep(4);
-                          }}
-                          className={cn(
-                            "p-4 rounded-[8px] border cursor-pointer transition-all flex items-center justify-between",
-                            hotelWizardData.vendorId === v.id
-                              ? "bg-[#FFF7ED] border-[#F97316] shadow-xxs"
-                              : "bg-white border-slate-200 hover:bg-slate-50",
-                          )}
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-black text-slate-800">
-                                {v.name}
-                              </p>
-                              {v.default && (
-                                <span className="text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded">
-                                  Default Vendor
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                              Payment Terms: {v.terms} • Outstanding: ₹
-                              {v.outstanding.toLocaleString("en-IN")}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-black text-slate-800">
-                              ₹{v.rate.toLocaleString("en-IN")}
-                            </p>
-                            <p className="text-[9px] text-slate-400">
-                              Negotiated Rate / Night
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {hotelWizardStep === 4 && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                          Check In
-                        </label>
-                        <input
-                          type="text"
-                          value={hotelWizardData.checkIn}
-                          onChange={(e) =>
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              checkIn: e.target.value,
-                            }))
-                          }
-                          className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                          Check Out
-                        </label>
-                        <input
-                          type="text"
-                          value={hotelWizardData.checkOut}
-                          onChange={(e) =>
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              checkOut: e.target.value,
-                            }))
-                          }
-                          className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                          Twin Rooms
-                        </label>
-                        <input
-                          type="number"
-                          value={hotelWizardData.rooms.Twin || 0}
-                          onChange={(e) =>
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              rooms: {
-                                ...prev.rooms,
-                                Twin: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                          Triple Rooms
-                        </label>
-                        <input
-                          type="number"
-                          value={hotelWizardData.rooms.Triple || 0}
-                          onChange={(e) =>
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              rooms: {
-                                ...prev.rooms,
-                                Triple: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                          Meal Plan
-                        </label>
-                        <select
-                          value={hotelWizardData.mealPlan}
-                          onChange={(e) =>
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              mealPlan: e.target.value,
-                            }))
-                          }
-                          className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
-                        >
-                          <option value="CP">CP (Breakfast)</option>
-                          <option value="MAP">MAP (Breakfast & Dinner)</option>
-                          <option value="AP">AP (All Meals)</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-100 p-3 rounded-lg">
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block">
-                          Vendor Negotiated Rate
-                        </span>
-                        <span className="text-sm font-black text-slate-800">
-                          ₹{hotelWizardData.vendorRate.toLocaleString("en-IN")}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block">
-                          Selling Rate / Budget
-                        </span>
-                        <input
-                          type="number"
-                          value={hotelWizardData.sellingRate}
-                          onChange={(e) =>
-                            setHotelWizardData((prev) => ({
-                              ...prev,
-                              sellingRate: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full h-7 text-xs font-bold border border-slate-200 rounded px-2 bg-white mt-1"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                        Remarks / Special Instructions
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Early check-in requested"
-                        value={hotelWizardData.remarks}
-                        onChange={(e) =>
-                          setHotelWizardData((prev) => ({
-                            ...prev,
-                            remarks: e.target.value,
-                          }))
-                        }
-                        className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2.5 bg-white text-slate-700"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                {hotelWizardStep > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setHotelWizardStep((prev) => (prev - 1) as any)
-                    }
-                    className="h-8 px-4 text-xs font-bold border border-slate-200 rounded-[4px] text-slate-600 hover:bg-slate-50"
-                  >
-                    ← Back
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddHotelWizardOpen(false)}
-                    className="h-8 px-4 text-xs font-bold border border-slate-200 rounded-[4px] text-slate-600 hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-                  {hotelWizardStep < 4 ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setHotelWizardStep((prev) => (prev + 1) as any)
-                      }
-                      className="h-8 px-4 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] shadow-xs"
-                    >
-                      Next Step →
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        toast.success(
-                          `Assigned ${hotelWizardData.hotelName} via ${hotelWizardData.vendorName}!`,
-                        );
-                        setIsAddHotelWizardOpen(false);
-                      }}
-                      className="h-8 px-5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] shadow-xs flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Save Stay
-                      Assignment
-                    </button>
-                  )}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <HotelAssignmentWizardModal
+            isOpen={isAddHotelWizardOpen}
+            onClose={() => setIsAddHotelWizardOpen(false)}
+            computedItinerary={computedItinerary}
+            dbVendors={dbVendors}
+            tripId={tripId}
+            departureDateStr={departureDateStr}
+            totalPax={allPassengers.length}
+            initialDayInfo={selectedWizardDayInfo}
+            onSaveSuccess={fetchPageData}
+          />
 
           {/* Hotel Details Right Drawer Modal */}
           <Dialog
@@ -9033,175 +8594,33 @@ export default function DepartureHubPage() {
 
           {/* ──────────────────────── HOTELS & ACCOMMODATIONS WORKSPACE ──────────────────────── */}
           {(activeTab === "accommodation" || activeTab === "hotels") && (
-             <div className="space-y-6">
-                <div className="flex justify-between items-end mb-4">
-                  <div>
-                    <h2 className="text-xl font-black text-slate-800">
-                      Accommodation Plan
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Simple view: Day by day stay details & sharing-wise per person rates
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <button className="flex items-center gap-2 bg-white border border-[#E2E8F0] text-slate-700 hover:bg-slate-50 px-4 py-2 rounded text-xs font-bold transition-colors shadow-xs">
-                      <Printer className="w-4 h-4" />
-                      Print
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setEditingHotel({ id: "STAY-1" });
-                      }}
-                      className="bg-[#F97316] hover:bg-[#E05E00] text-white px-4 py-2 rounded text-xs font-bold transition-colors shadow-xs"
-                    >
-                      Update / Change Hotel
-                    </button>
-                  </div>
-                </div>
-                
-                {(() => {
-                  const totalNights = computedItinerary.filter((i: any) => i.stay && i.stay !== "—" && !i.stay.includes("No Stay")).length || 5;
-                  const totalPax = allPassengers.length || 6;
-                  const estimatedBudget = totalPax * totalNights * 1250;
-                  const totalHotelBudget = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").reduce((sum: number, h: any) => sum + (h.totalAmount || h.cost || 0), 0) || (stats.totalExpenses ? Math.round(stats.totalExpenses * 0.45) : estimatedBudget);
-                  const perNightCost = totalNights > 0 ? Math.round(totalHotelBudget / totalNights) : 0;
-                  const avgPerPaxCost = totalPax > 0 ? Math.round(totalHotelBudget / totalPax) : 0;
-                  const perPaxPerNight = totalPax > 0 && totalNights > 0 ? Math.round(perNightCost / totalPax) : 1250;
-
-                  const twinAllocated = computedRoomAllocations.filter((r: any) => r.sharingType === "STANDARD" || r.roomType === "Twin" || r.roomType === "TWIN").length;
-                  const tripleAllocated = computedRoomAllocations.filter((r: any) => r.roomType === "Triple" || r.roomType === "TRIPLE").length;
-
-                  return (
-                    <>
-                      {/* Sharing-Wise Per Person Summary Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-2">
-                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
-                          <div className="flex items-center justify-between text-slate-500 mb-1">
-                            <span className="text-[11px] font-bold uppercase tracking-wider">Total Est. Stay Budget</span>
-                            <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">{totalNights} Nights</span>
-                          </div>
-                          <div className="text-xl font-extrabold text-slate-900">₹{totalHotelBudget.toLocaleString("en-IN")}</div>
-                          <div className="text-[11px] text-slate-500 mt-1 font-medium">₹{perNightCost.toLocaleString("en-IN")} / night across all stays</div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
-                          <div className="flex items-center justify-between text-slate-500 mb-1">
-                            <span className="text-[11px] font-bold uppercase tracking-wider">Twin Sharing (2 Pax)</span>
-                            <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-mono">{Math.ceil(twinAllocated / 2)} Rooms ({twinAllocated} Pax)</span>
-                          </div>
-                          <div className="text-xl font-extrabold text-blue-600">₹{perPaxPerNight.toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
-                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹{avgPerPaxCost.toLocaleString("en-IN")} / pax</div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs">
-                          <div className="flex items-center justify-between text-slate-500 mb-1">
-                            <span className="text-[11px] font-bold uppercase tracking-wider">Triple Sharing (3 Pax)</span>
-                            <span className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-mono">{Math.ceil(tripleAllocated / 3)} Rooms ({tripleAllocated} Pax)</span>
-                          </div>
-                          <div className="text-xl font-extrabold text-purple-600">₹{Math.round(perPaxPerNight * 0.9).toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
-                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Total Trip Stay: ₹{Math.round(avgPerPaxCost * 0.9).toLocaleString("en-IN")} / pax</div>
-                        </div>
-
-                        <div className="bg-white p-4 rounded-lg border border-[#E2E8F0] shadow-xs border-l-4 border-l-orange-500">
-                          <div className="flex items-center justify-between text-slate-500 mb-1">
-                            <span className="text-[11px] font-bold uppercase tracking-wider">Avg Per Person Cost</span>
-                            <span className="text-xs bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono">{totalPax} Pax Allotted</span>
-                          </div>
-                          <div className="text-xl font-extrabold text-orange-600">₹{perPaxPerNight.toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">/ pax / night</span></div>
-                          <div className="text-[11px] text-slate-500 mt-1 font-medium">Weighted avg for full departure</div>
-                        </div>
-                      </div>
-
-                      <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-[#E2E8F0]">
-                            <tr>
-                              <th className="px-6 py-4 w-20">Day</th>
-                              <th className="px-6 py-4">Date</th>
-                              <th className="px-6 py-4">Destination</th>
-                              <th className="px-6 py-4">Night Stay</th>
-                              <th className="px-6 py-4">Hotel</th>
-                              <th className="px-6 py-4">Rooms & Allotment</th>
-                              <th className="px-6 py-4">Cost & Per-Pax Sharing</th>
-                              <th className="px-6 py-4">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
-                            {computedItinerary.map((row: any, idx: number) => {
-                              const hasStay = row.stay && row.stay !== "—" && !row.stay.includes("No Stay");
-                              const dayLabel = String(row.day || idx + 1).toLowerCase().startsWith("day") ? (row.day || `Day ${idx + 1}`) : `Day ${row.day || idx + 1}`;
-                              const cleanLoc = row.stay && row.stay !== "—" && !row.stay.includes("No Stay") ? row.stay : (row.plan ? row.plan.split(" to ")[0].split(":")[0].trim() : "Enroute");
-                              const hotelName = hasStay ? (dbVendors.find((v: any) => v.type?.toLowerCase() === "hotel")?.name || row.stay) : "—";
-                              
-                              return (
-                                <tr key={idx} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setActiveTab("hotels"); setEditingHotel({ id: "STAY-1" }); }}>
-                                  <td className="px-6 py-4 font-black text-slate-900">{dayLabel}</td>
-                                  <td className="px-6 py-4">
-                                    <div className="font-medium text-slate-700">{row.date || departureDateStr}</div>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                                      <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                                      <span>{cleanLoc}</span>
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <span className={cn("px-2.5 py-1 rounded-[4px] font-bold text-[10px] uppercase", hasStay ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600")}>
-                                      {hasStay ? "Yes" : "No"}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    {hasStay ? (
-                                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                        {hotelName} <span className="text-orange-400 text-[10px]">★★★★☆</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-slate-400 font-bold">—</span>
-                                    )}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    {hasStay ? (
-                                      <div className="font-bold text-slate-800">
-                                        {computedRoomAllocations.length > 0 ? `${computedRoomAllocations.length} Rooms Allocated` : "Standard Inventory"}
-                                      </div>
-                                    ) : (
-                                      <span className="text-slate-400 font-bold">—</span>
-                                    )}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    {hasStay ? (
-                                      <>
-                                        <div className="font-extrabold text-emerald-600">₹{perNightCost.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 font-normal">/ night</span></div>
-                                        <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 mt-1 inline-block">
-                                          ₹{perPaxPerNight.toLocaleString("en-IN")} / pax avg
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <span className="text-slate-400 font-bold">—</span>
-                                    )}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <span className={cn("px-2.5 py-1 rounded-[4px] font-black text-[10px] tracking-wider uppercase", hasStay ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500")}>
-                                      {hasStay ? "CONFIRMED" : "NO STAY"}
-                                    </span>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </>
-                  );
-                })()}
-
-                <div className="flex items-center gap-2 mt-2">
-                  <Info className="w-3.5 h-3.5 text-slate-400" />
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Nights with "No Stay" are enroute days. Hotels are only shown for nights with stay.
-                  </p>
-                </div>
-              </div>
+            <AccommodationWorkspace
+              computedItinerary={computedItinerary}
+              opsHotelBookings={
+                opsHotels && opsHotels.length > 0
+                  ? opsHotels
+                  : tripVendors
+                      .filter((v: any) => v.vendorType === "hotel")
+                      .map((v: any) => v.rawAssignment)
+                      .filter(Boolean)
+              }
+              allPassengers={allPassengers}
+              passengerAllocations={passengerAllocations}
+              departureDateStr={departureDateStr}
+              tripId={tripId}
+              onEditHotel={(row: any, dayInfo?: any) => {
+                setSelectedWizardDayInfo(
+                  dayInfo || {
+                    dayNum: row?.dayNum,
+                    dayLabel: row?.dayLabel || row?.day,
+                    destination: row?.destination || row?.location || row?.sub,
+                    dateStr: row?.date,
+                    existingBooking: row?.existingBooking || row?.booking || row,
+                  },
+                );
+                setIsAddHotelWizardOpen(true);
+              }}
+            />
           )}
 
 
@@ -9675,13 +9094,12 @@ export default function DepartureHubPage() {
                                   vehicle: "—",
                                   seat: "—",
                                 };
-                                return {
-                                  ...prev,
-                                  [travelerName]: {
-                                    ...current,
-                                    vehicle: fleetName,
-                                  },
-                                };
+                                const entry = { ...current, vehicle: fleetName };
+                                const updated = { ...prev, [travelerName]: entry };
+                                // Also find passenger by name and write by id
+                                const pObj = allPassengers.find((p: any) => p.name === travelerName);
+                                if (pObj?.id) updated[pObj.id] = { ...entry };
+                                return updated;
                               });
                               toast.success(
                                 `Moved ${travelerName} to ${fleetName}`,
@@ -10087,25 +9505,35 @@ export default function DepartureHubPage() {
                     ) : (
                       dbGuides
                         .filter((g: any) => g.assignmentStatus !== "CANCELLED")
-                        .map((g: any) => (
-                          <tr
-                            key={g.id}
-                            className="hover:bg-slate-50/50 transition-colors"
-                          >
-                            <td className="p-3 border-r border-slate-100">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px] uppercase">
-                                  {g.guideName
-                                    ?.split(" ")
-                                    .map((n: string) => n[0])
-                                    .join("")
-                                    .substring(0, 2)}
+                        .map((g: any) => {
+                          const guideDisplayName =
+                            g.guideName ||
+                            g.name ||
+                            g.vendor?.name ||
+                            "Assigned Guide";
+                          const initials = guideDisplayName
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .filter(Boolean)
+                            .join("")
+                            .substring(0, 2)
+                            .toUpperCase();
+
+                          return (
+                            <tr
+                              key={g.id || guideDisplayName}
+                              className="hover:bg-slate-50/50 transition-colors"
+                            >
+                              <td className="p-3 border-r border-slate-100">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px] uppercase">
+                                    {initials}
+                                  </div>
+                                  <span className="font-bold text-slate-800">
+                                    {guideDisplayName}
+                                  </span>
                                 </div>
-                                <span className="font-bold text-slate-800">
-                                  {g.guideName}
-                                </span>
-                              </div>
-                            </td>
+                              </td>
                             <td className="p-3 border-r border-slate-100">
                               <span className="text-[9px] font-bold text-slate-500 uppercase">
                                 {(g.assignmentType || "PRIMARY_GUIDE").replace(
@@ -10183,7 +9611,8 @@ export default function DepartureHubPage() {
                               </Button>
                             </td>
                           </tr>
-                        ))
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -10209,6 +9638,8 @@ export default function DepartureHubPage() {
               tripId={tripId}
               departureDateStr={departureDateStr}
               tripDetails={tripDetails}
+              computedItinerary={computedItinerary}
+              allPassengers={allPassengers}
               tripVendors={tripVendors}
               activitiesList={activitiesList}
               fetchPageData={fetchPageData}
@@ -10221,6 +9652,7 @@ export default function DepartureHubPage() {
               tripId={tripId}
               departureDateStr={departureDateStr}
               tripDetails={tripDetails}
+              allPassengers={allPassengers}
             />
           )}
 
@@ -10878,14 +10310,19 @@ export default function DepartureHubPage() {
                         const vehicleVal = matchedFleet
                           ? matchedFleet.name
                           : shuffleVehicle;
-                        setPassengerAllocations((prev) => ({
-                          ...prev,
-                          [shufflingTraveler.name]: {
+                        setPassengerAllocations((prev) => {
+                          const entry = {
                             room: shuffleRoom,
                             vehicle: vehicleVal,
                             seat: shuffleSeat,
-                          },
-                        }));
+                          };
+                          const updated = { ...prev, [shufflingTraveler.name]: entry };
+                          // Also write by id so computedVehicleAllocations finds it
+                          if (shufflingTraveler.id) {
+                            updated[shufflingTraveler.id] = { ...entry };
+                          }
+                          return updated;
+                        });
                         toast.success(
                           `Updated allocations for ${shufflingTraveler.name}`,
                         );

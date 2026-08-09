@@ -62,24 +62,22 @@ import { GuidesModuleView } from "@/components/admin/vendors/modules/GuidesModul
 import { CampingModuleView } from "@/components/admin/vendors/modules/CampingModuleView";
 import { OtherVendorsModuleView } from "@/components/admin/vendors/modules/OtherVendorsModuleView";
 import { VendorContractManager } from "@/components/admin/vendors/VendorContractManager";
+import { AssignTripVendorDialog } from "@/components/admin/vendors/AssignTripVendorDialog";
 
-// Category Tab List
+// Category Tab List - Pure Vendor Directory
 const TABS = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
-  { id: "accommodation", label: "Accommodation", icon: Hotel },
-  { id: "transport", label: "Transport", icon: Bus },
-  { id: "activities", label: "Activities", icon: Compass },
-  { id: "restaurants", label: "Restaurants", icon: UtensilsCrossed },
-  { id: "guides", label: "Guides", icon: UserCheck },
-  { id: "other", label: "Other Vendors", icon: Building2 },
-  { id: "contracts", label: "Contracts ERP", icon: FileText },
-  { id: "payments", label: "Payments", icon: IndianRupee },
+  { id: "accommodation", label: "Accommodation", icon: Hotel, countKey: "accommodation" },
+  { id: "transport", label: "Transport", icon: Bus, countKey: "transport" },
+  { id: "activities", label: "Activities", icon: Compass, countKey: "activities" },
+  { id: "restaurants", label: "Restaurants", icon: UtensilsCrossed, countKey: "restaurants" },
+  { id: "guides", label: "Guides", icon: UserCheck, countKey: "guides" },
+  { id: "other", label: "Other Vendors", icon: Building2, countKey: "other" },
 ];
 
 export default function VendorDirectoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentCategory =
-    searchParams.get("category") || searchParams.get("tab") || "dashboard";
+    searchParams.get("category") || searchParams.get("tab") || "accommodation";
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingDetailVendor, setViewingDetailVendor] = useState<any>(null);
@@ -107,6 +105,29 @@ export default function VendorDirectoryPage() {
 
   // Selected entities for Rates view
   const [selectedVendor, setSelectedVendor] = useState<any>(null);
+
+  // Trip-Scoped Vendor Directory state
+  const [tripsList, setTripsList] = useState<any[]>([]);
+  const [selectedTripId, setSelectedTripId] = useState<string>("GLOBAL");
+  const [tripDestinations, setTripDestinations] = useState<string[]>([]);
+  const [assignTripVendorModalOpen, setAssignTripVendorModalOpen] = useState(false);
+  const [categoryCounts, setCategoryCounts] = useState<{
+    total: number;
+    accommodation: number;
+    transport: number;
+    activities: number;
+    restaurants: number;
+    guides: number;
+    other: number;
+  }>({
+    total: 0,
+    accommodation: 0,
+    transport: 0,
+    activities: 0,
+    restaurants: 0,
+    guides: 0,
+    other: 0,
+  });
 
   // Costing inputs
   const [costingPax, setCostingPax] = useState("10");
@@ -232,6 +253,9 @@ export default function VendorDirectoryPage() {
           "isActive",
           filterStatus === "ACTIVE" ? "true" : "false",
         );
+      if (selectedTripId && selectedTripId !== "GLOBAL") {
+        queryParams.set("tripId", selectedTripId);
+      }
       queryParams.set("page", targetPage.toString());
       queryParams.set("limit", "10");
 
@@ -257,6 +281,10 @@ export default function VendorDirectoryPage() {
 
       setVendors(vendorData);
       setPagination(pag);
+
+      if (res.data?.categoryCounts) {
+        setCategoryCounts(res.data.categoryCounts);
+      }
       if (analyticsRes.data?.data) setAnalytics(analyticsRes.data.data);
       if (destRes.data?.data) setDestinationsList(destRes.data.data);
 
@@ -274,10 +302,49 @@ export default function VendorDirectoryPage() {
     }
   };
 
+  // Load trips list on mount
+  useEffect(() => {
+    api
+      .get("/vendors/trips")
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setTripsList(res.data.data);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  // Fetch trip destinations when selectedTripId changes
   useEffect(() => {
     setViewingDetailVendor(null);
+    if (selectedTripId && selectedTripId !== "GLOBAL") {
+      api
+        .get(`/vendors/trips/${selectedTripId}/destinations`)
+        .then((res) => {
+          if (res.data?.success && Array.isArray(res.data.data)) {
+            setTripDestinations(res.data.data);
+          }
+        })
+        .catch(() => null);
+    } else {
+      setTripDestinations([]);
+    }
+    setFilterDestination("ALL");
     loadData(1, currentCategory);
-  }, [currentCategory, searchParams, filterStatus, filterDestination]);
+  }, [selectedTripId, currentCategory, searchParams, filterStatus, filterDestination]);
+
+  const handleRemoveVendorFromTrip = async (vendorId: string, vendorName: string) => {
+    if (selectedTripId === "GLOBAL") return;
+    if (!confirm(`Remove ${vendorName} from this trip? Master vendor record will NOT be deleted.`)) return;
+
+    try {
+      await api.delete(`/vendors/trips/${selectedTripId}/remove/${vendorId}`);
+      toast.success(`Removed ${vendorName} from trip (master record preserved)`);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to remove vendor from trip");
+    }
+  };
 
   const handleSaveVendor = async (force: boolean = false) => {
     if (!vendorForm.name || !vendorForm.type) {
@@ -420,38 +487,66 @@ export default function VendorDirectoryPage() {
 
   return (
     <div className="space-y-6 p-6 min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-[8px] border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3">
-          {currentCategory !== "dashboard" && (
+      {/* Linear / Notion Slate Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-black text-slate-900 tracking-tight">
+              {selectedTripId === "GLOBAL"
+                ? "Master Vendor Directory"
+                : `Trip Vendors: ${tripsList.find((t) => t.id === selectedTripId)?.title || selectedTripId}`}
+            </h1>
+            <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 uppercase">
+              {selectedTripId === "GLOBAL" ? "GLOBAL SCOPE" : "TRIP SCOPE"}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            {selectedTripId === "GLOBAL"
+              ? "Enterprise Partner Directory & Operations Workspace across all trips"
+              : `Showing vendors explicitly assigned to ${tripsList.find((t) => t.id === selectedTripId)?.title || selectedTripId}`}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Trip Selector Dropdown */}
+          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
+            <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider px-2">
+              Scope:
+            </span>
+            <Select value={selectedTripId} onValueChange={setSelectedTripId}>
+              <SelectTrigger className="w-[230px] h-8 text-xs font-bold bg-white border-slate-200 shadow-2xs">
+                <SelectValue placeholder="Select Trip Scope" />
+              </SelectTrigger>
+              <SelectContent className="bg-white text-xs font-medium">
+                <SelectItem value="GLOBAL" className="font-bold">
+                  🌐 Global Master Vendor Directory
+                </SelectItem>
+                {tripsList.map((t) => (
+                  <SelectItem key={t.id} value={t.id} className="font-bold">
+                    📍 {t.title} ({t._count?.tripVendors || 0} Vendors)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedTripId !== "GLOBAL" && (
             <Button
-              onClick={() => setSearchParams({ category: "dashboard" })}
-              variant="outline"
-              className="h-8.5 px-3 text-slate-700 border-slate-200 hover:bg-slate-50 font-bold text-xs flex items-center gap-1 cursor-pointer"
+              onClick={() => setAssignTripVendorModalOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-8 px-3 rounded-lg flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4 text-slate-500" /> Back to
-              Dashboard
+              <Plus className="w-3.5 h-3.5" />
+              Assign Vendor to Trip
             </Button>
           )}
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">
-              Vendor Management Directory
-            </h1>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Enterprise Partner Management & Operation Workspace
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
+
           <Button
             onClick={() => {
               setEditingVendor(null);
               let defaultType = "HOTEL";
               if (currentCategory === "transport") defaultType = "TRANSPORT";
-              else if (currentCategory === "activities")
-                defaultType = "ACTIVITIES";
-              else if (currentCategory === "restaurants")
-                defaultType = "RESTAURANT";
+              else if (currentCategory === "activities") defaultType = "ACTIVITIES";
+              else if (currentCategory === "restaurants") defaultType = "RESTAURANT";
               else if (currentCategory === "guides") defaultType = "GUIDE";
               else if (currentCategory === "camping") defaultType = "CAMPING";
               else if (currentCategory === "other") defaultType = "OTHER";
@@ -468,7 +563,7 @@ export default function VendorDirectoryPage() {
                 email: "",
                 gstin: "",
                 panNumber: "",
-                state: "Himachal Pradesh",
+                state: "",
                 city: "",
                 area: "",
                 address: "",
@@ -476,33 +571,61 @@ export default function VendorDirectoryPage() {
                 creditDays: "30",
                 notes: "",
                 contacts: [],
-                accommodationType: "HOTEL",
+                accommodationType: defaultType,
                 starRating: "3",
-                checkInTime: "12:00 PM",
-                checkOutTime: "11:00 AM",
-                fleetType: "Tempo Traveller",
-                permitType: "All India Tourist Permit (AITP)",
-                activityType: "River Rafting, Trekking",
-                outletType: "Group Buffet Hall",
-                guideRole: "Mountain Trekking Guide",
-                campsiteType: "Riverside Tents",
+                checkInTime: "",
+                checkOutTime: "",
+                fleetType: "",
+                permitType: "",
+                activityType: "",
+                outletType: "",
+                guideRole: "",
+                campsiteType: "",
               });
               setVendorModalOpen(true);
             }}
-            className="bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold px-4 py-2.5 rounded"
+            className="bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold h-8 px-3.5 rounded-lg shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Add New Vendor
-          </Button>
-          <Button
-            onClick={() => setPaymentModalOpen(true)}
-            className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold px-4 py-2.5 rounded"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Log Payment
+            <Plus className="w-3.5 h-3.5" />
+            Add Vendor <kbd className="hidden sm:inline-block text-[9px] font-mono bg-orange-700/40 px-1 rounded">N</kbd>
           </Button>
         </div>
       </div>
+
+      {/* Notion Style Slate Category Tab Segment Bar */}
+      {!viewingDetailVendor && (
+        <div className="bg-slate-100/80 p-1.5 rounded-xl border border-slate-200 flex flex-wrap items-center gap-1">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = currentCategory === tab.id;
+            const count = (categoryCounts as any)[tab.countKey] ?? 0;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSearchParams({ category: tab.id })}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer",
+                  isActive
+                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                )}
+              >
+                <Icon className={cn("w-3.5 h-3.5", isActive ? "text-[#F97316]" : "text-slate-500")} />
+                <span>{tab.label}</span>
+                <span
+                  className={cn(
+                    "text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full",
+                    isActive ? "bg-[#F97316] text-white" : "bg-slate-200 text-slate-600"
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Detail View Overlay */}
       {viewingDetailVendor ? (
@@ -521,194 +644,184 @@ export default function VendorDirectoryPage() {
             />
           )}
 
-          {currentCategory === "accommodation" && (
-            <AccommodationModuleView
-              vendors={vendors}
-              destinations={destinationsList}
-              pagination={pagination}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filterDestination={filterDestination}
-              onDestinationChange={setFilterDestination}
-              filterStatus={filterStatus}
-              onStatusChange={setFilterStatus}
-              onRefresh={() => loadData(1)}
-              onPageChange={(p) => loadData(p)}
-              onSelectVendor={(v) => setViewingDetailVendor(v)}
-              onAddVendor={() => {
-                setEditingVendor(null);
-                setVendorModalOpen(true);
-              }}
-              onEditVendor={(v) => {
-                setEditingVendor(v);
-                setVendorForm({ ...v });
-                setVendorModalOpen(true);
-              }}
-              onDeleteVendor={(id) => handleDeleteVendor(id)}
-            />
-          )}
+          {/* Active destinations list for current scope */}
+          {(() => {
+            const activeDestinations = tripDestinations.length > 0 ? tripDestinations : destinationsList;
+            const handleDeleteOrRemove = (id: string) => {
+              if (selectedTripId !== "GLOBAL") {
+                const target = vendors.find((v) => v.id === id);
+                handleRemoveVendorFromTrip(id, target?.name || "Vendor");
+              } else {
+                handleDeleteVendor(id);
+              }
+            };
 
-          {currentCategory === "transport" && (
-            <TransportModuleView
-              vendors={vendors}
-              destinations={destinationsList}
-              pagination={pagination}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filterDestination={filterDestination}
-              onDestinationChange={setFilterDestination}
-              filterStatus={filterStatus}
-              onStatusChange={setFilterStatus}
-              onRefresh={() => loadData(1)}
-              onPageChange={(p) => loadData(p)}
-              onSelectVendor={(v) => setViewingDetailVendor(v)}
-              onAddVendor={() => {
-                setEditingVendor(null);
-                setVendorModalOpen(true);
-              }}
-              onEditVendor={(v) => {
-                setEditingVendor(v);
-                setVendorForm({ ...v });
-                setVendorModalOpen(true);
-              }}
-              onDeleteVendor={(id) => handleDeleteVendor(id)}
-            />
-          )}
+            return (
+              <>
+                {currentCategory === "accommodation" && (
+                  <AccommodationModuleView
+                    vendors={vendors}
+                    destinations={activeDestinations}
+                    pagination={pagination}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    filterDestination={filterDestination}
+                    onDestinationChange={setFilterDestination}
+                    filterStatus={filterStatus}
+                    onStatusChange={setFilterStatus}
+                    onRefresh={() => loadData(1)}
+                    onPageChange={(p) => loadData(p)}
+                    onSelectVendor={(v) => setViewingDetailVendor(v)}
+                    onAddVendor={() => {
+                      setEditingVendor(null);
+                      setVendorModalOpen(true);
+                    }}
+                    onEditVendor={(v) => {
+                      setEditingVendor(v);
+                      setVendorForm({ ...v });
+                      setVendorModalOpen(true);
+                    }}
+                    onDeleteVendor={handleDeleteOrRemove}
+                  />
+                )}
 
-          {currentCategory === "activities" && (
-            <ActivitiesModuleView
-              vendors={vendors}
-              destinations={destinationsList}
-              pagination={pagination}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filterDestination={filterDestination}
-              onDestinationChange={setFilterDestination}
-              filterStatus={filterStatus}
-              onStatusChange={setFilterStatus}
-              onRefresh={() => loadData(1)}
-              onPageChange={(p) => loadData(p)}
-              onSelectVendor={(v) => setViewingDetailVendor(v)}
-              onAddVendor={() => {
-                setEditingVendor(null);
-                setVendorModalOpen(true);
-              }}
-              onEditVendor={(v) => {
-                setEditingVendor(v);
-                setVendorForm({ ...v });
-                setVendorModalOpen(true);
-              }}
-              onDeleteVendor={(id) => handleDeleteVendor(id)}
-            />
-          )}
+                {currentCategory === "transport" && (
+                  <TransportModuleView
+                    vendors={vendors}
+                    destinations={activeDestinations}
+                    pagination={pagination}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    filterDestination={filterDestination}
+                    onDestinationChange={setFilterDestination}
+                    filterStatus={filterStatus}
+                    onStatusChange={setFilterStatus}
+                    onRefresh={() => loadData(1)}
+                    onPageChange={(p) => loadData(p)}
+                    onSelectVendor={(v) => setViewingDetailVendor(v)}
+                    onAddVendor={() => {
+                      setEditingVendor(null);
+                      setVendorModalOpen(true);
+                    }}
+                    onEditVendor={(v) => {
+                      setEditingVendor(v);
+                      setVendorForm({ ...v });
+                      setVendorModalOpen(true);
+                    }}
+                    onDeleteVendor={handleDeleteOrRemove}
+                  />
+                )}
 
-          {currentCategory === "restaurants" && (
-            <RestaurantsModuleView
-              vendors={vendors}
-              destinations={destinationsList}
-              pagination={pagination}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filterDestination={filterDestination}
-              onDestinationChange={setFilterDestination}
-              filterStatus={filterStatus}
-              onStatusChange={setFilterStatus}
-              onRefresh={() => loadData(1)}
-              onPageChange={(p) => loadData(p)}
-              onSelectVendor={(v) => setViewingDetailVendor(v)}
-              onAddVendor={() => {
-                setEditingVendor(null);
-                setVendorModalOpen(true);
-              }}
-              onEditVendor={(v) => {
-                setEditingVendor(v);
-                setVendorForm({ ...v });
-                setVendorModalOpen(true);
-              }}
-              onDeleteVendor={(id) => handleDeleteVendor(id)}
-            />
-          )}
+                {currentCategory === "activities" && (
+                  <ActivitiesModuleView
+                    vendors={vendors}
+                    destinations={activeDestinations}
+                    pagination={pagination}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    filterDestination={filterDestination}
+                    onDestinationChange={setFilterDestination}
+                    filterStatus={filterStatus}
+                    onStatusChange={setFilterStatus}
+                    onRefresh={() => loadData(1)}
+                    onPageChange={(p) => loadData(p)}
+                    onSelectVendor={(v) => setViewingDetailVendor(v)}
+                    onAddVendor={() => {
+                      setEditingVendor(null);
+                      setVendorModalOpen(true);
+                    }}
+                    onEditVendor={(v) => {
+                      setEditingVendor(v);
+                      setVendorForm({ ...v });
+                      setVendorModalOpen(true);
+                    }}
+                    onDeleteVendor={handleDeleteOrRemove}
+                  />
+                )}
 
-          {currentCategory === "guides" && (
-            <GuidesModuleView
-              vendors={vendors}
-              destinations={destinationsList}
-              pagination={pagination}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filterDestination={filterDestination}
-              onDestinationChange={setFilterDestination}
-              filterStatus={filterStatus}
-              onStatusChange={setFilterStatus}
-              onRefresh={() => loadData(1)}
-              onPageChange={(p) => loadData(p)}
-              onSelectVendor={(v) => setViewingDetailVendor(v)}
-              onAddVendor={() => {
-                setEditingVendor(null);
-                setVendorModalOpen(true);
-              }}
-              onEditVendor={(v) => {
-                setEditingVendor(v);
-                setVendorForm({ ...v });
-                setVendorModalOpen(true);
-              }}
-              onDeleteVendor={(id) => handleDeleteVendor(id)}
-            />
-          )}
+                {currentCategory === "restaurants" && (
+                  <RestaurantsModuleView
+                    vendors={vendors}
+                    destinations={activeDestinations}
+                    pagination={pagination}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    filterDestination={filterDestination}
+                    onDestinationChange={setFilterDestination}
+                    filterStatus={filterStatus}
+                    onStatusChange={setFilterStatus}
+                    onRefresh={() => loadData(1)}
+                    onPageChange={(p) => loadData(p)}
+                    onSelectVendor={(v) => setViewingDetailVendor(v)}
+                    onAddVendor={() => {
+                      setEditingVendor(null);
+                      setVendorModalOpen(true);
+                    }}
+                    onEditVendor={(v) => {
+                      setEditingVendor(v);
+                      setVendorForm({ ...v });
+                      setVendorModalOpen(true);
+                    }}
+                    onDeleteVendor={handleDeleteOrRemove}
+                  />
+                )}
 
-          {currentCategory === "camping" && (
-            <CampingModuleView
-              vendors={vendors}
-              destinations={destinationsList}
-              pagination={pagination}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filterDestination={filterDestination}
-              onDestinationChange={setFilterDestination}
-              filterStatus={filterStatus}
-              onStatusChange={setFilterStatus}
-              onRefresh={() => loadData(1)}
-              onPageChange={(p) => loadData(p)}
-              onSelectVendor={(v) => setViewingDetailVendor(v)}
-              onAddVendor={() => {
-                setEditingVendor(null);
-                setVendorModalOpen(true);
-              }}
-              onEditVendor={(v) => {
-                setEditingVendor(v);
-                setVendorForm({ ...v });
-                setVendorModalOpen(true);
-              }}
-              onDeleteVendor={(id) => handleDeleteVendor(id)}
-            />
-          )}
+                {currentCategory === "guides" && (
+                  <GuidesModuleView
+                    vendors={vendors}
+                    destinations={activeDestinations}
+                    pagination={pagination}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    filterDestination={filterDestination}
+                    onDestinationChange={setFilterDestination}
+                    filterStatus={filterStatus}
+                    onStatusChange={setFilterStatus}
+                    onRefresh={() => loadData(1)}
+                    onPageChange={(p) => loadData(p)}
+                    onSelectVendor={(v) => setViewingDetailVendor(v)}
+                    onAddVendor={() => {
+                      setEditingVendor(null);
+                      setVendorModalOpen(true);
+                    }}
+                    onEditVendor={(v) => {
+                      setEditingVendor(v);
+                      setVendorForm({ ...v });
+                      setVendorModalOpen(true);
+                    }}
+                    onDeleteVendor={handleDeleteOrRemove}
+                  />
+                )}
 
-          {currentCategory === "other" && (
-            <OtherVendorsModuleView
-              vendors={vendors}
-              destinations={destinationsList}
-              pagination={pagination}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filterDestination={filterDestination}
-              onDestinationChange={setFilterDestination}
-              filterStatus={filterStatus}
-              onStatusChange={setFilterStatus}
-              onRefresh={() => loadData(1)}
-              onPageChange={(p) => loadData(p)}
-              onSelectVendor={(v) => setViewingDetailVendor(v)}
-              onAddVendor={() => {
-                setEditingVendor(null);
-                setVendorModalOpen(true);
-              }}
-              onEditVendor={(v) => {
-                setEditingVendor(v);
-                setVendorForm({ ...v });
-                setVendorModalOpen(true);
-              }}
-              onDeleteVendor={(id) => handleDeleteVendor(id)}
-            />
-          )}
+                {currentCategory === "other" && (
+                  <OtherVendorsModuleView
+                    vendors={vendors}
+                    destinations={activeDestinations}
+                    pagination={pagination}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    filterDestination={filterDestination}
+                    onDestinationChange={setFilterDestination}
+                    filterStatus={filterStatus}
+                    onStatusChange={setFilterStatus}
+                    onRefresh={() => loadData(1)}
+                    onPageChange={(p) => loadData(p)}
+                    onSelectVendor={(v) => setViewingDetailVendor(v)}
+                    onAddVendor={() => {
+                      setEditingVendor(null);
+                      setVendorModalOpen(true);
+                    }}
+                    onEditVendor={(v) => {
+                      setEditingVendor(v);
+                      setVendorForm({ ...v });
+                      setVendorModalOpen(true);
+                    }}
+                    onDeleteVendor={handleDeleteOrRemove}
+                  />
+                )}
+              </>
+            );
+          })()}
         </>
       )}
 
@@ -723,194 +836,6 @@ export default function VendorDirectoryPage() {
         }}
         onForceCreate={() => handleSaveVendor(true)}
       />
-      {currentCategory === "contracts" && (
-        <VendorContractManager vendors={vendors} loadData={loadData} />
-      )}
-
-      {currentCategory === "costing" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 bg-white p-6 rounded-[8px] border border-slate-200 shadow-sm space-y-4">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100">
-              Costing Parameters
-            </h2>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                  Group Size (Pax Count)
-                </label>
-                <Input
-                  type="number"
-                  value={costingPax}
-                  onChange={(e) => setCostingPax(e.target.value)}
-                  className="h-8.5 text-xs font-semibold text-slate-700 bg-white"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                  Contingency percent (%)
-                </label>
-                <Input
-                  type="number"
-                  value={costingContingency}
-                  onChange={(e) => setCostingContingency(e.target.value)}
-                  className="h-8.5 text-xs font-semibold text-slate-700 bg-white"
-                />
-              </div>
-              <Button
-                onClick={runCosting}
-                className="w-full bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold h-9 rounded mt-4 cursor-pointer"
-              >
-                Run Costing Engine
-              </Button>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 bg-white p-6 rounded-[8px] border border-slate-200 shadow-sm space-y-4">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100">
-              Per-Person Cost Results
-            </h2>
-            {costingResult ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-[6px] border border-slate-200">
-                    <span className="text-[10px] font-bold text-slate-450 uppercase block">
-                      Base Operations Cost
-                    </span>
-                    <span className="text-xl font-bold text-slate-800">
-                      ₹{costingResult.baseVendorCost}
-                    </span>
-                  </div>
-                  <div className="bg-orange-50 p-4 rounded-[6px] border border-[#FFF0E6]">
-                    <span className="text-[10px] font-bold text-[#F97316] uppercase block">
-                      Cost Per Person
-                    </span>
-                    <span className="text-xl font-bold text-[#F97316]">
-                      ₹{costingResult.costPerPerson}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-[10.5px] font-black text-slate-650 uppercase tracking-wider">
-                    Rooms Distribution Splitting Result
-                  </h4>
-                  {costingResult.allocations.accommodation?.map(
-                    (acc: any, i: number) => (
-                      <div
-                        key={i}
-                        className="text-xs font-semibold text-slate-750 bg-slate-50 border border-slate-200 p-3 rounded"
-                      >
-                        Rooms count allocated:{" "}
-                        <span className="font-mono text-[#F97316]">
-                          {acc.numberOfRooms} rooms
-                        </span>{" "}
-                        | Pax split:{" "}
-                        <span className="font-mono text-[#F97316]">
-                          {acc.roomDistribution?.join(" + ")}
-                        </span>
-                      </div>
-                    ),
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    onClick={async () => {
-                      try {
-                        await api.post("/vendors/directory/costing/snapshot", {
-                          tripId: "spiti-valley-road-trip",
-                          paxCount: parseInt(costingPax),
-                          calculationData: costingResult,
-                        });
-                        toast.success("Costing snapshot safely archived!");
-                      } catch (err: any) {
-                        toast.error("Snapshot failed: " + err.message);
-                      }
-                    }}
-                    className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold h-9 rounded cursor-pointer"
-                  >
-                    Save Cost Snapshot
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-16 border border-dashed border-slate-200 rounded text-center text-slate-400 font-semibold bg-slate-50/20">
-                Click Run Costing Engine to compile automatic per-person costing
-                splits.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {currentCategory === "payments" && (
-        <div className="bg-white p-6 rounded-[8px] border border-slate-200 shadow-sm space-y-4">
-          <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-base font-bold text-slate-800">
-                Vendor Payments Ledger
-              </h2>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                Logs advances, balance payouts, and remaining balances per
-                vendor.
-              </p>
-            </div>
-          </div>
-
-          <div className="border border-slate-200 rounded-[6px] overflow-hidden">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
-                <tr>
-                  <th className="p-3">Vendor</th>
-                  <th className="p-3 text-right">Invoice Amount</th>
-                  <th className="p-3 text-right">Advance Amount</th>
-                  <th className="p-3 text-right">Paid Amount</th>
-                  <th className="p-3 text-right">Remaining Balance</th>
-                  <th className="p-3 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                {paymentsList.map((p: any) => (
-                  <tr key={p.id} className="hover:bg-slate-50/20">
-                    <td className="p-3 font-bold text-slate-800">
-                      {p.vendor?.name}
-                    </td>
-                    <td className="p-3 text-right">₹{p.invoiceAmount}</td>
-                    <td className="p-3 text-right">₹{p.advanceAmount}</td>
-                    <td className="p-3 text-right">₹{p.paidAmount}</td>
-                    <td className="p-3 text-right text-rose-500 font-mono">
-                      ₹{p.remainingBalance}
-                    </td>
-                    <td className="p-3 text-right">
-                      <span
-                        className={cn(
-                          "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border",
-                          p.paymentStatus === "PAID"
-                            ? "bg-green-50 text-green-600 border-green-150"
-                            : "bg-amber-50 text-amber-600 border-amber-150",
-                        )}
-                      >
-                        {p.paymentStatus}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {paymentsList.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-8 text-center text-slate-400 font-semibold"
-                    >
-                      No payments logged in directory. Log a payment above to
-                      begin.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {/* Vendor Form Modal — Dynamic Category Specific Fields */}
       <Dialog open={vendorModalOpen} onOpenChange={setVendorModalOpen}>
@@ -1992,6 +1917,18 @@ export default function VendorDirectoryPage() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Assign Master Vendor to Trip Modal */}
+      {selectedTripId !== "GLOBAL" && (
+        <AssignTripVendorDialog
+          isOpen={assignTripVendorModalOpen}
+          onClose={() => setAssignTripVendorModalOpen(false)}
+          tripId={selectedTripId}
+          tripTitle={
+            tripsList.find((t) => t.id === selectedTripId)?.title || selectedTripId
+          }
+          onSuccess={() => loadData()}
+        />
+      )}
     </div>
   );
 }

@@ -114,181 +114,21 @@ export function AccommodationDetailPage({
     ],
   );
 
-  const [rooms, setRooms] = useState<any[]>(
-    vendor.vendorRooms || [
-      {
-        id: "r1",
-        name: "Standard Twin Sharing",
-        cap: 2,
-        base: 2500,
-        extra: 800,
-      },
-      {
-        id: "r2",
-        name: "Deluxe Triple Sharing",
-        cap: 3,
-        base: 3200,
-        extra: 800,
-      },
-      { id: "r3", name: "Family Quad Room", cap: 4, base: 4000, extra: 800 },
-    ],
-  );
-
-  const [seasons, setSeasons] = useState<any[]>(
-    vendor.seasonalRates || [
-      {
-        id: "s1",
-        name: "Summer Peak Season (May 01 - Jul 15)",
-        twin: 3000,
-        triple: 3800,
-        quad: 4600,
-      },
-      {
-        id: "s2",
-        name: "Winter Snow Season (Dec 15 - Feb 15)",
-        twin: 3500,
-        triple: 4200,
-        quad: 5000,
-      },
-    ],
-  );
-
-  const [contracts, setContracts] = useState<any[]>(
-    vendor.contracts || [
-      {
-        id: "ctr1",
-        title: "Direct Hotel Property Agreement 2026",
-        vendorName: "Direct Hotel (Property Manager)",
-        agreementType: "Direct Supply",
-        startDate: "2026-01-01",
-        expiryDate: "2026-12-31",
-        renewalReminderDate: "2026-11-30",
-        commissionPercent: 0,
-        cancellationPolicy:
-          "Free cancellation 7 days prior to check-in. 50% charge thereafter.",
-        status: "ACTIVE",
-        fileUrl: "#",
-      },
-      {
-        id: "ctr2",
-        title: "Mountain Hospitality Preferred B2B Supply Contract",
-        vendorName: "Mountain Hospitality Pvt Ltd",
-        agreementType: "B2B Contract",
-        startDate: "2026-03-01",
-        expiryDate: "2027-02-28",
-        renewalReminderDate: "2027-01-31",
-        commissionPercent: 10,
-        cancellationPolicy: "Flexible cancellation up to 48 hours prior.",
-        status: "ACTIVE",
-        fileUrl: "#",
-      },
-      {
-        id: "ctr3",
-        title: "Spiti Valley Escapes Seasonal Contract",
-        vendorName: "Spiti Valley Escapes",
-        agreementType: "Wholesale Rate",
-        startDate: "2026-04-01",
-        expiryDate: "2026-10-31",
-        renewalReminderDate: "2026-09-30",
-        commissionPercent: 8,
-        cancellationPolicy: "Non-refundable within 7 days of trip.",
-        status: "ACTIVE",
-        fileUrl: "#",
-      },
-    ],
-  );
-
-  const [gallery, setGallery] = useState<any[]>(
-    vendor.photos || [
-      {
-        id: "g1",
-        title: "Main Exterior View",
-        url: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80",
-      },
-      {
-        id: "g2",
-        title: "Deluxe Bedroom",
-        url: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=600&q=80",
-      },
-    ],
-  );
-
+  const [rooms, setRooms] = useState<any[]>(vendor.vendorRooms || []);
+  const [seasons, setSeasons] = useState<any[]>(vendor.seasonalRates || []);
+  const [contracts, setContracts] = useState<any[]>(vendor.contracts || []);
+  const [gallery, setGallery] = useState<any[]>(vendor.photos || []);
   const [destinations, setDestinations] = useState<string[]>(
-    vendor.destinationsList || ["Manali", "Kasol", "Jibhi"],
+    vendor.destinationsList || [],
   );
-
-  const [ledger, setLedger] = useState<any[]>(
-    vendor.ledgerEntries || [
-      {
-        id: "l1",
-        entryType: "INVOICE",
-        amount: 45000,
-        balance: 45000,
-        referenceNo: "INV-2026-881",
-        entryDate: "2026-07-15",
-        remarks:
-          "Peak season room allocations for Manali Kasol Departure 05 Jul",
-      },
-      {
-        id: "l2",
-        entryType: "ADVANCE",
-        amount: 20000,
-        balance: 25000,
-        referenceNo: "TXN-881920",
-        entryDate: "2026-07-18",
-        remarks: "Bank Transfer advance payment",
-      },
-    ],
-  );
+  const [ledger, setLedger] = useState<any[]>(vendor.ledgerEntries || []);
 
   const [priceHistory, setPriceHistory] = useState<any[]>(
-    vendor.priceHistory || [
-      {
-        id: "ph1",
-        serviceName: "Twin Sharing Room",
-        oldRate: 2200,
-        newRate: 2500,
-        changedBy: "Parth Rathod",
-        reason: "Annual seasonal tariff update",
-        createdAt: "2026-06-01",
-      },
-      {
-        id: "ph2",
-        serviceName: "Extra Mattress",
-        oldRate: 600,
-        newRate: 800,
-        changedBy: "Hemal Patel",
-        reason: "High demand season adjustment",
-        createdAt: "2026-07-01",
-      },
-    ],
+    vendor.priceHistory || [],
   );
 
   const [timeline, setTimeline] = useState<any[]>(
-    vendor.timelineEntries || [
-      {
-        id: "t1",
-        eventType: "CREATED",
-        description: "Vendor partner profile initialized in master directory.",
-        performedBy: "Admin System",
-        createdAt: "2026-05-10 10:30 AM",
-      },
-      {
-        id: "t2",
-        eventType: "CONTRACT_UPLOADED",
-        description:
-          "Seasonal Master Operations Agreement 2026 uploaded & verified.",
-        performedBy: "Hemal Patel",
-        createdAt: "2026-06-01 02:15 PM",
-      },
-      {
-        id: "t3",
-        eventType: "PRICE_UPDATED",
-        description: "Room tariffs updated for Twin & Triple occupancy.",
-        performedBy: "Parth Rathod",
-        createdAt: "2026-07-01 11:00 AM",
-      },
-    ],
+    vendor.timelineEntries || [],
   );
 
   // Modal Form States & Editing Handlers
@@ -737,8 +577,8 @@ export function AccommodationDetailPage({
               <span>•</span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />{" "}
-                {vendor.city || vendor.location || "Manali"},{" "}
-                {vendor.state || "Himachal Pradesh"}
+                {vendor.city || vendor.location || "N/A"}
+                {vendor.state ? `, ${vendor.state}` : ""}
               </span>
             </p>
           </div>
@@ -750,7 +590,7 @@ export function AccommodationDetailPage({
               setHeaderForm({
                 name: vendor.name || "",
                 city: vendor.city || vendor.location || "",
-                state: vendor.state || "Himachal Pradesh",
+                state: vendor.state || "",
                 contactPerson: vendor.contactPerson || "",
                 contactNumber: vendor.contactNumber || vendor.phone || "",
                 email: vendor.email || "",

@@ -17,11 +17,14 @@ import DayWiseActivityAccordionCard, {
   DepartureActivityItem,
 } from "./vendors/activities/DayWiseActivityAccordionCard";
 import Activity5StepWizardModal from "./vendors/activities/Activity5StepWizardModal";
+import { saveActivityToBackend } from "@/utils/departure/activityMapper";
 
 interface DepartureActivitiesProps {
   tripId: string;
   departureDateStr: string;
   tripDetails: any;
+  computedItinerary?: any[];
+  allPassengers?: any[];
   tripVendors: any[];
   activitiesList: any[];
   fetchPageData: () => void;
@@ -33,6 +36,8 @@ export default function DepartureActivities({
   tripId,
   departureDateStr,
   tripDetails,
+  computedItinerary = [],
+  allPassengers = [],
   tripVendors,
   activitiesList,
   fetchPageData,
@@ -46,6 +51,8 @@ export default function DepartureActivities({
 
   // Modals
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  const totalPaxCount = allPassengers.length > 0 ? allPassengers.length : 5;
 
   const currentActivities: DepartureActivityItem[] = useMemo(() => {
     if (activitiesList && activitiesList.length > 0) {
@@ -61,8 +68,8 @@ export default function DepartureActivities({
         endTime: a.endTime || "01:00 PM",
         status: (a.status?.toUpperCase() as any) || "CONFIRMED",
         vendorName: a.vendorName || "Contracted Supplier",
-        maxCapacity: Number(a.maxParticipants) || 40,
-        bookedCount: a.bookedCount !== undefined ? Number(a.bookedCount) : 40,
+        maxCapacity: Number(a.maxParticipants) || totalPaxCount,
+        bookedCount: a.bookedCount !== undefined ? Number(a.bookedCount) : totalPaxCount,
         isIncluded:
           a.isIncluded !== undefined
             ? a.isIncluded
@@ -82,14 +89,50 @@ export default function DepartureActivities({
             : a.estimatedCost !== undefined
               ? Number(a.estimatedCost)
               : 0,
-        guideName: a.responsibleGuide || "Neel Patel",
-        vehicleName: a.vehicleName || "Traveller 2",
+        guideName: a.responsibleGuide || "Lead Guide",
+        vehicleName: a.vehicleName || "Tempo 1",
         mealIncluded: "Included",
         notes: a.remarks || a.sub || "",
       }));
     }
+
+    // Dynamic fallback derived from real trip computedItinerary
+    if (computedItinerary && computedItinerary.length > 0) {
+      return computedItinerary.map((item, idx) => {
+        const dayNum =
+          typeof item.day === "number"
+            ? item.day
+            : parseInt(String(item.day || "").replace(/\D/g, ""), 10) || idx + 1;
+
+        const name = item.plan
+          ? item.plan.split("/")[0].split("-")[0].trim()
+          : item.title || `Day ${dayNum} Activity`;
+
+        return {
+          id: `itin-act-${dayNum}`,
+          name,
+          category: "SIGHTSEEING",
+          dayNumber: dayNum,
+          scheduledTime: "09:00 AM",
+          endTime: "05:00 PM",
+          status: "CONFIRMED",
+          vendorName: "Contracted Supplier",
+          maxCapacity: totalPaxCount,
+          bookedCount: totalPaxCount,
+          isIncluded: true,
+          adultPrice: 0,
+          childPrice: 0,
+          vendorCost: 0,
+          guideName: "Lead Guide",
+          vehicleName: "Tempo 1",
+          mealIncluded: "Included",
+          notes: item.activities || item.sub || item.description || "",
+        };
+      });
+    }
+
     return [];
-  }, [activitiesList]);
+  }, [activitiesList, computedItinerary, totalPaxCount]);
 
   const computedActivities = useMemo(() => {
     return currentActivities
@@ -110,9 +153,9 @@ export default function DepartureActivities({
 
   const groupedByDay = useMemo(() => {
     const groups: Record<number, DepartureActivityItem[]> = {};
-    // Ensure all 9 days of a 9-day trip are always shown in chronological order when All Days is selected
+    const totalDays = computedItinerary.length > 0 ? computedItinerary.length : 9;
     if (actDayFilter === "All Days") {
-      for (let d = 1; d <= 9; d++) {
+      for (let d = 1; d <= totalDays; d++) {
         groups[d] = [];
       }
     }
@@ -122,13 +165,15 @@ export default function DepartureActivities({
       groups[day].push(a);
     });
     return groups;
-  }, [computedActivities, actDayFilter]);
+  }, [computedActivities, actDayFilter, computedItinerary]);
 
   const daysAvailable = useMemo(() => {
-    const s = new Set<number>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const totalDays = computedItinerary.length > 0 ? computedItinerary.length : 9;
+    const s = new Set<number>();
+    for (let d = 1; d <= totalDays; d++) s.add(d);
     currentActivities.forEach((a) => s.add(a.dayNumber));
     return Array.from(s).sort((a, b) => a - b);
-  }, [currentActivities]);
+  }, [currentActivities, computedItinerary]);
 
   const handleUpdateActivityItem = async (
     id: string,
@@ -157,29 +202,25 @@ export default function DepartureActivities({
   };
 
   const handleAddActivityFromWizard = async (newActivity: any) => {
-    const nextList = [...currentActivities, newActivity];
-    setActivitiesList(nextList);
     try {
-      await api.post(
-        `/ops/activities/${tripId}?departureDate=${departureDateStr}`,
-        newActivity,
-      );
+      const persisted = await saveActivityToBackend(api, tripId, departureDateStr, newActivity);
+      setActivitiesList([...currentActivities, persisted]);
     } catch (e) {
-      // Offline fallback still updates UI
+      // API error toast is shown by saveActivityToBackend; UI state is not mutated on failure
     }
   };
 
-  const DAY_TITLES: Record<number, string> = {
-    1: "Train Journey — Ahmedabad Station Check-in, Group Briefing & Ice Breaking",
-    2: "Amritsar — Golden Temple, Jallianwala Bagh, Wagah Border & Kasol Transit",
-    3: "Kasol — Check-in, Manikaran Sahib, Chalal Trek & Campfire",
-    4: "Bijli Mahadev — Trek & Reach Manali",
-    5: "Adventure Day — Paragliding, River Rafting & Shawl Factory",
-    6: "Solang — ATV Ride, Solang Valley, Atal Tunnel & Sissu",
-    7: "Manali — Jogini Trek, Hadimba Temple & Mall Road",
-    8: "Return Journey — Train Boarding",
-    9: "Arrival — Trip Conclusion",
-  };
+  const dynamicDayTitles = useMemo(() => {
+    const map: Record<number, string> = {};
+    computedItinerary.forEach((item, idx) => {
+      const dNum =
+        typeof item.day === "number"
+          ? item.day
+          : parseInt(String(item.day || "").replace(/\D/g, ""), 10) || idx + 1;
+      map[dNum] = item.plan || item.title || item.description || `Day ${dNum} Plan`;
+    });
+    return map;
+  }, [computedItinerary]);
 
   const kpiStats = useMemo(() => {
     const totalActivities = currentActivities.length;
@@ -231,9 +272,6 @@ export default function DepartureActivities({
 
   return (
     <div className="space-y-6">
-      {/* ENTERPRISE KPI DASHBOARD HEADER */}
-      <ActivityKPIHeader stats={kpiStats} />
-
       {/* TOOLBAR: FILTER BAR & ADD ACTIVITY ACTION */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -305,7 +343,7 @@ export default function DepartureActivities({
                     DAY {day}
                   </div>
                   <span className="text-sm font-bold text-slate-700">
-                    {DAY_TITLES[day] || `Day ${day} Scheduled Activities`}
+                    {dynamicDayTitles[day] || `Day ${day} Scheduled Activities`}
                   </span>
                   <span className="ml-auto text-xs font-semibold text-slate-400">
                     {dayItems.length}{" "}

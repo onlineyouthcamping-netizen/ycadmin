@@ -73,15 +73,20 @@ api.interceptors.response.use(
     // 401 Handling: Session expired or unauthorized
     if (status === 401 && !axios.isCancel(err)) {
       const isLoginRequest =
-        url?.includes("/admin/login") || url?.includes("/login");
-      const isIdentityCheck = url?.includes("/admin/me");
+        url?.includes("/admin/login") ||
+        url?.includes("/users/login") ||
+        url?.includes("/login");
 
-      // Only evict stored token if the primary identity check (/admin/me) fails with 401
-      if (!isLoginRequest && isIdentityCheck) {
+      // Any protected API returning 401 invalidates stored token session
+      if (!isLoginRequest && !adminRedirectInProgress) {
+        adminRedirectInProgress = true;
         console.warn(
-          `[AUTH] Primary identity check (/admin/me) failed (401). Clearing token.`,
+          `[AUTH] Protected endpoint (${url}) returned 401 Unauthorized. Evicting session token.`,
         );
         localStorage.removeItem("token");
+        if (typeof window !== "undefined" && !window.location.pathname.includes("/admin/login")) {
+          window.location.href = "/admin/login?reason=session_expired";
+        }
       }
     }
     return Promise.reject(err);

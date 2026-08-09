@@ -377,52 +377,37 @@ export default function DeparturePayments({
     document.body.removeChild(link);
   };
 
+  const [isSubmittingClientPayment, setIsSubmittingClientPayment] = useState(false);
+
   // Handlers for Recording Payments
   const handleClientPaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBooking) return;
+    if (!selectedBooking || isSubmittingClientPayment) return;
     const amountNum = Number(clientPaymentForm.amount) || 0;
+    if (amountNum <= 0) {
+      toast.error("Please enter a valid payment amount greater than zero");
+      return;
+    }
+
+    setIsSubmittingClientPayment(true);
     try {
       await opsService.addClientPayment(
         selectedBooking.bookingId,
         clientPaymentForm,
       );
-    } catch {
-      // Continue update in local state for seamless feedback
+      toast.success(
+        `Recorded ₹${amountNum.toLocaleString()} receipt for ${selectedBooking.bookingId}`,
+      );
+      await fetchData();
+      setAddClientPaymentOpen(false);
+      setSelectedBooking(null);
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      const msg = err.response?.data?.message || err.message || "Failed to record client payment";
+      toast.error(msg);
+    } finally {
+      setIsSubmittingClientPayment(false);
     }
-    setBookings((prev) =>
-      prev.map((b) => {
-        if (b.bookingId === selectedBooking.bookingId) {
-          const newPaid = (b.advancePaid || 0) + amountNum;
-          const total = b.totalAmount || 0;
-          const status = newPaid >= total ? "Paid" : "Partially Paid";
-          return {
-            ...b,
-            advancePaid: newPaid,
-            paymentStatus: status,
-            history: [
-              {
-                id: `TXN-${Date.now()}`,
-                date: clientPaymentForm.paymentDate,
-                amount: amountNum,
-                method: clientPaymentForm.paymentMode,
-                txnId: clientPaymentForm.transactionId || `REF-${Date.now()}`,
-                status: "Verified",
-                verifiedBy: "Current User",
-                remarks: clientPaymentForm.remarks || "Payment logged",
-              },
-              ...(b.history || []),
-            ],
-          };
-        }
-        return b;
-      }),
-    );
-    toast.success(
-      `Recorded ₹${amountNum.toLocaleString()} receipt for ${selectedBooking.bookingId}`,
-    );
-    setAddClientPaymentOpen(false);
-    setSelectedBooking(null);
   };
 
   const handleVendorPaymentSubmit = async (e: React.FormEvent) => {
@@ -2371,9 +2356,10 @@ export default function DeparturePayments({
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmittingClientPayment}
                 className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
               >
-                Save & Record Receipt
+                {isSubmittingClientPayment ? "Recording Receipt..." : "Save & Record Receipt"}
               </Button>
             </div>
           </form>
