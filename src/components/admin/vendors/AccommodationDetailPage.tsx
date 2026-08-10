@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Building2,
   Phone,
@@ -22,6 +22,15 @@ import {
   TrendingUp,
   Pencil,
   Trash2,
+  Bus,
+  Car,
+  Truck,
+  Compass,
+  Utensils,
+  Activity,
+  Navigation,
+  Check,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +77,72 @@ export function AccommodationDetailPage({
   onUpdateVendor,
 }: AccommodationDetailPageProps) {
   const [vendor, setVendor] = useState<any>(initialVendor);
+  const vendorType = (vendor.type || "").toUpperCase();
+  const isTransport = vendorType === "TRANSPORT";
+  const isGuide = vendorType === "GUIDE";
+  const isActivity = vendorType === "ACTIVITIES";
+  const isRestaurant = vendorType === "RESTAURANT" || vendorType === "FOOD";
+
+  const dynamicTabs = useMemo(() => {
+    if (isTransport) {
+      return [
+        { id: "overview", label: "Overview", icon: Bus },
+        { id: "contacts", label: "Contacts", icon: Phone },
+        { id: "vehicles", label: "Vehicles & Fleet", icon: Car },
+        { id: "route_pricing", label: "Route Pricing", icon: MapPin },
+        { id: "contracts", label: "Contracts & Docs", icon: FileText },
+        { id: "trips", label: "Trips & Routes", icon: Users },
+        { id: "ledger", label: "Payment Ledger", icon: CreditCard },
+        { id: "timeline", label: "Activity Timeline", icon: History },
+      ];
+    }
+    if (isGuide) {
+      return [
+        { id: "overview", label: "Overview", icon: Compass },
+        { id: "contacts", label: "Contacts", icon: Phone },
+        { id: "guide_rates", label: "Rates & Allowance", icon: DollarSign },
+        { id: "contracts", label: "Contracts & Docs", icon: FileText },
+        { id: "trips", label: "Assigned Trips", icon: Users },
+        { id: "ledger", label: "Payment Ledger", icon: CreditCard },
+        { id: "timeline", label: "Activity Timeline", icon: History },
+      ];
+    }
+    if (isActivity) {
+      return [
+        { id: "overview", label: "Overview", icon: Activity },
+        { id: "contacts", label: "Contacts", icon: Phone },
+        { id: "activity_catalog", label: "Activity Catalog", icon: Tag },
+        { id: "contracts", label: "Contracts & Docs", icon: FileText },
+        { id: "trips", label: "Assigned Trips", icon: Users },
+        { id: "ledger", label: "Payment Ledger", icon: CreditCard },
+        { id: "timeline", label: "Activity Timeline", icon: History },
+      ];
+    }
+    if (isRestaurant) {
+      return [
+        { id: "overview", label: "Overview", icon: Utensils },
+        { id: "contacts", label: "Contacts", icon: Phone },
+        { id: "meal_plans", label: "Meal Plans & Buffet", icon: Utensils },
+        { id: "contracts", label: "Contracts & Docs", icon: FileText },
+        { id: "trips", label: "Assigned Trips", icon: Users },
+        { id: "ledger", label: "Payment Ledger", icon: CreditCard },
+        { id: "timeline", label: "Activity Timeline", icon: History },
+      ];
+    }
+    return [
+      { id: "overview", label: "Overview", icon: Building2 },
+      { id: "contacts", label: "Contacts", icon: Phone },
+      { id: "rooms", label: "Rooms", icon: Bed },
+      { id: "seasonal_pricing", label: "Seasonal Pricing", icon: Calendar },
+      { id: "contracts", label: "Contracts & Docs", icon: FileText },
+      { id: "gallery", label: "Gallery", icon: Image },
+      { id: "trips", label: "Trips & Destinations", icon: Users },
+      { id: "ledger", label: "Payment Ledger", icon: CreditCard },
+      { id: "price_history", label: "Price History", icon: TrendingUp },
+      { id: "timeline", label: "Activity Timeline", icon: History },
+    ];
+  }, [isTransport, isGuide, isActivity, isRestaurant]);
+
   const [activeTab, setActiveTab] = useState("overview");
 
   // Overview Editing State
@@ -81,13 +156,69 @@ export function AccommodationDetailPage({
     mealPlans: vendor.mealPlans || "EP, CP, MAP, AP",
     amenities:
       vendor.amenities ||
-      "WiFi, Parking, Power Backup, Bonfire, Restaurant, Laundry",
+      (isTransport
+        ? "GPS Tracking, Speed Governor, Pushback Seats, First Aid Kit, AC / Heater, Luggage Carrier"
+        : "WiFi, Parking, Power Backup, Bonfire, Restaurant, Laundry"),
+    fleetTypes: vendor.roomTypes || "20 Seater Tempo, 17 Seater Tempo, 14 Seater Tempo, Innova, Ertiga, Dzire",
+    operatingCity: vendor.city || vendor.location || "Punjab & Himachal",
+    tollParkingPolicy: "Included in base tariff",
+    driverAllowance: "₹500 / Night (or Included)",
+    routesCovered: vendor.notes || "Punjab, Himachal Pradesh, Ladakh, Kashmir, Uttarakhand",
     gstin: vendor.gstin || "",
     panNumber: vendor.panNumber || "",
     bankName: vendor.bankName || "",
     accountNumber: vendor.accountNumber || "",
     ifscCode: vendor.ifscCode || "",
     paymentTerms: vendor.paymentTerms || "30 Days Credit",
+  });
+
+  // State for Transport Vehicles & Routes
+  const [transportVehicles, setTransportVehicles] = useState<any[]>(() => {
+    if (vendor.transportRates && vendor.transportRates.length > 0) {
+      return vendor.transportRates.map((tr: any, idx: number) => ({
+        id: tr.id || `v-${idx}`,
+        model: tr.vehicleType || "Tempo Traveller",
+        capacity: tr.advertisedCapacity || 17,
+        sellableSeats: tr.sellableSeats || 16,
+        acType: "AC",
+        plateNumber: "PB-08-AB-1234",
+        status: "Active",
+      }));
+    }
+    return [
+      { id: "v1", model: "20 Seater Tempo Traveller", capacity: 20, sellableSeats: 19, acType: "AC", plateNumber: "PB-08-TR-2001", status: "Active" },
+      { id: "v2", model: "17 Seater Tempo Traveller", capacity: 17, sellableSeats: 16, acType: "AC", plateNumber: "PB-08-TR-1702", status: "Active" },
+      { id: "v3", model: "14 Seater Tempo Traveller", capacity: 14, sellableSeats: 13, acType: "AC", plateNumber: "PB-08-TR-1403", status: "Active" },
+      { id: "v4", model: "Toyota Innova Crysta", capacity: 7, sellableSeats: 6, acType: "AC", plateNumber: "PB-08-IN-7001", status: "Active" },
+      { id: "v5", model: "Maruti Suzuki Ertiga", capacity: 6, sellableSeats: 6, acType: "AC", plateNumber: "PB-08-ER-6002", status: "Active" },
+      { id: "v6", model: "Swift Dzire Sedan", capacity: 4, sellableSeats: 4, acType: "AC", plateNumber: "PB-08-DZ-4003", status: "Active" },
+    ];
+  });
+
+  const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
+    if (vendor.transportRates && vendor.transportRates.length > 0) {
+      return vendor.transportRates.map((tr: any, idx: number) => ({
+        id: tr.id || `r-${idx}`,
+        routeName: tr.routeName || `${tr.pickupLocation || "Kotkapura"} → ${tr.dropLocation || "Kotkapura"}`,
+        vehicleType: tr.vehicleType || "17 Seater",
+        totalAmount: Number(tr.totalVehicleCost || 44000),
+        perPersonRate: Math.round(Number(tr.totalVehicleCost || 44000) / (tr.sellableSeats || 16)),
+        notes: tr.notes || "",
+      }));
+    }
+    return [
+      { id: "r1", routeName: "Kotkapura → Kotkapura", vehicleType: "20 Seater Tempo", totalAmount: 48000, perPersonRate: 2526, notes: "Kotkapura pickup & drop extra: ₹2,000" },
+      { id: "r2", routeName: "Kotkapura → Kotkapura", vehicleType: "17 Seater Tempo", totalAmount: 44000, perPersonRate: 2750, notes: "Kotkapura pickup & drop extra: ₹2,000" },
+      { id: "r3", routeName: "Kotkapura → Kotkapura", vehicleType: "14 Seater Tempo", totalAmount: 38000, perPersonRate: 2923, notes: "Kotkapura pickup & drop extra: ₹2,000" },
+      { id: "r4", routeName: "Kotkapura → Kotkapura", vehicleType: "Innova", totalAmount: 28000, perPersonRate: 4667, notes: "" },
+      { id: "r5", routeName: "Kotkapura → Kotkapura", vehicleType: "Ertiga", totalAmount: 28000, perPersonRate: 4667, notes: "" },
+      { id: "r6", routeName: "Kotkapura → Kotkapura", vehicleType: "Swift Dzire", totalAmount: 17500, perPersonRate: 4375, notes: "" },
+      { id: "r7", routeName: "Jalandhar → Jalandhar", vehicleType: "20 Seater Tempo", totalAmount: 45000, perPersonRate: 2500, notes: "" },
+      { id: "r8", routeName: "Jalandhar → Jalandhar", vehicleType: "17 Seater Tempo", totalAmount: 42000, perPersonRate: 2625, notes: "" },
+      { id: "r9", routeName: "Jalandhar → Jalandhar", vehicleType: "14 Seater Tempo", totalAmount: 38000, perPersonRate: 2923, notes: "" },
+      { id: "r10", routeName: "Jalandhar → Jalandhar", vehicleType: "Innova", totalAmount: 28000, perPersonRate: 4667, notes: "" },
+      { id: "r11", routeName: "Jalandhar → Jalandhar", vehicleType: "Ertiga", totalAmount: 28000, perPersonRate: 4667, notes: "" },
+    ];
   });
 
   // State for dynamic sub-items
@@ -743,7 +874,7 @@ export function AccommodationDetailPage({
       {/* 10 Workspace Tabs */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-x-auto">
         <div className="flex border-b border-slate-100 min-w-max">
-          {TABS.map((t) => {
+          {dynamicTabs.map((t) => {
             const Icon = t.icon;
             return (
               <button
@@ -771,11 +902,20 @@ export function AccommodationDetailPage({
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2 border-b border-slate-100 gap-2">
                 <div>
                   <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                    Property & Compliance Profile
+                    {isTransport
+                      ? "Fleet & Transport Compliance Profile"
+                      : isGuide
+                        ? "Guide Profile & Certifications"
+                        : isRestaurant
+                          ? "Restaurant & Meal Plans Profile"
+                          : "Property & Compliance Profile"}
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Edit category, rating, check-in/out times, meal plans,
-                    amenities, and GSTIN/banking details directly below.
+                    {isTransport
+                      ? "Edit vehicle categories, operating routes, driver allowance, safety features, and banking details directly below."
+                      : isGuide
+                        ? "Edit guide language skills, daily rates, certifications, and compliance details directly below."
+                        : "Edit category, rating, check-in/out times, meal plans, amenities, and GSTIN/banking details directly below."}
                   </p>
                 </div>
                 <Button
@@ -788,139 +928,251 @@ export function AccommodationDetailPage({
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Property & Operational Info Card */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-amber-600" /> Property &
-                    Operational Info
-                  </h4>
+                {/* Category-Specific Operational Info Card */}
+                {isTransport ? (
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
+                      <Bus className="w-4 h-4 text-[#F97316]" /> Fleet & Transport Operational Info
+                    </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        Accommodation Category
-                      </label>
-                      <Select
-                        value={overviewForm.accommodationType}
-                        onValueChange={(v) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            accommodationType: v,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="h-8.5 bg-white text-xs border-slate-200 font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white text-xs">
-                          <SelectItem value="HOTEL">Hotel</SelectItem>
-                          <SelectItem value="RESORT">Resort</SelectItem>
-                          <SelectItem value="HOMESTAY">Homestay</SelectItem>
-                          <SelectItem value="HOSTEL">Hostel</SelectItem>
-                          <SelectItem value="CAMP">
-                            Camp / Luxury Tent
-                          </SelectItem>
-                          <SelectItem value="GUEST_HOUSE">
-                            Guest House
-                          </SelectItem>
-                          <SelectItem value="VILLA">Villa</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Primary Fleet Categories
+                        </label>
+                        <Input
+                          value={overviewForm.fleetTypes}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              fleetTypes: e.target.value,
+                            })
+                          }
+                          placeholder="20 Seater, 17 Seater, Innova, Ertiga"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
 
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        Star Rating
-                      </label>
-                      <Select
-                        value={overviewForm.starRating.toString()}
-                        onValueChange={(v) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            starRating: parseInt(v),
-                          })
-                        }
-                      >
-                        <SelectTrigger className="h-8.5 bg-white text-xs border-slate-200 font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white text-xs">
-                          <SelectItem value="1">1 Star ★</SelectItem>
-                          <SelectItem value="2">2 Star ★★</SelectItem>
-                          <SelectItem value="3">3 Star ★★★</SelectItem>
-                          <SelectItem value="4">4 Star ★★★★</SelectItem>
-                          <SelectItem value="5">5 Star ★★★★★</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Operating Base / Hub
+                        </label>
+                        <Input
+                          value={overviewForm.operatingCity}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              operatingCity: e.target.value,
+                            })
+                          }
+                          placeholder="Jalandhar / Kotkapura / Amritsar"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
 
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        Check-In Time
-                      </label>
-                      <Input
-                        value={overviewForm.checkInTime}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            checkInTime: e.target.value,
-                          })
-                        }
-                        className="h-8.5 bg-white text-xs border-slate-200 font-bold"
-                      />
-                    </div>
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Toll & Parking Policy
+                        </label>
+                        <Input
+                          value={overviewForm.tollParkingPolicy}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              tollParkingPolicy: e.target.value,
+                            })
+                          }
+                          placeholder="Included in base tariff"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
 
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        Check-Out Time
-                      </label>
-                      <Input
-                        value={overviewForm.checkOutTime}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            checkOutTime: e.target.value,
-                          })
-                        }
-                        className="h-8.5 bg-white text-xs border-slate-200 font-bold"
-                      />
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Driver Night Allowance
+                        </label>
+                        <Input
+                          value={overviewForm.driverAllowance}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              driverAllowance: e.target.value,
+                            })
+                          }
+                          placeholder="₹500 / Night or Included"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Service Coverage Routes / Sectors
+                        </label>
+                        <Input
+                          value={overviewForm.routesCovered}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              routesCovered: e.target.value,
+                            })
+                          }
+                          placeholder="Kotkapura ↔ Manali, Jalandhar ↔ Kasol, Amritsar ↔ Kullu"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Fleet Safety & Vehicle Features
+                        </label>
+                        <Textarea
+                          value={overviewForm.amenities}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              amenities: e.target.value,
+                            })
+                          }
+                          placeholder="GPS Tracking, Speed Governor, Pushback Seats, First Aid Kit, AC / Heater, Luggage Carrier"
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[60px]"
+                        />
+                      </div>
                     </div>
                   </div>
+                ) : (
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-amber-600" /> Property &
+                      Operational Info
+                    </h4>
 
-                  <div>
-                    <label className="font-extrabold text-slate-700 block mb-1">
-                      Meal Plans Supported
-                    </label>
-                    <Input
-                      value={overviewForm.mealPlans}
-                      onChange={(e) =>
-                        setOverviewForm({
-                          ...overviewForm,
-                          mealPlans: e.target.value,
-                        })
-                      }
-                      placeholder="EP, CP, MAP, AP"
-                      className="h-8.5 bg-white text-xs border-slate-200 font-bold"
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Accommodation Category
+                        </label>
+                        <Select
+                          value={overviewForm.accommodationType}
+                          onValueChange={(v) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              accommodationType: v,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8.5 bg-white text-xs border-slate-200 font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white text-xs">
+                            <SelectItem value="HOTEL">Hotel</SelectItem>
+                            <SelectItem value="RESORT">Resort</SelectItem>
+                            <SelectItem value="HOMESTAY">Homestay</SelectItem>
+                            <SelectItem value="HOSTEL">Hostel</SelectItem>
+                            <SelectItem value="CAMP">
+                              Camp / Luxury Tent
+                            </SelectItem>
+                            <SelectItem value="GUEST_HOUSE">
+                              Guest House
+                            </SelectItem>
+                            <SelectItem value="VILLA">Villa</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div>
-                    <label className="font-extrabold text-slate-700 block mb-1">
-                      Amenities
-                    </label>
-                    <Textarea
-                      value={overviewForm.amenities}
-                      onChange={(e) =>
-                        setOverviewForm({
-                          ...overviewForm,
-                          amenities: e.target.value,
-                        })
-                      }
-                      placeholder="WiFi, Parking, Power Backup, Bonfire..."
-                      className="bg-white text-xs border-slate-200 font-medium min-h-[60px]"
-                    />
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Star Rating
+                        </label>
+                        <Select
+                          value={overviewForm.starRating.toString()}
+                          onValueChange={(v) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              starRating: parseInt(v),
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8.5 bg-white text-xs border-slate-200 font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white text-xs">
+                            <SelectItem value="1">1 Star ★</SelectItem>
+                            <SelectItem value="2">2 Star ★★</SelectItem>
+                            <SelectItem value="3">3 Star ★★★</SelectItem>
+                            <SelectItem value="4">4 Star ★★★★</SelectItem>
+                            <SelectItem value="5">5 Star ★★★★★</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Check-In Time
+                        </label>
+                        <Input
+                          value={overviewForm.checkInTime}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              checkInTime: e.target.value,
+                            })
+                          }
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Check-Out Time
+                        </label>
+                        <Input
+                          value={overviewForm.checkOutTime}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              checkOutTime: e.target.value,
+                            })
+                          }
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Meal Plans Supported
+                        </label>
+                        <Input
+                          value={overviewForm.mealPlans}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              mealPlans: e.target.value,
+                            })
+                          }
+                          placeholder="EP, CP, MAP, AP"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Amenities
+                        </label>
+                        <Textarea
+                          value={overviewForm.amenities}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              amenities: e.target.value,
+                            })
+                          }
+                          placeholder="WiFi, Parking, Power Backup, Bonfire..."
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[60px]"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Financial & Compliance Info Card */}
                 <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
@@ -1027,12 +1279,159 @@ export function AccommodationDetailPage({
                             paymentTerms: e.target.value,
                           })
                         }
-                        placeholder="30 Days Credit"
+                        placeholder="30 Days Credit / 50% Advance"
                         className="h-8.5 bg-white text-xs border-slate-200 font-bold"
                       />
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: TRANSPORT VEHICLES & FLEET */}
+          {(activeTab === "vehicles" || (isTransport && activeTab === "rooms")) && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                    Vehicle Fleet & Seating Capacities
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Manage active transport vehicles, max passenger capacity, and sellable seats.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    const newVeh = {
+                      id: `v-${Date.now()}`,
+                      model: "Tempo Traveller (17 Seater)",
+                      capacity: 17,
+                      sellableSeats: 16,
+                      acType: "AC",
+                      plateNumber: "PB-08-NEW",
+                      status: "Active",
+                    };
+                    setTransportVehicles([...transportVehicles, newVeh]);
+                    toast.success("New vehicle added to fleet!");
+                  }}
+                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Vehicle to Fleet
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {transportVehicles.map((v) => (
+                  <div
+                    key={v.id}
+                    className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-3 text-xs relative"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#F97316] flex items-center justify-center font-bold">
+                          <Bus className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-extrabold text-slate-800 text-sm block">
+                            {v.model}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-500">
+                            {v.plateNumber || "PB-08-XX-XXXX"}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        {v.status || "Active"}
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1.5 text-slate-600 font-medium">
+                      <div className="flex justify-between">
+                        <span>Advertised Capacity:</span>
+                        <span className="font-bold text-slate-800">{v.capacity} Seats</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Sellable Passenger Seats:</span>
+                        <span className="font-bold text-[#F97316]">{v.sellableSeats} Seats</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Air Conditioning:</span>
+                        <span className="font-bold text-emerald-600">{v.acType || "AC Available"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: TRANSPORT ROUTE PRICING */}
+          {(activeTab === "route_pricing" || (isTransport && activeTab === "seasonal_pricing")) && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                    Route Pricing & Vehicle Tariffs
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Master route contracts and negotiated vehicle hire tariffs for MKA and all trips.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    const newRoute = {
+                      id: `r-${Date.now()}`,
+                      routeName: "Custom Route (Pickup ➔ Drop)",
+                      vehicleType: "17 Seater Tempo",
+                      totalAmount: 42000,
+                      perPersonRate: 2625,
+                      notes: "Standard sector contract",
+                    };
+                    setTransportRoutes([...transportRoutes, newRoute]);
+                    toast.success("New route tariff added!");
+                  }}
+                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Route Tariff
+                </Button>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-3">
+                {transportRoutes.map((r) => (
+                  <div
+                    key={r.id}
+                    className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-[#F97316]" />
+                        <span className="font-extrabold text-slate-800 text-sm">
+                          {r.routeName}
+                        </span>
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                          {r.vehicleType}
+                        </span>
+                      </div>
+                      {r.notes && (
+                        <p className="text-[11px] text-amber-700 font-medium mt-1">
+                          ⚠️ {r.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-emerald-800 font-black text-sm">
+                        <span>Total: ₹{r.totalAmount?.toLocaleString("en-IN")}</span>
+                        {r.perPersonRate && (
+                          <span className="text-[11px] font-bold text-emerald-600 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                            ≈ ₹{r.perPersonRate?.toLocaleString("en-IN")}/pax
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
