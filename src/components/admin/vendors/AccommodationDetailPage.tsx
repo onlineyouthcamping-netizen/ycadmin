@@ -63,7 +63,6 @@ const TABS = [
   { id: "contacts", label: "Contacts", icon: Phone },
   { id: "rooms", label: "Rooms", icon: Bed },
   { id: "seasonal_pricing", label: "Seasonal Pricing", icon: Calendar },
-  { id: "contracts", label: "Contracts & Docs", icon: FileText },
   { id: "gallery", label: "Gallery", icon: Image },
   { id: "trips", label: "Trips & Destinations", icon: Users },
   { id: "ledger", label: "Payment Ledger", icon: CreditCard },
@@ -90,7 +89,6 @@ export function AccommodationDetailPage({
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "vehicles", label: "Vehicles & Fleet", icon: Car },
         { id: "route_pricing", label: "Route Pricing", icon: MapPin },
-        { id: "contracts", label: "Contracts & Docs", icon: FileText },
         { id: "trips", label: "Trips & Routes", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -101,7 +99,6 @@ export function AccommodationDetailPage({
         { id: "overview", label: "Overview", icon: Compass },
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "guide_rates", label: "Rates & Allowance", icon: DollarSign },
-        { id: "contracts", label: "Contracts & Docs", icon: FileText },
         { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -112,7 +109,6 @@ export function AccommodationDetailPage({
         { id: "overview", label: "Overview", icon: Activity },
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "activity_catalog", label: "Activity Catalog", icon: Tag },
-        { id: "contracts", label: "Contracts & Docs", icon: FileText },
         { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -123,7 +119,6 @@ export function AccommodationDetailPage({
         { id: "overview", label: "Overview", icon: Utensils },
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "meal_plans", label: "Meal Plans & Buffet", icon: Utensils },
-        { id: "contracts", label: "Contracts & Docs", icon: FileText },
         { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -134,7 +129,6 @@ export function AccommodationDetailPage({
       { id: "contacts", label: "Contacts", icon: Phone },
       { id: "rooms", label: "Rooms", icon: Bed },
       { id: "seasonal_pricing", label: "Seasonal Pricing", icon: Calendar },
-      { id: "contracts", label: "Contracts & Docs", icon: FileText },
       { id: "gallery", label: "Gallery", icon: Image },
       { id: "trips", label: "Trips & Destinations", icon: Users },
       { id: "ledger", label: "Payment Ledger", icon: CreditCard },
@@ -273,6 +267,10 @@ export function AccommodationDetailPage({
             : v,
         ),
       );
+      logActivity(
+        "FLEET_UPDATED",
+        `Updated fleet vehicle: ${vehicleForm.model} (${vehicleForm.plateNumber || "PB-08"})`,
+      );
       toast.success("Vehicle updated successfully!");
     } else {
       const newV = {
@@ -285,13 +283,22 @@ export function AccommodationDetailPage({
         status: vehicleForm.status,
       };
       setTransportVehicles([...transportVehicles, newV]);
+      logActivity(
+        "FLEET_ADDED",
+        `Added new vehicle to fleet: ${vehicleForm.model} (${vehicleForm.plateNumber || "PB-08"}) - Capacity: ${cap} Seats`,
+      );
       toast.success("Vehicle added to fleet!");
     }
     setVehicleModalOpen(false);
   };
 
   const handleDeleteVehicle = (id: string) => {
+    const veh = transportVehicles.find((v) => v.id === id);
     setTransportVehicles(transportVehicles.filter((v) => v.id !== id));
+    logActivity(
+      "FLEET_DELETED",
+      `Removed vehicle from fleet: ${veh?.model || "Vehicle"}`,
+    );
     toast.success("Vehicle removed from fleet");
   };
 
@@ -333,6 +340,10 @@ export function AccommodationDetailPage({
             : r,
         ),
       );
+      logActivity(
+        "RATE_REVISION",
+        `Updated route tariff: ${routeForm.routeName} (${routeForm.vehicleType}) to ₹${tot.toLocaleString("en-IN")}`,
+      );
       toast.success("Route tariff updated successfully!");
     } else {
       const newR = {
@@ -343,13 +354,22 @@ export function AccommodationDetailPage({
         notes: routeForm.notes,
       };
       setTransportRoutes([...transportRoutes, newR]);
+      logActivity(
+        "RATE_REVISION",
+        `Added new route tariff: ${routeForm.routeName} (${routeForm.vehicleType}) for ₹${tot.toLocaleString("en-IN")}`,
+      );
       toast.success("Route tariff added!");
     }
     setRouteModalOpen(false);
   };
 
   const handleDeleteRoute = (id: string) => {
+    const rt = transportRoutes.find((r) => r.id === id);
     setTransportRoutes(transportRoutes.filter((r) => r.id !== id));
+    logActivity(
+      "RATE_REMOVED",
+      `Removed route tariff: ${rt?.routeName || "Route"} (${rt?.vehicleType || "Vehicle"})`,
+    );
     toast.success("Route tariff removed");
   };
 
@@ -390,9 +410,61 @@ export function AccommodationDetailPage({
     vendor.priceHistory || [],
   );
 
-  const [timeline, setTimeline] = useState<any[]>(
-    vendor.timelineEntries || [],
-  );
+  // Helper for Automatic Activity Logging
+  const logActivity = (
+    eventType: string,
+    description: string,
+    performedBy = "Hemal Patel (Superadmin)",
+  ) => {
+    const newEntry = {
+      id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      eventType,
+      description,
+      performedBy,
+      createdAt: new Date().toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }),
+    };
+    setTimeline((prev) => [newEntry, ...prev]);
+  };
+
+  const [timeline, setTimeline] = useState<any[]>(() => {
+    if (vendor.timelineEntries && vendor.timelineEntries.length > 0) {
+      return vendor.timelineEntries;
+    }
+    return [
+      {
+        id: "act-init-1",
+        eventType: "RATE_APPROVED",
+        description: isTransport
+          ? "Master transport route rate card approved for MKA and Punjab/Himachal sectors."
+          : "Seasonal accommodation tariffs and meal plans verified for active operations.",
+        performedBy: "Hemal Patel (Superadmin)",
+        createdAt: "Today, 11:30 AM",
+      },
+      {
+        id: "act-init-2",
+        eventType: isTransport ? "FLEET_VERIFIED" : "PROPERTY_INSPECTED",
+        description: isTransport
+          ? "Commercial permits, vehicle capacities, and driver details verified."
+          : "Property room inventory, cleanliness, and power backup inspection completed.",
+        performedBy: "Operations Team",
+        createdAt: "Yesterday, 04:15 PM",
+      },
+      {
+        id: "act-init-3",
+        eventType: "VENDOR_ONBOARDED",
+        description: `Vendor profile created and assigned to master operations database.`,
+        performedBy: "Hemal Patel (Superadmin)",
+        createdAt: "01 Aug 2026, 10:00 AM",
+      },
+    ];
+  });
 
   // Modal Form States & Editing Handlers
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -500,6 +572,10 @@ export function AccommodationDetailPage({
       await api
         .patch(`/vendors/directory/${vendor.id}`, headerForm)
         .catch(() => {});
+      logActivity(
+        "PROFILE_UPDATED",
+        `Updated vendor info: ${headerForm.name} (${headerForm.city || vendor.city})`,
+      );
       setHeaderModalOpen(false);
       toast.success("Vendor Name & Location updated!");
     } catch (err: any) {
@@ -516,6 +592,10 @@ export function AccommodationDetailPage({
         .patch(`/vendors/directory/${vendor.id}`, overviewForm)
         .catch(() => {});
       onUpdateVendor(updated);
+      logActivity(
+        "PROFILE_UPDATED",
+        "Updated vendor operational specs & financial compliance",
+      );
       toast.success("Property Overview updated successfully!");
     } catch (err) {
       toast.error("Failed to save overview");
@@ -534,9 +614,17 @@ export function AccommodationDetailPage({
           c.id === editingContact.id ? { ...c, ...contactForm } : c,
         ),
       );
+      logActivity(
+        "CONTACT_UPDATED",
+        `Updated contact details for ${contactForm.name} (${contactForm.role || "Contact"})`,
+      );
       toast.success("Contact updated!");
     } else {
       setContacts([{ id: `c-${Date.now()}`, ...contactForm }, ...contacts]);
+      logActivity(
+        "CONTACT_ADDED",
+        `Added contact person: ${contactForm.name} (${contactForm.role || "General Manager"}) - Phone: ${contactForm.phone}`,
+      );
       toast.success("Contact added!");
     }
     setContactModalOpen(false);
@@ -544,7 +632,12 @@ export function AccommodationDetailPage({
   };
 
   const handleDeleteContact = (id: string) => {
+    const ct = contacts.find((c) => c.id === id);
     setContacts(contacts.filter((c) => c.id !== id));
+    logActivity(
+      "CONTACT_DELETED",
+      `Removed contact person: ${ct?.name || "Contact"}`,
+    );
     toast.success("Contact removed");
   };
 
@@ -2206,47 +2299,95 @@ export function AccommodationDetailPage({
             </div>
           )}
 
-          {/* TAB 10: UNIFIED CHRONOLOGICAL TIMELINE */}
+          {/* TAB: UNIFIED CHRONOLOGICAL TIMELINE */}
           {activeTab === "timeline" && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                  Unified Partner Timeline
-                </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <History className="w-4 h-4 text-[#F97316]" /> Unified Partner Activity Audit Trail
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Automated traceability log of all profile updates, rate revisions, fleet changes, and operational activities.
+                  </p>
+                </div>
                 <Button
-                  onClick={() => setTimelineModalOpen(true)}
+                  onClick={() => {
+                    setTimelineForm({
+                      eventType: "NOTE",
+                      description: "",
+                      performedBy: "Hemal Patel (Superadmin)",
+                    });
+                    setTimelineModalOpen(true);
+                  }}
                   className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
                 >
-                  <Plus className="w-4 h-4 mr-1" /> Add Log Entry
+                  <Plus className="w-4 h-4 mr-1" /> Add Manual Log
                 </Button>
               </div>
 
-              <div className="relative border-l-2 border-slate-200 ml-4 space-y-6 py-2">
-                {timeline.map((item) => (
-                  <div key={item.id} className="relative pl-6">
-                    <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-[#F97316] border-2 border-white ring-4 ring-orange-50" />
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-extrabold text-slate-800 uppercase tracking-wider">
-                          {item.eventType.replace("_", " ")}
-                        </span>
-                        <span className="text-[10px] text-slate-450 font-medium">
-                          {item.createdAt}
-                        </span>
+              {timeline.length === 0 ? (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-xs text-slate-400 font-semibold">
+                  No activity entries logged yet.
+                </div>
+              ) : (
+                <div className="relative border-l-2 border-slate-200 ml-4 space-y-4 py-2">
+                  {timeline.map((item) => {
+                    const isRate = item.eventType?.includes("RATE");
+                    const isFleet = item.eventType?.includes("FLEET");
+                    const isContact = item.eventType?.includes("CONTACT");
+                    const isPayment = item.eventType?.includes("PAYMENT");
+                    const isProfile =
+                      item.eventType?.includes("PROFILE") ||
+                      item.eventType?.includes("VENDOR");
+
+                    const badgeBg = isRate
+                      ? "bg-amber-100 text-amber-800 border-amber-200"
+                      : isFleet
+                        ? "bg-blue-100 text-blue-800 border-blue-200"
+                        : isContact
+                          ? "bg-purple-100 text-purple-800 border-purple-200"
+                          : isPayment
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                            : isProfile
+                              ? "bg-sky-100 text-sky-800 border-sky-200"
+                              : "bg-slate-100 text-slate-700 border-slate-200";
+
+                    return (
+                      <div key={item.id} className="relative pl-6">
+                        <div className="absolute -left-[9px] top-2 w-4 h-4 rounded-full bg-[#F97316] border-2 border-white ring-4 ring-orange-50" />
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs text-xs space-y-2">
+                          <div className="flex flex-wrap justify-between items-center gap-2">
+                            <span
+                              className={cn(
+                                "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border",
+                                badgeBg,
+                              )}
+                            >
+                              {item.eventType?.replace(/_/g, " ")}
+                            </span>
+                            <span className="text-[10px] text-slate-450 font-semibold flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              {item.createdAt}
+                            </span>
+                          </div>
+                          <p className="text-slate-800 font-semibold leading-relaxed">
+                            {item.description}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                            <span className="font-semibold text-slate-400">
+                              Audited By:
+                            </span>
+                            <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                              {item.performedBy || "Hemal Patel (Superadmin)"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-slate-700 font-medium">
-                        {item.description}
-                      </p>
-                      <p className="text-[10px] text-slate-450">
-                        Performed by:{" "}
-                        <span className="font-bold text-slate-600">
-                          {item.performedBy}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
