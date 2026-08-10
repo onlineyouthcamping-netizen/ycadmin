@@ -221,6 +221,135 @@ export function AccommodationDetailPage({
     ];
   });
 
+  // State for Transport Vehicles & Routes
+  const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<any>(null);
+  const [vehicleForm, setVehicleForm] = useState({
+    model: "Tempo Traveller (17 Seater)",
+    capacity: "17",
+    sellableSeats: "16",
+    acType: "AC",
+    plateNumber: "PB-08-TR-1702",
+    status: "Active",
+  });
+
+  const [routeModalOpen, setRouteModalOpen] = useState(false);
+  const [editingRoute, setEditingRoute] = useState<any>(null);
+  const [routeForm, setRouteForm] = useState({
+    routeName: "Kotkapura → Kotkapura",
+    vehicleType: "17 Seater Tempo",
+    totalAmount: "44000",
+    perPersonRate: "2750",
+    notes: "",
+  });
+
+  const handleSaveVehicle = () => {
+    if (!vehicleForm.model) {
+      toast.error("Vehicle model is required");
+      return;
+    }
+    const cap = parseInt(vehicleForm.capacity) || 17;
+    const sellable = parseInt(vehicleForm.sellableSeats) || cap;
+
+    if (editingVehicle) {
+      setTransportVehicles(
+        transportVehicles.map((v) =>
+          v.id === editingVehicle.id
+            ? {
+                ...v,
+                model: vehicleForm.model,
+                capacity: cap,
+                sellableSeats: sellable,
+                acType: vehicleForm.acType,
+                plateNumber: vehicleForm.plateNumber,
+                status: vehicleForm.status,
+              }
+            : v,
+        ),
+      );
+      toast.success("Vehicle updated successfully!");
+    } else {
+      const newV = {
+        id: `v-${Date.now()}`,
+        model: vehicleForm.model,
+        capacity: cap,
+        sellableSeats: sellable,
+        acType: vehicleForm.acType,
+        plateNumber: vehicleForm.plateNumber,
+        status: vehicleForm.status,
+      };
+      setTransportVehicles([...transportVehicles, newV]);
+      toast.success("Vehicle added to fleet!");
+    }
+    setVehicleModalOpen(false);
+  };
+
+  const handleDeleteVehicle = (id: string) => {
+    setTransportVehicles(transportVehicles.filter((v) => v.id !== id));
+    toast.success("Vehicle removed from fleet");
+  };
+
+  const handleSaveRoute = async () => {
+    if (!routeForm.routeName) {
+      toast.error("Route name is required");
+      return;
+    }
+    const tot = parseFloat(routeForm.totalAmount) || 0;
+    const pp = parseFloat(routeForm.perPersonRate) || Math.round(tot / 16);
+
+    try {
+      await api
+        .post("/vendors/transport-rates", {
+          vendorId: vendor.id,
+          tripCode: vendor.tripCode || "MKA-1",
+          routeName: routeForm.routeName,
+          pickupLocation:
+            routeForm.routeName.split("→")[0]?.trim() || "Kotkapura",
+          dropLocation:
+            routeForm.routeName.split("→")[1]?.trim() || "Kotkapura",
+          vehicleType: routeForm.vehicleType || "17 Seater Tempo",
+          totalVehicleCost: tot,
+          notes: routeForm.notes || `₹${pp}/pax`,
+        })
+        .catch(() => {});
+    } catch (e) {}
+
+    if (editingRoute) {
+      setTransportRoutes(
+        transportRoutes.map((r) =>
+          r.id === editingRoute.id
+            ? {
+                ...r,
+                routeName: routeForm.routeName,
+                vehicleType: routeForm.vehicleType,
+                totalAmount: tot,
+                perPersonRate: pp,
+                notes: routeForm.notes,
+              }
+            : r,
+        ),
+      );
+      toast.success("Route tariff updated successfully!");
+    } else {
+      const newR = {
+        id: `r-${Date.now()}`,
+        routeName: routeForm.routeName,
+        vehicleType: routeForm.vehicleType,
+        totalAmount: tot,
+        perPersonRate: pp,
+        notes: routeForm.notes,
+      };
+      setTransportRoutes([...transportRoutes, newR]);
+      toast.success("Route tariff added!");
+    }
+    setRouteModalOpen(false);
+  };
+
+  const handleDeleteRoute = (id: string) => {
+    setTransportRoutes(transportRoutes.filter((r) => r.id !== id));
+    toast.success("Route tariff removed");
+  };
+
   // State for dynamic sub-items
   const [contacts, setContacts] = useState<any[]>(
     vendor.vendorContacts || [
@@ -1303,17 +1432,16 @@ export function AccommodationDetailPage({
                 </div>
                 <Button
                   onClick={() => {
-                    const newVeh = {
-                      id: `v-${Date.now()}`,
+                    setEditingVehicle(null);
+                    setVehicleForm({
                       model: "Tempo Traveller (17 Seater)",
-                      capacity: 17,
-                      sellableSeats: 16,
+                      capacity: "17",
+                      sellableSeats: "16",
                       acType: "AC",
-                      plateNumber: "PB-08-NEW",
+                      plateNumber: "PB-08-TR-1702",
                       status: "Active",
-                    };
-                    setTransportVehicles([...transportVehicles, newVeh]);
-                    toast.success("New vehicle added to fleet!");
+                    });
+                    setVehicleModalOpen(true);
                   }}
                   className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
                 >
@@ -1341,9 +1469,34 @@ export function AccommodationDetailPage({
                           </span>
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {v.status || "Active"}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {v.status || "Active"}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setEditingVehicle(v);
+                            setVehicleForm({
+                              model: v.model,
+                              capacity: v.capacity?.toString() || "17",
+                              sellableSeats: v.sellableSeats?.toString() || "16",
+                              acType: v.acType || "AC",
+                              plateNumber: v.plateNumber || "",
+                              status: v.status || "Active",
+                            });
+                            setVehicleModalOpen(true);
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-700 bg-slate-50 rounded border border-slate-100"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVehicle(v.id)}
+                          className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded border border-slate-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1.5 text-slate-600 font-medium">
@@ -1380,16 +1533,15 @@ export function AccommodationDetailPage({
                 </div>
                 <Button
                   onClick={() => {
-                    const newRoute = {
-                      id: `r-${Date.now()}`,
-                      routeName: "Custom Route (Pickup ➔ Drop)",
+                    setEditingRoute(null);
+                    setRouteForm({
+                      routeName: "Kotkapura → Kotkapura",
                       vehicleType: "17 Seater Tempo",
-                      totalAmount: 42000,
-                      perPersonRate: 2625,
-                      notes: "Standard sector contract",
-                    };
-                    setTransportRoutes([...transportRoutes, newRoute]);
-                    toast.success("New route tariff added!");
+                      totalAmount: "44000",
+                      perPersonRate: "2750",
+                      notes: "",
+                    });
+                    setRouteModalOpen(true);
                   }}
                   className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
                 >
@@ -1428,6 +1580,30 @@ export function AccommodationDetailPage({
                             ≈ ₹{r.perPersonRate?.toLocaleString("en-IN")}/pax
                           </span>
                         )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingRoute(r);
+                            setRouteForm({
+                              routeName: r.routeName,
+                              vehicleType: r.vehicleType,
+                              totalAmount: r.totalAmount?.toString() || "0",
+                              perPersonRate: r.perPersonRate?.toString() || "0",
+                              notes: r.notes || "",
+                            });
+                            setRouteModalOpen(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-100 rounded"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRoute(r.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 rounded"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -2960,6 +3136,190 @@ export function AccommodationDetailPage({
               className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
             >
               Save Activity Log
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Transport Vehicle Modal */}
+      <Dialog open={vehicleModalOpen} onOpenChange={setVehicleModalOpen}>
+        <DialogContent className="max-w-md bg-white border border-slate-200 rounded-xl p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-extrabold text-slate-800">
+              {editingVehicle ? "Edit Fleet Vehicle" : "Add Vehicle to Fleet"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-xs my-2">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Vehicle Model / Type
+              </label>
+              <Input
+                value={vehicleForm.model}
+                onChange={(e) =>
+                  setVehicleForm({ ...vehicleForm, model: e.target.value })
+                }
+                placeholder="e.g. 20 Seater Tempo Traveller, Innova Crysta"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Advertised Capacity
+                </label>
+                <Input
+                  type="number"
+                  value={vehicleForm.capacity}
+                  onChange={(e) =>
+                    setVehicleForm({ ...vehicleForm, capacity: e.target.value })
+                  }
+                  placeholder="20"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Sellable Seats
+                </label>
+                <Input
+                  type="number"
+                  value={vehicleForm.sellableSeats}
+                  onChange={(e) =>
+                    setVehicleForm({
+                      ...vehicleForm,
+                      sellableSeats: e.target.value,
+                    })
+                  }
+                  placeholder="19"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Air Conditioning
+                </label>
+                <Select
+                  value={vehicleForm.acType}
+                  onValueChange={(v) =>
+                    setVehicleForm({ ...vehicleForm, acType: v })
+                  }
+                >
+                  <SelectTrigger className="h-9 bg-white border-slate-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white text-xs">
+                    <SelectItem value="AC">AC (Air Conditioned)</SelectItem>
+                    <SelectItem value="Non-AC">Non-AC</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Registration Plate No.
+                </label>
+                <Input
+                  value={vehicleForm.plateNumber}
+                  onChange={(e) =>
+                    setVehicleForm({ ...vehicleForm, plateNumber: e.target.value })
+                  }
+                  placeholder="PB-08-TR-2001"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              onClick={handleSaveVehicle}
+              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+            >
+              {editingVehicle ? "Update Vehicle" : "Save Vehicle"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transport Route Tariff Modal */}
+      <Dialog open={routeModalOpen} onOpenChange={setRouteModalOpen}>
+        <DialogContent className="max-w-md bg-white border border-slate-200 rounded-xl p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-extrabold text-slate-800">
+              {editingRoute ? "Edit Route Tariff" : "Add Route Tariff"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-xs my-2">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Route Name (Pickup ➔ Drop)
+              </label>
+              <Input
+                value={routeForm.routeName}
+                onChange={(e) =>
+                  setRouteForm({ ...routeForm, routeName: e.target.value })
+                }
+                placeholder="e.g. Kotkapura ➔ Kotkapura, Jalandhar ➔ Jalandhar"
+              />
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Vehicle Type
+              </label>
+              <Input
+                value={routeForm.vehicleType}
+                onChange={(e) =>
+                  setRouteForm({ ...routeForm, vehicleType: e.target.value })
+                }
+                placeholder="e.g. 20 Seater Tempo, 17 Seater Tempo, Innova"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Total Vehicle Amount (₹)
+                </label>
+                <Input
+                  type="number"
+                  value={routeForm.totalAmount}
+                  onChange={(e) =>
+                    setRouteForm({ ...routeForm, totalAmount: e.target.value })
+                  }
+                  placeholder="44000"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Per Person Rate (₹)
+                </label>
+                <Input
+                  type="number"
+                  value={routeForm.perPersonRate}
+                  onChange={(e) =>
+                    setRouteForm({
+                      ...routeForm,
+                      perPersonRate: e.target.value,
+                    })
+                  }
+                  placeholder="2750"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Notes / Special Conditions
+              </label>
+              <Input
+                value={routeForm.notes}
+                onChange={(e) =>
+                  setRouteForm({ ...routeForm, notes: e.target.value })
+                }
+                placeholder="e.g. Kotkapura pickup & drop extra: ₹2,000"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              onClick={handleSaveRoute}
+              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+            >
+              {editingRoute ? "Update Route Tariff" : "Save Route Tariff"}
             </Button>
           </div>
         </DialogContent>

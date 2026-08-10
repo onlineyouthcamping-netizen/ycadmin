@@ -121,8 +121,27 @@ export default function OperationsHubPage() {
     { id: "train_tickets", label: "Train Tickets", done: true },
   ]);
 
+  // Filter States
+  const [filterDateRange, setFilterDateRange] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterTripId, setFilterTripId] = useState<string>("all");
+  const [filterGuide, setFilterGuide] = useState<string>("all");
+
   const computedDepartures = useMemo(() => {
     const list: any[] = [];
+    const normalizeDate = (val: any) => {
+      if (!val) return "";
+      if (typeof val === "string") {
+        const trimmed = val.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+      }
+      try {
+        const dt = new Date(val);
+        if (!isNaN(dt.getTime())) return dt.toISOString().split("T")[0];
+      } catch (e) {}
+      return String(val).split("T")[0];
+    };
+
     trips.forEach((trip) => {
       let datesArr: any[] = [];
       if (Array.isArray(trip.availableDates)) {
@@ -150,24 +169,31 @@ export default function OperationsHubPage() {
         if (diffDays < -durationDays) return;
 
         // DYNAMIC LINKING TO BOOKINGS
-        const targetDateStr = d.date; // YYYY-MM-DD
+        const targetDateStr = normalizeDate(d.date); // YYYY-MM-DD
         const depBookings = bookings.filter((b) => {
-          if (b.tripId !== trip.id || b.status === "cancelled") return false;
-          if (!b.departureDate) return false;
-          const bDateStr = new Date(b.departureDate)
-            .toISOString()
-            .split("T")[0];
+          if (!b) return false;
+          const matchTrip =
+            b.tripId === trip.id ||
+            (trip.slug && b.tripSlug === trip.slug) ||
+            (trip.title && b.tripTitle === trip.title);
+          if (!matchTrip || b.status === "cancelled" || b.status === "Cancelled")
+            return false;
+          const bDateStr = normalizeDate(b.departureDate || b.travelDate || b.date);
           return bDateStr === targetDateStr;
         });
 
         const booked = depBookings.reduce(
-          (sum, b) => sum + (b.numberOfTravelers || 1),
+          (sum, b) =>
+            sum +
+            (Number(b.numberOfTravelers) ||
+              (Array.isArray(b.passengers) ? b.passengers.length : 0) ||
+              1),
           0,
         );
         const cap = d.capacity || 30;
 
         const totalOutstanding = depBookings.reduce(
-          (sum, b) => sum + (b.remainingAmount || 0),
+          (sum, b) => sum + (Number(b.remainingAmount) || 0),
           0,
         );
         const balanceFormatted = `₹ ${totalOutstanding.toLocaleString("en-IN")}`;
@@ -277,13 +303,27 @@ export default function OperationsHubPage() {
     );
   }, [trips, bookings]);
 
+  const filteredDepartures = useMemo(() => {
+    return computedDepartures.filter((d) => {
+      if (filterTripId !== "all" && d.tripId !== filterTripId) return false;
+      if (filterStatus === "live" && !d.isLive) return false;
+      if (filterStatus === "upcoming" && d.isLive) return false;
+      if (filterStatus === "ready" && d.status !== "READY") return false;
+      if (filterStatus === "planning" && d.status !== "PLANNING" && d.status !== "IN PROGRESS") return false;
+      if (filterDateRange === "aug2026" && !d.departureDateStr?.startsWith("2026-08")) return false;
+      if (filterDateRange === "sep2026" && !d.departureDateStr?.startsWith("2026-09")) return false;
+      if (filterDateRange === "oct2026" && !d.departureDateStr?.startsWith("2026-10")) return false;
+      return true;
+    });
+  }, [computedDepartures, filterTripId, filterStatus, filterDateRange]);
+
   const liveDepartures = useMemo(
-    () => computedDepartures.filter((d) => d.isLive),
-    [computedDepartures],
+    () => filteredDepartures.filter((d) => d.isLive),
+    [filteredDepartures],
   );
   const upcomingDepartures = useMemo(
-    () => computedDepartures.filter((d) => !d.isLive),
-    [computedDepartures],
+    () => filteredDepartures.filter((d) => !d.isLive),
+    [filteredDepartures],
   );
 
   const renderDeparturesTable = (
@@ -774,7 +814,16 @@ export default function OperationsHubPage() {
     bookingsService
       .getAll({ limit: 1000 })
       .then((res) => {
-        setBookings(res.data || []);
+        const rawList = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+            ? res.data
+            : Array.isArray(res?.data?.data)
+              ? res.data.data
+              : Array.isArray(res?.bookings)
+                ? res.bookings
+                : [];
+        setBookings(rawList);
       })
       .catch(() => {});
   }, []);
