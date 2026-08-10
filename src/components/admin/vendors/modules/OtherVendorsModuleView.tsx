@@ -7,8 +7,10 @@ import {
   Eye,
   Pencil,
   Trash2,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getDisplayVendorCode } from "@/utils/vendorUtils";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -54,56 +56,56 @@ export function OtherVendorsModuleView({
   onDeleteVendor,
 }: OtherVendorsModuleViewProps) {
   const otherVendors = vendors.filter((v) =>
-    ["OTHER", "MISC", "EQUIPMENT", "GEAR", "PERMIT"].includes(v.type),
+    ["OTHER", "MISC", "EQUIPMENT", "GEAR", "PERMIT"].includes(
+      (v.type || "").toUpperCase(),
+    ),
   );
 
   return (
     <div className="space-y-4">
       {/* Contextual Filters */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs flex flex-wrap gap-2.5 items-center">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
           <Input
-            placeholder="Search Vendor Name, Equipment, Phone, Location..."
+            placeholder="Search vendor name, service, or city..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8.5 text-xs bg-white border-[#E2E8F0] rounded-md"
+            className="h-8.5 text-xs bg-white border-slate-200 rounded-lg pl-8.5 focus:border-[#F97316]"
           />
         </div>
-        <Select
-          value={filterDestination}
-          onValueChange={onDestinationChange}
-        >
-          <SelectTrigger className="h-8.5 w-44 text-xs border-[#E2E8F0]">
+        <Select value={filterDestination} onValueChange={onDestinationChange}>
+          <SelectTrigger className="h-8.5 w-44 text-xs border-slate-200 rounded-lg bg-white">
             <SelectValue placeholder="Destination" />
           </SelectTrigger>
           <SelectContent className="text-xs bg-white">
             <SelectItem value="ALL">All Destinations</SelectItem>
             {destinations.map((d, i) => (
               <SelectItem key={i} value={d}>
-                {d}
+                📍 {d}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Button
           onClick={onRefresh}
-          variant="ghost"
-          className="h-8.5 px-3 hover:bg-slate-50 text-slate-500 cursor-pointer"
+          variant="outline"
+          className="h-8.5 px-3 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg cursor-pointer"
         >
-          <RotateCw className="w-4 h-4" />
+          <RotateCw className="w-3.5 h-3.5" />
         </Button>
       </div>
 
       {/* Clean Full-Width Other Vendors Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-2xs">
-        <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50 text-slate-500 uppercase font-extrabold border-b border-slate-200">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+        <table className="w-full text-xs text-left border-collapse">
+          <thead className="bg-slate-50 text-slate-500 uppercase font-black tracking-wider text-[10px] border-b border-slate-200">
             <tr>
-              <th className="p-3.5 min-w-[200px]">Vendor Partner</th>
-              <th className="p-3.5 whitespace-nowrap">Category / Type</th>
-              <th className="p-3.5 whitespace-nowrap">Destination</th>
-              <th className="p-3.5 whitespace-nowrap">Contact Info</th>
-              <th className="p-3.5 text-right whitespace-nowrap">Actions</th>
+              <th className="py-3 px-4">Vendor Partner</th>
+              <th className="py-3 px-4 whitespace-nowrap">Category</th>
+              <th className="py-3 px-4 whitespace-nowrap">Destination</th>
+              <th className="py-3 px-4 whitespace-nowrap">Contact</th>
+              <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium">
@@ -118,11 +120,11 @@ export function OtherVendorsModuleView({
                       No Other Vendors Found
                     </p>
                     <p className="text-xs text-slate-500">
-                      There are no miscellaneous or equipment vendors registered in this scope. Click below to add a vendor.
+                      There are no registered equipment or permit vendors in this scope. Click below to add a vendor.
                     </p>
                     <Button
                       onClick={onAddVendor}
-                      className="mt-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer inline-flex items-center gap-1.5"
+                      className="mt-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                     >
                       <Plus className="w-4 h-4" /> Add Vendor
                     </Button>
@@ -135,63 +137,64 @@ export function OtherVendorsModuleView({
                   key={ov.id}
                   className="hover:bg-slate-50/80 transition-colors"
                 >
-                  <td className="p-3.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-extrabold shrink-0">
-                        <Building2 className="w-4 h-4" />
+                  <td className="py-2.5 px-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold shrink-0">
+                        <Building2 className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <span className="font-extrabold text-slate-800 text-sm block leading-tight">
+                        <span
+                          onClick={() => onSelectVendor(ov)}
+                          className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#F97316] cursor-pointer transition-colors"
+                        >
                           {ov.name}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400 font-mono uppercase">
-                          {ov.vendorCode || ov.id}
+                        <span className="text-[10px] font-mono text-slate-400 font-medium">
+                          {getDisplayVendorCode(ov)}
                         </span>
                       </div>
                     </div>
                   </td>
-                  <td className="p-3.5 font-bold text-slate-700 whitespace-nowrap">
-                    <span className="bg-slate-100 text-slate-700 border border-slate-200 font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase">
+                  <td className="py-2.5 px-4 whitespace-nowrap">
+                    <span className="bg-slate-100 text-slate-800 border border-slate-200 font-black px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide">
                       {ov.type || "OTHER"}
                     </span>
                   </td>
-                  <td className="p-3.5 text-slate-700 font-bold whitespace-nowrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />{" "}
-                      {ov.city || ov.location || "N/A"}
+                  <td className="py-2.5 px-4 whitespace-nowrap text-slate-700 font-medium text-xs">
+                    📍 {ov.city || ov.location || "N/A"}
+                  </td>
+                  <td className="py-2.5 px-4 whitespace-nowrap">
+                    <span className="font-bold text-slate-800 text-xs block">
+                      {ov.contactPerson || ov.name}
+                    </span>
+                    <span className="text-[11px] font-mono text-slate-500">
+                      {ov.phone || ov.contactNumber || "—"}
                     </span>
                   </td>
-                  <td className="p-3.5 text-slate-600 text-xs whitespace-nowrap">
-                    <div>
-                      <span className="font-bold text-slate-800 block">
-                        {ov.contactPerson || ov.name}
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        {ov.phone || ov.contactNumber || "No Phone"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-3.5 text-right whitespace-nowrap">
+                  <td className="py-2.5 px-4 text-right whitespace-nowrap">
                     <div className="inline-flex items-center justify-end gap-1.5">
-                      <Button
-                        onClick={() => onSelectVendor(ov)}
-                        className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-2.5 rounded-lg whitespace-nowrap cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5 mr-1" /> Workspace
-                      </Button>
                       <button
-                        onClick={() => onEditVendor(ov)}
-                        title="Edit Vendor Details"
-                        className="h-8 px-2.5 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors font-bold text-xs inline-flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                        type="button"
+                        onClick={() => onSelectVendor(ov)}
+                        className="h-7 px-2.5 text-[11px] font-bold text-[#F97316] hover:text-white bg-white hover:bg-[#F97316] rounded-md border border-orange-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                       >
-                        <Pencil className="w-3.5 h-3.5 text-slate-600" /> Edit
+                        <Eye className="w-3.5 h-3.5" /> Workspace
                       </button>
                       <button
-                        onClick={() => onDeleteVendor(ov.id)}
-                        title="Delete / Unmap Vendor"
-                        className="h-8 px-2.5 text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition-colors font-bold text-xs inline-flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                        type="button"
+                        onClick={() => onEditVendor(ov)}
+                        title="Edit"
+                        className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-100 rounded-md border border-slate-200 transition-colors cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Delete
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteVendor(ov.id)}
+                        title="Deactivate"
+                        className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-rose-600 bg-white hover:bg-rose-50 rounded-md border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </td>

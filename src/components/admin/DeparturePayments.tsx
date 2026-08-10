@@ -51,7 +51,7 @@ export default function DeparturePayments({
     | "activities"
     | "misc"
     | "reconciliation"
-  >("dashboard");
+  >("clients");
 
   // Expanded Row IDs for detailed transaction ledger view
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(
@@ -135,6 +135,279 @@ export default function DeparturePayments({
     remarks: "",
   });
 
+  const generateVendorInvoicePDF = (v: any, historyItem?: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Popup blocked! Please allow popups to download/print PDF.");
+      return;
+    }
+
+    const txnId = historyItem?.txnId || v.transactionId || `VND-INV-${v.id || '001'}`;
+    const payDate = historyItem?.date || v.paymentDate || new Date().toISOString().substring(0, 10);
+    const amount = historyItem?.amount || v.advancePaid || v.agreedAmount || 0;
+    const payMethod = historyItem?.method || v.paymentMode || "Bank Transfer";
+    const payType = historyItem?.type || (v.advancePaid >= v.agreedAmount ? "FINAL SETTLEMENT" : "ADVANCE PAYMENT");
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Vendor Payment Voucher - ${v.vendorName}</title>
+          <style>
+            body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; background: #fff; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f97316; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
+            .logo span { color: #f97316; }
+            .voucher-title { font-size: 18px; font-weight: 800; color: #f97316; text-transform: uppercase; text-align: right; }
+            .voucher-sub { font-size: 11px; color: #64748b; margin-top: 4px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 12px; }
+            .card-title { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; letter-spacing: 0.5px; }
+            .card-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+            .card-row strong { color: #0f172a; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px; }
+            th { background: #0f172a; color: #ffffff; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+            td { border-bottom: 1px solid #e2e8f0; padding: 12px 14px; }
+            .text-right { text-align: right; }
+            .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase; }
+            .badge-success { background: #dcfce7; color: #15803d; }
+            .badge-orange { background: #ffedd5; color: #c2410c; }
+            .total-box { background: #fff7ed; border: 1px solid #ffedd5; border-radius: 8px; padding: 16px; width: 280px; margin-left: auto; margin-bottom: 30px; }
+            .total-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+            .total-row.final { font-size: 16px; font-weight: 900; color: #c2410c; border-top: 1px solid #fed7aa; padding-top: 8px; margin-top: 8px; }
+            .footer { border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 11px; color: #94a3b8; margin-top: 40px; }
+            .stamp { border: 2px dashed #10b981; color: #047857; display: inline-block; padding: 8px 16px; border-radius: 6px; font-weight: 900; font-size: 12px; text-transform: uppercase; margin-top: 10px; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+            <button onclick="window.print()" style="background: #f97316; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Print / Save as PDF</button>
+          </div>
+
+          <div class="header">
+            <div>
+              <div class="logo">YOUTH<span>CAMPING</span> OS</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Youth Camping Official Payment Voucher</div>
+            </div>
+            <div>
+              <div class="voucher-title">VENDOR VOUCHER</div>
+              <div class="voucher-sub">Ref: ${txnId} | Date: ${payDate}</div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">Vendor Partner Details</div>
+              <div class="card-row"><span>Vendor Name:</span> <strong>${v.vendorName}</strong></div>
+              <div class="card-row"><span>Category:</span> <strong>${v.category || 'Vendor'}</strong></div>
+              <div class="card-row"><span>Invoice No:</span> <strong>${v.invoiceNumber || 'INV-001'}</strong></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Trip / Departure Context</div>
+              <div class="card-row"><span>Trip Context:</span> <strong>${tripDetails?.title || 'YouthCamping Departure'}</strong></div>
+              <div class="card-row"><span>Payment Status:</span> <span class="badge ${v.balanceAmount <= 0 ? 'badge-success' : 'badge-orange'}">${v.status || 'PAID'}</span></div>
+              <div class="card-row"><span>Voucher Type:</span> <strong>${payType}</strong></div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description / Service</th>
+                <th>Payment Mode</th>
+                <th>Transaction Reference</th>
+                <th class="text-right">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>${v.serviceDescription || (v.category + ' Services')}</strong>
+                  <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Payment logged for departure ops</div>
+                </td>
+                <td>${payMethod}</td>
+                <td><code>${txnId}</code></td>
+                <td class="text-right"><strong>₹${Number(amount).toLocaleString('en-IN')}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="total-box">
+            <div class="total-row"><span>Agreed Total:</span> <span>₹${(v.agreedAmount || amount).toLocaleString('en-IN')}</span></div>
+            <div class="total-row"><span>This Payment:</span> <span style="color: #10b981; font-weight: bold;">₹${Number(amount).toLocaleString('en-IN')}</span></div>
+            <div class="total-row final"><span>Balance Due:</span> <span>₹${(Math.max(0, (v.agreedAmount || amount) - (v.advancePaid || amount))).toLocaleString('en-IN')}</span></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div class="stamp">PAYMENT VERIFIED & RECORDED ✓</div>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #64748b;">
+              <div>_______________________________</div>
+              <div style="font-weight: bold; margin-top: 4px;">Authorized Accounts Officer</div>
+              <div>YouthCamping Operations Hub</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>YouthCamping Internal Operating System — Accounts & Finance Desk</p>
+            <p>This payment receipt is system generated and acts as official proof of vendor disbursement.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 400);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const generateClientReceiptPDF = (b: any, historyItem?: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Popup blocked! Please allow popups to print/download receipt.");
+      return;
+    }
+
+    const passengerName = b.passengerName || b.leadPassengerName || b.name || "Valued Guest";
+    const bookingId = b.bookingId || b.id || "BK-001";
+    const txnId = historyItem?.txnId || b.transactionId || `RCP-${bookingId}`;
+    const payDate = historyItem?.date || b.paymentDate || new Date().toISOString().substring(0, 10);
+    const amount = historyItem?.amount || b.advancePaid || b.totalAmount || 0;
+    const payMethod = historyItem?.method || b.paymentMode || "UPI";
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Customer Payment Receipt - ${passengerName}</title>
+          <style>
+            body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; background: #fff; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
+            .logo span { color: #2563eb; }
+            .voucher-title { font-size: 18px; font-weight: 800; color: #2563eb; text-transform: uppercase; text-align: right; }
+            .voucher-sub { font-size: 11px; color: #64748b; margin-top: 4px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 12px; }
+            .card-title { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; letter-spacing: 0.5px; }
+            .card-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+            .card-row strong { color: #0f172a; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 12px; }
+            th { background: #0f172a; color: #ffffff; text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; }
+            td { border-bottom: 1px solid #e2e8f0; padding: 12px 14px; }
+            .text-right { text-align: right; }
+            .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; text-transform: uppercase; }
+            .badge-success { background: #dcfce7; color: #15803d; }
+            .total-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; width: 280px; margin-left: auto; margin-bottom: 30px; }
+            .total-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+            .total-row.final { font-size: 16px; font-weight: 900; color: #1d4ed8; border-top: 1px solid #93c5fd; padding-top: 8px; margin-top: 8px; }
+            .footer { border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 11px; color: #94a3b8; margin-top: 40px; }
+            .stamp { border: 2px dashed #2563eb; color: #1d4ed8; display: inline-block; padding: 8px 16px; border-radius: 6px; font-weight: 900; font-size: 12px; text-transform: uppercase; margin-top: 10px; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+            <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Print / Save as PDF</button>
+          </div>
+
+          <div class="header">
+            <div>
+              <div class="logo">YOUTH<span>CAMPING</span> OS</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Official Passenger Payment Receipt</div>
+            </div>
+            <div>
+              <div class="voucher-title">PAYMENT RECEIPT</div>
+              <div class="voucher-sub">Ref: ${txnId} | Date: ${payDate}</div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">Passenger Details</div>
+              <div class="card-row"><span>Passenger Name:</span> <strong>${passengerName}</strong></div>
+              <div class="card-row"><span>Booking ID:</span> <strong>${bookingId}</strong></div>
+              <div class="card-row"><span>Phone:</span> <strong>${b.phone || b.leadPhone || 'N/A'}</strong></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Trip / Departure Context</div>
+              <div class="card-row"><span>Trip Title:</span> <strong>${tripDetails?.title || 'YouthCamping Trip'}</strong></div>
+              <div class="card-row"><span>Payment Status:</span> <span class="badge badge-success">PAYMENT RECEIVED ✓</span></div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Payment Mode</th>
+                <th>Transaction Reference</th>
+                <th class="text-right">Amount Received (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>Trip Booking Payment</strong>
+                  <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Verified customer receipt</div>
+                </td>
+                <td>${payMethod}</td>
+                <td><code>${txnId}</code></td>
+                <td class="text-right"><strong>₹${Number(amount).toLocaleString('en-IN')}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="total-box">
+            <div class="total-row"><span>Package Cost:</span> <span>₹${(b.totalAmount || amount).toLocaleString('en-IN')}</span></div>
+            <div class="total-row"><span>This Payment:</span> <span style="color: #2563eb; font-weight: bold;">₹${Number(amount).toLocaleString('en-IN')}</span></div>
+            <div class="total-row final"><span>Remaining Balance:</span> <span>₹${(Math.max(0, (b.totalAmount || amount) - (b.advancePaid || amount))).toLocaleString('en-IN')}</span></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div class="stamp">OFFICIAL RECEIPT VERIFIED ✓</div>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #64748b;">
+              <div>_______________________________</div>
+              <div style="font-weight: bold; margin-top: 4px;">YouthCamping Finance Desk</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>YouthCamping Official Booking Receipt — Thank you for travelling with us!</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 400);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const [addAdjustmentOpen, setAddAdjustmentOpen] = useState(false);
   const [adjustmentForm, setAdjustmentForm] = useState({
     type: "Refund",
@@ -147,12 +420,13 @@ export default function DeparturePayments({
   // Fetch API data and merge cleanly with defaults if API is empty
   const fetchData = async () => {
     try {
-      const [clientRes, vendorRes, vendorsDirRes] = await Promise.all([
+      const [clientRes, vendorRes, vendorsDirRes, expensesRes] = await Promise.all([
         opsService
           .getClientPayments(tripId, departureDateStr)
           .catch(() => ({ bookings: [], receipts: [] })),
         opsService.getVendorPayments(tripId, departureDateStr).catch(() => []),
         api.get("/vendors/directory").catch(() => ({ data: { data: [] } })),
+        opsService.getTripExpenses(tripId).catch(() => []),
       ]);
 
       const mergedBookings =
@@ -197,30 +471,63 @@ export default function DeparturePayments({
       // Merge auto-assigned vendors from the trip (Hotels, Guides, Transport)
       const mergedVendors = [...apiVendors];
       (tripVendors || []).forEach((tv) => {
-        const vName = tv.vendor?.name || tv.name;
+        const vName = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId) || tv.vendor?.name;
         if (!vName) return;
         
         const exists = mergedVendors.find((v) => v.vendorName === vName);
         if (!exists) {
+          const agreed = tv.agreedCost || 0;
+          const paid = tv.paidAmount || 0;
+          const statusLabel =
+            paid >= agreed && agreed > 0
+              ? "Paid"
+              : paid > 0
+              ? "Advance Paid"
+              : "Pending";
+
           mergedVendors.push({
             id: tv.id || `auto-${vName}`,
             vendorName: vName,
             category: tv.vendorType === "hotel" ? "Hotels" : tv.vendorType === "guide" ? "Guides" : "Transport",
             serviceDescription: tv.notes || `${tv.vendorType} services`,
-            agreedAmount: tv.agreedCost || 0,
-            advancePaid: tv.paidAmount || 0,
-            balanceAmount: (tv.agreedCost || 0) - (tv.paidAmount || 0),
-            status: tv.paymentStatus === "paid" ? "Paid" : "Pending",
-            paymentMode: "N/A",
-            history: [],
+            agreedAmount: agreed,
+            advancePaid: paid,
+            balanceAmount: agreed - paid,
+            status: statusLabel,
+            history:
+              paid > 0
+                ? [
+                    {
+                      date:
+                        departureDateStr ||
+                        new Date().toISOString().substring(0, 10),
+                      amount: paid,
+                      method: "Bank Transfer",
+                      txnId: `ADV-${(tv.id || "101").slice(-6)}`,
+                      type: "ADVANCE",
+                      status: "Paid",
+                    },
+                  ]
+                : [],
           });
         }
       });
+
+      // Filter categorized trip expenses
+      const fetchedExpenses = Array.isArray(expensesRes) ? expensesRes : [];
+      const activities = fetchedExpenses.filter((e: any) => e.category === "activities" || e.category === "Activity");
+      const misc = fetchedExpenses.filter((e: any) => e.category === "misc" || e.category === "Emergency" || e.category === "Miscellaneous");
+      const recons = fetchedExpenses.filter((e: any) => e.category === "reconciliation" || e.category === "Refund" || e.category === "Dispute");
 
       setBookings(mergedBookings);
       setReceipts(clientRes.receipts || []);
       setVendorPayments(mergedVendors);
       setDbVendors(vendorsDirRes.data?.data || []);
+
+      if (activities.length > 0) setActivityPayments(activities);
+      if (misc.length > 0) setMiscPayments(misc);
+      if (recons.length > 0) setAdjustments(recons);
+
     } catch (err) {
       console.error("fetchData error in DeparturePayments:", err);
       setBookings([]);
@@ -413,23 +720,46 @@ export default function DeparturePayments({
   const handleVendorPaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const agreedNum = Number(vendorPaymentForm.agreedAmount) || 0;
-    const advNum = Number(vendorPaymentForm.advancePaid) || 0;
-    const remaining = Math.max(0, agreedNum - advNum);
-    const status =
-      advNum >= agreedNum && agreedNum > 0
-        ? "Paid"
-        : advNum > 0
-          ? "Advance Paid"
-          : "Not Paid";
+    const inputAmount = Number(vendorPaymentForm.advancePaid) || 0;
 
     if (editingVendorPayment) {
+      const prevPaid = Number(editingVendorPayment.advancePaid) || 0;
+      // If user entered a new payment amount, add it to existing advancePaid; else keep as is
+      const isInstallment = prevPaid > 0 && inputAmount !== prevPaid;
+      const newTotalPaid = isInstallment ? prevPaid + inputAmount : inputAmount;
+      const remaining = Math.max(0, agreedNum - newTotalPaid);
+      const status =
+        newTotalPaid >= agreedNum && agreedNum > 0
+          ? "Paid"
+          : newTotalPaid > 0
+          ? "Advance Paid"
+          : "Pending";
+
+      const newHistoryItem = {
+        date:
+          vendorPaymentForm.paymentDate ||
+          new Date().toISOString().substring(0, 10),
+        amount: inputAmount,
+        method: vendorPaymentForm.paymentMode || "Bank Transfer",
+        txnId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
+        type: newTotalPaid >= agreedNum ? "SETTLEMENT" : "INSTALLMENT",
+        status: "Paid",
+      };
+
+      const updatedHistory = [
+        ...(editingVendorPayment.history || []),
+        newHistoryItem,
+      ];
+
       try {
-        await opsService.updateVendorPayment(
-          tripId,
-          editingVendorPayment.id,
-          vendorPaymentForm,
-        );
+        await opsService.updateVendorPayment(tripId, editingVendorPayment.id, {
+          ...vendorPaymentForm,
+          advancePaid: newTotalPaid,
+          remainingPayable: remaining,
+          status,
+        });
       } catch {}
+
       setVendorPayments((prev) =>
         prev.map((v) =>
           v.id === editingVendorPayment.id
@@ -439,15 +769,26 @@ export default function DeparturePayments({
                 category: vendorPaymentForm.category,
                 serviceDescription: vendorPaymentForm.serviceDescription,
                 agreedAmount: agreedNum,
-                advancePaid: advNum,
+                advancePaid: newTotalPaid,
                 remainingPayable: remaining,
                 status,
+                history: updatedHistory,
               }
             : v,
         ),
       );
-      toast.success("Vendor payable updated!");
+      toast.success(
+        `Recorded ₹${inputAmount.toLocaleString("en-IN")} payment for ${vendorPaymentForm.vendorName}!`,
+      );
     } else {
+      const remaining = Math.max(0, agreedNum - inputAmount);
+      const status =
+        inputAmount >= agreedNum && agreedNum > 0
+          ? "Paid"
+          : inputAmount > 0
+          ? "Advance Paid"
+          : "Pending";
+
       const newVnd = {
         id: `VND-${Date.now()}`,
         vendorName: vendorPaymentForm.vendorName,
@@ -457,22 +798,22 @@ export default function DeparturePayments({
         serviceDescription:
           vendorPaymentForm.serviceDescription || "Trip Service Invoice",
         agreedAmount: agreedNum,
-        advancePaid: advNum,
+        advancePaid: inputAmount,
         remainingPayable: remaining,
         status,
         paymentDate: vendorPaymentForm.paymentDate,
         paymentMode: vendorPaymentForm.paymentMode,
         transactionId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
         history:
-          advNum > 0
+          inputAmount > 0
             ? [
                 {
                   date: vendorPaymentForm.paymentDate,
-                  amount: advNum,
+                  amount: inputAmount,
                   method: vendorPaymentForm.paymentMode,
                   txnId:
                     vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
-                  type: "ADVANCE",
+                  type: inputAmount >= agreedNum ? "SETTLEMENT" : "ADVANCE",
                   status: "Paid",
                 },
               ]
@@ -485,7 +826,9 @@ export default function DeparturePayments({
         });
       } catch {}
       setVendorPayments((prev) => [newVnd, ...prev]);
-      toast.success("Vendor payable logged!");
+      toast.success(
+        `Logged vendor payable for ${vendorPaymentForm.vendorName}!`,
+      );
     }
     setAddVendorPaymentOpen(false);
     setEditingVendorPayment(null);
@@ -513,7 +856,13 @@ export default function DeparturePayments({
       vendorName: activityPaymentForm.vendorName || "External Vendor",
       isIncluded: false,
       status,
+      category: "activities",
     };
+
+    try {
+      await opsService.upsertTripExpense(tripId, newAct as any);
+    } catch {}
+
     setActivityPayments((prev) => [newAct, ...prev]);
     toast.success(`Recorded activity payment for "${newAct.activityName}"`);
     setAddActivityPaymentOpen(false);
@@ -529,7 +878,7 @@ export default function DeparturePayments({
     const newMisc = {
       id: `MISC-${Date.now()}`,
       description: miscPaymentForm.description,
-      category: miscPaymentForm.category,
+      category: "misc",
       amount: amountNum,
       payeeName: miscPaymentForm.payeeName || "Vendor / Staff",
       approvedBy: "Finance Admin",
@@ -537,6 +886,11 @@ export default function DeparturePayments({
       paymentDate: miscPaymentForm.paymentDate,
       paymentMethod: miscPaymentForm.paymentMethod,
     };
+
+    try {
+      await opsService.upsertTripExpense(tripId, newMisc as any);
+    } catch {}
+
     setMiscPayments((prev) => [newMisc, ...prev]);
     toast.success(`Logged miscellaneous expense: ${newMisc.description}`);
     setAddMiscPaymentOpen(false);
@@ -552,12 +906,18 @@ export default function DeparturePayments({
     const newAdj = {
       id: `ADJ-${Date.now()}`,
       type: adjustmentForm.type,
+      category: "reconciliation",
       originalPaymentRef: adjustmentForm.originalPaymentRef,
       amount: amountNum,
       reason: adjustmentForm.reason,
       status: adjustmentForm.status,
       createdAt: new Date().toISOString().substring(0, 10),
     };
+
+    try {
+      await opsService.upsertTripExpense(tripId, newAdj as any);
+    } catch {}
+
     setAdjustments((prev) => [newAdj, ...prev]);
     toast.success(
       `Logged ${newAdj.type} adjustment of ₹${amountNum.toLocaleString()}`,
@@ -581,7 +941,6 @@ export default function DeparturePayments({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 pt-3 rounded-t-xl">
         <div className="flex flex-wrap items-center gap-1">
           {[
-            { key: "dashboard", label: "Payment Dashboard", badge: "" },
             {
               key: "clients",
               label: "Client Receivables",
@@ -590,7 +949,7 @@ export default function DeparturePayments({
             {
               key: "vendors",
               label: "Vendor Payables",
-              badge: `₹${(calculatedStats.totalVendorPayable / 1000).toFixed(1)}k`,
+              badge: `₹${(calculatedStats.vendorOutstandingBalance / 1000).toFixed(1)}k`,
             },
             {
               key: "activities",
@@ -1369,13 +1728,11 @@ export default function DeparturePayments({
                                               size="sm"
                                               variant="outline"
                                               onClick={() =>
-                                                toast.success(
-                                                  `Receipt downloaded for ${h.txnId}`,
-                                                )
+                                                generateClientReceiptPDF(b, h)
                                               }
-                                              className="h-7 text-[11px] font-semibold"
+                                              className="h-7 text-[11px] font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                                             >
-                                              Download Receipt
+                                              Download Receipt PDF
                                             </Button>
                                           </div>
                                         </div>
@@ -1645,14 +2002,13 @@ export default function DeparturePayments({
                                       serviceDescription:
                                         v.serviceDescription || "",
                                       agreedAmount: String(v.agreedAmount),
-                                      advancePaid: String(v.advancePaid),
-                                      paymentDate: v.paymentDate || "",
-                                      paymentMode:
-                                        v.paymentMode || "BANK_TRANSFER",
-                                      transactionId: v.transactionId || "",
+                                      advancePaid: String(balance > 0 ? balance : 0),
+                                      paymentDate: new Date().toISOString().substring(0, 10),
+                                      paymentMode: "BANK_TRANSFER",
+                                      transactionId: "",
                                       invoiceProof: v.invoiceProof || "",
                                       status: v.status,
-                                      remarks: v.remarks || "",
+                                      remarks: "",
                                     });
                                     setAddVendorPaymentOpen(true);
                                   }}
@@ -1669,7 +2025,7 @@ export default function DeparturePayments({
                                   }
                                   className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded"
                                 >
-                                  {isExpanded ? "Hide" : "Invoice"}
+                                  {isExpanded ? "Hide History" : "View History"}
                                 </button>
                               </div>
                             </td>
@@ -1736,12 +2092,8 @@ export default function DeparturePayments({
                                             <Button
                                               size="sm"
                                               variant="outline"
-                                              onClick={() =>
-                                                toast.success(
-                                                  `Invoice PDF downloaded for ${v.invoiceNumber}`,
-                                                )
-                                              }
-                                              className="h-7 text-[11px] font-semibold"
+                                              onClick={() => generateVendorInvoicePDF(v, h)}
+                                              className="h-7 text-[11px] font-bold bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
                                             >
                                               Download Invoice PDF
                                             </Button>
@@ -2369,32 +2721,132 @@ export default function DeparturePayments({
       {/* ──────────────────────── MODAL 2: RECORD VENDOR PAYMENT ──────────────────────── */}
       <Dialog
         open={addVendorPaymentOpen}
-        onOpenChange={setAddVendorPaymentOpen}
+        onOpenChange={(open) => {
+          setAddVendorPaymentOpen(open);
+          if (!open) setEditingVendorPayment(null);
+        }}
       >
         <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200 overflow-y-auto max-h-[85vh]">
           <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
             {editingVendorPayment
-              ? "Edit Vendor Payment Record"
+              ? `Record Payment — ${editingVendorPayment.vendorName}`
               : "Record Vendor Payment"}
           </h3>
-          <form onSubmit={handleVendorPaymentSubmit} className="space-y-3 mt-3">
+
+          {editingVendorPayment && (
+            <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 text-xs space-y-1 my-2">
+              <div className="flex justify-between font-bold text-slate-800">
+                <span>Agreed Total:</span>
+                <span className="font-mono">
+                  ₹{(editingVendorPayment.agreedAmount || 0).toLocaleString("en-IN")}
+                </span>
+              </div>
+              <div className="flex justify-between font-bold text-emerald-700">
+                <span>Already Paid:</span>
+                <span className="font-mono">
+                  ₹{(editingVendorPayment.advancePaid || 0).toLocaleString("en-IN")}
+                </span>
+              </div>
+              <div className="flex justify-between font-black text-red-600 pt-1 border-t border-orange-200">
+                <span>Remaining Settlement Due:</span>
+                <span className="font-mono">
+                  ₹{Math.max(0, (editingVendorPayment.agreedAmount || 0) - (editingVendorPayment.advancePaid || 0)).toLocaleString("en-IN")}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleVendorPaymentSubmit} className="space-y-3 mt-2">
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
                 Vendor Partner Name
               </label>
-              <input
-                type="text"
-                required
+              <select
                 value={vendorPaymentForm.vendorName}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__custom__") {
+                    setVendorPaymentForm((prev) => ({
+                      ...prev,
+                      vendorName: "",
+                    }));
+                    return;
+                  }
+                  // Find selected vendor from tripVendors or vendorPayments
+                  const foundTv = (tripVendors || []).find((tv) => {
+                    const name = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId);
+                    return name === val;
+                  });
+                  const foundVp = vendorPayments.find((vp) => vp.vendorName === val);
+
+                  const catMap: Record<string, string> = {
+                    hotel: "Hotels",
+                    transport: "Transport",
+                    guide: "Guides",
+                    activities: "Activities",
+                  };
+
+                  const cat = foundTv
+                    ? (catMap[foundTv.vendorType] || "Hotels")
+                    : (foundVp?.category || "Hotels");
+
+                  const agreed = foundTv
+                    ? String(foundTv.agreedCost || foundTv.totalAmount || 0)
+                    : String(foundVp?.agreedAmount || 0);
+
+                  const serviceDesc = foundTv?.notes || foundVp?.serviceDescription || `${cat} services`;
+
                   setVendorPaymentForm((prev) => ({
                     ...prev,
-                    vendorName: e.target.value,
-                  }))
-                }
-                placeholder="e.g. ABC Travels & Hotels"
-                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
-              />
+                    vendorName: val,
+                    category: cat,
+                    agreedAmount: agreed,
+                    serviceDescription: serviceDesc,
+                  }));
+                }}
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-slate-400 mb-1"
+              >
+                <option value="">Select Vendor Partner...</option>
+                {tripVendors && tripVendors.length > 0 && (
+                  <optgroup label="Departure Configured Vendors">
+                    {tripVendors.map((tv, i) => {
+                      const name = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId) || `Vendor ${i + 1}`;
+                      const type = (tv.vendorType || "Service").toUpperCase();
+                      const cost = tv.agreedCost || tv.totalAmount || 0;
+                      return (
+                        <option key={`tv-${i}`} value={name}>
+                          {name} ({type}) {cost > 0 ? `– ₹${cost.toLocaleString("en-IN")}` : ''}
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                )}
+                {dbVendors && dbVendors.length > 0 && (
+                  <optgroup label="Vendor Directory">
+                    {dbVendors.map((dv, i) => (
+                      <option key={`dv-${i}`} value={dv.name}>
+                        {dv.name} ({dv.type || "VENDOR"})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <option value="__custom__">+ Enter Custom Vendor</option>
+              </select>
+              {(!vendorPaymentForm.vendorName || !tripVendors?.some((tv) => (tv.name || tv.vendorName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId)) === vendorPaymentForm.vendorName)) && (
+                <input
+                  type="text"
+                  required
+                  placeholder="Type custom vendor partner name..."
+                  value={vendorPaymentForm.vendorName}
+                  onChange={(e) =>
+                    setVendorPaymentForm((prev) => ({
+                      ...prev,
+                      vendorName: e.target.value,
+                    }))
+                  }
+                  className="w-full h-8 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -2442,10 +2894,11 @@ export default function DeparturePayments({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Advance Paid (₹)
+                  {editingVendorPayment ? "Payment Amount (₹)" : "Advance Paid (₹)"}
                 </label>
                 <input
                   type="number"
+                  required
                   value={vendorPaymentForm.advancePaid}
                   onChange={(e) =>
                     setVendorPaymentForm((prev) => ({
@@ -2528,7 +2981,7 @@ export default function DeparturePayments({
                 type="submit"
                 className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
               >
-                Save & Record Payable
+                {editingVendorPayment ? "Save & Record Payment" : "Save & Record Payable"}
               </Button>
             </div>
           </form>

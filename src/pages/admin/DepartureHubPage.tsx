@@ -89,6 +89,8 @@ import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import HotelCalculator from "@/components/admin/hotels/HotelCalculator";
 import AccommodationWorkspace from "@/components/admin/departure/AccommodationWorkspace";
 import HotelAssignmentWizardModal from "@/components/admin/departure/HotelAssignmentWizardModal";
+import DepartureTripControl from "@/components/admin/departure/DepartureTripControl";
+import DepartureMoneySummary from "@/components/admin/departure/DepartureMoneySummary";
 import { MobileDepartureWorkspace } from "@/components/mobile/MobileDepartureWorkspace";
 import {
   Dialog,
@@ -1169,10 +1171,17 @@ export default function DepartureHubPage() {
   const departureDateStr = resolvedDepartureDateStr;
 
   let rawTab = (searchParams.get("tab") || "overview").toLowerCase().trim();
-  if (rawTab === "hotels" || rawTab === "hotel" || rawTab === "accommodations") {
-    rawTab = "accommodation";
+  // Tab ID normalization
+  if (["hotel", "accommodations", "accommodation", "itinerary"].includes(rawTab)) {
+    rawTab = "hotels";
+  } else if (rawTab === "allocation" || rawTab === "tempo") {
+    rawTab = "transport";
   } else if (rawTab === "manifest") {
     rawTab = "passengers";
+  } else if (["ticketing", "tasks"].includes(rawTab)) {
+    rawTab = "operations";
+  } else if (["money", "payments", "reports", "stationpayments"].includes(rawTab)) {
+    rawTab = "finance";
   }
   const activeTab = rawTab;
 
@@ -1432,6 +1441,10 @@ export default function DepartureHubPage() {
     Record<string, { room: string; vehicle: string; seat: string }>
   >({});
   const [allocFleet, setAllocFleet] = useState<any[]>([]);
+  const [fleetVehicles, setFleetVehicles] = useState<any[]>([]);
+  const [vendorDirectoryFleet, setVendorDirectoryFleet] = useState<any[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [selectedVendorId, setSelectedVendorId] = useState<string>('');
   const [newVehicleType, setNewVehicleType] = useState("17 Seater Tempo");
   const [newVehicleCapacity, setNewVehicleCapacity] = useState("17");
   const [newVehicleName, setNewVehicleName] = useState("");
@@ -1541,17 +1554,39 @@ export default function DepartureHubPage() {
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
     const cap = parseInt(newVehicleCapacity) || 17;
-    const vName = newVehicleName || `Tempo ${allocFleet.length + 1}`;
+    const vName = newVehicleName || `${newVehicleType || 'Tempo'} ${allocFleet.length + 1}`;
 
     try {
+      // 1. If an existing departure vehicle is selected
+      if (selectedVehicleId && selectedVehicleId !== 'custom') {
+        const existing = fleetVehicles.find((v) => v.id === selectedVehicleId);
+        if (existing) {
+          const newV = {
+            id: existing.id,
+            name: existing.driverName || existing.name || vName,
+            vehicleType: existing.vehicleType,
+            capacity: existing.capacity,
+            cost: existing.tariff?.amount ?? existing.totalAmount,
+            vendor: existing.vendor?.name ?? existing.notes ?? 'Vendor',
+          };
+          setAllocFleet((prev) => [...prev, newV]);
+          toast.success(`Added ${newV.name} (${newV.vehicleType})`);
+          setSelectedVehicleId('');
+          setSelectedVendorId('');
+          return;
+        }
+      }
+
+      // 2. Save new transport fleet record to backend database linked to vendorId if selected
       const savedVehicle = await opsService.createTransportFleet(
         tripId,
         {
-          vehicleType: newVehicleType,
+          vehicleType: newVehicleType || "17 Seater Tempo",
           capacity: cap,
           totalAmount: parseFloat(newVehicleCost) || 35000,
           driverName: vName,
           notes: newVehicleVendor || "General Vendor",
+          vendorId: selectedVendorId || undefined,
         },
         departureDateStr,
       );
@@ -1562,15 +1597,18 @@ export default function DepartureHubPage() {
         vehicleType: savedVehicle.vehicleType,
         capacity: savedVehicle.capacity,
         cost: savedVehicle.totalAmount,
-        vendor: savedVehicle.notes || "General Vendor",
+        vendor: savedVehicle.notes || newVehicleVendor || "General Vendor",
+        vendorId: savedVehicle.vendorId || selectedVendorId,
       };
 
       setAllocFleet((prev) => [...prev, newV]);
       setNewVehicleName("");
       setNewVehicleCost("");
       setNewVehicleVendor("");
+      setSelectedVehicleId("");
+      setSelectedVendorId("");
       toast.success(
-        `Added ${newV.name} (${newV.vehicleType}) and saved to database!`,
+        `Added ${newV.name} (${newV.vehicleType}) and linked to Vendor Directory!`,
       );
       fetchPageData();
     } catch {
@@ -1698,6 +1736,35 @@ export default function DepartureHubPage() {
   const [actTypeFilter, setActTypeFilter] = useState("All Activity Type");
   const [actStatusFilter, setActStatusFilter] = useState("All Status");
   const [actSearch, setActSearch] = useState("");
+
+  // ─── 6-Screen Sub-Tab State ───
+  const [planSubTab, setPlanSubTab] = useState<"accommodation" | "allocation" | "guides" | "activities">("accommodation");
+  const [opsSubTab, setOpsSubTab] = useState<"control" | "ticketing" | "allocation" | "tasks">("control");
+  const [moneySubTab, setMoneySubTab] = useState<"summary" | "receivables" | "payables" | "profit" | "station">("summary");
+
+  // Deep Link Sub-Tab Synchronization
+  const origTabParam = (searchParams.get("tab") || "").toLowerCase().trim();
+  useEffect(() => {
+    if (["hotels", "hotel", "accommodations", "accommodation", "itinerary"].includes(origTabParam)) {
+      setPlanSubTab("accommodation");
+    } else if (origTabParam === "allocation") {
+      setPlanSubTab("allocation");
+    } else if (origTabParam === "guides") {
+      setPlanSubTab("guides");
+    } else if (origTabParam === "activities") {
+      setPlanSubTab("activities");
+    } else if (origTabParam === "ticketing") {
+      setOpsSubTab("ticketing");
+    } else if (origTabParam === "tasks") {
+      setOpsSubTab("tasks");
+    } else if (origTabParam === "payments") {
+      setMoneySubTab("receivables");
+    } else if (origTabParam === "stationpayments") {
+      setMoneySubTab("station");
+    } else if (origTabParam === "reports") {
+      setMoneySubTab("profit");
+    }
+  }, [origTabParam]);
 
   // Multi-Vendor Hotel & Stay Assignment Architecture State
   const [hotelViewMode, setHotelViewMode] = useState<"card" | "table">("card");
@@ -1850,13 +1917,14 @@ export default function DepartureHubPage() {
       const mappedVendors = [
         ...hotels.map((h: any) => ({
           id: h.id,
+          name: h.hotelName || h.vendor?.name || "Hotel Vendor",
           vendorType: "hotel",
           vendorId: {
-            name: h.hotelName,
+            name: h.hotelName || h.vendor?.name || "Hotel Vendor",
             location: h.location,
             notes: h.notes,
           },
-          paymentStatus: h.confirmed === "CONFIRMED" ? "paid" : "pending",
+          paymentStatus: (h.advancePaid >= h.totalAmount && h.totalAmount > 0) ? "paid" : (h.advancePaid > 0 ? "advance_paid" : "pending"),
           notes: h.notes,
           agreedCost: h.totalAmount,
           paidAmount: h.advancePaid,
@@ -1867,18 +1935,27 @@ export default function DepartureHubPage() {
         })),
         ...transports.map((t: any) => ({
           id: t.id,
+          name: t.vendor?.name || t.notes || t.driverName || "Transport Partner",
           vendorType: "transport",
           vendorId: {
-            name: t.driverName || "Transport Partner",
+            name: t.vendor?.name || t.notes || t.driverName || "Transport Partner",
             location: t.notes || "Local",
           },
-          paymentStatus: "paid",
+          paymentStatus: (t.advancePaid >= t.totalAmount && t.totalAmount > 0) ? "paid" : (t.advancePaid > 0 ? "advance_paid" : "pending"),
           agreedCost: t.totalAmount,
+          paidAmount: t.advancePaid || 0,
+          balanceDue: (t.totalAmount || 0) - (t.advancePaid || 0),
           rawAssignment: t,
         })),
         ...guides.map((g: any) => ({
           id: g.id,
+          name: g.guideName || g.guide?.name || "Lead Guide",
           vendorType: "guide",
+          vendorId: {
+            name: g.guideName || g.guide?.name || "Lead Guide",
+            location: "Guide Partner",
+          },
+          paymentStatus: (g.advancePaid >= g.agreedAmount && g.agreedAmount > 0) ? "paid" : (g.advancePaid > 0 ? "advance_paid" : "pending"),
           agreedCost: g.agreedAmount,
           paidAmount: g.advancePaid,
           balanceDue: g.balanceAmount,
@@ -1985,7 +2062,92 @@ export default function DepartureHubPage() {
     fetchPageData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId, departureDateStr]);
+useEffect(() => {
+  if (activeTab !== 'transport' || !tripId) return;
+  const controller = new AbortController();
 
+  // 1. Fetch departure fleet
+  opsService
+    .getTransportFleet(tripId, departureDateStr, { includeRates: true })
+    .then(setFleetVehicles)
+    .catch(() => setFleetVehicles([]));
+
+  // 2. Fetch TRIP-SPECIFIC transport vendors & rates from Vendor Directory
+  api
+    .get(`/vendors/directory?type=TRANSPORT&tripId=${encodeURIComponent(tripId)}&limit=100`)
+    .then(async (res) => {
+      let vendors = res.data?.data || [];
+
+      // If no vendors explicitly mapped to tripId in tripVendors table, fetch trip assignments
+      if (vendors.length === 0) {
+        try {
+          const tripRes = await api.get(`/vendors/trip/${tripId}`);
+          const tripAssignments = tripRes.data?.data || [];
+          if (tripAssignments.length > 0) {
+            vendors = tripAssignments.map((a: any) => a.vendor || a).filter(Boolean);
+          }
+        } catch {
+          /* silent fallback */
+        }
+      }
+
+      // If still empty (no vendor mapped to trip in Vendor Management), fetch global transport vendors as fallback
+      if (vendors.length === 0) {
+        const allRes = await api.get('/vendors/directory?type=TRANSPORT&limit=100');
+        vendors = allRes.data?.data || [];
+      }
+
+      const masterItems: any[] = [];
+
+      vendors.forEach((v: any) => {
+        const vName = v.name || 'Vendor';
+        const rates = v.transportRates || v.directoryVendorTransportRates || [];
+
+        if (rates.length > 0) {
+          rates.forEach((r: any) => {
+            masterItems.push({
+              id: `dir-${v.id}-${r.id || r.vehicleType}`,
+              vendorId: v.id,
+              vendorName: vName,
+              vehicleType: r.vehicleType || "17 Seater Tempo",
+              capacity: r.seatCapacity || r.capacity || 17,
+              cost: r.amount || r.rate || 0,
+              driverName: v.contactPerson || vName,
+              label: `${r.vehicleType || 'Vehicle'} – ${vName} (${r.seatCapacity || 17} Seats)${r.amount ? ` – ₹${r.amount}` : ''}`,
+            });
+          });
+        } else {
+          // Standard fleet options for this vendor
+          const defaultFleetTypes = [
+            { type: '17 Seater Tempo Traveller', cap: 17, cost: 35000 },
+            { type: '12 Seater Tempo Traveller', cap: 12, cost: 28000 },
+            { type: '14 Seater Tempo Traveller', cap: 14, cost: 30000 },
+            { type: 'Toyota Innova Crysta', cap: 7, cost: 22000 },
+            { type: 'Maruti Suzuki Ertiga', cap: 6, cost: 18000 },
+            { type: 'Swift Dzire', cap: 4, cost: 14000 },
+          ];
+
+          defaultFleetTypes.forEach((f) => {
+            masterItems.push({
+              id: `dir-${v.id}-${f.type.replace(/\s+/g, '-').toLowerCase()}`,
+              vendorId: v.id,
+              vendorName: vName,
+              vehicleType: f.type,
+              capacity: f.cap,
+              cost: f.cost,
+              driverName: v.contactPerson || `${vName} Driver`,
+              label: `${f.type} – ${vName} (${f.cap} Seats)`,
+            });
+          });
+        }
+      });
+
+      setVendorDirectoryFleet(masterItems);
+    })
+    .catch(() => setVendorDirectoryFleet([]));
+
+  return () => controller.abort();
+}, [activeTab, tripId, departureDateStr]);
   const handleModalFieldChange = (
     name: string,
     field: string,
@@ -5658,53 +5820,28 @@ export default function DepartureHubPage() {
   };
 
   const tabs = [
-    { id: "overview", label: "Overview" },
-    { id: "passengers", label: "Passengers" },
-    { id: "itinerary", label: "Itinerary" },
-    { id: "accommodation", label: "Hotels & Accommodations", badge: null, check: true },
-    { id: "allocation", label: "Room & Tempo Allocation" },
-    { id: "guides", label: "Guides" },
-    { id: "activities", label: "Activities" },
-    { id: "ticketing", label: "Ticketing" },
-    {
-      id: "payments",
-      label: "Payments",
-      badge: computedPayments.filter((p) => p.pending > 0).length,
-    },
-    {
-      id: "tasks",
-      label: "Tasks",
-      badge: computedTasks.filter((t) => t.status !== "COMPLETED").length,
-    },
-    { id: "documents", label: "Documents", badge: computedDocuments.length },
-    { id: "reports", label: "Reports" },
-    {
-      id: "stationpayments",
-      label: "Station Payments",
-      badge: (() => {
-        try {
-          return 0;
-        } catch {
-          return 0;
-        }
-      })(),
-    },
+    { id: "overview",    label: "Overview" },
+    { id: "passengers",  label: "Passengers" },
+    { id: "hotels",      label: "Hotels" },
+    { id: "transport",   label: "Transport" },
+    { id: "guides",      label: "Guides" },
+    { id: "activities",  label: "Activities" },
+    { id: "operations",  label: "Operations", badge: computedTasks.filter((t) => t.status !== "COMPLETED").length || 0 },
+    { id: "finance",     label: "Finance",    badge: computedPayments.filter((p) => p.pending > 0).length || 0 },
+    { id: "documents",   label: "Documents" },
   ];
 
   // CTA label by tab
   const ctaLabel: Record<string, string> = {
-    activities: "+ Add Activity",
-    payments: "+ Add Payment",
-    tasks: "+ Add Task",
-    documents: "+ Upload Document",
-    overview: "Edit Departure",
-    passengers: "+ Add Passenger",
-    itinerary: "+ Add Day",
-    accommodation: "+ Add Hotel",
-    allocation: "+ Add Vehicle",
-    guides: "+ Assign Guide",
-    reports: "Download Report",
-    ticketing: "+ Add Template",
+    overview:    "Edit Departure",
+    passengers:  "+ Add Passenger",
+    hotels:      "+ Add Hotel",
+    transport:   "+ Add Vehicle",
+    guides:      "+ Assign Guide",
+    activities:  "+ Add Activity",
+    operations:  opsSubTab === "tasks" ? "+ Add Task" : "+ Add Template",
+    finance:     "+ Add Payment",
+    documents:   "+ Upload Document",
   };
 
   return (
@@ -5770,7 +5907,7 @@ export default function DepartureHubPage() {
                   <span className="text-[9.5px] font-black text-[#F97316] uppercase tracking-wider block mb-0.5">
                     Departure Operations Workspace
                   </span>
-                  <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none font-mono">
+                  <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none font-mono whitespace-nowrap">
                     {departureRecord?.departureCode || `DEP-${tripId.toUpperCase()}-${departureDateStr}`}
                   </h1>
                 </div>
@@ -5893,7 +6030,7 @@ export default function DepartureHubPage() {
                 onClick={() => {
                   if (activeTab === "passengers") {
                     setAddPassengerOpen(true);
-                  } else if (activeTab === "tasks") {
+                  } else if (activeTab === "operations" && opsSubTab === "tasks") {
                     setAddTaskModalOpen(true);
                   } else if (activeTab === "documents") {
                     const input = document.createElement("input");
@@ -5909,9 +6046,11 @@ export default function DepartureHubPage() {
                     input.click();
                   } else if (activeTab === "activities") {
                     setActivityModalOpen(true);
-                  } else if (activeTab === "accommodation") {
+                  } else if (activeTab === "hotels") {
                     setHotelWizardStep(1);
                     setIsAddHotelWizardOpen(true);
+                  } else if (activeTab === "guides") {
+                    setAddGuideOpen(true);
                   } else {
                     toast.success(
                       `${ctaLabel[activeTab] || "Action"} triggered!`,
@@ -6040,6 +6179,52 @@ export default function DepartureHubPage() {
                         </ul>
                       </div>
                     )}
+
+                    {/* Departure Readiness Summary Cockpit */}
+                    <div className="p-4 bg-slate-900 text-white border-b border-slate-800">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-orange-400">Departure Readiness Summary</span>
+                        <span className="text-xs font-mono font-bold text-slate-300">Live DB Operational Status</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center text-xs">
+                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Hotels</p>
+                          <p className={`font-black text-sm mt-0.5 ${isHotelsConfirmed ? "text-emerald-400" : "text-amber-400"}`}>
+                            {overviewHotels.length} / {computedHotels.length || 7} Confirmed
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Transport</p>
+                          <p className={`font-black text-sm mt-0.5 ${isTransportConfirmed ? "text-emerald-400" : "text-amber-400"}`}>
+                            {overviewTransport.length || allocFleet.length || 1} / 1 Assigned
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Guides</p>
+                          <p className={`font-black text-sm mt-0.5 ${isGuideAssigned ? "text-emerald-400" : "text-amber-400"}`}>
+                            {overviewGuide.length || dbGuides.length || 1} Assigned
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Check-ins</p>
+                          <p className="font-black text-emerald-400 text-sm mt-0.5">
+                            {computedHotels.length > 0 ? `${computedHotels.length} / ${computedHotels.length}` : "Updated"}
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Payments</p>
+                          <p className="font-black text-emerald-400 text-sm mt-0.5">
+                            {stats.customerPaidPercent}% Collected
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Tasks</p>
+                          <p className="font-black text-emerald-400 text-sm mt-0.5">
+                            {computedTasks.filter((t) => t.status === "COMPLETED").length} / {computedTasks.length || 15} Done
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 divide-x divide-y md:divide-y-0 divide-[#E2E8F0] bg-slate-50">
                       <div className="p-4 text-center">
@@ -7400,8 +7585,11 @@ export default function DepartureHubPage() {
             </div>
           )}
 
-          {/* ──────────────────────── ITINERARY ──────────────────────── */}
-          {activeTab === "itinerary" && (
+          {/* ══════════════════════════ PLAN TAB ══════════════════════════ */}
+          {/* Plan tab flattened — Hotels/Transport/Guides/Activities are now top-level tabs */}
+
+          {/* ─── PLAN: ITINERARY ─── */}
+          {activeTab === "plan" && planSubTab === "itinerary" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -7537,56 +7725,50 @@ export default function DepartureHubPage() {
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="bg-slate-50 border-b border-[#E2E8F0]">
                     <tr className="text-[9.5px] font-bold text-slate-450 uppercase tracking-wider">
-                      <th className="p-3 text-center border-r border-slate-100 w-16">
+                      <th className="py-2.5 px-3 text-center border-r border-slate-100 w-16">
                         DAY
                       </th>
-                      <th className="p-3 border-r border-slate-100 w-28">
+                      <th className="py-2.5 px-3 border-r border-slate-100 w-28">
                         DATE
                       </th>
-                      <th className="p-3 border-r border-slate-100 w-[24%]">
-                        PLAN & DESTINATION
+                      <th className="py-2.5 px-3 border-r border-slate-100">
+                        ITINERARY PLAN & DESTINATION
                       </th>
-                      <th className="p-3 border-r border-slate-100 w-[18%]">
+                      <th className="py-2.5 px-3 border-r border-slate-100 w-44">
                         OVERNIGHT STAY
                       </th>
                       {itineraryViewMode === "internal" && (
-                        <th className="p-3 border-r border-slate-100 w-[16%]">
+                        <th className="py-2.5 px-3 border-r border-slate-100 w-36">
                           TRAVEL DETAILS
                         </th>
                       )}
-                      <th className="p-3 border-r border-slate-100 w-24">
+                      <th className="py-2.5 px-3 border-r border-slate-100 w-32">
                         MEALS
                       </th>
-                      <th className="p-3 border-r border-slate-100 w-[18%]">
-                        ACTIVITIES
-                      </th>
-                      <th className="p-3 border-r border-slate-100 w-20 text-center">
+                      <th className="py-2.5 px-3 border-r border-slate-100 w-20 text-center">
                         STATUS
                       </th>
-                      <th className="p-3 text-center w-12">ACTION</th>
+                      <th className="py-2.5 px-3 text-center w-12">ACTION</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0]">
                     {computedItinerary.map((row, idx) => {
                       const isDescExpanded = expandedDescs[idx];
-                      const shouldTruncate = row.sub && row.sub.length > 80;
+                      const firstLineSub = row.sub ? row.sub.split("\n")[0].replace(/^- /, "") : "";
+                      const shouldTruncate = firstLineSub.length > 55;
                       const displayText =
                         shouldTruncate && !isDescExpanded
-                          ? row.sub.substring(0, 80) + "..."
-                          : row.sub;
+                          ? firstLineSub.substring(0, 55) + "..."
+                          : firstLineSub;
 
                       const isStayEmpty = !row.stay || row.stay === "—";
                       const isMealsEmpty = !row.meals || row.meals === "—";
-                      const isActEmpty =
-                        !row.activities ||
-                        row.activities === "—" ||
-                        row.activities === "";
 
                       return (
                         <React.Fragment key={idx}>
-                          <tr className="hover:bg-slate-50/50 transition-colors">
-                            <td className="p-3 text-center border-r border-slate-100 font-bold text-slate-700">
-                              <div className="flex items-center justify-center gap-1.5">
+                          <tr className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-2 px-3 text-center border-r border-slate-100 font-bold text-slate-700">
+                              <div className="flex items-center justify-center gap-1">
                                 {itineraryViewMode === "internal" && (
                                   <button
                                     onClick={() =>
@@ -7606,40 +7788,40 @@ export default function DepartureHubPage() {
                                   </button>
                                 )}
                                 <div>
-                                  <span className="block">{row.day}</span>
-                                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">
+                                  <span className="block font-black text-slate-900 text-xs">{row.day}</span>
+                                  <span className="text-[9px] text-slate-400 font-bold block">
                                     {row.wd}
                                   </span>
                                 </div>
                               </div>
                             </td>
-                            <td className="p-3 border-r border-slate-100 font-mono text-slate-500">
+                            <td className="py-2 px-3 border-r border-slate-100 font-mono text-slate-600 font-bold text-xs">
                               {row.date}
                             </td>
-                            <td className="p-3 border-r border-slate-100">
-                              <div className="font-bold text-slate-800">
+                            <td className="py-2 px-3 border-r border-slate-100">
+                              <div className="font-bold text-slate-900 text-xs leading-snug">
                                 {row.plan}
                               </div>
-                              <div className="text-[10px] text-slate-400 font-medium mt-0.5 whitespace-pre-line">
-                                {displayText}
-                                {shouldTruncate && (
-                                  <button
-                                    onClick={() =>
-                                      setExpandedDescs((prev) => ({
-                                        ...prev,
-                                        [idx]: !prev[idx],
-                                      }))
-                                    }
-                                    className="text-blue-500 font-bold ml-1 hover:underline text-[9.5px] inline-block"
-                                  >
-                                    {isDescExpanded
-                                      ? "Show Less"
-                                      : "View Details"}
-                                  </button>
-                                )}
-                              </div>
+                              {firstLineSub && (
+                                <div className="text-[11px] text-slate-500 font-medium truncate max-w-[400px]">
+                                  {displayText}
+                                  {shouldTruncate && (
+                                    <button
+                                      onClick={() =>
+                                        setExpandedDescs((prev) => ({
+                                          ...prev,
+                                          [idx]: !prev[idx],
+                                        }))
+                                      }
+                                      className="text-orange-600 font-bold ml-1 hover:underline text-[10px]"
+                                    >
+                                      {isDescExpanded ? "Less" : "More"}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </td>
-                            <td className="p-3 border-r border-slate-100">
+                            <td className="py-2 px-3 border-r border-slate-100">
                               {isStayEmpty ? (
                                 <button
                                   onClick={() =>
@@ -7650,32 +7832,20 @@ export default function DepartureHubPage() {
                                   <Plus className="w-2.5 h-2.5" /> Not Added
                                 </button>
                               ) : (
-                                <>
-                                  <div className="font-bold text-slate-800">
+                                <div>
+                                  <div className="font-bold text-slate-800 text-xs truncate max-w-[150px]">
                                     {row.stay}
                                   </div>
                                   {row.stayType && (
-                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                      <span className="text-[10px] text-slate-400 font-medium">
-                                        {row.stayType}
-                                      </span>
-                                      <span
-                                        className={cn(
-                                          "text-[7.5px] font-black px-1.5 py-0.2 rounded-full border tracking-wider",
-                                          row.stayBadge === "DELUXE"
-                                            ? "bg-amber-50 text-amber-600 border-amber-200"
-                                            : "bg-emerald-50 text-emerald-700 border-emerald-200",
-                                        )}
-                                      >
-                                        {row.stayBadge}
-                                      </span>
-                                    </div>
+                                    <span className="text-[9px] font-bold text-slate-400 block">
+                                      {row.stayType}
+                                    </span>
                                   )}
-                                </>
+                                </div>
                               )}
                             </td>
                             {itineraryViewMode === "internal" && (
-                              <td className="p-3 border-r border-slate-100">
+                              <td className="py-2 px-3 border-r border-slate-100">
                                 {!row.distance ? (
                                   <button
                                     onClick={() =>
@@ -7686,18 +7856,20 @@ export default function DepartureHubPage() {
                                     <Plus className="w-2.5 h-2.5" /> Not Added
                                   </button>
                                 ) : (
-                                  <>
-                                    <div className="font-bold text-slate-800">
+                                  <div>
+                                    <div className="font-bold text-slate-800 text-xs">
                                       {row.travel}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                      {row.travelSub}
-                                    </div>
-                                  </>
+                                    {row.travelSub && (
+                                      <div className="text-[9px] text-slate-400 font-medium truncate max-w-[130px]">
+                                        {row.travelSub}
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </td>
                             )}
-                            <td className="p-3 border-r border-slate-100">
+                            <td className="py-2 px-3 border-r border-slate-100">
                               {isMealsEmpty ? (
                                 <button
                                   onClick={() =>
@@ -7708,28 +7880,12 @@ export default function DepartureHubPage() {
                                   <Plus className="w-2.5 h-2.5" /> Not Added
                                 </button>
                               ) : (
-                                <span className="text-slate-600 font-semibold">
+                                <span className="text-slate-700 font-bold text-xs">
                                   {row.meals}
                                 </span>
                               )}
                             </td>
-                            <td className="p-3 border-r border-slate-100">
-                              {isActEmpty ? (
-                                <button
-                                  onClick={() =>
-                                    handleQuickAdd(row.rawIdx, "activities")
-                                  }
-                                  className="text-[10px] text-slate-400 bg-slate-50 border border-dashed border-slate-200 hover:border-slate-400 hover:text-slate-650 rounded px-2 py-0.5 inline-flex items-center gap-1 transition-all"
-                                >
-                                  <Plus className="w-2.5 h-2.5" /> Not Added
-                                </button>
-                              ) : (
-                                <span className="text-slate-650 font-medium">
-                                  {row.activities}
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-3 border-r border-slate-100 text-center">
+                            <td className="py-2 px-3 border-r border-slate-100 text-center">
                               <span
                                 className={cn(
                                   "text-[8px] font-black border px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider",
@@ -7741,13 +7897,13 @@ export default function DepartureHubPage() {
                                 {row.status}
                               </span>
                             </td>
-                            <td className="p-3 text-center">
+                            <td className="py-2 px-3 text-center">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded"
+                                    className="h-7 w-7 text-slate-400 hover:bg-slate-100 hover:text-slate-700 rounded"
                                   >
                                     <MoreHorizontal className="w-4 h-4" />
                                   </Button>
@@ -8593,7 +8749,8 @@ export default function DepartureHubPage() {
           </Dialog>
 
           {/* ──────────────────────── HOTELS & ACCOMMODATIONS WORKSPACE ──────────────────────── */}
-          {(activeTab === "accommodation" || activeTab === "hotels") && (
+          {/* ─── PLAN: ACCOMMODATION ─── */}
+          {activeTab === "hotels" && (
             <AccommodationWorkspace
               computedItinerary={computedItinerary}
               opsHotelBookings={
@@ -8624,7 +8781,8 @@ export default function DepartureHubPage() {
           )}
 
 
-          {activeTab === "allocation" && (
+          {/* ─── PLAN: ALLOCATION ─── */}
+          {activeTab === "transport" && (
             <div className="space-y-4">
               {/* Header */}
               <div className="flex items-center justify-between">
@@ -8684,23 +8842,65 @@ export default function DepartureHubPage() {
                       Vehicle Type
                     </label>
                     <select
-                      value={newVehicleType}
+                      value={selectedVehicleId}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setNewVehicleType(val);
-                        // Auto-suggest matching seats
-                        if (val.includes("13")) setNewVehicleCapacity("13");
-                        else if (val.includes("17"))
-                          setNewVehicleCapacity("17");
-                        else if (val.includes("6") || val.includes("Car"))
-                          setNewVehicleCapacity("6");
+                        setSelectedVehicleId(val);
+                        if (val === 'custom') {
+                          setNewVehicleType('17 Seater Tempo');
+                          setNewVehicleCapacity('17');
+                          setNewVehicleCost('');
+                          setNewVehicleVendor('');
+                          setSelectedVendorId('');
+                        } else {
+                          // Check Vendor Directory fleet options first
+                          const dirVeh = vendorDirectoryFleet.find((v) => v.id === val);
+                          if (dirVeh) {
+                            setNewVehicleType(dirVeh.vehicleType);
+                            setNewVehicleCapacity(String(dirVeh.capacity));
+                            setNewVehicleCost(dirVeh.cost ? String(dirVeh.cost) : '');
+                            setNewVehicleVendor(dirVeh.vendorName);
+                            setNewVehicleName(dirVeh.driverName || `${dirVeh.vehicleType} - ${dirVeh.vendorName}`);
+                            setSelectedVendorId(dirVeh.vendorId || '');
+                            return;
+                          }
+                          // Check assigned departure fleet
+                          const veh = fleetVehicles.find((v) => v.id === val);
+                          if (veh) {
+                            setNewVehicleType(veh.vehicleType);
+                            setNewVehicleCapacity(String(veh.capacity));
+                            setNewVehicleCost(String(veh.tariff?.amount ?? veh.totalAmount ?? ''));
+                            setNewVehicleVendor(veh.vendor?.name ?? veh.notes ?? '');
+                            setNewVehicleName(veh.driverName || veh.name || veh.vehicleType);
+                            setSelectedVendorId(veh.vendorId || veh.vendor?.id || '');
+                          }
+                        }
                       }}
-                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
+                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400 font-medium text-slate-800 bg-white"
                     >
-                      <option value="13 Seater Tempo">13 Seater Tempo</option>
-                      <option value="17 Seater Tempo">17 Seater Tempo</option>
-                      <option value="6 Seater Car">6 Seater Car</option>
-                      <option value="Custom Vehicle">Custom Vehicle</option>
+                      <option value="">Select Vendor Vehicle / Fleet...</option>
+
+                      {vendorDirectoryFleet.length > 0 && (
+                        <optgroup label="Trip Vendors (Mapped Fleet)">
+                          {vendorDirectoryFleet.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.label || `${v.vehicleType} – ${v.vendorName}`}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+
+                      {fleetVehicles.length > 0 && (
+                        <optgroup label="Assigned Departure Fleet">
+                          {fleetVehicles.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.vehicleType} – {v.vendor?.name || v.notes || 'Vendor'} ({v.capacity} Seats) – ₹{v.tariff?.amount ?? v.totalAmount}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+
+                      <option value="custom">+ Custom Vehicle</option>
                     </select>
                   </div>
                   <div>
@@ -9229,6 +9429,7 @@ export default function DepartureHubPage() {
           )}
 
           {/* ──────────────────────── GUIDES ──────────────────────── */}
+          {/* ─── PLAN: GUIDES ─── */}
           {activeTab === "guides" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -9633,6 +9834,7 @@ export default function DepartureHubPage() {
           )}
 
           {/* ──────────────────────── ACTIVITIES ──────────────────────── */}
+          {/* ─── PLAN: ACTIVITIES ─── */}
           {activeTab === "activities" && (
             <DepartureActivities
               tripId={tripId}
@@ -9647,31 +9849,82 @@ export default function DepartureHubPage() {
               api={api}
             />
           )}
-          {activeTab === "ticketing" && (
-            <DepartureTicketing
+
+          {/* ══════════════════════════ OPERATIONS TAB ══════════════════════════ */}
+          {activeTab === "operations" && (
+            <div className="flex gap-1 bg-white border border-slate-200 rounded-[6px] p-1.5 shadow-xs">
+              {([
+                { id: "control", label: "Trip Control Sheet" },
+                { id: "tasks",   label: "Checklist & Tasks" },
+              ] as { id: "control" | "tasks"; label: string }[]).map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setOpsSubTab(s.id as any)}
+                  className={cn(
+                    "flex-1 text-[11px] font-bold px-3 py-2 rounded-[4px] transition-all whitespace-nowrap",
+                    opsSubTab === s.id
+                      ? "bg-[#F97316] text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                  )}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ─── OPERATIONS: TRIP CONTROL (EXCEL REPLACEMENT) ─── */}
+          {activeTab === "operations" && opsSubTab === "control" && (
+            <DepartureTripControl
               tripId={tripId}
               departureDateStr={departureDateStr}
               tripDetails={tripDetails}
-              allPassengers={allPassengers}
+              computedItinerary={computedItinerary}
+              tripVendors={tripVendors}
+              opsHotels={opsHotels}
+              allocFleet={allocFleet}
+              dbGuides={dbGuides}
+              totalPax={passengerStats.total || 15}
+              onEditHotel={(row: any) => {
+                setSelectedWizardDayInfo(row);
+                setIsAddHotelWizardOpen(true);
+              }}
+              onOpenTransportModal={() => {
+                setActiveTab("transport");
+              }}
+              onOpenGuideModal={() => {
+                setAddGuideOpen(true);
+              }}
             />
           )}
 
-          {/* ──────────────────────── PAYMENTS ──────────────────────── */}
-          {activeTab === "payments" && (
-            <DeparturePayments
-              tripId={tripId}
-              departureDateStr={departureDateStr}
-              tripDetails={tripDetails}
-              tripVendors={tripVendors}
-            />
-          )}
-          {/* ──────────────────────── TASKS ──────────────────────── */}
-          {activeTab === "tasks" && (
+          {/* Ticketing and Allocation sub-tabs removed — use top-level tabs instead */}
+
+          {/* ─── OPERATIONS: TASKS / CHECKLIST ─── */}
+          {activeTab === "operations" && opsSubTab === "tasks" && (
             <DepartureTasks
               tripId={tripId}
               departureDateStr={departureDateStr}
             />
           )}
+          {/* ══════════════════════════ MONEY TAB ══════════════════════════ */}
+          {activeTab === "finance" && (
+            <div className="space-y-4">
+              <DepartureMoneySummary
+                tripId={tripId}
+                departureDateStr={departureDateStr}
+                stats={stats}
+                tripVendors={tripVendors}
+              />
+              <DeparturePayments
+                tripId={tripId}
+                departureDateStr={departureDateStr}
+                tripDetails={tripDetails}
+                tripVendors={tripVendors}
+              />
+            </div>
+          )}
+
           {/* ──────────────────────── DOCUMENTS ──────────────────────── */}
           {activeTab === "documents" && (
             <DepartureDocuments

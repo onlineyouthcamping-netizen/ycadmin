@@ -51,6 +51,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import api from "@/services/api";
+import { getDisplayVendorCode } from "@/utils/vendorUtils";
 
 interface AccommodationDetailPageProps {
   vendor: any;
@@ -76,11 +77,11 @@ export function AccommodationDetailPage({
   onUpdateVendor,
 }: AccommodationDetailPageProps) {
   const [vendor, setVendor] = useState<any>(initialVendor);
-  const vendorType = (vendor.type || "").toUpperCase();
-  const isTransport = vendorType === "TRANSPORT";
-  const isGuide = vendorType === "GUIDE";
-  const isActivity = vendorType === "ACTIVITIES";
-  const isRestaurant = vendorType === "RESTAURANT" || vendorType === "FOOD";
+  const typeUpper = (vendor.type || vendor.accommodationType || vendor.category || "").toUpperCase();
+  const isTransport = typeUpper.includes("TRANSPORT") || typeUpper.includes("FLEET") || typeUpper.includes("VEHICLE");
+  const isGuide = typeUpper.includes("GUIDE") || typeUpper.includes("LEADER") || typeUpper.includes("TREK");
+  const isActivity = typeUpper.includes("ACTIVITIES") || typeUpper.includes("ACTIVITY") || typeUpper.includes("ADVENTURE");
+  const isRestaurant = typeUpper.includes("RESTAURANT") || typeUpper.includes("FOOD") || typeUpper.includes("MEAL") || typeUpper.includes("DINING");
 
   const dynamicTabs = useMemo(() => {
     if (isTransport) {
@@ -98,7 +99,7 @@ export function AccommodationDetailPage({
       return [
         { id: "overview", label: "Overview", icon: Compass },
         { id: "contacts", label: "Contacts", icon: Phone },
-        { id: "guide_rates", label: "Rates & Allowance", icon: DollarSign },
+        { id: "rates_allowance", label: "Rates & Allowance", icon: DollarSign },
         { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -108,7 +109,7 @@ export function AccommodationDetailPage({
       return [
         { id: "overview", label: "Overview", icon: Activity },
         { id: "contacts", label: "Contacts", icon: Phone },
-        { id: "activity_catalog", label: "Activity Catalog", icon: Tag },
+        { id: "rates_allowance", label: "Rates & Allowance", icon: DollarSign },
         { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -118,7 +119,7 @@ export function AccommodationDetailPage({
       return [
         { id: "overview", label: "Overview", icon: Utensils },
         { id: "contacts", label: "Contacts", icon: Phone },
-        { id: "meal_plans", label: "Meal Plans & Buffet", icon: Utensils },
+        { id: "meal_tariffs", label: "Meal Tariffs & Thali Rates", icon: DollarSign },
         { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -242,6 +243,80 @@ export function AccommodationDetailPage({
     totalAmount: "44000",
     notes: "",
   });
+
+  // State for Tour Guide Daily Rates & Allowances
+  const [guideRates, setGuideRates] = useState<any[]>([
+    {
+      id: "gr1",
+      roleName: "Lead Trek Leader",
+      badgeText: "Primary Role",
+      perDayFee: 2500,
+      foodAllowance: 500,
+      miscAllowance: 300,
+    },
+    {
+      id: "gr2",
+      roleName: "Local Cultural Guide",
+      badgeText: "City / Sightseeing",
+      perDayFee: 1500,
+      foodAllowance: 300,
+      miscAllowance: 200,
+    },
+  ]);
+  const [guideRateModalOpen, setGuideRateModalOpen] = useState(false);
+  const [editingGuideRate, setEditingGuideRate] = useState<any>(null);
+  const [guideRateForm, setGuideRateForm] = useState({
+    roleName: "Lead Trek Leader",
+    badgeText: "Primary Role",
+    perDayFee: "2500",
+    foodAllowance: "500",
+    miscAllowance: "300",
+  });
+
+  const handleSaveGuideRate = () => {
+    if (!guideRateForm.roleName || !guideRateForm.perDayFee) {
+      toast.error("Role Name and Per Day Fee are required");
+      return;
+    }
+    const perDay = parseInt(guideRateForm.perDayFee) || 0;
+    const food = parseInt(guideRateForm.foodAllowance) || 0;
+    const misc = parseInt(guideRateForm.miscAllowance) || 0;
+
+    if (editingGuideRate) {
+      setGuideRates(
+        guideRates.map((gr) =>
+          gr.id === editingGuideRate.id
+            ? {
+                ...gr,
+                roleName: guideRateForm.roleName,
+                badgeText: guideRateForm.badgeText,
+                perDayFee: perDay,
+                foodAllowance: food,
+                miscAllowance: misc,
+              }
+            : gr,
+        ),
+      );
+      toast.success("Guide rate configuration updated");
+    } else {
+      const newGr = {
+        id: `gr-${Date.now()}`,
+        roleName: guideRateForm.roleName,
+        badgeText: guideRateForm.badgeText || "Role",
+        perDayFee: perDay,
+        foodAllowance: food,
+        miscAllowance: misc,
+      };
+      setGuideRates([...guideRates, newGr]);
+      toast.success("New guide rate configuration added");
+    }
+    setGuideRateModalOpen(false);
+  };
+
+  const handleDeleteGuideRate = (id: string) => {
+    setGuideRates(guideRates.filter((gr) => gr.id !== id));
+    toast.success("Guide rate removed");
+  };
 
   const handleSaveVehicle = () => {
     if (!vehicleForm.model) {
@@ -947,7 +1022,7 @@ export function AccommodationDetailPage({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200 uppercase">
-                {vendor.vendorCode || vendor.id}
+                {getDisplayVendorCode(vendor)}
               </span>
               <h2 className="text-lg font-black text-slate-800 tracking-tight">
                 {vendor.name}
@@ -1309,6 +1384,217 @@ export function AccommodationDetailPage({
                           }
                           placeholder="GPS Tracking, Speed Governor, Pushback Seats, First Aid Kit, AC / Heater, Luggage Carrier"
                           className="bg-white text-xs border-slate-200 font-medium min-h-[60px]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : isGuide ? (
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
+                      <Compass className="w-4 h-4 text-blue-600" /> Tour Guide Profile & Certifications
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Guide Role / Specialization
+                        </label>
+                        <Input
+                          value={overviewForm.guideRole || "Lead Trek Leader & High Altitude Specialist"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              guideRole: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Lead Trek Leader, Cultural Local Guide"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Operating Base / Hub
+                        </label>
+                        <Input
+                          value={overviewForm.operatingCity || vendor.city || vendor.location || "Kasol / Manali / Shimla"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              operatingCity: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Shimla / Manali / Kasol"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Languages Spoken
+                        </label>
+                        <Input
+                          value={overviewForm.languages || "English, Hindi, Pahari"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              languages: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. English, Hindi, Pahari, Lahauli"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Mountaineering Certifications
+                        </label>
+                        <Input
+                          value={overviewForm.certifications || "BMC (Basic Mountaineering Course), WFR"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              certifications: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. BMC, AMC, Wilderness First Responder (WFR)"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Trekking & Expedition Experience
+                        </label>
+                        <Input
+                          value={overviewForm.experience || "7+ Years (40+ Kheerganga & Sar Pass Expeditions)"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              experience: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 7+ Years Experience across Parvati Valley & Spiti"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Safety Equipment & Rescue Gear Carried
+                        </label>
+                        <Textarea
+                          value={overviewForm.amenities || "First Aid Kit, Oxygen Cylinder, Stretchers, Walkie-Talkie Radio, Rope & Harness"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              amenities: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. First Aid Kit, O2 Cylinder, Satellite Radio, Rope & Harness"
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[60px]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : isRestaurant ? (
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
+                      <Utensils className="w-4 h-4 text-orange-600" /> Restaurant & Dining Profile
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Cuisine & Meal Offerings
+                        </label>
+                        <Input
+                          value={overviewForm.cuisines || "North Indian, Himachali Dham, Continental, Chinese"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              cuisines: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Indian, Chinese, Himachali Local"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Seating Capacity (Group Handling)
+                        </label>
+                        <Input
+                          value={overviewForm.seatingCapacity || "80 Pax Group Seating"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              seatingCapacity: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 80 Pax Group Indoor + Outdoor"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Operating Hours & Service Timing
+                        </label>
+                        <Input
+                          value={overviewForm.operatingHours || "7:00 AM - 11:00 PM (Breakfast, Lunch & Dinner)"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              operatingHours: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 7:00 AM - 11:00 PM"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : isActivity ? (
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
+                      <Activity className="w-4 h-4 text-indigo-600" /> Adventure & Activity Profile
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Primary Activity Offerings
+                        </label>
+                        <Input
+                          value={overviewForm.activityTypes || "Paragliding, River Rafting, Zipline, Camping"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              activityTypes: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Paragliding, Rafting, Zipline"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Operating Hub / Site
+                        </label>
+                        <Input
+                          value={overviewForm.operatingCity || vendor.city || vendor.location || "Dobhi / Kullu"}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              operatingCity: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Dobhi Fly Site, Kullu River Point"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
                         />
                       </div>
                     </div>
@@ -1814,9 +2100,9 @@ export function AccommodationDetailPage({
                               setEditingRoom(r);
                               setRoomForm({
                                 name: r.name,
-                                cap: r.cap.toString(),
-                                base: r.base.toString(),
-                                extra: r.extra.toString(),
+                                cap: (r.cap || 2).toString(),
+                                base: (r.base || 1000).toString(),
+                                extra: (r.extra || 500).toString(),
                               });
                               setRoomModalOpen(true);
                             }}
@@ -1835,19 +2121,19 @@ export function AccommodationDetailPage({
                       <p className="text-slate-550">
                         Capacity:{" "}
                         <span className="font-bold text-slate-700">
-                          {r.cap} Persons
+                          {r.cap || 2} Persons
                         </span>
                       </p>
                       <p className="text-slate-550">
                         Base Tariff / Night:{" "}
                         <span className="font-black text-emerald-600">
-                          ₹{r.base}
+                          ₹{r.base || 1000}
                         </span>
                       </p>
                       <p className="text-slate-550">
                         Extra Mattress Rate:{" "}
                         <span className="font-bold text-slate-700">
-                          ₹{r.extra}
+                          ₹{r.extra || 500}
                         </span>
                       </p>
                     </div>
@@ -1940,6 +2226,220 @@ export function AccommodationDetailPage({
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB FOR GUIDES: RATES & ALLOWANCE */}
+          {activeTab === "rates_allowance" && isGuide && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Tour Guide Daily Rates & Allowances
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Per day fee, total food allowance, and miscellaneous allowances.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingGuideRate(null);
+                    setGuideRateForm({
+                      roleName: "",
+                      badgeText: "Primary Role",
+                      perDayFee: "2500",
+                      foodAllowance: "500",
+                      miscAllowance: "300",
+                    });
+                    setGuideRateModalOpen(true);
+                  }}
+                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-3.5 shadow-2xs"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Rate Config
+                </Button>
+              </div>
+
+              {guideRates.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 border border-slate-200 border-dashed rounded-xl space-y-2">
+                  <Compass className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs font-extrabold text-slate-700">
+                    No Guide Rate Configurations Added
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Click "Add Rate Config" above to set per-day guide tariffs.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {guideRates.map((gr) => (
+                    <div
+                      key={gr.id}
+                      className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs relative"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-extrabold text-slate-800 text-sm block">
+                            {gr.roleName}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 uppercase">
+                            {gr.badgeText || "Role"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingGuideRate(gr);
+                              setGuideRateForm({
+                                roleName: gr.roleName,
+                                badgeText: gr.badgeText || "Primary Role",
+                                perDayFee: (gr.perDayFee || 2500).toString(),
+                                foodAllowance: (gr.foodAllowance || 500).toString(),
+                                miscAllowance: (gr.miscAllowance || 300).toString(),
+                              });
+                              setGuideRateModalOpen(true);
+                            }}
+                            className="p-1 text-slate-400 hover:text-slate-700 bg-slate-50 rounded border border-slate-200"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGuideRate(gr.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded border border-slate-200"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 pt-1">
+                        Per Day Fee:{" "}
+                        <span className="font-black text-emerald-600 text-sm">
+                          ₹{gr.perDayFee || 2500} / Day
+                        </span>
+                      </p>
+                      <p className="text-slate-600">
+                        Food Allowance:{" "}
+                        <span className="font-bold text-slate-800">
+                          ₹{gr.foodAllowance || 500} / Day
+                        </span>
+                      </p>
+                      <p className="text-slate-600">
+                        Miscellaneous Allowance:{" "}
+                        <span className="font-bold text-slate-800">
+                          ₹{gr.miscAllowance || 300} / Day
+                        </span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB FOR ACTIVITIES: RATES & ALLOWANCE */}
+          {activeTab === "rates_allowance" && isActivity && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Adventure Activity Rates & Tariffs
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Per-person rates for Paragliding, Rafting, Zipline, and Equipment.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
+                  <span className="font-extrabold text-slate-800 text-sm block">
+                    Tandem Paragliding High Fly
+                  </span>
+                  <p className="text-slate-600">
+                    Per Pax Tariff:{" "}
+                    <span className="font-black text-emerald-600 text-sm">
+                      ₹2,500 / Person
+                    </span>
+                  </p>
+                  <p className="text-slate-500 text-[11px]">
+                    Includes GoPro 4K Video Recording & Pilot Fee
+                  </p>
+                </div>
+                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
+                  <span className="font-extrabold text-slate-800 text-sm block">
+                    12 KM White Water River Rafting
+                  </span>
+                  <p className="text-slate-600">
+                    Per Pax Tariff:{" "}
+                    <span className="font-black text-emerald-600 text-sm">
+                      ₹1,200 / Person
+                    </span>
+                  </p>
+                  <p className="text-slate-500 text-[11px]">
+                    Includes Safety Gear, Lifejacket & Helmet
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB FOR RESTAURANTS: MEAL TARIFFS */}
+          {activeTab === "meal_tariffs" && isRestaurant && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Meal Tariffs & Thali Rates
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Configure per-head breakfast, lunch, and dinner tariffs for group bookings.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
+                  <span className="font-extrabold text-slate-800 text-sm block">
+                    Group Breakfast Buffet / Thali
+                  </span>
+                  <p className="text-slate-600">
+                    Per Pax Rate:{" "}
+                    <span className="font-black text-emerald-600 text-sm">
+                      ₹150 / Pax
+                    </span>
+                  </p>
+                  <p className="text-slate-500 text-[11px]">
+                    Includes: Tea, Paratha, Puri Bhaji, Omelette
+                  </p>
+                </div>
+                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
+                  <span className="font-extrabold text-slate-800 text-sm block">
+                    Group Lunch Buffet (Veg)
+                  </span>
+                  <p className="text-slate-600">
+                    Per Pax Rate:{" "}
+                    <span className="font-black text-emerald-600 text-sm">
+                      ₹250 / Pax
+                    </span>
+                  </p>
+                  <p className="text-slate-500 text-[11px]">
+                    Includes: Paneer, Dal, Rice, Roti, Salad, Sweet
+                  </p>
+                </div>
+                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
+                  <span className="font-extrabold text-slate-800 text-sm block">
+                    Group Dinner Buffet (Veg + Non-Veg)
+                  </span>
+                  <p className="text-slate-600">
+                    Per Pax Rate:{" "}
+                    <span className="font-black text-emerald-600 text-sm">
+                      ₹350 / Pax
+                    </span>
+                  </p>
+                  <p className="text-slate-500 text-[11px]">
+                    Includes: Chicken Curry / Paneer, Dal Fry, Jeera Rice, Gulab Jamun
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -3331,6 +3831,94 @@ export function AccommodationDetailPage({
               className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
             >
               {editingRoute ? "Update Route Tariff" : "Save Route Tariff"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guide Rate Configuration Modal */}
+      <Dialog open={guideRateModalOpen} onOpenChange={setGuideRateModalOpen}>
+        <DialogContent className="max-w-md bg-white border border-slate-200 rounded-xl p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-extrabold text-slate-800 border-b pb-2">
+              {editingGuideRate ? "Edit Guide Daily Rate & Allowances" : "Add Guide Daily Rate & Allowances"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-xs my-2 font-medium text-slate-700">
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Guide Role / Designation *
+              </label>
+              <Input
+                value={guideRateForm.roleName}
+                onChange={(e) => setGuideRateForm({ ...guideRateForm, roleName: e.target.value })}
+                placeholder="e.g. Lead Trek Leader, Assistant Guide, Cultural Guide"
+                className="h-8.5 text-xs font-bold"
+              />
+            </div>
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Category Badge / Tag
+              </label>
+              <Input
+                value={guideRateForm.badgeText}
+                onChange={(e) => setGuideRateForm({ ...guideRateForm, badgeText: e.target.value })}
+                placeholder="e.g. Primary Role, City / Sightseeing"
+                className="h-8.5 text-xs"
+              />
+            </div>
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Per Day Fee (₹/Day) *
+              </label>
+              <Input
+                type="number"
+                value={guideRateForm.perDayFee}
+                onChange={(e) => setGuideRateForm({ ...guideRateForm, perDayFee: e.target.value })}
+                placeholder="2500"
+                className="h-8.5 text-xs font-bold"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Food Allowance (₹/Day)
+                </label>
+                <Input
+                  type="number"
+                  value={guideRateForm.foodAllowance}
+                  onChange={(e) => setGuideRateForm({ ...guideRateForm, foodAllowance: e.target.value })}
+                  placeholder="500"
+                  className="h-8.5 text-xs"
+                />
+              </div>
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Miscellaneous Allowance (₹)
+                </label>
+                <Input
+                  type="number"
+                  value={guideRateForm.miscAllowance}
+                  onChange={(e) => setGuideRateForm({ ...guideRateForm, miscAllowance: e.target.value })}
+                  placeholder="300"
+                  className="h-8.5 text-xs"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+            <Button
+              variant="outline"
+              onClick={() => setGuideRateModalOpen(false)}
+              className="h-8 text-xs font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveGuideRate}
+              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+            >
+              {editingGuideRate ? "Update Guide Rate" : "Add Guide Rate"}
             </Button>
           </div>
         </DialogContent>

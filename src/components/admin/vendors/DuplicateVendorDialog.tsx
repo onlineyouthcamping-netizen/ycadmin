@@ -9,6 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { getDisplayVendorCode } from "@/utils/vendorUtils";
 
 interface DuplicateVendorDialogProps {
   open: boolean;
@@ -50,7 +51,7 @@ export function DuplicateVendorDialog({
               {existingVendor.name}
             </span>
             <span className="text-[10px] font-mono font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded uppercase">
-              {existingVendor.vendorCode || existingVendor.id}
+              {getDisplayVendorCode(existingVendor)}
             </span>
           </div>
           <div className="text-slate-600 font-medium space-y-1">

@@ -233,12 +233,14 @@ export const opsService = {
 
   async getTransportFleet(
     tripId: string,
-    departureDate?: string,
+    options?: { departureDate?: string; includeRates?: boolean },
   ): Promise<OpsTransportFleet[]> {
-    const q = departureDate
-      ? `?departureDate=${encodeURIComponent(departureDate)}`
-      : "";
-    const res = await api.get(`/ops/transport/${tripId}${q}`);
+    const { departureDate, includeRates } = options || {};
+    const q = [];
+    if (departureDate) q.push(`departureDate=${encodeURIComponent(departureDate)}`);
+    if (includeRates) q.push(`includeRates=true`);
+    const queryString = q.length ? `?${q.join('&')}` : '';
+    const res = await api.get(`/ops/transport/${tripId}${queryString}`);
     return res.data?.data || [];
   },
   async createTransportFleet(

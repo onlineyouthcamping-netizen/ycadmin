@@ -25,6 +25,7 @@ import {
   Users,
   Calendar,
   Hash,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ interface AccommodationWorkspaceProps {
 // ─────────────────────────────────────────────
 
 interface AccommodationRow {
+  key: string;
   dayLabel: string;
   date: string;
   destination: string;
@@ -97,6 +99,15 @@ export default function AccommodationWorkspace({
   onEditHotel,
 }: AccommodationWorkspaceProps) {
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null);
+  const [stayOverrides, setStayOverrides] = useState<Record<string, boolean>>({});
+
+  const handleToggleStay = (key: string, explicitValue?: boolean) => {
+    setStayOverrides((prev) => {
+      const current = prev[key];
+      const next = explicitValue !== undefined ? explicitValue : !current;
+      return { ...prev, [key]: next };
+    });
+  };
 
   const totalPax = allPassengers.length;
 
@@ -122,6 +133,7 @@ export default function AccommodationWorkspace({
   const rows = useMemo<AccommodationRow[]>(() => {
     return computedItinerary.map((day: any, idx: number) => {
       const dayDate = day.date || "";
+      const rowKey = dayDate || day.day || `day-${idx}`;
 
       // Extract stay or destination city
       const parsedStay =
@@ -136,16 +148,18 @@ export default function AccommodationWorkspace({
       // 1. Try finding a saved hotel booking for this day date or location
       const booking = findHotelForDay(dayDate, cityLocation, opsHotelBookings);
 
-      // 2. Check if this day is a stay day (has booking OR has stay location OR is overnight itinerary day)
+      // 2. Check default stay day status
       const isEnrouteDay =
         (day.plan || "").toLowerCase().includes("train journey") ||
         (day.sub || "").toLowerCase().includes("arrival in your city") ||
         (day.plan || "").toLowerCase().includes("your city");
 
-      const hasStay =
+      const defaultHasStay =
         !!booking ||
         (!isEnrouteDay && idx > 0 && idx < computedItinerary.length - 1) ||
         (!!parsedStay && !parsedStay.toLowerCase().includes("no stay"));
+
+      const hasStay = stayOverrides[rowKey] !== undefined ? stayOverrides[rowKey] : defaultHasStay;
 
       const destination =
         booking?.location ||
@@ -171,7 +185,7 @@ export default function AccommodationWorkspace({
       let nights = 1;
       let status: AccommodationRow["status"] = "no-stay";
 
-      if (booking) {
+      if (hasStay && booking) {
         nights = booking.nightsCount || 1;
         // Use explicit room counts from booking if available; fall back to authoritativeRooms
         const dRooms = booking.doubleRoomsCount ?? authoritativeRooms;
@@ -193,32 +207,35 @@ export default function AccommodationWorkspace({
         costPerPaxPerNight = nights > 0 ? costPerPaxStay / nights : costPerPaxStay;
       } else if (hasStay) {
         status = "pending";
+      } else {
+        status = "no-stay";
       }
 
       const nightsText =
-        !hasStay && !booking
+        !hasStay
           ? "No Stay"
           : nights === 1
             ? "1 Night"
             : `${nights} Nights`;
 
       return {
+        key: rowKey,
         dayLabel: day.day || `Day ${idx + 1}`,
         date: dayDate,
         destination,
-        hasStay: hasStay || !!booking,
+        hasStay,
         nightsText,
         nights,
-        hotelName: booking?.hotelName || (hasStay ? "— Pending Assignment —" : "—"),
-        physicalRooms,
-        costPerPaxPerNight,
-        costPerPaxStay,
-        totalAmount,
+        hotelName: hasStay ? (booking?.hotelName || "— Pending Assignment —") : "—",
+        physicalRooms: hasStay ? physicalRooms : 0,
+        costPerPaxPerNight: hasStay ? costPerPaxPerNight : 0,
+        costPerPaxStay: hasStay ? costPerPaxStay : 0,
+        totalAmount: hasStay ? totalAmount : 0,
         status,
-        booking,
+        booking: hasStay ? booking : null,
       };
     });
-  }, [computedItinerary, opsHotelBookings, totalPax]);
+  }, [computedItinerary, opsHotelBookings, physicalRoomAllocation, totalPax, stayOverrides]);
 
   // ── Summary bar values ──
   const summary = useMemo(() => {
@@ -320,9 +337,23 @@ export default function AccommodationWorkspace({
           <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
             {rows.map((row, idx) => (
               <AccommodationTableRow
-                key={idx}
+                key={row.key || idx}
                 row={row}
                 onClick={() => setSelectedDayIdx(idx)}
+                onToggleStay={(e) => {
+                  e.stopPropagation();
+                  handleToggleStay(row.key);
+                }}
+                onAssignClick={(e) => {
+                  e.stopPropagation();
+                  onEditHotel(row.booking || { id: "" }, {
+                    dayNum: idx + 1,
+                    dayLabel: row.dayLabel,
+                    destination: row.destination,
+                    dateStr: row.date,
+                    existingBooking: row.booking,
+                  });
+                }}
               />
             ))}
           </tbody>
@@ -333,7 +364,7 @@ export default function AccommodationWorkspace({
       <div className="md:hidden space-y-2">
         {rows.map((row, idx) => (
           <AccommodationMobileCard
-            key={idx}
+            key={row.key || idx}
             row={row}
             onClick={() => setSelectedDayIdx(idx)}
           />
@@ -362,6 +393,7 @@ export default function AccommodationWorkspace({
               physicalRoomAllocation={physicalRoomAllocation}
               totalPax={totalPax}
               onClose={() => setSelectedDayIdx(null)}
+              onToggleStay={(key, val) => handleToggleStay(key, val)}
               onEditHotel={() => {
                 setSelectedDayIdx(null);
                 onEditHotel(selectedRow.booking || { id: "" }, {
@@ -413,9 +445,13 @@ function SummaryPill({
 function AccommodationTableRow({
   row,
   onClick,
+  onAssignClick,
+  onToggleStay,
 }: {
   row: AccommodationRow;
   onClick: () => void;
+  onAssignClick: (e: React.MouseEvent) => void;
+  onToggleStay: (e: React.MouseEvent) => void;
 }) {
   return (
     <tr
@@ -444,18 +480,31 @@ function AccommodationTableRow({
         )}
       </td>
 
-      {/* Stay */}
+      {/* Stay (Interactive Toggle) */}
       <td className="px-4 py-3.5 whitespace-nowrap">
-        <span
+        <button
+          type="button"
+          onClick={onToggleStay}
+          title="Click to toggle Stay / No Stay for this day"
           className={cn(
-            "px-2 py-1 rounded-[4px] font-bold text-[10px] uppercase",
+            "px-2 py-1 rounded-[4px] font-extrabold text-[10px] uppercase transition-all inline-flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 border shadow-2xs",
             row.hasStay
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-slate-100 text-slate-500"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100"
+              : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200 hover:text-slate-800"
           )}
         >
-          {row.nightsText}
-        </span>
+          {row.hasStay ? (
+            <>
+              <Bed className="w-3 h-3 text-emerald-600 shrink-0" />
+              <span>{row.nightsText}</span>
+            </>
+          ) : (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+              <span>NO STAY</span>
+            </>
+          )}
+        </button>
       </td>
 
       {/* Hotel */}
@@ -464,7 +513,7 @@ function AccommodationTableRow({
           <span
             className={cn(
               "font-bold text-slate-900 truncate max-w-[160px] block",
-              row.hotelName === "— Not Assigned —" && "text-slate-400 font-medium"
+              row.hotelName === "— Pending Assignment —" && "text-slate-400 font-medium"
             )}
           >
             {row.hotelName}
@@ -507,9 +556,19 @@ function AccommodationTableRow({
         )}
       </td>
 
-      {/* Status */}
+      {/* Status & Action */}
       <td className="px-4 py-3.5 whitespace-nowrap">
-        <StatusBadge status={row.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={row.status} />
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={onAssignClick}
+            className="h-6 text-[10px] font-bold text-orange-600 border-orange-200 hover:bg-orange-50"
+          >
+            {row.booking ? "Edit" : "+ Assign"}
+          </Button>
+        </div>
       </td>
 
       {/* Chevron */}
@@ -620,6 +679,7 @@ interface DayDetailDrawerProps {
   totalPax: number;
   onClose: () => void;
   onEditHotel: () => void;
+  onToggleStay: (key: string, explicitValue?: boolean) => void;
 }
 
 function DayDetailDrawer({
@@ -631,6 +691,7 @@ function DayDetailDrawer({
   totalPax,
   onClose,
   onEditHotel,
+  onToggleStay,
 }: DayDetailDrawerProps) {
   const booking = row.booking;
 
@@ -713,29 +774,63 @@ function DayDetailDrawer({
     });
   }, [booking, totalPax]);
 
-  // ── Room allocation display ──
-  // Use actual saved allocations if available, else suggest from sharing config
+  // ── Derive day-specific sharing from booking or fallback to global passengerSharing ──
+  const daySharing = useMemo(() => {
+    if (booking) {
+      const dPax = booking.doublePax ?? ((booking.doubleRoomsCount || 0) * 2);
+      const tPax = booking.triplePax ?? ((booking.tripleRoomsCount || 0) * 3);
+      const qPax = booking.quadPax ?? ((booking.quadRoomsCount || 0) * 4);
+      const exPax = booking.extraPersonsCount || 0;
+      if (dPax > 0 || tPax > 0 || qPax > 0 || exPax > 0) {
+        return {
+          doublePax: dPax,
+          triplePax: tPax,
+          quadPax: qPax,
+          otherPax: exPax,
+        };
+      }
+    }
+    return passengerSharing;
+  }, [booking, passengerSharing]);
+
+  // ── Room allocation display derived from booking or physicalRoomAllocation ──
   const roomsToShow = useMemo(() => {
+    if (booking && (booking.doubleRoomsCount || booking.tripleRoomsCount || booking.quadRoomsCount || booking.extraPersonsCount)) {
+      const list: Array<{ roomLabel: string; occupants: string[]; paxCount: number }> = [];
+      let roomCounter = 1;
+      for (let i = 0; i < (booking.doubleRoomsCount || 0); i++) {
+        list.push({ roomLabel: `Room ${roomCounter++} (Double)`, occupants: [], paxCount: 2 });
+      }
+      for (let i = 0; i < (booking.tripleRoomsCount || 0); i++) {
+        list.push({ roomLabel: `Room ${roomCounter++} (Triple)`, occupants: [], paxCount: 3 });
+      }
+      for (let i = 0; i < (booking.quadRoomsCount || 0); i++) {
+        list.push({ roomLabel: `Room ${roomCounter++} (Quad)`, occupants: [], paxCount: 4 });
+      }
+      if (booking.extraPersonsCount > 0) {
+        list.push({ roomLabel: `Extra Mattress`, occupants: [], paxCount: booking.extraPersonsCount });
+      }
+      if (list.length > 0) return list;
+    }
+
     if (physicalRoomAllocation.rooms.length > 0) {
       return physicalRoomAllocation.rooms;
     }
-    // Suggest from sharing config
-    const sizes = suggestRoomAllocation(passengerSharing);
+
+    const sizes = suggestRoomAllocation(daySharing);
     return sizes.map((paxCount, i) => ({
       roomLabel: `Room ${i + 1}`,
       occupants: [],
       paxCount,
     }));
-  }, [physicalRoomAllocation, passengerSharing]);
+  }, [booking, physicalRoomAllocation, daySharing]);
 
-  const isSuggestedAllocation = physicalRoomAllocation.rooms.length === 0;
-  const effectiveTotalRooms =
-    physicalRoomAllocation.rooms.length > 0
-      ? physicalRoomAllocation.totalRooms
-      : booking?.numberOfRooms || roomsToShow.length;
+  const isSuggestedAllocation = !booking && physicalRoomAllocation.rooms.length === 0;
+  const effectiveTotalRooms = roomsToShow.length;
+  const effectiveTotalPax = roomsToShow.reduce((s, r) => s + r.paxCount, 0);
 
   // ── Format check-in/out dates ──
-  const checkIn = booking?.checkIn ? formatDisplayDate(booking.checkIn) : row.date;
+  const checkIn = row.date || (booking?.checkIn ? formatDisplayDate(booking.checkIn) : "—");
   const checkOut = booking?.checkOut ? formatDisplayDate(booking.checkOut) : "—";
 
   return (
@@ -776,113 +871,158 @@ function DayDetailDrawer({
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-          {/* ── Section 1: Hotel ── */}
+        {/* ── Manual Stay / No Stay Switch Bar ── */}
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shadow-2xs shrink-0 transition-colors",
+              row.hasStay ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
+            )}>
+              <Bed className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-black text-slate-800 block">
+                Stay Setting
+              </span>
+              <span className="text-[10px] text-slate-500 font-semibold">
+                {row.hasStay ? "Overnight stay required for this day" : "No hotel stay required for this day"}
+              </span>
+            </div>
+          </div>
+          <div className="flex bg-slate-200/70 p-1 rounded-lg border border-slate-200/60 shrink-0">
+            <button
+              type="button"
+              onClick={() => onToggleStay(row.key, true)}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-extrabold rounded-md transition-all flex items-center gap-1 cursor-pointer",
+                row.hasStay
+                  ? "bg-white text-emerald-700 shadow-xs"
+                  : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              <Bed className="w-3.5 h-3.5" />
+              Stay
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleStay(row.key, false)}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-extrabold rounded-md transition-all flex items-center gap-1 cursor-pointer",
+                !row.hasStay
+                  ? "bg-white text-slate-800 shadow-xs"
+                  : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              No Stay
+            </button>
+          </div>
+        </div>
+
+        {!booking ? (
+          /* ── Unassigned State: Single Clean Actionable Card ── */
+          <div className="bg-orange-50/50 border border-orange-200/70 rounded-xl p-6 text-center flex flex-col items-center justify-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-orange-100/80 text-orange-600 flex items-center justify-center shadow-xs">
+              <Hotel className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-800">
+                No Hotel Assigned
+              </h4>
+              <p className="text-xs text-slate-500 mt-1 max-w-xs font-medium">
+                No accommodation configured for {row.destination} on {row.date} ({row.nightsText}).
+              </p>
+            </div>
+            <Button
+              onClick={onEditHotel}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-black text-xs h-9 px-4 rounded-lg shadow-sm flex items-center gap-1.5 transition-all mt-1"
+            >
+              <Plus className="w-4 h-4" />
+              Assign Hotel
+            </Button>
+          </div>
+        ) : (
+          /* ── Section 1: Hotel Info ── */
           <Section title="Hotel" icon={<Hotel className="w-3.5 h-3.5" />}>
-            {booking ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-black text-slate-900 text-sm">
-                    {booking.hotelName}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-black px-2 py-0.5 rounded uppercase",
-                      booking.confirmed === "CONFIRMED"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : "bg-amber-50 text-amber-600"
-                    )}
-                  >
-                    {booking.confirmed || "UNCONFIRMED"}
-                  </span>
-                </div>
-                {booking.location && (
-                  <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-                    <MapPin className="w-3 h-3 text-orange-400" />
-                    {booking.location}
-                  </div>
-                )}
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <InfoChip label="Check-in" value={checkIn} />
-                  <InfoChip label="Check-out" value={checkOut} />
-                  <InfoChip label="Nights" value={String(booking.nightsCount || 1)} />
-                </div>
-                {booking.roomType && (
-                  <InfoChip label="Room Type" value={booking.roomType} />
-                )}
-              </div>
-            ) : (
-              <div className="text-xs text-slate-400 font-medium py-2">
-                No hotel assigned for this day.{" "}
-                <button
-                  onClick={onEditHotel}
-                  className="text-orange-500 underline"
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-900 text-sm">
+                  {booking.hotelName}
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider",
+                    booking.confirmed === "CONFIRMED"
+                      ? "bg-emerald-50 text-emerald-600 border border-emerald-200/50"
+                      : "bg-amber-50 text-amber-600 border border-amber-200/50"
+                  )}
                 >
-                  Assign Hotel
-                </button>
+                  {booking.confirmed || "UNCONFIRMED"}
+                </span>
               </div>
-            )}
+              {booking.location && (
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                  <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                  {booking.location}
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <InfoChip label="Check-in" value={checkIn} />
+                <InfoChip label="Check-out" value={checkOut} />
+                <InfoChip label="Nights" value={String(booking.nightsCount || 1)} />
+              </div>
+              {booking.roomType && (
+                <InfoChip label="Room Type" value={booking.roomType} />
+              )}
+            </div>
           </Section>
+        )}
 
-          {/* ── Section 2: Passenger Sharing Configuration ── */}
-          <Section title="Passenger Sharing" icon={<Users className="w-3.5 h-3.5" />}>
-            <p className="text-[10px] text-slate-400 font-medium mb-2">
-              Departure-level sharing configuration (read-only)
-            </p>
-            {passengerSharing.doublePax === 0 &&
-            passengerSharing.triplePax === 0 &&
-            passengerSharing.quadPax === 0 ? (
-              <div className="text-xs text-slate-400 font-medium">
-                {allPassengers.length > 0
-                  ? "Room allocations not yet saved. Run auto-allocation first."
-                  : "No passengers confirmed yet."}
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {passengerSharing.doublePax > 0 && (
-                  <SharingDisplay
-                    type="Double"
-                    pax={passengerSharing.doublePax}
-                    color="bg-blue-50 border-blue-200 text-blue-700"
-                  />
-                )}
-                {passengerSharing.triplePax > 0 && (
-                  <SharingDisplay
-                    type="Triple"
-                    pax={passengerSharing.triplePax}
-                    color="bg-purple-50 border-purple-200 text-purple-700"
-                  />
-                )}
-                {passengerSharing.quadPax > 0 && (
-                  <SharingDisplay
-                    type="Quad"
-                    pax={passengerSharing.quadPax}
-                    color="bg-amber-50 border-amber-200 text-amber-700"
-                  />
-                )}
-                {passengerSharing.otherPax > 0 && (
-                  <SharingDisplay
-                    type="Other"
-                    pax={passengerSharing.otherPax}
-                    color="bg-slate-100 border-slate-200 text-slate-600"
-                  />
-                )}
-              </div>
-            )}
-          </Section>
-
-          {/* ── Section 3: Physical Room Allocation ── */}
-          <Section title="Physical Room Allocation" icon={<Hash className="w-3.5 h-3.5" />}>
+        {/* ── Room Allocation (Only render if there are rooms or passenger sharing data) ── */}
+        {(roomsToShow.length > 0 || daySharing.doublePax > 0 || daySharing.triplePax > 0 || daySharing.quadPax > 0 || daySharing.otherPax > 0) && (
+          <Section title="Room Allocation & Sharing" icon={<Hash className="w-3.5 h-3.5" />}>
             {isSuggestedAllocation && roomsToShow.length > 0 && (
               <p className="text-[10px] text-amber-600 font-bold mb-2 flex items-center gap-1">
                 <Info className="w-3 h-3 shrink-0" />
                 Suggested allocation — save from Room & Allocation tab to confirm
               </p>
             )}
-            {roomsToShow.length === 0 ? (
-              <div className="text-xs text-slate-400 font-medium py-1">
-                No room allocation data. Use the Room & Allocation tab to assign passengers to rooms.
+
+            {/* Sharing Badges */}
+            {(daySharing.doublePax > 0 || daySharing.triplePax > 0 || daySharing.quadPax > 0 || daySharing.otherPax > 0) && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {daySharing.doublePax > 0 && (
+                  <SharingDisplay
+                    type="Double"
+                    pax={daySharing.doublePax}
+                    color="bg-blue-50 border-blue-200 text-blue-700"
+                  />
+                )}
+                {daySharing.triplePax > 0 && (
+                  <SharingDisplay
+                    type="Triple"
+                    pax={daySharing.triplePax}
+                    color="bg-purple-50 border-purple-200 text-purple-700"
+                  />
+                )}
+                {daySharing.quadPax > 0 && (
+                  <SharingDisplay
+                    type="Quad"
+                    pax={daySharing.quadPax}
+                    color="bg-amber-50 border-amber-200 text-amber-700"
+                  />
+                )}
+                {daySharing.otherPax > 0 && (
+                  <SharingDisplay
+                    type="Other"
+                    pax={daySharing.otherPax}
+                    color="bg-slate-100 border-slate-200 text-slate-600"
+                  />
+                )}
               </div>
-            ) : (
+            )}
+
+            {/* Physical Rooms */}
+            {roomsToShow.length > 0 && (
               <>
                 <div className="space-y-1.5">
                   {roomsToShow.map((room, i) => (
@@ -909,137 +1049,146 @@ function DayDetailDrawer({
                 <div className="mt-2 flex items-center justify-between text-xs font-black text-slate-700 border-t border-slate-100 pt-2">
                   <span>Total</span>
                   <span>
-                    {effectiveTotalRooms} Room{effectiveTotalRooms !== 1 ? "s" : ""} ·{" "}
-                    {isSuggestedAllocation
-                      ? (passengerSharing.doublePax + passengerSharing.triplePax + passengerSharing.quadPax + passengerSharing.otherPax)
-                      : physicalRoomAllocation.totalPax}{" "}
-                    Pax
+                    {effectiveTotalRooms} Room{effectiveTotalRooms !== 1 ? "s" : ""} · {effectiveTotalPax} Pax
                   </span>
                 </div>
               </>
             )}
           </Section>
+        )}
 
-          {/* ── Section 4: Cost Calculation ── */}
-          {row.hasStay && (
-            <Section title="Accommodation Cost" icon={<Hash className="w-3.5 h-3.5" />}>
-              {costResult ? (
-                <div className="space-y-2">
-                  {/* Pricing mode badge */}
-                  <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Pricing:{" "}
-                    <span className="text-slate-600">
-                      {costResult.pricingMode === "PER_ROOM"
-                        ? "Per Physical Room / Night"
-                        : "Per Person / Night"}
+        {/* ── Cost Calculation (Only if hasStay and booking exists) ── */}
+        {row.hasStay && booking && (
+          <Section title="Accommodation Cost" icon={<Hash className="w-3.5 h-3.5" />}>
+            {costResult ? (
+              <div className="space-y-2">
+                {/* Pricing mode badge */}
+                <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                  Pricing:{" "}
+                  <span className="text-slate-600">
+                    {costResult.pricingMode === "PER_ROOM"
+                      ? "Per Physical Room / Night"
+                      : "Per Person / Night"}
+                  </span>
+                </div>
+
+                {/* Calculation steps */}
+                <div className="space-y-1.5">
+                  {costResult.steps.map((step, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "flex items-center justify-between text-xs",
+                        i === costResult.steps.length - 1
+                          ? "font-black text-slate-900 border-t border-slate-100 pt-2 mt-1"
+                          : "text-slate-600 font-medium"
+                      )}
+                    >
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        {step.label}
+                      </span>
+                      <span className="font-mono font-bold text-slate-700">
+                        {step.result || step.formula}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Primary numbers */}
+                <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase">Cost / Pax / Night</span>
+                    <span className="text-base font-black text-emerald-600">
+                      {formatINR(costResult.costPerPaxPerNight, 2)}
                     </span>
                   </div>
-
-                  {/* Calculation steps */}
-                  <div className="space-y-1.5">
-                    {costResult.steps.map((step, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "flex items-center justify-between text-xs",
-                          i === costResult.steps.length - 1
-                            ? "font-black text-slate-900 border-t border-slate-100 pt-2 mt-1"
-                            : "text-slate-600 font-medium"
-                        )}
-                      >
-                        <span className="text-[10px] text-slate-400 font-semibold">
-                          {step.label}
-                        </span>
-                        <span className="font-mono font-bold text-slate-700">
-                          {step.result || step.formula}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Primary numbers */}
-                  <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                  {row.nights > 1 && (
                     <div className="flex justify-between items-baseline">
-                      <span className="text-[10px] text-slate-500 font-semibold uppercase">Cost / Pax / Night</span>
-                      <span className="text-base font-black text-emerald-600">
-                        {formatINR(costResult.costPerPaxPerNight, 2)}
+                      <span className="text-[10px] text-slate-500 font-semibold uppercase">Cost / Pax / Stay ({row.nights} nights)</span>
+                      <span className="text-sm font-extrabold text-orange-600">
+                        {formatINR(costResult.costPerPaxStay, 2)}
                       </span>
                     </div>
-                    {row.nights > 1 && (
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-[10px] text-slate-500 font-semibold uppercase">Cost / Pax / Stay ({row.nights} nights)</span>
-                        <span className="text-sm font-extrabold text-orange-600">
-                          {formatINR(costResult.costPerPaxStay, 2)}
-                        </span>
+                  )}
+                  <div className="flex justify-between items-baseline border-t border-slate-200 pt-1.5 mt-1">
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase">Total Cost</span>
+                    <span className="text-sm font-black text-slate-800">
+                      {formatINR(costResult.grandTotal)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tax note */}
+                {booking?.taxPercent > 0 && (
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    Includes {booking.taxPercent}% GST on total
+                  </p>
+                )}
+
+                {/* Balance */}
+                {(booking.advancePaid > 0 || booking.balanceAmount > 0) && (
+                  <div className="mt-2 space-y-1">
+                    {booking.advancePaid > 0 && (
+                      <div className="flex justify-between text-xs font-bold text-emerald-600">
+                        <span>Advance Paid</span>
+                        <span>{formatINR(booking.advancePaid)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-baseline border-t border-slate-200 pt-1.5 mt-1">
-                      <span className="text-[10px] text-slate-500 font-semibold uppercase">Total Cost</span>
-                      <span className="text-sm font-black text-slate-800">
-                        {formatINR(costResult.grandTotal)}
-                      </span>
-                    </div>
+                    {booking.balanceAmount > 0 && (
+                      <div className="flex justify-between text-xs font-bold text-rose-600">
+                        <span>Balance Due</span>
+                        <span>{formatINR(booking.balanceAmount)}</span>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Tax note */}
-                  {booking?.taxPercent > 0 && (
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      Includes {booking.taxPercent}% GST on total
-                    </p>
-                  )}
-
-                  {/* Balance */}
-                  {booking && (booking.advancePaid > 0 || booking.balanceAmount > 0) && (
-                    <div className="mt-2 space-y-1">
-                      {booking.advancePaid > 0 && (
-                        <div className="flex justify-between text-xs font-bold text-emerald-600">
-                          <span>Advance Paid</span>
-                          <span>{formatINR(booking.advancePaid)}</span>
-                        </div>
-                      )}
-                      {booking.balanceAmount > 0 && (
-                        <div className="flex justify-between text-xs font-bold text-rose-600">
-                          <span>Balance Due</span>
-                          <span>{formatINR(booking.balanceAmount)}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-slate-400 font-medium py-1">
-                  No rates configured.{" "}
-                  <button onClick={onEditHotel} className="text-orange-500 underline">
-                    Add hotel rates
-                  </button>
-                </div>
-              )}
-            </Section>
-          )}
-        </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400 font-medium py-1 flex items-center justify-between">
+                <span>No rates configured.</span>
+                <button onClick={onEditHotel} className="text-orange-500 hover:text-orange-600 font-bold underline">
+                  Add hotel rates
+                </button>
+              </div>
+            )}
+          </Section>
+        )}
+      </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-100 px-5 py-3 flex justify-between items-center shrink-0">
+      <div className="border-t border-slate-100 px-5 py-3 flex justify-between items-center shrink-0 bg-slate-50/50">
         <span className="text-[10px] font-bold text-slate-400">
-          {booking ? `ID: ${booking.id?.substring(0, 12)}...` : "No hotel record"}
+          {booking ? `ID: ${booking.id?.substring(0, 12)}...` : "Unassigned"}
         </span>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onEditHotel}
-            className="h-8 text-xs font-bold border-slate-200"
-          >
-            <Pencil className="w-3.5 h-3.5 mr-1.5" />
-            Edit Hotel
-          </Button>
-          <Button
-            size="sm"
-            onClick={onClose}
-            className="h-8 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white"
-          >
-            Close
-          </Button>
+          {booking ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditHotel}
+                className="h-8 text-xs font-bold border-slate-200"
+              >
+                <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                Edit Hotel
+              </Button>
+              <Button
+                size="sm"
+                onClick={onClose}
+                className="h-8 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white"
+              >
+                Close
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              onClick={onClose}
+              className="h-8 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white px-4"
+            >
+              Close
+            </Button>
+          )}
         </div>
       </div>
     </div>

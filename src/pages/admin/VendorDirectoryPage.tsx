@@ -394,10 +394,11 @@ export default function VendorDirectoryPage() {
     if (!confirm("Are you sure you want to deactivate this vendor?")) return;
     try {
       await api.delete(`/vendors/directory/${id}`);
-      toast.success("Vendor deactivated");
+      toast.success("Vendor deactivated successfully");
+      setVendors((prev) => prev.filter((v) => v.id !== id));
       loadData();
     } catch (err: any) {
-      toast.error("Deactivation failed: " + err.message);
+      toast.error("Deactivation failed: " + (err.response?.data?.message || err.message));
     }
   };
 
