@@ -170,6 +170,12 @@ export function AccommodationDetailPage({
     accountNumber: vendor.accountNumber || "",
     ifscCode: vendor.ifscCode || "",
     paymentTerms: vendor.paymentTerms || "30 Days Credit",
+    financialDetails:
+      vendor.financialDetails ||
+      vendor.bankDetails ||
+      (vendor.gstin || vendor.bankName
+        ? `GSTIN: ${vendor.gstin || "02AAACH1827C1Z5"}\nPAN: ${vendor.panNumber || "AAACH1827C"}\nBank: ${vendor.bankName || "HDFC Bank Ltd"}\nA/C: ${vendor.accountNumber || "50200049281726"}\nIFSC: ${vendor.ifscCode || "HDFC0000240"}\nPayment Terms: ${vendor.paymentTerms || "30 Days Credit"}`
+        : `GSTIN: 02AAACH1827C1Z5\nPAN: AAACH1827C\nBank: HDFC Bank Ltd\nA/C: 50200049281726\nIFSC: HDFC0000240\nPayment Terms: 30 Days Credit`),
   });
 
   // State for Transport Vehicles & Routes
@@ -1301,114 +1307,27 @@ export function AccommodationDetailPage({
                 )}
 
                 {/* Financial & Compliance Info Card */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
-                    <CreditCard className="w-4 h-4 text-blue-600" /> Financial &
-                    Compliance
-                  </h4>
+                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-3">
+                  <div className="flex items-center justify-between border-b pb-2 border-slate-200">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <CreditCard className="w-4 h-4 text-blue-600" /> Financial & Compliance Details
+                    </h4>
+                    <span className="text-[10px] text-slate-400 font-medium">GST, PAN, Bank A/C, IFSC & Payment Terms</span>
+                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        GSTIN Number
-                      </label>
-                      <Input
-                        value={overviewForm.gstin}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            gstin: e.target.value,
-                          })
-                        }
-                        placeholder="02AAACH1827C1Z5"
-                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        PAN Number
-                      </label>
-                      <Input
-                        value={overviewForm.panNumber}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            panNumber: e.target.value,
-                          })
-                        }
-                        placeholder="AAACH1827C"
-                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        Bank Name
-                      </label>
-                      <Input
-                        value={overviewForm.bankName}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            bankName: e.target.value,
-                          })
-                        }
-                        placeholder="HDFC Bank Ltd"
-                        className="h-8.5 bg-white text-xs border-slate-200 font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        Account Number
-                      </label>
-                      <Input
-                        value={overviewForm.accountNumber}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            accountNumber: e.target.value,
-                          })
-                        }
-                        placeholder="50200049281726"
-                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        IFSC Code
-                      </label>
-                      <Input
-                        value={overviewForm.ifscCode}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            ifscCode: e.target.value,
-                          })
-                        }
-                        placeholder="HDFC0000240"
-                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="font-extrabold text-slate-700 block mb-1">
-                        Payment Terms
-                      </label>
-                      <Input
-                        value={overviewForm.paymentTerms}
-                        onChange={(e) =>
-                          setOverviewForm({
-                            ...overviewForm,
-                            paymentTerms: e.target.value,
-                          })
-                        }
-                        placeholder="30 Days Credit / 50% Advance"
-                        className="h-8.5 bg-white text-xs border-slate-200 font-bold"
-                      />
-                    </div>
+                  <div>
+                    <Textarea
+                      value={overviewForm.financialDetails}
+                      onChange={(e) =>
+                        setOverviewForm({
+                          ...overviewForm,
+                          financialDetails: e.target.value,
+                        })
+                      }
+                      rows={6}
+                      placeholder={`GSTIN: 02AAACH1827C1Z5\nPAN: AAACH1827C\nBank: HDFC Bank Ltd\nA/C: 50200049281726\nIFSC: HDFC0000240\nPayment Terms: 30 Days Credit`}
+                      className="bg-white text-xs border-slate-200 font-mono resize-y leading-relaxed font-medium"
+                    />
                   </div>
                 </div>
               </div>
@@ -2416,77 +2335,19 @@ export function AccommodationDetailPage({
             </div>
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                GSTIN
+                Financial, Banking & Compliance Details
               </label>
-              <Input
-                value={overviewForm.gstin}
-                onChange={(e) =>
-                  setOverviewForm({ ...overviewForm, gstin: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                PAN Number
-              </label>
-              <Input
-                value={overviewForm.panNumber}
+              <Textarea
+                value={overviewForm.financialDetails}
                 onChange={(e) =>
                   setOverviewForm({
                     ...overviewForm,
-                    panNumber: e.target.value,
+                    financialDetails: e.target.value,
                   })
                 }
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Bank Name
-              </label>
-              <Input
-                value={overviewForm.bankName}
-                onChange={(e) =>
-                  setOverviewForm({ ...overviewForm, bankName: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Account Number
-              </label>
-              <Input
-                value={overviewForm.accountNumber}
-                onChange={(e) =>
-                  setOverviewForm({
-                    ...overviewForm,
-                    accountNumber: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                IFSC Code
-              </label>
-              <Input
-                value={overviewForm.ifscCode}
-                onChange={(e) =>
-                  setOverviewForm({ ...overviewForm, ifscCode: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Payment Terms
-              </label>
-              <Input
-                value={overviewForm.paymentTerms}
-                onChange={(e) =>
-                  setOverviewForm({
-                    ...overviewForm,
-                    paymentTerms: e.target.value,
-                  })
-                }
+                rows={5}
+                placeholder={`GSTIN: 02AAACH1827C1Z5\nPAN: AAACH1827C\nBank: HDFC Bank Ltd\nA/C: 50200049281726\nIFSC: HDFC0000240\nPayment Terms: 30 Days Credit`}
+                className="font-mono text-xs leading-relaxed"
               />
             </div>
           </div>
@@ -2526,25 +2387,13 @@ export function AccommodationDetailPage({
               <label className="font-bold text-slate-700 block mb-1">
                 Role / Designation
               </label>
-              <Select
+              <Input
                 value={contactForm.role}
-                onValueChange={(v) =>
-                  setContactForm({ ...contactForm, role: v })
+                onChange={(e) =>
+                  setContactForm({ ...contactForm, role: e.target.value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="General Manager">
-                    General Manager
-                  </SelectItem>
-                  <SelectItem value="Reception">Reception</SelectItem>
-                  <SelectItem value="Owner">Owner</SelectItem>
-                  <SelectItem value="Accounts">Accounts</SelectItem>
-                  <SelectItem value="Emergency">Emergency Contact</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="e.g. Owner, General Manager, Driver, Accounts..."
+              />
             </div>
             <div>
               <label className="font-bold text-slate-700 block mb-1">
