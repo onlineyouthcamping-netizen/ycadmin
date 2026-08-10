@@ -199,25 +199,26 @@ export function AccommodationDetailPage({
     if (vendor.transportRates && vendor.transportRates.length > 0) {
       return vendor.transportRates.map((tr: any, idx: number) => ({
         id: tr.id || `r-${idx}`,
-        routeName: tr.routeName || `${tr.pickupLocation || "Kotkapura"} → ${tr.dropLocation || "Kotkapura"}`,
+        routeName:
+          tr.routeName ||
+          `${tr.pickupLocation || "Kotkapura"} → ${tr.dropLocation || "Kotkapura"}`,
         vehicleType: tr.vehicleType || "17 Seater",
         totalAmount: Number(tr.totalVehicleCost || 44000),
-        perPersonRate: Math.round(Number(tr.totalVehicleCost || 44000) / (tr.sellableSeats || 16)),
         notes: tr.notes || "",
       }));
     }
     return [
-      { id: "r1", routeName: "Kotkapura → Kotkapura", vehicleType: "20 Seater Tempo", totalAmount: 48000, perPersonRate: 2526, notes: "Kotkapura pickup & drop extra: ₹2,000" },
-      { id: "r2", routeName: "Kotkapura → Kotkapura", vehicleType: "17 Seater Tempo", totalAmount: 44000, perPersonRate: 2750, notes: "Kotkapura pickup & drop extra: ₹2,000" },
-      { id: "r3", routeName: "Kotkapura → Kotkapura", vehicleType: "14 Seater Tempo", totalAmount: 38000, perPersonRate: 2923, notes: "Kotkapura pickup & drop extra: ₹2,000" },
-      { id: "r4", routeName: "Kotkapura → Kotkapura", vehicleType: "Innova", totalAmount: 28000, perPersonRate: 4667, notes: "" },
-      { id: "r5", routeName: "Kotkapura → Kotkapura", vehicleType: "Ertiga", totalAmount: 28000, perPersonRate: 4667, notes: "" },
-      { id: "r6", routeName: "Kotkapura → Kotkapura", vehicleType: "Swift Dzire", totalAmount: 17500, perPersonRate: 4375, notes: "" },
-      { id: "r7", routeName: "Jalandhar → Jalandhar", vehicleType: "20 Seater Tempo", totalAmount: 45000, perPersonRate: 2500, notes: "" },
-      { id: "r8", routeName: "Jalandhar → Jalandhar", vehicleType: "17 Seater Tempo", totalAmount: 42000, perPersonRate: 2625, notes: "" },
-      { id: "r9", routeName: "Jalandhar → Jalandhar", vehicleType: "14 Seater Tempo", totalAmount: 38000, perPersonRate: 2923, notes: "" },
-      { id: "r10", routeName: "Jalandhar → Jalandhar", vehicleType: "Innova", totalAmount: 28000, perPersonRate: 4667, notes: "" },
-      { id: "r11", routeName: "Jalandhar → Jalandhar", vehicleType: "Ertiga", totalAmount: 28000, perPersonRate: 4667, notes: "" },
+      { id: "r1", routeName: "Kotkapura → Kotkapura", vehicleType: "20 Seater Tempo", totalAmount: 48000, notes: "Kotkapura pickup & drop extra: ₹2,000" },
+      { id: "r2", routeName: "Kotkapura → Kotkapura", vehicleType: "17 Seater Tempo", totalAmount: 44000, notes: "Kotkapura pickup & drop extra: ₹2,000" },
+      { id: "r3", routeName: "Kotkapura → Kotkapura", vehicleType: "14 Seater Tempo", totalAmount: 38000, notes: "Kotkapura pickup & drop extra: ₹2,000" },
+      { id: "r4", routeName: "Kotkapura → Kotkapura", vehicleType: "Innova", totalAmount: 28000, notes: "" },
+      { id: "r5", routeName: "Kotkapura → Kotkapura", vehicleType: "Ertiga", totalAmount: 28000, notes: "" },
+      { id: "r6", routeName: "Kotkapura → Kotkapura", vehicleType: "Swift Dzire", totalAmount: 17500, notes: "" },
+      { id: "r7", routeName: "Jalandhar → Jalandhar", vehicleType: "20 Seater Tempo", totalAmount: 45000, notes: "" },
+      { id: "r8", routeName: "Jalandhar → Jalandhar", vehicleType: "17 Seater Tempo", totalAmount: 42000, notes: "" },
+      { id: "r9", routeName: "Jalandhar → Jalandhar", vehicleType: "14 Seater Tempo", totalAmount: 38000, notes: "" },
+      { id: "r10", routeName: "Jalandhar → Jalandhar", vehicleType: "Innova", totalAmount: 28000, notes: "" },
+      { id: "r11", routeName: "Jalandhar → Jalandhar", vehicleType: "Ertiga", totalAmount: 28000, notes: "" },
     ];
   });
 
@@ -239,7 +240,6 @@ export function AccommodationDetailPage({
     routeName: "Kotkapura → Kotkapura",
     vehicleType: "17 Seater Tempo",
     totalAmount: "44000",
-    perPersonRate: "2750",
     notes: "",
   });
 
@@ -295,7 +295,6 @@ export function AccommodationDetailPage({
       return;
     }
     const tot = parseFloat(routeForm.totalAmount) || 0;
-    const pp = parseFloat(routeForm.perPersonRate) || Math.round(tot / 16);
 
     try {
       await api
@@ -309,7 +308,7 @@ export function AccommodationDetailPage({
             routeForm.routeName.split("→")[1]?.trim() || "Kotkapura",
           vehicleType: routeForm.vehicleType || "17 Seater Tempo",
           totalVehicleCost: tot,
-          notes: routeForm.notes || `₹${pp}/pax`,
+          notes: routeForm.notes || "",
         })
         .catch(() => {});
     } catch (e) {}
@@ -323,7 +322,6 @@ export function AccommodationDetailPage({
                 routeName: routeForm.routeName,
                 vehicleType: routeForm.vehicleType,
                 totalAmount: tot,
-                perPersonRate: pp,
                 notes: routeForm.notes,
               }
             : r,
@@ -336,7 +334,6 @@ export function AccommodationDetailPage({
         routeName: routeForm.routeName,
         vehicleType: routeForm.vehicleType,
         totalAmount: tot,
-        perPersonRate: pp,
         notes: routeForm.notes,
       };
       setTransportRoutes([...transportRoutes, newR]);
@@ -1538,7 +1535,6 @@ export function AccommodationDetailPage({
                       routeName: "Kotkapura → Kotkapura",
                       vehicleType: "17 Seater Tempo",
                       totalAmount: "44000",
-                      perPersonRate: "2750",
                       notes: "",
                     });
                     setRouteModalOpen(true);
@@ -1575,11 +1571,6 @@ export function AccommodationDetailPage({
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-emerald-800 font-black text-sm">
                         <span>Total: ₹{r.totalAmount?.toLocaleString("en-IN")}</span>
-                        {r.perPersonRate && (
-                          <span className="text-[11px] font-bold text-emerald-600 bg-white px-2 py-0.5 rounded border border-emerald-200">
-                            ≈ ₹{r.perPersonRate?.toLocaleString("en-IN")}/pax
-                          </span>
-                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -1589,7 +1580,6 @@ export function AccommodationDetailPage({
                               routeName: r.routeName,
                               vehicleType: r.vehicleType,
                               totalAmount: r.totalAmount?.toString() || "0",
-                              perPersonRate: r.perPersonRate?.toString() || "0",
                               notes: r.notes || "",
                             });
                             setRouteModalOpen(true);
@@ -3270,36 +3260,18 @@ export function AccommodationDetailPage({
                 placeholder="e.g. 20 Seater Tempo, 17 Seater Tempo, Innova"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Total Vehicle Amount (₹)
-                </label>
-                <Input
-                  type="number"
-                  value={routeForm.totalAmount}
-                  onChange={(e) =>
-                    setRouteForm({ ...routeForm, totalAmount: e.target.value })
-                  }
-                  placeholder="44000"
-                />
-              </div>
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Per Person Rate (₹)
-                </label>
-                <Input
-                  type="number"
-                  value={routeForm.perPersonRate}
-                  onChange={(e) =>
-                    setRouteForm({
-                      ...routeForm,
-                      perPersonRate: e.target.value,
-                    })
-                  }
-                  placeholder="2750"
-                />
-              </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Total Vehicle Amount (₹)
+              </label>
+              <Input
+                type="number"
+                value={routeForm.totalAmount}
+                onChange={(e) =>
+                  setRouteForm({ ...routeForm, totalAmount: e.target.value })
+                }
+                placeholder="44000"
+              />
             </div>
             <div>
               <label className="font-bold text-slate-700 block mb-1">
