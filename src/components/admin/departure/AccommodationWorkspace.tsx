@@ -149,6 +149,7 @@ export default function AccommodationWorkspace({
 
       const destination =
         booking?.location ||
+        (hasStay && cityLocation && cityLocation !== "—" ? cityLocation : "") ||
         parsedStay ||
         (day.plan ? day.plan.split("/")[0].split("-")[0].trim() : "—");
 

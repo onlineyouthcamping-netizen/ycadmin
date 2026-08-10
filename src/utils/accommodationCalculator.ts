@@ -442,6 +442,15 @@ export function resolveCityForItineraryDay(item: any): string {
   if (!item) return "";
   const raw = `${item.stay || ""} ${item.destination || ""} ${item.location || ""} ${item.city || ""} ${item.plan || ""} ${item.sub || ""} ${item.description || ""}`.toLowerCase();
 
+  if (raw.includes("wagah") || raw.includes("amritsar") || raw.includes("golden temple") || raw.includes("jallianwala")) {
+    return "Amritsar";
+  }
+  if (raw.includes("jalandhar")) {
+    return "Jalandhar";
+  }
+  if (raw.includes("kasol") || raw.includes("parvati") || raw.includes("chalal") || raw.includes("manikaran") || raw.includes("tosh")) {
+    return "Kasol";
+  }
   if (raw.includes("kaza") || raw.includes("key") || raw.includes("komic") || raw.includes("langza") || raw.includes("hikkim") || raw.includes("kibber") || raw.includes("chicham")) {
     return "Kaza";
   }
@@ -451,19 +460,57 @@ export function resolveCityForItineraryDay(item: any): string {
   if (raw.includes("chandratal") || raw.includes("chandra taal") || raw.includes("batal")) {
     return "Chandratal";
   }
-  if (raw.includes("manali") || raw.includes("atal tunnel") || raw.includes("solang") || raw.includes("mall road")) {
+  if (raw.includes("manali") || raw.includes("atal tunnel") || raw.includes("solang") || raw.includes("mall road") || raw.includes("jogini") || raw.includes("sissu")) {
     return "Manali";
   }
-  if (raw.includes("kullu") || raw.includes("risan") || raw.includes("kasol")) {
+  if (raw.includes("kullu") || raw.includes("risan")) {
     return "Kullu";
   }
-  if (raw.includes("shimla") || raw.includes("narkanda") || raw.includes("kufri")) {
+  if (raw.includes("shimla") || raw.includes("narkanda") || raw.includes("kufri") || raw.includes("mashobra")) {
     return "Shimla";
   }
   if (raw.includes("sangla") || raw.includes("chitkul") || raw.includes("rakcham")) {
     return "Sangla";
   }
-  return item.stay || item.destination || item.location || item.city || "";
+  if (raw.includes("kalpa") || raw.includes("reckong peo")) {
+    return "Kalpa";
+  }
+  if (raw.includes("leh") || raw.includes("shanti stupa") || raw.includes("hall of fame")) {
+    return "Leh";
+  }
+  if (raw.includes("nubra") || raw.includes("hunder") || raw.includes("diskit")) {
+    return "Nubra Valley";
+  }
+  if (raw.includes("pangong")) {
+    return "Pangong Tso";
+  }
+  if (raw.includes("munnar")) {
+    return "Munnar";
+  }
+  if (raw.includes("thekkady") || raw.includes("periyar")) {
+    return "Thekkady";
+  }
+  if (raw.includes("alleppey") || raw.includes("alappuzha")) {
+    return "Alleppey";
+  }
+  if (raw.includes("kochi") || raw.includes("cochin")) {
+    return "Kochi";
+  }
+  if (raw.includes("kedarkantha") || raw.includes("sankri") || raw.includes("juda ka talab")) {
+    return "Sankri";
+  }
+  if (raw.includes("rishikesh") || raw.includes("haridwar")) {
+    return "Rishikesh";
+  }
+
+  // Clean fallback from stay or location
+  let fallback = item.city || item.location || item.destination || item.stay || "";
+  if (fallback.toLowerCase().startsWith("hotel or cottages in ")) {
+    fallback = fallback.replace(/hotel or cottages in\s+/i, "");
+  } else if (fallback.toLowerCase().startsWith("hotel in ")) {
+    fallback = fallback.replace(/hotel in\s+/i, "");
+  }
+  return fallback.split("/")[0].split("-")[0].trim() || "—";
 }
 
 export function findHotelForDay(
