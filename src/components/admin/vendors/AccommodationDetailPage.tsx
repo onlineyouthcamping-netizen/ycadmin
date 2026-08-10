@@ -397,8 +397,57 @@ export function AccommodationDetailPage({
     ],
   );
 
-  const [rooms, setRooms] = useState<any[]>(vendor.vendorRooms || []);
-  const [seasons, setSeasons] = useState<any[]>(vendor.seasonalRates || []);
+  const [rooms, setRooms] = useState<any[]>(() => {
+    if (vendor.vendorRooms && vendor.vendorRooms.length > 0) {
+      return vendor.vendorRooms;
+    }
+    const name = (vendor.name || "").toLowerCase();
+    if (name.includes("barpa")) {
+      return [
+        { id: "r1", name: "Family Cottage Suite (01 Family)", capacity: "4", baseRate: 1100, extraBedRate: 500 },
+        { id: "r2", name: "Single Deluxe Room (08 Single)", capacity: "2", baseRate: 1100, extraBedRate: 500 },
+      ];
+    }
+    if (name.includes("kasol")) {
+      return [
+        { id: "r1", name: "Family Room (05 Family)", capacity: "4", baseRate: 1000, extraBedRate: 500 },
+        { id: "r2", name: "Single Room (11 Single)", capacity: "2", baseRate: 1000, extraBedRate: 500 },
+      ];
+    }
+    if (name.includes("kullu")) {
+      return [
+        { id: "r1", name: "Alpine Riverside Tents (15 Tents)", capacity: "3", baseRate: 900, extraBedRate: 400 },
+      ];
+    }
+    return [
+      { id: "r1", name: "Deluxe Mountain View", capacity: "2", baseRate: 1200, extraBedRate: 500 },
+    ];
+  });
+
+  const [seasons, setSeasons] = useState<any[]>(() => {
+    if (vendor.seasonalRates && vendor.seasonalRates.length > 0) {
+      return vendor.seasonalRates;
+    }
+    const name = (vendor.name || "").toLowerCase();
+    if (name.includes("barpa")) {
+      return [
+        { id: "s1", seasonName: "Standard MKA Group Operations", twinRate: 1100, tripleRate: 800, quadRate: 800 },
+      ];
+    }
+    if (name.includes("kasol")) {
+      return [
+        { id: "s1", seasonName: "Standard MKA Group Operations", twinRate: 1000, tripleRate: 800, quadRate: 800 },
+      ];
+    }
+    if (name.includes("kullu")) {
+      return [
+        { id: "s1", seasonName: "Standard MKA Group Operations", twinRate: 900, tripleRate: 700, quadRate: 700 },
+      ];
+    }
+    return [
+      { id: "s1", seasonName: "Standard Peak Season", twinRate: 1200, tripleRate: 950, quadRate: 850 },
+    ];
+  });
   const [contracts, setContracts] = useState<any[]>(vendor.contracts || []);
   const [gallery, setGallery] = useState<any[]>(vendor.photos || []);
   const [destinations, setDestinations] = useState<string[]>(
