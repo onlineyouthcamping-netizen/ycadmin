@@ -228,6 +228,27 @@ export default function BookingDetailsView({
   const [payAmount, setPayAmount] = useState("");
   const [payMode, setPayMode] = useState("UPI");
   const [payComments, setPayComments] = useState("");
+  const [payCollectedByAdminId, setPayCollectedByAdminId] = useState("");
+  const [staffList, setStaffList] = useState<any[]>([]);
+
+  useEffect(() => {
+    api
+      .get("/admin/users/sales-executives")
+      .then((res) => {
+        if (res.data?.data) {
+          setStaffList(res.data.data);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  useEffect(() => {
+    if (booking?.salesAdminId) {
+      setPayCollectedByAdminId(booking.salesAdminId);
+    } else if (currentAdmin?.id) {
+      setPayCollectedByAdminId(currentAdmin.id);
+    }
+  }, [booking?.salesAdminId, currentAdmin?.id]);
 
   // Cancellation and Refund Modal States
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -1367,8 +1388,16 @@ export default function BookingDetailsView({
           amount: amt,
           paymentMode: payMode,
           notes: payComments,
+          collectedByAdminId: payCollectedByAdminId || booking.salesAdminId,
         });
-        toast.success("Payment recorded successfully!");
+
+        if (payCollectedByAdminId && payCollectedByAdminId !== booking.salesAdminId) {
+          await bookingsService.update(booking.id, {
+            salesAdminId: payCollectedByAdminId,
+          }).catch(() => null);
+        }
+
+        toast.success("Payment recorded & mapped to Personal Collections!");
         setShowCreatePayment(false);
         setPayComments("");
         onRefresh();
@@ -5663,49 +5692,72 @@ export default function BookingDetailsView({
 
             {/* Form parameters depending on Payment Source selection */}
             {paymentSource === "collected" && (
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 animate-fade-in">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-slate-550">
-                    Amount
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    <div className="relative flex-1">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-[10px]">
-                        INR
-                      </span>
-                      <Input
-                        type="number"
-                        value={payAmount}
-                        onChange={(e) => setPayAmount(e.target.value)}
-                        className="pl-9 h-8 text-xs font-mono"
-                      />
+              <div className="space-y-3 pt-2 border-t border-slate-100 animate-fade-in">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-550">
+                      Amount
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <div className="relative flex-1">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-[10px]">
+                          INR
+                        </span>
+                        <Input
+                          type="number"
+                          value={payAmount}
+                          onChange={(e) => setPayAmount(e.target.value)}
+                          className="pl-9 h-8 text-xs font-mono"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <Select value={payMode} onValueChange={setPayMode}>
+                          <SelectTrigger className="h-8 text-xs font-semibold">
+                            <SelectValue placeholder="Mode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UPI">UPI</SelectItem>
+                            <SelectItem value="Cash">Cash</SelectItem>
+                            <SelectItem value="Bank Transfer">
+                              Bank Transfer
+                            </SelectItem>
+                            <SelectItem value="Card">Card</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="w-24">
-                      <Select value={payMode} onValueChange={setPayMode}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="-- Select --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="UPI">UPI</SelectItem>
-                          <SelectItem value="Cash">Cash</SelectItem>
-                          <SelectItem value="Bank Transfer">
-                            Bank Transfer
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-550">
+                      Collected By (Person / Staff)
+                    </label>
+                    <Select
+                      value={payCollectedByAdminId}
+                      onValueChange={setPayCollectedByAdminId}
+                    >
+                      <SelectTrigger className="h-8 text-xs font-semibold border-slate-200">
+                        <SelectValue placeholder="Select Staff" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {staffList.map((staff) => (
+                          <SelectItem key={staff.id} value={staff.id}>
+                            {staff.name || staff.email}
                           </SelectItem>
-                          <SelectItem value="Card">Card</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase text-slate-550">
-                    Comments
+                    Comments / Reference UTR
                   </label>
                   <Input
                     value={payComments}
                     onChange={(e) => setPayComments(e.target.value)}
-                    placeholder="e.g. YAC 26/05/2026"
+                    placeholder="e.g. YAC 26/05/2026 / UTR928102910"
                     className="h-8 text-xs rounded"
                   />
                 </div>

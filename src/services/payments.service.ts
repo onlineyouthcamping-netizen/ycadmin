@@ -36,6 +36,7 @@ export const paymentsService = {
     bookingId: string;
     amount: number;
     paymentMode: string;
+    collectedByAdminId?: string;
     paymentDate?: string;
     reference?: string;
     notes?: string;
@@ -47,6 +48,7 @@ export const paymentsService = {
       const res = await api.post(`/payments/client/add/${data.bookingId}`, {
         amount: data.amount,
         paymentMode: data.paymentMode,
+        collectedByAdminId: data.collectedByAdminId,
         transactionId: data.reference || `TXN-${Date.now()}`,
         paymentDate: data.paymentDate || new Date().toISOString(),
         status: data.status || "Verified",
