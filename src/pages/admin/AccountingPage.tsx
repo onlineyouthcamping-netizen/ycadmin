@@ -1151,62 +1151,19 @@ export default function AccountingPage() {
     dynamicOfficeExpenses.length > 0
       ? dynamicOfficeExpenses.map((e) => ({
           date: e.date,
-          cat: e.subParticulars || "Utilities",
+          cat: e.subParticulars || "Miscellaneous",
           desc: e.particulars || "Office Operational Expense",
           vendor: e.originalEntry?.payeeName || "Vendor / Staff",
-          account: e.account || "ICICI Bank A/c",
+          account: e.account || "—",
           amount: e.outflow || 0,
           mode: e.mode || "UPI",
-          rec: "INV-OFFICE-01",
+          rec: e.originalEntry?.referenceNumber || "—",
           trip: "—",
           addedBy: e.addedBy || "Admin",
           icon: CreditCard,
           iconColor: "bg-orange-50 text-orange-600",
         }))
-      : [
-          {
-            date: new Date().toISOString().split("T")[0],
-            cat: "Rent & Lease",
-            desc: "Head Office Rent",
-            vendor: "Ahmedabad Properties Ltd",
-            account: "HDFC Bank A/c",
-            amount: 45000,
-            mode: "Bank Transfer",
-            rec: "INV-RENT-08",
-            trip: "—",
-            addedBy: "Super Admin",
-            icon: CreditCard,
-            iconColor: "bg-blue-50 text-blue-600",
-          },
-          {
-            date: new Date().toISOString().split("T")[0],
-            cat: "Utilities",
-            desc: "High Speed Fiber Internet",
-            vendor: "Airtel Broadband",
-            account: "ICICI Bank A/c",
-            amount: 2499,
-            mode: "UPI",
-            rec: "INV-NET-08",
-            trip: "—",
-            addedBy: "Hemal Patel",
-            icon: CreditCard,
-            iconColor: "bg-emerald-50 text-emerald-600",
-          },
-          {
-            date: new Date().toISOString().split("T")[0],
-            cat: "Software",
-            desc: "Cloud Servers & CRM System",
-            vendor: "AWS & Google Workspace",
-            account: "ICICI Bank A/c",
-            amount: 18500,
-            mode: "Credit Card",
-            rec: "INV-AWS-08",
-            trip: "—",
-            addedBy: "Super Admin",
-            icon: CreditCard,
-            iconColor: "bg-purple-50 text-purple-600",
-          },
-        ];
+      : [];
 
   const rawTransactions = [
     ...dynamicInflows,
@@ -3246,47 +3203,6 @@ export default function AccountingPage() {
       {/* OFFICE EXPENSES TAB */}
       {activeTab === "office_expenses" && (
         <div className="space-y-6">
-          {/* Action Header and Date Ranges */}
-          <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-            {/* Filter Buttons */}
-            <div className="flex flex-wrap gap-1 bg-white p-1 rounded-[4px] border border-slate-200 shadow-sm text-xs font-semibold text-slate-500">
-              {[
-                "Today",
-                "Yesterday",
-                "This Week",
-                "This Month",
-                "Last Month",
-                "This Financial Year",
-                "Custom Range",
-              ].map((range) => (
-                <button
-                  key={range}
-                  onClick={() => applyDatePreset(range)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-[3px] transition-all cursor-pointer",
-                    selectedPreset === range
-                      ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-bold"
-                      : "hover:text-slate-800",
-                  )}
-                >
-                  {range}
-                </button>
-              ))}
-            </div>
-
-            {/* Date Range Picker Input */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 text-xs font-bold uppercase">
-                Date Range:
-              </span>
-              <Input
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="h-8 text-xs w-48 rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700"
-              />
-            </div>
-          </div>
-
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left: Office Expenses Table */}
             <Card className="flex-1 rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
@@ -3308,7 +3224,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {officeExpensesRows.map((row, idx) => {
+                    {officeExpensesRows.length > 0 ? officeExpensesRows.map((row, idx) => {
                       const Icon = row.icon || CreditCard;
                       return (
                         <tr
@@ -3371,7 +3287,13 @@ export default function AccountingPage() {
                           </td>
                         </tr>
                       );
-                    })}
+                    }) : (
+                      <tr>
+                        <td colSpan={11} className="px-4 py-10 text-center text-slate-400 text-xs font-semibold">
+                          No office expenses recorded for this period. Click <span className="text-[#F97316] font-bold">+ Add Payment</span> to log one.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -3907,79 +3829,38 @@ export default function AccountingPage() {
       {/* PROFIT & LOSS TAB */}
       {activeTab === "profit_loss" && (
         <div className="space-y-6">
-          {/* Action Header and Date Ranges */}
-          <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-            {/* Filter Buttons */}
-            <div className="flex flex-wrap gap-1 bg-white p-1 rounded-[4px] border border-slate-200 shadow-sm text-xs font-semibold text-slate-500">
-              {[
-                "Today",
-                "Yesterday",
-                "This Week",
-                "This Month",
-                "Last Month",
-                "This Financial Year",
-                "Custom Range",
-              ].map((range) => (
-                <button
-                  key={range}
-                  onClick={() => applyDatePreset(range)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-[3px] transition-all cursor-pointer",
-                    selectedPreset === range
-                      ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-bold"
-                      : "hover:text-slate-800",
-                  )}
-                >
-                  {range}
-                </button>
-              ))}
-            </div>
-
-            {/* Date Range Picker Input */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 text-xs font-bold uppercase">
-                Date Range:
-              </span>
-              <Input
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="h-8 text-xs w-48 rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700"
-              />
-            </div>
-          </div>
-
           {/* Metrics Cards Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {[
               {
                 label: "Total Revenue",
                 val: plRevenue.toLocaleString("en-IN"),
-                trend: "+18.45%",
-                type: "up",
+                sub: `Collected from bookings in period`,
+                type: "neutral",
               },
               {
                 label: "Total Direct Cost",
                 val: plDirectCost.toLocaleString("en-IN"),
-                trend: "+12.32%",
-                type: "up",
+                sub: `Vendor & trip expenses`,
+                type: "neutral",
               },
               {
                 label: "Gross Profit",
                 val: plGrossProfit.toLocaleString("en-IN"),
-                sub: `Gross Profit Margin ${plGrossMargin}%`,
+                sub: `Gross Margin: ${plGrossMargin}%`,
                 type: "neutral",
               },
               {
                 label: "Total Operating Expense",
                 val: plOperatingCost.toLocaleString("en-IN"),
-                trend: "+9.41%",
-                type: "up",
+                sub: `Office & overhead costs`,
+                type: "neutral",
               },
               {
                 label: "Net Profit",
                 val: plNetProfit.toLocaleString("en-IN"),
-                sub: `Net Profit Margin ${plNetMargin}%`,
-                type: "neutral",
+                sub: `Net Margin: ${plNetMargin}%`,
+                type: plNetProfit >= 0 ? "up" : "down",
               },
             ].map((card, i) => (
               <Card
