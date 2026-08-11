@@ -308,7 +308,7 @@ export default function AccountingPage() {
           ...(fStatus !== "ALL" ? { status: fStatus } : {}),
           ...(fMode !== "ALL" ? { paymentMode: fMode } : {}),
         }),
-        bookingsService.getAll({ limit: 100 }).catch(() => null),
+        bookingsService.getAll({ limit: 1000 }).catch(() => null),
       ]);
       if (result) {
         setEntries(result.data);
@@ -317,7 +317,10 @@ export default function AccountingPage() {
         setTotalPages(result.pagination.totalPages);
       }
       if (bookingsRes) {
-        setBookings(bookingsRes.data || []);
+        const rawList = Array.isArray(bookingsRes)
+          ? bookingsRes
+          : bookingsRes.data || bookingsRes.bookings || [];
+        setBookings(rawList);
       }
     } catch {
       toast.error("Failed to load accounting entries");
@@ -760,36 +763,61 @@ export default function AccountingPage() {
     },
   ];
 
-  // Map ONLY actual collected booking payments into income transactions
+  // Map ALL collected booking payments into income transactions
   const bookingEntries = bookings
-    .filter((b) => Number(b.advancePaid) > 0)
-    .map((b) => ({
-      id: `bk-entry-${b.id || b.bookingId}`,
-      bookingId: b.bookingId,
-      booking: {
-        bookingId: b.bookingId,
-        fullName: b.fullName || b.name || b.passengerName || "Guest",
-        tripName: b.tripName || "Spiti Valley Road Trip",
-        totalAmount: b.totalAmount || 0,
-      },
-      amount: Number(b.advancePaid) || 0,
-      paymentMode: b.paymentMode || "UPI",
-      status: "APPROVED",
-      createdAt:
-        typeof b.createdAt === "string"
-          ? b.createdAt
-          : new Date().toISOString(),
-    }));
+    .filter((b) => {
+      const paid = Number(
+        b.advancePaid ??
+          b.advance ??
+          b.paidAmount ??
+          b.receivedAmount ??
+          b.totalPaid ??
+          b.amountPaid ??
+          0,
+      );
+      return paid > 0;
+    })
+    .map((b) => {
+      const paid = Number(
+        b.advancePaid ??
+          b.advance ??
+          b.paidAmount ??
+          b.receivedAmount ??
+          b.totalPaid ??
+          b.amountPaid ??
+          0,
+      );
+      const bId = b.bookingId || b.id || `BK-${b._id}`;
+      return {
+        id: `bk-entry-${b.id || b._id || b.bookingId}`,
+        bookingId: bId,
+        booking: {
+          bookingId: bId,
+          fullName: b.fullName || b.name || b.passengerName || "Guest",
+          tripName: b.tripName || b.tripCode || "Trip",
+          totalAmount: Number(b.totalAmount || b.totalPrice || 0),
+        },
+        amount: paid,
+        paymentMode: b.paymentMode || b.payment_method || "UPI",
+        status: "APPROVED",
+        createdAt:
+          typeof b.createdAt === "string"
+            ? b.createdAt
+            : new Date().toISOString(),
+        salesperson: b.salesAdmin
+          ? { id: b.salesAdmin.id, name: b.salesAdmin.name, email: b.salesAdmin.email }
+          : undefined,
+      };
+    });
 
-  // Merge unique entries by bookingId / ID
+  // Merge unique entries: include ALL collected booking payments and manual ledger entries
   const entryMap = new Map();
-  (entries || []).forEach((e) => {
-    if (e.bookingId) entryMap.set(e.bookingId, e);
-    else entryMap.set(e.id, e);
-  });
   bookingEntries.forEach((be) => {
-    if (!entryMap.has(be.bookingId) && !entryMap.has(be.id)) {
-      entryMap.set(be.bookingId || be.id, be);
+    entryMap.set(be.id, be);
+  });
+  (entries || []).forEach((e) => {
+    if (e.id) {
+      entryMap.set(e.id, e);
     }
   });
 
