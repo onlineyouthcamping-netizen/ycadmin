@@ -399,18 +399,20 @@ export default function AccountingPage() {
         );
 
         if (!exists) {
+          const agreed = Number(v.agreedAmount || v.rate || v.cost || 0);
+          const paid = Number(v.paidAmount || v.advancePaid || 0);
           allAssignments.push({
             id: `vnd-dir-${v.id || vName.replace(/\s+/g, "-")}`,
             vendorId: { name: vName, type: vType },
             vendorName: vName,
             tripName: v.location ? `${v.location} Trip` : "General Operations",
             tripCode: "OPS-1",
-            totalAmount: v.agreedAmount || v.rate || 45000,
-            paidAmount: v.paidAmount || v.advancePaid || 15000,
+            totalAmount: agreed,
+            paidAmount: paid,
             paymentStatus:
-              (v.paidAmount || 15000) >= (v.agreedAmount || 45000)
+              paid >= agreed && agreed > 0
                 ? "paid"
-                : (v.paidAmount || 15000) > 0
+                : paid > 0
                   ? "partial"
                   : "pending",
           });
