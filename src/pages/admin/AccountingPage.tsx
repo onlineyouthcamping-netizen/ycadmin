@@ -142,7 +142,53 @@ export default function AccountingPage() {
     }
   }, [tabParam]);
 
-  const [dateRange, setDateRange] = useState("01 Jul 2024 - 03 Jul 2024");
+  const [selectedPreset, setSelectedPreset] = useState("This Month");
+  const [dateRange, setDateRange] = useState("01 Aug 2026 - 31 Aug 2026");
+
+  const applyDatePreset = (preset: string) => {
+    setSelectedPreset(preset);
+    const now = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    if (preset === "Today") {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    } else if (preset === "Yesterday") {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      start = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0);
+      end = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59);
+    } else if (preset === "This Week") {
+      const day = now.getDay();
+      const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+      start = new Date(now.getFullYear(), now.getMonth(), diffToMonday, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), diffToMonday + 6, 23, 59, 59);
+    } else if (preset === "This Month") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    } else if (preset === "Last Month") {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    } else if (preset === "This Financial Year") {
+      const curYear = now.getFullYear();
+      const curMonth = now.getMonth();
+      const fyStartYear = curMonth >= 3 ? curYear : curYear - 1;
+      start = new Date(fyStartYear, 3, 1, 0, 0, 0);
+      end = new Date(fyStartYear + 1, 2, 31, 23, 59, 59);
+    }
+
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+
+    if (preset !== "Custom Range") {
+      setDateRange(`${fmt(start)} - ${fmt(end)}`);
+    }
+  };
 
   // Customer Accounting State
   const [entries, setEntries] = useState<AccountingEntry[]>([]);
@@ -1711,6 +1757,49 @@ export default function AccountingPage() {
         ))}
       </div>
 
+      {/* Interactive Date Preset Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-2.5 rounded-[4px] border border-slate-200 shadow-xs mb-6">
+        <div className="flex flex-wrap gap-1 text-xs font-semibold text-slate-500">
+          {[
+            "Today",
+            "Yesterday",
+            "This Week",
+            "This Month",
+            "Last Month",
+            "This Financial Year",
+            "Custom Range",
+          ].map((preset) => (
+            <button
+              key={preset}
+              onClick={() => applyDatePreset(preset)}
+              className={cn(
+                "px-3 py-1.5 rounded-[3px] transition-all cursor-pointer",
+                selectedPreset === preset
+                  ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-extrabold shadow-2xs"
+                  : "hover:bg-slate-50 hover:text-slate-800 border border-transparent",
+              )}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+            Range:
+          </span>
+          <Input
+            value={dateRange}
+            onChange={(e) => {
+              setSelectedPreset("Custom Range");
+              setDateRange(e.target.value);
+            }}
+            placeholder="01 Aug 2026 - 31 Aug 2026"
+            className="h-7 text-xs w-52 rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700 shadow-none"
+          />
+        </div>
+      </div>
+
       {/* OVERVIEW TAB */}
       {activeTab === "overview" && (
         <div className="space-y-6">
@@ -3165,17 +3254,18 @@ export default function AccountingPage() {
                 "Today",
                 "Yesterday",
                 "This Week",
-                "Last Week",
                 "This Month",
                 "Last Month",
+                "This Financial Year",
                 "Custom Range",
               ].map((range) => (
                 <button
                   key={range}
+                  onClick={() => applyDatePreset(range)}
                   className={cn(
-                    "px-3 py-1.5 rounded-[3px] transition-colors",
-                    range === "This Month"
-                      ? "border border-[#F97316]/30 text-[#F97316] font-bold"
+                    "px-3 py-1.5 rounded-[3px] transition-all cursor-pointer",
+                    selectedPreset === range
+                      ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-bold"
                       : "hover:text-slate-800",
                   )}
                 >
@@ -3832,10 +3922,11 @@ export default function AccountingPage() {
               ].map((range) => (
                 <button
                   key={range}
+                  onClick={() => applyDatePreset(range)}
                   className={cn(
-                    "px-3 py-1.5 rounded-[3px] transition-colors",
-                    range === "This Month"
-                      ? "border border-[#F97316]/30 text-[#F97316] font-bold"
+                    "px-3 py-1.5 rounded-[3px] transition-all cursor-pointer",
+                    selectedPreset === range
+                      ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-bold"
                       : "hover:text-slate-800",
                   )}
                 >
