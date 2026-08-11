@@ -109,4 +109,32 @@ export const accountingService = {
     const res = await api.get(`/accounting/reports${query}`);
     return res.data?.data;
   },
+
+  async getPersonalCollections(): Promise<{
+    data: any[];
+    summary: {
+      totalCollected: number;
+      totalSubmitted: number;
+      totalPending: number;
+    };
+  }> {
+    const res = await api.get("/accounting/personal-collections");
+    return res.data;
+  },
+
+  async getPersonCollectionDetails(adminId: string): Promise<any> {
+    const res = await api.get(`/accounting/personal-collections/${adminId}`);
+    return res.data;
+  },
+
+  async recordEmployeeSubmission(data: {
+    employeeAdminId: string;
+    amount: number;
+    paymentMode: string;
+    referenceNumber?: string;
+    notes?: string;
+  }): Promise<any> {
+    const res = await api.post("/accounting/personal-collections/submit", data);
+    return res.data;
+  },
 };

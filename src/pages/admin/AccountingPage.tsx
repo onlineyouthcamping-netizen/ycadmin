@@ -221,12 +221,117 @@ export default function AccountingPage() {
     name: "",
     nick: "",
     num: "",
-    holder: "",
-    type: "",
+    holder: "YouthCamping Travel Pvt. Ltd.",
+    type: "Current Account",
     branch: "",
     ifsc: "",
     openBal: 0,
   });
+
+  // Personal Collections / Employee Collections State
+  const [personalCollections, setPersonalCollections] = useState<any[]>([]);
+  const [personalCollectionsSummary, setPersonalCollectionsSummary] = useState({
+    totalCollected: 0,
+    totalSubmitted: 0,
+    totalPending: 0,
+  });
+  const [loadingPersonalCollections, setLoadingPersonalCollections] = useState(false);
+  const [personalSearch, setPersonalSearch] = useState("");
+  const [personalStatusFilter, setPersonalStatusFilter] = useState("ALL");
+
+  // Person Detail View Modal State
+  const [selectedPersonForDetail, setSelectedPersonForDetail] = useState<any | null>(null);
+  const [personDetailData, setPersonDetailData] = useState<any | null>(null);
+  const [loadingPersonDetail, setLoadingPersonDetail] = useState(false);
+  const [showPersonDetailModal, setShowPersonDetailModal] = useState(false);
+
+  // Record Submission Modal State
+  const [showRecordSubmissionModal, setShowRecordSubmissionModal] = useState(false);
+  const [submissionForm, setSubmissionForm] = useState({
+    employeeAdminId: "",
+    amount: "",
+    paymentMode: "CASH",
+    referenceNumber: "",
+    notes: "",
+  });
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+
+  const loadPersonalCollections = async () => {
+    setLoadingPersonalCollections(true);
+    try {
+      const res = await accountingService.getPersonalCollections();
+      if (res?.data) {
+        setPersonalCollections(res.data);
+        if (res.summary) setPersonalCollectionsSummary(res.summary);
+      }
+    } catch (err) {
+      console.error("Failed to load personal collections", err);
+    } finally {
+      setLoadingPersonalCollections(false);
+    }
+  };
+
+  const handleOpenPersonDetail = async (person: any) => {
+    setSelectedPersonForDetail(person);
+    setShowPersonDetailModal(true);
+    setLoadingPersonDetail(true);
+    try {
+      const res = await accountingService.getPersonCollectionDetails(person.id);
+      if (res?.data) {
+        setPersonDetailData(res.data);
+      }
+    } catch (err) {
+      toast.error("Failed to load details for " + person.name);
+    } finally {
+      setLoadingPersonDetail(false);
+    }
+  };
+
+  const handleOpenRecordSubmission = (personId?: string) => {
+    setSubmissionForm({
+      employeeAdminId: personId || (selectedPersonForDetail?.employee?.id || selectedPersonForDetail?.id || ""),
+      amount: "",
+      paymentMode: "CASH",
+      referenceNumber: "",
+      notes: "",
+    });
+    setShowRecordSubmissionModal(true);
+  };
+
+  const handleSubmitEmployeePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!submissionForm.employeeAdminId || !submissionForm.amount) {
+      toast.error("Please select an employee and enter an amount");
+      return;
+    }
+    const amt = Number(submissionForm.amount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error("Amount must be a positive number");
+      return;
+    }
+
+    setSubmittingPayment(true);
+    try {
+      const res = await accountingService.recordEmployeeSubmission({
+        employeeAdminId: submissionForm.employeeAdminId,
+        amount: amt,
+        paymentMode: submissionForm.paymentMode,
+        referenceNumber: submissionForm.referenceNumber || undefined,
+        notes: submissionForm.notes || undefined,
+      });
+      toast.success(res?.message || "Submission recorded successfully!");
+      setShowRecordSubmissionModal(false);
+      loadPersonalCollections();
+      if (selectedPersonForDetail?.employee?.id === submissionForm.employeeAdminId || selectedPersonForDetail?.id === submissionForm.employeeAdminId) {
+        handleOpenPersonDetail({ id: submissionForm.employeeAdminId, name: selectedPersonForDetail?.name || selectedPersonForDetail?.employee?.name });
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to record submission");
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
+
   const [bookings, setBookings] = useState<any[]>([]);
   const [reportModal, setReportModal] = useState<{
     open: boolean;
@@ -555,6 +660,7 @@ export default function AccountingPage() {
   useEffect(() => {
     loadReports();
     loadVendorAssignments();
+    loadPersonalCollections();
   }, [loadReports]);
 
   useEffect(() => {
@@ -1508,7 +1614,7 @@ export default function AccountingPage() {
     { id: "overview", label: "Overview" },
     { id: "transactions", label: "Transactions" },
     { id: "cash_book", label: "Cash Book" },
-    { id: "bank_accounts", label: "Bank Accounts" },
+    { id: "personal_collections", label: "Personal Collections" },
     { id: "vendor_payments", label: "Vendor Payments" },
     { id: "office_expenses", label: "Office Expenses" },
     { id: "payments", label: "Payments" },
@@ -2699,388 +2805,232 @@ export default function AccountingPage() {
         </div>
       )}
 
-      {/* BANK ACCOUNTS TAB */}
-      {activeTab === "bank_accounts" && (
-        <div className="space-y-4">
-          {/* Filters Bar */}
-          <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex flex-wrap gap-3.5 items-center">
-            <div className="relative flex-1 max-w-xs min-w-[150px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-450" />
-              <input
-                type="text"
-                placeholder="Search account..."
-                className="h-8.5 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none"
-              />
-            </div>
+      {/* PERSONAL COLLECTIONS TAB (Replaces Bank Accounts) */}
+      {(activeTab === "personal_collections" || activeTab === "bank_accounts") && (
+        <div className="space-y-6">
+          {/* Summary KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-xs">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Total Collected
+                  </p>
+                  <h3 className="text-xl font-extrabold text-slate-800 mt-1">
+                    ₹ {personalCollectionsSummary.totalCollected.toLocaleString("en-IN")}
+                  </h3>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <Wallet className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400 font-semibold mt-2">
+                Total money collected from customers by staff
+              </p>
+            </Card>
 
-            <div className="flex flex-col gap-1 w-36">
-              <Select defaultValue="all">
-                <SelectTrigger className="h-8.5 text-[11px] font-bold border-slate-200 bg-white text-slate-700 rounded-[4px]">
-                  <SelectValue placeholder="Bank" />
-                </SelectTrigger>
-                <SelectContent className="rounded-[4px]">
-                  <SelectItem value="all">All Banks</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Card className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-xs">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Total Submitted
+                  </p>
+                  <h3 className="text-xl font-extrabold text-emerald-600 mt-1">
+                    ₹ {personalCollectionsSummary.totalSubmitted.toLocaleString("en-IN")}
+                  </h3>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400 font-semibold mt-2">
+                Submitted/paid to YouthCamping accounts
+              </p>
+            </Card>
 
-            <div className="flex flex-col gap-1 w-36">
-              <Select defaultValue="all">
-                <SelectTrigger className="h-8.5 text-[11px] font-bold border-slate-200 bg-white text-slate-700 rounded-[4px]">
-                  <SelectValue placeholder="Account Type" />
-                </SelectTrigger>
-                <SelectContent className="rounded-[4px]">
-                  <SelectItem value="all">All Types</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1 w-36">
-              <Select defaultValue="all">
-                <SelectTrigger className="h-8.5 text-[11px] font-bold border-slate-200 bg-white text-slate-700 rounded-[4px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent className="rounded-[4px]">
-                  <SelectItem value="all">All Status</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1 w-36">
-              <Select defaultValue="all">
-                <SelectTrigger className="h-8.5 text-[11px] font-bold border-slate-200 bg-white text-slate-700 rounded-[4px]">
-                  <SelectValue placeholder="Branch" />
-                </SelectTrigger>
-                <SelectContent className="rounded-[4px]">
-                  <SelectItem value="all">All Branches</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1 w-36">
-              <Select defaultValue="all">
-                <SelectTrigger className="h-8.5 text-[11px] font-bold border-slate-200 bg-white text-slate-700 rounded-[4px]">
-                  <SelectValue placeholder="Currency" />
-                </SelectTrigger>
-                <SelectContent className="rounded-[4px]">
-                  <SelectItem value="all">All Currency</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <button className="h-8.5 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 bg-white hover:bg-slate-50 text-slate-755 flex items-center gap-1 shadow-3xs ml-auto">
-              Clear Filters
-            </button>
+            <Card className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-xs">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Total Pending
+                  </p>
+                  <h3 className="text-xl font-extrabold text-amber-600 mt-1">
+                    ₹ {personalCollectionsSummary.totalPending.toLocaleString("en-IN")}
+                  </h3>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                  <Clock className="w-5 h-5" />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400 font-semibold mt-2">
+                Calculated Pending Balance (Total Collected - Total Submitted)
+              </p>
+            </Card>
           </div>
 
-          <div className="flex flex-col xl:flex-row gap-6">
-            {/* Left: Accounts Cards & Table List */}
-            <div className="flex-1 space-y-6">
-              {/* Accounts Table */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                    <tr className="text-[9.5px] font-bold text-slate-455 uppercase tracking-wider">
-                      <th className="p-3 border-r border-slate-100">
-                        Bank Logo
-                      </th>
-                      <th className="p-3 border-r border-slate-100">
-                        Bank Name
-                      </th>
-                      <th className="p-3 border-r border-slate-100">
-                        Account Nickname
-                      </th>
-                      <th className="p-3 border-r border-slate-100">
-                        Account Number
-                      </th>
-                      <th className="p-3 border-r border-slate-100">
-                        Account Holder
-                      </th>
-                      <th className="p-3 border-r border-slate-100">
-                        Account Type
-                      </th>
-                      <th className="p-3 border-r border-slate-100">Branch</th>
-                      <th className="p-3 border-r border-slate-100">
-                        IFSC Code
-                      </th>
-                      <th className="p-3 border-r border-slate-100 text-right">
-                        Current Balance
-                      </th>
-                      <th className="p-3 border-r border-slate-100">
-                        Last Reconciled
-                      </th>
-                      <th className="p-3 border-r border-slate-100">Status</th>
-                      <th className="p-3 text-center">Actions</th>
+          {/* Action & Filter Bar */}
+          <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex flex-wrap gap-3.5 items-center justify-between">
+            <div className="flex flex-wrap gap-3 items-center flex-1 max-w-xl">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={personalSearch}
+                  onChange={(e) => setPersonalSearch(e.target.value)}
+                  placeholder="Search employee/person..."
+                  className="h-8.5 w-full pl-8 text-xs rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="w-36">
+                <Select
+                  value={personalStatusFilter}
+                  onValueChange={setPersonalStatusFilter}
+                >
+                  <SelectTrigger className="h-8.5 text-xs font-semibold border-slate-200 bg-white text-slate-700 rounded-[4px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[4px]">
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="SETTLED">Settled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              size="sm"
+              onClick={() => handleOpenRecordSubmission()}
+              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Record Submission
+            </Button>
+          </div>
+
+          {/* Person Collections Table */}
+          <Card className="rounded-[4px] border border-[#E2E8F0] overflow-hidden shadow-xs bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50 border-b border-[#E2E8F0]">
+                  <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="p-3 border-r border-slate-100">Person / Employee</th>
+                    <th className="p-3 border-r border-slate-100 text-right">Total Collected</th>
+                    <th className="p-3 border-r border-slate-100 text-right">Total Submitted</th>
+                    <th className="p-3 border-r border-slate-100 text-right">Pending Amount</th>
+                    <th className="p-3 border-r border-slate-100 text-center">Status</th>
+                    <th className="p-3 border-r border-slate-100">Last Collection</th>
+                    <th className="p-3 border-r border-slate-100">Last Submission</th>
+                    <th className="p-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0]">
+                  {loadingPersonalCollections ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">
+                        Loading personal collections...
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
-                    {bankAccountsListGlobal.map((row, idx) => (
-                      <tr
-                        key={idx}
-                        onClick={() => setSelectedBankIdx(idx)}
-                        className={cn(
-                          "hover:bg-slate-50/50 transition-colors cursor-pointer",
-                          selectedBankIdx === idx && "bg-slate-100/50",
-                        )}
-                      >
-                        <td className="p-3 text-center border-r border-slate-100">
-                          <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[9px] uppercase">
-                            {row.name.substring(0, 2)}
-                          </div>
-                        </td>
-                        <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
-                          {row.name}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 text-slate-650 font-semibold">
-                          {row.nick}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 font-mono text-slate-500">
-                          {row.num}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">
-                          {row.holder}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 text-slate-500 font-semibold">
-                          {row.type}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 text-slate-600 font-medium">
-                          {row.branch}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 font-mono text-slate-500">
-                          {row.ifsc}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-650">
-                          ₹{" "}
-                          {row.bal.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="p-3 border-r border-slate-100 text-slate-500 font-medium">
-                          {row.rec}
-                        </td>
-                        <td className="p-3 border-r border-slate-100">
-                          <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider block w-fit">
-                            ACTIVE
-                          </span>
-                        </td>
-                        <td className="p-3 text-center">
-                          <div className="flex justify-center items-center gap-1.5">
-                            <button
-                              onClick={(e) => handleEditBank(idx, e)}
-                              className="h-7 w-7 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center border border-slate-200"
-                              title="Edit Bank Details"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteBank(idx, e)}
-                              className="h-7 w-7 text-red-500 hover:bg-red-50 rounded flex items-center justify-center border border-red-200"
-                              title="Delete Bank Account"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Bottom summary bar */}
-              <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-between text-xs font-semibold">
-                <span>Showing 1 to 6 of 6 entries</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400">Show</span>
-                  <select className="h-7 text-[10px] font-bold border border-slate-200 bg-white rounded px-1 cursor-pointer">
-                    <option>25</option>
-                  </select>
-                  <span className="text-slate-400">entries</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Side Widgets Sidebar Panel */}
-            {(() => {
-              const activeBank =
-                bankAccountsListGlobal[selectedBankIdx] ||
-                bankAccountsListGlobal[0];
-              const activeBankDocs = [
-                {
-                  name: `${activeBank.code}_PAN_Card.pdf`,
-                  size: "1.2 MB",
-                  date: "12 May 2024",
-                },
-                {
-                  name: `${activeBank.code}_Aadhaar_Card.pdf`,
-                  size: "1.1 MB",
-                  date: "12 May 2024",
-                },
-                {
-                  name: `${activeBank.code}_Cancelled_Cheque.pdf`,
-                  size: "0.8 MB",
-                  date: "12 May 2024",
-                },
-                {
-                  name: `${activeBank.code}_Bank_Agreement.pdf`,
-                  size: "1.5 MB",
-                  date: "12 May 2024",
-                },
-                {
-                  name: `${activeBank.code}_Statement_May.pdf`,
-                  size: "2.4 MB",
-                  date: "03 Jun 2024",
-                },
-              ];
-
-              return (
-                <div className="w-full xl:w-80 space-y-6 shrink-0">
-                  {/* Bank Details Widget */}
-                  <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-650 flex items-center justify-center font-bold text-xs uppercase">
-                          {activeBank.name.substring(0, 2)}
-                        </div>
-                        <div>
-                          <h4 className="font-extrabold text-slate-800 text-[12.5px] leading-tight">
-                            {activeBank.name}
-                          </h4>
-                          <p className="text-[10px] text-slate-455 font-semibold mt-0.5">
-                            {activeBank.nick}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.2 rounded-full uppercase tracking-wider">
-                        Active
-                      </span>
-                    </div>
-
-                    <div className="space-y-1 text-slate-600 text-[11px] font-medium font-mono">
-                      <p>Branch Code: {activeBank.num}</p>
-                    </div>
-
-                    <div className="space-y-2 border-t border-slate-100 pt-4 text-[11.5px] font-semibold text-slate-650">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-450 font-semibold">
-                          Current Balance
-                        </span>
-                        <span className="text-emerald-650 font-extrabold">
-                          ₹{" "}
-                          {activeBank.bal.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-450 font-semibold">
-                          Opening Balance
-                        </span>
-                        <span className="text-slate-800 font-bold">
-                          ₹{" "}
-                          {activeBank.openBal.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-450 font-semibold">
-                          Account Type
-                        </span>
-                        <span className="text-slate-800 font-bold">
-                          {activeBank.type}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-455 font-semibold">
-                          Branch
-                        </span>
-                        <span className="text-slate-800 font-bold truncate max-w-[150px]">
-                          {activeBank.branch}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-450 font-semibold">
-                          IFSC Code
-                        </span>
-                        <span className="text-slate-800 font-bold font-mono">
-                          {activeBank.ifsc}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-450 font-semibold">
-                          Currency
-                        </span>
-                        <span className="text-slate-800 font-bold">INR</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-450 font-semibold">
-                          Last Reconciled
-                        </span>
-                        <span className="text-slate-800 font-bold">
-                          {activeBank.rec} by Suresh Bhai
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 pt-4 space-y-2">
-                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400" />{" "}
-                        View Ledger
-                      </button>
-                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                        <Download className="w-3.5 h-3.5 text-slate-400" />{" "}
-                        Import Statement
-                      </button>
-                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                        <RefreshCw className="w-3.5 h-3.5 text-slate-400" />{" "}
-                        Reconcile Account
-                      </button>
-                      <button className="w-full h-8.5 text-[11px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-[4px] flex items-center justify-center gap-1.5 shadow-3xs">
-                        <Download className="w-3.5 h-3.5 text-slate-400" />{" "}
-                        Download Ledger
-                      </button>
-                    </div>
-                  </Card>
-
-                  {/* Documents Checklist Panel */}
-                  <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <h3 className="text-xs font-bold text-slate-755 uppercase tracking-wider">
-                        Documents ({activeBankDocs.length})
-                      </h3>
-                      <button className="text-[10px] font-bold text-blue-600 hover:underline uppercase">
-                        View All
-                      </button>
-                    </div>
-                    <div className="space-y-3.5 text-xs font-semibold">
-                      {activeBankDocs.map((doc, idx) => (
-                        <div
-                          key={idx}
-                          className="flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0"
+                  ) : personalCollections.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">
+                        No collections found
+                      </td>
+                    </tr>
+                  ) : (
+                    personalCollections
+                      .filter((p) => {
+                        const matchSearch =
+                          !personalSearch ||
+                          p.name.toLowerCase().includes(personalSearch.toLowerCase()) ||
+                          p.email.toLowerCase().includes(personalSearch.toLowerCase());
+                        const matchStatus =
+                          personalStatusFilter === "ALL" ||
+                          p.status.toUpperCase() === personalStatusFilter.toUpperCase();
+                        return matchSearch && matchStatus;
+                      })
+                      .map((person) => (
+                        <tr
+                          key={person.id}
+                          onClick={() => handleOpenPersonDetail(person)}
+                          className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                         >
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-red-500 shrink-0" />
-                            <div className="flex flex-col">
-                              <span className="font-bold text-slate-700 truncate max-w-[130px]">
-                                {doc.name}
-                              </span>
-                              <span className="text-[9px] text-slate-400 font-semibold mt-0.5">
-                                {doc.date} · {doc.size}
-                              </span>
+                          <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
+                                {person.name.substring(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-800 text-xs">{person.name}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{person.email}</p>
+                              </div>
                             </div>
-                          </div>
-                          <button className="h-7 w-7 text-slate-450 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150">
-                            <Download className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                </div>
-              );
-            })()}
-          </div>
+                          </td>
+                          <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-700">
+                            ₹ {person.totalCollected.toLocaleString("en-IN")}
+                          </td>
+                          <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-600">
+                            ₹ {person.totalSubmitted.toLocaleString("en-IN")}
+                          </td>
+                          <td className="p-3 border-r border-slate-100 text-right font-extrabold text-amber-600">
+                            ₹ {person.pending.toLocaleString("en-IN")}
+                          </td>
+                          <td className="p-3 border-r border-slate-100 text-center">
+                            <span
+                              className={cn(
+                                "text-[8.5px] font-black px-2 py-0.5 rounded-[3px] uppercase tracking-wider inline-block",
+                                person.status === "Settled"
+                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                  : "bg-amber-50 text-amber-600 border border-amber-100",
+                              )}
+                            >
+                              {person.status}
+                            </span>
+                          </td>
+                          <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">
+                            {person.lastCollection
+                              ? new Date(person.lastCollection).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </td>
+                          <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">
+                            {person.lastSubmission
+                              ? new Date(person.lastSubmission).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => handleOpenPersonDetail(person)}
+                                className="h-7 px-2.5 text-[10.5px] font-bold text-slate-650 hover:bg-slate-100 rounded border border-slate-200 flex items-center gap-1"
+                                title="View Person Detail Ledger"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-slate-500" /> View
+                              </button>
+                              <button
+                                onClick={() => handleOpenRecordSubmission(person.id)}
+                                className="h-7 px-2 text-[10.5px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 flex items-center gap-1"
+                                title="Record Submission"
+                              >
+                                + Submit
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
       )}
 
@@ -5489,6 +5439,295 @@ export default function AccountingPage() {
                 className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white"
               >
                 Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Person Collection Detail Modal */}
+      <Dialog open={showPersonDetailModal} onOpenChange={setShowPersonDetailModal}>
+        <DialogContent className="rounded-[6px] border-[#E2E8F0] p-6 bg-white shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b border-[#E2E8F0] pb-3">
+            <div className="flex justify-between items-center pr-6">
+              <div>
+                <DialogTitle className="text-base font-extrabold text-slate-800">
+                  {personDetailData?.employee?.name || selectedPersonForDetail?.name || "Person Collections Detail"}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-400 font-semibold mt-0.5">
+                  {personDetailData?.employee?.email || selectedPersonForDetail?.email} · Personal Collections Ledger
+                </DialogDescription>
+              </div>
+              <span
+                className={cn(
+                  "text-[10px] font-black px-2.5 py-1 rounded-[4px] uppercase tracking-wider",
+                  (personDetailData?.summary?.status || selectedPersonForDetail?.status) === "SETTLED" ||
+                    (personDetailData?.summary?.status || selectedPersonForDetail?.status) === "Settled"
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                    : "bg-amber-50 text-amber-600 border border-amber-200",
+                )}
+              >
+                {personDetailData?.summary?.status || selectedPersonForDetail?.status || "PENDING"}
+              </span>
+            </div>
+          </DialogHeader>
+
+          {loadingPersonDetail ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-semibold">
+              Loading collection ledger...
+            </div>
+          ) : (
+            <div className="space-y-6 pt-4">
+              {/* Summary Cards Row */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-[4px] p-3.5">
+                  <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Total Collected</p>
+                  <p className="text-lg font-extrabold text-slate-800 mt-0.5">
+                    ₹ {(personDetailData?.summary?.totalCollected || 0).toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-[4px] p-3.5">
+                  <p className="text-[9.5px] font-bold text-emerald-600 uppercase tracking-wider">Total Submitted</p>
+                  <p className="text-lg font-extrabold text-emerald-600 mt-0.5">
+                    ₹ {(personDetailData?.summary?.totalSubmitted || 0).toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div className="bg-amber-50/50 border border-amber-200/60 rounded-[4px] p-3.5">
+                  <p className="text-[9.5px] font-bold text-amber-600 uppercase tracking-wider">Pending Amount</p>
+                  <p className="text-lg font-extrabold text-amber-600 mt-0.5">
+                    ₹ {(personDetailData?.summary?.pending || 0).toLocaleString("en-IN")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Bar */}
+              <div className="flex justify-between items-center">
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Transactions Ledger
+                </h4>
+                <Button
+                  size="sm"
+                  onClick={() => handleOpenRecordSubmission(selectedPersonForDetail?.id)}
+                  className="h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px]"
+                >
+                  + Record Submission to YouthCamping
+                </Button>
+              </div>
+
+              {/* Collections Transactions Table */}
+              <div className="space-y-2">
+                <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Collection Transactions ({personDetailData?.collectionTransactions?.length || 0})
+                </h5>
+                <div className="border border-slate-200 rounded-[4px] overflow-hidden bg-white">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[9px] font-bold text-slate-500 uppercase">
+                      <tr>
+                        <th className="p-2.5">Date</th>
+                        <th className="p-2.5">Booking ID</th>
+                        <th className="p-2.5">Customer / Passenger</th>
+                        <th className="p-2.5">Mode</th>
+                        <th className="p-2.5 text-right">Amount Collected</th>
+                        <th className="p-2.5">Ref / Transaction ID</th>
+                        <th className="p-2.5">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {(personDetailData?.collectionTransactions || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="p-4 text-center text-slate-400 text-xs">
+                            No collection transactions recorded
+                          </td>
+                        </tr>
+                      ) : (
+                        personDetailData.collectionTransactions.map((tx: any) => (
+                          <tr key={tx.id} className="hover:bg-slate-50/50">
+                            <td className="p-2.5 text-slate-500">
+                              {new Date(tx.date).toLocaleDateString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </td>
+                            <td className="p-2.5 font-bold text-slate-800">{tx.bookingId}</td>
+                            <td className="p-2.5 text-slate-700 font-semibold">{tx.customerName}</td>
+                            <td className="p-2.5 font-bold text-slate-600">{tx.paymentMode}</td>
+                            <td className="p-2.5 text-right font-extrabold text-slate-800">
+                              ₹ {tx.amountCollected.toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-2.5 font-mono text-[11px] text-slate-500">{tx.reference}</td>
+                            <td className="p-2.5 text-slate-400 text-[11px]">{tx.notes}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Submissions Transactions Table */}
+              <div className="space-y-2 pt-2">
+                <h5 className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
+                  Submission Transactions ({personDetailData?.submissionTransactions?.length || 0})
+                </h5>
+                <div className="border border-slate-200 rounded-[4px] overflow-hidden bg-white">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-emerald-50/60 border-b border-emerald-100 text-[9px] font-bold text-emerald-700 uppercase">
+                      <tr>
+                        <th className="p-2.5">Date</th>
+                        <th className="p-2.5 text-right">Amount Submitted</th>
+                        <th className="p-2.5">Payment Mode</th>
+                        <th className="p-2.5">Reference Number</th>
+                        <th className="p-2.5">Recorded By</th>
+                        <th className="p-2.5">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {(personDetailData?.submissionTransactions || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-4 text-center text-slate-400 text-xs">
+                            No submissions recorded yet
+                          </td>
+                        </tr>
+                      ) : (
+                        personDetailData.submissionTransactions.map((sub: any) => (
+                          <tr key={sub.id} className="hover:bg-slate-50/50">
+                            <td className="p-2.5 text-slate-500">
+                              {new Date(sub.date).toLocaleDateString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </td>
+                            <td className="p-2.5 text-right font-extrabold text-emerald-600">
+                              ₹ {sub.amountSubmitted.toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-2.5 font-bold text-slate-700">{sub.paymentMode}</td>
+                            <td className="p-2.5 font-mono text-[11px] text-slate-500">{sub.reference}</td>
+                            <td className="p-2.5 text-slate-600 font-semibold">{sub.recordedBy}</td>
+                            <td className="p-2.5 text-slate-400 text-[11px]">{sub.notes}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Record Employee Submission Modal */}
+      <Dialog open={showRecordSubmissionModal} onOpenChange={setShowRecordSubmissionModal}>
+        <DialogContent className="rounded-[4px] border-[#E2E8F0] p-6 bg-white shadow-lg max-w-md">
+          <DialogHeader className="border-b border-[#E2E8F0] pb-3">
+            <DialogTitle className="text-xs font-black text-slate-800 uppercase tracking-wider">
+              Record Employee Submission
+            </DialogTitle>
+            <DialogDescription className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              Record when an employee/person submits collected funds to YouthCamping
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmitEmployeePayment} className="space-y-4 pt-4">
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                Employee / Person
+              </label>
+              <Select
+                value={submissionForm.employeeAdminId}
+                onValueChange={(val) => setSubmissionForm({ ...submissionForm, employeeAdminId: val })}
+              >
+                <SelectTrigger className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px] font-semibold">
+                  <SelectValue placeholder="Select Employee" />
+                </SelectTrigger>
+                <SelectContent className="rounded-[4px]">
+                  {personalCollections.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} (Pending: ₹{p.pending.toLocaleString()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  Amount Submitted (₹)
+                </label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 25000"
+                  value={submissionForm.amount}
+                  onChange={(e) => setSubmissionForm({ ...submissionForm, amount: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  Payment Mode
+                </label>
+                <Select
+                  value={submissionForm.paymentMode}
+                  onValueChange={(val) => setSubmissionForm({ ...submissionForm, paymentMode: val })}
+                >
+                  <SelectTrigger className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px] font-semibold">
+                    <SelectValue placeholder="Mode" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[4px]">
+                    <SelectItem value="CASH">CASH</SelectItem>
+                    <SelectItem value="BANK_TRANSFER">BANK TRANSFER</SelectItem>
+                    <SelectItem value="UPI">UPI</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                Reference / UTR / Transaction ID
+              </label>
+              <Input
+                placeholder="e.g. UTR9281039120"
+                value={submissionForm.referenceNumber}
+                onChange={(e) => setSubmissionForm({ ...submissionForm, referenceNumber: e.target.value })}
+                className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                Notes / Remarks
+              </label>
+              <Input
+                placeholder="Handed over cash at office / Transferred to HDFC"
+                value={submissionForm.notes}
+                onChange={(e) => setSubmissionForm({ ...submissionForm, notes: e.target.value })}
+                className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+              />
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-[#E2E8F0]">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRecordSubmissionModal(false)}
+                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs border border-slate-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={submittingPayment}
+                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {submittingPayment ? "Recording..." : "Record Submission"}
               </Button>
             </DialogFooter>
           </form>
