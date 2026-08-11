@@ -41,9 +41,10 @@ import {
   Sparkles,
   Globe,
   MessageSquare,
-  LayoutDashboard,
   Sliders,
   MoreHorizontal,
+  Wallet,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
