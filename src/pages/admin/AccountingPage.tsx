@@ -961,69 +961,34 @@ export default function AccountingPage() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  // Calculate stats for KPIs
-  const totalApprovedCollection = ledgerTotals.APPROVED || 0;
-  const totalVendorPaid = vendorAssignments.reduce(
-    (sum, a) => sum + (a.paidAmount || 0),
-    0,
-  );
-  const totalOfficeExpenses = officeExpenses.reduce(
-    (sum, e) => sum + e.amount,
-    0,
-  );
-  const cashInHand =
-    totalApprovedCollection - totalVendorPaid - totalOfficeExpenses;
-  const outstandingCustomers = ledgerTotals.PENDING || 0;
+  // Calculate stats for KPIs — all use date-filtered data
+  // totalApprovedCollection = sum of dynamicInflows (already date-filtered booking payments)
+  // NOTE: dynamicInflows is defined BELOW (after mergedEntries) so we compute this lazily from rawTransactions later
+  const outstandingCustomers = bookings
+    .filter((b) => {
+      const paid = Number(b.advancePaid ?? b.advance ?? b.paidAmount ?? 0);
+      const total = Number(b.totalAmount ?? b.totalPrice ?? 0);
+      return total > 0 && paid < total;
+    })
+    .reduce((sum, b) => {
+      const paid = Number(b.advancePaid ?? b.advance ?? b.paidAmount ?? 0);
+      const total = Number(b.totalAmount ?? b.totalPrice ?? 0);
+      return sum + (total - paid);
+    }, 0);
+  const outstandingBookingsCount = bookings.filter((b) => {
+    const paid = Number(b.advancePaid ?? b.advance ?? b.paidAmount ?? 0);
+    const total = Number(b.totalAmount ?? b.totalPrice ?? 0);
+    return total > 0 && paid < total;
+  }).length;
   const outstandingVendors = vendorAssignments.reduce(
-    (sum, a) => sum + (a.totalAmount - (a.paidAmount || 0)),
+    (sum, a) => sum + Math.max(0, (a.totalAmount || 0) - (a.paidAmount || 0)),
     0,
   );
+  const outstandingVendorsCount = vendorAssignments.filter(
+    (a) => a.paymentStatus !== "paid" && (a.totalAmount || 0) > (a.paidAmount || 0),
+  ).length;
 
-  // Chart data
-  const cashFlowData = [
-    {
-      name: "27 Jun",
-      Collection: 170000,
-      "Vendor Payments": 65000,
-      Expenses: 12000,
-    },
-    {
-      name: "28 Jun",
-      Collection: 220000,
-      "Vendor Payments": 45000,
-      Expenses: 15000,
-    },
-    {
-      name: "29 Jun",
-      Collection: 190000,
-      "Vendor Payments": 80000,
-      Expenses: 8000,
-    },
-    {
-      name: "30 Jun",
-      Collection: 310000,
-      "Vendor Payments": 95000,
-      Expenses: 22000,
-    },
-    {
-      name: "01 Jul",
-      Collection: 250000,
-      "Vendor Payments": 70000,
-      Expenses: 18000,
-    },
-    {
-      name: "02 Jul",
-      Collection: 405000,
-      "Vendor Payments": 110000,
-      Expenses: 25000,
-    },
-    {
-      name: "03 Jul",
-      Collection: 335000,
-      "Vendor Payments": 85000,
-      Expenses: 14000,
-    },
-  ];
+  // cashFlowData is computed AFTER rawTransactions is defined (below)
 
   // Map ALL collected booking payments into income transactions
   const bookingEntries = bookings
@@ -1203,21 +1168,67 @@ export default function AccountingPage() {
     ...dynamicOfficeExpenses,
   ];
 
-  // Dynamic bank summary calculations
+  // ── Date-filtered KPI values (computed from rawTransactions) ──────────────
+  const totalApprovedCollection = rawTransactions
+    .filter((t) => t.type === "Income")
+    .reduce((sum, t) => sum + (t.inflow || 0), 0);
+  const totalVendorPaid = rawTransactions
+    .filter((t) => t.type === "Expense" && t.subParticulars === "Vendor Payment")
+    .reduce((sum, t) => sum + (t.outflow || 0), 0);
+  const totalOfficeExpenses = rawTransactions
+    .filter((t) => t.type === "Expense" && t.subParticulars !== "Vendor Payment")
+    .reduce((sum, t) => sum + (t.outflow || 0), 0);
+  const cashInHand = totalApprovedCollection - totalVendorPaid - totalOfficeExpenses;
+
+  // ── Dynamic bank summary (start from 0 — only real transactions) ──────────
   const iciciBalance = rawTransactions.reduce(
     (sum, t) =>
       sum + (t.account === "ICICI Bank A/c" ? t.inflow - t.outflow : 0),
-    585300,
+    0,
   );
   const hdfcBalance = rawTransactions.reduce(
     (sum, t) =>
       sum + (t.account === "HDFC Bank A/c" ? t.inflow - t.outflow : 0),
-    325500,
+    0,
   );
   const cashBalance = rawTransactions.reduce(
     (sum, t) => sum + (t.account === "Cash" ? t.inflow - t.outflow : 0),
-    160000,
+    0,
   );
+
+  // ── Dynamic cashFlowData: group transactions by day within the active window ──
+  const buildCashFlowData = () => {
+    // Generate all days in the active date window
+    const days: { name: string; dateKey: string }[] = [];
+    const cursor = new Date(activeDateStart);
+    cursor.setHours(0, 0, 0, 0);
+    const windowEnd = new Date(activeDateEnd);
+    windowEnd.setHours(23, 59, 59, 999);
+
+    // Limit to 31 days max to keep chart readable
+    let count = 0;
+    while (cursor <= windowEnd && count < 31) {
+      const label = cursor.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+      const key = cursor.toISOString().split("T")[0];
+      days.push({ name: label, dateKey: key });
+      cursor.setDate(cursor.getDate() + 1);
+      count++;
+    }
+
+    // Bucket transactions per day
+    return days.map(({ name, dateKey }) => {
+      const dayTx = rawTransactions.filter((t) => {
+        const txDate = (t.date || "").substring(0, 10);
+        return txDate === dateKey;
+      });
+      const collection = dayTx.filter((t) => t.type === "Income").reduce((s, t) => s + (t.inflow || 0), 0);
+      const vendorPay = dayTx.filter((t) => t.type === "Expense" && t.subParticulars === "Vendor Payment").reduce((s, t) => s + (t.outflow || 0), 0);
+      const expenses = dayTx.filter((t) => t.type === "Expense" && t.subParticulars !== "Vendor Payment").reduce((s, t) => s + (t.outflow || 0), 0);
+      return { name, Collection: collection, "Vendor Payments": vendorPay, Expenses: expenses };
+    });
+  };
+
+  const cashFlowData = buildCashFlowData();
 
   const totalCollection = rawTransactions
     .filter((t) => t.type === "Income")
@@ -1357,15 +1368,15 @@ export default function AccountingPage() {
   const bankAccountsListGlobal = customBankAccounts;
 
   const pendingVendorPayments = vendorAssignments
-    .filter((a) => a.paymentStatus !== "paid")
+    .filter((a) => a.paymentStatus !== "paid" && (a.totalAmount || 0) > (a.paidAmount || 0))
     .slice(0, 5)
     .map((a) => ({
-      vendor: typeof a.vendorId === "object" ? a.vendorId.name : "Vendor",
-      trip: a.tripCode || "MKA - 05 Jul",
+      vendor: typeof a.vendorId === "object" ? a.vendorId.name : (a.vendorName || "Vendor"),
+      trip: a.tripCode || "—",
       dueDate: a.dueDate
-        ? new Date(a.dueDate).toLocaleDateString()
-        : "05 Jul 2024",
-      amount: a.totalAmount - (a.paidAmount || 0),
+        ? new Date(a.dueDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+        : "—",
+      amount: Math.max(0, (a.totalAmount || 0) - (a.paidAmount || 0)),
     }));
 
   const tripProfitability =
@@ -1407,8 +1418,8 @@ export default function AccountingPage() {
     return timeA - timeB;
   });
 
-  // Starting balance is 8,95,250
-  let currentBalance = 895250;
+  // Running balance starts at 0 (only real transactions)
+  let currentBalance = 0;
   const computedTransactions = sortedChronological.map((t) => {
     if (t.type === "Income") {
       currentBalance += t.inflow;
@@ -1798,37 +1809,37 @@ export default function AccountingPage() {
               {
                 label: "Total Collection",
                 val: totalApprovedCollection,
-                trend: "18% vs yesterday",
+                subtitle: `${dynamicInflows.length} payment${dynamicInflows.length !== 1 ? "s" : ""} received`,
                 type: "up",
               },
               {
                 label: "Total Payments (Vendors)",
                 val: totalVendorPaid,
-                trend: "8% vs yesterday",
-                type: "down",
+                subtitle: "Vendor disbursements",
+                type: "neutral",
               },
               {
                 label: "Office Expenses",
                 val: totalOfficeExpenses,
-                trend: "5% vs yesterday",
-                type: "down",
+                subtitle: `${dynamicOfficeExpenses.length} expense${dynamicOfficeExpenses.length !== 1 ? "s" : ""} logged`,
+                type: "neutral",
               },
               {
                 label: "Cash in Hand",
-                val: cashInHand,
-                trend: "24% vs yesterday",
-                type: "up",
+                val: Math.max(0, cashInHand),
+                subtitle: cashInHand < 0 ? "Deficit" : "Net available",
+                type: cashInHand >= 0 ? "up" : "down",
               },
               {
                 label: "Outstanding (Customers)",
                 val: outstandingCustomers,
-                subtitle: "62 Bookings",
+                subtitle: `${outstandingBookingsCount} booking${outstandingBookingsCount !== 1 ? "s" : ""} unpaid`,
                 type: "neutral",
               },
               {
                 label: "Outstanding (Vendors)",
                 val: outstandingVendors,
-                subtitle: "23 Vendors",
+                subtitle: `${outstandingVendorsCount} vendor${outstandingVendorsCount !== 1 ? "s" : ""} pending`,
                 type: "neutral",
               },
             ].map((card, i) => (
