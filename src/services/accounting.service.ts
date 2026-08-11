@@ -110,7 +110,7 @@ export const accountingService = {
     return res.data?.data;
   },
 
-  async getPersonalCollections(): Promise<{
+  async getPersonalCollections(startDate?: string, endDate?: string): Promise<{
     data: any[];
     summary: {
       totalCollected: number;
@@ -118,7 +118,10 @@ export const accountingService = {
       totalPending: number;
     };
   }> {
-    const res = await api.get("/accounting/personal-collections");
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const res = await api.get("/accounting/personal-collections", { params });
     return res.data;
   },
 

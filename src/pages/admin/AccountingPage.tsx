@@ -142,14 +142,31 @@ export default function AccountingPage() {
     }
   }, [tabParam]);
 
-  const [selectedPreset, setSelectedPreset] = useState("This Month");
-  const [dateRange, setDateRange] = useState("01 Aug 2026 - 31 Aug 2026");
+  const [selectedPreset, setSelectedPreset] = useState("Today");
+
+  // Compute today's dates as defaults
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [activeDateStart, setActiveDateStart] = useState<Date>(todayStart);
+  const [activeDateEnd, setActiveDateEnd] = useState<Date>(todayEnd);
+
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+  const [dateRange, setDateRange] = useState(`${fmt(todayStart)} - ${fmt(todayEnd)}`);
 
   const applyDatePreset = (preset: string) => {
     setSelectedPreset(preset);
     const now = new Date();
-    let start = new Date();
-    let end = new Date();
+    let start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
     if (preset === "Today") {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -176,18 +193,14 @@ export default function AccountingPage() {
       const fyStartYear = curMonth >= 3 ? curYear : curYear - 1;
       start = new Date(fyStartYear, 3, 1, 0, 0, 0);
       end = new Date(fyStartYear + 1, 2, 31, 23, 59, 59);
+    } else {
+      // Custom Range — don't override active dates
+      return;
     }
 
-    const fmt = (d: Date) =>
-      d.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-
-    if (preset !== "Custom Range") {
-      setDateRange(`${fmt(start)} - ${fmt(end)}`);
-    }
+    setActiveDateStart(start);
+    setActiveDateEnd(end);
+    setDateRange(`${fmt(start)} - ${fmt(end)}`);
   };
 
   // Customer Accounting State
@@ -303,10 +316,12 @@ export default function AccountingPage() {
   });
   const [submittingPayment, setSubmittingPayment] = useState(false);
 
-  const loadPersonalCollections = async () => {
+  const loadPersonalCollections = async (start?: Date, end?: Date) => {
     setLoadingPersonalCollections(true);
     try {
-      const res = await accountingService.getPersonalCollections();
+      const s = (start || activeDateStart).toISOString().split("T")[0];
+      const e = (end || activeDateEnd).toISOString().split("T")[0];
+      const res = await accountingService.getPersonalCollections(s, e);
       if (res?.data) {
         setPersonalCollections(res.data);
         if (res.summary) setPersonalCollectionsSummary(res.summary);
@@ -710,6 +725,12 @@ export default function AccountingPage() {
     loadPersonalCollections();
   }, [loadReports]);
 
+  // Re-fetch personal collections whenever the active date window changes
+  useEffect(() => {
+    loadPersonalCollections(activeDateStart, activeDateEnd);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDateStart, activeDateEnd]);
+
   useEffect(() => {
     setPage(1);
   }, [search, fStatus, fMode, pageSize]);
@@ -1064,9 +1085,20 @@ export default function AccountingPage() {
 
   const mergedEntries = Array.from(entryMap.values());
 
-  // Dynamic Collections (Approved entries with positive collected amount)
+  // Helper: check if a date string / ISO date falls within active date window
+  const dateInRange = (dateStr: string | undefined): boolean => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    // Compare at day-level precision — strip time
+    const dayStart = new Date(activeDateStart.getFullYear(), activeDateStart.getMonth(), activeDateStart.getDate());
+    const dayEnd = new Date(activeDateEnd.getFullYear(), activeDateEnd.getMonth(), activeDateEnd.getDate(), 23, 59, 59);
+    return d >= dayStart && d <= dayEnd;
+  };
+
+  // Dynamic Collections (Approved entries with positive collected amount, filtered by date)
   const dynamicInflows = mergedEntries
-    .filter((e) => e.status === "APPROVED" && (Number(e.amount) || 0) > 0)
+    .filter((e) => e.status === "APPROVED" && (Number(e.amount) || 0) > 0 && dateInRange(e.createdAt))
     .map((e) => ({
       id: e.id,
       originalEntry: e,
@@ -1094,9 +1126,9 @@ export default function AccountingPage() {
       addedBy: e.salesperson?.name || "System",
     }));
 
-  // Dynamic Payouts (Paid vendor assignments)
+  // Dynamic Payouts (Paid vendor assignments, filtered by payment date)
   const dynamicOutflows = vendorAssignments
-    .filter((a) => (a.paidAmount || 0) > 0)
+    .filter((a) => (a.paidAmount || 0) > 0 && dateInRange(a.updatedAt || a.createdAt))
     .map((a) => ({
       id: a._id || a.id,
       originalEntry: a,
@@ -1128,8 +1160,8 @@ export default function AccountingPage() {
       addedBy: "System",
     }));
 
-  // Dynamic Office Expenses
-  const dynamicOfficeExpenses = officeExpenses.map((e) => ({
+  // Dynamic Office Expenses (filtered by expense date)
+  const dynamicOfficeExpenses = officeExpenses.filter((e) => dateInRange(e.date || e.createdAt)).map((e) => ({
     id: e._id || e.id,
     originalEntry: e,
     date: e.date,
