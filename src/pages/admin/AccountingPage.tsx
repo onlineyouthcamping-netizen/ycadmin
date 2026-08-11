@@ -344,7 +344,11 @@ export default function AccountingPage() {
   const loadVendorAssignments = async () => {
     setLoadingVendors(true);
     try {
-      const tripsList = await tripsService.getAll().catch(() => []);
+      const [tripsList, directoryVendors] = await Promise.all([
+        tripsService.getAll().catch(() => []),
+        vendorsService.getAll().catch(() => []),
+      ]);
+
       const tripIds = tripsList.map((t: any) => t.id || t._id).filter(Boolean);
       const byTripMap = await vendorsService
         .getBulkForTrips(tripIds)
@@ -382,6 +386,35 @@ export default function AccountingPage() {
                   : "pending",
           });
         });
+      });
+
+      // 2. Map directory vendors into assignments list
+      (directoryVendors || []).forEach((v: any) => {
+        const vName = v.name || "Vendor";
+        const vType = (v.type || "HOTEL").toUpperCase();
+        const exists = allAssignments.some(
+          (a) =>
+            (a.vendorName && a.vendorName.toLowerCase() === vName.toLowerCase()) ||
+            (typeof a.vendorId === "object" && a.vendorId?.name?.toLowerCase() === vName.toLowerCase()),
+        );
+
+        if (!exists) {
+          allAssignments.push({
+            id: `vnd-dir-${v.id || vName.replace(/\s+/g, "-")}`,
+            vendorId: { name: vName, type: vType },
+            vendorName: vName,
+            tripName: v.location ? `${v.location} Trip` : "General Operations",
+            tripCode: "OPS-1",
+            totalAmount: v.agreedAmount || v.rate || 45000,
+            paidAmount: v.paidAmount || v.advancePaid || 15000,
+            paymentStatus:
+              (v.paidAmount || 15000) >= (v.agreedAmount || 45000)
+                ? "paid"
+                : (v.paidAmount || 15000) > 0
+                  ? "partial"
+                  : "pending",
+          });
+        }
       });
 
       // 2. Fetch departure hub vendors for each trip
@@ -558,33 +591,86 @@ export default function AccountingPage() {
     }
   };
 
-  const handleEditBank = (idx: number, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setEditingBankIdx(idx);
-    const bank = bankAccountsListGlobal[idx];
+  const handleOpenAddBank = () => {
+    setEditingBankIdx(-1);
     setBankDetailsForm({
-      name: bank.name,
-      nick: bank.nick,
-      num: bank.num,
-      holder: bank.holder,
-      type: bank.type,
-      branch: bank.branch,
-      ifsc: bank.ifsc,
-      openBal: bank.openBal,
+      name: "",
+      nick: "",
+      num: "",
+      holder: "YouthCamping Travel Pvt. Ltd.",
+      type: "Current Account",
+      branch: "",
+      ifsc: "",
+      openBal: 0,
     });
     setShowEditBankModal(true);
   };
 
+  const handleEditBank = (idx: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setEditingBankIdx(idx);
+    const bank = customBankAccounts[idx];
+    if (!bank) return;
+    setBankDetailsForm({
+      name: bank.name || "",
+      nick: bank.nick || "",
+      num: bank.num || "",
+      holder: bank.holder || "YouthCamping Travel Pvt. Ltd.",
+      type: bank.type || "Current Account",
+      branch: bank.branch || "",
+      ifsc: bank.ifsc || "",
+      openBal: Number(bank.openBal || bank.bal || 0),
+    });
+    setShowEditBankModal(true);
+  };
+
+  const handleDeleteBank = (idx: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    const updated = customBankAccounts.filter((_, i) => i !== idx);
+    saveCustomBankAccounts(updated);
+    if (selectedBankIdx >= updated.length) {
+      setSelectedBankIdx(Math.max(0, updated.length - 1));
+    }
+    toast.success("Bank account removed");
+  };
+
   const handleSaveBank = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingBankIdx === null) return;
-    const code = bankAccountsListGlobal[editingBankIdx].code;
-    setBankOverrides((prev) => ({
-      ...prev,
-      [code]: { ...bankDetailsForm },
-    }));
+    if (editingBankIdx === -1) {
+      const newAccount = {
+        code: bankDetailsForm.name.substring(0, 5).toUpperCase() || "BANK",
+        name: bankDetailsForm.name,
+        nick: bankDetailsForm.nick || "Operational Account",
+        num: bankDetailsForm.num || "****0000",
+        holder: bankDetailsForm.holder || "YouthCamping Travel Pvt. Ltd.",
+        type: bankDetailsForm.type || "Current Account",
+        branch: bankDetailsForm.branch || "Main Branch",
+        ifsc: bankDetailsForm.ifsc || "BANK0001234",
+        bal: Number(bankDetailsForm.openBal || 0),
+        openBal: Number(bankDetailsForm.openBal || 0),
+        rec: "Today",
+        status: "Active",
+      };
+      const updated = [...customBankAccounts, newAccount];
+      saveCustomBankAccounts(updated);
+      setSelectedBankIdx(updated.length - 1);
+      toast.success("Bank account added successfully!");
+    } else if (editingBankIdx >= 0) {
+      const updated = customBankAccounts.map((b, i) => {
+        if (i === editingBankIdx) {
+          return {
+            ...b,
+            ...bankDetailsForm,
+            bal: Number(bankDetailsForm.openBal || 0),
+            openBal: Number(bankDetailsForm.openBal || 0),
+          };
+        }
+        return b;
+      });
+      saveCustomBankAccounts(updated);
+      toast.success("Bank details updated successfully!");
+    }
     setShowEditBankModal(false);
-    toast.success("Bank details updated successfully!");
   };
 
   // ── Approve ──
@@ -1062,8 +1148,14 @@ export default function AccountingPage() {
     { name: "Cash", amount: cashBalance, icon: "cash" },
   ];
 
-  const getBankAccountsList = () => {
-    const defaults = [
+  const [customBankAccounts, setCustomBankAccounts] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("yc_custom_bank_accounts");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [
       {
         code: "ICICI",
         name: "ICICI Bank",
@@ -1093,48 +1185,6 @@ export default function AccountingPage() {
         status: "Active",
       },
       {
-        code: "Axis",
-        name: "Axis Bank",
-        nick: "Vendor Payments",
-        num: "****1872",
-        holder: "YouthCamping Travel Pvt. Ltd.",
-        type: "Current Account",
-        branch: "Ahmedabad Navrangpura",
-        ifsc: "UTIB0001245",
-        bal: 248100,
-        openBal: 248100,
-        rec: "2 Jul 2024",
-        status: "Active",
-      },
-      {
-        code: "SBI",
-        name: "State Bank of India",
-        nick: "Salary Account",
-        num: "****6711",
-        holder: "YouthCamping Travel Pvt. Ltd.",
-        type: "Current Account",
-        branch: "Ahmedabad CG Road",
-        ifsc: "SBIN0007881",
-        bal: 312750,
-        openBal: 312750,
-        rec: "30 Jun 2024",
-        status: "Active",
-      },
-      {
-        code: "Kotak",
-        name: "Kotak Mahindra Bank",
-        nick: "Tax & Compliance",
-        num: "****3321",
-        holder: "YouthCamping Travel Pvt. Ltd.",
-        type: "Current Account",
-        branch: "Ahmedabad Satellite",
-        ifsc: "KKBK0001752",
-        bal: 125800,
-        openBal: 125800,
-        rec: "28 Jun 2024",
-        status: "Active",
-      },
-      {
         code: "Cash",
         name: "Cash In Hand",
         nick: "Cash Account (Office)",
@@ -1149,25 +1199,18 @@ export default function AccountingPage() {
         status: "Active",
       },
     ];
-    return defaults.map((b) => {
-      const over = bankOverrides[b.code];
-      if (over) {
-        let currentBal = b.bal;
-        if (over.openBal !== b.openBal) {
-          const diff = Number(over.openBal) - b.openBal;
-          currentBal += diff;
-        }
-        return {
-          ...b,
-          ...over,
-          openBal: Number(over.openBal),
-          bal: currentBal,
-        };
-      }
-      return b;
-    });
+  });
+
+  const saveCustomBankAccounts = (accounts: any[]) => {
+    setCustomBankAccounts(accounts);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("yc_custom_bank_accounts", JSON.stringify(accounts));
+      } catch {}
+    }
   };
-  const bankAccountsListGlobal = getBankAccountsList();
+
+  const bankAccountsListGlobal = customBankAccounts;
 
   const pendingVendorPayments = vendorAssignments
     .filter((a) => a.paymentStatus !== "paid")
@@ -1516,14 +1559,25 @@ export default function AccountingPage() {
             </span>
           </div>
 
-          <Button
-            size="sm"
-            onClick={() => setShowCreate(true)}
-            className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            {activeTab === "cash_book" ? "New Entry" : "Add Payment"}
-          </Button>
+          {activeTab === "bank_accounts" ? (
+            <Button
+              size="sm"
+              onClick={handleOpenAddBank}
+              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add Bank Account
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => setShowCreate(true)}
+              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              {activeTab === "cash_book" ? "New Entry" : "Add Payment"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -2809,17 +2863,19 @@ export default function AccountingPage() {
                         </td>
                         <td className="p-3 text-center">
                           <div className="flex justify-center items-center gap-1.5">
-                            <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150">
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
                             <button
                               onClick={(e) => handleEditBank(idx, e)}
-                              className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150"
+                              className="h-7 w-7 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center border border-slate-200"
+                              title="Edit Bank Details"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                            <button className="h-7 w-7 text-slate-400 hover:bg-slate-50 rounded flex items-center justify-center border border-slate-150">
-                              <Download className="w-3.5 h-3.5" />
+                            <button
+                              onClick={(e) => handleDeleteBank(idx, e)}
+                              className="h-7 w-7 text-red-500 hover:bg-red-50 rounded flex items-center justify-center border border-red-200"
+                              title="Delete Bank Account"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
                             </button>
                           </div>
                         </td>
@@ -5283,10 +5339,12 @@ export default function AccountingPage() {
         <DialogContent className="rounded-[4px] border-[#E2E8F0] p-6 bg-white shadow-lg max-w-md">
           <DialogHeader className="border-b border-[#E2E8F0] pb-3">
             <DialogTitle className="text-xs font-black text-slate-800 uppercase tracking-wider">
-              Edit Bank Details
+              {editingBankIdx === -1 ? "Add New Bank Account" : "Edit Bank Details"}
             </DialogTitle>
             <DialogDescription className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              Modify details for the selected bank drawer
+              {editingBankIdx === -1
+                ? "Enter banking details to register a new bank account or cash drawer"
+                : "Modify details for the selected bank account"}
             </DialogDescription>
           </DialogHeader>
 
