@@ -51,6 +51,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import api from "@/services/api";
+import { tripsService } from "@/services/trips.service";
 import { getDisplayVendorCode } from "@/utils/vendorUtils";
 
 interface AccommodationDetailPageProps {
@@ -533,6 +534,46 @@ export function AccommodationDetailPage({
   const [priceHistory, setPriceHistory] = useState<any[]>(
     vendor.priceHistory || [],
   );
+
+  // Real Fed Trips State & Dynamic Vendor Mapping
+  const [allTrips, setAllTrips] = useState<any[]>([]);
+  const [linkedTripIds, setLinkedTripIds] = useState<string[]>(() => vendor.linkedTripIds || []);
+  const [linkTripModalOpen, setLinkTripModalOpen] = useState<boolean>(false);
+  const [selectedTripToLink, setSelectedTripToLink] = useState<string>("");
+
+  React.useEffect(() => {
+    tripsService
+      .getAll()
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setAllTrips(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch real trips for vendor mapping:", err);
+      });
+  }, []);
+
+  const mappedTrips = useMemo(() => {
+    if (!allTrips || allTrips.length === 0) return [];
+
+    return allTrips.filter((t) => {
+      // 1. Explicitly linked trip ID
+      if (linkedTripIds.includes(t.id)) return true;
+
+      // 2. Explicit trip code matching
+      if (vendor.tripCode && (t.id === vendor.tripCode || t.slug === vendor.tripCode)) return true;
+
+      // 3. Location / Destination matching
+      const vendorLoc = (vendor.location || vendor.city || "").toLowerCase();
+      const tripLoc = (t.location || t.title || t.slug || "").toLowerCase();
+
+      if (destinations.some((d) => d.trim() && tripLoc.includes(d.toLowerCase()))) return true;
+      if (vendorLoc && tripLoc.includes(vendorLoc)) return true;
+
+      return false;
+    });
+  }, [allTrips, linkedTripIds, destinations, vendor.location, vendor.city, vendor.tripCode]);
 
   // Helper for Automatic Activity Logging
   const logActivity = (
@@ -2667,61 +2708,116 @@ export function AccommodationDetailPage({
           {activeTab === "trips" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                  Destination Mappings & Active Trips
-                </h3>
-                <Button
-                  onClick={() => setDestModalOpen(true)}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Link Destination
-                </Button>
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                    Destination Mappings & Mapped Real Trips
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Trips dynamically linked via destination match or explicit assignment.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setDestModalOpen(true)}
+                    variant="outline"
+                    className="h-8 text-xs font-bold border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Link Destination
+                  </Button>
+                  <Button
+                    onClick={() => setLinkTripModalOpen(true)}
+                    className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Link Real Trip
+                  </Button>
+                </div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-3">
-                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                  <span className="font-bold text-slate-700 text-[10px] uppercase block mb-2">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-4">
+                <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
+                  <span className="font-bold text-slate-700 text-[10px] uppercase block">
                     Linked Master Destinations
                   </span>
                   <div className="flex gap-2 flex-wrap">
-                    {destinations.map((d, i) => (
-                      <span
-                        key={i}
-                        className="bg-amber-100 text-amber-800 px-3 py-1 rounded-md font-extrabold text-xs flex items-center gap-1.5"
-                      >
-                        ✓ {d}
-                        <button
-                          onClick={() => handleDeleteDestination(d)}
-                          className="hover:text-rose-700"
+                    {destinations.length === 0 ? (
+                      <span className="text-slate-400 italic text-xs">No destinations linked yet.</span>
+                    ) : (
+                      destinations.map((d, i) => (
+                        <span
+                          key={i}
+                          className="bg-amber-100 text-amber-800 px-3 py-1 rounded-md font-extrabold text-xs flex items-center gap-1.5"
                         >
-                          ×
-                        </button>
-                      </span>
-                    ))}
+                          ✓ {d}
+                          <button
+                            onClick={() => handleDeleteDestination(d)}
+                            className="hover:text-rose-700 font-black ml-1"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <span className="font-bold text-slate-700 text-[10px] uppercase block">
-                    Trips Using This Vendor
-                  </span>
-                  {[
-                    "Manali Kasol Backpacking",
-                    "Himachal Escape Expedition",
-                    "Winter Snow Special",
-                  ].map((tripName, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center bg-white p-3 rounded border border-slate-200"
-                    >
-                      <span className="font-bold text-slate-800">
-                        {tripName}
-                      </span>
-                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded">
-                        Active Link
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 text-[10px] uppercase block">
+                      Real Fed Trips Using This Vendor ({mappedTrips.length})
+                    </span>
+                  </div>
+
+                  {mappedTrips.length === 0 ? (
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 text-center space-y-2">
+                      <p className="text-slate-500 font-medium">
+                        No real trips currently mapped to this vendor.
+                      </p>
+                      <Button
+                        onClick={() => setLinkTripModalOpen(true)}
+                        size="xs"
+                        className="bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 font-bold"
+                      >
+                        + Select from Available Real Trips
+                      </Button>
                     </div>
-                  ))}
+                  ) : (
+                    mappedTrips.map((trip, idx) => (
+                      <div
+                        key={trip.id || idx}
+                        className="flex justify-between items-center bg-white p-3.5 rounded-lg border border-slate-200 hover:border-orange-300 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 font-mono font-black text-[10px] flex items-center justify-center shrink-0">
+                            {trip.id || trip.slug || `TRIP-${idx + 1}`}
+                          </span>
+                          <div>
+                            <span className="font-extrabold text-slate-900 text-xs block">
+                              {trip.title || trip.name}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              Location: {trip.location || vendor.location || "Himachal"} • {trip.duration || "Multi-day"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded uppercase">
+                            Active Link
+                          </span>
+                          {linkedTripIds.includes(trip.id) && (
+                            <button
+                              onClick={() => {
+                                setLinkedTripIds(linkedTripIds.filter((id) => id !== trip.id));
+                                toast.success(`Unlinked ${trip.title}`);
+                              }}
+                              className="text-xs text-slate-400 hover:text-red-600 font-bold px-2 py-1"
+                            >
+                              Unlink
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -3919,6 +4015,66 @@ export function AccommodationDetailPage({
               className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingGuideRate ? "Update Guide Rate" : "Add Guide Rate"}
+            </Button>
+          </div>
+      {/* LINK REAL TRIP MODAL */}
+      <Dialog open={linkTripModalOpen} onOpenChange={setLinkTripModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-xl rounded-xl">
+          <DialogTitle className="text-base font-black text-slate-900">
+            Link Real Fed Trip
+          </DialogTitle>
+          <p className="text-xs text-slate-500">
+            Select an available trip fed in YouthCamping OS to map directly to <strong>{vendor.name}</strong>.
+          </p>
+
+          <div className="space-y-3 py-3 text-xs">
+            <div>
+              <label className="font-extrabold text-slate-700 block mb-1">
+                Select Real Fed Trip
+              </label>
+              <select
+                value={selectedTripToLink}
+                onChange={(e) => setSelectedTripToLink(e.target.value)}
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+              >
+                <option value="">-- Choose Real Trip --</option>
+                {allTrips.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title || t.name} ({t.location || "Trip"}) [{t.id}]
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLinkTripModalOpen(false)}
+              className="h-8 text-xs font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (!selectedTripToLink) {
+                  toast.error("Please select a trip to link");
+                  return;
+                }
+                const tripObj = allTrips.find((t) => t.id === selectedTripToLink);
+                if (!linkedTripIds.includes(selectedTripToLink)) {
+                  setLinkedTripIds([...linkedTripIds, selectedTripToLink]);
+                  logActivity("TRIP_LINKED", `Linked trip: ${tripObj?.title || selectedTripToLink} to vendor`);
+                  toast.success(`Linked "${tripObj?.title || selectedTripToLink}" to ${vendor.name}`);
+                }
+                setLinkTripModalOpen(false);
+                setSelectedTripToLink("");
+              }}
+              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4"
+            >
+              Link Trip
             </Button>
           </div>
         </DialogContent>
