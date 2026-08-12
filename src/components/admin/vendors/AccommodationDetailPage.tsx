@@ -562,14 +562,23 @@ export function AccommodationDetailPage({
       if (linkedTripIds.includes(t.id)) return true;
 
       // 2. Explicit trip code matching
-      if (vendor.tripCode && (t.id === vendor.tripCode || t.slug === vendor.tripCode)) return true;
+      if (vendor.tripCode && (t.id === vendor.tripCode || t.slug === vendor.tripCode || t.code === vendor.tripCode)) return true;
 
-      // 3. Location / Destination matching
-      const vendorLoc = (vendor.location || vendor.city || "").toLowerCase();
-      const tripLoc = (t.location || t.title || t.slug || "").toLowerCase();
+      const tripFullText = `${t.title || ""} ${t.location || ""} ${t.slug || ""} ${t.code || ""}`.toLowerCase();
 
-      if (destinations.some((d) => d.trim() && tripLoc.includes(d.toLowerCase()))) return true;
-      if (vendorLoc && tripLoc.includes(vendorLoc)) return true;
+      // 3. Linked Master Destinations matching (e.g. Manali, Shimla, Spiti)
+      if (destinations.some((d) => d.trim() && tripFullText.includes(d.trim().toLowerCase()))) return true;
+
+      // 4. Tokenized vendor location matching (e.g., "Manali, Himachal" -> ["manali", "himachal"])
+      const vendorLocRaw = (vendor.location || vendor.city || "").toLowerCase();
+      if (vendorLocRaw) {
+        const tokens = vendorLocRaw
+          .split(/[\s,]+/)
+          .map((tok) => tok.trim())
+          .filter((tok) => tok.length > 2 && tok !== "and" && tok !== "the");
+
+        if (tokens.some((tok) => tripFullText.includes(tok))) return true;
+      }
 
       return false;
     });
