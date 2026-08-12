@@ -4024,8 +4024,10 @@ export function AccommodationDetailPage({
               className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingGuideRate ? "Update Guide Rate" : "Add Guide Rate"}
-            </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
       {/* LINK REAL TRIP MODAL */}
       <Dialog open={linkTripModalOpen} onOpenChange={setLinkTripModalOpen}>
         <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-xl rounded-xl">
