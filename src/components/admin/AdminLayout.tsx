@@ -238,7 +238,17 @@ function AdminSidebar() {
   };
 
   const handleLogout = () => {
-    logout();
+    try {
+      logout();
+    } catch (e) {
+      console.error("Logout store error:", e);
+    }
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("admin_user");
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {}
     window.location.href = "/admin/login";
   };
 
@@ -867,8 +877,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     <DropdownMenuSeparator className="my-1 border-slate-100" />
 
                     <DropdownMenuItem
-                      onSelect={() => handleLogout()}
-                      onClick={() => handleLogout()}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        handleLogout();
+                      }}
                       className="text-xs font-bold text-white bg-[#F97316] hover:bg-[#EA580C] focus:bg-[#EA580C] focus:text-white cursor-pointer rounded-lg py-2 px-3 mt-1.5 flex items-center justify-center shadow-xs transition-all"
                     >
                       <LogOut className="w-4 h-4 mr-2 text-white" />
