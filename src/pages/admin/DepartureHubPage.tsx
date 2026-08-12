@@ -3483,52 +3483,106 @@ useEffect(() => {
   };
 
   const computedItinerary = useMemo(() => {
-    const isSpiti =
-      tripId.toLowerCase().includes("spt") ||
-      tripId.toLowerCase().includes("spiti");
-
-    const rawList =
+    const activeItinerarySource =
       tripDetails?.itinerary && tripDetails.itinerary.length > 0
-        ? tripDetails.itinerary.map((it: any, idx: number) => {
-            const stayName =
-              it.stay && it.stay !== "—" ? it.stay : it.location || "";
-            const mealsName =
-              it.meals && it.meals !== "—" ? it.meals : "Breakfast & Dinner";
-            const actName = Array.isArray(it.activities)
-              ? it.activities.length > 0
-                ? it.activities.join(" • ")
-                : it.title || it.location || ""
-              : it.activities && it.activities !== "—"
-                ? it.activities
-                : it.title || it.location || "";
-            const travelName =
-              it.travel ||
-              it.distance ||
-              (it.location ? `Transfer / ${it.location}` : "Local Transfer");
-            const travelSubName =
-              it.travelSub || it.drivingHours || "Planned Transfer";
+        ? tripDetails.itinerary
+        : itineraryList && itineraryList.length > 0
+        ? itineraryList
+        : (() => {
+            const tid = (tripId || "").toLowerCase();
+            if (tid.includes("ker") || tid.includes("krl") || tid.includes("kerala")) {
+              return [
+                { day: 1, title: "Ahmedabad to Cochin Train Journey", location: "Cochin", stay: "Night Journey", description: "Departure/reporting time: Arriving at Ernakulam Junction around 9:00 PM." },
+                { day: 2, title: "Arrival in Cochin", location: "Cochin", stay: "Cochin", description: "Proceed to your hotel near the railway station and settle in." },
+                { day: 3, title: "Scenic Drive to Munnar", location: "Munnar", stay: "Munnar", description: "Warm pick-up & transfer to Munnar tea plantations." },
+                { day: 4, title: "Explore the Beauty of Munnar", location: "Munnar", stay: "Munnar", description: "Kundala Dam, Mattupetty Dam, Tea Gardens exploration." },
+                { day: 5, title: "Thekkady – Wildlife & Cultural Experience", location: "Thekkady", stay: "Thekkady", description: "Periyar National Park & spice plantation tour." },
+                { day: 6, title: "Thekkady to Alleppey – Backwater Paradise", location: "Alleppey", stay: "Alleppey", description: "Alleppey houseboat & backwater cruise experience." },
+                { day: 7, title: "Alleppey to Cochin", location: "Cochin", stay: "Cochin", description: "Fort Kochi sightseeing, Chinese fishing nets & local market." },
+                { day: 8, title: "Cochin to Ahmedabad", location: "Cochin", stay: "Night Journey", description: "Board return train from Ernakulam Junction." },
+                { day: 9, title: "Arrival at Your City", location: "Your City", stay: "—", description: "Reach home with memorable Kerala trip experiences." },
+              ];
+            }
+            if (tid.includes("spt") || tid.includes("spiti")) {
+              return [
+                { day: 1, title: "Train Journey to Chandigarh / Jalandhar", location: "Chandigarh", stay: "Night Journey", description: "Overnight train journey from starting location." },
+                { day: 2, title: "Drive to Shimla / Narkanda", location: "Shimla", stay: "Shimla", description: "Scenic mountain drive towards Narkanda." },
+                { day: 3, title: "Shimla to Chitkul", location: "Chitkul", stay: "Chitkul", description: "Travel to last Indian village Chitkul." },
+                { day: 4, title: "Travel Chitkul to Tabo via Nako", location: "Tabo", stay: "Tabo", description: "Visit Nako Lake & Tabo Monastery." },
+                { day: 5, title: "Explore Tabo, Dhankar & Kaza", location: "Kaza", stay: "Kaza", description: "Visit Dhankar Monastery & drive to Kaza." },
+                { day: 6, title: "Key Monastery, Hikkim, Komic, Langza", location: "Kaza", stay: "Kaza", description: "Highest post office Hikkim & Key Monastery." },
+                { day: 7, title: "Kaza to Chandratal Lake", location: "Chandratal", stay: "Chandratal", description: "Cross Kunzum Pass & camp at Chandratal." },
+                { day: 8, title: "Chandratal to Manali", location: "Manali", stay: "Manali", description: "Drive through Atal Tunnel to Manali." },
+                { day: 9, title: "Manali Sightseeing & Return Train", location: "Manali", stay: "Night Journey", description: "Local sightseeing & departure." },
+                { day: 10, title: "Arrive at Your City", location: "Your City", stay: "—", description: "Reach home safely." },
+              ];
+            }
+            if (tid.includes("mka") || tid.includes("manali")) {
+              return [
+                { day: 1, title: "Train Journey to Jalandhar", location: "Jalandhar", stay: "Night Journey", description: "Overnight train journey." },
+                { day: 2, title: "Visit Wagha Border & Golden Temple", location: "Amritsar", stay: "Amritsar", description: "Sightseeing in Amritsar." },
+                { day: 3, title: "Day for Kasol & Parvati Valley Exploration", location: "Kasol", stay: "Kasol", description: "Exploration of Kasol & Manikaran." },
+                { day: 4, title: "Bijli Mahadev Trek", location: "Manali", stay: "Manali", description: "Scenic trek to Bijli Mahadev." },
+                { day: 5, title: "Adventure Activities: Rafting & Paragliding", location: "Manali", stay: "Manali", description: "River rafting & paragliding in Kullu." },
+                { day: 6, title: "Solang Valley – Atal Tunnel – Sissu", location: "Sissu", stay: "Sissu", description: "Explore Solang Valley and Sissu." },
+                { day: 7, title: "Manali Sightseeing & Jogini Waterfall", location: "Manali", stay: "Manali", description: "Hadimba Temple & Jogini Waterfall." },
+                { day: 8, title: "Return Train Journey", location: "Jalandhar", stay: "Night Journey", description: "Board return train." },
+                { day: 9, title: "Arrive at Your City", location: "Your City", stay: "—", description: "Reach home." },
+              ];
+            }
+            const fallbackDays = [];
+            const count = tripDetails?.durationDays || 9;
+            for (let i = 1; i <= count; i++) {
+              fallbackDays.push({
+                day: i,
+                title: i === 1 ? `Day ${i} Departure & Journey` : i === count ? `Day ${i} Return & Arrival` : `Day ${i} Exploration & Stay`,
+                location: `Destination Day ${i}`,
+                stay: i === 1 || i === count ? "Night Journey" : `Hotel Day ${i}`,
+                description: `Operational details for Day ${i}`,
+              });
+            }
+            return fallbackDays;
+          })();
 
-            return {
-              rawIdx: idx,
-              day: `Day ${it.day || idx + 1}`,
-              plan: it.title || it.location || `Day ${it.day || idx + 1}`,
-              sub: it.description || "",
-              stay: stayName || "—",
-              stayType:
-                stayName && stayName !== "—"
-                  ? it.stayType || "Standard Stay"
-                  : "",
-              stayBadge:
-                stayName && stayName !== "—" ? it.stayBadge || "STANDARD" : "",
-              travel: travelName,
-              travelSub: travelSubName,
-              distance: travelName,
-              meals: mealsName || "—",
-              activities: actName || "—",
-              status: "ON TIME",
-            };
-          })
-        : [];
+    const rawList = activeItinerarySource.map((it: any, idx: number) => {
+      const stayName =
+        it.stay && it.stay !== "—" ? it.stay : it.location || "";
+      const mealsName =
+        it.meals && it.meals !== "—" ? it.meals : "Breakfast & Dinner";
+      const actName = Array.isArray(it.activities)
+        ? it.activities.length > 0
+          ? it.activities.join(" • ")
+          : it.title || it.location || ""
+        : it.activities && it.activities !== "—"
+          ? it.activities
+          : it.title || it.location || "";
+      const travelName =
+        it.travel ||
+        it.distance ||
+        (it.location ? `Transfer / ${it.location}` : "Local Transfer");
+      const travelSubName =
+        it.travelSub || it.drivingHours || "Planned Transfer";
+
+      return {
+        rawIdx: idx,
+        day: `Day ${it.day || idx + 1}`,
+        plan: it.title || it.plan || it.location || `Day ${it.day || idx + 1}`,
+        sub: it.description || it.sub || "",
+        stay: stayName || "—",
+        stayType:
+          stayName && stayName !== "—"
+            ? it.stayType || "Standard Stay"
+            : "",
+        stayBadge:
+          stayName && stayName !== "—" ? it.stayBadge || "STANDARD" : "",
+        travel: travelName,
+        travelSub: travelSubName,
+        distance: travelName,
+        meals: mealsName || "—",
+        activities: actName || "—",
+        status: "ON TIME",
+      };
+    });
 
     const baseItin = rawList.map((item: any, idx: number) => ({
       ...item,
@@ -3544,7 +3598,7 @@ useEffect(() => {
         date,
       };
     });
-  }, [tripDetails, departureDateStr, tripId]);
+  }, [tripDetails, itineraryList, departureDateStr, tripId]);
 
   const computedHotels = useMemo(() => {
     const isSpiti =
@@ -9852,7 +9906,7 @@ useEffect(() => {
 
           {/* ══════════════════════════ OPERATIONS TAB ══════════════════════════ */}
           {activeTab === "operations" && (
-            <div className="flex gap-1 bg-white border border-slate-200 rounded-[6px] p-1.5 shadow-xs">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-2 mb-3">
               {([
                 { id: "control", label: "Trip Control Sheet" },
                 { id: "tasks",   label: "Checklist & Tasks" },
@@ -9861,10 +9915,10 @@ useEffect(() => {
                   key={s.id}
                   onClick={() => setOpsSubTab(s.id as any)}
                   className={cn(
-                    "flex-1 text-[11px] font-bold px-3 py-2 rounded-[4px] transition-all whitespace-nowrap",
+                    "px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap border",
                     opsSubTab === s.id
-                      ? "bg-[#F97316] text-white shadow-sm"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                      ? "bg-[#F97316] text-white border-[#F97316] shadow-sm"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
                   )}
                 >
                   {s.label}

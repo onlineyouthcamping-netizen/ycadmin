@@ -56,6 +56,15 @@ const OperationsHubPage = lazy(
 const DepartureHubPage = lazy(
   () => import("./pages/admin/DepartureHubPage.tsx"),
 );
+const SopLibraryPage = lazy(
+  () => import("./pages/admin/SopLibraryPage.tsx"),
+);
+const SopBuilderPage = lazy(
+  () => import("./pages/admin/SopBuilderPage.tsx"),
+);
+const DailyTaskConsolePage = lazy(
+  () => import("./pages/admin/DailyTaskConsolePage.tsx"),
+);
 const VendorDirectoryPage = lazy(
   () => import("./pages/admin/VendorDirectoryPage.tsx"),
 );
@@ -351,6 +360,30 @@ const App = () => (
                   element={
                     <AdminRoute requiredPermission="ops.view">
                       <DepartureHubPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/operations/sops"
+                  element={
+                    <AdminRoute requiredPermission="ops.view">
+                      <SopLibraryPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/operations/sops/builder"
+                  element={
+                    <AdminRoute requiredPermission="ops.view">
+                      <SopBuilderPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/operations/daily-tasks"
+                  element={
+                    <AdminRoute requiredPermission="ops.view">
+                      <DailyTaskConsolePage />
                     </AdminRoute>
                   }
                 />

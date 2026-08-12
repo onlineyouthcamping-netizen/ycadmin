@@ -24,6 +24,8 @@ export interface TripControlRowData {
   dateStr: string;
   dayLabel: string;
   destination: string;
+  planTitle?: string;
+  isNightJourney?: boolean;
   paxCount: number;
   hotelName: string;
   hotelPhone: string;

@@ -10,6 +10,7 @@ import {
   Play,
   CheckCircle2,
   Download,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { opsService } from "@/services/ops.service";
+
+import { sopsService } from "@/services/sops.service";
 
 interface DepartureTasksProps {
   tripId: string;
@@ -34,11 +37,13 @@ export default function DepartureTasks({
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApplyingSop, setIsApplyingSop] = useState(false);
 
   // Filters
   const [stageFilter, setStageFilter] = useState("All Stages");
   const [priorityFilter, setPriorityFilter] = useState("All Priorities");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [sourceFilter, setSourceFilter] = useState("All Sources");
   const [search, setSearch] = useState("");
 
   // Modals & Form
@@ -55,16 +60,190 @@ export default function DepartureTasks({
     remarks: "",
   });
 
+  const calcOffsetDate = (daysOffset: number) => {
+    try {
+      const d = new Date(departureDateStr);
+      if (isNaN(d.getTime())) return departureDateStr;
+      d.setDate(d.getDate() + daysOffset);
+      return d.toISOString().substring(0, 10);
+    } catch {
+      return departureDateStr;
+    }
+  };
+
+  const formatDateDisplay = (dateVal: any, includeYear: boolean = true) => {
+    if (!dateVal) return "—";
+    try {
+      const rawStr = typeof dateVal === "string" ? dateVal : new Date(dateVal).toISOString();
+      const str = rawStr.split("T")[0];
+      const parts = str.split("-");
+      if (parts.length === 3) {
+        const year = Number(parts[0]);
+        const monthIdx = Number(parts[1]) - 1;
+        const day = Number(parts[2]);
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        if (!isNaN(day) && !isNaN(monthIdx) && months[monthIdx]) {
+          return includeYear ? `${day} ${months[monthIdx]} ${year}` : `${day} ${months[monthIdx]}`;
+        }
+      }
+    } catch {}
+    return "—";
+  };
+
+  const getFormattedDueDate = (task: any) => {
+    if (task.dueDate) {
+      return formatDateDisplay(task.dueDate, true);
+    }
+
+    try {
+      const depStr = String(departureDateStr).split("T")[0];
+      const parts = depStr.split("-");
+      if (parts.length !== 3) return "—";
+
+      let offsetDays = 0;
+      if (task.relativeOffset !== undefined && task.relativeOffset !== null) {
+        offsetDays = task.relativeOffset;
+      } else {
+        const stage = task.stage || "";
+        if (stage === "PRE_TRIP_30D") offsetDays = -30;
+        else if (stage === "PRE_TRIP_21D") offsetDays = -21;
+        else if (stage === "PRE_TRIP_14D") offsetDays = -14;
+        else if (stage === "PRE_TRIP_7D") offsetDays = -7;
+        else if (stage === "PRE_TRIP_3D") offsetDays = -3;
+        else if (stage === "PRE_TRIP_1D") offsetDays = -1;
+        else if (stage === "DEPARTURE_DAY") offsetDays = 0;
+        else if (stage === "DURING_TRIP") offsetDays = 1;
+        else if (stage === "POST_TRIP") offsetDays = 9;
+      }
+
+      const calculated = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      calculated.setDate(calculated.getDate() + offsetDays);
+      return formatDateDisplay(calculated, true);
+    } catch {
+      return "—";
+    }
+  };
+
+  const DEFAULT_CHECKLIST_TASKS = [
+    {
+      id: "def-1",
+      taskName: "Confirm Hotel Bookings & Advance Payment",
+      stage: "PRE_TRIP_30D",
+      relativeOffset: -30,
+      assignedTo: "OPERATIONS",
+      priority: "HIGH",
+      dueDate: calcOffsetDate(-30),
+      status: "Pending",
+      notes: "Verify all hotel vouchers and payment receipts",
+      isCompleted: false,
+      source: "SOP",
+    },
+    {
+      id: "def-2",
+      taskName: "Assign Lead Tour Guide & Vehicle Driver",
+      stage: "PRE_TRIP_14D",
+      relativeOffset: -14,
+      assignedTo: "OPERATIONS",
+      priority: "HIGH",
+      dueDate: calcOffsetDate(-14),
+      status: "Pending",
+      notes: "Assign guide contact & vehicle license details",
+      isCompleted: false,
+      source: "SOP",
+    },
+    {
+      id: "def-3",
+      taskName: "Verify Vehicle Fleet & Driver Credentials",
+      stage: "PRE_TRIP_7D",
+      relativeOffset: -7,
+      assignedTo: "TRANSPORT_DESK",
+      priority: "HIGH",
+      dueDate: calcOffsetDate(-7),
+      status: "Pending",
+      notes: "Check tempo Traveller permits and driver phone",
+      isCompleted: false,
+      source: "SOP",
+    },
+    {
+      id: "def-4",
+      taskName: "Create WhatsApp Group & Send Pax Welcome Kit",
+      stage: "PRE_TRIP_3D",
+      relativeOffset: -3,
+      assignedTo: "SALES_EXEC",
+      priority: "HIGH",
+      dueDate: calcOffsetDate(-3),
+      status: "Pending",
+      notes: "Send meeting point info & packing checklist",
+      isCompleted: false,
+      source: "SOP",
+    },
+    {
+      id: "def-5",
+      taskName: "Final Passenger Manifest & Train Ticket Audit",
+      stage: "DEPARTURE_DAY",
+      relativeOffset: 0,
+      assignedTo: "TICKETING",
+      priority: "URGENT",
+      dueDate: calcOffsetDate(0),
+      status: "Pending",
+      notes: "Audit all PNR statuses & train coach numbers",
+      isCompleted: false,
+      source: "SOP",
+    },
+    {
+      id: "def-6",
+      taskName: "Hotel Check-in & Daily Operations Tracking",
+      stage: "DURING_TRIP",
+      relativeOffset: 1,
+      assignedTo: "LEAD_GUIDE",
+      priority: "HIGH",
+      dueDate: calcOffsetDate(1),
+      status: "Pending",
+      notes: "Update daily check-ins on Trip Control Sheet",
+      isCompleted: false,
+      source: "SOP",
+    },
+  ];
+
   const fetchTasks = async () => {
     setLoading(true);
     try {
       const data = await opsService.getTasks(tripId, departureDateStr);
-      setTasks(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setTasks(data);
+      } else {
+        // Automatically apply active Trip SOP for this departure
+        try {
+          await sopsService.applySopToDeparture(tripId, departureDateStr);
+          const freshData = await opsService.getTasks(tripId, departureDateStr);
+          if (Array.isArray(freshData) && freshData.length > 0) {
+            setTasks(freshData);
+          } else {
+            setTasks(DEFAULT_CHECKLIST_TASKS);
+          }
+        } catch {
+          setTasks(DEFAULT_CHECKLIST_TASKS);
+        }
+      }
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to load tasks");
+      console.error("Fetch tasks error:", err);
+      setTasks(DEFAULT_CHECKLIST_TASKS);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApplySop = async () => {
+    setIsApplyingSop(true);
+    try {
+      const res = await sopsService.applySopToDeparture(tripId, departureDateStr);
+      toast.success(res?.message || "Applied Trip SOP successfully!");
+      fetchTasks();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to apply SOP to departure");
+    } finally {
+      setIsApplyingSop(false);
     }
   };
 
@@ -158,11 +337,15 @@ export default function DepartureTasks({
       priorityFilter === "All Priorities" || t.priority === priorityFilter;
     const matchStatus =
       statusFilter === "All Status" || t.status === statusFilter;
+    const matchSource =
+      sourceFilter === "All Sources" ||
+      (sourceFilter === "SOP Tasks" && (t.source === "SOP" || !t.source)) ||
+      (sourceFilter === "Manual Tasks" && t.source === "MANUAL");
     const matchSearch =
       search === "" ||
       t.taskName.toLowerCase().includes(search.toLowerCase()) ||
       (t.remarks && t.remarks.toLowerCase().includes(search.toLowerCase()));
-    return matchStage && matchPriority && matchStatus && matchSearch;
+    return matchStage && matchPriority && matchStatus && matchSource && matchSearch;
   });
 
   const handleDownloadCSV = () => {
@@ -177,6 +360,7 @@ export default function DepartureTasks({
       "Priority",
       "Due Date",
       "Status",
+      "Source",
       "Remarks",
     ].join(",");
     const rows = filteredTasks.map((t) =>
@@ -187,6 +371,7 @@ export default function DepartureTasks({
         t.priority,
         t.dueDate ? new Date(t.dueDate).toLocaleDateString("en-IN") : "—",
         t.status,
+        t.source || "SOP",
         `"${t.remarks || ""}"`,
       ].join(","),
     );
@@ -202,7 +387,15 @@ export default function DepartureTasks({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Visual Dynamic SOP Timeline Map */}
+      <SopTimelineMap
+        tasks={tasks}
+        tripTitle={tripId}
+        departureDateStr={departureDateStr}
+        onToggleTask={toggleComplete}
+      />
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
@@ -274,7 +467,10 @@ export default function DepartureTasks({
           <option value="All Stages">All Stages</option>
           {[
             "PRE_TRIP_30D",
+            "PRE_TRIP_21D",
+            "PRE_TRIP_14D",
             "PRE_TRIP_7D",
+            "PRE_TRIP_3D",
             "PRE_TRIP_1D",
             "DEPARTURE_DAY",
             "DURING_TRIP",
@@ -291,7 +487,7 @@ export default function DepartureTasks({
           className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
         >
           <option value="All Priorities">All Priorities</option>
-          {["LOW", "MEDIUM", "HIGH"].map((p) => (
+          {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((p) => (
             <option key={p} value={p}>
               {p}
             </option>
@@ -319,6 +515,7 @@ export default function DepartureTasks({
             className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none"
           />
         </div>
+
         <button
           onClick={handleDownloadCSV}
           className="h-8 text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-3xs"
@@ -436,9 +633,7 @@ export default function DepartureTasks({
                     </span>
                   </td>
                   <td className="p-3 border-r border-slate-100 font-semibold text-slate-600">
-                    {t.dueDate
-                      ? new Date(t.dueDate).toLocaleDateString("en-IN")
-                      : "—"}
+                    {getFormattedDueDate(t)}
                   </td>
                   <td className="p-3 border-r border-slate-100 text-center">
                     <span

@@ -5,6 +5,7 @@ import { DataTable } from "@/components/admin/DataTable";
 import { Button } from "@/components/ui/button";
 import TripFormEditor from "@/components/admin/TripFormEditor";
 import TripSortModal from "@/components/admin/TripSortModal";
+import { sopsService } from "@/services/sops.service";
 import type { Trip, TripFormData } from "@/types";
 import {
   Plus,
@@ -24,6 +25,7 @@ import {
   Search,
   Filter,
   Eye,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import TripVendorsPanel from "@/components/admin/TripVendorsPanel";
@@ -206,6 +208,77 @@ export default function TripsPage() {
     }
   };
 
+  const handleDuplicateTrip = async (t: Trip) => {
+    if (!t || !t.id) return;
+    const copySop = confirm(
+      `Duplicate Trip "${t.title}"?\n\nWould you like to COPY the Operations SOP & Master Checklist for this new trip?`,
+    );
+
+    try {
+      const duplicatedTitle = `${t.title} (Copy)`;
+      const duplicatedSlug = `${t.slug || t.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-copy-${Date.now()}`;
+
+      const payload: TripFormData = {
+        ...t,
+        title: duplicatedTitle,
+        slug: duplicatedSlug,
+        status: "draft",
+      };
+
+      delete (payload as any).id;
+      delete (payload as any).createdAt;
+      delete (payload as any).updatedAt;
+
+      const newTrip = await tripsService.create(payload);
+
+      if (copySop && t.id && newTrip?.id) {
+        try {
+          const sourceSop = await sopsService.getSopByTrip(t.id);
+          if (
+            sourceSop &&
+            sourceSop.activeVersion &&
+            sourceSop.activeVersion.taskTemplates
+          ) {
+            const newTemplate = await sopsService.createSopTemplate({
+              tripId: newTrip.id,
+              templateName: `${duplicatedTitle} Operations SOP`,
+              description: `Copied Operations SOP from ${t.title}`,
+            });
+
+            if (newTemplate && newTemplate.activeVersion) {
+              for (const task of sourceSop.activeVersion.taskTemplates) {
+                await sopsService.createTaskTemplate(
+                  newTemplate.activeVersion.id,
+                  {
+                    taskName: task.taskName,
+                    instructions: task.instructions,
+                    category: task.category,
+                    taskType: task.taskType,
+                    stage: task.stage,
+                    relativeOffset: task.relativeOffset,
+                    defaultAssignee: task.defaultAssignee,
+                    priority: task.priority,
+                    isRequired: task.isRequired,
+                  },
+                );
+              }
+            }
+          }
+        } catch (sopErr) {
+          console.error("Error duplicating SOP:", sopErr);
+        }
+      }
+
+      toast.success(
+        `Duplicated trip "${newTrip.title}" ${copySop ? "with Operations SOP" : ""}`,
+      );
+      load();
+    } catch (err) {
+      console.error("Duplicate trip error:", err);
+      toast.error("Failed to duplicate trip");
+    }
+  };
+
   const handleShuffle = async () => {
     try {
       await tripsService.shuffle();
@@ -378,6 +451,15 @@ export default function TripsPage() {
               className="h-7 w-7 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md"
             >
               <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDuplicateTrip(t)}
+              title="Duplicate Trip (Copy Itinerary & SOP)"
+              className="h-7 w-7 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md"
+            >
+              <Copy className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"

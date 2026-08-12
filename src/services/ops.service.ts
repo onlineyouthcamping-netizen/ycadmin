@@ -706,6 +706,21 @@ export const opsService = {
   async deleteTask(id: string): Promise<void> {
     await api.delete(`/ops/tasks-docs-comm/tasks/${id}`);
   },
+  async saveTask(
+    tripId: string,
+    data: any,
+    departureDate?: string,
+  ): Promise<any> {
+    const depDate =
+      departureDate ||
+      data.departureDate ||
+      new Date().toISOString().substring(0, 10);
+    if (data.id) {
+      return this.updateTask(tripId, depDate, data.id, data);
+    } else {
+      return this.createTask(tripId, depDate, data);
+    }
+  },
 
   // Documents Endpoints
   async getDocuments(tripId: string, departureDate: string): Promise<any[]> {
@@ -869,6 +884,19 @@ export const opsService = {
   async resetHotelOverride(tripId: string, data: any): Promise<any> {
     const res = await api.post(`/ops/hotels/${tripId}/reset-override`, data);
     return res.data;
+  },
+
+  async getAllTasks(params?: {
+    assignee?: string;
+    source?: string;
+    status?: string;
+    priority?: string;
+    tripId?: string;
+    search?: string;
+  }): Promise<any[]> {
+    const q = new URLSearchParams(params as any).toString();
+    const res = await api.get(`/ops/tasks-docs-comm/all-tasks?${q}`);
+    return res.data?.data || [];
   },
 };
 

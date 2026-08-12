@@ -124,6 +124,8 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       { title: "Departures Hub", url: "/admin/operations" },
+      { title: "Daily Task Console", url: "/admin/operations/daily-tasks" },
+      { title: "SOP & Checklists", url: "/admin/operations/sops" },
       { title: "Vendor Management", url: "/admin/vendors" },
       { title: "Company Documents", url: "/admin/company-documents" },
     ],
@@ -386,13 +388,43 @@ function AdminSidebar() {
               return true;
             };
 
-            // Check if any sub-item is active
+            const visibleSubItems =
+              mod.subItems?.filter((sub) => hasUserAccessToUrl(sub.url)) || [];
+
+            if (hasSub && visibleSubItems.length === 0) return null;
+            if (!hasSub && mod.url && !hasUserAccessToUrl(mod.url)) return null;
+
+            // Check if a sub-item is active
             const isSubActive = (url: string) => {
               const [urlPath, urlSearch] = url.split("?");
-              const pathMatches =
-                location.pathname === urlPath ||
-                (urlPath !== "/admin" &&
-                  location.pathname.startsWith(urlPath + "/"));
+              const currentPath = location.pathname;
+
+              let pathMatches = false;
+              if (currentPath === urlPath) {
+                pathMatches = true;
+              } else if (
+                urlPath === "/admin/operations" &&
+                currentPath.startsWith("/admin/departure-workspace")
+              ) {
+                pathMatches = true;
+              } else if (
+                urlPath !== "/admin" &&
+                currentPath.startsWith(urlPath + "/")
+              ) {
+                // Check if any visible sibling sub-item has a more specific (longer) matching urlPath
+                const hasMoreSpecificSibling = visibleSubItems.some((otherSub) => {
+                  if (otherSub.url === url) return false;
+                  const [otherPath] = otherSub.url.split("?");
+                  return (
+                    otherPath.length > urlPath.length &&
+                    (currentPath === otherPath ||
+                      currentPath.startsWith(otherPath + "/"))
+                  );
+                });
+                if (!hasMoreSpecificSibling) {
+                  pathMatches = true;
+                }
+              }
 
               if (!pathMatches) return false;
 
@@ -409,7 +441,7 @@ function AdminSidebar() {
                   } else {
                     if (urlPath === "/admin/accounting")
                       return urlTab === "overview";
-                    const firstTabSubItem = mod.subItems?.find((sub) =>
+                    const firstTabSubItem = visibleSubItems.find((sub) =>
                       sub.url.startsWith(urlPath + "?tab="),
                     );
                     if (firstTabSubItem) {
@@ -428,7 +460,7 @@ function AdminSidebar() {
               }
 
               if (currentTab) {
-                const hasSiblingWithThisTab = mod.subItems?.some((sub) => {
+                const hasSiblingWithThisTab = visibleSubItems.some((sub) => {
                   const [subPath, subSearch] = sub.url.split("?");
                   if (subPath !== urlPath || !subSearch) return false;
                   const subParams = new URLSearchParams(subSearch);
@@ -439,12 +471,6 @@ function AdminSidebar() {
 
               return true;
             };
-
-            const visibleSubItems =
-              mod.subItems?.filter((sub) => hasUserAccessToUrl(sub.url)) || [];
-
-            if (hasSub && visibleSubItems.length === 0) return null;
-            if (!hasSub && mod.url && !hasUserAccessToUrl(mod.url)) return null;
 
             const isAnySubActive =
               hasSub && visibleSubItems.some((sub) => isSubActive(sub.url));

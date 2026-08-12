@@ -1,6 +1,7 @@
 import AboutTripCmsEditor from "@/components/admin/trips/AboutTripCmsEditor";
 import VariantsManager from "@/components/admin/trips/VariantsManager";
 import ModernTripCalendar from "@/components/admin/trips/ModernTripCalendar";
+import TripSopEditorTab from "@/components/admin/trips/TripSopEditorTab";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -418,6 +419,31 @@ export default function TripFormEditor({
 
       const editingId = editing?.id || (editing as any)?._id;
       await onSave(cleanData, editingId);
+
+      // Persist Operations SOP Tasks for this specific Trip
+      if (cleanData.sopTasks && Array.isArray(cleanData.sopTasks) && cleanData.sopTasks.length > 0) {
+        try {
+          const targetTripId = editingId || cleanData.id || cleanData.slug;
+          if (targetTripId) {
+            let template = await sopsService.getSopByTrip(targetTripId);
+            if (!template) {
+              template = await sopsService.createSopTemplate({
+                tripId: targetTripId,
+                templateName: `${cleanData.title || "Trip"} Operations SOP`,
+                description: `Standard Operating Procedure for ${cleanData.title}`,
+              });
+            }
+            if (template && template.activeVersion) {
+              for (const task of cleanData.sopTasks) {
+                await sopsService.createTaskTemplate(template.activeVersion.id, task);
+              }
+            }
+          }
+        } catch (sopErr) {
+          console.error("Error persisting SOP tasks during Trip Save:", sopErr);
+        }
+      }
+
       onCancel();
     } catch (err) {
       console.error(err);
@@ -658,6 +684,12 @@ export default function TripFormEditor({
                 BASIC DETAILS
               </TabsTrigger>
               <TabsTrigger
+                value="ops-sop"
+                className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs"
+              >
+                OPERATIONS SOP & CHECKLIST
+              </TabsTrigger>
+              <TabsTrigger
                 value="pricing"
                 className="whitespace-nowrap px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-xs"
               >
@@ -748,6 +780,12 @@ export default function TripFormEditor({
                 BASIC DETAILS
               </TabsTrigger>
               <TabsTrigger
+                value="ops-sop"
+                className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200"
+              >
+                OPERATIONS SOP & CHECKLIST
+              </TabsTrigger>
+              <TabsTrigger
                 value="pricing"
                 className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200"
               >
@@ -831,6 +869,25 @@ export default function TripFormEditor({
 
         {/* MIDDLE CONTENT PANEL */}
         <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-2xs min-h-[70vh]">
+          {/* OPERATIONS SOP TAB CONTENT */}
+          <TabsContent
+            value="ops-sop"
+            className="mt-0 space-y-6 animate-fade-in"
+          >
+            <TripSopEditorTab
+              tripId={form.id || editing?.id}
+              tripTitle={form.title}
+              sopEnabled={form.sopEnabled !== false}
+              onToggleSopEnabled={(enabled) =>
+                setForm({ ...form, sopEnabled: enabled })
+              }
+              taskTemplates={form.sopTasks || []}
+              onUpdateTasks={(tasks) =>
+                setForm({ ...form, sopTasks: tasks })
+              }
+            />
+          </TabsContent>
+
           {/* OVERVIEW TAB CONTENT */}
           <TabsContent
             value="overview"
