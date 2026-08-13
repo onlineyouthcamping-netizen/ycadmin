@@ -40,6 +40,33 @@ const DEFAULT_STAGES = [
   { id: "POST_TRIP", label: "POST TRIP", isCustom: false, offsetDays: 7 },
 ];
 
+const VALID_SOP_STAGES = [
+  "PRE_TRIP_30D",
+  "PRE_TRIP_21D",
+  "PRE_TRIP_14D",
+  "PRE_TRIP_7D",
+  "PRE_TRIP_3D",
+  "PRE_TRIP_1D",
+  "DEPARTURE_DAY",
+  "DURING_TRIP",
+  "POST_TRIP",
+] as const;
+
+/** Maps any stage string (including custom IDs like CUSTOM_TYGJ) to a valid DB OpsSOPStage enum value */
+function resolveToValidStage(stage: string, relativeOffset: number): string {
+  if (VALID_SOP_STAGES.includes(stage as any)) return stage;
+  // Fall back to nearest stage based on offset
+  if (relativeOffset > 1) return "POST_TRIP";
+  if (relativeOffset === 1) return "DURING_TRIP";
+  if (relativeOffset === 0) return "DEPARTURE_DAY";
+  if (relativeOffset <= -30) return "PRE_TRIP_30D";
+  if (relativeOffset <= -21) return "PRE_TRIP_21D";
+  if (relativeOffset <= -14) return "PRE_TRIP_14D";
+  if (relativeOffset <= -7) return "PRE_TRIP_7D";
+  if (relativeOffset <= -3) return "PRE_TRIP_3D";
+  return "PRE_TRIP_1D";
+}
+
 export default function SopBuilderPage() {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId");
@@ -165,10 +192,14 @@ export default function SopBuilderPage() {
     setIsSubmitting(true);
     try {
       const parsedOffset = parseInt(String(taskForm.relativeOffset), 10);
+      const safeOffset = isNaN(parsedOffset) ? -7 : parsedOffset;
+      // Resolve custom stage IDs (e.g. CUSTOM_TYGJ) to valid OpsSOPStage enum values
+      const safeStage = resolveToValidStage(taskForm.stage, safeOffset);
       const payload = {
         ...taskForm,
         taskName: taskForm.taskName.trim(),
-        relativeOffset: isNaN(parsedOffset) ? -7 : parsedOffset,
+        relativeOffset: safeOffset,
+        stage: safeStage,
       };
 
       if (editingTask) {
