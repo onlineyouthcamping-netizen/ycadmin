@@ -1064,32 +1064,33 @@ export default function AccountingPage() {
   // Dynamic Collections (Approved entries with positive collected amount, filtered by date)
   const dynamicInflows = mergedEntries
     .filter((e) => e.status === "APPROVED" && (Number(e.amount) || 0) > 0 && dateInRange(e.createdAt))
-    .map((e) => ({
-      id: e.id,
-      originalEntry: e,
-      date: e.createdAt.split("T")[0],
-      time: new Date(e.createdAt).toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }),
-      type: "Income",
-      particulars: `Received from ${e.booking?.fullName || e.booking?.name || "Guest"}`,
-      subParticulars: "Booking Payment",
-      reference: e.booking?.tripName || "Trip",
-      account: e.paymentMode === "CASH" ? "Cash" : "ICICI Bank A/c",
-      mode:
-        e.paymentMode === "CASH"
-          ? "Cash"
-          : e.paymentMode === "UPI"
-            ? "UPI"
-            : "Bank Transfer",
-      inflow: e.amount,
-      outflow: 0,
-      category: "Booking Payment",
-      categoryColor: "bg-blue-500",
-      addedBy: e.salesperson?.name || "System",
-    }));
+    .map((e) => {
+      const rawMode = String(e.paymentMode || e.mode || "").toUpperCase().trim();
+      const isCash = rawMode === "CASH" || rawMode.includes("CASH") || rawMode.includes("MONEY");
+      const isUpi = rawMode === "UPI" || rawMode.includes("UPI") || rawMode.includes("QR");
+
+      return {
+        id: e.id,
+        originalEntry: e,
+        date: e.createdAt.split("T")[0],
+        time: new Date(e.createdAt).toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+        type: "Income",
+        particulars: `Received from ${e.booking?.fullName || e.booking?.name || "Guest"}`,
+        subParticulars: "Booking Payment",
+        reference: e.booking?.tripName || "Trip",
+        account: isCash ? "Cash Account / Cash Book" : isUpi ? "UPI / QR Account" : "ICICI Bank A/c",
+        mode: isCash ? "Cash" : isUpi ? "UPI" : "Bank Transfer",
+        inflow: e.amount,
+        outflow: 0,
+        category: "Booking Payment",
+        categoryColor: "bg-blue-500",
+        addedBy: e.salesperson?.name || "System",
+      };
+    });
 
   // Dynamic Payouts (Paid vendor assignments, filtered by payment date)
   const dynamicOutflows = vendorAssignments
@@ -2818,7 +2819,7 @@ export default function AccountingPage() {
                       {
                         entries.filter(
                           (e) =>
-                            e.paymentMode === "CASH" && e.status === "APPROVED",
+                            String(e.paymentMode || "").toUpperCase().includes("CASH") && e.status === "APPROVED",
                         ).length
                       }{" "}
                       Transactions
@@ -2828,7 +2829,7 @@ export default function AccountingPage() {
                       {entries
                         .filter(
                           (e) =>
-                            e.paymentMode === "CASH" && e.status === "APPROVED",
+                            String(e.paymentMode || "").toUpperCase().includes("CASH") && e.status === "APPROVED",
                         )
                         .reduce((sum, e) => sum + e.amount, 0)
                         .toLocaleString()}
@@ -2845,7 +2846,7 @@ export default function AccountingPage() {
                       {
                         entries.filter(
                           (e) =>
-                            e.paymentMode === "CASH" && e.status === "PENDING",
+                            String(e.paymentMode || "").toUpperCase().includes("CASH") && e.status === "PENDING",
                         ).length
                       }{" "}
                       Transactions
@@ -2855,7 +2856,7 @@ export default function AccountingPage() {
                       {entries
                         .filter(
                           (e) =>
-                            e.paymentMode === "CASH" && e.status === "PENDING",
+                            String(e.paymentMode || "").toUpperCase().includes("CASH") && e.status === "PENDING",
                         )
                         .reduce((sum, e) => sum + e.amount, 0)
                         .toLocaleString()}
@@ -2872,7 +2873,7 @@ export default function AccountingPage() {
                       {
                         entries.filter(
                           (e) =>
-                            e.paymentMode === "CASH" && e.status === "REJECTED",
+                            String(e.paymentMode || "").toUpperCase().includes("CASH") && e.status === "REJECTED",
                         ).length
                       }{" "}
                       Transactions
@@ -2882,7 +2883,7 @@ export default function AccountingPage() {
                       {entries
                         .filter(
                           (e) =>
-                            e.paymentMode === "CASH" && e.status === "REJECTED",
+                            String(e.paymentMode || "").toUpperCase().includes("CASH") && e.status === "REJECTED",
                         )
                         .reduce((sum, e) => sum + e.amount, 0)
                         .toLocaleString()}
