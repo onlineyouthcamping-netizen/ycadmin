@@ -170,8 +170,8 @@ export function AccommodationDetailPage({
       vendor.financialDetails ||
       vendor.bankDetails ||
       (vendor.gstin || vendor.bankName
-        ? `GSTIN: ${vendor.gstin || "02AAACH1827C1Z5"}\nPAN: ${vendor.panNumber || "AAACH1827C"}\nBank: ${vendor.bankName || "HDFC Bank Ltd"}\nA/C: ${vendor.accountNumber || "50200049281726"}\nIFSC: ${vendor.ifscCode || "HDFC0000240"}\nPayment Terms: ${vendor.paymentTerms || "30 Days Credit"}`
-        : `GSTIN: 02AAACH1827C1Z5\nPAN: AAACH1827C\nBank: HDFC Bank Ltd\nA/C: 50200049281726\nIFSC: HDFC0000240\nPayment Terms: 30 Days Credit`),
+        ? `GSTIN: ${vendor.gstin || "N/A"}\nPAN: ${vendor.panNumber || "N/A"}\nBank: ${vendor.bankName || "N/A"}\nA/C: ${vendor.accountNumber || "N/A"}\nIFSC: ${vendor.ifscCode || "N/A"}\nPayment Terms: ${vendor.paymentTerms || "N/A"}`
+        : "No GST / Banking details logged."),
   });
 
   // State for Transport Vehicles & Routes
@@ -503,52 +503,14 @@ export function AccommodationDetailPage({
     if (vendor.vendorRooms && vendor.vendorRooms.length > 0) {
       return vendor.vendorRooms;
     }
-    const name = (vendor.name || "").toLowerCase();
-    if (name.includes("barpa")) {
-      return [
-        { id: "r1", name: "Family Cottage Suite (01 Family)", capacity: "4", baseRate: 1100, extraBedRate: 500 },
-        { id: "r2", name: "Single Deluxe Room (08 Single)", capacity: "2", baseRate: 1100, extraBedRate: 500 },
-      ];
-    }
-    if (name.includes("kasol")) {
-      return [
-        { id: "r1", name: "Family Room (05 Family)", capacity: "4", baseRate: 1000, extraBedRate: 500 },
-        { id: "r2", name: "Single Room (11 Single)", capacity: "2", baseRate: 1000, extraBedRate: 500 },
-      ];
-    }
-    if (name.includes("kullu")) {
-      return [
-        { id: "r1", name: "Alpine Riverside Tents (15 Tents)", capacity: "3", baseRate: 900, extraBedRate: 400 },
-      ];
-    }
-    return [
-      { id: "r1", name: "Deluxe Mountain View", capacity: "2", baseRate: 1200, extraBedRate: 500 },
-    ];
+    return [];
   });
 
   const [seasons, setSeasons] = useState<any[]>(() => {
     if (vendor.seasonalRates && vendor.seasonalRates.length > 0) {
       return vendor.seasonalRates;
     }
-    const name = (vendor.name || "").toLowerCase();
-    if (name.includes("barpa")) {
-      return [
-        { id: "s1", seasonName: "Standard MKA Group Operations", twinRate: 1100, tripleRate: 800, quadRate: 800 },
-      ];
-    }
-    if (name.includes("kasol")) {
-      return [
-        { id: "s1", seasonName: "Standard MKA Group Operations", twinRate: 1000, tripleRate: 800, quadRate: 800 },
-      ];
-    }
-    if (name.includes("kullu")) {
-      return [
-        { id: "s1", seasonName: "Standard MKA Group Operations", twinRate: 900, tripleRate: 700, quadRate: 700 },
-      ];
-    }
-    return [
-      { id: "s1", seasonName: "Standard Peak Season", twinRate: 1200, tripleRate: 950, quadRate: 850 },
-    ];
+    return [];
   });
   const [contracts, setContracts] = useState<any[]>(vendor.contracts || []);
   const [gallery, setGallery] = useState<any[]>(vendor.photos || []);

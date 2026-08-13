@@ -79,6 +79,7 @@ export default function VendorDirectoryPage() {
     searchParams.get("category") || searchParams.get("tab") || "accommodation";
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSavingVendor, setIsSavingVendor] = useState(false);
   const [viewingDetailVendor, setViewingDetailVendor] = useState<any>(null);
 
   // Duplicate detection dialog state
@@ -440,6 +441,7 @@ export default function VendorDirectoryPage() {
   };
 
   const handleSaveVendor = async (force: boolean = false) => {
+    if (isSavingVendor) return;
     if (!vendorForm.name || !vendorForm.type) {
       toast.error("Please fill in Vendor Name and Category");
       return;
@@ -464,6 +466,7 @@ export default function VendorDirectoryPage() {
       }
     }
 
+    setIsSavingVendor(true);
     try {
       if (editingVendor) {
         await api.patch(`/vendors/directory/${editingVendor.id}`, vendorForm);
@@ -488,6 +491,8 @@ export default function VendorDirectoryPage() {
         "Failed to save vendor: " +
           (err.response?.data?.message || err.message),
       );
+    } finally {
+      setIsSavingVendor(false);
     }
   };
 
