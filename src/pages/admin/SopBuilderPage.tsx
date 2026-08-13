@@ -61,11 +61,24 @@ export default function SopBuilderPage() {
     }
   });
 
+  // Hidden/Deleted default stages persisted in localStorage
+  const [hiddenStageIds, setHiddenStageIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("yc_hidden_sop_stages");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [addStageModalOpen, setAddStageModalOpen] = useState(false);
   const [newStageLabel, setNewStageLabel] = useState("");
   const [newStageOffset, setNewStageOffset] = useState(-5);
 
   const stagesList = [...DEFAULT_STAGES, ...customStages];
+  const visibleStages = stagesList.filter(
+    (s) => s.id === "ALL" || !hiddenStageIds.includes(s.id),
+  );
 
   // Add/Edit Task Modal state
   const [taskModalOpen, setTaskModalOpen] = useState(false);
@@ -246,17 +259,36 @@ export default function SopBuilderPage() {
     toast.success(`Custom stage "${newStageObj.label}" created successfully!`);
   };
 
-  const handleDeleteCustomStage = (stageId: string) => {
-    const updated = customStages.filter((s) => s.id !== stageId);
-    setCustomStages(updated);
-    try {
-      localStorage.setItem("yc_custom_sop_stages", JSON.stringify(updated));
-    } catch {}
+  const handleDeleteStage = (stageId: string) => {
+    if (stageId === "ALL") return;
+
+    const isCustom = customStages.some((s) => s.id === stageId);
+    if (isCustom) {
+      const updatedCustom = customStages.filter((s) => s.id !== stageId);
+      setCustomStages(updatedCustom);
+      try {
+        localStorage.setItem("yc_custom_sop_stages", JSON.stringify(updatedCustom));
+      } catch {}
+    } else {
+      const updatedHidden = [...hiddenStageIds, stageId];
+      setHiddenStageIds(updatedHidden);
+      try {
+        localStorage.setItem("yc_hidden_sop_stages", JSON.stringify(updatedHidden));
+      } catch {}
+    }
 
     if (activeStage === stageId) {
       setActiveStage("ALL");
     }
-    toast.success("Custom stage removed");
+    toast.success("Stage removed!");
+  };
+
+  const handleResetDefaultStages = () => {
+    setHiddenStageIds([]);
+    try {
+      localStorage.removeItem("yc_hidden_sop_stages");
+    } catch {}
+    toast.success("Default stages restored!");
   };
 
   const filteredTasks = (activeVersion?.taskTemplates || []).filter(
@@ -368,7 +400,7 @@ export default function SopBuilderPage() {
 
       {/* Stage Selector Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {stagesList.map((s) => {
+        {visibleStages.map((s) => {
           const isSelected = activeStage === s.id;
           const count =
             s.id === "ALL"
@@ -376,7 +408,7 @@ export default function SopBuilderPage() {
               : activeVersion.taskTemplates.filter((t) => t.stage === s.id).length;
 
           return (
-            <div key={s.id} className="relative flex items-center">
+            <div key={s.id} className="relative group flex items-center">
               <button
                 onClick={() => setActiveStage(s.id)}
                 className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -393,20 +425,24 @@ export default function SopBuilderPage() {
                 >
                   {count}
                 </span>
-              </button>
 
-              {s.isCustom && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteCustomStage(s.id);
-                  }}
-                  className="ml-1 text-slate-400 hover:text-red-500 transition-colors p-1 font-bold text-xs cursor-pointer"
-                  title="Remove custom stage"
-                >
-                  ×
-                </button>
-              )}
+                {s.id !== "ALL" && (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteStage(s.id);
+                    }}
+                    className={`ml-1 hover:bg-red-500 hover:text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[11px] font-bold transition-colors ${
+                      isSelected
+                        ? "text-white/80 hover:text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                    title={`Delete / Remove ${s.label} stage`}
+                  >
+                    ×
+                  </span>
+                )}
+              </button>
             </div>
           );
         })}
@@ -418,6 +454,16 @@ export default function SopBuilderPage() {
           <Plus className="w-3.5 h-3.5" />
           Add Stage
         </button>
+
+        {hiddenStageIds.length > 0 && (
+          <button
+            onClick={handleResetDefaultStages}
+            className="px-2.5 py-2 rounded-lg text-[11px] font-semibold whitespace-nowrap text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            title="Reset & restore default stage pills"
+          >
+            Reset Defaults
+          </button>
+        )}
       </div>
 
       {/* Tasks Table */}
