@@ -497,6 +497,17 @@ export default function HotelAssignmentWizardModal({
     ];
   }, [selectedDestination, combinedHotelProperties]);
 
+  // Auto-sync selectedHotel state whenever matchingHotels or selectedDestination changes
+  useEffect(() => {
+    if (!isOpen || matchingHotels.length === 0) return;
+    const isSelectedInMatching = matchingHotels.some(
+      (h) => h.name === selectedHotel?.name || h.id === selectedHotel?.id
+    );
+    if (!isSelectedInMatching && matchingHotels[0]) {
+      handleSelectHotel(matchingHotels[0], selectedDestination);
+    }
+  }, [matchingHotels, selectedDestination, isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -526,31 +537,30 @@ export default function HotelAssignmentWizardModal({
     setNightsCount(n);
     setCheckOutDate(addNightsToDate(initCheckIn, n));
 
+    const normDest = normalizeDestinationName(destName);
+
     if (existingB && (existingB.hotelName || existingB.vendorName || existingB.hotel)) {
       const hName = existingB.hotelName || existingB.hotel || existingB.vendorName || "";
-      const matched = combinedHotelProperties.find((h) => h.name.toLowerCase() === hName.toLowerCase());
+      const matchedInCity = matchingHotels.find((h) => h.name.toLowerCase() === hName.toLowerCase());
+      const matchedAny = combinedHotelProperties.find((h) => h.name.toLowerCase() === hName.toLowerCase());
+      const matched = matchedInCity || (matchedAny && normalizeDestinationName(matchedAny.city) === normDest ? matchedAny : null);
+
       if (matched) {
         setSelectedHotel(matched);
-        const rates = extractHotelRates(matched);
+        const rates = extractHotelRates(matched, destName);
         setDoubleRate(existingB.doubleRate || rates.doubleRate);
         setTripleRate(existingB.tripleRate || rates.tripleRate);
         setQuadRate(existingB.quadRate || rates.quadRate);
         setExtraBedRate(existingB.extraBedRate || rates.extraBedRate);
-      } else {
-        const fallbackHotel = {
-          id: existingB.id || `h-${Date.now()}`,
-          name: hName,
-          city: destName,
-          category: "Standard Property",
-        };
-        setSelectedHotel(fallbackHotel);
-        setDoubleRate(existingB.doubleRate || 1100);
-        setTripleRate(existingB.tripleRate || 800);
-        setQuadRate(existingB.quadRate || 800);
-        setExtraBedRate(existingB.extraBedRate || 500);
+      } else if (matchingHotels[0]) {
+        setSelectedHotel(matchingHotels[0]);
+        const rates = extractHotelRates(matchingHotels[0], destName);
+        setDoubleRate(existingB.doubleRate || rates.doubleRate);
+        setTripleRate(existingB.tripleRate || rates.tripleRate);
+        setQuadRate(existingB.quadRate || rates.quadRate);
+        setExtraBedRate(existingB.extraBedRate || rates.extraBedRate);
       }
     } else {
-      const normDest = normalizeDestinationName(destName);
       const matched = combinedHotelProperties.find((h) => {
         const normCity = normalizeDestinationName(h.city || "");
         return normCity.includes(normDest) || normDest.includes(normCity);
