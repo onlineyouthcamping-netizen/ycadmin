@@ -204,7 +204,7 @@ export default function AccommodationWorkspace({
 
         let calcTotal = (dRooms * dMult * dRate + tRooms * tMult * tRate + qRooms * qMult * qRate + exPax * exRate) * nights;
 
-        totalAmount = booking.totalAmount > 0 ? booking.totalAmount : calcTotal;
+        totalAmount = calcTotal > 0 ? calcTotal : (booking.totalAmount > 0 ? booking.totalAmount : 0);
         status = "configured";
 
         const effectivePaxCount = totalPax > 0 ? totalPax : Math.max(1, authoritativeRooms * 2);
@@ -706,17 +706,18 @@ function DayDetailDrawer({
     const rate = getPrimaryRateFromBooking(booking);
     if (rate <= 0 && (!booking.totalAmount || booking.totalAmount <= 0)) return null;
 
-    if (booking.totalAmount > 0 && totalPax > 0) {
-      // Use stored total (most accurate — already computed by backend)
+    const effectiveTotal = row.totalAmount > 0 ? row.totalAmount : (booking.totalAmount || 0);
+
+    if (effectiveTotal > 0 && totalPax > 0) {
       const nights = booking.nightsCount || 1;
       const rooms = booking.numberOfRooms || 0;
-      const costPerPaxStay = booking.totalAmount / totalPax;
+      const costPerPaxStay = effectiveTotal / totalPax;
       const costPerPaxPerNight = nights > 0 ? costPerPaxStay / nights : costPerPaxStay;
       const mode = normalisePricingMode(booking.pricingMethod);
 
       const steps = [];
       if (mode === "PER_ROOM" && rooms > 0) {
-        const roomRate = rooms > 0 && nights > 0 ? booking.totalAmount / rooms / nights : rate;
+        const roomRate = rooms > 0 && nights > 0 ? effectiveTotal / rooms / nights : rate;
         steps.push({
           label: "Room Rate",
           formula: `${formatINR(roomRate)} / Room / Night`,
@@ -725,11 +726,11 @@ function DayDetailDrawer({
         steps.push({
           label: `${rooms} Rooms × ${formatINR(roomRate)} × ${nights} Night${nights !== 1 ? "s" : ""}`,
           formula: `${rooms} × ${formatINR(roomRate)} × ${nights}`,
-          result: formatINR(booking.totalAmount),
+          result: formatINR(effectiveTotal),
         });
         steps.push({
           label: "Cost per Pax / Stay",
-          formula: `${formatINR(booking.totalAmount)} ÷ ${totalPax} Pax`,
+          formula: `${formatINR(effectiveTotal)} ÷ ${totalPax} Pax`,
           result: formatINR(costPerPaxStay, 2),
         });
         if (nights > 1) {
@@ -740,7 +741,7 @@ function DayDetailDrawer({
           });
         }
       } else {
-        const paxRate = totalPax > 0 && nights > 0 ? booking.totalAmount / totalPax / nights : rate;
+        const paxRate = totalPax > 0 && nights > 0 ? effectiveTotal / totalPax / nights : rate;
         steps.push({
           label: "Rate",
           formula: `${formatINR(paxRate)} / Pax / Night`,
@@ -749,7 +750,7 @@ function DayDetailDrawer({
         steps.push({
           label: `${totalPax} Pax × ${nights} Night${nights !== 1 ? "s" : ""}`,
           formula: `${totalPax} × ${formatINR(paxRate)} × ${nights}`,
-          result: formatINR(booking.totalAmount),
+          result: formatINR(effectiveTotal),
         });
         steps.push({
           label: "Cost per Pax / Stay",
@@ -759,7 +760,7 @@ function DayDetailDrawer({
       }
 
       return {
-        grandTotal: booking.totalAmount,
+        grandTotal: effectiveTotal,
         costPerPaxPerNight,
         costPerPaxStay,
         steps,
