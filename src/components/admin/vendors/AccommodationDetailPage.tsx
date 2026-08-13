@@ -530,7 +530,8 @@ export function AccommodationDetailPage({
       return vendor.vendorRooms.map((r: any) => {
         let extra: any = {};
         try {
-          if (r.notes) extra = JSON.parse(r.notes);
+          if (r.notes && typeof r.notes === "string") extra = JSON.parse(r.notes);
+          else if (r.notes && typeof r.notes === "object") extra = r.notes;
         } catch {}
         return {
           id: r.id,
@@ -538,8 +539,9 @@ export function AccommodationDetailPage({
           totalRooms: extra.totalRooms || r.totalRooms || 1,
           cap: r.capacity || extra.cap || 4,
           doubleRate: extra.doubleRate ?? r.baseRate ?? r.doubleRate ?? 0,
-          tripleRate: extra.tripleRate ?? r.extraMattressRate ?? r.tripleRate ?? 0,
+          tripleRate: extra.tripleRate ?? r.tripleRate ?? 0,
           quadRate: extra.quadRate ?? r.quadRate ?? 0,
+          extraBedRate: extra.extraBedRate ?? r.extraMattressRate ?? 0,
           base: extra.doubleRate ?? r.baseRate ?? 0,
         };
       });
