@@ -120,6 +120,7 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
       let extra: any = {};
       try {
         if (r.notes && typeof r.notes === "string") extra = JSON.parse(r.notes);
+        else if (r.notes && typeof r.notes === "object") extra = r.notes;
       } catch {}
 
       const doubleVal = Number(
