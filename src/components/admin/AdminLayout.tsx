@@ -443,24 +443,28 @@ function AdminSidebar() {
               const searchParams = new URLSearchParams(location.search);
               const currentTab = searchParams.get("tab");
 
-              if (url.includes("?")) {
-                const urlParams = new URLSearchParams(url.split("?")[1]);
-                const urlTab = urlParams.get("tab");
-                if (urlTab) {
-                  return currentTab === urlTab;
+              if (urlSearch) {
+                // This sub-item expects specific query params like ?tab=stationpayments
+                const urlParams = new URLSearchParams(urlSearch);
+                for (const [key, val] of urlParams.entries()) {
+                  if (searchParams.get(key) !== val) return false;
                 }
-              } else if (currentTab) {
-                // If this base item has no ?tab=, check if any sibling sub-item matches currentTab
-                const isSiblingTabActive = visibleSubItems.some((otherSub) => {
+                return true;
+              }
+
+              // If this sub-item has NO query params (e.g. /admin/operations):
+              // If a sibling sub-item has query params matching current location.search, this base item should NOT be active.
+              if (currentTab) {
+                const hasMatchingSiblingTab = visibleSubItems.some((otherSub) => {
                   if (otherSub.url === url) return false;
                   const [otherPath, otherSearch] = otherSub.url.split("?");
                   if (otherPath === urlPath && otherSearch) {
-                    const otherTab = new URLSearchParams(otherSearch).get("tab");
-                    return otherTab === currentTab;
+                    const otherParams = new URLSearchParams(otherSearch);
+                    return otherParams.get("tab") === currentTab;
                   }
                   return false;
                 });
-                if (isSiblingTabActive) return false;
+                if (hasMatchingSiblingTab) return false;
               }
 
               return true;
