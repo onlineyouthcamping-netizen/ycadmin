@@ -445,6 +445,19 @@ export default function HotelAssignmentWizardModal({
     return list;
   }, [dbVendors, adminHotels]);
 
+  const destinationCitiesList = useMemo(() => {
+    const set = new Set<string>();
+    hotelEligibleDestinations.forEach((d) => {
+      if (d.name) set.add(d.name);
+    });
+    dbVendors.forEach((v: any) => {
+      if (v.city) set.add(v.city);
+      if (v.location) set.add(v.location);
+    });
+    if (selectedDestination) set.add(selectedDestination);
+    return Array.from(set).sort();
+  }, [hotelEligibleDestinations, dbVendors, selectedDestination]);
+
   const matchingHotels = useMemo(() => {
     if (!selectedDestination) return combinedHotelProperties;
     const normSelected = normalizeDestinationName(selectedDestination);
@@ -719,14 +732,11 @@ export default function HotelAssignmentWizardModal({
                 }}
                 className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
               >
-                {["Amritsar", "Kasol", "Kullu", "Manali", "Shimla", "Dharamshala", "Jalandhar", "Chandigarh", "Delhi", "Goa", "Jibhi"].map((city) => (
+                {destinationCitiesList.map((city) => (
                   <option key={city} value={city}>
                     📍 {city}
                   </option>
                 ))}
-                {!["Amritsar", "Kasol", "Kullu", "Manali", "Shimla", "Dharamshala", "Jalandhar", "Chandigarh", "Delhi", "Goa", "Jibhi"].includes(selectedDestination) && (
-                  <option value={selectedDestination}>📍 {selectedDestination}</option>
-                )}
               </select>
             </div>
 

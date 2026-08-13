@@ -197,7 +197,12 @@ export default function AccommodationWorkspace({
         const exPax = booking.extraPersonsCount || 0;
         const exRate = booking.extraBedRate || 0;
 
-        let calcTotal = (dRooms * dRate + tRooms * tRate + qRooms * qRate + exPax * exRate) * nights;
+        const isPerPerson = (booking.pricingMethod || "per-person").toLowerCase() === "per-person";
+        const dMult = isPerPerson ? 2 : 1;
+        const tMult = isPerPerson ? 3 : 1;
+        const qMult = isPerPerson ? 4 : 1;
+
+        let calcTotal = (dRooms * dMult * dRate + tRooms * tMult * tRate + qRooms * qMult * qRate + exPax * exRate) * nights;
 
         totalAmount = booking.totalAmount > 0 ? booking.totalAmount : calcTotal;
         status = "configured";
