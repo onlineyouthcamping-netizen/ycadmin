@@ -158,20 +158,34 @@ export default function SopBuilderPage() {
   const handleSaveTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeVersion) return;
+    if (!taskForm.taskName.trim()) {
+      toast.error("Please enter Task Name");
+      return;
+    }
     setIsSubmitting(true);
     try {
+      const parsedOffset = parseInt(String(taskForm.relativeOffset), 10);
+      const payload = {
+        ...taskForm,
+        taskName: taskForm.taskName.trim(),
+        relativeOffset: isNaN(parsedOffset) ? -7 : parsedOffset,
+      };
+
       if (editingTask) {
-        await sopsService.updateTaskTemplate(editingTask.id, taskForm);
+        await sopsService.updateTaskTemplate(editingTask.id, payload);
         toast.success("SOP Task Template updated!");
       } else {
-        await sopsService.createTaskTemplate(activeVersion.id, taskForm);
+        await sopsService.createTaskTemplate(activeVersion.id, payload);
         toast.success("SOP Task Template created!");
       }
       setTaskModalOpen(false);
       loadData();
     } catch (err: any) {
       console.error(err);
-      toast.error("Failed to save task template");
+      toast.error(
+        "Failed to save task template: " +
+          (err.response?.data?.message || err.message),
+      );
     } finally {
       setIsSubmitting(false);
     }
