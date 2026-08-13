@@ -283,78 +283,106 @@ export function AccommodationDetailPage({
     notes: "",
   });
 
-  // State for Tour Guide Daily Rates & Allowances
-  const [guideRates, setGuideRates] = useState<any[]>([
-    {
-      id: "gr1",
-      roleName: "Lead Trek Leader",
-      badgeText: "Primary Role",
-      perDayFee: 2500,
-      foodAllowance: 500,
-      miscAllowance: 300,
-    },
-    {
-      id: "gr2",
-      roleName: "Local Cultural Guide",
-      badgeText: "City / Sightseeing",
-      perDayFee: 1500,
-      foodAllowance: 300,
-      miscAllowance: 200,
-    },
-  ]);
+  // State for Tour Guide Daily Rates
+  const [guideRates, setGuideRates] = useState<any[]>(() => {
+    let initial = vendor.guideRates;
+    if (typeof initial === "string") {
+      try {
+        initial = JSON.parse(initial);
+      } catch {
+        initial = null;
+      }
+    }
+    if (Array.isArray(initial) && initial.length > 0) {
+      return initial;
+    }
+    return [
+      {
+        id: "gr1",
+        roleName: "Lead Trek Leader",
+        badgeText: "Primary Role",
+        perDayFee: 2500,
+      },
+      {
+        id: "gr2",
+        roleName: "Local Cultural Guide",
+        badgeText: "City / Sightseeing",
+        perDayFee: 1500,
+      },
+    ];
+  });
   const [guideRateModalOpen, setGuideRateModalOpen] = useState(false);
   const [editingGuideRate, setEditingGuideRate] = useState<any>(null);
   const [guideRateForm, setGuideRateForm] = useState({
     roleName: "Lead Trek Leader",
     badgeText: "Primary Role",
     perDayFee: "2500",
-    foodAllowance: "500",
-    miscAllowance: "300",
   });
 
-  const handleSaveGuideRate = () => {
+  const handleSaveGuideRate = async () => {
     if (!guideRateForm.roleName || !guideRateForm.perDayFee) {
       toast.error("Role Name and Per Day Fee are required");
       return;
     }
     const perDay = parseInt(guideRateForm.perDayFee) || 0;
-    const food = parseInt(guideRateForm.foodAllowance) || 0;
-    const misc = parseInt(guideRateForm.miscAllowance) || 0;
 
+    let updatedList: any[] = [];
     if (editingGuideRate) {
-      setGuideRates(
-        guideRates.map((gr) =>
-          gr.id === editingGuideRate.id
-            ? {
-                ...gr,
-                roleName: guideRateForm.roleName,
-                badgeText: guideRateForm.badgeText,
-                perDayFee: perDay,
-                foodAllowance: food,
-                miscAllowance: misc,
-              }
-            : gr,
-        ),
+      updatedList = guideRates.map((gr) =>
+        gr.id === editingGuideRate.id
+          ? {
+              ...gr,
+              roleName: guideRateForm.roleName,
+              badgeText: guideRateForm.badgeText,
+              perDayFee: perDay,
+            }
+          : gr,
       );
-      toast.success("Guide rate configuration updated");
     } else {
       const newGr = {
         id: `gr-${Date.now()}`,
         roleName: guideRateForm.roleName,
         badgeText: guideRateForm.badgeText || "Role",
         perDayFee: perDay,
-        foodAllowance: food,
-        miscAllowance: misc,
       };
-      setGuideRates([...guideRates, newGr]);
-      toast.success("New guide rate configuration added");
+      updatedList = [...guideRates, newGr];
     }
+
+    setGuideRates(updatedList);
+    const updatedVendor = { ...vendor, guideRates: updatedList };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        guideRates: updatedList,
+      });
+      toast.success("Guide rate configuration saved successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Saved locally, but failed to update server");
+    }
+
     setGuideRateModalOpen(false);
+    setEditingGuideRate(null);
   };
 
-  const handleDeleteGuideRate = (id: string) => {
-    setGuideRates(guideRates.filter((gr) => gr.id !== id));
-    toast.success("Guide rate removed");
+  const handleDeleteGuideRate = async (id: string) => {
+    const updatedList = guideRates.filter((gr) => gr.id !== id);
+    setGuideRates(updatedList);
+    const updatedVendor = { ...vendor, guideRates: updatedList };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        guideRates: updatedList,
+      });
+      toast.success("Guide rate removed");
+    } catch (err) {
+      console.error(err);
+      toast.error("Removed locally, but failed to update server");
+    }
   };
 
   const handleSaveVehicle = async () => {
@@ -2121,10 +2149,10 @@ export function AccommodationDetailPage({
               <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                 <div>
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                    Tour Guide Daily Rates & Allowances
+                    Tour Guide Daily Rates
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Per day fee, total food allowance, and miscellaneous allowances.
+                    Per day fee for trek leaders and guides.
                   </p>
                 </div>
                 <Button
@@ -2134,8 +2162,6 @@ export function AccommodationDetailPage({
                       roleName: "",
                       badgeText: "Primary Role",
                       perDayFee: "2500",
-                      foodAllowance: "500",
-                      miscAllowance: "300",
                     });
                     setGuideRateModalOpen(true);
                   }}
@@ -2179,8 +2205,6 @@ export function AccommodationDetailPage({
                                 roleName: gr.roleName,
                                 badgeText: gr.badgeText || "Primary Role",
                                 perDayFee: (gr.perDayFee || 2500).toString(),
-                                foodAllowance: (gr.foodAllowance || 500).toString(),
-                                miscAllowance: (gr.miscAllowance || 300).toString(),
                               });
                               setGuideRateModalOpen(true);
                             }}
@@ -2200,18 +2224,6 @@ export function AccommodationDetailPage({
                         Per Day Fee:{" "}
                         <span className="font-black text-emerald-600 text-sm">
                           ₹{gr.perDayFee || 2500} / Day
-                        </span>
-                      </p>
-                      <p className="text-slate-600">
-                        Food Allowance:{" "}
-                        <span className="font-bold text-slate-800">
-                          ₹{gr.foodAllowance || 500} / Day
-                        </span>
-                      </p>
-                      <p className="text-slate-600">
-                        Miscellaneous Allowance:{" "}
-                        <span className="font-bold text-slate-800">
-                          ₹{gr.miscAllowance || 300} / Day
                         </span>
                       </p>
                     </div>
@@ -3895,7 +3907,7 @@ export function AccommodationDetailPage({
         <DialogContent className="max-w-md bg-white border border-slate-200 rounded-xl p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-sm font-extrabold text-slate-800 border-b pb-2">
-              {editingGuideRate ? "Edit Guide Daily Rate & Allowances" : "Add Guide Daily Rate & Allowances"}
+              {editingGuideRate ? "Edit Guide Daily Rate" : "Add Guide Daily Rate"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-xs my-2 font-medium text-slate-700">
@@ -3932,32 +3944,6 @@ export function AccommodationDetailPage({
                 placeholder="2500"
                 className="h-8.5 text-xs font-bold"
               />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-extrabold text-slate-800 block mb-1">
-                  Food Allowance (₹/Day)
-                </label>
-                <Input
-                  type="number"
-                  value={guideRateForm.foodAllowance}
-                  onChange={(e) => setGuideRateForm({ ...guideRateForm, foodAllowance: e.target.value })}
-                  placeholder="500"
-                  className="h-8.5 text-xs"
-                />
-              </div>
-              <div>
-                <label className="font-extrabold text-slate-800 block mb-1">
-                  Miscellaneous Allowance (₹)
-                </label>
-                <Input
-                  type="number"
-                  value={guideRateForm.miscAllowance}
-                  onChange={(e) => setGuideRateForm({ ...guideRateForm, miscAllowance: e.target.value })}
-                  placeholder="300"
-                  className="h-8.5 text-xs"
-                />
-              </div>
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
