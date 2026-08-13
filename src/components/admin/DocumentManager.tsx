@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   Camera,
-  File,
+  File as FileIcon,
   ArrowUp,
   ArrowDown,
   X,
@@ -245,7 +245,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       return <FileText className="w-4 h-4 text-rose-500" />;
     if (mimeType?.includes("image"))
       return <ImageIcon className="w-4 h-4 text-blue-500" />;
-    return <File className="w-4 h-4 text-slate-500" />;
+    return <FileIcon className="w-4 h-4 text-slate-500" />;
   };
 
   return (

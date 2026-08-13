@@ -2839,7 +2839,10 @@ useEffect(() => {
           hotelName: hotelNameForm || "",
           location: hotelLocationForm || "",
           roomType: hotelRoomTypeForm || "",
-          numberOfRooms: totalRoomsCount || 1,
+          numberOfRooms:
+            (cleanDoubleRooms || 0) +
+              (cleanTripleRooms || 0) +
+              (cleanQuadRooms || 0) || 1,
           totalAmount: finalCost,
           advancePaid: cleanPaid,
           confirmed: hotelConfirmedForm || "UNCONFIRMED",
@@ -5953,7 +5956,6 @@ useEffect(() => {
           departureName={tripDetails?.title || tripId}
           departureDate={departureDateStr}
           passengers={allPassengers}
-          onSelectPassenger={(p) => setActivePassenger(p.rawPassenger || p)}
         />
       </div>
 

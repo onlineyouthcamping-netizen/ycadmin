@@ -13,7 +13,7 @@ const ThemeContext = createContext<{
 
 export const useTheme = () => useContext(ThemeContext);
 
-const defaultTheme: ThemeConfig = {
+const defaultTheme: Partial<ThemeConfig> = {
   fontFamily: "Montserrat",
   headingFont: "Montserrat",
   bodyFont: "Montserrat",
@@ -79,7 +79,7 @@ export const DynamicThemeProvider = ({
 }) => {
   const [theme, setTheme] = useState<ThemeConfig | null>(null);
 
-  const applyTheme = (config: ThemeConfig) => {
+  const applyTheme = (config: Partial<ThemeConfig>) => {
     const root = document.documentElement;
 
     // Core Colors

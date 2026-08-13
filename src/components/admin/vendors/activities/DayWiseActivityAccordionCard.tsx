@@ -46,6 +46,7 @@ export interface DepartureActivityItem {
   adultPrice: number;
   childPrice: number;
   vendorCost: number;
+  sellingPrice?: number;
   customerPrice?: number;
   isIncluded?: boolean;
   gstPercent?: number;

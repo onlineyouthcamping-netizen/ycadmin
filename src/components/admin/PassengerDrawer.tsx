@@ -209,12 +209,8 @@ export function PassengerDrawer({
     }
 
     const directIdUrl =
-      formData.aadhaarUrl ||
-      formData.idProofUrl ||
       (formData as any).idProof ||
       formData.aadhaar ||
-      passenger.aadhaarUrl ||
-      passenger.idProofUrl ||
       (passenger as any).idProof ||
       passenger.aadhaar;
 
@@ -457,9 +453,9 @@ export function PassengerDrawer({
                 <Label className="text-[10px] font-bold uppercase text-slate-500">Gender</Label>
                 <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100/80 rounded-lg border border-slate-200">
                   {[
-                    { label: "Male", code: "M", full: "Male" },
-                    { label: "Female", code: "F", full: "Female" },
-                    { label: "Other", code: "O", full: "Other" },
+                    { label: "Male", code: "M" as const, full: "Male" },
+                    { label: "Female", code: "F" as const, full: "Female" },
+                    { label: "Other", code: "O" as const, full: "Other" },
                   ].map((g) => {
                     const isSelected =
                       formData.gender === g.code ||

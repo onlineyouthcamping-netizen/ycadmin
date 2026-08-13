@@ -190,11 +190,7 @@ export default function NewBookingModal({
           pickupCity: firstVariant ? firstVariant.location : "",
           roomType: firstRoom ? firstRoom.label : "Double Sharing",
           trainClass: firstTravel ? firstTravel.label : "Sleeper",
-          departureDate: firstDate
-            ? typeof firstDate === "string"
-              ? firstDate
-              : firstDate.date
-            : "",
+          departureDate: firstDate ? String(firstDate) : "",
         }));
       }
     } catch (err) {

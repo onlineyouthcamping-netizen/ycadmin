@@ -228,7 +228,6 @@ export default function DepartureActivities({
       (a) =>
         a.status === "DRAFT" ||
         a.status === "READY" ||
-        a.status === "PENDING" ||
         !a.status,
     ).length;
     const passengersBooked = Math.max(

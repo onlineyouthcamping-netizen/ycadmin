@@ -388,14 +388,6 @@ export default function DepartureTasks({
 
   return (
     <div className="space-y-5">
-      {/* Visual Dynamic SOP Timeline Map */}
-      <SopTimelineMap
-        tasks={tasks}
-        tripTitle={tripId}
-        departureDateStr={departureDateStr}
-        onToggleTask={toggleComplete}
-      />
-
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[

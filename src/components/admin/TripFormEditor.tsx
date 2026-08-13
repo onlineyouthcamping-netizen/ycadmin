@@ -51,6 +51,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { RichTextEditor } from "./RichTextEditor";
 import { settingsService } from "@/services/settings.service";
+import { sopsService } from "@/services/sops.service";
 import { ImageUpload } from "./ImageUpload";
 import { attractionsService, Attraction } from "@/services/attractions.service";
 import api from "@/services/api";
@@ -429,13 +430,18 @@ export default function TripFormEditor({
             if (!template) {
               template = await sopsService.createSopTemplate({
                 tripId: targetTripId,
-                templateName: `${cleanData.title || "Trip"} Operations SOP`,
+                name: `${cleanData.title || "Trip"} Operations SOP`,
                 description: `Standard Operating Procedure for ${cleanData.title}`,
               });
             }
-            if (template && template.activeVersion) {
-              for (const task of cleanData.sopTasks) {
-                await sopsService.createTaskTemplate(template.activeVersion.id, task);
+            if (template && template.activeVersionId) {
+              const activeVersion =
+                template.versions?.find((v) => v.id === template.activeVersionId) ||
+                null;
+              if (activeVersion) {
+                for (const task of cleanData.sopTasks) {
+                  await sopsService.createTaskTemplate(activeVersion.id, task);
+                }
               }
             }
           }
@@ -606,7 +612,7 @@ export default function TripFormEditor({
       <div className="flex gap-3">
         <Button
           variant="outline"
-          onClick={() => onOpenChange(false)}
+          onClick={() => onCancel()}
           className="rounded-xl h-12 px-6 font-bold text-slate-600 border-slate-200"
         >
           Discard
@@ -3500,6 +3506,7 @@ export default function TripFormEditor({
                 <ImageUpload
                   multiple
                   label="Upload Glimpse Photos"
+                  onUpload={() => {}}
                   onMultipleUpload={(urls) => {
                     const existingGallery = form.gallery || [];
                     const newItems = urls.map((url, idx) => ({

@@ -204,7 +204,7 @@ export default function DeparturePayments({
               <div class="card-title">Vendor Partner Details</div>
               <div class="card-row"><span>Vendor Name:</span> <strong>${v.vendorName}</strong></div>
               <div class="card-row"><span>Category:</span> <strong>${v.category || 'Vendor'}</strong></div>
-              <div class="card-row"><span>Invoice No:</span> <strong>${v.invoiceNumber || 'INV-001'}</strong></div>
+              <div class="card-row"><span>Invoice No:</span> <strong>${v.invoiceNumber || '—'}</strong></div>
             </div>
             <div class="card">
               <div class="card-title">Trip / Departure Context</div>
@@ -1961,7 +1961,7 @@ export default function DeparturePayments({
                               </span>
                             </td>
                             <td className="p-3 border-r border-slate-100 font-bold text-slate-700">
-                              {v.invoiceNumber || "INV-001"}
+                              {v.invoiceNumber || "—"}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
                               {formatCurrency(v.agreedAmount)}

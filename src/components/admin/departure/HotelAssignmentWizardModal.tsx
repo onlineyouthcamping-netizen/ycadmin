@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { opsService } from "@/services/ops.service";
+import { resolveCityForItineraryDay } from "@/utils/accommodationCalculator";
 import api from "@/services/api";
 import { toast } from "sonner";
 import {
@@ -415,6 +416,14 @@ export default function HotelAssignmentWizardModal({
     return null;
   }, [hotelEligibleDestinations, initialDayInfo]);
 
+  const currentDayItineraryDate = useMemo(() => {
+    const match = computedItinerary.find((day: any) => {
+      const d = typeof day?.day === "number" ? day.day : parseInt(String(day?.day ?? "").replace(/\D/g, ""), 10) || 0;
+      return d === currentDayNum;
+    }) || computedItinerary[0];
+    return match?.dateStr || match?.date || undefined;
+  }, [computedItinerary, currentDayNum]);
+
   const combinedHotelProperties = useMemo(() => {
     const list: any[] = [];
     const seenNames = new Set<string>();
@@ -536,7 +545,7 @@ export default function HotelAssignmentWizardModal({
     setSelectedDestination(destName);
 
     const initCheckIn = formatDateForInput(
-      existingB?.checkInDate || existingB?.checkIn || initialDayInfo?.dateStr || currentDayDestination?.dateStr,
+      existingB?.checkInDate || existingB?.checkIn || initialDayInfo?.dateStr || currentDayItineraryDate,
       departureDateStr,
       dayOffset
     );

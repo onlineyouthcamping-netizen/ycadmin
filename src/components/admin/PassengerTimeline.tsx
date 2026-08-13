@@ -17,8 +17,6 @@ export function PassengerTimeline({
 }: PassengerTimelineProps) {
   // Determine statuses for timeline
   const directId =
-    passenger.aadhaarUrl ||
-    passenger.idProofUrl ||
     passenger.aadhaar ||
     (passenger as any).idProof ||
     (passenger as any).idProofUrl;

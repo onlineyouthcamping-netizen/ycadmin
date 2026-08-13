@@ -591,7 +591,7 @@ import { MobileQuickActionFab } from "@/components/mobile/MobileQuickActionFab";
 import { MobileNavigationDrawer } from "@/components/mobile/MobileNavigationDrawer";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { admin, isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { admin, isAuthenticated, isLoading, checkAuth, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
