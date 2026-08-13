@@ -2140,8 +2140,9 @@ useEffect(() => {
           let cost = r.amount || r.rate || r.totalAmount || 0;
           if (!cost && Array.isArray(v.routePricingGroups)) {
             v.routePricingGroups.forEach((g: any) => {
-              if (Array.isArray(g.routeRates)) {
-                g.routeRates.forEach((rr: any) => {
+              const ratesList = g.vehicleRates || g.routeRates || [];
+              if (Array.isArray(ratesList)) {
+                ratesList.forEach((rr: any) => {
                   if (
                     rr.vehicleType?.toLowerCase() === vType.toLowerCase() &&
                     rr.totalAmount
