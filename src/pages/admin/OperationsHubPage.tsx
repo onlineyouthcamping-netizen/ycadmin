@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { calculateReadinessScore } from "@/utils/readinessUtils";
 import ReportsConsole from "@/components/admin/ReportsConsole";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import StationPaymentCollection from "@/components/admin/StationPaymentCollection";
 import {
   Compass,
   Calculator,
@@ -79,6 +80,17 @@ const getTodayString = () => new Date().toISOString().split("T")[0];
 
 export default function OperationsHubPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
+  if (tabParam === "stationpayments" || tabParam === "station_payments" || tabParam === "station") {
+    return (
+      <div className="p-6 bg-slate-50 min-h-screen">
+        <StationPaymentCollection />
+      </div>
+    );
+  }
+
   const [trips, setTrips] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
