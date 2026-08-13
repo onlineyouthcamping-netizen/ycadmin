@@ -73,7 +73,7 @@ import {
   Sliders,
 } from "lucide-react";
 import { AdminContainer } from "@/components/layout";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
