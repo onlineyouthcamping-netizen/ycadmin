@@ -346,27 +346,31 @@ export default function SopBuilderPage() {
 
   const isTaskInStage = (t: SopTaskTemplate, s: any) => {
     if (s.id === "ALL") return true;
-    // Exact ID match or normalized ID match
-    if (
-      t.stage === s.id ||
-      normalizeStageStr(t.stage) === normalizeStageStr(s.id)
-    ) {
-      return true;
-    }
 
+    // 1. If s is a custom stage (e.g. offset -10)
     if (s.isCustom) {
-      return s.offsetDays !== null && t.relativeOffset === s.offsetDays;
+      return (
+        t.stage === s.id ||
+        normalizeStageStr(t.stage) === normalizeStageStr(s.id) ||
+        (s.offsetDays !== null && t.relativeOffset === s.offsetDays)
+      );
     }
 
-    // Standard stage: match offset if no custom stage captures this offset
-    const isCapturedByCustom = customStages.some(
+    // 2. If s is a standard stage (e.g. PRE_TRIP_7D)
+    // Check if any custom stage claims this task's relativeOffset
+    const matchedCustom = customStages.find(
       (cs) => cs.offsetDays !== null && cs.offsetDays === t.relativeOffset,
     );
-    if (!isCapturedByCustom && s.offsetDays !== null) {
-      return t.relativeOffset === s.offsetDays;
+    if (matchedCustom) {
+      // Task belongs to custom stage, so exclude from standard stage
+      return false;
     }
 
-    return false;
+    return (
+      t.stage === s.id ||
+      normalizeStageStr(t.stage) === normalizeStageStr(s.id) ||
+      (s.offsetDays !== null && t.relativeOffset === s.offsetDays)
+    );
   };
 
   const filteredTasks = (activeVersion?.taskTemplates || []).filter((t) => {
@@ -599,12 +603,16 @@ export default function SopBuilderPage() {
                     ? `T${t.relativeOffset} Days`
                     : `T+${t.relativeOffset} Days`;
 
-                const matchingStageObj = stagesList.find(
-                  (s) =>
-                    s.id !== "ALL" &&
-                    (s.id === t.stage ||
-                      (s.offsetDays !== null && s.offsetDays === t.relativeOffset)),
+                const customMatch = customStages.find(
+                  (cs) => cs.offsetDays !== null && cs.offsetDays === t.relativeOffset,
                 );
+                const defaultMatch = DEFAULT_STAGES.find(
+                  (ds) =>
+                    ds.id !== "ALL" &&
+                    (ds.id === t.stage ||
+                      (ds.offsetDays !== null && ds.offsetDays === t.relativeOffset)),
+                );
+                const matchingStageObj = customMatch || defaultMatch;
                 const displayStageLabel = matchingStageObj
                   ? matchingStageObj.label
                   : t.stage.replace(/_/g, " ");
