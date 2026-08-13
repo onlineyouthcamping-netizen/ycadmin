@@ -250,9 +250,9 @@ export default function CompanyDocumentsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="space-y-4">
         {/* Main List Section */}
-        <div className="xl:col-span-3 space-y-4">
+        <div className="space-y-4">
           {/* Tabs and Filters Row */}
           <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
             {/* Tabs */}
@@ -459,114 +459,6 @@ export default function CompanyDocumentsPage() {
                   )}
                 </tbody>
               </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar Section */}
-        <div className="space-y-6">
-          {/* Storage Box */}
-          <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-5 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-              <HardDrive className="w-4 h-4 text-slate-400" /> Storage Capacity
-            </h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold">
-                <span className="text-slate-500">Space Used</span>
-                <span className="text-slate-800">
-                  {totalSizeUsed.toFixed(2)} GB of 20 GB
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded overflow-hidden">
-                <div
-                  className="bg-[#F97316] h-full rounded"
-                  style={{ width: `${storagePercent}%` }}
-                />
-              </div>
-              <p className="text-[10px] text-slate-500 font-semibold mt-1">
-                High-speed secure document hosting workspace enabled.
-              </p>
-            </div>
-          </div>
-
-          {/* Categories Counts List */}
-          <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-5 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b pb-2">
-              File Categories
-            </h3>
-            <div className="divide-y divide-slate-100">
-              {Object.entries(categoryCounts).map(([cat, count]) => (
-                <div
-                  key={cat}
-                  className="flex justify-between py-2 text-xs font-semibold text-slate-650"
-                >
-                  <span>{cat}</span>
-                  <span className="bg-slate-100 px-2 py-0.5 rounded-full font-bold text-slate-700 text-[10px]">
-                    {count} files
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Expiring Reminders */}
-          <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-5 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" /> Expiry
-              Reminders
-            </h3>
-            <div className="space-y-3">
-              {expiringList.length > 0 ? (
-                expiringList.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="p-3 bg-amber-50/50 border border-amber-100/60 rounded-[4px] space-y-1.5"
-                  >
-                    <p className="text-xs font-bold text-amber-800">
-                      {doc.name}
-                    </p>
-                    <div className="flex items-center justify-between text-[10px] text-amber-700 font-bold uppercase">
-                      <span>Expires: {doc.expiryDate}</span>
-                      <span
-                        className="underline cursor-pointer"
-                        onClick={() =>
-                          toast.info(
-                            `Action initiated for renewing ${doc.name}`,
-                          )
-                        }
-                      >
-                        Renew
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-400 font-semibold py-2">
-                  All document expiration cycles are in green status.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Audited Actions */}
-          <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-5 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-              <Activity className="w-4 h-4 text-slate-400" /> Recent Actions Log
-            </h3>
-            <div className="space-y-3">
-              {recentActivity.map((act, i) => (
-                <div key={i} className="flex gap-2.5 items-start">
-                  <div className="w-1.5 h-1.5 bg-[#F97316] rounded-full mt-1.5 shrink-0" />
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-slate-650 leading-normal">
-                      {act.text}
-                    </p>
-                    <span className="text-[9px] text-slate-400 font-bold uppercase">
-                      {act.time}
-                    </span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
