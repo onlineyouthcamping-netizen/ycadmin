@@ -529,15 +529,7 @@ export function findHotelForDay(
   const normDay = normaliseDate(dayDate);
   const normLoc = (dayLocation || "").toLowerCase().trim();
 
-  // 1. Location matching FIRST if dayLocation is valid and non-generic
-  if (normLoc && normLoc !== "—" && !normLoc.includes("no stay")) {
-    for (const b of hotelBookings) {
-      const bLoc = (b.location || "").toLowerCase().trim();
-      if (bLoc && (normLoc.includes(bLoc) || bLoc.includes(normLoc))) return b;
-    }
-  }
-
-  // 2. Exact checkIn date match
+  // 1. EXACT Check-In Date match FIRST (Primary key for each itinerary day)
   if (normDay) {
     for (const b of hotelBookings) {
       const cinStr = normaliseDate(b.checkIn);
@@ -545,7 +537,7 @@ export function findHotelForDay(
     }
   }
 
-  // 3. Date range match (checkIn <= dayDate <= checkOut)
+  // 2. Date range match (checkIn <= dayDate < checkOut) for multi-night stays
   if (normDay) {
     const dayMs = new Date(normDay).getTime();
     for (const b of hotelBookings) {
@@ -554,7 +546,15 @@ export function findHotelForDay(
       if (!cinStr) continue;
       const cinMs = new Date(cinStr).getTime();
       const coutMs = coutStr ? new Date(coutStr).getTime() : cinMs + 86400000;
-      if (dayMs >= cinMs && dayMs <= coutMs) return b;
+      if (dayMs >= cinMs && dayMs < coutMs) return b;
+    }
+  }
+
+  // 3. Location matching LAST (Fallback only if no date match)
+  if (normLoc && normLoc !== "—" && !normLoc.includes("no stay")) {
+    for (const b of hotelBookings) {
+      const bLoc = (b.location || "").toLowerCase().trim();
+      if (bLoc && (normLoc.includes(bLoc) || bLoc.includes(normLoc))) return b;
     }
   }
 
