@@ -20,7 +20,9 @@ export const TravelDeskCreateSopModal: React.FC<CreateSopModalProps> = ({
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("ClipboardList");
-  const [items, setItems] = useState([{ title: "", content: "" }]);
+  const [items, setItems] = useState<{ title: string; content: string }[]>([
+    { title: "", content: "" },
+  ]);
 
   const handleAddItem = () => {
     setItems([...items, { title: "", content: "" }]);

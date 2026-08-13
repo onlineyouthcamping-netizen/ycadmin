@@ -29,7 +29,11 @@ import {
   X,
 } from "lucide-react";
 import api from "@/services/api";
-import { travelDeskService } from "@/services/travelDesk.service";
+import {
+  travelDeskService,
+  type TravelDeskArticle,
+  type TripDocument,
+} from "@/services/travelDesk.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -40,34 +44,8 @@ interface CategoryArticlesViewProps {
   onRefreshCount: () => void;
 }
 
-interface Article {
-  id: string;
-  title: string;
-  summary?: string;
-  content: string;
-  status: string;
-  effectiveStatus?: string;
+interface Article extends TravelDeskArticle {
   visibility: string;
-  effectiveFrom?: string;
-  expiresAt?: string;
-  tags?: string;
-}
-
-interface TripDocument {
-  id: string;
-  tripId: string;
-  name: string;
-  category: string;
-  fileType: string;
-  size?: string;
-  addedBy: string;
-  dateAdded: string;
-  fileUrl?: string;
-  title: string;
-  version: number;
-  visibility: string;
-  status: string;
-  approvalDetails?: any;
 }
 
 export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
@@ -81,14 +59,14 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
   const [activeTab, setActiveTab] = useState<"articles" | "pdfs">("articles");
 
   // ARTICLES STATE
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<TravelDeskArticle[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
   const [articlesError, setArticlesError] = useState<string | null>(null);
   const [articleSearchQuery, setArticleSearchQuery] = useState("");
 
   // Articles Form/Editor states
   const [isEditingArticle, setIsEditingArticle] = useState(false);
-  const [editingArticle, setEditingArticle] = useState<Partial<Article> | null>(
+  const [editingArticle, setEditingArticle] = useState<Partial<TravelDeskArticle> | null>(
     null,
   );
   const [activeArticleMenuId, setActiveArticleMenuId] = useState<string | null>(
@@ -238,13 +216,13 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
     setIsEditingArticle(true);
   };
 
-  const handleOpenEditArticle = (article: Article) => {
+  const handleOpenEditArticle = (article: TravelDeskArticle) => {
     setEditingArticle(article);
     setArtTitle(article.title);
     setArtSummary(article.summary || "");
     setArtContent(convertHtmlToBullets(article.content));
     setArtTags(article.tags || "");
-    setArtVisibility(article.visibility);
+    setArtVisibility(article.visibility || "");
     setArtEffectiveFrom(
       article.effectiveFrom
         ? new Date(article.effectiveFrom).toISOString().split("T")[0]
@@ -483,7 +461,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
     setEditingPdf(pdf);
     setPdfFormTitle(pdf.title);
     setPdfFormDesc(pdf.approvalDetails?.description || "");
-    setPdfFormVisibility(pdf.visibility);
+    setPdfFormVisibility(pdf.visibility || "internal");
     setPdfFormStatus(pdf.status);
     setIsEditingPdfMeta(true);
     setActivePdfMenuId(null);

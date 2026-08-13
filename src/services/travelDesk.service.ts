@@ -33,6 +33,11 @@ export interface TravelDeskArticle {
   content: string;
   status: string;
   category?: any;
+  tags?: string | null;
+  visibility?: string;
+  effectiveFrom?: string;
+  expiresAt?: string;
+  effectiveStatus?: string;
 }
 
 export interface DepartureSummary {
@@ -159,6 +164,11 @@ export interface TripDocument {
   addedBy: string;
   dateAdded: string;
   fileUrl?: string;
+  title?: string;
+  version?: number;
+  visibility?: string;
+  status?: string;
+  approvalDetails?: any;
   createdAt: string;
   updatedAt: string;
 }
@@ -373,11 +383,28 @@ export const travelDeskService = {
     const res = await api.get(`/travel-desk/sops/${tripId}`);
     return res.data.data;
   },
-  createSop: async (data: Partial<TripSop>): Promise<TripSop> => {
+  createSop: async (data: {
+    tripId: string;
+    title: string;
+    description?: string;
+    category?: string;
+    icon?: string;
+    items?: { title: string; content?: string }[];
+  }): Promise<TripSop> => {
     const res = await api.post(`/travel-desk/sops`, data);
     return res.data.data;
   },
-  updateSop: async (id: string, data: Partial<TripSop>): Promise<TripSop> => {
+  updateSop: async (
+    id: string,
+    data: {
+      tripId?: string;
+      title?: string;
+      description?: string;
+      category?: string;
+      icon?: string;
+      items?: { title: string; content?: string }[];
+    },
+  ): Promise<TripSop> => {
     const res = await api.put(`/travel-desk/sops/${id}`, data);
     return res.data.data;
   },

@@ -138,6 +138,7 @@ export interface CollectPayload {
   proofImageUrl?: string;
   utrNumber?: string;
   receivingAccountId?: string;
+  customAccountName?: string;
 }
 
 export const stationPaymentService = {

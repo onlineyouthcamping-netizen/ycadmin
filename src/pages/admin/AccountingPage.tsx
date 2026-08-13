@@ -513,6 +513,12 @@ export default function AccountingPage() {
   const loadVendorAssignments = async () => {
     setLoadingVendors(true);
     try {
+      const liveQueueRes = await api.get("/payments/vendor-payables-queue").catch(() => null);
+      if (liveQueueRes?.data?.data && Array.isArray(liveQueueRes.data.data) && liveQueueRes.data.data.length > 0) {
+        setVendorAssignments(liveQueueRes.data.data);
+        return;
+      }
+
       const [tripsList, directoryVendors] = await Promise.all([
         tripsService.getAll().catch(() => []),
         vendorsService.getAll().catch(() => []),

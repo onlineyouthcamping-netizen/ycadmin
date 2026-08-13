@@ -265,7 +265,8 @@ export default function TrainTicketsPanel({
     setEditingId(ticket.id);
     setForm({
       travelerName: ticket.travelerName || "",
-      passengerReference: ticket.passengerReference || "DEPARTURE",
+      passengerReference:
+        (ticket.passengerReference as "DEPARTURE" | "RETURN") || "DEPARTURE",
       pnr: ticket.pnr || "",
       trainName: ticket.trainName || "",
       trainNumber: ticket.trainNumber || "",

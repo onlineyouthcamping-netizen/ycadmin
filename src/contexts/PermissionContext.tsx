@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuthStore } from "@/store/auth.store";
 import { rbacService, UserAccessDetails } from "@/services/rbac.service";
 
 interface PermissionContextType {
@@ -26,7 +26,7 @@ const PermissionContext = createContext<PermissionContextType | undefined>(
 export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { currentAdmin } = useAuth();
+  const { admin: currentAdmin } = useAuthStore();
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [userAccessDetails, setUserAccessDetails] =
     useState<UserAccessDetails | null>(null);
