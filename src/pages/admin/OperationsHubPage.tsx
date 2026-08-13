@@ -83,14 +83,6 @@ export default function OperationsHubPage() {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
 
-  if (tabParam === "stationpayments" || tabParam === "station_payments" || tabParam === "station") {
-    return (
-      <div className="p-6 bg-slate-50 min-h-screen">
-        <StationPaymentCollection />
-      </div>
-    );
-  }
-
   const [trips, setTrips] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
@@ -1584,6 +1576,14 @@ export default function OperationsHubPage() {
   };
 
   const selectedTrip = trips.find((t) => t.id === selectedTripId);
+
+  if (tabParam === "stationpayments" || tabParam === "station_payments" || tabParam === "station") {
+    return (
+      <div className="p-6 bg-slate-50 min-h-screen">
+        <StationPaymentCollection />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20 p-6 bg-[#F4F7FB] min-h-screen -mx-6 -mt-6">
