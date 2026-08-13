@@ -443,42 +443,24 @@ function AdminSidebar() {
               const searchParams = new URLSearchParams(location.search);
               const currentTab = searchParams.get("tab");
 
-              if (urlSearch) {
-                const urlParams = new URLSearchParams(urlSearch);
+              if (url.includes("?")) {
+                const urlParams = new URLSearchParams(url.split("?")[1]);
                 const urlTab = urlParams.get("tab");
-
                 if (urlTab) {
-                  if (currentTab) {
-                    return urlTab === currentTab;
-                  } else {
-                    if (urlPath === "/admin/accounting")
-                      return urlTab === "overview";
-                    const firstTabSubItem = visibleSubItems.find((sub) =>
-                      sub.url.startsWith(urlPath + "?tab="),
-                    );
-                    if (firstTabSubItem) {
-                      const firstTab = new URLSearchParams(
-                        firstTabSubItem.url.split("?")[1],
-                      ).get("tab");
-                      return urlTab === firstTab;
-                    }
+                  return currentTab === urlTab;
+                }
+              } else if (currentTab) {
+                // If this base item has no ?tab=, check if any sibling sub-item matches currentTab
+                const isSiblingTabActive = visibleSubItems.some((otherSub) => {
+                  if (otherSub.url === url) return false;
+                  const [otherPath, otherSearch] = otherSub.url.split("?");
+                  if (otherPath === urlPath && otherSearch) {
+                    const otherTab = new URLSearchParams(otherSearch).get("tab");
+                    return otherTab === currentTab;
                   }
-                }
-
-                for (const [key, val] of urlParams.entries()) {
-                  if (searchParams.get(key) !== val) return false;
-                }
-                return true;
-              }
-
-              if (currentTab) {
-                const hasSiblingWithThisTab = visibleSubItems.some((sub) => {
-                  const [subPath, subSearch] = sub.url.split("?");
-                  if (subPath !== urlPath || !subSearch) return false;
-                  const subParams = new URLSearchParams(subSearch);
-                  return subParams.get("tab") === currentTab;
+                  return false;
                 });
-                if (hasSiblingWithThisTab) return false;
+                if (isSiblingTabActive) return false;
               }
 
               return true;
