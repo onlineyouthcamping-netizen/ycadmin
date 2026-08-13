@@ -531,9 +531,9 @@ export function findHotelForDay(
 
   // 1. EXACT Check-In Date match FIRST (Primary key for each itinerary day)
   if (normDay) {
-    for (const b of hotelBookings) {
-      const cinStr = normaliseDate(b.checkIn);
-      if (cinStr && cinStr === normDay) return b;
+    const matches = hotelBookings.filter((b) => normaliseDate(b.checkIn) === normDay);
+    if (matches.length > 0) {
+      return matches[matches.length - 1];
     }
   }
 

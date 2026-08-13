@@ -701,7 +701,10 @@ export default function HotelAssignmentWizardModal({
           ? selectedHotel.vendorObj.id
           : null;
 
-      const payload = {
+      const existingB = initialDayInfo?.existingBooking;
+
+      const payload: any = {
+        ...(existingB?.id && !String(existingB.id).startsWith("stay") ? { id: existingB.id } : {}),
         hotelName: selectedHotel.name,
         location: selectedDestination || selectedHotel.city || "Manali",
         roomType: selectedHotel.category || "Standard Room",
