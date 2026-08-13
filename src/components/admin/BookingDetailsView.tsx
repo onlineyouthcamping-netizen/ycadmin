@@ -1395,7 +1395,15 @@ export default function BookingDetailsView({
           }).catch(() => null);
         }
 
-        toast.success("Payment recorded & mapped to Personal Collections!");
+        if (booking.status !== "confirmed" && booking.status !== "cancelled") {
+          await bookingsService.update(booking.id, {
+            status: "confirmed",
+          }).catch(() => null);
+          await handleSendEmail("confirmation").catch(() => null);
+          toast.success("Payment recorded, booking confirmed & confirmation voucher email sent!");
+        } else {
+          toast.success("Payment recorded & mapped to Personal Collections!");
+        }
         setShowCreatePayment(false);
         setPayComments("");
         onRefresh();
