@@ -108,7 +108,23 @@ export default function VendorDirectoryPage() {
 
   // Trip-Scoped Vendor Directory state
   const [tripsList, setTripsList] = useState<any[]>([]);
-  const [selectedTripId, setSelectedTripId] = useState<string>("");
+  const [selectedTripId, setSelectedTripId] = useState<string>(() => {
+    return (
+      searchParams.get("tripId") ||
+      localStorage.getItem("yc_vendor_selected_trip") ||
+      ""
+    );
+  });
+
+  const handleTripSelectChange = (newTripId: string) => {
+    setSelectedTripId(newTripId);
+    try {
+      localStorage.setItem("yc_vendor_selected_trip", newTripId);
+    } catch {}
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("tripId", newTripId);
+    setSearchParams(newParams, { replace: true });
+  };
   const [tripDestinations, setTripDestinations] = useState<string[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<{
     total: number;
@@ -306,20 +322,27 @@ export default function VendorDirectoryPage() {
     api
       .get("/vendors/trips")
       .then((res) => {
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          setTripsList(res.data.data);
-          setSelectedTripId((prev) => prev || res.data.data[0].id);
+        if (
+          res.data?.success &&
+          Array.isArray(res.data.data) &&
+          res.data.data.length > 0
+        ) {
+          const list = res.data.data;
+          setTripsList(list);
+
+          const savedTripId =
+            searchParams.get("tripId") ||
+            localStorage.getItem("yc_vendor_selected_trip");
+          const isValid = list.some((t: any) => t.id === savedTripId);
+          if (savedTripId && isValid) {
+            setSelectedTripId(savedTripId);
+          } else {
+            setSelectedTripId(list[0].id);
+          }
         }
       })
       .catch(() => null);
   }, []);
-
-  // Auto-select first trip when trips are loaded
-  useEffect(() => {
-    if (tripsList.length > 0 && !selectedTripId) {
-      setSelectedTripId(tripsList[0].id);
-    }
-  }, [tripsList]);
 
   // Fetch trip destinations when selectedTripId changes
   useEffect(() => {
@@ -613,7 +636,7 @@ export default function VendorDirectoryPage() {
           {/* Trip Selector */}
           <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
             <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider px-2">Trip:</span>
-            <Select value={selectedTripId} onValueChange={setSelectedTripId}>
+            <Select value={selectedTripId} onValueChange={handleTripSelectChange}>
               <SelectTrigger className="w-[260px] h-8 text-xs font-bold bg-white border-slate-200 shadow-2xs">
                 <SelectValue placeholder="— Select Trip —" />
               </SelectTrigger>
