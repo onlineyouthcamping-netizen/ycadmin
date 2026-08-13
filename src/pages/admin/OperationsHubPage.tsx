@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { calculateReadinessScore } from "@/utils/readinessUtils";
 import ReportsConsole from "@/components/admin/ReportsConsole";
+import { useAuthStore } from "@/store/auth.store";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import StationPaymentCollection from "@/components/admin/StationPaymentCollection";
 import {
@@ -80,6 +81,7 @@ const getTodayString = () => new Date().toISOString().split("T")[0];
 
 export default function OperationsHubPage() {
   const navigate = useNavigate();
+  const { admin } = useAuthStore();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
 

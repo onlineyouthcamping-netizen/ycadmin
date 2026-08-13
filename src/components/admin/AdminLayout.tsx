@@ -867,7 +867,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     <DropdownMenuItem
                       onSelect={(e) => {
                         e.preventDefault();
-                        handleLogout();
+                        logout();
                       }}
                       className="text-xs font-bold text-white bg-[#F97316] hover:bg-[#EA580C] focus:bg-[#EA580C] focus:text-white cursor-pointer rounded-lg py-2 px-3 mt-1.5 flex items-center justify-center shadow-xs transition-all"
                     >

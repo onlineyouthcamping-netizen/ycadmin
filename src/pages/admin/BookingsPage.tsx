@@ -52,6 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { bookingsService } from "@/services/bookings.service";
+import api from "@/services/api";
 import { adminUsersService } from "@/services/adminUsers.service";
 import BookingDetailsView from "@/components/admin/BookingDetailsView";
 import NewBookingModal from "@/components/admin/NewBookingModal";
@@ -332,6 +333,7 @@ export default function BookingsPage() {
     if (b.status === "cancelled") return "Cancelled";
     if (b.status === "expired") return "Expired";
     if (b.status === "draft") return "Draft";
+    if (b.status === "confirmed" && b.remainingAmount <= 0) return "Completed";
     if (b.status === "confirmed") return "Confirmed";
     return "Inquiry";
   };
@@ -538,7 +540,7 @@ export default function BookingsPage() {
       // 1. Quick Filters
       if (quickFilter === "my") {
         const meta = getBookingMetaData(b);
-        if (meta.bookedBy !== (currentAdmin?.name || currentAdmin?.username))
+        if (meta.bookedBy !== currentAdmin?.name)
           return false;
       } else if (quickFilter === "confirmed_bookings") {
         if (b.status !== "confirmed") return false;
@@ -929,8 +931,13 @@ export default function BookingsPage() {
                           passengersDot = "amber";
                         }
 
+                        const passengerCount = Array.isArray(b.passengers)
+                          ? b.passengers.length
+                          : Array.isArray(b.passengers?.details)
+                            ? b.passengers.details.length
+                            : 0;
                         let documentsDot: "red" | undefined = undefined;
-                        if (!b.isVerified) {
+                        if (passengerCount < (b.numberOfTravelers || 0)) {
                           documentsDot = "red";
                         }
 
@@ -1756,7 +1763,7 @@ export default function BookingsPage() {
         onSent={() => {
           setSelectedIds([]);
           setIsBulkEmailOpen(false);
-          loadBookings();
+          fetchAll();
         }}
       />
     </div>

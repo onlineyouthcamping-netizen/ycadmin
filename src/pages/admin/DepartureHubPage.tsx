@@ -2112,42 +2112,63 @@ useEffect(() => {
           return;
         }
 
-        const ratesList =
-          Array.isArray(v.transportRates) && v.transportRates.length > 0
-            ? v.transportRates
-            : Array.isArray(v.vehicleMaster) && v.vehicleMaster.length > 0
-              ? v.vehicleMaster
-              : Array.isArray(v.transportFleet) && v.transportFleet.length > 0
-                ? v.transportFleet
-                : [
-                    { vehicleType: "20 Seater Tempo Traveller", seatCapacity: 20 },
-                    { vehicleType: "17 Seater Tempo Traveller", seatCapacity: 17 },
-                    { vehicleType: "14 Seater Tempo Traveller", seatCapacity: 14 },
-                    { vehicleType: "Toyota Innova Crysta", seatCapacity: 7 },
-                    { vehicleType: "Maruti Suzuki Ertiga", seatCapacity: 6 },
-                    { vehicleType: "Swift Dzire Sedan", seatCapacity: 4 },
-                  ];
+        let extractedVehicles: any[] = [];
 
-        ratesList.forEach((r: any) => {
-          const vType = r.vehicleType || r.model || r.vehicleModel || "17 Seater Tempo Traveller";
-          const cap = r.seatCapacity || r.capacity || 17;
-          let cost = Number(r.amount || r.rate || r.totalAmount || 0);
-
-          if (!cost && Array.isArray(v.routePricingGroups)) {
-            v.routePricingGroups.forEach((g: any) => {
-              const ratesList = g.vehicleRates || g.routeRates || [];
-              if (Array.isArray(ratesList)) {
-                ratesList.forEach((rr: any) => {
-                  if (
-                    rr.vehicleType?.toLowerCase() === vType.toLowerCase() &&
-                    rr.totalAmount
-                  ) {
-                    cost = Number(rr.totalAmount);
-                  }
+        // 1. Primary: Route Contracts from Vendor Management (routePricingGroups.vehicleRates)
+        if (Array.isArray(v.routePricingGroups) && v.routePricingGroups.length > 0) {
+          v.routePricingGroups.forEach((g: any) => {
+            const vRates = g.vehicleRates || g.routeRates || [];
+            if (Array.isArray(vRates)) {
+              vRates.forEach((vr: any) => {
+                const vType = vr.vehicleNameSnapshot || vr.vehicleType || "17 Seater Tempo Traveller";
+                const cap = vr.advertisedCapacity || vr.capacity || (vType.match(/\d+/) ? parseInt(vType.match(/\d+/)[0]) : 17);
+                const sellable = vr.sellableSeats || cap;
+                const cost = Number(vr.totalVehicleAmount || vr.amount || 0);
+                extractedVehicles.push({
+                  id: vr.id,
+                  vehicleType: vType,
+                  capacity: cap,
+                  sellableSeats: sellable,
+                  cost: cost,
                 });
-              }
+              });
+            }
+          });
+        }
+
+        // 2. Secondary: Direct Transport Rates
+        if (extractedVehicles.length === 0 && Array.isArray(v.transportRates) && v.transportRates.length > 0) {
+          v.transportRates.forEach((r: any) => {
+            const vType = r.vehicleType || r.model || "17 Seater Tempo Traveller";
+            const cap = r.advertisedCapacity || r.seatCapacity || r.capacity || 17;
+            const sellable = r.sellableSeats || cap;
+            const cost = Number(r.totalVehicleAmount || r.amount || r.rate || 0);
+            extractedVehicles.push({
+              id: r.id,
+              vehicleType: vType,
+              capacity: cap,
+              sellableSeats: sellable,
+              cost: cost,
             });
-          }
+          });
+        }
+
+        // 3. Fallback: Default vehicles if vendor has no rates configured
+        if (extractedVehicles.length === 0) {
+          extractedVehicles = [
+            { vehicleType: "20 Seater Tempo Traveller", capacity: 20, sellableSeats: 17, cost: 64000 },
+            { vehicleType: "17 Seater Tempo Traveller", capacity: 17, sellableSeats: 16, cost: 52000 },
+            { vehicleType: "14 Seater Tempo Traveller", capacity: 14, sellableSeats: 13, cost: 48000 },
+            { vehicleType: "Toyota Innova Crysta", capacity: 7, sellableSeats: 5, cost: 40000 },
+            { vehicleType: "Maruti Suzuki Ertiga", capacity: 6, sellableSeats: 5, cost: 36000 },
+          ];
+        }
+
+        extractedVehicles.forEach((r: any) => {
+          const vType = r.vehicleType;
+          const cap = r.capacity;
+          const sellable = r.sellableSeats || cap;
+          const cost = r.cost;
 
           const itemKey = `${v.id}-${vType.toLowerCase().trim()}-${cap}`;
           if (seenKeys.has(itemKey)) return;
@@ -2159,9 +2180,10 @@ useEffect(() => {
             vendorName: vName,
             vehicleType: vType,
             capacity: cap,
+            sellableSeats: sellable,
             cost: cost,
             driverName: `${vName} ${vType}`,
-            label: `${vType} – ${vName} (${cap} Seats)${cost > 0 ? ` – ₹${cost.toLocaleString("en-IN")}` : ""}`,
+            label: `${vType} – ${vName} (${cap} Seats / ${sellable} Sellable)${cost > 0 ? ` – ₹${cost.toLocaleString("en-IN")}` : ""}`,
           });
         });
       });

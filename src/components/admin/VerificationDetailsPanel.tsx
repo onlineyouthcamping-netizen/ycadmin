@@ -38,6 +38,7 @@ import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import TrainTicketsPanel from "./TrainTicketsPanel";
 import { bookingsService } from "@/services/bookings.service";
+import { toast } from "sonner";
 
 // ── STATUS BADGE COLORS ──
 const STATUS_STYLES: Record<

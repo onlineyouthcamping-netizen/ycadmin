@@ -64,6 +64,7 @@ import {
 } from "@/components/ui/select";
 import type { Booking, BookingTrip } from "@/types";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { bookingsService } from "@/services/bookings.service";
 import { paymentsService } from "@/services/payments.service";
 import { tripsService } from "@/services/trips.service";
@@ -100,6 +101,7 @@ export default function BookingDetailsView({
   defaultTab,
 }: BookingDetailsViewProps) {
   const { admin: currentAdmin } = useAuthStore();
+  const navigate = useNavigate();
   const [customerTimeline, setCustomerTimeline] = useState<any[]>([]);
   const [customerTimelineOpen, setCustomerTimelineOpen] = useState(false);
 
