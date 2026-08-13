@@ -1180,8 +1180,10 @@ export default function DepartureHubPage() {
     rawTab = "passengers";
   } else if (["ticketing", "tasks"].includes(rawTab)) {
     rawTab = "operations";
-  } else if (["money", "payments", "reports", "stationpayments"].includes(rawTab)) {
+  } else if (["money", "payments", "reports"].includes(rawTab)) {
     rawTab = "finance";
+  } else if (["station", "stationpayments", "station_payments"].includes(rawTab)) {
+    rawTab = "stationpayments";
   }
   const activeTab = rawTab;
 
