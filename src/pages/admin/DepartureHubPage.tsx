@@ -8986,17 +8986,26 @@ useEffect(() => {
                     <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                       Capacity (Seats)
                     </label>
-                    <select
-                      value={newVehicleCapacity}
-                      onChange={(e) => setNewVehicleCapacity(e.target.value)}
-                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
-                    >
-                      {[...Array(60)].map((_, i) => (
-                        <option key={i + 1} value={String(i + 1)}>
-                          {i + 1} Seats
-                        </option>
-                      ))}
-                    </select>
+                    {selectedVehicleId && selectedVehicleId !== 'custom' ? (
+                      <input
+                        type="text"
+                        readOnly
+                        value={`${newVehicleCapacity} Seats`}
+                        className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs font-bold text-slate-700 bg-slate-50 cursor-not-allowed"
+                      />
+                    ) : (
+                      <select
+                        value={newVehicleCapacity}
+                        onChange={(e) => setNewVehicleCapacity(e.target.value)}
+                        className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
+                      >
+                        {[...Array(60)].map((_, i) => (
+                          <option key={i + 1} value={String(i + 1)}>
+                            {i + 1} Seats
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div>
                     <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
@@ -9018,10 +9027,14 @@ useEffect(() => {
                     <input
                       type="number"
                       required
+                      readOnly={selectedVehicleId !== '' && selectedVehicleId !== 'custom'}
                       placeholder="45000"
                       value={newVehicleCost}
                       onChange={(e) => setNewVehicleCost(e.target.value)}
-                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
+                      className={cn(
+                        "h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400",
+                        selectedVehicleId !== '' && selectedVehicleId !== 'custom' && "bg-slate-50 font-bold text-slate-700 cursor-not-allowed"
+                      )}
                     />
                   </div>
                   <div>
@@ -9030,10 +9043,14 @@ useEffect(() => {
                     </label>
                     <input
                       type="text"
+                      readOnly={selectedVehicleId !== '' && selectedVehicleId !== 'custom'}
                       placeholder="ABC Travels"
                       value={newVehicleVendor}
                       onChange={(e) => setNewVehicleVendor(e.target.value)}
-                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
+                      className={cn(
+                        "h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400",
+                        selectedVehicleId !== '' && selectedVehicleId !== 'custom' && "bg-slate-50 font-bold text-slate-700 cursor-not-allowed"
+                      )}
                     />
                   </div>
                   <Button

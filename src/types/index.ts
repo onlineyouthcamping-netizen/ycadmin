@@ -279,50 +279,140 @@ export interface BookingTrip {
 }
 
 export interface BookingPassenger {
-  name: string;
-  age: number;
-  gender: string;
-  phone: string;
+  id?: string;
+  name?: string;
+  age?: number | string | null;
+  gender?: string;
+  phone?: string;
+  email?: string;
+  roomSharing?: string;
+  foodPreference?: string;
+  dob?: string | null;
+  [key: string]: unknown;
+}
+
+/**
+ * Booking passengers JSON payload — the backend stores this as a Prisma Json
+ * column. Historically it can be either a plain array (legacy) or a
+ * `{ details, persons }` object (current). Both shapes are supported here;
+ * normalize at the service layer.
+ */
+export type BookingPassengersPayload =
+  | BookingPassenger[]
+  | {
+      details?: Record<string, unknown>;
+      persons?: BookingPassenger[];
+    };
+
+/**
+ * Canonical Booking type — mirrors the backend Prisma `Booking` model
+ * response (see backend/prisma/schema.prisma) plus normalized/derived
+ * compatibility fields surfaced by `bookingsService.normalizeBooking`.
+ */
+export type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "rejected"
+  | (string & {});
+
+export type PaymentStatus =
+  | "UNPAID"
+  | "PARTIAL"
+  | "PAID"
+  | "REFUNDED"
+  | (string & {});
+
+export interface BookingSalesAdminRef {
+  id: string;
+  name?: string | null;
+  email?: string | null;
 }
 
 export interface Booking {
   id: string;
+  tenantId?: string;
   bookingId: string;
   tripId: string;
-  tripName: string;
-  status: 'pending' | 'confirmed';
-  fullName: string;
-  age: number;
-  gender: 'Male' | 'Female' | 'Other';
-  mobile: string;
-  trainClass: 'Sleeper' | '3AC' | 'Flight';
-  ticketStatus?: string;
-  trainTicketStatus?: string;
-  roomType: string;
-  numberOfTravelers?: number;
-  baseAmount?: number;
-  gstAmount?: number;
+  tripName?: string | null;
+  status: BookingStatus;
+  // Customer contact (authoritative backend fields)
+  name?: string | null;
+  fullName?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  age?: number | null;
+  gender?: string | null;
+  // Financials
+  numberOfTravelers?: number | null;
+  baseAmount?: number | null;
+  gstAmount?: number | null;
+  depositGst?: number | null;
   totalAmount: number;
+  amount?: number | null;
   advancePaid: number;
   remainingAmount: number;
-  paymentMode: 'UPI' | 'Cash' | 'Bank Transfer' | '';
-  paymentStatus: 'Pending' | 'Partial' | 'Paid';
-  payment_status?: string;
-  payment_method?: string;
-  upi_reference?: string;
-  notes?: string;
-  departureDate?: string;
-  pickupCity?: string;
-  skipDays?: number;
-  adjustedPrice?: number;
-  joiningDate?: string;
+  paymentMode?: string | null;
+  paymentStatus?: PaymentStatus | null;
+  payment_status?: string | null;
+  payment_method?: string | null;
+  upi_reference?: string | null;
+  notes?: string | null;
+  adminNotes?: string | null;
+  // Ownership / attribution
+  sourceBookingLinkId?: string | null;
+  salesAdminId?: string | null;
+  salesAdmin?: BookingSalesAdminRef | null;
+  sourceMeta?: Record<string, unknown> | null;
+  // Operational
+  departureDate?: string | null;
+  pickupCity?: string | null;
+  skipDays?: number | null;
+  adjustedPrice?: number | null;
+  joiningDate?: string | null;
   reminderSent?: boolean;
-  passengers?: BookingPassenger[];
+  passengers?: BookingPassengersPayload | null;
+  trainTicketRequired?: boolean;
+  trainTicketStatus?: string | null;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  // Relations (when the backend includes them)
+  tripRef?: {
+    id?: string;
+    title?: string;
+    slug?: string;
+    price?: number;
+    duration?: string | null;
+    [key: string]: unknown;
+  } | null;
+  // ── Normalized / derived compatibility fields ──
+  // Populated by bookingsService.normalizeBooking from the raw API response.
+  trainClass?: string;
+  ticketStatus?: string;
+  roomType?: string;
+  roomSharing?: string;
+  foodPreference?: string;
+  leadSource?: string;
+  source?: string;
+  createdByName?: string;
+  discountAmount?: number;
+  duration?: string;
 }
 
-export type BookingFormData = Omit<Booking, "id" | "bookingId" | "remainingAmount" | "createdAt" | "updatedAt">;
+export type BookingFormData = Omit<
+  Booking,
+  | "id"
+  | "bookingId"
+  | "remainingAmount"
+  | "createdAt"
+  | "updatedAt"
+  | "tenantId"
+  | "sourceBookingLinkId"
+  | "salesAdminId"
+  | "salesAdmin"
+  | "sourceMeta"
+>;
 
 export interface Inquiry {
   id: string;

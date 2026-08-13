@@ -1,6 +1,57 @@
 import axios from "axios";
 import api from "./api";
-import type { Booking, BookingTrip } from "@/types";
+import type { Booking, BookingPassenger, BookingPassengersPayload, BookingTrip } from "@/types";
+
+/**
+ * Normalize a raw backend booking row (Prisma Booking JSON) into the
+ * canonical frontend `Booking` shape. The backend returns raw model rows,
+ * so derived/legacy-compat fields are resolved here in ONE place instead of
+ * being scattered through components.
+ */
+export function normalizeBooking(raw: any): Booking {
+  if (!raw || typeof raw !== "object") return raw;
+
+  const passengers: BookingPassengersPayload = raw.passengers;
+  const persons: BookingPassenger[] = Array.isArray(passengers)
+    ? (passengers as BookingPassenger[])
+    : Array.isArray(passengers?.persons)
+      ? (passengers.persons as BookingPassenger[])
+      : [];
+  const details =
+    passengers && !Array.isArray(passengers)
+      ? (passengers.details as Record<string, unknown> | undefined) || {}
+      : {};
+  const lead = persons[0] || {};
+
+  const sourceMetaRaw = raw.sourceMeta;
+
+  return {
+    ...raw,
+    // Contact fields — backend authoritative names
+    name: raw.name ?? raw.fullName ?? null,
+    fullName: raw.fullName ?? raw.name ?? null,
+    phone: raw.phone ?? raw.mobile ?? null,
+    mobile: raw.mobile ?? raw.phone ?? null,
+    email: raw.email ?? null,
+    // Derived ownership
+    createdByName: raw.salesAdmin?.name ?? raw.createdByName,
+    salesAdminId: raw.salesAdminId ?? null,
+    // Derived operational fields (stored under passengers.details server-side)
+    trainClass: (details.trainClass as string) ?? raw.trainClass,
+    ticketStatus: (details.ticketStatus as string) ?? raw.ticketStatus,
+    roomType: (details.roomType as string) ?? raw.roomType,
+    roomSharing: (details.roomSharing as string) ?? lead.roomSharing ?? raw.roomSharing,
+    foodPreference: (details.foodPreference as string) ?? lead.foodPreference ?? raw.foodPreference,
+    // Derived attribution / pricing metadata
+    leadSource: sourceMetaRaw?.source ?? (sourceMetaRaw?.utm_source as string) ?? raw.leadSource,
+    source: sourceMetaRaw?.source ?? raw.source,
+    discountAmount: typeof raw.discountAmount === "number" ? raw.discountAmount : 0,
+    duration: raw.tripRef?.duration ?? raw.duration,
+  };
+}
+
+const normalizeList = (list: any[]): Booking[] =>
+  Array.isArray(list) ? list.map((b) => normalizeBooking(b)) : [];
 
 export const bookingsService = {
   // ── BOOKINGS ──
@@ -38,6 +89,13 @@ export const bookingsService = {
       }
 
       const res = await api.get(`/bookings?${params.toString()}`, { signal });
+      if (
+        res.data &&
+        typeof res.data === "object" &&
+        Array.isArray(res.data.data)
+      ) {
+        return { ...res.data, data: normalizeList(res.data.data) };
+      }
       return res.data;
     } catch (err) {
       if (
@@ -55,17 +113,17 @@ export const bookingsService = {
 
   async getById(id: string): Promise<Booking> {
     const res = await api.get(`/bookings/${id}`);
-    return res.data.data;
+    return normalizeBooking(res.data.data);
   },
 
   async create(data: any): Promise<Booking> {
     const res = await api.post("/bookings", data);
-    return res.data.data;
+    return normalizeBooking(res.data.data);
   },
 
   async update(id: string, data: any): Promise<Booking> {
     const res = await api.put(`/bookings/${id}`, data);
-    return res.data.data;
+    return normalizeBooking(res.data.data);
   },
 
   async confirm(
@@ -80,12 +138,12 @@ export const bookingsService = {
     },
   ): Promise<Booking> {
     const res = await api.put(`/bookings/${id}/confirm`, data);
-    return res.data.data;
+    return normalizeBooking(res.data.data);
   },
 
   async confirmPayment(id: string): Promise<Booking> {
     const res = await api.patch(`/bookings/${id}/confirm-payment`);
-    return res.data.data;
+    return normalizeBooking(res.data.data);
   },
 
   async delete(id: string): Promise<void> {
@@ -102,7 +160,7 @@ export const bookingsService = {
     },
   ): Promise<Booking> {
     const res = await api.post(`/bookings/${id}/cancel`, data);
-    return res.data.booking;
+    return normalizeBooking(res.data.booking);
   },
 
   // ── TRIPS ──
