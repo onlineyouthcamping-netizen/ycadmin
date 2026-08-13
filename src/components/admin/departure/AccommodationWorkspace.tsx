@@ -43,6 +43,7 @@ import {
   getPrimaryRateFromBooking,
   normalisePricingMode,
   resolveCityForItineraryDay,
+  normalizeDestinationName,
   suggestRoomAllocation,
 } from "@/utils/accommodationCalculator";
 
