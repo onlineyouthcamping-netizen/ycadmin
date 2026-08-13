@@ -40,33 +40,6 @@ const DEFAULT_STAGES = [
   { id: "POST_TRIP", label: "POST TRIP", isCustom: false, offsetDays: 7 },
 ];
 
-const VALID_SOP_STAGES = [
-  "PRE_TRIP_30D",
-  "PRE_TRIP_21D",
-  "PRE_TRIP_14D",
-  "PRE_TRIP_7D",
-  "PRE_TRIP_3D",
-  "PRE_TRIP_1D",
-  "DEPARTURE_DAY",
-  "DURING_TRIP",
-  "POST_TRIP",
-] as const;
-
-/** Maps any stage string (including custom IDs like CUSTOM_TYGJ) to a valid DB OpsSOPStage enum value */
-function resolveToValidStage(stage: string, relativeOffset: number): string {
-  if (VALID_SOP_STAGES.includes(stage as any)) return stage;
-  // Fall back to nearest stage based on offset
-  if (relativeOffset > 1) return "POST_TRIP";
-  if (relativeOffset === 1) return "DURING_TRIP";
-  if (relativeOffset === 0) return "DEPARTURE_DAY";
-  if (relativeOffset <= -30) return "PRE_TRIP_30D";
-  if (relativeOffset <= -21) return "PRE_TRIP_21D";
-  if (relativeOffset <= -14) return "PRE_TRIP_14D";
-  if (relativeOffset <= -7) return "PRE_TRIP_7D";
-  if (relativeOffset <= -3) return "PRE_TRIP_3D";
-  return "PRE_TRIP_1D";
-}
-
 export default function SopBuilderPage() {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId");
@@ -198,13 +171,11 @@ export default function SopBuilderPage() {
     try {
       const parsedOffset = parseInt(String(taskForm.relativeOffset), 10);
       const safeOffset = isNaN(parsedOffset) ? -7 : parsedOffset;
-      // Resolve custom stage IDs (e.g. CUSTOM_TYGJ) to valid OpsSOPStage enum values
-      const safeStage = resolveToValidStage(taskForm.stage, safeOffset);
       const payload = {
         ...taskForm,
         taskName: taskForm.taskName.trim(),
         relativeOffset: safeOffset,
-        stage: safeStage,
+        stage: taskForm.stage,
       };
 
       if (editingTask) {
@@ -603,19 +574,16 @@ export default function SopBuilderPage() {
                     ? `T${t.relativeOffset} Days`
                     : `T+${t.relativeOffset} Days`;
 
-                const customMatch = customStages.find(
-                  (cs) => cs.offsetDays !== null && cs.offsetDays === t.relativeOffset,
+                const stgMatch = stagesList.find(
+                  (s) =>
+                    s.id !== "ALL" &&
+                    (s.id === t.stage ||
+                      normalizeStageStr(s.id) === normalizeStageStr(t.stage) ||
+                      (s.offsetDays !== null && s.offsetDays === t.relativeOffset)),
                 );
-                const defaultMatch = DEFAULT_STAGES.find(
-                  (ds) =>
-                    ds.id !== "ALL" &&
-                    (ds.id === t.stage ||
-                      (ds.offsetDays !== null && ds.offsetDays === t.relativeOffset)),
-                );
-                const matchingStageObj = customMatch || defaultMatch;
-                const displayStageLabel = matchingStageObj
-                  ? matchingStageObj.label
-                  : t.stage.replace(/_/g, " ");
+                const displayStageLabel = stgMatch
+                  ? stgMatch.label
+                  : t.stage.replace(/^CUSTOM_/, "").replace(/_/g, " ");
 
                 return (
                   <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
