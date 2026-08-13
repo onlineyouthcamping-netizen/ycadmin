@@ -645,8 +645,11 @@ export function AccommodationDetailPage({
   const [roomForm, setRoomForm] = useState({
     name: "",
     cap: "2",
-    base: "",
-    extra: "800",
+    doubleRate: "1200",
+    tripleRate: "900",
+    quadRate: "750",
+    singleRate: "1800",
+    extraBedRate: "500",
   });
 
   const [seasonModalOpen, setSeasonModalOpen] = useState(false);
@@ -805,32 +808,33 @@ export function AccommodationDetailPage({
 
   // Room Handlers
   const handleSaveRoom = () => {
-    if (!roomForm.name || !roomForm.base) {
-      toast.error("Please enter Room Name and Base Tariff");
+    if (!roomForm.name.trim()) {
+      toast.error("Please enter Room Category Name");
       return;
     }
+    const roomData = {
+      name: roomForm.name.trim(),
+      cap: parseInt(roomForm.cap, 10) || 2,
+      doubleRate: parseFloat(roomForm.doubleRate) || 0,
+      tripleRate: parseFloat(roomForm.tripleRate) || 0,
+      quadRate: parseFloat(roomForm.quadRate) || 0,
+      singleRate: parseFloat(roomForm.singleRate) || 0,
+      extraBedRate: parseFloat(roomForm.extraBedRate) || 0,
+      base: parseFloat(roomForm.doubleRate) || parseFloat(roomForm.tripleRate) || 0,
+      extra: parseFloat(roomForm.extraBedRate) || 0,
+    };
+
     if (editingRoom) {
       setRooms(
         rooms.map((r) =>
-          r.id === editingRoom.id
-            ? {
-                ...r,
-                name: roomForm.name,
-                cap: parseInt(roomForm.cap) || 2,
-                base: parseFloat(roomForm.base) || 0,
-                extra: parseFloat(roomForm.extra) || 0,
-              }
-            : r,
+          r.id === editingRoom.id ? { ...r, ...roomData } : r,
         ),
       );
       toast.success("Room category updated!");
     } else {
       const newRoom = {
         id: `r-${Date.now()}`,
-        name: roomForm.name,
-        cap: parseInt(roomForm.cap) || 2,
-        base: parseFloat(roomForm.base) || 0,
-        extra: parseFloat(roomForm.extra) || 0,
+        ...roomData,
       };
       setRooms([...rooms, newRoom]);
       toast.success("Room category saved!");
@@ -1919,10 +1923,18 @@ export function AccommodationDetailPage({
                 <Button
                   onClick={() => {
                     setEditingRoom(null);
-                    setRoomForm({ name: "", cap: "2", base: "", extra: "800" });
+                    setRoomForm({
+                      name: "",
+                      cap: "2",
+                      doubleRate: "1200",
+                      tripleRate: "900",
+                      quadRate: "750",
+                      singleRate: "1800",
+                      extraBedRate: "500",
+                    });
                     setRoomModalOpen(true);
                   }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
+                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold cursor-pointer"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Add Room Category
                 </Button>
@@ -1935,8 +1947,7 @@ export function AccommodationDetailPage({
                     No Room Categories Added Yet
                   </p>
                   <p className="text-[11px] text-slate-500">
-                    Click "Add Room Category" above to configure occupancy rates
-                    and extra mattress tariffs.
+                    Click "Add Room Category" above to configure per person double, triple, and quad sharing tariffs.
                   </p>
                 </div>
               ) : (
@@ -1944,12 +1955,17 @@ export function AccommodationDetailPage({
                   {rooms.map((r) => (
                     <div
                       key={r.id}
-                      className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs relative"
+                      className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5 text-xs relative"
                     >
                       <div className="flex justify-between items-start">
-                        <span className="font-extrabold text-slate-800 text-sm block">
-                          {r.name}
-                        </span>
+                        <div>
+                          <span className="font-extrabold text-slate-900 text-sm block">
+                            {r.name}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">
+                            Capacity: {r.cap || 2} Persons
+                          </span>
+                        </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => {
@@ -1957,41 +1973,58 @@ export function AccommodationDetailPage({
                               setRoomForm({
                                 name: r.name,
                                 cap: (r.cap || 2).toString(),
-                                base: (r.base || 1000).toString(),
-                                extra: (r.extra || 500).toString(),
+                                doubleRate: (r.doubleRate || r.base || 1200).toString(),
+                                tripleRate: (r.tripleRate || 900).toString(),
+                                quadRate: (r.quadRate || 750).toString(),
+                                singleRate: (r.singleRate || 1800).toString(),
+                                extraBedRate: (r.extraBedRate || r.extra || 500).toString(),
                               });
                               setRoomModalOpen(true);
                             }}
-                            className="p-1 text-slate-400 hover:text-slate-700 bg-slate-50 rounded"
+                            className="p-1 text-slate-400 hover:text-slate-700 bg-slate-50 rounded cursor-pointer"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteRoom(r.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded"
+                            className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
-                      <p className="text-slate-550">
-                        Capacity:{" "}
-                        <span className="font-bold text-slate-700">
-                          {r.cap || 2} Persons
+
+                      <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                        <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                          Per Person Tariffs
                         </span>
-                      </p>
-                      <p className="text-slate-550">
-                        Base Tariff / Night:{" "}
-                        <span className="font-black text-emerald-600">
-                          ₹{r.base || 1000}
-                        </span>
-                      </p>
-                      <p className="text-slate-550">
-                        Extra Mattress Rate:{" "}
-                        <span className="font-bold text-slate-700">
-                          ₹{r.extra || 500}
-                        </span>
-                      </p>
+                        <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                          <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
+                            <span className="text-slate-500 block text-[9px] font-bold">DOUBLE SHARING</span>
+                            <span className="font-black text-emerald-600">₹{r.doubleRate || r.base || 0}</span>
+                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
+                          </div>
+                          <div className="bg-[#FFF7ED] p-1.5 rounded border border-orange-100">
+                            <span className="text-orange-600 block text-[9px] font-bold">TRIPLE SHARING</span>
+                            <span className="font-black text-emerald-600">₹{r.tripleRate || 0}</span>
+                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
+                          </div>
+                          <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
+                            <span className="text-slate-500 block text-[9px] font-bold">QUAD SHARING</span>
+                            <span className="font-black text-emerald-600">₹{r.quadRate || 0}</span>
+                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
+                          </div>
+                          <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
+                            <span className="text-slate-500 block text-[9px] font-bold">SINGLE SHARING</span>
+                            <span className="font-black text-slate-700">₹{r.singleRate || 0}</span>
+                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
+                          </div>
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-500 font-medium flex justify-between items-center pt-1 border-t border-slate-50">
+                          <span>Extra Mattress / Bed:</span>
+                          <span className="font-bold text-slate-700">₹{r.extraBedRate || r.extra || 0}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3124,25 +3157,25 @@ export function AccommodationDetailPage({
         <DialogContent className="max-w-md bg-white border border-slate-200 rounded-xl p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-base font-extrabold text-slate-800">
-              Add Room Category
+              {editingRoom ? "Edit Room Category" : "Add Room Category"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 text-xs my-2">
+          <div className="space-y-3.5 text-xs my-2">
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                Room Category Name
+                Room Category Name <span className="text-red-500">*</span>
               </label>
               <Input
                 value={roomForm.name}
                 onChange={(e) =>
                   setRoomForm({ ...roomForm, name: e.target.value })
                 }
-                placeholder="e.g. Deluxe Lake View Twin"
+                placeholder="e.g. Deluxe Mountain View Room"
               />
             </div>
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                Capacity (Persons)
+                Room Capacity (Persons)
               </label>
               <Input
                 type="number"
@@ -3150,39 +3183,92 @@ export function AccommodationDetailPage({
                 onChange={(e) =>
                   setRoomForm({ ...roomForm, cap: e.target.value })
                 }
+                placeholder="2"
               />
             </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Base Tariff / Night (₹)
-              </label>
-              <Input
-                type="number"
-                value={roomForm.base}
-                onChange={(e) =>
-                  setRoomForm({ ...roomForm, base: e.target.value })
-                }
-                placeholder="2500"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Extra Mattress Rate (₹)
-              </label>
-              <Input
-                type="number"
-                value={roomForm.extra}
-                onChange={(e) =>
-                  setRoomForm({ ...roomForm, extra: e.target.value })
-                }
-                placeholder="800"
-              />
+
+            <div className="pt-2 border-t border-slate-100 space-y-2.5">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                Per Person Tariffs (₹ / Night)
+              </span>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Double Sharing (₹/person)
+                  </label>
+                  <Input
+                    type="number"
+                    value={roomForm.doubleRate}
+                    onChange={(e) =>
+                      setRoomForm({ ...roomForm, doubleRate: e.target.value })
+                    }
+                    placeholder="1200"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Triple Sharing (₹/person)
+                  </label>
+                  <Input
+                    type="number"
+                    value={roomForm.tripleRate}
+                    onChange={(e) =>
+                      setRoomForm({ ...roomForm, tripleRate: e.target.value })
+                    }
+                    placeholder="900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Quad Sharing (₹/person)
+                  </label>
+                  <Input
+                    type="number"
+                    value={roomForm.quadRate}
+                    onChange={(e) =>
+                      setRoomForm({ ...roomForm, quadRate: e.target.value })
+                    }
+                    placeholder="750"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Single Sharing (₹/person)
+                  </label>
+                  <Input
+                    type="number"
+                    value={roomForm.singleRate}
+                    onChange={(e) =>
+                      setRoomForm({ ...roomForm, singleRate: e.target.value })
+                    }
+                    placeholder="1800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Extra Mattress / Bed Rate (₹/night)
+                </label>
+                <Input
+                  type="number"
+                  value={roomForm.extraBedRate}
+                  onChange={(e) =>
+                    setRoomForm({ ...roomForm, extraBedRate: e.target.value })
+                  }
+                  placeholder="500"
+                />
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button
               onClick={handleSaveRoom}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
+              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2 cursor-pointer"
             >
               Save Room Category
             </Button>
