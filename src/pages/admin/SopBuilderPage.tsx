@@ -27,17 +27,17 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { sopsService, SopTemplate, SopVersion, SopTaskTemplate } from "@/services/sops.service";
 import { useStaffUsers } from "@/hooks/useStaffUsers";
 
-const STAGES = [
-  { id: "ALL", label: "All Stages" },
-  { id: "PRE_TRIP_30D", label: "PRE-TRIP 30D" },
-  { id: "PRE_TRIP_21D", label: "PRE-TRIP 21D" },
-  { id: "PRE_TRIP_14D", label: "PRE-TRIP 14D" },
-  { id: "PRE_TRIP_7D", label: "PRE-TRIP 7D" },
-  { id: "PRE_TRIP_3D", label: "PRE-TRIP 3D" },
-  { id: "PRE_TRIP_1D", label: "PRE-TRIP 1D" },
-  { id: "DEPARTURE_DAY", label: "DEPARTURE DAY" },
-  { id: "DURING_TRIP", label: "DURING TRIP" },
-  { id: "POST_TRIP", label: "POST TRIP" },
+const DEFAULT_STAGES = [
+  { id: "ALL", label: "All Stages", isCustom: false, offsetDays: null },
+  { id: "PRE_TRIP_30D", label: "PRE-TRIP 30D", isCustom: false, offsetDays: -30 },
+  { id: "PRE_TRIP_21D", label: "PRE-TRIP 21D", isCustom: false, offsetDays: -21 },
+  { id: "PRE_TRIP_14D", label: "PRE-TRIP 14D", isCustom: false, offsetDays: -14 },
+  { id: "PRE_TRIP_7D", label: "PRE-TRIP 7D", isCustom: false, offsetDays: -7 },
+  { id: "PRE_TRIP_3D", label: "PRE-TRIP 3D", isCustom: false, offsetDays: -3 },
+  { id: "PRE_TRIP_1D", label: "PRE-TRIP 1D", isCustom: false, offsetDays: -1 },
+  { id: "DEPARTURE_DAY", label: "DEPARTURE DAY", isCustom: false, offsetDays: 0 },
+  { id: "DURING_TRIP", label: "DURING TRIP", isCustom: false, offsetDays: 1 },
+  { id: "POST_TRIP", label: "POST TRIP", isCustom: false, offsetDays: 7 },
 ];
 
 export default function SopBuilderPage() {
@@ -50,6 +50,22 @@ export default function SopBuilderPage() {
   const [activeVersion, setActiveVersion] = useState<SopVersion | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeStage, setActiveStage] = useState("ALL");
+
+  // Custom Stages state persisted in localStorage
+  const [customStages, setCustomStages] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("yc_custom_sop_stages");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [addStageModalOpen, setAddStageModalOpen] = useState(false);
+  const [newStageLabel, setNewStageLabel] = useState("");
+  const [newStageOffset, setNewStageOffset] = useState(-5);
+
+  const stagesList = [...DEFAULT_STAGES, ...customStages];
 
   // Add/Edit Task Modal state
   const [taskModalOpen, setTaskModalOpen] = useState(false);
@@ -201,6 +217,48 @@ export default function SopBuilderPage() {
     }
   };
 
+  const handleAddCustomStage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStageLabel.trim()) return;
+
+    const stageId = `CUSTOM_${newStageLabel.trim().toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
+    if (stagesList.some((s) => s.id === stageId)) {
+      toast.error("A stage with this name already exists");
+      return;
+    }
+
+    const newStageObj = {
+      id: stageId,
+      label: newStageLabel.trim().toUpperCase(),
+      isCustom: true,
+      offsetDays: newStageOffset,
+    };
+
+    const updated = [...customStages, newStageObj];
+    setCustomStages(updated);
+    try {
+      localStorage.setItem("yc_custom_sop_stages", JSON.stringify(updated));
+    } catch {}
+
+    setActiveStage(stageId);
+    setNewStageLabel("");
+    setAddStageModalOpen(false);
+    toast.success(`Custom stage "${newStageObj.label}" created successfully!`);
+  };
+
+  const handleDeleteCustomStage = (stageId: string) => {
+    const updated = customStages.filter((s) => s.id !== stageId);
+    setCustomStages(updated);
+    try {
+      localStorage.setItem("yc_custom_sop_stages", JSON.stringify(updated));
+    } catch {}
+
+    if (activeStage === stageId) {
+      setActiveStage("ALL");
+    }
+    toast.success("Custom stage removed");
+  };
+
   const filteredTasks = (activeVersion?.taskTemplates || []).filter(
     (t) => activeStage === "ALL" || t.stage === activeStage,
   );
@@ -234,19 +292,19 @@ export default function SopBuilderPage() {
             <Button
               onClick={handleCreateNewVersion}
               variant="outline"
-              className="h-8 text-xs font-semibold text-slate-700"
+              className="h-8 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
             >
               <Copy className="w-3.5 h-3.5 mr-1" />
-              Duplicate / New Version
+              New Draft Version
             </Button>
 
             <Button
-              onClick={handlePreviewSchedule}
+              onClick={() => setPreviewModalOpen(true)}
               variant="outline"
-              className="h-8 text-xs font-semibold text-[#F97316] border-orange-200 hover:bg-orange-50"
+              className="h-8 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
             >
-              <Calendar className="w-3.5 h-3.5 mr-1" />
-              Preview Date Engine
+              <Zap className="w-3.5 h-3.5 mr-1 text-amber-500" />
+              Preview Schedule
             </Button>
 
             <Button
@@ -310,7 +368,7 @@ export default function SopBuilderPage() {
 
       {/* Stage Selector Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {STAGES.map((s) => {
+        {stagesList.map((s) => {
           const isSelected = activeStage === s.id;
           const count =
             s.id === "ALL"
@@ -318,19 +376,48 @@ export default function SopBuilderPage() {
               : activeVersion.taskTemplates.filter((t) => t.stage === s.id).length;
 
           return (
-            <button
-              key={s.id}
-              onClick={() => setActiveStage(s.id)}
-              className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${
-                isSelected
-                  ? "bg-[#F97316] text-white border-[#F97316] shadow-sm"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              {s.label} ({count})
-            </button>
+            <div key={s.id} className="relative flex items-center">
+              <button
+                onClick={() => setActiveStage(s.id)}
+                className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? "bg-[#F97316] text-white border-[#F97316] shadow-sm"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <span>{s.label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded text-[10px] ${
+                    isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+
+              {s.isCustom && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCustomStage(s.id);
+                  }}
+                  className="ml-1 text-slate-400 hover:text-red-500 transition-colors p-1 font-bold text-xs cursor-pointer"
+                  title="Remove custom stage"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           );
         })}
+
+        <button
+          onClick={() => setAddStageModalOpen(true)}
+          className="px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border border-dashed border-orange-400 text-orange-600 hover:bg-orange-50 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add Stage
+        </button>
       </div>
 
       {/* Tasks Table */}
@@ -468,7 +555,7 @@ export default function SopBuilderPage() {
                   onChange={(e) => setTaskForm({ ...taskForm, stage: e.target.value })}
                   className="w-full h-9 text-xs border border-slate-200 rounded-lg px-2 bg-white text-slate-800"
                 >
-                  {STAGES.filter((s) => s.id !== "ALL").map((s) => (
+                  {stagesList.filter((s) => s.id !== "ALL").map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.label}
                     </option>
@@ -614,6 +701,69 @@ export default function SopBuilderPage() {
               </tbody>
             </table>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Custom Stage Modal */}
+      <Dialog open={addStageModalOpen} onOpenChange={setAddStageModalOpen}>
+        <DialogContent className="max-w-sm bg-white p-6 rounded-xl border border-slate-200">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Plus className="w-4 h-4 text-orange-500" />
+              Generate Custom Stage
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Add a new stage pill for your SOP workflow (e.g. PRE-TRIP 45D, EQUIPMENT CHECK, etc.)
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddCustomStage} className="space-y-4 mt-2">
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                Stage Label / Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="e.g. PRE-TRIP 45D or GEAR CHECK 5D"
+                value={newStageLabel}
+                onChange={(e) => setNewStageLabel(e.target.value)}
+                className="text-xs h-9"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                Relative Day Offset (T-minus / T-plus)
+              </label>
+              <Input
+                type="number"
+                placeholder="-45, -5, 0, 1"
+                value={newStageOffset}
+                onChange={(e) => setNewStageOffset(parseInt(e.target.value, 10) || 0)}
+                className="text-xs h-9"
+              />
+              <span className="text-[9px] text-slate-400 block mt-1">
+                e.g. -45 = 45 days before departure, 0 = departure day.
+              </span>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAddStageModalOpen(false)}
+                className="h-8 text-xs font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="h-8 text-xs font-bold bg-[#F97316] hover:bg-[#EA580C] text-white"
+              >
+                Generate Stage Pill
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
