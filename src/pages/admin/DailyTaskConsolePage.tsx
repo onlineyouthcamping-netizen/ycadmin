@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { opsService } from "@/services/ops.service";
 import { sopsService } from "@/services/sops.service";
+import { useStaffUsers } from "@/hooks/useStaffUsers";
 
 const formatDateDisplay = (dateVal: any, includeYear: boolean = true) => {
   if (!dateVal) return "—";
@@ -92,6 +93,7 @@ const getDynamicDueDateDisplay = (task: any) => {
 };
 
 export default function DailyTaskConsolePage() {
+  const { staffUsers } = useStaffUsers();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -613,13 +615,12 @@ export default function DailyTaskConsolePage() {
             onChange={(e) => setAssigneeFilter(e.target.value)}
             className="h-8 text-xs font-bold border border-slate-200 rounded-lg px-3 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer shadow-3xs"
           >
-            <option value="ALL">All Assignee Roles</option>
-            <option value="OPERATIONS">Operations Desk</option>
-            <option value="LEAD_GUIDE">Lead Tour Guide</option>
-            <option value="TRANSPORT_DESK">Transport & Fleet</option>
-            <option value="SALES_EXEC">Sales Executive</option>
-            <option value="TICKETING">Train & Flight Ticketing</option>
-            <option value="FINANCE">Finance & Vendors</option>
+            <option value="ALL">All Staff Assignees</option>
+            {staffUsers.map((u) => (
+              <option key={u.id || u.email} value={u.name}>
+                {u.name} ({u.role})
+              </option>
+            ))}
           </select>
 
           <select
@@ -904,19 +905,18 @@ export default function DailyTaskConsolePage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="font-extrabold text-slate-700 block mb-1">
-                  Assignee Role
+                  Assignee / Staff Member
                 </label>
                 <select
                   value={taskForm.assignedTo}
                   onChange={(e) => setTaskForm({ ...taskForm, assignedTo: e.target.value })}
                   className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
                 >
-                  <option value="OPERATIONS">Operations Desk</option>
-                  <option value="LEAD_GUIDE">Lead Tour Guide</option>
-                  <option value="TRANSPORT_DESK">Transport & Fleet</option>
-                  <option value="SALES_EXEC">Sales Executive</option>
-                  <option value="TICKETING">Train & Flight Ticketing</option>
-                  <option value="FINANCE">Finance & Vendors</option>
+                  {staffUsers.map((u) => (
+                    <option key={u.id || u.email} value={u.name}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
                 </select>
               </div>
 

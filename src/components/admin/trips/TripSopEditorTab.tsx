@@ -25,6 +25,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { sopsService, OpsSopTaskTemplateData } from "@/services/sops.service";
+import { useStaffUsers } from "@/hooks/useStaffUsers";
 
 interface TripSopEditorTabProps {
   tripId?: string;
@@ -92,6 +93,7 @@ export default function TripSopEditorTab({
   taskTemplates = [],
   onUpdateTasks,
 }: TripSopEditorTabProps) {
+  const { staffUsers } = useStaffUsers();
   const [tasks, setTasks] = useState<OpsSopTaskTemplateData[]>(taskTemplates);
   const [loading, setLoading] = useState<boolean>(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState<boolean>(false);
@@ -104,7 +106,7 @@ export default function TripSopEditorTab({
     taskType: "VERIFICATION",
     stage: "PRE_TRIP_30D",
     relativeOffset: -30,
-    defaultAssignee: "OPERATIONS",
+    defaultAssignee: "Hemal Patel",
     priority: "HIGH",
     isRequired: true,
   });
@@ -613,19 +615,18 @@ export default function TripSopEditorTab({
 
               <div>
                 <label className="font-extrabold text-slate-700 block mb-1">
-                  Assignee Role
+                  Assignee / Staff Member
                 </label>
                 <select
-                  value={form.defaultAssignee || "OPERATIONS"}
+                  value={form.defaultAssignee || "Hemal Patel"}
                   onChange={(e) => setForm({ ...form, defaultAssignee: e.target.value })}
                   className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
                 >
-                  <option value="OPERATIONS">Operations Desk</option>
-                  <option value="LEAD_GUIDE">Lead Tour Guide</option>
-                  <option value="TRANSPORT_DESK">Transport & Fleet</option>
-                  <option value="SALES_EXEC">Sales Executive</option>
-                  <option value="TICKETING">Train & Flight Ticketing</option>
-                  <option value="FINANCE">Finance & Vendors</option>
+                  {staffUsers.map((user) => (
+                    <option key={user.id || user.email} value={user.name}>
+                      {user.name} ({user.role})
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

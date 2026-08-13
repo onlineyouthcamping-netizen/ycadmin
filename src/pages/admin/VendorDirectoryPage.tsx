@@ -62,7 +62,6 @@ import { GuidesModuleView } from "@/components/admin/vendors/modules/GuidesModul
 import { CampingModuleView } from "@/components/admin/vendors/modules/CampingModuleView";
 import { OtherVendorsModuleView } from "@/components/admin/vendors/modules/OtherVendorsModuleView";
 import { VendorContractManager } from "@/components/admin/vendors/VendorContractManager";
-import { AssignTripVendorDialog } from "@/components/admin/vendors/AssignTripVendorDialog";
 
 // Category Tab List - Pure Vendor Directory
 const TABS = [
@@ -108,9 +107,8 @@ export default function VendorDirectoryPage() {
 
   // Trip-Scoped Vendor Directory state
   const [tripsList, setTripsList] = useState<any[]>([]);
-  const [selectedTripId, setSelectedTripId] = useState<string>("GLOBAL");
+  const [selectedTripId, setSelectedTripId] = useState<string>("");
   const [tripDestinations, setTripDestinations] = useState<string[]>([]);
-  const [assignTripVendorModalOpen, setAssignTripVendorModalOpen] = useState(false);
   const [categoryCounts, setCategoryCounts] = useState<{
     total: number;
     accommodation: number;
@@ -253,7 +251,7 @@ export default function VendorDirectoryPage() {
           "isActive",
           filterStatus === "ACTIVE" ? "true" : "false",
         );
-      if (selectedTripId && selectedTripId !== "GLOBAL") {
+      if (selectedTripId) {
         queryParams.set("tripId", selectedTripId);
       }
       queryParams.set("page", targetPage.toString());
@@ -307,17 +305,25 @@ export default function VendorDirectoryPage() {
     api
       .get("/vendors/trips")
       .then((res) => {
-        if (res.data?.success && Array.isArray(res.data.data)) {
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
           setTripsList(res.data.data);
+          setSelectedTripId((prev) => prev || res.data.data[0].id);
         }
       })
       .catch(() => null);
   }, []);
 
+  // Auto-select first trip when trips are loaded
+  useEffect(() => {
+    if (tripsList.length > 0 && !selectedTripId) {
+      setSelectedTripId(tripsList[0].id);
+    }
+  }, [tripsList]);
+
   // Fetch trip destinations when selectedTripId changes
   useEffect(() => {
     setViewingDetailVendor(null);
-    if (selectedTripId && selectedTripId !== "GLOBAL") {
+    if (selectedTripId) {
       api
         .get(`/vendors/trips/${selectedTripId}/destinations`)
         .then((res) => {
@@ -330,20 +336,107 @@ export default function VendorDirectoryPage() {
       setTripDestinations([]);
     }
     setFilterDestination("ALL");
-    loadData(1, currentCategory);
+    if (selectedTripId) loadData(1, currentCategory);
   }, [selectedTripId, currentCategory, searchParams, filterStatus, filterDestination]);
 
   const handleRemoveVendorFromTrip = async (vendorId: string, vendorName: string) => {
-    if (selectedTripId === "GLOBAL") return;
-    if (!confirm(`Remove ${vendorName} from this trip? Master vendor record will NOT be deleted.`)) return;
-
+    if (!selectedTripId) return;
+    const tripTitle = tripsList.find((t) => t.id === selectedTripId)?.title || "this trip";
+    if (!confirm(`Remove "${vendorName}" from ${tripTitle}? The vendor record itself is NOT deleted.`)) return;
     try {
       await api.delete(`/vendors/trips/${selectedTripId}/remove/${vendorId}`);
-      toast.success(`Removed ${vendorName} from trip (master record preserved)`);
+      toast.success(`Removed "${vendorName}" from trip (vendor record preserved)`);
       loadData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to remove vendor from trip");
     }
+  };
+
+  const getCategoryVendorType = (cat: string) => {
+    switch (cat) {
+      case "transport":
+        return "TRANSPORT";
+      case "activities":
+        return "ACTIVITIES";
+      case "restaurants":
+        return "RESTAURANT";
+      case "guides":
+        return "GUIDE";
+      case "camping":
+        return "CAMPING";
+      case "other":
+        return "OTHER";
+      case "accommodation":
+      default:
+        return "HOTEL";
+    }
+  };
+
+  const handleOpenAddVendor = (forcedCategory?: string) => {
+    if (!selectedTripId) {
+      toast.error("Please select a trip first");
+      return;
+    }
+    const categoryToUse = forcedCategory || currentCategory;
+    const defaultType = getCategoryVendorType(categoryToUse);
+
+    setEditingVendor(null);
+    setVendorForm({
+      vendorCode: "",
+      name: "",
+      legalName: "",
+      type: defaultType,
+      contactPerson: "",
+      contactNumber: "",
+      alternateNumber: "",
+      whatsappNumber: "",
+      email: "",
+      companyName: "",
+      gstin: "",
+      panNumber: "",
+      state: "Himachal Pradesh",
+      city: "",
+      area: "",
+      address: "",
+      paymentTerms: "",
+      creditDays: "30",
+      priority: "3",
+      rating: "0",
+      blacklisted: false,
+      preferred: false,
+      citiesCovered: [],
+      services: [],
+      notes: "",
+      contacts: [],
+      accommodationType: "",
+      starRating: "3",
+      checkInTime: "",
+      checkOutTime: "",
+      fleetTypes: [],
+      fleetType: "",
+      fleetSize: "",
+      seatCapacity: "",
+      permitType: "",
+      driverName: "",
+      dailyTariff: "",
+      activityType: "",
+      batchCapacity: "",
+      safetyRating: "",
+      commissionPercent: "",
+      outletType: "",
+      cuisineTypes: "",
+      buffetCapacity: "",
+      avgMealRate: "",
+      guideRole: "",
+      certifications: "",
+      languages: "",
+      dailyGuideFee: "",
+      campsiteType: "",
+      washroomType: "",
+      tentCapacity: "",
+      customCategory: "",
+    });
+    setVendorModalOpen(true);
   };
 
   const handleSaveVendor = async (force: boolean = false) => {
@@ -376,8 +469,16 @@ export default function VendorDirectoryPage() {
         await api.patch(`/vendors/directory/${editingVendor.id}`, vendorForm);
         toast.success("Vendor updated successfully");
       } else {
-        await api.post("/vendors/directory", vendorForm);
-        toast.success("Vendor created successfully");
+        const createRes = await api.post("/vendors/directory", vendorForm);
+        const newVendorId = createRes.data?.data?.id;
+        // Auto-assign the new vendor to the currently selected trip
+        if (newVendorId && selectedTripId) {
+          await api.post(`/vendors/trips/${selectedTripId}/assign`, {
+            vendorId: newVendorId,
+            category: vendorForm.type || "OTHER",
+          }).catch(() => null); // silent — vendor is created even if mapping fails
+        }
+        toast.success("Vendor created and mapped to trip");
       }
       setVendorModalOpen(false);
       setDuplicateDialogOpen(false);
@@ -486,109 +587,52 @@ export default function VendorDirectoryPage() {
     }
   };
 
+  const selectedTrip = tripsList.find((t) => t.id === selectedTripId);
+
   return (
     <div className="space-y-6 p-6 min-h-screen bg-slate-50">
-      {/* Linear / Notion Slate Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-black text-slate-900 tracking-tight">
-              {selectedTripId === "GLOBAL"
-                ? "Master Vendor Directory"
-                : `Trip Vendors: ${tripsList.find((t) => t.id === selectedTripId)?.title || selectedTripId}`}
-            </h1>
-            <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 uppercase">
-              {selectedTripId === "GLOBAL" ? "GLOBAL SCOPE" : "TRIP SCOPE"}
-            </span>
-          </div>
+          <h1 className="text-lg font-black text-slate-900 tracking-tight">
+            {selectedTrip ? `${selectedTrip.title} — Vendor Directory` : "Vendor Directory"}
+          </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            {selectedTripId === "GLOBAL"
-              ? "Enterprise Partner Directory & Operations Workspace across all trips"
-              : `Showing vendors explicitly assigned to ${tripsList.find((t) => t.id === selectedTripId)?.title || selectedTripId}`}
+            {selectedTrip
+              ? `${selectedTrip.location || ""} · ${selectedTrip._count?.tripVendors || 0} vendors mapped`
+              : "Select a trip to manage its vendors"}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Trip Selector Dropdown */}
+          {/* Trip Selector */}
           <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
-            <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider px-2">
-              Scope:
-            </span>
+            <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider px-2">Trip:</span>
             <Select value={selectedTripId} onValueChange={setSelectedTripId}>
-              <SelectTrigger className="w-[230px] h-8 text-xs font-bold bg-white border-slate-200 shadow-2xs">
-                <SelectValue placeholder="Select Trip Scope" />
+              <SelectTrigger className="w-[260px] h-8 text-xs font-bold bg-white border-slate-200 shadow-2xs">
+                <SelectValue placeholder="— Select Trip —" />
               </SelectTrigger>
               <SelectContent className="bg-white text-xs font-medium">
-                <SelectItem value="GLOBAL" className="font-bold">
-                  🌐 Global Master Vendor Directory
-                </SelectItem>
                 {tripsList.map((t) => (
                   <SelectItem key={t.id} value={t.id} className="font-bold">
-                    📍 {t.title} ({t._count?.tripVendors || 0} Vendors)
+                    {t.title}
+                    <span className="ml-1.5 text-[9px] font-mono text-slate-400">
+                      ({t._count?.tripVendors || 0})
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {selectedTripId !== "GLOBAL" && (
-            <Button
-              onClick={() => setAssignTripVendorModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-8 px-3 rounded-lg flex items-center gap-1.5 shadow-2xs cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Assign Vendor to Trip
-            </Button>
-          )}
-
+          {/* Add Vendor — only active when a trip is selected */}
           <Button
-            onClick={() => {
-              setEditingVendor(null);
-              let defaultType = "HOTEL";
-              if (currentCategory === "transport") defaultType = "TRANSPORT";
-              else if (currentCategory === "activities") defaultType = "ACTIVITIES";
-              else if (currentCategory === "restaurants") defaultType = "RESTAURANT";
-              else if (currentCategory === "guides") defaultType = "GUIDE";
-              else if (currentCategory === "camping") defaultType = "CAMPING";
-              else if (currentCategory === "other") defaultType = "OTHER";
-
-              setVendorForm({
-                vendorCode: "",
-                name: "",
-                legalName: "",
-                type: defaultType,
-                contactPerson: "",
-                contactNumber: "",
-                alternateNumber: "",
-                whatsappNumber: "",
-                email: "",
-                gstin: "",
-                panNumber: "",
-                state: "",
-                city: "",
-                area: "",
-                address: "",
-                paymentTerms: "",
-                creditDays: "30",
-                notes: "",
-                contacts: [],
-                accommodationType: defaultType,
-                starRating: "3",
-                checkInTime: "",
-                checkOutTime: "",
-                fleetType: "",
-                permitType: "",
-                activityType: "",
-                outletType: "",
-                guideRole: "",
-                campsiteType: "",
-              });
-              setVendorModalOpen(true);
-            }}
-            className="bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold h-8 px-3.5 rounded-lg shadow-2xs cursor-pointer flex items-center gap-1.5"
+            disabled={!selectedTripId}
+            onClick={() => handleOpenAddVendor()}
+            className="bg-[#F97316] hover:bg-[#E05E00] disabled:opacity-40 text-white text-xs font-bold h-8 px-3.5 rounded-lg shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Vendor <kbd className="hidden sm:inline-block text-[9px] font-mono bg-orange-700/40 px-1 rounded">N</kbd>
+            Add Vendor
           </Button>
         </div>
       </div>
@@ -646,15 +690,18 @@ export default function VendorDirectoryPage() {
           )}
 
           {/* Active destinations list for current scope */}
-          {(() => {
+          {!selectedTripId ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <Building2 className="w-12 h-12 text-slate-200 mb-4" />
+              <p className="text-sm font-black text-slate-500">No Trip Selected</p>
+              <p className="text-xs text-slate-400 font-medium mt-1">Select a trip from the dropdown above to manage its vendors</p>
+            </div>
+          ) : (
+          <>{ (() => {
             const activeDestinations = tripDestinations.length > 0 ? tripDestinations : destinationsList;
             const handleDeleteOrRemove = (id: string) => {
-              if (selectedTripId !== "GLOBAL") {
-                const target = vendors.find((v) => v.id === id);
-                handleRemoveVendorFromTrip(id, target?.name || "Vendor");
-              } else {
-                handleDeleteVendor(id);
-              }
+              const target = vendors.find((v) => v.id === id);
+              handleRemoveVendorFromTrip(id, target?.name || "Vendor");
             };
 
             return (
@@ -673,13 +720,10 @@ export default function VendorDirectoryPage() {
                     onRefresh={() => loadData(1)}
                     onPageChange={(p) => loadData(p)}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
-                    onAddVendor={() => {
-                      setEditingVendor(null);
-                      setVendorModalOpen(true);
-                    }}
+                    onAddVendor={() => handleOpenAddVendor("accommodation")}
                     onEditVendor={(v) => {
                       setEditingVendor(v);
-                      setVendorForm({ ...v });
+                      setVendorForm({ ...v, type: v.type || "HOTEL" });
                       setVendorModalOpen(true);
                     }}
                     onDeleteVendor={handleDeleteOrRemove}
@@ -700,13 +744,10 @@ export default function VendorDirectoryPage() {
                     onRefresh={() => loadData(1)}
                     onPageChange={(p) => loadData(p)}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
-                    onAddVendor={() => {
-                      setEditingVendor(null);
-                      setVendorModalOpen(true);
-                    }}
+                    onAddVendor={() => handleOpenAddVendor("transport")}
                     onEditVendor={(v) => {
                       setEditingVendor(v);
-                      setVendorForm({ ...v });
+                      setVendorForm({ ...v, type: v.type || "TRANSPORT" });
                       setVendorModalOpen(true);
                     }}
                     onDeleteVendor={handleDeleteOrRemove}
@@ -727,13 +768,10 @@ export default function VendorDirectoryPage() {
                     onRefresh={() => loadData(1)}
                     onPageChange={(p) => loadData(p)}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
-                    onAddVendor={() => {
-                      setEditingVendor(null);
-                      setVendorModalOpen(true);
-                    }}
+                    onAddVendor={() => handleOpenAddVendor("activities")}
                     onEditVendor={(v) => {
                       setEditingVendor(v);
-                      setVendorForm({ ...v });
+                      setVendorForm({ ...v, type: v.type || "ACTIVITIES" });
                       setVendorModalOpen(true);
                     }}
                     onDeleteVendor={handleDeleteOrRemove}
@@ -754,13 +792,10 @@ export default function VendorDirectoryPage() {
                     onRefresh={() => loadData(1)}
                     onPageChange={(p) => loadData(p)}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
-                    onAddVendor={() => {
-                      setEditingVendor(null);
-                      setVendorModalOpen(true);
-                    }}
+                    onAddVendor={() => handleOpenAddVendor("restaurants")}
                     onEditVendor={(v) => {
                       setEditingVendor(v);
-                      setVendorForm({ ...v });
+                      setVendorForm({ ...v, type: v.type || "RESTAURANT" });
                       setVendorModalOpen(true);
                     }}
                     onDeleteVendor={handleDeleteOrRemove}
@@ -781,13 +816,10 @@ export default function VendorDirectoryPage() {
                     onRefresh={() => loadData(1)}
                     onPageChange={(p) => loadData(p)}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
-                    onAddVendor={() => {
-                      setEditingVendor(null);
-                      setVendorModalOpen(true);
-                    }}
+                    onAddVendor={() => handleOpenAddVendor("guides")}
                     onEditVendor={(v) => {
                       setEditingVendor(v);
-                      setVendorForm({ ...v });
+                      setVendorForm({ ...v, type: v.type || "GUIDE" });
                       setVendorModalOpen(true);
                     }}
                     onDeleteVendor={handleDeleteOrRemove}
@@ -808,13 +840,10 @@ export default function VendorDirectoryPage() {
                     onRefresh={() => loadData(1)}
                     onPageChange={(p) => loadData(p)}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
-                    onAddVendor={() => {
-                      setEditingVendor(null);
-                      setVendorModalOpen(true);
-                    }}
+                    onAddVendor={() => handleOpenAddVendor("other")}
                     onEditVendor={(v) => {
                       setEditingVendor(v);
-                      setVendorForm({ ...v });
+                      setVendorForm({ ...v, type: v.type || "OTHER" });
                       setVendorModalOpen(true);
                     }}
                     onDeleteVendor={handleDeleteOrRemove}
@@ -822,7 +851,8 @@ export default function VendorDirectoryPage() {
                 )}
               </>
             );
-          })()}
+          })()}</>
+          )}
         </>
       )}
 
@@ -1082,13 +1112,14 @@ export default function VendorDirectoryPage() {
                       Check-In Time
                     </label>
                     <Input
-                      value={vendorForm.checkInTime || "12:00 PM"}
+                      value={vendorForm.checkInTime || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           checkInTime: e.target.value,
                         })
                       }
+                      placeholder="e.g. 12:00 PM"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1097,13 +1128,14 @@ export default function VendorDirectoryPage() {
                       Check-Out Time
                     </label>
                     <Input
-                      value={vendorForm.checkOutTime || "11:00 AM"}
+                      value={vendorForm.checkOutTime || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           checkOutTime: e.target.value,
                         })
                       }
+                      placeholder="e.g. 11:00 AM"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1118,13 +1150,13 @@ export default function VendorDirectoryPage() {
                       Fleet Vehicle Category
                     </label>
                     <Select
-                      value={vendorForm.fleetType || "Tempo Traveller"}
+                      value={vendorForm.fleetType || ""}
                       onValueChange={(v) =>
                         setVendorForm({ ...vendorForm, fleetType: v })
                       }
                     >
                       <SelectTrigger className="h-8.5 bg-white border-slate-200">
-                        <SelectValue />
+                        <SelectValue placeholder="Select Fleet Category" />
                       </SelectTrigger>
                       <SelectContent className="text-xs bg-white">
                         <SelectItem value="Tempo Traveller">
@@ -1139,23 +1171,28 @@ export default function VendorDirectoryPage() {
                         <SelectItem value="Cab / Sedan">
                           Local Cab / Sedan
                         </SelectItem>
+                        <SelectItem value="Force Urbania">
+                          Force Urbania Luxury Van
+                        </SelectItem>
+                        <SelectItem value="Multiple Vehicles">
+                          Multiple Fleet Vehicles
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 uppercase block mb-1">
-                      Vehicle Seating Capacity *
+                      Vehicle Seating Capacity
                     </label>
                     <Input
-                      type="number"
-                      value={vendorForm.seatCapacity || "17"}
+                      value={vendorForm.seatCapacity || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           seatCapacity: e.target.value,
                         })
                       }
-                      placeholder="e.g. 12, 17, 26, 45"
+                      placeholder="e.g. 17 or 12, 17, 26"
                       className="h-8.5 bg-white font-bold text-slate-800"
                     />
                   </div>
@@ -1164,16 +1201,13 @@ export default function VendorDirectoryPage() {
                       Permit Type
                     </label>
                     <Select
-                      value={
-                        vendorForm.permitType ||
-                        "All India Tourist Permit (AITP)"
-                      }
+                      value={vendorForm.permitType || ""}
                       onValueChange={(v) =>
                         setVendorForm({ ...vendorForm, permitType: v })
                       }
                     >
                       <SelectTrigger className="h-8.5 bg-white border-slate-200">
-                        <SelectValue />
+                        <SelectValue placeholder="Select Permit Type" />
                       </SelectTrigger>
                       <SelectContent className="text-xs bg-white">
                         <SelectItem value="All India Tourist Permit (AITP)">
@@ -1209,7 +1243,6 @@ export default function VendorDirectoryPage() {
                       Base Daily Tariff (₹)
                     </label>
                     <Input
-                      type="number"
                       value={vendorForm.dailyTariff || ""}
                       onChange={(e) =>
                         setVendorForm({
@@ -1232,17 +1265,14 @@ export default function VendorDirectoryPage() {
                       Activities Offered
                     </label>
                     <Input
-                      value={
-                        vendorForm.activityType ||
-                        "River Rafting, Paragliding, Zipline"
-                      }
+                      value={vendorForm.activityType || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           activityType: e.target.value,
                         })
                       }
-                      placeholder="Rafting, Paragliding, Trekking"
+                      placeholder="e.g. River Rafting, Paragliding, Zipline"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1252,13 +1282,14 @@ export default function VendorDirectoryPage() {
                     </label>
                     <Input
                       type="number"
-                      value={vendorForm.batchCapacity || "30"}
+                      value={vendorForm.batchCapacity || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           batchCapacity: e.target.value,
                         })
                       }
+                      placeholder="e.g. 30"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1267,13 +1298,14 @@ export default function VendorDirectoryPage() {
                       Safety Rating
                     </label>
                     <Input
-                      value={vendorForm.safetyRating || "Certified Standard A+"}
+                      value={vendorForm.safetyRating || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           safetyRating: e.target.value,
                         })
                       }
+                      placeholder="e.g. Certified Standard A+"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1283,13 +1315,14 @@ export default function VendorDirectoryPage() {
                     </label>
                     <Input
                       type="number"
-                      value={vendorForm.commissionPercent || "15"}
+                      value={vendorForm.commissionPercent || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           commissionPercent: e.target.value,
                         })
                       }
+                      placeholder="e.g. 15"
                       className="h-8.5 bg-white font-bold text-purple-700"
                     />
                   </div>
@@ -1304,13 +1337,13 @@ export default function VendorDirectoryPage() {
                       Outlet Type
                     </label>
                     <Select
-                      value={vendorForm.outletType || "Group Buffet Hall"}
+                      value={vendorForm.outletType || ""}
                       onValueChange={(v) =>
                         setVendorForm({ ...vendorForm, outletType: v })
                       }
                     >
                       <SelectTrigger className="h-8.5 bg-white border-slate-200">
-                        <SelectValue />
+                        <SelectValue placeholder="Select Outlet Type" />
                       </SelectTrigger>
                       <SelectContent className="text-xs bg-white">
                         <SelectItem value="Group Buffet Hall">
@@ -1331,16 +1364,14 @@ export default function VendorDirectoryPage() {
                       Cuisines Offered
                     </label>
                     <Input
-                      value={
-                        vendorForm.cuisineTypes ||
-                        "North Indian, Pahadi, Veg / Jain"
-                      }
+                      value={vendorForm.cuisineTypes || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           cuisineTypes: e.target.value,
                         })
                       }
+                      placeholder="e.g. North Indian, Pahadi, Veg / Jain"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1350,13 +1381,14 @@ export default function VendorDirectoryPage() {
                     </label>
                     <Input
                       type="number"
-                      value={vendorForm.buffetCapacity || "60"}
+                      value={vendorForm.buffetCapacity || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           buffetCapacity: e.target.value,
                         })
                       }
+                      placeholder="e.g. 60"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1366,13 +1398,14 @@ export default function VendorDirectoryPage() {
                     </label>
                     <Input
                       type="number"
-                      value={vendorForm.avgMealRate || "250"}
+                      value={vendorForm.avgMealRate || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           avgMealRate: e.target.value,
                         })
                       }
+                      placeholder="e.g. 250"
                       className="h-8.5 bg-white font-bold text-blue-700"
                     />
                   </div>
@@ -1387,13 +1420,14 @@ export default function VendorDirectoryPage() {
                       Guide Expedition Role
                     </label>
                     <Input
-                      value={vendorForm.guideRole || "Mountain Trekking Guide"}
+                      value={vendorForm.guideRole || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           guideRole: e.target.value,
                         })
                       }
+                      placeholder="e.g. Mountain Trekking Guide"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1402,16 +1436,14 @@ export default function VendorDirectoryPage() {
                       Certifications (NIM / IMF)
                     </label>
                     <Input
-                      value={
-                        vendorForm.certifications ||
-                        "NIM Basic & Advance, IMF Certified"
-                      }
+                      value={vendorForm.certifications || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           certifications: e.target.value,
                         })
                       }
+                      placeholder="e.g. NIM Basic & Advance, IMF Certified"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1420,13 +1452,14 @@ export default function VendorDirectoryPage() {
                       Languages Spoken
                     </label>
                     <Input
-                      value={vendorForm.languages || "English, Hindi, Pahadi"}
+                      value={vendorForm.languages || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           languages: e.target.value,
                         })
                       }
+                      placeholder="e.g. English, Hindi, Pahadi"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1436,13 +1469,14 @@ export default function VendorDirectoryPage() {
                     </label>
                     <Input
                       type="number"
-                      value={vendorForm.dailyGuideFee || "2000"}
+                      value={vendorForm.dailyGuideFee || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           dailyGuideFee: e.target.value,
                         })
                       }
+                      placeholder="e.g. 2000"
                       className="h-8.5 bg-white font-bold text-indigo-700"
                     />
                   </div>
@@ -1457,15 +1491,14 @@ export default function VendorDirectoryPage() {
                       Campsite Type
                     </label>
                     <Input
-                      value={
-                        vendorForm.campsiteType || "Riverside Luxury Tents"
-                      }
+                      value={vendorForm.campsiteType || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           campsiteType: e.target.value,
                         })
                       }
+                      placeholder="e.g. Riverside Luxury Tents"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1474,15 +1507,13 @@ export default function VendorDirectoryPage() {
                       Washroom Facility
                     </label>
                     <Select
-                      value={
-                        vendorForm.washroomType || "Attached Western Toilet"
-                      }
+                      value={vendorForm.washroomType || ""}
                       onValueChange={(v) =>
                         setVendorForm({ ...vendorForm, washroomType: v })
                       }
                     >
                       <SelectTrigger className="h-8.5 bg-white border-slate-200">
-                        <SelectValue />
+                        <SelectValue placeholder="Select Washroom Type" />
                       </SelectTrigger>
                       <SelectContent className="text-xs bg-white">
                         <SelectItem value="Attached Western Toilet">
@@ -1499,13 +1530,14 @@ export default function VendorDirectoryPage() {
                       Tent Occupancy
                     </label>
                     <Input
-                      value={vendorForm.tentCapacity || "Twin / Triple Sharing"}
+                      value={vendorForm.tentCapacity || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           tentCapacity: e.target.value,
                         })
                       }
+                      placeholder="e.g. Twin / Triple Sharing"
                       className="h-8.5 bg-white"
                     />
                   </div>
@@ -1515,13 +1547,14 @@ export default function VendorDirectoryPage() {
                     </label>
                     <Input
                       type="number"
-                      value={vendorForm.dailyTariff || "1800"}
+                      value={vendorForm.dailyTariff || ""}
                       onChange={(e) =>
                         setVendorForm({
                           ...vendorForm,
                           dailyTariff: e.target.value,
                         })
                       }
+                      placeholder="e.g. 1800"
                       className="h-8.5 bg-white font-bold text-pink-700"
                     />
                   </div>
@@ -1918,18 +1951,6 @@ export default function VendorDirectoryPage() {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Assign Master Vendor to Trip Modal */}
-      {selectedTripId !== "GLOBAL" && (
-        <AssignTripVendorDialog
-          isOpen={assignTripVendorModalOpen}
-          onClose={() => setAssignTripVendorModalOpen(false)}
-          tripId={selectedTripId}
-          tripTitle={
-            tripsList.find((t) => t.id === selectedTripId)?.title || selectedTripId
-          }
-          onSuccess={() => loadData()}
-        />
-      )}
     </div>
   );
 }

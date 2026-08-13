@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Building2,
   Phone,
@@ -53,6 +53,7 @@ import { toast } from "sonner";
 import api from "@/services/api";
 import { tripsService } from "@/services/trips.service";
 import { getDisplayVendorCode } from "@/utils/vendorUtils";
+import { RoutePricingTab } from "./RoutePricingTab";
 
 interface AccommodationDetailPageProps {
   vendor: any;
@@ -89,8 +90,7 @@ export function AccommodationDetailPage({
       return [
         { id: "overview", label: "Overview", icon: Bus },
         { id: "contacts", label: "Contacts", icon: Phone },
-        { id: "vehicles", label: "Vehicles & Fleet", icon: Car },
-        { id: "route_pricing", label: "Route Pricing", icon: MapPin },
+        { id: "vehicles", label: "Vehicles & Route Pricing", icon: Car },
         { id: "trips", label: "Trips & Routes", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
@@ -175,27 +175,65 @@ export function AccommodationDetailPage({
   });
 
   // State for Transport Vehicles & Routes
-  const [transportVehicles, setTransportVehicles] = useState<any[]>(() => {
-    if (vendor.transportRates && vendor.transportRates.length > 0) {
-      return vendor.transportRates.map((tr: any, idx: number) => ({
-        id: tr.id || `v-${idx}`,
-        model: tr.vehicleType || "Tempo Traveller",
-        capacity: tr.advertisedCapacity || 17,
-        sellableSeats: tr.sellableSeats || 16,
-        acType: "AC",
-        plateNumber: "PB-08-AB-1234",
-        status: "Active",
-      }));
-    }
-    return [
-      { id: "v1", model: "20 Seater Tempo Traveller", capacity: 20, sellableSeats: 19, acType: "AC", plateNumber: "PB-08-TR-2001", status: "Active" },
-      { id: "v2", model: "17 Seater Tempo Traveller", capacity: 17, sellableSeats: 16, acType: "AC", plateNumber: "PB-08-TR-1702", status: "Active" },
-      { id: "v3", model: "14 Seater Tempo Traveller", capacity: 14, sellableSeats: 13, acType: "AC", plateNumber: "PB-08-TR-1403", status: "Active" },
-      { id: "v4", model: "Toyota Innova Crysta", capacity: 7, sellableSeats: 6, acType: "AC", plateNumber: "PB-08-IN-7001", status: "Active" },
-      { id: "v5", model: "Maruti Suzuki Ertiga", capacity: 6, sellableSeats: 6, acType: "AC", plateNumber: "PB-08-ER-6002", status: "Active" },
-      { id: "v6", model: "Swift Dzire Sedan", capacity: 4, sellableSeats: 4, acType: "AC", plateNumber: "PB-08-DZ-4003", status: "Active" },
-    ];
-  });
+  const [transportVehicles, setTransportVehicles] = useState<any[]>([]);
+
+  const loadVendorVehicles = async () => {
+    if (!vendor?.id) return;
+    try {
+      const res = await api.get(`/vendors/directory/${vendor.id}/vehicles`);
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        if (res.data.data.length > 0) {
+          setTransportVehicles(
+            res.data.data.map((v: any) => ({
+              id: v.id,
+              model: v.vehicleName,
+              capacity: v.advertisedCapacity,
+              sellableSeats: v.sellableSeats,
+              acType: v.hasAC ? "AC" : "Non-AC",
+              plateNumber: v.plateNumber || "PB-08",
+              status: v.isActive ? "Active" : "Inactive",
+            }))
+          );
+        } else {
+          // Seed default master vehicles for quick start
+          const defaultModels = [
+            { name: "20 Seater Tempo Traveller", cap: 20, sell: 19 },
+            { name: "17 Seater Tempo Traveller", cap: 17, sell: 16 },
+            { name: "14 Seater Tempo Traveller", cap: 14, sell: 13 },
+            { name: "Toyota Innova Crysta", cap: 7, sell: 6 },
+            { name: "Maruti Suzuki Ertiga", cap: 6, sell: 6 },
+            { name: "Swift Dzire Sedan", cap: 4, sell: 4 },
+          ];
+          for (const m of defaultModels) {
+            await api.post(`/vendors/directory/${vendor.id}/vehicles`, {
+              vehicleName: m.name,
+              advertisedCapacity: m.cap,
+              sellableSeats: m.sell,
+              hasAC: true,
+            }).catch(() => null);
+          }
+          const reloadRes = await api.get(`/vendors/directory/${vendor.id}/vehicles`);
+          if (reloadRes.data?.success) {
+            setTransportVehicles(
+              reloadRes.data.data.map((v: any) => ({
+                id: v.id,
+                model: v.vehicleName,
+                capacity: v.advertisedCapacity,
+                sellableSeats: v.sellableSeats,
+                acType: v.hasAC ? "AC" : "Non-AC",
+                plateNumber: v.plateNumber || "PB-08",
+                status: v.isActive ? "Active" : "Inactive",
+              }))
+            );
+          }
+        }
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadVendorVehicles();
+  }, [vendor?.id]);
 
   const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
     if (vendor.transportRates && vendor.transportRates.length > 0) {
@@ -319,7 +357,7 @@ export function AccommodationDetailPage({
     toast.success("Guide rate removed");
   };
 
-  const handleSaveVehicle = () => {
+  const handleSaveVehicle = async () => {
     if (!vehicleForm.model) {
       toast.error("Vehicle model is required");
       return;
@@ -327,55 +365,43 @@ export function AccommodationDetailPage({
     const cap = parseInt(vehicleForm.capacity) || 17;
     const sellable = parseInt(vehicleForm.sellableSeats) || cap;
 
-    if (editingVehicle) {
-      setTransportVehicles(
-        transportVehicles.map((v) =>
-          v.id === editingVehicle.id
-            ? {
-                ...v,
-                model: vehicleForm.model,
-                capacity: cap,
-                sellableSeats: sellable,
-                acType: vehicleForm.acType,
-                plateNumber: vehicleForm.plateNumber,
-                status: vehicleForm.status,
-              }
-            : v,
-        ),
-      );
-      logActivity(
-        "FLEET_UPDATED",
-        `Updated fleet vehicle: ${vehicleForm.model} (${vehicleForm.plateNumber || "PB-08"})`,
-      );
-      toast.success("Vehicle updated successfully!");
-    } else {
-      const newV = {
-        id: `v-${Date.now()}`,
-        model: vehicleForm.model,
-        capacity: cap,
-        sellableSeats: sellable,
-        acType: vehicleForm.acType,
-        plateNumber: vehicleForm.plateNumber,
-        status: vehicleForm.status,
-      };
-      setTransportVehicles([...transportVehicles, newV]);
-      logActivity(
-        "FLEET_ADDED",
-        `Added new vehicle to fleet: ${vehicleForm.model} (${vehicleForm.plateNumber || "PB-08"}) - Capacity: ${cap} Seats`,
-      );
-      toast.success("Vehicle added to fleet!");
+    try {
+      if (editingVehicle && !editingVehicle.id.startsWith("v-")) {
+        await api.patch(`/vendors/directory/vehicles/${editingVehicle.id}`, {
+          vehicleName: vehicleForm.model,
+          advertisedCapacity: cap,
+          sellableSeats: sellable,
+          hasAC: vehicleForm.acType === "AC",
+          plateNumber: vehicleForm.plateNumber,
+        });
+        toast.success("Vehicle updated in master!");
+      } else {
+        await api.post(`/vendors/directory/${vendor.id}/vehicles`, {
+          vehicleName: vehicleForm.model,
+          advertisedCapacity: cap,
+          sellableSeats: sellable,
+          hasAC: vehicleForm.acType === "AC",
+          plateNumber: vehicleForm.plateNumber,
+        });
+        toast.success("Vehicle added to master fleet!");
+      }
+      setVehicleModalOpen(false);
+      loadVendorVehicles();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to save vehicle");
     }
-    setVehicleModalOpen(false);
   };
 
-  const handleDeleteVehicle = (id: string) => {
-    const veh = transportVehicles.find((v) => v.id === id);
-    setTransportVehicles(transportVehicles.filter((v) => v.id !== id));
-    logActivity(
-      "FLEET_DELETED",
-      `Removed vehicle from fleet: ${veh?.model || "Vehicle"}`,
-    );
-    toast.success("Vehicle removed from fleet");
+  const handleDeleteVehicle = async (id: string) => {
+    try {
+      if (!id.startsWith("v-")) {
+        await api.delete(`/vendors/directory/vehicles/${id}`);
+      }
+      toast.success("Vehicle removed from master fleet");
+      loadVendorVehicles();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to remove vehicle");
+    }
   };
 
   const handleSaveRoute = async () => {
@@ -1812,191 +1838,9 @@ export function AccommodationDetailPage({
             </div>
           )}
 
-          {/* TAB: TRANSPORT VEHICLES & FLEET */}
-          {(activeTab === "vehicles" || (isTransport && activeTab === "rooms")) && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                    Vehicle Fleet & Seating Capacities
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Manage active transport vehicles, max passenger capacity, and sellable seats.
-                  </p>
-                </div>
-                <Button
-                  onClick={() => {
-                    setEditingVehicle(null);
-                    setVehicleForm({
-                      model: "Tempo Traveller (17 Seater)",
-                      capacity: "17",
-                      sellableSeats: "16",
-                      acType: "AC",
-                      plateNumber: "PB-08-TR-1702",
-                      status: "Active",
-                    });
-                    setVehicleModalOpen(true);
-                  }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Add Vehicle to Fleet
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {transportVehicles.map((v) => (
-                  <div
-                    key={v.id}
-                    className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-3 text-xs relative"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#F97316] flex items-center justify-center font-bold">
-                          <Bus className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <span className="font-extrabold text-slate-800 text-sm block">
-                            {v.model}
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500">
-                            {v.plateNumber || "PB-08-XX-XXXX"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          {v.status || "Active"}
-                        </span>
-                        <button
-                          onClick={() => {
-                            setEditingVehicle(v);
-                            setVehicleForm({
-                              model: v.model,
-                              capacity: v.capacity?.toString() || "17",
-                              sellableSeats: v.sellableSeats?.toString() || "16",
-                              acType: v.acType || "AC",
-                              plateNumber: v.plateNumber || "",
-                              status: v.status || "Active",
-                            });
-                            setVehicleModalOpen(true);
-                          }}
-                          className="p-1 text-slate-400 hover:text-slate-700 bg-slate-50 rounded border border-slate-100"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteVehicle(v.id)}
-                          className="p-1 text-slate-400 hover:text-rose-600 bg-slate-50 rounded border border-slate-100"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1.5 text-slate-600 font-medium">
-                      <div className="flex justify-between">
-                        <span>Advertised Capacity:</span>
-                        <span className="font-bold text-slate-800">{v.capacity} Seats</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Sellable Passenger Seats:</span>
-                        <span className="font-bold text-[#F97316]">{v.sellableSeats} Seats</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Air Conditioning:</span>
-                        <span className="font-bold text-emerald-600">{v.acType || "AC Available"}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB: TRANSPORT ROUTE PRICING */}
-          {(activeTab === "route_pricing" || (isTransport && activeTab === "seasonal_pricing")) && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                    Route Pricing & Vehicle Tariffs
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Master route contracts and negotiated vehicle hire tariffs for MKA and all trips.
-                  </p>
-                </div>
-                <Button
-                  onClick={() => {
-                    setEditingRoute(null);
-                    setRouteForm({
-                      routeName: "Kotkapura → Kotkapura",
-                      vehicleType: "17 Seater Tempo",
-                      totalAmount: "44000",
-                      notes: "",
-                    });
-                    setRouteModalOpen(true);
-                  }}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Add Route Tariff
-                </Button>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-3">
-                {transportRoutes.map((r) => (
-                  <div
-                    key={r.id}
-                    className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-[#F97316]" />
-                        <span className="font-extrabold text-slate-800 text-sm">
-                          {r.routeName}
-                        </span>
-                        <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
-                          {r.vehicleType}
-                        </span>
-                      </div>
-                      {r.notes && (
-                        <p className="text-[11px] text-amber-700 font-medium mt-1">
-                          ⚠️ {r.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-emerald-800 font-black text-sm">
-                        <span>Total: ₹{r.totalAmount?.toLocaleString("en-IN")}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            setEditingRoute(r);
-                            setRouteForm({
-                              routeName: r.routeName,
-                              vehicleType: r.vehicleType,
-                              totalAmount: r.totalAmount?.toString() || "0",
-                              notes: r.notes || "",
-                            });
-                            setRouteModalOpen(true);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-100 rounded"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRoute(r.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-100 rounded"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* TAB: TRANSPORT VEHICLES & ROUTE PRICING (UNIFIED) */}
+          {(activeTab === "vehicles" || activeTab === "route_pricing" || (isTransport && activeTab === "seasonal_pricing")) && (
+            <RoutePricingTab vendorId={vendor.id} vendorName={vendor.name} />
           )}
 
           {/* TAB 2: CONTACT PERSONS */}
@@ -2769,64 +2613,139 @@ export function AccommodationDetailPage({
                   </div>
                 </div>
 
+                {/* SECTION 1: MAPPED DESTINATION TRIPS */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-700 text-[10px] uppercase block">
-                      Real Fed Trips Using This Vendor ({mappedTrips.length})
+                      Destination-Matched Active Trips ({mappedTrips.length})
                     </span>
                   </div>
 
                   {mappedTrips.length === 0 ? (
-                    <div className="bg-white p-6 rounded-lg border border-slate-200 text-center space-y-2">
-                      <p className="text-slate-500 font-medium">
-                        No real trips currently mapped to this vendor.
+                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-center space-y-2">
+                      <p className="text-slate-500 font-medium text-xs">
+                        No destination-matched trips currently linked to this vendor's location.
                       </p>
-                      <Button
-                        onClick={() => setLinkTripModalOpen(true)}
-                        size="xs"
-                        className="bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 font-bold"
-                      >
-                        + Select from Available Real Trips
-                      </Button>
                     </div>
                   ) : (
-                    mappedTrips.map((trip, idx) => (
-                      <div
-                        key={trip.id || idx}
-                        className="flex justify-between items-center bg-white p-3.5 rounded-lg border border-slate-200 hover:border-orange-300 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 font-mono font-black text-[10px] flex items-center justify-center shrink-0">
-                            {trip.id || trip.slug || `TRIP-${idx + 1}`}
-                          </span>
-                          <div>
-                            <span className="font-extrabold text-slate-900 text-xs block">
-                              {trip.title || trip.name}
+                    mappedTrips.map((trip, idx) => {
+                      const displayCode =
+                        trip.code ||
+                        trip.shortCode ||
+                        (trip.id && trip.id.length <= 10 ? trip.id.toUpperCase() : null) ||
+                        (trip.slug && trip.slug.length <= 10 ? trip.slug.toUpperCase() : null) ||
+                        `TRIP-${idx + 1}`;
+
+                      return (
+                        <div
+                          key={trip.id || idx}
+                          className="flex justify-between items-center bg-white p-3.5 rounded-lg border border-slate-200 hover:border-orange-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="px-2.5 py-1 rounded-md bg-orange-50 border border-orange-200 text-orange-700 font-mono font-black text-[10px] uppercase shrink-0 min-w-[52px] text-center">
+                              {displayCode}
                             </span>
-                            <span className="text-[10px] text-slate-500 font-medium">
-                              Location: {trip.location || vendor.location || "Himachal"} • {trip.duration || "Multi-day"}
+                            <div className="min-w-0">
+                              <span className="font-extrabold text-slate-900 text-xs block truncate">
+                                {trip.title || trip.name}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium block truncate">
+                                Location: {trip.location || vendor.location || "Himachal"} • {trip.duration || "Multi-day"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 ml-3">
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded uppercase">
+                              Active Link
                             </span>
+                            {linkedTripIds.includes(trip.id) && (
+                              <button
+                                onClick={() => {
+                                  setLinkedTripIds(linkedTripIds.filter((id) => id !== trip.id));
+                                  toast.success(`Unlinked ${trip.title}`);
+                                }}
+                                className="text-xs text-slate-400 hover:text-red-600 font-bold px-2 py-1"
+                              >
+                                Unlink
+                              </button>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded uppercase">
-                            Active Link
-                          </span>
-                          {linkedTripIds.includes(trip.id) && (
-                            <button
-                              onClick={() => {
-                                setLinkedTripIds(linkedTripIds.filter((id) => id !== trip.id));
-                                toast.success(`Unlinked ${trip.title}`);
-                              }}
-                              className="text-xs text-slate-400 hover:text-red-600 font-bold px-2 py-1"
-                            >
-                              Unlink
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
+                </div>
+
+                {/* SECTION 2: ALL AVAILABLE SYSTEM TRIPS CATALOG */}
+                <div className="space-y-3 pt-3 border-t border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-800 text-xs uppercase block">
+                        All Available System Trips Catalog ({allTrips.length} Total)
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        View and 1-click link any fed trip in YouthCamping OS to this vendor.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {allTrips.map((t, idx) => {
+                      const isLinked = mappedTrips.some((m) => m.id === t.id) || linkedTripIds.includes(t.id);
+                      const displayCode =
+                        t.code ||
+                        t.shortCode ||
+                        (t.id && t.id.length <= 10 ? t.id.toUpperCase() : null) ||
+                        (t.slug && t.slug.length <= 10 ? t.slug.toUpperCase() : null) ||
+                        `TRIP-${idx + 1}`;
+
+                      return (
+                        <div
+                          key={t.id}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-lg border text-xs transition-colors bg-white",
+                            isLinked ? "border-emerald-200 bg-emerald-50/30" : "border-slate-200 hover:border-orange-300"
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono font-bold text-[10px] uppercase shrink-0">
+                              {displayCode}
+                            </span>
+                            <div className="min-w-0">
+                              <span className="font-bold text-slate-900 block truncate text-[11px]">
+                                {t.title || t.name}
+                              </span>
+                              <span className="text-[10px] text-slate-500 block truncate">
+                                {t.location || "Trip"} • {t.duration || "Nights"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <Button
+                            size="xs"
+                            onClick={() => {
+                              if (isLinked) {
+                                setLinkedTripIds(linkedTripIds.filter((id) => id !== t.id));
+                                toast.success(`Unlinked ${t.title}`);
+                              } else {
+                                setLinkedTripIds([...linkedTripIds, t.id]);
+                                logActivity("TRIP_LINKED", `Linked trip: ${t.title} to vendor`);
+                                toast.success(`Linked "${t.title}" to ${vendor.name}`);
+                              }
+                            }}
+                            className={cn(
+                              "h-7 text-[10px] font-bold px-2.5 shrink-0 ml-2",
+                              isLinked
+                                ? "bg-emerald-100 text-emerald-800 hover:bg-rose-100 hover:text-rose-800"
+                                : "bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-600 hover:text-white"
+                            )}
+                          >
+                            {isLinked ? "✓ Linked" : "+ Link Trip"}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>

@@ -1045,7 +1045,6 @@ export default function BookingDetailsView({
   const handleConfirmSubmit = async () => {
     if (!canManageBooking)
       return toast.error("Not authorized to confirm this booking");
-    if (isExpired) return toast.error("This booking has expired");
     if (!confirmTotal || parseFloat(confirmTotal) <= 0) {
       toast.error("Enter a valid total amount");
       return;
@@ -1192,7 +1191,6 @@ export default function BookingDetailsView({
   const handleRejectSubmit = async () => {
     if (!canManageBooking)
       return toast.error("Not authorized to reject this booking");
-    if (isExpired) return toast.error("This booking has expired");
     if (
       !confirm(
         "Are you sure you want to reject and delete this booking request?",
@@ -2051,7 +2049,7 @@ export default function BookingDetailsView({
               {flowStatus === "Cancelled"
                 ? "This booking was cancelled."
                 : flowStatus === "Expired"
-                  ? "This booking link has expired."
+                  ? "This booking link has expired. You can still confirm it manually below."
                   : flowStatus === "Partially Paid"
                     ? "Partially paid. Remaining balance is pending."
                     : flowStatus === "Pending Payment"
@@ -2059,7 +2057,7 @@ export default function BookingDetailsView({
                       : "Pending Inquiry."}
             </span>
           </div>
-          {flowStatus !== "Cancelled" && flowStatus !== "Expired" && (
+          {flowStatus !== "Cancelled" && (
             <button
               onClick={() => {
                 setConfirmTotal((booking.totalAmount || 0).toString());
@@ -2067,7 +2065,7 @@ export default function BookingDetailsView({
                 setConfirmEmail(booking.email || "");
                 setIsConfirming(true);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all shrink-0"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all shrink-0 cursor-pointer"
             >
               Confirm Booking
             </button>

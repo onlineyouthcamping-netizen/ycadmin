@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { sopsService, SopTemplate, SopVersion, SopTaskTemplate } from "@/services/sops.service";
+import { useStaffUsers } from "@/hooks/useStaffUsers";
 
 const STAGES = [
   { id: "ALL", label: "All Stages" },
@@ -43,6 +44,7 @@ export default function SopBuilderPage() {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId");
   const navigate = useNavigate();
+  const { staffUsers } = useStaffUsers();
 
   const [template, setTemplate] = useState<SopTemplate | null>(null);
   const [activeVersion, setActiveVersion] = useState<SopVersion | null>(null);
@@ -59,7 +61,7 @@ export default function SopBuilderPage() {
     relativeOffset: -7,
     priority: "MEDIUM",
     isRequired: true,
-    defaultAssignee: "OPERATIONS",
+    defaultAssignee: "Hemal Patel",
     instructions: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,7 +105,7 @@ export default function SopBuilderPage() {
       relativeOffset: -7,
       priority: "MEDIUM",
       isRequired: true,
-      defaultAssignee: "OPERATIONS",
+      defaultAssignee: "Hemal Patel",
       instructions: "",
     });
     setTaskModalOpen(true);
@@ -118,7 +120,7 @@ export default function SopBuilderPage() {
       relativeOffset: t.relativeOffset,
       priority: t.priority,
       isRequired: t.isRequired,
-      defaultAssignee: t.defaultAssignee || "OPERATIONS",
+      defaultAssignee: t.defaultAssignee || "Hemal Patel",
       instructions: t.instructions || "",
     });
     setTaskModalOpen(true);
@@ -515,12 +517,11 @@ export default function SopBuilderPage() {
                   onChange={(e) => setTaskForm({ ...taskForm, defaultAssignee: e.target.value })}
                   className="w-full h-9 text-xs border border-slate-200 rounded-lg px-2 bg-white text-slate-800"
                 >
-                  <option value="OPERATIONS">OPERATIONS</option>
-                  <option value="LEAD_GUIDE">LEAD GUIDE</option>
-                  <option value="TRANSPORT_DESK">TRANSPORT DESK</option>
-                  <option value="SALES_EXEC">SALES EXEC</option>
-                  <option value="TICKETING">TICKETING</option>
-                  <option value="FINANCE">FINANCE</option>
+                  {staffUsers.map((user) => (
+                    <option key={user.id || user.email} value={user.name}>
+                      {user.name} ({user.role})
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
