@@ -347,9 +347,31 @@ export default function VerificationQueuePage() {
   }, [items, search]);
 
   const handleRowClick = (item: any) => {
-    const bId = item.booking?.id || item.bookingId || item.id;
+    const bId = item.bookingId || item.booking?.id || item.booking?.bookingId || item.id;
     setSelectedBookingId(bId);
-    setSelectedBooking(item.booking || item);
+
+    const parentBooking = item.booking || {};
+    const merged = {
+      ...parentBooking,
+      ...item,
+      bookingId: parentBooking.bookingId || item.bookingId || item.id,
+      id: parentBooking.id || item.bookingId || item.id,
+      travelerName: item.travelerName || parentBooking.fullName || parentBooking.name || "—",
+      tripName: parentBooking.tripName || item.tripName || item.destinationStation || "—",
+      departureDate: parentBooking.departureDate || item.journeyDate || null,
+      pnr: (item.pnr && item.pnr !== "PENDING" && item.pnr !== "NOT GENERATED") ? item.pnr : (parentBooking.pnr || null),
+      trainName: item.trainName || parentBooking.trainName || null,
+      trainNumber: item.trainNumber || parentBooking.trainNumber || null,
+      coach: item.coach || parentBooking.coach || null,
+      seatNumber: item.seatNumber || parentBooking.seatNumber || null,
+      berthType: item.berthType || parentBooking.berthType || null,
+      ticketAmount: item.ticketAmount || parentBooking.ticketAmount || null,
+      amountMode: item.amountMode || parentBooking.amountMode || null,
+      submittedBy: typeof item.submittedBy === "object" ? (item.submittedBy?.name || item.submittedBy?.email) : (item.ticketBookingPerson || item.createdBy || "System"),
+      submittedAt: item.createdAt || item.submittedAt || new Date().toISOString(),
+    };
+
+    setSelectedBooking(merged);
   };
 
   const handleQuickAction = async (

@@ -361,26 +361,8 @@ export default function TripSopEditorTab({
           </div>
         </div>
 
-        {/* Quick Actions & Presets */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-slate-500">Quick Presets:</span>
-            <button
-              type="button"
-              onClick={() => loadPresetSop("spiti")}
-              className="text-xs font-bold px-2.5 py-1 rounded bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-700 border border-slate-200 transition-colors"
-            >
-              Spiti Preset (8 Tasks)
-            </button>
-            <button
-              type="button"
-              onClick={() => loadPresetSop("manali")}
-              className="text-xs font-bold px-2.5 py-1 rounded bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-700 border border-slate-200 transition-colors"
-            >
-              Manali Preset (4 Tasks)
-            </button>
-          </div>
-
+        {/* Actions */}
+        <div className="flex items-center justify-end pt-1">
           <Button
             type="button"
             onClick={() => {

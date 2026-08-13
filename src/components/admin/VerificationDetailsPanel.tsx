@@ -220,16 +220,21 @@ export default function VerificationDetailsPanel({
   const loadData = async () => {
     setLoading(true);
     try {
-      const [verification, fullB] = await Promise.all([
+      const [verification, fullB, tickets] = await Promise.all([
         bookingVerificationService.getVerificationStatus(bookingId),
         bookingsService.getById(bookingId).catch(() => null),
+        trainTicketService.getTicketsByBooking(bookingId).catch(() => []),
       ]);
       setVerificationData(verification);
       setFullBooking(fullB);
+      if (tickets && Array.isArray(tickets) && tickets.length > 0) {
+        setTrainTickets(tickets);
+        setTicketCount(tickets.length);
+      }
 
-      if (queueType === "train" && booking?.id && !booking.isPseudo) {
+      if (queueType === "train" && (booking?.id || bookingId) && !booking?.isPseudo) {
         const history = await trainTicketService
-          .getTicketHistory(booking.id)
+          .getTicketHistory(booking?.id || bookingId)
           .catch(() => []);
         setTicketHistory(history);
       }
