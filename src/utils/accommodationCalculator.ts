@@ -533,7 +533,12 @@ export function findHotelForDay(
   if (normDay) {
     const matches = hotelBookings.filter((b) => normaliseDate(b.checkIn) === normDay);
     if (matches.length > 0) {
-      return matches[matches.length - 1];
+      const sorted = [...matches].sort((a: any, b: any) => {
+        const tA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const tB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return tA - tB;
+      });
+      return sorted[sorted.length - 1];
     }
   }
 

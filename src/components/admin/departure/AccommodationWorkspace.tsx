@@ -162,8 +162,8 @@ export default function AccommodationWorkspace({
       const hasStay = stayOverrides[rowKey] !== undefined ? stayOverrides[rowKey] : defaultHasStay;
 
       const destination =
-        booking?.location ||
         (hasStay && cityLocation && cityLocation !== "—" ? cityLocation : "") ||
+        booking?.location ||
         parsedStay ||
         (day.plan ? day.plan.split("/")[0].split("-")[0].trim() : "—");
 
