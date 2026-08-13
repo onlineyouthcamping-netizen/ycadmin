@@ -440,7 +440,19 @@ export function getPrimaryRateFromBooking(booking: {
  */
 export function resolveCityForItineraryDay(item: any): string {
   if (!item) return "";
-  const raw = `${item.stay || ""} ${item.destination || ""} ${item.location || ""} ${item.city || ""} ${item.plan || ""} ${item.sub || ""} ${item.description || ""}`.toLowerCase();
+
+  const cleanStay = (item.stay && item.stay !== "—" ? item.stay : "").trim();
+  const cleanCity = (item.city && item.city !== "—" ? item.city : "").trim();
+  const cleanLoc = (item.location && item.location !== "—" ? item.location : "").trim();
+  const cleanDest = (item.destination && item.destination !== "—" ? item.destination : "").trim();
+
+  let targetStr = cleanStay || cleanCity || cleanLoc || cleanDest;
+
+  if (!targetStr) {
+    targetStr = `${item.plan || ""} ${item.sub || ""}`;
+  }
+
+  const raw = targetStr.toLowerCase();
 
   if (raw.includes("wagah") || raw.includes("amritsar") || raw.includes("golden temple") || raw.includes("jallianwala")) {
     return "Amritsar";
@@ -460,7 +472,7 @@ export function resolveCityForItineraryDay(item: any): string {
   if (raw.includes("chandratal") || raw.includes("chandra taal") || raw.includes("batal")) {
     return "Chandratal";
   }
-  if (raw.includes("manali") || raw.includes("atal tunnel") || raw.includes("solang") || raw.includes("mall road") || raw.includes("jogini") || raw.includes("sissu")) {
+  if (raw.includes("manali") || raw.includes("solang") || raw.includes("mall road") || raw.includes("sissu")) {
     return "Manali";
   }
   if (raw.includes("kullu") || raw.includes("risan")) {
@@ -469,7 +481,10 @@ export function resolveCityForItineraryDay(item: any): string {
   if (raw.includes("shimla") || raw.includes("narkanda") || raw.includes("kufri") || raw.includes("mashobra")) {
     return "Shimla";
   }
-  if (raw.includes("sangla") || raw.includes("chitkul") || raw.includes("rakcham")) {
+  if (raw.includes("chitkul")) {
+    return "Chitkul";
+  }
+  if (raw.includes("sangla") || raw.includes("rakcham")) {
     return "Sangla";
   }
   if (raw.includes("kalpa") || raw.includes("reckong peo")) {
