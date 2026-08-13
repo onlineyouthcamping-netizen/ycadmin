@@ -412,7 +412,7 @@ export default function HotelAssignmentWizardModal({
 
     dbVendors.forEach((v: any) => {
       const name = v.name || v.hotelName || "";
-      const city = v.city || v.location || "Manali";
+      const city = v.city || v.location || "";
       if (name && !seenNames.has(name.toLowerCase())) {
         seenNames.add(name.toLowerCase());
         list.push({
@@ -427,45 +427,64 @@ export default function HotelAssignmentWizardModal({
       }
     });
 
-    adminHotels.forEach((h: any) => {
-      if (h.name && !seenNames.has(h.name.toLowerCase())) {
-        seenNames.add(h.name.toLowerCase());
-        list.push({
-          id: h.id || `HTL-${list.length + 1}`,
-          name: h.name,
-          city: h.city || "Manali",
-          category: h.category || "Deluxe Hotel",
-          rating: typeof h.rating === "number" ? "★".repeat(h.rating) : h.rating || "4.5 ★",
-          phone: h.phone || "",
-          vendorObj: h,
-        });
-      }
-    });
+    if (list.length === 0) {
+      adminHotels.forEach((h: any) => {
+        if (h.name && !seenNames.has(h.name.toLowerCase())) {
+          seenNames.add(h.name.toLowerCase());
+          list.push({
+            id: h.id || `HTL-${list.length + 1}`,
+            name: h.name,
+            city: h.city || "Manali",
+            category: h.category || "Deluxe Hotel",
+            rating: typeof h.rating === "number" ? "★".repeat(h.rating) : h.rating || "4.5 ★",
+            phone: h.phone || "",
+            vendorObj: h,
+          });
+        }
+      });
+    }
 
     return list;
   }, [dbVendors, adminHotels]);
 
   const destinationCitiesList = useMemo(() => {
-    const set = new Set<string>();
-    hotelEligibleDestinations.forEach((d) => {
-      if (d.name) set.add(d.name);
-    });
+    const seenNorm = new Set<string>();
+    const cities: string[] = [];
+
+    const addCity = (rawName: string) => {
+      if (!rawName) return;
+      let clean = rawName.trim();
+      if (clean.toLowerCase().endsWith(" camp")) {
+        const base = clean.substring(0, clean.length - 5).trim();
+        if (base) clean = base;
+      }
+      const norm = normalizeDestinationName(clean);
+      if (norm && !seenNorm.has(norm)) {
+        seenNorm.add(norm);
+        cities.push(clean);
+      }
+    };
+
+    hotelEligibleDestinations.forEach((d) => addCity(d.name));
+
     dbVendors.forEach((v: any) => {
-      if (v.city) set.add(v.city);
-      if (v.location) set.add(v.location);
+      addCity(v.city);
+      addCity(v.location);
     });
-    if (selectedDestination) set.add(selectedDestination);
-    return Array.from(set).sort();
+
+    if (selectedDestination) addCity(selectedDestination);
+
+    return cities.sort((a, b) => a.localeCompare(b));
   }, [hotelEligibleDestinations, dbVendors, selectedDestination]);
 
   const matchingHotels = useMemo(() => {
     if (!selectedDestination) return combinedHotelProperties;
     const normSelected = normalizeDestinationName(selectedDestination);
-    const filtered = combinedHotelProperties.filter((h) => {
+    const exactMatches = combinedHotelProperties.filter((h) => {
       const normCity = normalizeDestinationName(h.city || "");
       return normCity.includes(normSelected) || normSelected.includes(normCity);
     });
-    return filtered.length > 0 ? filtered : combinedHotelProperties;
+    return exactMatches.length > 0 ? exactMatches : combinedHotelProperties;
   }, [selectedDestination, combinedHotelProperties]);
 
   useEffect(() => {
@@ -522,17 +541,30 @@ export default function HotelAssignmentWizardModal({
       }
     } else {
       const normDest = normalizeDestinationName(destName);
-      const firstMatch =
-        combinedHotelProperties.find((h) => normalizeDestinationName(h.city).includes(normDest)) ||
-        combinedHotelProperties[0];
+      const matched = combinedHotelProperties.find((h) => {
+        const normCity = normalizeDestinationName(h.city || "");
+        return normCity.includes(normDest) || normDest.includes(normCity);
+      });
 
-      if (firstMatch) {
-        setSelectedHotel(firstMatch);
-        const rates = extractHotelRates(firstMatch);
+      if (matched) {
+        setSelectedHotel(matched);
+        const rates = extractHotelRates(matched, destName);
         setDoubleRate(rates.doubleRate);
         setTripleRate(rates.tripleRate);
         setQuadRate(rates.quadRate);
         setExtraBedRate(rates.extraBedRate);
+      } else {
+        const placeholderHotel = {
+          id: `custom-${normDest}`,
+          name: `Hotel / Stay in ${destName}`,
+          city: destName,
+          category: "Standard Property",
+        };
+        setSelectedHotel(placeholderHotel);
+        setDoubleRate(1200);
+        setTripleRate(900);
+        setQuadRate(750);
+        setExtraBedRate(500);
       }
     }
 
@@ -725,10 +757,21 @@ export default function HotelAssignmentWizardModal({
                   const newDest = e.target.value;
                   setSelectedDestination(newDest);
                   const norm = normalizeDestinationName(newDest);
-                  const firstMatch = combinedHotelProperties.find((h) =>
-                    normalizeDestinationName(h.city).includes(norm)
-                  ) || combinedHotelProperties[0];
-                  if (firstMatch) handleSelectHotel(firstMatch, newDest);
+                  const matched = combinedHotelProperties.find((h) => {
+                    const normCity = normalizeDestinationName(h.city || "");
+                    return normCity.includes(norm) || norm.includes(normCity);
+                  });
+                  if (matched) {
+                    handleSelectHotel(matched, newDest);
+                  } else {
+                    const placeholderHotel = {
+                      id: `custom-${norm}`,
+                      name: `Hotel / Stay in ${newDest}`,
+                      city: newDest,
+                      category: "Standard Property",
+                    };
+                    handleSelectHotel(placeholderHotel, newDest);
+                  }
                 }}
                 className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
               >
