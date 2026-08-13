@@ -248,35 +248,14 @@ export default function AccommodationWorkspace({
     const uniqueHotels = new Set(
       rows.filter((r) => r.booking?.hotelName).map((r) => r.booking!.hotelName)
     ).size;
-    const totalRooms = rows.reduce((sum, r) => {
-      // Avoid double-counting multi-night stays (same booking appears on multiple rows)
-      if (!r.booking) return sum;
-      return sum + (r.physicalRooms > 0 ? r.physicalRooms : 0);
-    }, 0);
 
-    // Sum distinct hotel bookings total cost
-    const seenBookingIds = new Set<string>();
-    let totalDepartureCost = 0;
-    rows.forEach((r) => {
-      if (r.booking && r.totalAmount > 0) {
-        const bId = r.booking.id || `${r.hotelName}-${r.date}`;
-        if (!seenBookingIds.has(bId)) {
-          seenBookingIds.add(bId);
-          totalDepartureCost += r.totalAmount;
-        }
-      }
-    });
+    const peakRooms = Math.max(0, ...rows.map((r) => (r.hasStay ? r.physicalRooms : 0)));
+    const roomNights = rows.reduce((sum, r) => sum + (r.hasStay ? r.physicalRooms * r.nights : 0), 0);
+    const totalDepartureCost = rows.reduce((sum, r) => sum + (r.hasStay ? r.totalAmount : 0), 0);
+    const costPerPaxTrip = totalPax > 0 ? totalDepartureCost / totalPax : 0;
 
-    // Average cost per pax per night (from configured stays)
-    const configuredRows = rows.filter((r) => r.hasStay && r.costPerPaxPerNight > 0);
-    const avgCostPerPaxNight =
-      configuredRows.length > 0
-        ? configuredRows.reduce((s, r) => s + r.costPerPaxPerNight, 0) /
-          configuredRows.length
-        : 0;
-
-    return { stayNights, uniqueHotels, totalRooms, avgCostPerPaxNight, totalDepartureCost };
-  }, [rows]);
+    return { stayNights, uniqueHotels, peakRooms, roomNights, totalDepartureCost, costPerPaxTrip };
+  }, [rows, totalPax]);
 
   const selectedRow = selectedDayIdx !== null ? rows[selectedDayIdx] : null;
 
@@ -306,13 +285,16 @@ export default function AccommodationWorkspace({
           </span>
           <SummaryPill icon={<Calendar className="w-3 h-3" />} label={`${summary.stayNights} Stay Night${summary.stayNights !== 1 ? "s" : ""}`} />
           <SummaryPill icon={<Hotel className="w-3 h-3" />} label={`${summary.uniqueHotels} Hotel${summary.uniqueHotels !== 1 ? "s" : ""}`} />
-          {summary.totalRooms > 0 && (
-            <SummaryPill icon={<Bed className="w-3 h-3" />} label={`${summary.totalRooms} Rooms`} />
+          {summary.peakRooms > 0 && (
+            <SummaryPill
+              icon={<Bed className="w-3 h-3" />}
+              label={`${summary.peakRooms} Rooms / Night (${summary.roomNights} Room Nights)`}
+            />
           )}
           {summary.totalDepartureCost > 0 && (
             <SummaryPill
               icon={<Users className="w-3 h-3" />}
-              label={`${formatINR(summary.totalDepartureCost, 0)} Total Stay Cost`}
+              label={`${formatINR(summary.totalDepartureCost, 0)} Total Stay Cost (${formatINR(summary.costPerPaxTrip, 0)} / pax)`}
               highlight
             />
           )}
