@@ -810,13 +810,20 @@ export function AccommodationDetailPage({
       toast.error("Please enter Room Category Name");
       return;
     }
+    const dRate = parseFloat(roomForm.doubleRate) || 0;
+    const tRate = parseFloat(roomForm.tripleRate) || 0;
+    const qRate = parseFloat(roomForm.quadRate) || 0;
+
+    // Auto-sync room capacity to the highest sharing tariff entered
+    const derivedCap = qRate > 0 ? 4 : tRate > 0 ? 3 : 2;
+
     const roomData = {
       name: roomForm.name.trim(),
-      cap: parseInt(roomForm.cap, 10) || 2,
-      doubleRate: parseFloat(roomForm.doubleRate) || 0,
-      tripleRate: parseFloat(roomForm.tripleRate) || 0,
-      quadRate: parseFloat(roomForm.quadRate) || 0,
-      base: parseFloat(roomForm.doubleRate) || parseFloat(roomForm.tripleRate) || 0,
+      cap: derivedCap,
+      doubleRate: dRate,
+      tripleRate: tRate,
+      quadRate: qRate,
+      base: dRate || tRate || qRate || 0,
     };
 
     if (editingRoom) {
@@ -3157,20 +3164,6 @@ export function AccommodationDetailPage({
                 placeholder="e.g. Deluxe Mountain View Room"
               />
             </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Room Capacity (Persons)
-              </label>
-              <Input
-                type="number"
-                value={roomForm.cap}
-                onChange={(e) =>
-                  setRoomForm({ ...roomForm, cap: e.target.value })
-                }
-                placeholder="2"
-              />
-            </div>
-
             <div className="pt-2 border-t border-slate-100 space-y-2.5">
               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
                 Per Person Tariffs (₹ / Night)
