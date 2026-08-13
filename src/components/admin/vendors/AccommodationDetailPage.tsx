@@ -170,8 +170,8 @@ export function AccommodationDetailPage({
       vendor.financialDetails ||
       vendor.bankDetails ||
       (vendor.gstin || vendor.bankName
-        ? `GSTIN: ${vendor.gstin || "N/A"}\nPAN: ${vendor.panNumber || "N/A"}\nBank: ${vendor.bankName || "N/A"}\nA/C: ${vendor.accountNumber || "N/A"}\nIFSC: ${vendor.ifscCode || "N/A"}\nPayment Terms: ${vendor.paymentTerms || "N/A"}`
-        : "No GST / Banking details logged."),
+        ? `GSTIN: ${vendor.gstin || ""}\nPAN: ${vendor.panNumber || ""}\nBank: ${vendor.bankName || ""}\nA/C: ${vendor.accountNumber || ""}\nIFSC: ${vendor.ifscCode || ""}\nPayment Terms: ${vendor.paymentTerms || ""}`.trim()
+        : ""),
   });
 
   // State for Transport Vehicles & Routes
@@ -648,8 +648,6 @@ export function AccommodationDetailPage({
     doubleRate: "1200",
     tripleRate: "900",
     quadRate: "750",
-    singleRate: "1800",
-    extraBedRate: "500",
   });
 
   const [seasonModalOpen, setSeasonModalOpen] = useState(false);
@@ -818,10 +816,7 @@ export function AccommodationDetailPage({
       doubleRate: parseFloat(roomForm.doubleRate) || 0,
       tripleRate: parseFloat(roomForm.tripleRate) || 0,
       quadRate: parseFloat(roomForm.quadRate) || 0,
-      singleRate: parseFloat(roomForm.singleRate) || 0,
-      extraBedRate: parseFloat(roomForm.extraBedRate) || 0,
       base: parseFloat(roomForm.doubleRate) || parseFloat(roomForm.tripleRate) || 0,
-      extra: parseFloat(roomForm.extraBedRate) || 0,
     };
 
     if (editingRoom) {
@@ -1795,8 +1790,8 @@ export function AccommodationDetailPage({
                         })
                       }
                       rows={6}
-                      placeholder={`GSTIN: 02AAACH1827C1Z5\nPAN: AAACH1827C\nBank: HDFC Bank Ltd\nA/C: 50200049281726\nIFSC: HDFC0000240\nPayment Terms: 30 Days Credit`}
-                      className="bg-white text-xs border-slate-200 font-mono resize-y leading-relaxed font-medium"
+                      placeholder="Enter GSTIN, PAN, Bank Name, Account Number, IFSC Code & Payment Terms..."
+                      className="bg-white text-xs border-slate-200 font-mono resize-y leading-relaxed font-medium min-h-[140px]"
                     />
                   </div>
                 </div>
@@ -1976,8 +1971,6 @@ export function AccommodationDetailPage({
                                 doubleRate: (r.doubleRate || r.base || 1200).toString(),
                                 tripleRate: (r.tripleRate || 900).toString(),
                                 quadRate: (r.quadRate || 750).toString(),
-                                singleRate: (r.singleRate || 1800).toString(),
-                                extraBedRate: (r.extraBedRate || r.extra || 500).toString(),
                               });
                               setRoomModalOpen(true);
                             }}
@@ -1998,31 +1991,22 @@ export function AccommodationDetailPage({
                         <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
                           Per Person Tariffs
                         </span>
-                        <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                        <div className="grid grid-cols-3 gap-1.5 text-[10px]">
                           <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
-                            <span className="text-slate-500 block text-[9px] font-bold">DOUBLE SHARING</span>
+                            <span className="text-slate-500 block text-[8.5px] font-bold">DOUBLE</span>
                             <span className="font-black text-emerald-600">₹{r.doubleRate || r.base || 0}</span>
-                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
+                            <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
                           <div className="bg-[#FFF7ED] p-1.5 rounded border border-orange-100">
-                            <span className="text-orange-600 block text-[9px] font-bold">TRIPLE SHARING</span>
+                            <span className="text-orange-600 block text-[8.5px] font-bold">TRIPLE</span>
                             <span className="font-black text-emerald-600">₹{r.tripleRate || 0}</span>
-                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
+                            <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
                           <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
-                            <span className="text-slate-500 block text-[9px] font-bold">QUAD SHARING</span>
+                            <span className="text-slate-500 block text-[8.5px] font-bold">QUAD</span>
                             <span className="font-black text-emerald-600">₹{r.quadRate || 0}</span>
-                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
+                            <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
-                          <div className="bg-slate-50 p-1.5 rounded border border-slate-100">
-                            <span className="text-slate-500 block text-[9px] font-bold">SINGLE SHARING</span>
-                            <span className="font-black text-slate-700">₹{r.singleRate || 0}</span>
-                            <span className="text-[9px] text-slate-400 font-medium"> / person</span>
-                          </div>
-                        </div>
-                        <div className="mt-1 text-[10px] text-slate-500 font-medium flex justify-between items-center pt-1 border-t border-slate-50">
-                          <span>Extra Mattress / Bed:</span>
-                          <span className="font-bold text-slate-700">₹{r.extraBedRate || r.extra || 0}</span>
                         </div>
                       </div>
                     </div>
@@ -3192,9 +3176,9 @@ export function AccommodationDetailPage({
                 Per Person Tariffs (₹ / Night)
               </span>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
+                  <label className="font-bold text-slate-700 block mb-1 text-[11px]">
                     Double Sharing (₹/person)
                   </label>
                   <Input
@@ -3207,7 +3191,7 @@ export function AccommodationDetailPage({
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
+                  <label className="font-bold text-slate-700 block mb-1 text-[11px]">
                     Triple Sharing (₹/person)
                   </label>
                   <Input
@@ -3219,11 +3203,8 @@ export function AccommodationDetailPage({
                     placeholder="900"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
+                  <label className="font-bold text-slate-700 block mb-1 text-[11px]">
                     Quad Sharing (₹/person)
                   </label>
                   <Input
@@ -3235,33 +3216,6 @@ export function AccommodationDetailPage({
                     placeholder="750"
                   />
                 </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Single Sharing (₹/person)
-                  </label>
-                  <Input
-                    type="number"
-                    value={roomForm.singleRate}
-                    onChange={(e) =>
-                      setRoomForm({ ...roomForm, singleRate: e.target.value })
-                    }
-                    placeholder="1800"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Extra Mattress / Bed Rate (₹/night)
-                </label>
-                <Input
-                  type="number"
-                  value={roomForm.extraBedRate}
-                  onChange={(e) =>
-                    setRoomForm({ ...roomForm, extraBedRate: e.target.value })
-                  }
-                  placeholder="500"
-                />
               </div>
             </div>
           </div>

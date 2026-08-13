@@ -291,9 +291,16 @@ export default function SopBuilderPage() {
     toast.success("Default stages restored!");
   };
 
-  const filteredTasks = (activeVersion?.taskTemplates || []).filter(
-    (t) => activeStage === "ALL" || t.stage === activeStage,
-  );
+  const normalizeStageStr = (str: string) =>
+    (str || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  const filteredTasks = (activeVersion?.taskTemplates || []).filter((t) => {
+    if (activeStage === "ALL") return true;
+    return (
+      t.stage === activeStage ||
+      normalizeStageStr(t.stage) === normalizeStageStr(activeStage)
+    );
+  });
 
   if (loading) {
     return <div className="p-8 text-center text-slate-400">Loading SOP Builder...</div>;
@@ -405,7 +412,11 @@ export default function SopBuilderPage() {
           const count =
             s.id === "ALL"
               ? activeVersion.taskTemplates.length
-              : activeVersion.taskTemplates.filter((t) => t.stage === s.id).length;
+              : activeVersion.taskTemplates.filter(
+                  (t) =>
+                    t.stage === s.id ||
+                    normalizeStageStr(t.stage) === normalizeStageStr(s.id),
+                ).length;
 
           return (
             <div key={s.id} className="relative group flex items-center">
@@ -484,8 +495,29 @@ export default function SopBuilderPage() {
           <tbody className="divide-y divide-slate-100">
             {filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
-                  No task templates configured for stage "{activeStage}".
+                <td colSpan={8} className="p-8 text-center space-y-2.5">
+                  <p className="text-xs font-extrabold text-slate-700">
+                    No task templates configured for stage "{visibleStages.find((s) => s.id === activeStage)?.label || activeStage}"
+                  </p>
+                  <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                    Click "+ Add Task" to create a task for this stage, or switch to another stage tab above (e.g., Departure Day has tasks).
+                  </p>
+                  <div className="flex items-center justify-center gap-2 pt-2">
+                    <Button
+                      onClick={handleOpenAddTask}
+                      className="h-7.5 text-xs font-bold bg-[#F97316] hover:bg-[#EA580C] text-white px-3 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      Add Task for {visibleStages.find((s) => s.id === activeStage)?.label || activeStage}
+                    </Button>
+                    <Button
+                      onClick={() => setActiveStage("ALL")}
+                      variant="outline"
+                      className="h-7.5 text-xs font-bold border-slate-200 text-slate-700 px-3 cursor-pointer"
+                    >
+                      View All Stages ({activeVersion?.taskTemplates?.length || 0})
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ) : (
