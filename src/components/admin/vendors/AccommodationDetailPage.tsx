@@ -793,46 +793,58 @@ export function AccommodationDetailPage({
   };
 
   // Contact Handlers
-  const handleSaveContact = () => {
-    if (!contactForm.name || !contactForm.phone) {
-      toast.error("Please enter Name and Phone number");
+  const handleSaveContact = async () => {
+    if (!contactForm.name) {
+      toast.error("Please enter contact name");
       return;
     }
+    let updatedContacts: any[] = [];
     if (editingContact) {
-      setContacts(
-        contacts.map((c) =>
-          c.id === editingContact.id ? { ...c, ...contactForm } : c,
-        ),
-      );
-      logActivity(
-        "CONTACT_UPDATED",
-        `Updated contact details for ${contactForm.name} (${contactForm.role || "Contact"})`,
+      updatedContacts = contacts.map((c) =>
+        c.id === editingContact.id ? { ...c, ...contactForm } : c,
       );
       toast.success("Contact updated!");
     } else {
-      setContacts([{ id: `c-${Date.now()}`, ...contactForm }, ...contacts]);
-      logActivity(
-        "CONTACT_ADDED",
-        `Added contact person: ${contactForm.name} (${contactForm.role || "General Manager"}) - Phone: ${contactForm.phone}`,
-      );
+      updatedContacts = [{ id: `c-${Date.now()}`, ...contactForm }, ...contacts];
       toast.success("Contact added!");
     }
+
+    setContacts(updatedContacts);
     setContactModalOpen(false);
     setEditingContact(null);
+
+    try {
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, {
+        contacts: updatedContacts,
+      });
+      if (res.data?.data) {
+        setVendor(res.data.data);
+        onUpdateVendor(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleDeleteContact = (id: string) => {
-    const ct = contacts.find((c) => c.id === id);
-    setContacts(contacts.filter((c) => c.id !== id));
-    logActivity(
-      "CONTACT_DELETED",
-      `Removed contact person: ${ct?.name || "Contact"}`,
-    );
+  const handleDeleteContact = async (id: string) => {
+    const updatedContacts = contacts.filter((c) => c.id !== id);
+    setContacts(updatedContacts);
     toast.success("Contact removed");
+    try {
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, {
+        contacts: updatedContacts,
+      });
+      if (res.data?.data) {
+        setVendor(res.data.data);
+        onUpdateVendor(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Room Handlers
-  const handleSaveRoom = () => {
+  const handleSaveRoom = async () => {
     if (!roomForm.name.trim()) {
       toast.error("Please enter Room Category Name");
       return;
@@ -840,7 +852,8 @@ export function AccommodationDetailPage({
     const dRate = parseFloat(roomForm.doubleRate) || 0;
     const tRate = parseFloat(roomForm.tripleRate) || 0;
     const qRate = parseFloat(roomForm.quadRate) || 0;
-    const userCap = parseInt(roomForm.cap, 10) || (qRate > 0 ? 4 : tRate > 0 ? 3 : 2);
+    const userCap =
+      parseInt(roomForm.cap, 10) || (qRate > 0 ? 4 : tRate > 0 ? 3 : 2);
     const totalRoomsCount = parseInt(roomForm.totalRooms, 10) || 1;
 
     const roomData = {
@@ -853,51 +866,75 @@ export function AccommodationDetailPage({
       base: dRate || tRate || qRate || 0,
     };
 
+    let updatedRooms: any[] = [];
     if (editingRoom) {
-      setRooms(
-        rooms.map((r) =>
-          r.id === editingRoom.id ? { ...r, ...roomData } : r,
-        ),
+      updatedRooms = rooms.map((r) =>
+        r.id === editingRoom.id ? { ...r, ...roomData } : r,
       );
-      toast.success("Room category updated!");
     } else {
       const newRoom = {
         id: `r-${Date.now()}`,
         ...roomData,
       };
-      setRooms([...rooms, newRoom]);
-      toast.success("Room category saved!");
+      updatedRooms = [...rooms, newRoom];
     }
+
+    setRooms(updatedRooms);
     setRoomModalOpen(false);
     setEditingRoom(null);
+
+    try {
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, {
+        rooms: updatedRooms,
+      });
+      if (res.data?.data) {
+        setVendor(res.data.data);
+        onUpdateVendor(res.data.data);
+      }
+      toast.success("Room category saved successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Saved locally, failed to update server");
+    }
   };
 
-  const handleDeleteRoom = (id: string) => {
-    setRooms(rooms.filter((r) => r.id !== id));
-    toast.success("Room removed");
+  const handleDeleteRoom = async (id: string) => {
+    const updatedRooms = rooms.filter((r) => r.id !== id);
+    setRooms(updatedRooms);
+    try {
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, {
+        rooms: updatedRooms,
+      });
+      if (res.data?.data) {
+        setVendor(res.data.data);
+        onUpdateVendor(res.data.data);
+      }
+      toast.success("Room removed");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Season Handlers
-  const handleSaveSeason = () => {
+  const handleSaveSeason = async () => {
     if (!seasonForm.name || !seasonForm.twin) {
       toast.error("Please enter Season Name and Twin Sharing Rate");
       return;
     }
+
+    let updatedSeasons: any[] = [];
     if (editingSeason) {
-      setSeasons(
-        seasons.map((s) =>
-          s.id === editingSeason.id
-            ? {
-                ...s,
-                name: seasonForm.name,
-                twin: parseFloat(seasonForm.twin) || 0,
-                triple: parseFloat(seasonForm.triple) || 0,
-                quad: parseFloat(seasonForm.quad) || 0,
-              }
-            : s,
-        ),
+      updatedSeasons = seasons.map((s) =>
+        s.id === editingSeason.id
+          ? {
+              ...s,
+              name: seasonForm.name,
+              twin: parseFloat(seasonForm.twin) || 0,
+              triple: parseFloat(seasonForm.triple) || 0,
+              quad: parseFloat(seasonForm.quad) || 0,
+            }
+          : s,
       );
-      toast.success("Seasonal tariff updated!");
     } else {
       const newSeason = {
         id: `s-${Date.now()}`,
@@ -906,16 +943,43 @@ export function AccommodationDetailPage({
         triple: parseFloat(seasonForm.triple) || 0,
         quad: parseFloat(seasonForm.quad) || 0,
       };
-      setSeasons([...seasons, newSeason]);
-      toast.success("Seasonal tariff saved!");
+      updatedSeasons = [...seasons, newSeason];
     }
+
+    setSeasons(updatedSeasons);
     setSeasonModalOpen(false);
     setEditingSeason(null);
+
+    try {
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, {
+        seasons: updatedSeasons,
+      });
+      if (res.data?.data) {
+        setVendor(res.data.data);
+        onUpdateVendor(res.data.data);
+      }
+      toast.success("Seasonal tariff saved successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Saved locally, failed to update server");
+    }
   };
 
-  const handleDeleteSeason = (id: string) => {
-    setSeasons(seasons.filter((s) => s.id !== id));
-    toast.success("Seasonal tariff removed");
+  const handleDeleteSeason = async (id: string) => {
+    const updatedSeasons = seasons.filter((s) => s.id !== id);
+    setSeasons(updatedSeasons);
+    try {
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, {
+        seasons: updatedSeasons,
+      });
+      if (res.data?.data) {
+        setVendor(res.data.data);
+        onUpdateVendor(res.data.data);
+      }
+      toast.success("Seasonal tariff removed");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Contract Handlers
