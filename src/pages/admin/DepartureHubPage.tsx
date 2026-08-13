@@ -2100,10 +2100,10 @@ useEffect(() => {
       }
 
       const masterItems: any[] = [];
+      const seenKeys = new Set<string>();
 
       vendors.forEach((v: any) => {
         const vName = (v.name || 'Vendor').trim();
-        // Ignore dummy or test vendors with names like 'mm', 'oo', 'qqq' or short junk names
         if (
           !vName ||
           vName.length < 3 ||
@@ -2112,32 +2112,27 @@ useEffect(() => {
           return;
         }
 
-        // Fetch explicit vehicles from Vendor Management (vehicleMaster, transportRates, transportFleet)
-        let vehicles: any[] = [];
-        if (Array.isArray(v.vehicleMaster) && v.vehicleMaster.length > 0) {
-          vehicles = v.vehicleMaster;
-        } else if (Array.isArray(v.transportRates) && v.transportRates.length > 0) {
-          vehicles = v.transportRates;
-        } else if (Array.isArray(v.transportFleet) && v.transportFleet.length > 0) {
-          vehicles = v.transportFleet;
-        } else {
-          // Standard Authoritative Vehicle Master Fleet matching Vendor Management
-          vehicles = [
-            { model: "20 Seater Tempo Traveller", capacity: 20 },
-            { model: "17 Seater Tempo Traveller", capacity: 17 },
-            { model: "14 Seater Tempo Traveller", capacity: 14 },
-            { model: "Toyota Innova Crysta", capacity: 7 },
-            { model: "Maruti Suzuki Ertiga", capacity: 6 },
-            { model: "Swift Dzire Sedan", capacity: 4 },
-          ];
-        }
+        const ratesList =
+          Array.isArray(v.transportRates) && v.transportRates.length > 0
+            ? v.transportRates
+            : Array.isArray(v.vehicleMaster) && v.vehicleMaster.length > 0
+              ? v.vehicleMaster
+              : Array.isArray(v.transportFleet) && v.transportFleet.length > 0
+                ? v.transportFleet
+                : [
+                    { vehicleType: "20 Seater Tempo Traveller", seatCapacity: 20 },
+                    { vehicleType: "17 Seater Tempo Traveller", seatCapacity: 17 },
+                    { vehicleType: "14 Seater Tempo Traveller", seatCapacity: 14 },
+                    { vehicleType: "Toyota Innova Crysta", seatCapacity: 7 },
+                    { vehicleType: "Maruti Suzuki Ertiga", seatCapacity: 6 },
+                    { vehicleType: "Swift Dzire Sedan", seatCapacity: 4 },
+                  ];
 
-        vehicles.forEach((r: any) => {
-          const vType = r.model || r.vehicleType || r.vehicleModel || "17 Seater Tempo Traveller";
-          const cap = r.capacity || r.seatCapacity || 17;
+        ratesList.forEach((r: any) => {
+          const vType = r.vehicleType || r.model || r.vehicleModel || "17 Seater Tempo Traveller";
+          const cap = r.seatCapacity || r.capacity || 17;
+          let cost = Number(r.amount || r.rate || r.totalAmount || 0);
 
-          // Lookup route contract pricing if available
-          let cost = r.amount || r.rate || r.totalAmount || 0;
           if (!cost && Array.isArray(v.routePricingGroups)) {
             v.routePricingGroups.forEach((g: any) => {
               const ratesList = g.vehicleRates || g.routeRates || [];
@@ -2147,22 +2142,26 @@ useEffect(() => {
                     rr.vehicleType?.toLowerCase() === vType.toLowerCase() &&
                     rr.totalAmount
                   ) {
-                    cost = rr.totalAmount;
+                    cost = Number(rr.totalAmount);
                   }
                 });
               }
             });
           }
 
+          const itemKey = `${v.id}-${vType.toLowerCase().trim()}-${cap}`;
+          if (seenKeys.has(itemKey)) return;
+          seenKeys.add(itemKey);
+
           masterItems.push({
-            id: `dir-${v.id}-${(r.id || vType).toString().replace(/\s+/g, "-").toLowerCase()}`,
+            id: r.id || `dir-${v.id}-${vType.toString().replace(/\s+/g, "-").toLowerCase()}`,
             vendorId: v.id,
             vendorName: vName,
             vehicleType: vType,
             capacity: cap,
             cost: cost,
             driverName: `${vName} ${vType}`,
-            label: `${vType} – ${vName} (${cap} Seats)${cost ? ` – ₹${cost}` : ""}`,
+            label: `${vType} – ${vName} (${cap} Seats)${cost > 0 ? ` – ₹${cost.toLocaleString("en-IN")}` : ""}`,
           });
         });
       });
