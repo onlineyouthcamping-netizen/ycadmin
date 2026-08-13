@@ -484,7 +484,17 @@ export default function HotelAssignmentWizardModal({
       const normCity = normalizeDestinationName(h.city || "");
       return normCity.includes(normSelected) || normSelected.includes(normCity);
     });
-    return exactMatches.length > 0 ? exactMatches : combinedHotelProperties;
+    if (exactMatches.length > 0) {
+      return exactMatches;
+    }
+    return [
+      {
+        id: `custom-${normSelected}`,
+        name: `Hotel / Stay in ${selectedDestination}`,
+        city: selectedDestination,
+        category: "Standard Property",
+      },
+    ];
   }, [selectedDestination, combinedHotelProperties]);
 
   useEffect(() => {
