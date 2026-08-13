@@ -433,7 +433,7 @@ export default function TripsPage() {
       render: (t: Trip) => {
         if (!t) return null;
         return (
-          <div className="flex gap-1 items-center justify-end opacity-0 group-hover/row:opacity-100 transition-opacity">
+          <div className="flex gap-1 items-center justify-end">
             <Button
               variant="ghost"
               size="icon"

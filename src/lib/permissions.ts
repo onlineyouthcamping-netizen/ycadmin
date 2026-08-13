@@ -67,6 +67,17 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "accounting.view",
     "accounting.edit",
     "emails.manage_templates",
+    "station_payments.view",
+    "station_payments.collect",
+    "station_payments.edit_before_handover",
+    "station_payments.cancel",
+    "station_payments.handover",
+    "station_payments.receive",
+    "station_payments.reconcile",
+    "station_payments.export",
+    "station_payments.resend_receipt",
+    "station_payments.manage_accounts",
+    "station_payments.verify_upi",
   ],
 
   admin: [
@@ -108,6 +119,12 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "tickets.templates.manage",
     "tickets.alerts.view",
     "emails.manage_templates",
+    "station_payments.view",
+    "station_payments.collect",
+    "station_payments.handover",
+    "station_payments.receive",
+    "station_payments.reconcile",
+    "station_payments.resend_receipt",
   ],
 
   sales: [
@@ -149,6 +166,9 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "tickets.bulk",
     "tickets.templates.manage",
     "tickets.alerts.view",
+    "station_payments.view",
+    "station_payments.collect",
+    "station_payments.handover",
   ],
 
   finance: [
@@ -161,6 +181,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "hr.view",
     "accounting.view",
     "accounting.edit",
+    "station_payments.view",
+    "station_payments.collect",
+    "station_payments.receive",
+    "station_payments.reconcile",
+    "station_payments.manage_accounts",
   ],
 
   guide: [
@@ -170,6 +195,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "operations.view",
     "operations.edit",
     "hr.view",
+    "tickets.view",
+    "tickets.create",
+    "tickets.edit",
+    "tickets.submit",
+    "tickets.approve",
   ],
 
   viewer: [
@@ -208,13 +238,14 @@ export function hasPermission(
 ): boolean {
   if (typeof permissionsOrRole === "string") {
     const normalizedRole = permissionsOrRole.toLowerCase();
-    if (normalizedRole === "superadmin") return true;
+    if (normalizedRole === "superadmin" || normalizedRole === "founder") return true;
     const set = ROLE_PERMISSIONS_SETS[normalizedRole];
     if (!set) return false;
     return set.has(required);
   }
 
-  if (role?.toLowerCase() === "superadmin") return true;
+  const normRole = role?.toLowerCase();
+  if (normRole === "superadmin" || normRole === "founder") return true;
 
   if (role) {
     const normalizedRole = role.toLowerCase();
@@ -231,7 +262,8 @@ export function hasAnyPermission(
   requiredPermissions: string[],
   role?: string,
 ): boolean {
-  if (role?.toLowerCase() === "superadmin") return true;
+  const normRole = role?.toLowerCase();
+  if (normRole === "superadmin" || normRole === "founder") return true;
   if (!permissions) return false;
   return requiredPermissions.some((p) => permissions.includes(p));
 }
@@ -241,7 +273,8 @@ export function hasAllPermissions(
   requiredPermissions: string[],
   role?: string,
 ): boolean {
-  if (role?.toLowerCase() === "superadmin") return true;
+  const normRole = role?.toLowerCase();
+  if (normRole === "superadmin" || normRole === "founder") return true;
   if (!permissions) return false;
   return requiredPermissions.every((p) => permissions.includes(p));
 }

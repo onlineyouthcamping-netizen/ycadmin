@@ -5882,6 +5882,7 @@ useEffect(() => {
     { id: "activities",  label: "Activities" },
     { id: "operations",  label: "Operations", badge: computedTasks.filter((t) => t.status !== "COMPLETED").length || 0 },
     { id: "finance",     label: "Finance",    badge: computedPayments.filter((p) => p.pending > 0).length || 0 },
+    { id: "stationpayments", label: "Station Payments" },
     { id: "documents",   label: "Documents" },
   ];
 
