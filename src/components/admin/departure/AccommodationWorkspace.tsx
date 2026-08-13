@@ -947,10 +947,17 @@ function DayDetailDrawer({
                   {booking.confirmed || "UNCONFIRMED"}
                 </span>
               </div>
-              {booking.location && (
+              {(row.destination || booking.location) && (
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                   <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                  {booking.location}
+                  <span>{row.destination || booking.location}</span>
+                  {booking.location &&
+                    row.destination &&
+                    normalizeDestinationName(booking.location) !== normalizeDestinationName(row.destination) && (
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        (Property in {booking.location})
+                      </span>
+                    )}
                 </div>
               )}
               <div className="grid grid-cols-3 gap-2 pt-1">
