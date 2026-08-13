@@ -644,7 +644,8 @@ export function AccommodationDetailPage({
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [roomForm, setRoomForm] = useState({
     name: "",
-    cap: "2",
+    totalRooms: "8",
+    cap: "4",
     doubleRate: "1200",
     tripleRate: "900",
     quadRate: "750",
@@ -813,13 +814,13 @@ export function AccommodationDetailPage({
     const dRate = parseFloat(roomForm.doubleRate) || 0;
     const tRate = parseFloat(roomForm.tripleRate) || 0;
     const qRate = parseFloat(roomForm.quadRate) || 0;
-
-    // Auto-sync room capacity to the highest sharing tariff entered
-    const derivedCap = qRate > 0 ? 4 : tRate > 0 ? 3 : 2;
+    const userCap = parseInt(roomForm.cap, 10) || (qRate > 0 ? 4 : tRate > 0 ? 3 : 2);
+    const totalRoomsCount = parseInt(roomForm.totalRooms, 10) || 1;
 
     const roomData = {
       name: roomForm.name.trim(),
-      cap: derivedCap,
+      totalRooms: totalRoomsCount,
+      cap: userCap,
       doubleRate: dRate,
       tripleRate: tRate,
       quadRate: qRate,
@@ -1927,12 +1928,11 @@ export function AccommodationDetailPage({
                     setEditingRoom(null);
                     setRoomForm({
                       name: "",
-                      cap: "2",
+                      totalRooms: "8",
+                      cap: "4",
                       doubleRate: "1200",
                       tripleRate: "900",
                       quadRate: "750",
-                      singleRate: "1800",
-                      extraBedRate: "500",
                     });
                     setRoomModalOpen(true);
                   }}
@@ -1949,7 +1949,7 @@ export function AccommodationDetailPage({
                     No Room Categories Added Yet
                   </p>
                   <p className="text-[11px] text-slate-500">
-                    Click "Add Room Category" above to configure per person double, triple, and quad sharing tariffs.
+                    Click "Add Room Category" above to configure room inventory, capacity, and per-person tariffs.
                   </p>
                 </div>
               ) : (
@@ -1964,9 +1964,14 @@ export function AccommodationDetailPage({
                           <span className="font-extrabold text-slate-900 text-sm block">
                             {r.name}
                           </span>
-                          <span className="text-[10px] font-bold text-slate-400">
-                            Capacity: {r.cap || 2} Persons
-                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-500 mt-1">
+                            <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                              📦 {r.totalRooms || 1} Rooms Total
+                            </span>
+                            <span className="bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-blue-700">
+                              👥 {r.cap || 4} Persons Cap
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-1">
                           <button
@@ -1974,7 +1979,8 @@ export function AccommodationDetailPage({
                               setEditingRoom(r);
                               setRoomForm({
                                 name: r.name,
-                                cap: (r.cap || 2).toString(),
+                                totalRooms: (r.totalRooms || 1).toString(),
+                                cap: (r.cap || 4).toString(),
                                 doubleRate: (r.doubleRate || r.base || 1200).toString(),
                                 tripleRate: (r.tripleRate || 900).toString(),
                                 quadRate: (r.quadRate || 750).toString(),
@@ -3161,8 +3167,37 @@ export function AccommodationDetailPage({
                 onChange={(e) =>
                   setRoomForm({ ...roomForm, name: e.target.value })
                 }
-                placeholder="e.g. Deluxe Mountain View Room"
+                placeholder="e.g. Deluxe Mountain View Room / Family Room (6-Bedded)"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Total Rooms Inventory
+                </label>
+                <Input
+                  type="number"
+                  value={roomForm.totalRooms}
+                  onChange={(e) =>
+                    setRoomForm({ ...roomForm, totalRooms: e.target.value })
+                  }
+                  placeholder="e.g. 8"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Max Room Capacity (Persons)
+                </label>
+                <Input
+                  type="number"
+                  value={roomForm.cap}
+                  onChange={(e) =>
+                    setRoomForm({ ...roomForm, cap: e.target.value })
+                  }
+                  placeholder="e.g. 4 (or 6 for Family)"
+                />
+              </div>
             </div>
             <div className="pt-2 border-t border-slate-100 space-y-2.5">
               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
