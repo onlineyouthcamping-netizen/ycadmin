@@ -2102,44 +2102,50 @@ useEffect(() => {
       const masterItems: any[] = [];
 
       vendors.forEach((v: any) => {
-        const vName = v.name || 'Vendor';
-        const rates = v.transportRates || v.directoryVendorTransportRates || [];
+        const vName = (v.name || 'Vendor').trim();
+        // Ignore dummy or test vendors with names like 'mm', 'oo', 'qqq' or short junk names
+        if (
+          !vName ||
+          vName.length < 3 ||
+          ["mm", "oo", "qqq", "test", "demo"].includes(vName.toLowerCase())
+        ) {
+          return;
+        }
 
-        if (rates.length > 0) {
+        const rates =
+          v.transportRates ||
+          v.directoryVendorTransportRates ||
+          v.vehicleMaster ||
+          v.transportFleet ||
+          [];
+
+        if (Array.isArray(rates) && rates.length > 0) {
           rates.forEach((r: any) => {
+            const vType = r.vehicleType || r.model || "Tempo Traveller";
+            const cap = r.seatCapacity || r.capacity || r.sellableSeats || 17;
+            const cost = r.amount || r.rate || r.totalAmount || 0;
             masterItems.push({
-              id: `dir-${v.id}-${r.id || r.vehicleType}`,
+              id: `dir-${v.id}-${r.id || vType}`,
               vendorId: v.id,
               vendorName: vName,
-              vehicleType: r.vehicleType || "17 Seater Tempo",
-              capacity: r.seatCapacity || r.capacity || 17,
-              cost: r.amount || r.rate || 0,
+              vehicleType: vType,
+              capacity: cap,
+              cost: cost,
               driverName: v.contactPerson || vName,
-              label: `${r.vehicleType || 'Vehicle'} – ${vName} (${r.seatCapacity || 17} Seats)${r.amount ? ` – ₹${r.amount}` : ''}`,
+              label: `${vType} – ${vName} (${cap} Seats)${cost ? ` – ₹${cost}` : ""}`,
             });
           });
         } else {
-          // Standard fleet options for this vendor
-          const defaultFleetTypes = [
-            { type: '17 Seater Tempo Traveller', cap: 17, cost: 35000 },
-            { type: '12 Seater Tempo Traveller', cap: 12, cost: 28000 },
-            { type: '14 Seater Tempo Traveller', cap: 14, cost: 30000 },
-            { type: 'Toyota Innova Crysta', cap: 7, cost: 22000 },
-            { type: 'Maruti Suzuki Ertiga', cap: 6, cost: 18000 },
-            { type: 'Swift Dzire', cap: 4, cost: 14000 },
-          ];
-
-          defaultFleetTypes.forEach((f) => {
-            masterItems.push({
-              id: `dir-${v.id}-${f.type.replace(/\s+/g, '-').toLowerCase()}`,
-              vendorId: v.id,
-              vendorName: vName,
-              vehicleType: f.type,
-              capacity: f.cap,
-              cost: f.cost,
-              driverName: v.contactPerson || `${vName} Driver`,
-              label: `${f.type} – ${vName} (${f.cap} Seats)`,
-            });
+          // Single clean entry for configured vendor instead of 6 fake duplicate entries
+          masterItems.push({
+            id: `dir-${v.id}`,
+            vendorId: v.id,
+            vendorName: vName,
+            vehicleType: "17 Seater Tempo",
+            capacity: 17,
+            cost: 0,
+            driverName: v.contactPerson || vName,
+            label: `${vName} (Transport Vendor)`,
           });
         }
       });
