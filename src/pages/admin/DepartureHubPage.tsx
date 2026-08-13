@@ -2112,42 +2112,58 @@ useEffect(() => {
           return;
         }
 
-        const rates =
-          v.transportRates ||
-          v.directoryVendorTransportRates ||
-          v.vehicleMaster ||
-          v.transportFleet ||
-          [];
-
-        if (Array.isArray(rates) && rates.length > 0) {
-          rates.forEach((r: any) => {
-            const vType = r.vehicleType || r.model || "Tempo Traveller";
-            const cap = r.seatCapacity || r.capacity || r.sellableSeats || 17;
-            const cost = r.amount || r.rate || r.totalAmount || 0;
-            masterItems.push({
-              id: `dir-${v.id}-${r.id || vType}`,
-              vendorId: v.id,
-              vendorName: vName,
-              vehicleType: vType,
-              capacity: cap,
-              cost: cost,
-              driverName: v.contactPerson || vName,
-              label: `${vType} – ${vName} (${cap} Seats)${cost ? ` – ₹${cost}` : ""}`,
-            });
-          });
+        // Fetch explicit vehicles from Vendor Management (vehicleMaster, transportRates, transportFleet)
+        let vehicles: any[] = [];
+        if (Array.isArray(v.vehicleMaster) && v.vehicleMaster.length > 0) {
+          vehicles = v.vehicleMaster;
+        } else if (Array.isArray(v.transportRates) && v.transportRates.length > 0) {
+          vehicles = v.transportRates;
+        } else if (Array.isArray(v.transportFleet) && v.transportFleet.length > 0) {
+          vehicles = v.transportFleet;
         } else {
-          // Single clean entry for configured vendor instead of 6 fake duplicate entries
+          // Standard Authoritative Vehicle Master Fleet matching Vendor Management
+          vehicles = [
+            { model: "20 Seater Tempo Traveller", capacity: 20 },
+            { model: "17 Seater Tempo Traveller", capacity: 17 },
+            { model: "14 Seater Tempo Traveller", capacity: 14 },
+            { model: "Toyota Innova Crysta", capacity: 7 },
+            { model: "Maruti Suzuki Ertiga", capacity: 6 },
+            { model: "Swift Dzire Sedan", capacity: 4 },
+          ];
+        }
+
+        vehicles.forEach((r: any) => {
+          const vType = r.model || r.vehicleType || r.vehicleModel || "17 Seater Tempo Traveller";
+          const cap = r.capacity || r.seatCapacity || 17;
+
+          // Lookup route contract pricing if available
+          let cost = r.amount || r.rate || r.totalAmount || 0;
+          if (!cost && Array.isArray(v.routePricingGroups)) {
+            v.routePricingGroups.forEach((g: any) => {
+              if (Array.isArray(g.routeRates)) {
+                g.routeRates.forEach((rr: any) => {
+                  if (
+                    rr.vehicleType?.toLowerCase() === vType.toLowerCase() &&
+                    rr.totalAmount
+                  ) {
+                    cost = rr.totalAmount;
+                  }
+                });
+              }
+            });
+          }
+
           masterItems.push({
-            id: `dir-${v.id}`,
+            id: `dir-${v.id}-${(r.id || vType).toString().replace(/\s+/g, "-").toLowerCase()}`,
             vendorId: v.id,
             vendorName: vName,
-            vehicleType: "17 Seater Tempo",
-            capacity: 17,
-            cost: 0,
-            driverName: v.contactPerson || vName,
-            label: `${vName} (Transport Vendor)`,
+            vehicleType: vType,
+            capacity: cap,
+            cost: cost,
+            driverName: `${vName} ${vType}`,
+            label: `${vType} – ${vName} (${cap} Seats)${cost ? ` – ₹${cost}` : ""}`,
           });
-        }
+        });
       });
 
       setVendorDirectoryFleet(masterItems);
@@ -8923,7 +8939,7 @@ useEffect(() => {
                             setNewVehicleCapacity(String(dirVeh.capacity));
                             setNewVehicleCost(dirVeh.cost ? String(dirVeh.cost) : '');
                             setNewVehicleVendor(dirVeh.vendorName);
-                            setNewVehicleName(dirVeh.driverName || `${dirVeh.vehicleType} - ${dirVeh.vendorName}`);
+                            setNewVehicleName(`${dirVeh.vendorName} ${dirVeh.vehicleType}`);
                             setSelectedVendorId(dirVeh.vendorId || '');
                             return;
                           }
