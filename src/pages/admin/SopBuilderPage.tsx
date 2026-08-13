@@ -154,11 +154,16 @@ export default function SopBuilderPage() {
 
   const handleOpenAddTask = () => {
     setEditingTask(null);
+    const curStageObj = stagesList.find((s) => s.id === activeStage);
+    const initialOffset =
+      curStageObj && curStageObj.offsetDays !== null
+        ? curStageObj.offsetDays
+        : -7;
     setTaskForm({
       taskName: "",
       description: "",
       stage: activeStage !== "ALL" ? activeStage : "PRE_TRIP_7D",
-      relativeOffset: -7,
+      relativeOffset: initialOffset,
       priority: "MEDIUM",
       isRequired: true,
       defaultAssignee: "Hemal Patel",
@@ -339,12 +344,35 @@ export default function SopBuilderPage() {
   const normalizeStageStr = (str: string) =>
     (str || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-  const filteredTasks = (activeVersion?.taskTemplates || []).filter((t) => {
-    if (activeStage === "ALL") return true;
-    return (
-      t.stage === activeStage ||
-      normalizeStageStr(t.stage) === normalizeStageStr(activeStage)
+  const isTaskInStage = (t: SopTaskTemplate, s: any) => {
+    if (s.id === "ALL") return true;
+    // Exact ID match or normalized ID match
+    if (
+      t.stage === s.id ||
+      normalizeStageStr(t.stage) === normalizeStageStr(s.id)
+    ) {
+      return true;
+    }
+
+    if (s.isCustom) {
+      return s.offsetDays !== null && t.relativeOffset === s.offsetDays;
+    }
+
+    // Standard stage: match offset if no custom stage captures this offset
+    const isCapturedByCustom = customStages.some(
+      (cs) => cs.offsetDays !== null && cs.offsetDays === t.relativeOffset,
     );
+    if (!isCapturedByCustom && s.offsetDays !== null) {
+      return t.relativeOffset === s.offsetDays;
+    }
+
+    return false;
+  };
+
+  const filteredTasks = (activeVersion?.taskTemplates || []).filter((t) => {
+    const curStageObj = visibleStages.find((s) => s.id === activeStage);
+    if (!curStageObj) return true;
+    return isTaskInStage(t, curStageObj);
   });
 
   if (loading) {
@@ -457,11 +485,8 @@ export default function SopBuilderPage() {
           const count =
             s.id === "ALL"
               ? activeVersion.taskTemplates.length
-              : activeVersion.taskTemplates.filter(
-                  (t) =>
-                    t.stage === s.id ||
-                    normalizeStageStr(t.stage) === normalizeStageStr(s.id),
-                ).length;
+              : activeVersion.taskTemplates.filter((t) => isTaskInStage(t, s))
+                  .length;
 
           return (
             <div key={s.id} className="relative group flex items-center">
@@ -574,6 +599,16 @@ export default function SopBuilderPage() {
                     ? `T${t.relativeOffset} Days`
                     : `T+${t.relativeOffset} Days`;
 
+                const matchingStageObj = stagesList.find(
+                  (s) =>
+                    s.id !== "ALL" &&
+                    (s.id === t.stage ||
+                      (s.offsetDays !== null && s.offsetDays === t.relativeOffset)),
+                );
+                const displayStageLabel = matchingStageObj
+                  ? matchingStageObj.label
+                  : t.stage.replace(/_/g, " ");
+
                 return (
                   <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
@@ -585,7 +620,7 @@ export default function SopBuilderPage() {
                     </td>
                     <td className="p-3 border-r border-slate-100">
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
-                        {t.stage.replace(/_/g, " ")}
+                        {displayStageLabel}
                       </span>
                     </td>
                     <td className="p-3 border-r border-slate-100 text-center">
@@ -675,7 +710,18 @@ export default function SopBuilderPage() {
                 <label className="text-xs font-bold text-slate-700 block mb-1">Stage</label>
                 <select
                   value={taskForm.stage}
-                  onChange={(e) => setTaskForm({ ...taskForm, stage: e.target.value })}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const stgObj = stagesList.find((s) => s.id === selectedId);
+                    setTaskForm({
+                      ...taskForm,
+                      stage: selectedId,
+                      relativeOffset:
+                        stgObj && stgObj.offsetDays !== null
+                          ? stgObj.offsetDays
+                          : taskForm.relativeOffset,
+                    });
+                  }}
                   className="w-full h-9 text-xs border border-slate-200 rounded-lg px-2 bg-white text-slate-800"
                 >
                   {stagesList.filter((s) => s.id !== "ALL").map((s) => (
