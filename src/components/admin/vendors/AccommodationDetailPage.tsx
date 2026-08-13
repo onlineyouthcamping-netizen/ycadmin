@@ -526,17 +526,38 @@ export function AccommodationDetailPage({
   );
 
   const [rooms, setRooms] = useState<any[]>(() => {
-    if (vendor.vendorRooms && vendor.vendorRooms.length > 0) {
-      return vendor.vendorRooms;
+    if (Array.isArray(vendor.vendorRooms) && vendor.vendorRooms.length > 0) {
+      return vendor.vendorRooms.map((r: any) => {
+        let extra: any = {};
+        try {
+          if (r.notes) extra = JSON.parse(r.notes);
+        } catch {}
+        return {
+          id: r.id,
+          name: r.roomName || r.name || "Standard Room",
+          totalRooms: extra.totalRooms || r.totalRooms || 1,
+          cap: r.capacity || extra.cap || 4,
+          doubleRate: extra.doubleRate ?? r.baseRate ?? r.doubleRate ?? 0,
+          tripleRate: extra.tripleRate ?? r.extraMattressRate ?? r.tripleRate ?? 0,
+          quadRate: extra.quadRate ?? r.quadRate ?? 0,
+          base: extra.doubleRate ?? r.baseRate ?? 0,
+        };
+      });
     }
-    return [];
+    return vendor.rooms || [];
   });
 
   const [seasons, setSeasons] = useState<any[]>(() => {
-    if (vendor.seasonalRates && vendor.seasonalRates.length > 0) {
-      return vendor.seasonalRates;
+    if (Array.isArray(vendor.seasonalRates) && vendor.seasonalRates.length > 0) {
+      return vendor.seasonalRates.map((s: any) => ({
+        id: s.id,
+        name: s.seasonName || s.name,
+        twin: s.twinRate ?? s.twin ?? 0,
+        triple: s.tripleRate ?? s.triple ?? 0,
+        quad: s.quadRate ?? s.quad ?? 0,
+      }));
     }
-    return [];
+    return vendor.seasons || [];
   });
   const [contracts, setContracts] = useState<any[]>(vendor.contracts || []);
   const [gallery, setGallery] = useState<any[]>(vendor.photos || []);
