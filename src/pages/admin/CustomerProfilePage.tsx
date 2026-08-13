@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../services/api";
-import { ActivityEvent } from "../../types";
 import { formatDistanceToNow } from "date-fns";
 
 export default function CustomerProfilePage() {

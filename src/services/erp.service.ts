@@ -19,6 +19,7 @@ export interface CompanyDocument {
   type: string;
   uploadedBy: string;
   uploadedDate: string;
+  uploadDate?: string;
   expiryDate: string;
   status: string;
   size: string;

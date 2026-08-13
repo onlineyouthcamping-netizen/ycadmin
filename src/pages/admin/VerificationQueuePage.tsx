@@ -187,8 +187,8 @@ export default function VerificationQueuePage() {
           .getAll({ status: "all", limit: 1000 })
           .catch(() => ({ data: [] })),
       ]);
-      const vItems = verifRes.data || verifRes;
-      const tItems = trainRes.data || trainRes;
+      const vItems: any = verifRes.data || verifRes;
+      const tItems: any[] = trainRes.data || [];
       const bRes = bookingsRes.data || bookingsRes;
       const bookingsList = Array.isArray(bRes)
         ? bRes

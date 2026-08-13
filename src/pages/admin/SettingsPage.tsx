@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 type SettingsTabId = "account" | "security";
 
-const SETTINGS_TABS = [
+export const SETTINGS_TABS = [
   { id: "account", label: "My Profile", icon: User },
   { id: "security", label: "Security & Password", icon: Shield },
 ];

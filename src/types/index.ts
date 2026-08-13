@@ -631,6 +631,7 @@ export interface Quotation {
   _id?: string;
   slug: string;
   status: "Draft" | "Published" | "Sent" | "Cancelled";
+  shareToken?: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;

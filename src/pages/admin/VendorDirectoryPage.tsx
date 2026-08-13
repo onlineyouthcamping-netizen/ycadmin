@@ -1640,7 +1640,7 @@ export default function VendorDirectoryPage() {
               Cancel
             </Button>
             <Button
-              onClick={handleSaveVendor}
+              onClick={() => handleSaveVendor()}
               className="bg-[#F97316] hover:bg-[#E05E00] text-white rounded h-8.5 px-4 cursor-pointer text-xs font-bold"
             >
               Save {vendorForm.type} Vendor

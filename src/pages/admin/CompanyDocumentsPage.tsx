@@ -383,7 +383,7 @@ export default function CompanyDocumentsPage() {
                           {doc.uploadedBy}
                         </td>
                         <td className="py-3.5 text-[11px] font-semibold text-slate-500">
-                          {doc.uploadedDate}
+                          {doc.uploadedDate || doc.uploadDate || "—"}
                         </td>
                         <td className="py-3.5 text-[11px] font-bold text-slate-700">
                           {doc.expiryDate !== "—" ? (
