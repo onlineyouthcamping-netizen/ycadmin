@@ -310,10 +310,11 @@ function AdminSidebar() {
                 if (!isFounder) return false;
               }
 
-              const isSuperAdmin = role === "superadmin";
+              const isSuperAdmin = role === "superadmin" || role === "founder";
               if (isSuperAdmin) return true;
 
-              // Determine effective permissions (union of token permissions, and custom permissions)
+              // Determine effective permissions (union of default role permissions, token permissions, and custom permissions)
+              const rolePerms = ROLE_PERMISSIONS[role] || [];
               const customPerms = Array.isArray(admin.customPermissions)
                 ? admin.customPermissions
                 : [];
@@ -321,7 +322,7 @@ function AdminSidebar() {
                 ? (admin as any).permissions
                 : [];
               const effectivePerms = Array.from(
-                new Set([...customPerms, ...tokenPerms]),
+                new Set([...rolePerms, ...customPerms, ...tokenPerms]),
               );
 
               if (urlPath === "/admin/operations") {
@@ -345,8 +346,8 @@ function AdminSidebar() {
                 "/admin/booking-forms": ["bookings.create", "bookings.view"],
                 "/admin/bookings": ["bookings.view"],
                 "/admin/operations": ["operations.view", "ops.view"],
-                "/admin/vendors": ["vendors.view", "ops.view"],
-                "/admin/company-documents": ["company_documents.view"],
+                "/admin/vendors": ["vendors.view", "vendors.manage", "ops.view"],
+                "/admin/company-documents": ["company_documents.view", "operations.view", "ops.view"],
                 "/admin/approvals-hub": [
                   "bookings.verify",
                   "tickets.approve",

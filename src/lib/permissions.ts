@@ -247,14 +247,25 @@ export function hasPermission(
   const normRole = role?.toLowerCase();
   if (normRole === "superadmin" || normRole === "founder") return true;
 
-  if (role) {
-    const normalizedRole = role.toLowerCase();
-    const roleSet = ROLE_PERMISSIONS_SETS[normalizedRole];
-    if (roleSet && roleSet.has(required)) return true;
+  // Build combined permissions set from role defaults + custom permissions
+  const roleDefaults = normRole ? (ROLE_PERMISSIONS[normRole] || []) : [];
+  const customPerms = Array.isArray(permissionsOrRole) ? permissionsOrRole : [];
+  const combined = new Set([...roleDefaults, ...customPerms]);
+
+  if (combined.has(required)) return true;
+
+  // Check common permission aliases
+  if (required === "ops.view" || required === "operations.view") {
+    return combined.has("ops.view") || combined.has("operations.view") || combined.has("trips.view");
+  }
+  if (required.startsWith("vendors.")) {
+    return combined.has("vendors.view") || combined.has("vendors.manage") || combined.has("operations.view") || combined.has("ops.view");
+  }
+  if (required.startsWith("trips.")) {
+    return combined.has("trips.view") || combined.has("trips.create") || combined.has("trips.edit") || combined.has("operations.view");
   }
 
-  if (!permissionsOrRole) return false;
-  return permissionsOrRole.includes(required);
+  return false;
 }
 
 export function hasAnyPermission(
