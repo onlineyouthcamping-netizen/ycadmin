@@ -104,35 +104,44 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
   const city = (destinationCity || v.city || v.location || hotelOrVendor?.city || "").toLowerCase();
   const category = (v.category || v.accommodationType || hotelOrVendor?.category || "").toLowerCase();
 
-  // 0. Extract rates from vendorRooms or rooms list if present
-  const roomsList = Array.isArray(v.vendorRooms)
-    ? v.vendorRooms
-    : Array.isArray(v.rooms)
-      ? v.rooms
-      : [];
+  // 0. Extract rates from roomRates, vendorRooms, or rooms list if present
+  const roomRatesList = Array.isArray(v.roomRates)
+    ? v.roomRates
+    : Array.isArray(v.vendorRooms)
+      ? v.vendorRooms
+      : Array.isArray(v.rooms)
+        ? v.rooms
+        : [];
 
-  if (roomsList.length > 0) {
+  if (roomRatesList.length > 0) {
     let d = 0,
       t = 0,
       q = 0,
       ex = 0;
-    for (const r of roomsList) {
+    for (const r of roomRatesList) {
       let extra: any = {};
       try {
         if (r.notes && typeof r.notes === "string") extra = JSON.parse(r.notes);
         else if (r.notes && typeof r.notes === "object") extra = r.notes;
       } catch {}
 
-      const doubleVal = Number(
-        extra.doubleRate ?? r.doubleRate ?? r.baseRate ?? r.base ?? 0,
-      );
-      const tripleVal = Number(
-        extra.tripleRate ?? r.tripleRate ?? r.extraMattressRate ?? 0,
-      );
+      const type = String(r.sharingType || r.roomType || r.category || "").toUpperCase();
+      const amt = Number(r.amount || extra.doubleRate || r.doubleRate || r.baseRate || r.base || 0);
+
+      if (type.includes("DOUBLE") || type.includes("TWIN") || type.includes("2")) {
+        if (amt > 0 && (!d || amt < d)) d = amt;
+      } else if (type.includes("TRIPLE") || type.includes("3")) {
+        if (amt > 0 && (!t || amt < t)) t = amt;
+      } else if (type.includes("QUAD") || type.includes("4")) {
+        if (amt > 0 && (!q || amt < q)) q = amt;
+      } else if (type.includes("EXTRA") || type.includes("BED") || type.includes("MATTRESS")) {
+        if (amt > 0 && (!ex || amt < ex)) ex = amt;
+      }
+
+      const doubleVal = Number(extra.doubleRate ?? r.doubleRate ?? r.baseRate ?? r.base ?? 0);
+      const tripleVal = Number(extra.tripleRate ?? r.tripleRate ?? r.extraMattressRate ?? 0);
       const quadVal = Number(extra.quadRate ?? r.quadRate ?? 0);
-      const extraBedVal = Number(
-        extra.extraBedRate ?? r.extraMattressRate ?? 0,
-      );
+      const extraBedVal = Number(extra.extraBedRate ?? r.extraMattressRate ?? 0);
 
       if (doubleVal > 0 && (!d || doubleVal < d)) d = doubleVal;
       if (tripleVal > 0 && (!t || tripleVal < t)) t = tripleVal;
@@ -140,12 +149,12 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
       if (extraBedVal > 0 && (!ex || extraBedVal < ex)) ex = extraBedVal;
     }
 
-    if (d > 0) {
+    if (d > 0 || t > 0 || q > 0) {
       return {
-        doubleRate: d,
-        tripleRate: t > 0 ? t : Math.round(d * 0.8),
-        quadRate: q > 0 ? q : Math.round(d * 0.7),
-        extraBedRate: ex > 0 ? ex : Math.round(d * 0.4),
+        doubleRate: d > 0 ? d : 1100,
+        tripleRate: t > 0 ? t : (q > 0 ? q : Math.round((d || 1100) * 0.8)),
+        quadRate: q > 0 ? q : (t > 0 ? t : Math.round((d || 1100) * 0.7)),
+        extraBedRate: ex > 0 ? ex : Math.round((d || 1100) * 0.5),
       };
     }
   }
