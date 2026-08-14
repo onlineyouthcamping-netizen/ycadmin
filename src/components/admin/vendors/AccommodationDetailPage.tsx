@@ -240,8 +240,61 @@ export function AccommodationDetailPage({
   };
 
   useEffect(() => {
+    if (!vendor?.id) return;
+    setVendor(vendor);
     loadVendorVehicles();
-  }, [vendor?.id]);
+
+    // 1. Sync guide rates from prop
+    if (vendor.guideRates) {
+      try {
+        const parsed =
+          typeof vendor.guideRates === "string"
+            ? JSON.parse(vendor.guideRates)
+            : vendor.guideRates;
+        if (Array.isArray(parsed) && parsed.length > 0) setGuideRates(parsed);
+      } catch (e) {}
+    }
+
+    // 2. Sync meal tariffs from prop
+    if (vendor.mealPlans || vendor.mealTariffs) {
+      try {
+        const raw = vendor.mealTariffs || vendor.mealPlans;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed) && parsed.length > 0) setMealTariffs(parsed);
+      } catch (e) {}
+    }
+
+    // 3. Fetch latest live vendor record from server to guarantee persistence
+    api
+      .get(`/vendors/directory/${vendor.id}`)
+      .then((res) => {
+        if (res?.data?.data) {
+          const fresh = res.data.data;
+          setVendor(fresh);
+          if (fresh.guideRates) {
+            try {
+              const parsed =
+                typeof fresh.guideRates === "string"
+                  ? JSON.parse(fresh.guideRates)
+                  : fresh.guideRates;
+              if (Array.isArray(parsed) && parsed.length > 0)
+                setGuideRates(parsed);
+            } catch (e) {}
+          }
+          if (fresh.mealPlans || fresh.mealTariffs) {
+            try {
+              const raw = fresh.mealTariffs || fresh.mealPlans;
+              const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+              if (Array.isArray(parsed) && parsed.length > 0)
+                setMealTariffs(parsed);
+            } catch (e) {}
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch live vendor details:", err);
+      });
+  }, [vendor?.id, vendor?.guideRates, vendor?.mealPlans, vendor?.mealTariffs]);
 
   const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
     if (vendor.transportRates && vendor.transportRates.length > 0) {
