@@ -4406,3 +4406,5 @@ export function AccommodationDetailPage({
     </div>
   );
 }
+
+export default AccommodationDetailPage;
