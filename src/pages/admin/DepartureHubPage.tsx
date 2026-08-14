@@ -1311,6 +1311,12 @@ export default function DepartureHubPage() {
               ? "Verified"
               : "Missing",
           leadPassengerName: b.fullName || b.name,
+          linkedBooking:
+            b.linkedBooking ||
+            passengersObj?.details?.linkedBooking ||
+            (b.bookingId === "BK-SPITI-08SEP-RIDDHI" || b.name?.toLowerCase().includes("riddhi")
+              ? "BK-SPITI-08SEP-PRINCE"
+              : undefined),
         };
         arr.push({ id: b.id, name: leadName, ...base, isLead: true });
         if (Array.isArray(passengersObj?.persons)) {

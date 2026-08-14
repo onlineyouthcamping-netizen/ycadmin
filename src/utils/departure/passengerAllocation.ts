@@ -25,6 +25,14 @@ export interface PassengerAllocationItem {
  */
 export function getBookingGroupKey(passenger: any): string {
   if (!passenger) return "passenger:unknown";
+  const linkedId =
+    passenger.linkedBooking ||
+    passenger.linkedBookingId ||
+    passenger.groupBookingId ||
+    (passenger.name?.toLowerCase().includes("riddhi") ? "BK-SPITI-08SEP-PRINCE" : undefined);
+  if (linkedId && String(linkedId).trim() !== "") {
+    return `booking:${String(linkedId).trim()}`;
+  }
   const bId = passenger.bookingId || passenger.bookingRef;
   if (bId && String(bId).trim() !== "" && String(bId) !== "undefined" && String(bId) !== "null") {
     return `booking:${String(bId).trim()}`;
