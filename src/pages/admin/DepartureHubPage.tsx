@@ -5296,6 +5296,36 @@ useEffect(() => {
     );
     const allocated = new Set<string>();
 
+    const roomsTracked: Array<{
+      roomName: string;
+      members: any[];
+      maxCap: number;
+      gender: string;
+      isCouple: boolean;
+      roomType: string;
+    }> = [];
+
+    const assignToRoom = (p: any, rName: string, maxCap = 2, isCouple = false) => {
+      newAllocs[p.id] = { room: rName };
+      allocated.add(p.id);
+      let r = roomsTracked.find((x) => x.roomName === rName);
+      if (!r) {
+        r = {
+          roomName: rName,
+          members: [],
+          maxCap,
+          gender: p.gender || "Male",
+          isCouple,
+          roomType: p.roomType || (maxCap === 4 ? "Quad" : maxCap === 3 ? "Triple" : "Double"),
+        };
+        roomsTracked.push(r);
+      }
+      r.members.push(p);
+      if (p.gender === "Female" && r.members.some((m: any) => m.gender === "Male")) {
+        r.isCouple = true;
+      }
+    };
+
     // Step 1: Identify couples/groups — travelers sharing the same bookingId
     const bookingGroups = groupPassengersByBooking(activeTravelers);
 
@@ -5308,18 +5338,22 @@ useEffect(() => {
           while (list.length >= 2) {
             let chunkSize = 2;
             const pref = list[0]?.roomType || "";
+            let cap = 2;
             if (pref.includes("Quad") || pref.includes("Family") || list.length === 4) {
               chunkSize = Math.min(4, list.length);
+              cap = 4;
             } else if (pref.includes("Triple") || list.length === 3) {
               chunkSize = Math.min(3, list.length);
+              cap = 3;
             } else {
               chunkSize = Math.min(2, list.length);
+              cap = 2;
             }
 
+            const currentRoomName = `Room ${roomNum}`;
             const chunk = list.slice(0, chunkSize);
             chunk.forEach((p) => {
-              newAllocs[p.id] = { room: `Room ${roomNum}` };
-              allocated.add(p.id);
+              assignToRoom(p, currentRoomName, cap);
             });
             roomNum++;
             list = list.slice(chunkSize);
@@ -5330,54 +5364,36 @@ useEffect(() => {
 
     const capacitySize = parseInt(sharingPref) || 3;
 
-    // Helper Phase 1: Explicit Preferences (Respects Gender strictly)
-    const allocatePass1 = (travelersList: any[]) => {
-      if (travelersList.length === 0) return;
-      const preferences = ["Single", "Double", "Triple", "Quad", "Family", "Dorm"];
-      const capMap: Record<string, number> = { Single: 1, Double: 2, Triple: 3, Quad: 4, Family: 4, Dorm: 6 };
-      
-      preferences.forEach(pref => {
-        const list = travelersList.filter(p => p.roomType === pref && !allocated.has(p.id));
-        const cap = capMap[pref];
-        let index = 0;
-        while (index + cap <= list.length) {
-          const chunk = list.slice(index, index + cap);
-          chunk.forEach((p) => {
-            newAllocs[p.id] = { room: `Room ${roomNum}` };
-            allocated.add(p.id);
-          });
-          roomNum++;
-          index += cap;
+    // Helper: Allocate unassigned travelers into available open beds of matching gender rooms before creating new rooms!
+    const fillOrAllocatePool = (travelersList: any[]) => {
+      travelersList.forEach((p) => {
+        if (allocated.has(p.id)) return;
+        const pGender = (p.gender || "").toLowerCase();
+        
+        // 1. Try finding an existing non-couple room of the same gender with available beds
+        const availableRoom = roomsTracked.find(
+          (r) =>
+            !r.isCouple &&
+            (r.gender || "").toLowerCase() === pGender &&
+            r.members.length < r.maxCap
+        );
+
+        if (availableRoom) {
+          assignToRoom(p, availableRoom.roomName, availableRoom.maxCap, false);
         }
       });
-    };
 
-    // Phase 1: Execute Explicit Preferences
-    if (sameGenderEnforced) {
-      const remainingMales = activeTravelers.filter(p => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.id));
-      allocatePass1(remainingMales);
-      
-      const remainingFemales = activeTravelers.filter(p => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.id));
-      allocatePass1(remainingFemales);
-      
-      const remainingUnknowns = activeTravelers.filter(p => !allocated.has(p.id) && (p.gender || "").toLowerCase() !== "male" && (p.gender || "").toLowerCase() !== "female");
-      allocatePass1(remainingUnknowns);
-    } else {
-      const remainingAll = activeTravelers.filter(p => !allocated.has(p.id));
-      allocatePass1(remainingAll);
-    }
-
-    // Phase 2: Smart Fallback (Allocates remaining unassigned travelers into rooms strictly per gender)
-    const allocatePoolByGender = (genderPool: any[]) => {
-      let pool = [...genderPool];
+      // 2. Any remaining unassigned travelers get grouped into new rooms by gender
+      const remaining = travelersList.filter((p) => !allocated.has(p.id));
+      let pool = [...remaining];
       while (pool.length > 0) {
         let chunkSize = Math.min(capacitySize, pool.length);
         if (chunkSize === 0) break;
         const chunk = pool.splice(0, chunkSize);
+        const currentRoomName = `Room ${roomNum}`;
         chunk.forEach((p) => {
           if (p) {
-            newAllocs[p.id] = { room: `Room ${roomNum}` };
-            allocated.add(p.id);
+            assignToRoom(p, currentRoomName, capacitySize, false);
           }
         });
         roomNum++;
@@ -5388,20 +5404,20 @@ useEffect(() => {
       const leftoverFemales = activeTravelers.filter(
         (p) => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.id),
       );
-      allocatePoolByGender(leftoverFemales);
+      fillOrAllocatePool(leftoverFemales);
 
       const leftoverMales = activeTravelers.filter(
         (p) => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.id),
       );
-      allocatePoolByGender(leftoverMales);
+      fillOrAllocatePool(leftoverMales);
 
       const leftoverOthers = activeTravelers.filter(
         (p) => !allocated.has(p.id),
       );
-      allocatePoolByGender(leftoverOthers);
+      fillOrAllocatePool(leftoverOthers);
     } else {
       const remainingAll = activeTravelers.filter((p) => !allocated.has(p.id));
-      allocatePoolByGender(remainingAll);
+      fillOrAllocatePool(remainingAll);
     }
 
     // ── VEHICLE & TEMPO AUTO-ALLOCATION PASS ──
