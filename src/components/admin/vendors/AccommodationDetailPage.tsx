@@ -244,14 +244,16 @@ export function AccommodationDetailPage({
     setVendor(vendor);
     loadVendorVehicles();
 
-    // 1. Sync guide rates from prop
-    if (vendor.guideRates) {
+    // 1. Sync guide & activity rates from prop
+    if (vendor.guideRates || vendor.activityRates) {
       try {
+        const raw = vendor.activityRates || vendor.guideRates;
         const parsed =
-          typeof vendor.guideRates === "string"
-            ? JSON.parse(vendor.guideRates)
-            : vendor.guideRates;
-        if (Array.isArray(parsed) && parsed.length > 0) setGuideRates(parsed);
+          typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setGuideRates(parsed);
+          setActivityRates(parsed);
+        }
       } catch (e) {}
     }
 
@@ -264,21 +266,61 @@ export function AccommodationDetailPage({
       } catch (e) {}
     }
 
-    // 3. Fetch latest live vendor record from server to guarantee persistence
+    // 3. Sync contacts from prop
+    setContacts(deriveContactsFromVendor(vendor));
+
+    // 4. Sync overviewForm from prop
+    setOverviewForm({
+      name: vendor.name || "",
+      accommodationType: vendor.accommodationType || vendor.type || "HOTEL",
+      starRating: vendor.starRating || 3,
+      checkInTime: vendor.checkInTime || "12:00 PM",
+      checkOutTime: vendor.checkOutTime || "11:00 AM",
+      mealPlans: vendor.mealPlans || "EP, CP, MAP, AP",
+      amenities: vendor.amenities || "",
+      fleetTypes: vendor.roomTypes || "",
+      operatingCity: vendor.city || vendor.location || "",
+      tollParkingPolicy: "Included in base tariff",
+      routesCovered: vendor.notes || "",
+      gstin: vendor.gstin || "",
+      panNumber: vendor.panNumber || "",
+      bankName: vendor.bankName || "",
+      accountNumber: vendor.accountNumber || "",
+      ifscCode: vendor.ifscCode || "",
+      upiId: vendor.upiId || "",
+      paymentTerms: vendor.paymentTerms || "30 Days Credit",
+      creditDays: vendor.creditDays || 30,
+      guideRole: vendor.guideRole || "Lead Trek Leader & High Altitude Specialist",
+      languages: vendor.languages || "",
+      certifications: vendor.certifications || "",
+      experience: vendor.experience || "",
+      cuisines: vendor.cuisines || "",
+      seatingCapacity: vendor.seatingCapacity || "",
+      operatingHours: vendor.operatingHours || "",
+      activityTypes: vendor.activityTypes || "",
+      financialDetails:
+        vendor.financialDetails ||
+        (vendor.gstin || vendor.bankName
+          ? `GSTIN: ${vendor.gstin || ""}\nPAN: ${vendor.panNumber || ""}\nBank: ${vendor.bankName || ""}\nA/C: ${vendor.accountNumber || ""}\nIFSC: ${vendor.ifscCode || ""}\nPayment Terms: ${vendor.paymentTerms || ""}`.trim()
+          : ""),
+    });
+
+    // 5. Fetch latest live vendor record from server to guarantee persistence
     api
       .get(`/vendors/directory/${vendor.id}`)
       .then((res) => {
         if (res?.data?.data) {
           const fresh = res.data.data;
           setVendor(fresh);
-          if (fresh.guideRates) {
+          if (fresh.guideRates || fresh.activityRates) {
             try {
+              const raw = fresh.activityRates || fresh.guideRates;
               const parsed =
-                typeof fresh.guideRates === "string"
-                  ? JSON.parse(fresh.guideRates)
-                  : fresh.guideRates;
-              if (Array.isArray(parsed) && parsed.length > 0)
+                typeof raw === "string" ? JSON.parse(raw) : raw;
+              if (Array.isArray(parsed) && parsed.length > 0) {
                 setGuideRates(parsed);
+                setActivityRates(parsed);
+              }
             } catch (e) {}
           }
           if (fresh.mealPlans || fresh.mealTariffs) {
@@ -289,12 +331,47 @@ export function AccommodationDetailPage({
                 setMealTariffs(parsed);
             } catch (e) {}
           }
+          setContacts(deriveContactsFromVendor(fresh));
+          setOverviewForm({
+            name: fresh.name || "",
+            accommodationType: fresh.accommodationType || fresh.type || "HOTEL",
+            starRating: fresh.starRating || 3,
+            checkInTime: fresh.checkInTime || "12:00 PM",
+            checkOutTime: fresh.checkOutTime || "11:00 AM",
+            mealPlans: fresh.mealPlans || "EP, CP, MAP, AP",
+            amenities: fresh.amenities || "",
+            fleetTypes: fresh.roomTypes || "",
+            operatingCity: fresh.city || fresh.location || "",
+            tollParkingPolicy: "Included in base tariff",
+            routesCovered: fresh.notes || "",
+            gstin: fresh.gstin || "",
+            panNumber: fresh.panNumber || "",
+            bankName: fresh.bankName || "",
+            accountNumber: fresh.accountNumber || "",
+            ifscCode: fresh.ifscCode || "",
+            upiId: fresh.upiId || "",
+            paymentTerms: fresh.paymentTerms || "30 Days Credit",
+            creditDays: fresh.creditDays || 30,
+            guideRole: fresh.guideRole || "Lead Trek Leader & High Altitude Specialist",
+            languages: fresh.languages || "",
+            certifications: fresh.certifications || "",
+            experience: fresh.experience || "",
+            cuisines: fresh.cuisines || "",
+            seatingCapacity: fresh.seatingCapacity || "",
+            operatingHours: fresh.operatingHours || "",
+            activityTypes: fresh.activityTypes || "",
+            financialDetails:
+              fresh.financialDetails ||
+              (fresh.gstin || fresh.bankName
+                ? `GSTIN: ${fresh.gstin || ""}\nPAN: ${fresh.panNumber || ""}\nBank: ${fresh.bankName || ""}\nA/C: ${fresh.accountNumber || ""}\nIFSC: ${fresh.ifscCode || ""}\nPayment Terms: ${fresh.paymentTerms || ""}`.trim()
+                : ""),
+          });
         }
       })
       .catch((err) => {
         console.warn("Could not fetch live vendor details:", err);
       });
-  }, [vendor?.id, vendor?.guideRates, vendor?.mealPlans, vendor?.mealTariffs]);
+  }, [vendor?.id, vendor?.guideRates, vendor?.mealPlans, vendor?.mealTariffs, vendor?.vendorContacts]);
 
   const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
     if (vendor.transportRates && vendor.transportRates.length > 0) {
@@ -602,6 +679,147 @@ export function AccommodationDetailPage({
     }
   };
 
+  // State for Activity Rates & Tariffs (Adventure / Activities)
+  const defaultActivityRates = [
+    {
+      id: "act-1",
+      name: "Tandem Paragliding High Fly",
+      category: "PARAGLIDING",
+      perPaxRate: 2500,
+      inclusions: "Includes GoPro 4K Video Recording & Pilot Fee",
+    },
+    {
+      id: "act-2",
+      name: "12 KM White Water River Rafting",
+      category: "RAFTING",
+      perPaxRate: 1200,
+      inclusions: "Includes Safety Gear, Lifejacket & Helmet",
+    },
+  ];
+
+  const [activityRates, setActivityRates] = useState<any[]>(() => {
+    let initial = vendor?.activityRates || vendor?.guideRates;
+    if (typeof initial === "string") {
+      try {
+        const parsed = JSON.parse(initial);
+        if (Array.isArray(parsed) && parsed.length > 0) initial = parsed;
+      } catch {}
+    }
+    if (Array.isArray(initial) && initial.length > 0) {
+      return initial;
+    }
+    return defaultActivityRates;
+  });
+
+  const [activityRateModalOpen, setActivityRateModalOpen] = useState(false);
+  const [editingActivityRate, setEditingActivityRate] = useState<any>(null);
+  const [activityRateForm, setActivityRateForm] = useState({
+    name: "Tandem Paragliding High Fly",
+    category: "PARAGLIDING",
+    perPaxRate: "2500",
+    inclusions: "Includes GoPro 4K Video Recording & Pilot Fee",
+  });
+
+  const handleOpenAddActivityRate = () => {
+    setEditingActivityRate(null);
+    setActivityRateForm({
+      name: "",
+      category: "PARAGLIDING",
+      perPaxRate: "1500",
+      inclusions: "",
+    });
+    setActivityRateModalOpen(true);
+  };
+
+  const handleOpenEditActivityRate = (rate: any) => {
+    setEditingActivityRate(rate);
+    setActivityRateForm({
+      name: rate.name || "",
+      category: rate.category || "PARAGLIDING",
+      perPaxRate: String(rate.perPaxRate || 1500),
+      inclusions: rate.inclusions || "",
+    });
+    setActivityRateModalOpen(true);
+  };
+
+  const handleSaveActivityRate = async () => {
+    if (!activityRateForm.name || !activityRateForm.perPaxRate) {
+      toast.error("Activity Name and Per Pax Rate are required");
+      return;
+    }
+    const perPax = parseInt(activityRateForm.perPaxRate) || 0;
+
+    let updatedList: any[] = [];
+    if (editingActivityRate) {
+      updatedList = activityRates.map((t) =>
+        t.id === editingActivityRate.id
+          ? {
+              ...t,
+              name: activityRateForm.name,
+              category: activityRateForm.category,
+              perPaxRate: perPax,
+              inclusions: activityRateForm.inclusions,
+            }
+          : t,
+      );
+    } else {
+      const newRate = {
+        id: `act-${Date.now()}`,
+        name: activityRateForm.name,
+        category: activityRateForm.category,
+        perPaxRate: perPax,
+        inclusions: activityRateForm.inclusions,
+      };
+      updatedList = [...activityRates, newRate];
+    }
+
+    setActivityRates(updatedList);
+    const updatedVendor = {
+      ...vendor,
+      activityRates: updatedList,
+      guideRates: JSON.stringify(updatedList),
+    };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        activityRates: updatedList,
+        guideRates: JSON.stringify(updatedList),
+      });
+      toast.success("Activity rate saved successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Saved locally, but failed to update server");
+    }
+
+    setActivityRateModalOpen(false);
+    setEditingActivityRate(null);
+  };
+
+  const handleDeleteActivityRate = async (rateId: string) => {
+    const updatedList = activityRates.filter((t) => t.id !== rateId);
+    setActivityRates(updatedList);
+    const updatedVendor = {
+      ...vendor,
+      activityRates: updatedList,
+      guideRates: JSON.stringify(updatedList),
+    };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        activityRates: updatedList,
+        guideRates: JSON.stringify(updatedList),
+      });
+      toast.success("Activity rate deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete from server");
+    }
+  };
+
   const handleSaveVehicle = async () => {
     if (!vehicleForm.model) {
       toast.error("Vehicle model is required");
@@ -720,28 +938,51 @@ export function AccommodationDetailPage({
     toast.success("Route tariff removed");
   };
 
-  // State for dynamic sub-items
-  const [contacts, setContacts] = useState<any[]>(
-    vendor.vendorContacts || [
-      {
-        id: "c1",
-        name: vendor.contactPerson || "Suresh Kumar",
+  const deriveContactsFromVendor = (v: any) => {
+    if (
+      v?.vendorContacts &&
+      Array.isArray(v.vendorContacts) &&
+      v.vendorContacts.length > 0
+    ) {
+      return v.vendorContacts.map((c: any, idx: number) => ({
+        id: c.id || `c-${idx}`,
+        name: c.name || "Contact",
+        role: c.role || (idx === 0 ? "General Manager" : "Contact"),
+        phone: c.phone || "",
+        whatsapp: c.whatsapp || c.phone || "",
+        email: c.email || "",
+        isPrimary: c.isPrimary !== undefined ? c.isPrimary : idx === 0,
+      }));
+    }
+    const list: any[] = [];
+    if (v?.contactPerson || v?.phone || v?.whatsappNumber || v?.email) {
+      list.push({
+        id: "c-primary",
+        name: v.contactPerson || v.name || "Primary Contact",
         role: "General Manager",
-        phone: vendor.contactNumber || vendor.phone || "+91 98166 66244",
-        whatsapp: "+91 98166 66244",
-        email: vendor.email || "manager@hotel.com",
+        phone: v.phone || v.contactNumber || "",
+        whatsapp: v.whatsappNumber || v.phone || "",
+        email: v.email || "",
         isPrimary: true,
-      },
-      {
-        id: "c2",
-        name: "Front Desk Reception",
-        role: "Reception",
-        phone: "+91 98166 66245",
-        whatsapp: "+91 98166 66245",
-        email: "reception@hotel.com",
+      });
+    }
+    if (v?.alternatePhone) {
+      list.push({
+        id: "c-alt",
+        name: "Alternate Contact",
+        role: "Operations / Desk",
+        phone: v.alternatePhone,
+        whatsapp: v.alternatePhone,
+        email: "",
         isPrimary: false,
-      },
-    ],
+      });
+    }
+    return list;
+  };
+
+  // State for dynamic sub-items
+  const [contacts, setContacts] = useState<any[]>(() =>
+    deriveContactsFromVendor(vendor),
   );
 
   const [rooms, setRooms] = useState<any[]>(() => {
@@ -2095,27 +2336,88 @@ export function AccommodationDetailPage({
                 )}
 
                 {/* Financial & Compliance Info Card */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-3">
+                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-3.5">
                   <div className="flex items-center justify-between border-b pb-2 border-slate-200">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                       <CreditCard className="w-4 h-4 text-blue-600" /> Financial & Compliance Details
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-medium">GST, PAN, Bank A/C, IFSC & Payment Terms</span>
+                    <span className="text-[10px] text-slate-400 font-medium">GST, PAN, Bank & Terms</span>
                   </div>
 
-                  <div>
-                    <Textarea
-                      value={overviewForm.financialDetails}
-                      onChange={(e) =>
-                        setOverviewForm({
-                          ...overviewForm,
-                          financialDetails: e.target.value,
-                        })
-                      }
-                      rows={6}
-                      placeholder="Enter GSTIN, PAN, Bank Name, Account Number, IFSC Code & Payment Terms..."
-                      className="bg-white text-xs border-slate-200 font-mono resize-y leading-relaxed font-medium min-h-[140px]"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">GSTIN Number</label>
+                      <Input
+                        value={overviewForm.gstin}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, gstin: e.target.value })}
+                        placeholder="e.g. 02AAACH7409R1ZZ"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold uppercase"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">PAN Number</label>
+                      <Input
+                        value={overviewForm.panNumber}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, panNumber: e.target.value })}
+                        placeholder="e.g. ABCDE1234F"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold uppercase"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">Bank Name</label>
+                      <Input
+                        value={overviewForm.bankName}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, bankName: e.target.value })}
+                        placeholder="e.g. HDFC Bank / SBI"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">Account Number</label>
+                      <Input
+                        value={overviewForm.accountNumber}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, accountNumber: e.target.value })}
+                        placeholder="e.g. 50200012345678"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">IFSC Code</label>
+                      <Input
+                        value={overviewForm.ifscCode}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, ifscCode: e.target.value })}
+                        placeholder="e.g. HDFC0001234"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold uppercase"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">UPI ID</label>
+                      <Input
+                        value={overviewForm.upiId}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, upiId: e.target.value })}
+                        placeholder="e.g. vendor@okhdfcbank"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">Payment Terms</label>
+                      <Input
+                        value={overviewForm.paymentTerms}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, paymentTerms: e.target.value })}
+                        placeholder="e.g. 30 Days Credit / 50% Advance"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-extrabold text-slate-700 block mb-1">Credit Period (Days)</label>
+                      <Input
+                        type="number"
+                        value={overviewForm.creditDays}
+                        onChange={(e) => setOverviewForm({ ...overviewForm, creditDays: parseInt(e.target.value) || 0 })}
+                        placeholder="30"
+                        className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2534,38 +2836,77 @@ export function AccommodationDetailPage({
                     Per-person rates for Paragliding, Rafting, Zipline, and Equipment.
                   </p>
                 </div>
+                <Button
+                  onClick={handleOpenAddActivityRate}
+                  size="sm"
+                  className="h-8 bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-bold gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Activity Tariff
+                </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
-                  <span className="font-extrabold text-slate-800 text-sm block">
-                    Tandem Paragliding High Fly
-                  </span>
-                  <p className="text-slate-600">
-                    Per Pax Tariff:{" "}
-                    <span className="font-black text-emerald-600 text-sm">
-                      ₹2,500 / Person
-                    </span>
-                  </p>
-                  <p className="text-slate-500 text-[11px]">
-                    Includes GoPro 4K Video Recording & Pilot Fee
-                  </p>
+              {activityRates.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <Activity className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs font-bold text-slate-600">No activity rates configured yet</p>
+                  <p className="text-[11px] text-slate-400">Add negotiated per-person tariffs for adventure activities.</p>
+                  <Button
+                    onClick={handleOpenAddActivityRate}
+                    className="h-7.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-3 mt-2 cursor-pointer shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add First Activity Tariff
+                  </Button>
                 </div>
-                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
-                  <span className="font-extrabold text-slate-800 text-sm block">
-                    12 KM White Water River Rafting
-                  </span>
-                  <p className="text-slate-600">
-                    Per Pax Tariff:{" "}
-                    <span className="font-black text-emerald-600 text-sm">
-                      ₹1,200 / Person
-                    </span>
-                  </p>
-                  <p className="text-slate-500 text-[11px]">
-                    Includes Safety Gear, Lifejacket & Helmet
-                  </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {activityRates.map((rate) => (
+                    <div
+                      key={rate.id}
+                      className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5 text-xs flex flex-col justify-between hover:border-slate-300 transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <span className="font-extrabold text-slate-900 text-sm leading-snug">
+                            {rate.name}
+                          </span>
+                          <span className="shrink-0 bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide border border-indigo-200">
+                            {rate.category || "ACTIVITY"}
+                          </span>
+                        </div>
+                        <p className="text-slate-600">
+                          Per Pax Tariff:{" "}
+                          <span className="font-black text-emerald-600 text-sm">
+                            ₹{Number(rate.perPaxRate || 0).toLocaleString("en-IN")} / Person
+                          </span>
+                        </p>
+                        {rate.inclusions && (
+                          <p className="text-slate-500 text-[11px] pt-1 border-t border-slate-100 mt-2">
+                            {rate.inclusions}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+                        <Button
+                          onClick={() => handleOpenEditActivityRate(rate)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-[11px] font-bold text-slate-600 hover:text-orange-600 hover:bg-orange-50 cursor-pointer"
+                        >
+                          <Pencil className="w-3 h-3 mr-1" /> Edit Rate
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteActivityRate(rate.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -4389,6 +4730,94 @@ export function AccommodationDetailPage({
               className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingMealTariff ? "Update Meal Rate" : "Add Meal Rate"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ADVENTURE ACTIVITY RATE & TARIFF MODAL */}
+      <Dialog open={activityRateModalOpen} onOpenChange={setActivityRateModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-xl rounded-xl">
+          <DialogTitle className="text-base font-black text-slate-900">
+            {editingActivityRate ? "Edit Activity Rate / Tariff" : "Add Activity Rate / Tariff"}
+          </DialogTitle>
+          <p className="text-xs text-slate-500">
+            Configure negotiated per-person tariff for activities and equipment at <strong>{vendor.name}</strong>.
+          </p>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Activity Name / Package *
+              </label>
+              <Input
+                value={activityRateForm.name}
+                onChange={(e) => setActivityRateForm({ ...activityRateForm, name: e.target.value })}
+                placeholder="e.g. Tandem Paragliding High Fly, 12 KM River Rafting"
+                className="h-8.5 text-xs font-bold"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Activity Category
+                </label>
+                <select
+                  value={activityRateForm.category}
+                  onChange={(e) => setActivityRateForm({ ...activityRateForm, category: e.target.value })}
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                >
+                  <option value="PARAGLIDING">Paragliding 🪂</option>
+                  <option value="RAFTING">River Rafting 🚣</option>
+                  <option value="TREKKING">Trekking / Hike 🥾</option>
+                  <option value="ZIPLINE">Zipline / Ropeway 🧗</option>
+                  <option value="CAMPING">Camping / Tents ⛺</option>
+                  <option value="EQUIPMENT">Equipment Rental 🎒</option>
+                  <option value="OTHER">Other Activity</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Per Pax Rate (₹/Person) *
+                </label>
+                <Input
+                  type="number"
+                  value={activityRateForm.perPaxRate}
+                  onChange={(e) => setActivityRateForm({ ...activityRateForm, perPaxRate: e.target.value })}
+                  placeholder="2500"
+                  className="h-8.5 text-xs font-bold text-emerald-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Inclusions & Safety Gear Provided
+              </label>
+              <Input
+                value={activityRateForm.inclusions}
+                onChange={(e) => setActivityRateForm({ ...activityRateForm, inclusions: e.target.value })}
+                placeholder="e.g. Includes GoPro 4K Video Recording, Pilot Fee, Lifejacket & Helmet"
+                className="h-8.5 text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+            <Button
+              variant="outline"
+              onClick={() => setActivityRateModalOpen(false)}
+              className="h-8 text-xs font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveActivityRate}
+              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+            >
+              {editingActivityRate ? "Update Activity Rate" : "Add Activity Rate"}
             </Button>
           </div>
         </DialogContent>
