@@ -142,45 +142,61 @@ export function AccommodationDetailPage({
 
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Overview State Extractor
+  const extractOverviewState = useCallback((v: any) => {
+    let meta: any = {};
+    if (v?.notes && typeof v.notes === "string" && v.notes.startsWith("{")) {
+      try {
+        meta = JSON.parse(v.notes);
+      } catch {}
+    }
+
+    const type = (v?.type || "").toUpperCase();
+    const isTrans = type === "TRANSPORT" || type === "FLEET";
+    const isG = type === "GUIDE" || type === "TREK_LEADER";
+    const isRest = type === "RESTAURANT" || type === "FOOD" || type === "MEALS";
+    const isAct = type === "ACTIVITIES" || type === "ACTIVITY" || type === "EXPERIENCE";
+
+    return {
+      name: v?.name || "",
+      accommodationType: v?.accommodationType || v?.type || "HOTEL",
+      starRating: v?.starRating || 3,
+      checkInTime: v?.checkInTime || "12:00 PM",
+      checkOutTime: v?.checkOutTime || "11:00 AM",
+      mealPlans: v?.mealPlans || "EP, CP, MAP, AP",
+      amenities: v?.amenities !== undefined && v?.amenities !== null ? v.amenities : meta.amenities || "",
+      fleetTypes: v?.fleetTypes || meta.fleetTypes || (isTrans ? v?.roomTypes : "") || "",
+      operatingCity: v?.operatingCity || meta.operatingCity || v?.city || v?.location || "",
+      tollParkingPolicy: v?.tollParkingPolicy || meta.tollParkingPolicy || (isTrans ? v?.lateCheckOutPolicy : "") || "Included in base tariff",
+      routesCovered: v?.routesCovered || meta.routesCovered || (v?.notes && !v.notes.startsWith("{") ? v.notes : "") || "",
+      gstin: v?.gstin || "",
+      panNumber: v?.panNumber || "",
+      bankName: v?.bankName || "",
+      accountNumber: v?.accountNumber || "",
+      ifscCode: v?.ifscCode || "",
+      upiId: v?.upiId || "",
+      paymentTerms: v?.paymentTerms || "30 Days Credit",
+      creditDays: v?.creditDays !== undefined ? v.creditDays : 30,
+      guideRole: v?.guideRole || meta.guideRole || (isG ? v?.website : "") || "",
+      languages: v?.languages || meta.languages || (isG ? v?.sharingTypes : "") || "",
+      certifications: v?.certifications || meta.certifications || (isG ? v?.earlyCheckInPolicy : "") || "",
+      experience: v?.experience || meta.experience || (isG ? v?.lateCheckOutPolicy : "") || "",
+      cuisines: v?.cuisines || meta.cuisines || (isRest ? v?.sharingTypes : "") || "",
+      seatingCapacity: v?.seatingCapacity || meta.seatingCapacity || (isRest ? v?.roomTypes : "") || "",
+      operatingHours: v?.operatingHours || meta.operatingHours || (isRest || isAct ? v?.earlyCheckInPolicy : "") || "",
+      activityTypes: v?.activityTypes || meta.activityTypes || (isAct ? v?.roomTypes : "") || "",
+      financialDetails:
+        v?.financialDetails ||
+        v?.bankDetails ||
+        (v?.gstin || v?.bankName
+          ? `GSTIN: ${v?.gstin || ""}\nPAN: ${v?.panNumber || ""}\nBank: ${v?.bankName || ""}\nA/C: ${v?.accountNumber || ""}\nIFSC: ${v?.ifscCode || ""}\nPayment Terms: ${v?.paymentTerms || ""}`.trim()
+          : ""),
+    };
+  }, []);
+
   // Overview Editing State
   const [editOverviewOpen, setEditOverviewOpen] = useState(false);
-  const [overviewForm, setOverviewForm] = useState({
-    name: vendor.name || "",
-    accommodationType: vendor.accommodationType || vendor.type || "HOTEL",
-    starRating: vendor.starRating || 3,
-    checkInTime: vendor.checkInTime || "12:00 PM",
-    checkOutTime: vendor.checkOutTime || "11:00 AM",
-    mealPlans: vendor.mealPlans || "EP, CP, MAP, AP",
-    amenities:
-      vendor.amenities ||
-      (isTransport
-        ? "GPS Tracking, Speed Governor, Pushback Seats, First Aid Kit, AC / Heater, Luggage Carrier"
-        : "WiFi, Parking, Power Backup, Bonfire, Restaurant, Laundry"),
-    fleetTypes: vendor.roomTypes || "20 Seater Tempo, 17 Seater Tempo, 14 Seater Tempo, Innova, Ertiga, Dzire",
-    operatingCity: vendor.city || vendor.location || "Punjab & Himachal",
-    tollParkingPolicy: "Included in base tariff",
-    routesCovered: vendor.notes || "Punjab, Himachal Pradesh, Ladakh, Kashmir, Uttarakhand",
-    gstin: vendor.gstin || "",
-    panNumber: vendor.panNumber || "",
-    bankName: vendor.bankName || "",
-    accountNumber: vendor.accountNumber || "",
-    ifscCode: vendor.ifscCode || "",
-    paymentTerms: vendor.paymentTerms || "30 Days Credit",
-    guideRole: vendor.guideRole || "Lead Trek Leader & High Altitude Specialist",
-    languages: vendor.languages || "",
-    certifications: vendor.certifications || "",
-    experience: vendor.experience || "",
-    cuisines: vendor.cuisines || "",
-    seatingCapacity: vendor.seatingCapacity || "",
-    operatingHours: vendor.operatingHours || "",
-    activityTypes: vendor.activityTypes || "",
-    financialDetails:
-      vendor.financialDetails ||
-      vendor.bankDetails ||
-      (vendor.gstin || vendor.bankName
-        ? `GSTIN: ${vendor.gstin || ""}\nPAN: ${vendor.panNumber || ""}\nBank: ${vendor.bankName || ""}\nA/C: ${vendor.accountNumber || ""}\nIFSC: ${vendor.ifscCode || ""}\nPayment Terms: ${vendor.paymentTerms || ""}`.trim()
-        : ""),
-  });
+  const [overviewForm, setOverviewForm] = useState(() => extractOverviewState(vendor));
 
   // State for Transport Vehicles & Routes
   const [transportVehicles, setTransportVehicles] = useState<any[]>([]);
@@ -270,40 +286,7 @@ export function AccommodationDetailPage({
     setContacts(deriveContactsFromVendor(vendor));
 
     // 4. Sync overviewForm from prop
-    setOverviewForm({
-      name: vendor.name || "",
-      accommodationType: vendor.accommodationType || vendor.type || "HOTEL",
-      starRating: vendor.starRating || 3,
-      checkInTime: vendor.checkInTime || "12:00 PM",
-      checkOutTime: vendor.checkOutTime || "11:00 AM",
-      mealPlans: vendor.mealPlans || "EP, CP, MAP, AP",
-      amenities: vendor.amenities || "",
-      fleetTypes: vendor.roomTypes || "",
-      operatingCity: vendor.city || vendor.location || "",
-      tollParkingPolicy: "Included in base tariff",
-      routesCovered: vendor.notes || "",
-      gstin: vendor.gstin || "",
-      panNumber: vendor.panNumber || "",
-      bankName: vendor.bankName || "",
-      accountNumber: vendor.accountNumber || "",
-      ifscCode: vendor.ifscCode || "",
-      upiId: vendor.upiId || "",
-      paymentTerms: vendor.paymentTerms || "30 Days Credit",
-      creditDays: vendor.creditDays || 30,
-      guideRole: vendor.guideRole || "Lead Trek Leader & High Altitude Specialist",
-      languages: vendor.languages || "",
-      certifications: vendor.certifications || "",
-      experience: vendor.experience || "",
-      cuisines: vendor.cuisines || "",
-      seatingCapacity: vendor.seatingCapacity || "",
-      operatingHours: vendor.operatingHours || "",
-      activityTypes: vendor.activityTypes || "",
-      financialDetails:
-        vendor.financialDetails ||
-        (vendor.gstin || vendor.bankName
-          ? `GSTIN: ${vendor.gstin || ""}\nPAN: ${vendor.panNumber || ""}\nBank: ${vendor.bankName || ""}\nA/C: ${vendor.accountNumber || ""}\nIFSC: ${vendor.ifscCode || ""}\nPayment Terms: ${vendor.paymentTerms || ""}`.trim()
-          : ""),
-    });
+    setOverviewForm(extractOverviewState(vendor));
 
     // 5. Fetch latest live vendor record from server to guarantee persistence
     api
@@ -332,46 +315,13 @@ export function AccommodationDetailPage({
             } catch (e) {}
           }
           setContacts(deriveContactsFromVendor(fresh));
-          setOverviewForm({
-            name: fresh.name || "",
-            accommodationType: fresh.accommodationType || fresh.type || "HOTEL",
-            starRating: fresh.starRating || 3,
-            checkInTime: fresh.checkInTime || "12:00 PM",
-            checkOutTime: fresh.checkOutTime || "11:00 AM",
-            mealPlans: fresh.mealPlans || "EP, CP, MAP, AP",
-            amenities: fresh.amenities || "",
-            fleetTypes: fresh.roomTypes || "",
-            operatingCity: fresh.city || fresh.location || "",
-            tollParkingPolicy: "Included in base tariff",
-            routesCovered: fresh.notes || "",
-            gstin: fresh.gstin || "",
-            panNumber: fresh.panNumber || "",
-            bankName: fresh.bankName || "",
-            accountNumber: fresh.accountNumber || "",
-            ifscCode: fresh.ifscCode || "",
-            upiId: fresh.upiId || "",
-            paymentTerms: fresh.paymentTerms || "30 Days Credit",
-            creditDays: fresh.creditDays || 30,
-            guideRole: fresh.guideRole || "Lead Trek Leader & High Altitude Specialist",
-            languages: fresh.languages || "",
-            certifications: fresh.certifications || "",
-            experience: fresh.experience || "",
-            cuisines: fresh.cuisines || "",
-            seatingCapacity: fresh.seatingCapacity || "",
-            operatingHours: fresh.operatingHours || "",
-            activityTypes: fresh.activityTypes || "",
-            financialDetails:
-              fresh.financialDetails ||
-              (fresh.gstin || fresh.bankName
-                ? `GSTIN: ${fresh.gstin || ""}\nPAN: ${fresh.panNumber || ""}\nBank: ${fresh.bankName || ""}\nA/C: ${fresh.accountNumber || ""}\nIFSC: ${fresh.ifscCode || ""}\nPayment Terms: ${fresh.paymentTerms || ""}`.trim()
-                : ""),
-          });
+          setOverviewForm(extractOverviewState(fresh));
         }
       })
       .catch((err) => {
         console.warn("Could not fetch live vendor details:", err);
       });
-  }, [vendor?.id, vendor?.guideRates, vendor?.mealPlans, vendor?.mealTariffs, vendor?.vendorContacts]);
+  }, [vendor?.id, vendor?.guideRates, vendor?.mealPlans, vendor?.mealTariffs, vendor?.vendorContacts, extractOverviewState]);
 
   const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
     if (vendor.transportRates && vendor.transportRates.length > 0) {
@@ -1908,7 +1858,7 @@ export function AccommodationDetailPage({
                           Primary Fleet Categories
                         </label>
                         <Input
-                          value={overviewForm.fleetTypes}
+                          value={overviewForm.fleetTypes ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -1925,7 +1875,7 @@ export function AccommodationDetailPage({
                           Operating Base / Hub
                         </label>
                         <Input
-                          value={overviewForm.operatingCity}
+                          value={overviewForm.operatingCity ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -1942,7 +1892,7 @@ export function AccommodationDetailPage({
                           Toll & Parking Policy
                         </label>
                         <Input
-                          value={overviewForm.tollParkingPolicy}
+                          value={overviewForm.tollParkingPolicy ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -1959,7 +1909,7 @@ export function AccommodationDetailPage({
                           Service Coverage Routes / Sectors
                         </label>
                         <Input
-                          value={overviewForm.routesCovered}
+                          value={overviewForm.routesCovered ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -1973,10 +1923,10 @@ export function AccommodationDetailPage({
 
                       <div className="sm:col-span-2">
                         <label className="font-extrabold text-slate-700 block mb-1">
-                          Fleet Safety & Vehicle Features
+                          Fleet Safety & Vehicle Features / Amenities
                         </label>
                         <Textarea
-                          value={overviewForm.amenities}
+                          value={overviewForm.amenities ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2001,7 +1951,7 @@ export function AccommodationDetailPage({
                           Guide Role / Specialization
                         </label>
                         <Input
-                          value={overviewForm.guideRole || "Lead Trek Leader & High Altitude Specialist"}
+                          value={overviewForm.guideRole ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2018,7 +1968,7 @@ export function AccommodationDetailPage({
                           Operating Base / Hub
                         </label>
                         <Input
-                          value={overviewForm.operatingCity || vendor.city || vendor.location || "Kasol / Manali / Shimla"}
+                          value={overviewForm.operatingCity ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2035,7 +1985,7 @@ export function AccommodationDetailPage({
                           Languages Spoken
                         </label>
                         <Input
-                          value={overviewForm.languages || "English, Hindi, Pahari"}
+                          value={overviewForm.languages ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2052,7 +2002,7 @@ export function AccommodationDetailPage({
                           Mountaineering Certifications
                         </label>
                         <Input
-                          value={overviewForm.certifications || "BMC (Basic Mountaineering Course), WFR"}
+                          value={overviewForm.certifications ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2069,7 +2019,7 @@ export function AccommodationDetailPage({
                           Trekking & Expedition Experience
                         </label>
                         <Input
-                          value={overviewForm.experience || "7+ Years (40+ Kheerganga & Sar Pass Expeditions)"}
+                          value={overviewForm.experience ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2083,10 +2033,10 @@ export function AccommodationDetailPage({
 
                       <div className="sm:col-span-2">
                         <label className="font-extrabold text-slate-700 block mb-1">
-                          Safety Equipment & Rescue Gear Carried
+                          Safety Equipment & Gear Carried / Amenities
                         </label>
                         <Textarea
-                          value={overviewForm.amenities || "First Aid Kit, Oxygen Cylinder, Stretchers, Walkie-Talkie Radio, Rope & Harness"}
+                          value={overviewForm.amenities ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2111,14 +2061,14 @@ export function AccommodationDetailPage({
                           Cuisine & Meal Offerings
                         </label>
                         <Input
-                          value={overviewForm.cuisines || "North Indian, Himachali Dham, Continental, Chinese"}
+                          value={overviewForm.cuisines ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
                               cuisines: e.target.value,
                             })
                           }
-                          placeholder="e.g. Indian, Chinese, Himachali Local"
+                          placeholder="e.g. North Indian, Himachali Dham, Continental, Chinese"
                           className="h-8.5 bg-white text-xs border-slate-200 font-bold"
                         />
                       </div>
@@ -2128,14 +2078,14 @@ export function AccommodationDetailPage({
                           Seating Capacity (Group Handling)
                         </label>
                         <Input
-                          value={overviewForm.seatingCapacity || "80 Pax Group Seating"}
+                          value={overviewForm.seatingCapacity ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
                               seatingCapacity: e.target.value,
                             })
                           }
-                          placeholder="e.g. 80 Pax Group Indoor + Outdoor"
+                          placeholder="e.g. 80 Pax Group Indoor + Outdoor Seating"
                           className="h-8.5 bg-white text-xs border-slate-200 font-bold"
                         />
                       </div>
@@ -2145,15 +2095,32 @@ export function AccommodationDetailPage({
                           Operating Hours & Service Timing
                         </label>
                         <Input
-                          value={overviewForm.operatingHours || "7:00 AM - 11:00 PM (Breakfast, Lunch & Dinner)"}
+                          value={overviewForm.operatingHours ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
                               operatingHours: e.target.value,
                             })
                           }
-                          placeholder="e.g. 7:00 AM - 11:00 PM"
+                          placeholder="e.g. 7:00 AM - 11:00 PM (Breakfast, Lunch & Dinner)"
                           className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Amenities & Dining Facilities
+                        </label>
+                        <Textarea
+                          value={overviewForm.amenities ?? ""}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              amenities: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Jungle safari camp attach wash room, proper bedding, soap 🧼, hot water 🚿, Lawn Seating, Buffet Counters"
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[70px]"
                         />
                       </div>
                     </div>
@@ -2170,14 +2137,14 @@ export function AccommodationDetailPage({
                           Primary Activity Offerings
                         </label>
                         <Input
-                          value={overviewForm.activityTypes || "Paragliding, River Rafting, Zipline, Camping"}
+                          value={overviewForm.activityTypes ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
                               activityTypes: e.target.value,
                             })
                           }
-                          placeholder="e.g. Paragliding, Rafting, Zipline"
+                          placeholder="e.g. Paragliding, River Rafting, Zipline, Camping"
                           className="h-8.5 bg-white text-xs border-slate-200 font-bold"
                         />
                       </div>
@@ -2187,7 +2154,7 @@ export function AccommodationDetailPage({
                           Operating Hub / Site
                         </label>
                         <Input
-                          value={overviewForm.operatingCity || vendor.city || vendor.location || "Dobhi / Kullu"}
+                          value={overviewForm.operatingCity ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2196,6 +2163,40 @@ export function AccommodationDetailPage({
                           }
                           placeholder="e.g. Dobhi Fly Site, Kullu River Point"
                           className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Operating Hours & Slot Timings
+                        </label>
+                        <Input
+                          value={overviewForm.operatingHours ?? ""}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              operatingHours: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. 8:00 AM - 6:00 PM (Weather Permitting)"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Safety Equipment & Activity Amenities
+                        </label>
+                        <Textarea
+                          value={overviewForm.amenities ?? ""}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              amenities: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. GoPro 4K Video, Certified Pilot, Lifejackets & Helmets, First Aid Box, Waiting Lounge"
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[70px]"
                         />
                       </div>
                     </div>
@@ -2271,7 +2272,7 @@ export function AccommodationDetailPage({
                           Check-In Time
                         </label>
                         <Input
-                          value={overviewForm.checkInTime}
+                          value={overviewForm.checkInTime ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2287,7 +2288,7 @@ export function AccommodationDetailPage({
                           Check-Out Time
                         </label>
                         <Input
-                          value={overviewForm.checkOutTime}
+                          value={overviewForm.checkOutTime ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2303,7 +2304,7 @@ export function AccommodationDetailPage({
                           Meal Plans Supported
                         </label>
                         <Input
-                          value={overviewForm.mealPlans}
+                          value={overviewForm.mealPlans ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2320,7 +2321,7 @@ export function AccommodationDetailPage({
                           Amenities
                         </label>
                         <Textarea
-                          value={overviewForm.amenities}
+                          value={overviewForm.amenities ?? ""}
                           onChange={(e) =>
                             setOverviewForm({
                               ...overviewForm,
@@ -2348,7 +2349,7 @@ export function AccommodationDetailPage({
                     <div>
                       <label className="font-extrabold text-slate-700 block mb-1">GSTIN Number</label>
                       <Input
-                        value={overviewForm.gstin}
+                        value={overviewForm.gstin ?? ""}
                         onChange={(e) => setOverviewForm({ ...overviewForm, gstin: e.target.value })}
                         placeholder="e.g. 02AAACH7409R1ZZ"
                         className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold uppercase"
@@ -2357,7 +2358,7 @@ export function AccommodationDetailPage({
                     <div>
                       <label className="font-extrabold text-slate-700 block mb-1">PAN Number</label>
                       <Input
-                        value={overviewForm.panNumber}
+                        value={overviewForm.panNumber ?? ""}
                         onChange={(e) => setOverviewForm({ ...overviewForm, panNumber: e.target.value })}
                         placeholder="e.g. ABCDE1234F"
                         className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold uppercase"
@@ -2366,7 +2367,7 @@ export function AccommodationDetailPage({
                     <div>
                       <label className="font-extrabold text-slate-700 block mb-1">Bank Name</label>
                       <Input
-                        value={overviewForm.bankName}
+                        value={overviewForm.bankName ?? ""}
                         onChange={(e) => setOverviewForm({ ...overviewForm, bankName: e.target.value })}
                         placeholder="e.g. HDFC Bank / SBI"
                         className="h-8.5 bg-white text-xs border-slate-200 font-bold"
@@ -2375,7 +2376,7 @@ export function AccommodationDetailPage({
                     <div>
                       <label className="font-extrabold text-slate-700 block mb-1">Account Number</label>
                       <Input
-                        value={overviewForm.accountNumber}
+                        value={overviewForm.accountNumber ?? ""}
                         onChange={(e) => setOverviewForm({ ...overviewForm, accountNumber: e.target.value })}
                         placeholder="e.g. 50200012345678"
                         className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
@@ -2384,7 +2385,7 @@ export function AccommodationDetailPage({
                     <div>
                       <label className="font-extrabold text-slate-700 block mb-1">IFSC Code</label>
                       <Input
-                        value={overviewForm.ifscCode}
+                        value={overviewForm.ifscCode ?? ""}
                         onChange={(e) => setOverviewForm({ ...overviewForm, ifscCode: e.target.value })}
                         placeholder="e.g. HDFC0001234"
                         className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold uppercase"
@@ -2393,7 +2394,7 @@ export function AccommodationDetailPage({
                     <div>
                       <label className="font-extrabold text-slate-700 block mb-1">UPI ID</label>
                       <Input
-                        value={overviewForm.upiId}
+                        value={overviewForm.upiId ?? ""}
                         onChange={(e) => setOverviewForm({ ...overviewForm, upiId: e.target.value })}
                         placeholder="e.g. vendor@okhdfcbank"
                         className="h-8.5 bg-white text-xs border-slate-200 font-mono font-bold"
@@ -2402,7 +2403,7 @@ export function AccommodationDetailPage({
                     <div>
                       <label className="font-extrabold text-slate-700 block mb-1">Payment Terms</label>
                       <Input
-                        value={overviewForm.paymentTerms}
+                        value={overviewForm.paymentTerms ?? ""}
                         onChange={(e) => setOverviewForm({ ...overviewForm, paymentTerms: e.target.value })}
                         placeholder="e.g. 30 Days Credit / 50% Advance"
                         className="h-8.5 bg-white text-xs border-slate-200 font-bold"
@@ -2412,7 +2413,7 @@ export function AccommodationDetailPage({
                       <label className="font-extrabold text-slate-700 block mb-1">Credit Period (Days)</label>
                       <Input
                         type="number"
-                        value={overviewForm.creditDays}
+                        value={overviewForm.creditDays ?? 30}
                         onChange={(e) => setOverviewForm({ ...overviewForm, creditDays: parseInt(e.target.value) || 0 })}
                         placeholder="30"
                         className="h-8.5 bg-white text-xs border-slate-200 font-bold"
