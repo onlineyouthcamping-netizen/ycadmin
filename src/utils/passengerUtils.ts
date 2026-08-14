@@ -27,6 +27,10 @@ export interface NormalizedPassenger {
   activitySelection: string;
   remarks: string;
   internalNotes: string;
+  isCancelled: boolean;
+  status: string;
+  cancellationReason?: string;
+  cancellationDate?: string;
 }
 
 export function calculateAgeFromDOB(dobStr?: string | null): number | null {
@@ -302,6 +306,15 @@ export function normalizePassenger(
     documents = pObj.documents;
   }
 
+  const isCancelled =
+    pObj.isCancelled === true ||
+    pObj.status === "CANCELLED" ||
+    (typeof pObj.status === "string" && pObj.status.toLowerCase().includes("cancel")) ||
+    (typeof pObj.notes === "string" && pObj.notes.toLowerCase().includes("cancel"));
+  const status = isCancelled ? "CANCELLED" : pObj.status || "CONFIRMED";
+  const cancellationReason = pObj.cancellationReason || pObj.cancelReason || "";
+  const cancellationDate = pObj.cancellationDate || "";
+
   return {
     id,
     name,
@@ -326,6 +339,10 @@ export function normalizePassenger(
     activitySelection: String(activitySelection),
     remarks: String(remarks),
     internalNotes: String(internalNotes),
+    isCancelled,
+    status,
+    cancellationReason: cancellationReason ? String(cancellationReason) : undefined,
+    cancellationDate: cancellationDate ? String(cancellationDate) : undefined,
   };
 }
 

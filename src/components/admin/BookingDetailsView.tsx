@@ -43,6 +43,10 @@ import {
   RefreshCw,
   Layers,
   Loader2,
+  UserX,
+  RotateCcw,
+  UserCheck,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,6 +150,13 @@ export default function BookingDetailsView({
     foodPreference: "Normal Food",
     roomSharing: "Triple",
   });
+
+  // Individual Passenger Cancellation State
+  const [cancelPassengerModalOpen, setCancelPassengerModalOpen] = useState(false);
+  const [cancellingPassenger, setCancellingPassenger] = useState<any | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("Customer Requested Cancellation");
+  const [cancellationNotes, setCancellationNotes] = useState("");
+  const [isProcessingCancelPax, setIsProcessingCancelPax] = useState(false);
 
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
@@ -739,6 +750,11 @@ export default function BookingDetailsView({
           p.trainOption || p.trainClass || booking.trainClass || "Sleeper";
         const pRoom =
           p.roomSharing || p.roomType || booking.roomSharing || booking.roomType || "Double Sharing";
+        const isCancelled =
+          p.isCancelled === true ||
+          p.status === "CANCELLED" ||
+          (typeof p.status === "string" && p.status.toLowerCase().includes("cancel")) ||
+          (typeof p.notes === "string" && p.notes.toLowerCase().includes("cancel"));
         passengersList.push({
           id: p.id || (idx === 0 ? "main" : `p-${idx}`),
           name:
@@ -755,13 +771,17 @@ export default function BookingDetailsView({
           age: p.age || (idx === 0 ? booking.age : 20) || 20,
           type: p.type || `${pTrain} Train`,
           trainOption: pTrain,
-          status: p.status || "Form complete",
+          status: isCancelled ? "CANCELLED" : (p.status || "Form complete"),
+          isCancelled: isCancelled,
+          cancellationReason: p.cancellationReason || p.cancelReason || (isCancelled ? "Cancelled by customer" : undefined),
+          cancellationDate: p.cancellationDate,
           foodPreference:
             p.foodPreference ||
             (idx === 0 ? booking.foodPreference : "Normal Food") ||
             "Normal Food",
           roomSharing: pRoom,
           idProof: p.idProof,
+          linkedBooking: p.linkedBooking,
         });
       });
     } else {
@@ -966,6 +986,156 @@ export default function BookingDetailsView({
     } catch (err: any) {
       console.error("Failed to sync booking data with passengers:", err);
       throw err;
+    }
+  };
+
+  const handleCancelPassengerSubmit = async () => {
+    if (!cancellingPassenger) return;
+    setIsProcessingCancelPax(true);
+    try {
+      const updatedPassengers = passengers.map((p) => {
+        if (p.id === cancellingPassenger.id || p.name === cancellingPassenger.name) {
+          return {
+            ...p,
+            isCancelled: true,
+            status: "CANCELLED",
+            cancellationReason: cancellationReason || "Customer Requested Cancellation",
+            cancellationDate: new Date().toISOString(),
+          };
+        }
+        return p;
+      });
+
+      setPassengers(updatedPassengers);
+      await syncBookingDataWithPassengers(updatedPassengers);
+
+      // Cancel matching train ticket if any
+      try {
+        const matchingTicket = tickets.find(
+          (t) => t.travelerName === cancellingPassenger.name,
+        );
+        if (matchingTicket) {
+          await api.patch(`/train-tickets/${matchingTicket.id}`, {
+            ticketStatus: "CANCELLED",
+            status: "CANCELLED",
+          });
+        }
+      } catch (tErr) {
+        console.warn("Could not auto-cancel train ticket:", tErr);
+      }
+
+      toast.success(`Passenger ${cancellingPassenger.name} marked as CANCELLED`);
+      setCancelPassengerModalOpen(false);
+      setCancellingPassenger(null);
+      setCancellationReason("Customer Requested Cancellation");
+      setCancellationNotes("");
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      toast.error(
+        "Failed to cancel passenger: " + (err.message || "Unknown error"),
+      );
+    } finally {
+      setIsProcessingCancelPax(false);
+    }
+  };
+
+  const handleRestorePassenger = async (passengerToRestore: any) => {
+    if (!passengerToRestore) return;
+    try {
+      const updatedPassengers = passengers.map((p) => {
+        if (
+          p.id === passengerToRestore.id ||
+          p.name === passengerToRestore.name
+        ) {
+          const { cancellationReason, cancellationDate, ...rest } = p;
+          return {
+            ...rest,
+            isCancelled: false,
+            status: "CONFIRMED",
+          };
+        }
+        return p;
+      });
+
+      setPassengers(updatedPassengers);
+      await syncBookingDataWithPassengers(updatedPassengers);
+      toast.success(
+        `Passenger ${passengerToRestore.name} restored to CONFIRMED`,
+      );
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      toast.error(
+        "Failed to restore passenger: " + (err.message || "Unknown error"),
+      );
+    }
+  };
+
+  const handleBulkCancelPassengers = async () => {
+    if (selectedPassengerIds.length === 0) return;
+    if (
+      !confirm(
+        `Mark ${selectedPassengerIds.length} selected passenger(s) as CANCELLED?`,
+      )
+    )
+      return;
+    try {
+      const updatedPassengers = passengers.map((p) => {
+        const normP = normalizePassenger(booking, p);
+        if (
+          selectedPassengerIds.includes(p.id) ||
+          selectedPassengerIds.includes(normP.id)
+        ) {
+          return {
+            ...p,
+            isCancelled: true,
+            status: "CANCELLED",
+            cancellationReason: "Bulk Group Cancellation",
+            cancellationDate: new Date().toISOString(),
+          };
+        }
+        return p;
+      });
+
+      setPassengers(updatedPassengers);
+      await syncBookingDataWithPassengers(updatedPassengers);
+      setSelectedPassengerIds([]);
+      toast.success(
+        `${selectedPassengerIds.length} passenger(s) marked as CANCELLED`,
+      );
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      toast.error("Failed to cancel selected passengers");
+    }
+  };
+
+  const handleBulkRestorePassengers = async () => {
+    if (selectedPassengerIds.length === 0) return;
+    try {
+      const updatedPassengers = passengers.map((p) => {
+        const normP = normalizePassenger(booking, p);
+        if (
+          selectedPassengerIds.includes(p.id) ||
+          selectedPassengerIds.includes(normP.id)
+        ) {
+          const { cancellationReason, cancellationDate, ...rest } = p;
+          return {
+            ...rest,
+            isCancelled: false,
+            status: "CONFIRMED",
+          };
+        }
+        return p;
+      });
+
+      setPassengers(updatedPassengers);
+      await syncBookingDataWithPassengers(updatedPassengers);
+      setSelectedPassengerIds([]);
+      toast.success(
+        `${selectedPassengerIds.length} passenger(s) restored to CONFIRMED`,
+      );
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      toast.error("Failed to restore selected passengers");
     }
   };
 
@@ -2672,9 +2842,24 @@ export default function BookingDetailsView({
                     <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
                       Passengers Manifest
                     </h3>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono">
-                      {passengers.length} of {qty} travelers
-                    </span>
+                    {(() => {
+                      const activePaxCount = passengers.filter(
+                        (p) => !p.isCancelled && p.status !== "CANCELLED",
+                      ).length;
+                      const cancelledPaxCount = passengers.filter(
+                        (p) => p.isCancelled || p.status === "CANCELLED",
+                      ).length;
+                      return (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono">
+                          {activePaxCount} Active / {passengers.length} Total{" "}
+                          {cancelledPaxCount > 0 && (
+                            <span className="text-rose-600 font-bold">
+                              ({cancelledPaxCount} Cancelled)
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })()}
                   </div>
                   {canManageBooking && !isExpired ? (
                     <button
@@ -2693,7 +2878,7 @@ export default function BookingDetailsView({
                         });
                         setShowAddPassenger(true);
                       }}
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1"
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1 cursor-pointer"
                     >
                       + Add Passenger
                     </button>
@@ -2705,15 +2890,35 @@ export default function BookingDetailsView({
                 </div>
 
                 {selectedPassengerIds.length > 0 && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 mx-4 mt-3">
                     <span className="text-xs font-bold text-orange-800 ml-2">
                       {selectedPassengerIds.length} passenger(s) selected
                     </span>
-                    <div className="flex gap-2">
-                      <button className="text-[10px] bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded hover:bg-slate-50 font-bold uppercase" onClick={() => toast.success("Bulk room sharing planning coming soon!")}>Plan Sharing</button>
-                      <button className="text-[10px] bg-white border border-slate-200 text-slate-700 px-2 py-1 rounded hover:bg-slate-50 font-bold uppercase" onClick={() => toast.success("Bulk transport allocation coming soon!")}>Assign Transport</button>
-                      <button className="text-[10px] bg-green-500 border border-green-600 text-white px-2 py-1 rounded hover:bg-green-600 font-bold uppercase flex items-center gap-1"><MessageSquare className="w-3 h-3"/> WhatsApp</button>
-                      <button className="text-[10px] bg-slate-900 border border-slate-900 text-white px-2 py-1 rounded hover:bg-slate-800 font-bold uppercase" onClick={() => toast.success("Bulk Excel download coming soon!")}>Download Excel</button>
+                    <div className="flex gap-2 items-center">
+                      <button
+                        className="text-[10px] bg-rose-600 text-white px-2.5 py-1 rounded hover:bg-rose-700 font-bold uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
+                        onClick={handleBulkCancelPassengers}
+                      >
+                        <UserX className="w-3 h-3" /> Cancel Selected ({selectedPassengerIds.length})
+                      </button>
+                      <button
+                        className="text-[10px] bg-emerald-600 text-white px-2.5 py-1 rounded hover:bg-emerald-700 font-bold uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
+                        onClick={handleBulkRestorePassengers}
+                      >
+                        <RotateCcw className="w-3 h-3" /> Restore Selected
+                      </button>
+                      <button
+                        className="text-[10px] bg-green-500 border border-green-600 text-white px-2 py-1 rounded hover:bg-green-600 font-bold uppercase flex items-center gap-1"
+                        onClick={() => toast.success("WhatsApp sharing initiated")}
+                      >
+                        <MessageSquare className="w-3 h-3" /> WhatsApp
+                      </button>
+                      <button
+                        className="text-[10px] bg-slate-900 border border-slate-900 text-white px-2 py-1 rounded hover:bg-slate-800 font-bold uppercase"
+                        onClick={() => toast.success("Bulk Excel download coming soon!")}
+                      >
+                        Download Excel
+                      </button>
                     </div>
                   </div>
                 )}
@@ -2724,7 +2929,7 @@ export default function BookingDetailsView({
                         <th className="px-4 py-2 w-10">
                           <input 
                             type="checkbox" 
-                            className="rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+                            className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
                             checked={passengers.length > 0 && selectedPassengerIds.length === passengers.length}
                             onChange={(e) => {
                               if (e.target.checked) {
@@ -2735,7 +2940,7 @@ export default function BookingDetailsView({
                             }}
                           />
                         </th>
-                        <th className="px-4 py-2 w-20">Action</th>
+                        <th className="px-4 py-2 w-24">Action</th>
                         <th className="px-4 py-2">Name</th>
                         <th className="px-4 py-2 w-16">Age</th>
                         <th className="px-4 py-2 w-18">Gender</th>
@@ -2750,7 +2955,12 @@ export default function BookingDetailsView({
                     <tbody className="divide-y divide-slate-100 text-slate-700">
                       {passengers.map((p, index) => {
                         const normP = normalizePassenger(booking, p, index);
-                        const hasDocs = true;
+                        const isCancelled =
+                          normP.isCancelled ||
+                          p.isCancelled === true ||
+                          p.status === "CANCELLED" ||
+                          (typeof p.status === "string" &&
+                            p.status.toLowerCase().includes("cancel"));
 
                         // Room sharing option label helper
                         const getRoomSharingLabel = (roomType: string) => {
@@ -2768,6 +2978,13 @@ export default function BookingDetailsView({
 
                         // Train status check helper
                         const getPassengerStatus = (passengerName: string) => {
+                          if (isCancelled) {
+                            return {
+                              label: "Cancelled",
+                              colorClass:
+                                "bg-rose-100 text-rose-700 border-rose-300 font-black",
+                            };
+                          }
                           const ticket = tickets.find(
                             (t) => t.travelerName === passengerName,
                           );
@@ -2827,7 +3044,12 @@ export default function BookingDetailsView({
                         return (
                           <tr 
                             key={p.id || index}
-                            className="cursor-pointer hover:bg-orange-50/50 transition-colors group"
+                            className={cn(
+                              "cursor-pointer transition-colors group",
+                              isCancelled
+                                ? "bg-rose-50/70 hover:bg-rose-100/70 border-l-4 border-l-rose-500"
+                                : "hover:bg-orange-50/50"
+                            )}
                             onClick={() => {
                               setActivePassenger(normP);
                               setIsPassengerDrawerOpen(true);
@@ -2835,8 +3057,8 @@ export default function BookingDetailsView({
                           >
                             <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                               <input 
-                                type="checkbox"
-                                className="rounded border-slate-300 text-orange-500 focus:ring-orange-500"
+                                type="checkbox" 
+                                className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
                                 checked={selectedPassengerIds.includes(normP.id)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -2849,7 +3071,7 @@ export default function BookingDetailsView({
                             </td>
                             {/* Action buttons */}
                             <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex gap-1.5">
+                              <div className="flex gap-1.5 items-center">
                                 {canManageBooking && !isExpired ? (
                                   <>
                                     <button
@@ -2857,16 +3079,42 @@ export default function BookingDetailsView({
                                         setActivePassenger(normP);
                                         setIsPassengerDrawerOpen(true);
                                       }}
-                                      className="p-1 text-slate-400 hover:text-slate-700 border border-slate-200 bg-slate-50/60 rounded"
+                                      className="p-1 text-slate-400 hover:text-slate-700 border border-slate-200 bg-slate-50/60 rounded cursor-pointer"
                                       title="Open Passenger Module"
                                     >
                                       <User className="w-3.5 h-3.5" />
                                     </button>
+
+                                    {isCancelled ? (
+                                      <button
+                                        onClick={() => handleRestorePassenger(normP)}
+                                        className="p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border border-emerald-200 bg-emerald-50/40 rounded transition-colors cursor-pointer"
+                                        title="Restore Passenger (Re-activate to Confirmed)"
+                                      >
+                                        <RotateCcw className="w-3.5 h-3.5" />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          setCancellingPassenger(normP);
+                                          setCancellationReason(
+                                            "Customer Requested Cancellation",
+                                          );
+                                          setCancellationNotes("");
+                                          setCancelPassengerModalOpen(true);
+                                        }}
+                                        className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 bg-rose-50/40 rounded transition-colors cursor-pointer"
+                                        title="Cancel This Passenger (1-person cancellation in group)"
+                                      >
+                                        <UserX className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+
                                     <button
                                       onClick={async () => {
                                         if (
                                           confirm(
-                                            `Remove passenger ${normP.name}?`,
+                                            `Permanently delete passenger ${normP.name}?`,
                                           )
                                         ) {
                                           const updated = passengers.filter(
@@ -2880,16 +3128,16 @@ export default function BookingDetailsView({
                                             toast.success(
                                               "Passenger removed and booking items updated",
                                             );
-                                            onRefresh();
+                                            if (onRefresh) onRefresh();
                                           } catch (e) {
                                             toast.error(
-                                              "Failed to sync delete passenger and update items",
+                                              "Failed to delete passenger",
                                             );
                                           }
                                         }
                                       }}
-                                      className="p-1 text-red-400 hover:text-red-600 border border-slate-200 bg-slate-50/60 rounded"
-                                      title="Delete"
+                                      className="p-1 text-red-400 hover:text-red-600 border border-slate-200 bg-slate-50/60 rounded cursor-pointer"
+                                      title="Permanently Delete"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
@@ -2903,7 +3151,30 @@ export default function BookingDetailsView({
                             </td>
 
                             <td className="px-4 py-3 font-bold text-slate-800">
-                              <div>{normP.name || "N/A"}</div>
+                              <div
+                                className={cn(
+                                  "flex items-center gap-1.5",
+                                  isCancelled
+                                    ? "line-through text-rose-700 font-bold"
+                                    : "",
+                                )}
+                              >
+                                <span>{normP.name || "N/A"}</span>
+                                {isCancelled && (
+                                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-rose-200/90 text-rose-800 rounded border border-rose-300 no-underline inline-block">
+                                    CANCELLED
+                                  </span>
+                                )}
+                              </div>
+                              {isCancelled &&
+                                (normP.cancellationReason ||
+                                  p.cancellationReason) && (
+                                  <div className="text-[10px] text-rose-600 font-medium italic mt-0.5">
+                                    Reason:{" "}
+                                    {normP.cancellationReason ||
+                                      p.cancellationReason}
+                                  </div>
+                                )}
                               {normP.phone &&
                                 normP.phone !== "N/A" &&
                                 normP.phone !== "Not specified" &&
@@ -3058,43 +3329,32 @@ export default function BookingDetailsView({
                                               📄 {doc.originalFileName || doc.title}
                                             </span>
                                             <div className="flex gap-1.5 items-center">
-                                              {doc.url &&
-                                              (doc.url.startsWith("http") ||
-                                                doc.url.startsWith("/")) ? (
-                                                <a
-                                                  href={doc.url}
-                                                  target="_blank"
-                                                  rel="noreferrer"
-                                                  className="text-[9px] text-blue-600 hover:text-blue-800 font-bold uppercase transition-colors"
-                                                >
-                                                  View
-                                                </a>
-                                              ) : (
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    handleViewDoc(
-                                                      p.id,
-                                                      doc.originalFileName || doc.title,
-                                                      doc.id,
-                                                    )
-                                                  }
-                                                  className="text-[9px] text-blue-600 hover:text-blue-800 font-bold uppercase transition-colors"
-                                                >
-                                                  View
-                                                </button>
-                                              )}
-                                              <span className="text-slate-300 text-[9px]">
-                                                |
-                                              </span>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setSelectedDoc({
+                                                    ...doc,
+                                                    passengerName: normP.name,
+                                                    passengerId: normP.id,
+                                                  });
+                                                  setShowDocPreview(true);
+                                                }}
+                                                className="text-[9px] text-orange-600 hover:text-orange-700 font-bold"
+                                              >
+                                                View
+                                              </button>
                                               <button
                                                 type="button"
                                                 onClick={() =>
-                                                  handleRemoveDoc(p.id, doc.id)
+                                                  handleDeleteDocument(
+                                                    doc.id,
+                                                    doc.url,
+                                                    p.id,
+                                                  )
                                                 }
-                                                className="text-[9px] text-rose-600 hover:text-rose-800 font-bold uppercase transition-colors"
+                                                className="text-[9px] text-red-500 hover:text-red-700 font-bold"
                                               >
-                                                Remove
+                                                Delete
                                               </button>
                                             </div>
                                           </div>
@@ -6169,6 +6429,97 @@ export default function BookingDetailsView({
           </DialogContent>
         </Dialog>
       )}
+      {/* DIALOG: CANCEL INDIVIDUAL PASSENGER IN GROUP */}
+      <Dialog open={cancelPassengerModalOpen} onOpenChange={setCancelPassengerModalOpen}>
+        <DialogContent className="sm:max-w-[460px] bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+          <DialogHeader>
+            <DialogTitle className="text-base font-extrabold text-rose-700 flex items-center gap-2">
+              <UserX className="w-5 h-5 text-rose-600" /> Cancel Passenger from Group
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Mark an individual traveler as cancelled while keeping the rest of the booking active.
+            </DialogDescription>
+          </DialogHeader>
+
+          {cancellingPassenger && (
+            <div className="space-y-4 py-2 text-xs">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-rose-950 text-sm">{cancellingPassenger.name}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-200/80 text-rose-900 font-bold">
+                    {cancellingPassenger.age ? `${cancellingPassenger.age}y` : ""} {cancellingPassenger.genderFull || cancellingPassenger.gender}
+                  </span>
+                </div>
+                <p className="text-[11px] text-rose-700 font-medium">
+                  Booking ID: <strong>{booking.bookingId || booking.id}</strong> ({booking.fullName || booking.name})
+                </p>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-extrabold uppercase text-slate-700 block mb-1">
+                  Cancellation Reason *
+                </label>
+                <Select value={cancellationReason} onValueChange={setCancellationReason}>
+                  <SelectTrigger className="h-9 text-xs bg-white border-slate-200 font-medium">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="text-xs bg-white">
+                    <SelectItem value="Customer Requested Cancellation">Customer Requested Cancellation</SelectItem>
+                    <SelectItem value="Medical Emergency / Health Issue">Medical Emergency / Health Issue</SelectItem>
+                    <SelectItem value="Schedule / Work Conflict">Schedule / Work Conflict</SelectItem>
+                    <SelectItem value="Train / Visa / ID Issue">Train / Visa / ID Issue</SelectItem>
+                    <SelectItem value="Personal / Family Emergency">Personal / Family Emergency</SelectItem>
+                    <SelectItem value="No-Show / Unreachable">No-Show / Unreachable</SelectItem>
+                    <SelectItem value="Other Reason">Other / Custom Reason</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-extrabold uppercase text-slate-700 block mb-1">
+                  Internal Cancellation Notes (Optional)
+                </label>
+                <Textarea
+                  value={cancellationNotes}
+                  onChange={(e) => setCancellationNotes(e.target.value)}
+                  placeholder="e.g. Discussed with team / replacement pending..."
+                  className="text-xs min-h-[60px] bg-white border-slate-200"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCancelPassengerModalOpen(false)}
+              className="text-xs font-semibold h-9 rounded-lg border-slate-200 cursor-pointer"
+              disabled={isProcessingCancelPax}
+            >
+              Keep Active
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCancelPassengerSubmit}
+              disabled={isProcessingCancelPax}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              {isProcessingCancelPax ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Cancelling...</span>
+                </>
+              ) : (
+                <>
+                  <UserX className="w-3.5 h-3.5" />
+                  <span>Confirm Passenger Cancellation</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
