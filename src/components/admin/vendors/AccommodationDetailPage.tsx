@@ -547,19 +547,6 @@ export function AccommodationDetailPage({
       toast.error("Failed to delete from server");
     }
   };
-    setVendor(updatedVendor);
-    onUpdateVendor(updatedVendor);
-
-    try {
-      await api.patch(`/vendors/directory/${vendor.id}`, {
-        guideRates: updatedList,
-      });
-      toast.success("Guide rate removed");
-    } catch (err) {
-      console.error(err);
-      toast.error("Removed locally, but failed to update server");
-    }
-  };
 
   const handleSaveVehicle = async () => {
     if (!vehicleForm.model) {
