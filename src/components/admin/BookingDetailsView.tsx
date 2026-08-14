@@ -6384,6 +6384,9 @@ export default function BookingDetailsView({
               <DialogTitle className="text-base font-extrabold text-rose-700 flex items-center gap-2">
                 <Trash2 className="w-5 h-5 text-rose-600" /> Permanently Delete Booking
               </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Permanently purge this booking record from the system.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-2 text-xs text-slate-600">
               <p className="font-semibold text-slate-800">
