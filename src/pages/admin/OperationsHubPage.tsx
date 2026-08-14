@@ -2856,18 +2856,29 @@ export default function OperationsHubPage() {
                                           {fleetItem?.capacity || 17} Filled
                                         </span>
                                       </p>
-                                      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
-                                        {travelers.map((t: any, i: number) => (
-                                          <p
-                                            key={i}
-                                            className="text-[10px] font-medium text-slate-600 truncate flex items-center gap-1.5"
-                                          >
-                                            <span className="text-[9px] font-bold font-mono text-blue-500 bg-blue-50 px-1 py-0.2 rounded shrink-0">
-                                              #{t.seatNumber || i + 1}
-                                            </span>
-                                            {t.travelerName}
-                                          </p>
-                                        ))}
+                                      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                                        {travelers
+                                          .slice()
+                                          .sort((a: any, b: any) => {
+                                            const sA = parseInt(String(a.seatNumber || "").replace(/\D/g, "")) || 0;
+                                            const sB = parseInt(String(b.seatNumber || "").replace(/\D/g, "")) || 0;
+                                            if (sA !== sB) return sA - sB;
+                                            return (a.travelerName || "").localeCompare(b.travelerName || "");
+                                          })
+                                          .map((t: any, i: number) => {
+                                            const seatDisplay = t.seatNumber && t.seatNumber !== "—" ? t.seatNumber : i + 1;
+                                            return (
+                                              <div
+                                                key={i}
+                                                className="text-[10px] font-medium text-slate-600 flex items-center gap-1.5 min-w-0"
+                                              >
+                                                <span className="text-[9px] font-bold font-mono text-blue-500 bg-blue-50 border border-blue-100 min-w-[26px] h-4.5 px-1 inline-flex items-center justify-center rounded shrink-0 tabular-nums text-center">
+                                                  #{seatDisplay}
+                                                </span>
+                                                <span className="truncate min-w-0 flex-1">{t.travelerName}</span>
+                                              </div>
+                                            );
+                                          })}
                                       </div>
                                     </div>
                                   );

@@ -9120,35 +9120,45 @@ useEffect(() => {
                               </span>
                             </p>
                             <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 min-h-[40px]">
-                              {travelers.map((t: any, i: number) => {
-                                const rawG = (t.rawGender || "").toLowerCase();
-                                let theme = "text-emerald-600 bg-emerald-50 border-emerald-100";
-                                if (rawG === "male") theme = "text-blue-600 bg-blue-50 border-blue-100";
-                                else if (rawG === "female") theme = "text-pink-600 bg-pink-50 border-pink-100";
+                              {travelers
+                                .slice()
+                                .sort((a: any, b: any) => {
+                                  const sA = parseInt(String(a.seatNumber || "").replace(/\D/g, "")) || 0;
+                                  const sB = parseInt(String(b.seatNumber || "").replace(/\D/g, "")) || 0;
+                                  if (sA !== sB) return sA - sB;
+                                  return (a.travelerName || "").localeCompare(b.travelerName || "");
+                                })
+                                .map((t: any, i: number) => {
+                                  const rawG = (t.rawGender || "").toLowerCase();
+                                  let theme = "text-emerald-600 bg-emerald-50 border-emerald-100";
+                                  if (rawG === "male") theme = "text-blue-600 bg-blue-50 border-blue-100";
+                                  else if (rawG === "female") theme = "text-pink-600 bg-pink-50 border-pink-100";
 
-                                return (
-                                  <p
-                                    key={i}
-                                    draggable
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.setData("travelerName", t.travelerName);
-                                      if (t.passengerId) {
-                                        e.dataTransfer.setData("passengerId", t.passengerId);
-                                      } else {
-                                        const pObj = allPassengers.find((p: any) => p.name === t.travelerName);
-                                        if (pObj?.id) e.dataTransfer.setData("passengerId", pObj.id);
-                                      }
-                                    }}
-                                    className="text-[11px] font-bold text-slate-650 truncate flex items-center gap-2 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2 py-1 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none"
-                                    onClick={() => handleOpenShuffle({ name: t.travelerName, id: t.passengerId })}
-                                  >
-                                    <span className={`text-[9px] font-black font-mono ${theme} border px-1.5 py-0.2 rounded shrink-0`}>
-                                      #{t.seatNumber || i + 1}
-                                    </span>
-                                    {t.travelerName}
-                                  </p>
-                                );
-                              })}
+                                  const seatDisplay = t.seatNumber && t.seatNumber !== "—" ? t.seatNumber : i + 1;
+
+                                  return (
+                                    <div
+                                      key={i}
+                                      draggable
+                                      onDragStart={(e) => {
+                                        e.dataTransfer.setData("travelerName", t.travelerName);
+                                        if (t.passengerId) {
+                                          e.dataTransfer.setData("passengerId", t.passengerId);
+                                        } else {
+                                          const pObj = allPassengers.find((p: any) => p.name === t.travelerName);
+                                          if (pObj?.id) e.dataTransfer.setData("passengerId", pObj.id);
+                                        }
+                                      }}
+                                      className="text-[11px] font-bold text-slate-700 flex items-center gap-2 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2.5 py-1.5 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none min-w-0"
+                                      onClick={() => handleOpenShuffle({ name: t.travelerName, id: t.passengerId })}
+                                    >
+                                      <span className={`text-[9px] font-black font-mono ${theme} border min-w-[28px] h-5 px-1 inline-flex items-center justify-center rounded shrink-0 tabular-nums text-center`}>
+                                        #{seatDisplay}
+                                      </span>
+                                      <span className="truncate min-w-0 flex-1">{t.travelerName}</span>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           </div>
                         );
