@@ -152,28 +152,12 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     breadcrumbLabel: "Operations / Vendor Directory",
   },
   {
-    id: "guides-hub",
-    label: "Guide Management",
-    path: "/admin/guides-hub",
-    permission: "guides.view",
-    navigation: { visible: true, group: "Operations", iconName: "User" },
-    breadcrumbLabel: "Operations / Guide Management",
-  },
-  {
     id: "company-documents-ops",
     label: "Company Documents",
     path: "/admin/company-documents",
     permission: "company_documents.view",
     navigation: { visible: true, group: "Operations", iconName: "FileText" },
     breadcrumbLabel: "Operations / Documents",
-  },
-  {
-    id: "reports-ops",
-    label: "Reports",
-    path: "/admin/reports",
-    permission: "reports.view",
-    navigation: { visible: true, group: "Operations", iconName: "BarChart3" },
-    breadcrumbLabel: "Operations / Reports",
   },
 
   // Approval Center Module
@@ -216,32 +200,6 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     authenticatedOnly: true,
     navigation: { visible: true, group: "Travel Desk", iconName: "Plane" },
     breadcrumbLabel: "Travel Desk",
-  },
-
-  // People / HR Module
-  {
-    id: "hr",
-    label: "Employees & Tasks",
-    path: "/admin/hr",
-    permission: "hr.view",
-    navigation: { visible: true, group: "People", iconName: "Users" },
-    breadcrumbLabel: "People / Employees & Tasks",
-  },
-  {
-    id: "attendance-logs",
-    label: "Attendance Logs",
-    path: "/admin/attendance-logs",
-    permission: "attendance.view",
-    navigation: { visible: true, group: "People", iconName: "Clock" },
-    breadcrumbLabel: "People / Attendance Logs",
-  },
-  {
-    id: "payroll",
-    label: "Payroll",
-    path: "/admin/payroll",
-    permission: "payroll.view",
-    navigation: { visible: true, group: "People", iconName: "CreditCard" },
-    breadcrumbLabel: "People / Payroll",
   },
 
   // Business Module
@@ -287,22 +245,6 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
   },
 
   // Marketing Module
-  {
-    id: "marketing-overview",
-    label: "Marketing Overview",
-    path: "/admin/marketing/overview",
-    permission: "settings.view",
-    navigation: { visible: true, group: "Marketing", iconName: "Megaphone" },
-    breadcrumbLabel: "Marketing / Overview",
-  },
-  {
-    id: "content-studio",
-    label: "Content Studio",
-    path: "/admin/marketing/content-studio",
-    permission: "marketing.social",
-    navigation: { visible: true, group: "Marketing", iconName: "Sparkles" },
-    breadcrumbLabel: "Marketing / Content Studio",
-  },
   {
     id: "blogs",
     label: "Blogs",
@@ -366,14 +308,5 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     permission: "emails.manage_templates",
     navigation: { visible: true, group: "Administration", iconName: "Mail" },
     breadcrumbLabel: "Administration / Email Templates",
-  },
-  {
-    id: "audit-logs",
-    label: "Audit Logs",
-    path: "/admin/audit-logs",
-    founderOnly: true,
-    permission: "audit.view",
-    navigation: { visible: true, group: "Administration", iconName: "History" },
-    breadcrumbLabel: "Administration / Audit Logs",
   },
 ];

@@ -71,7 +71,7 @@ interface AuthState {
 function getStoredAdmin(): Admin | null {
   try {
     const raw =
-      typeof window !== "undefined"
+      typeof window !== "undefined" && typeof localStorage !== "undefined"
         ? localStorage.getItem("admin_user") || localStorage.getItem("admin")
         : null;
     if (!raw) return null;
@@ -83,7 +83,9 @@ function getStoredAdmin(): Admin | null {
 }
 
 const initialToken =
-  typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  typeof window !== "undefined" && typeof localStorage !== "undefined"
+    ? localStorage.getItem("token")
+    : null;
 
 const hasInitialAdminToken =
   isValidTokenString(initialToken) &&

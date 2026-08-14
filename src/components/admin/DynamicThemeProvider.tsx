@@ -2,8 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { themeService, ThemeConfig } from "@/services/theme.service";
 
 const ThemeContext = createContext<{
-  theme: ThemeConfig | null;
-  updateLocalTheme: (config: ThemeConfig) => void;
+  theme: Partial<ThemeConfig> | null;
+  updateLocalTheme: (config: Partial<ThemeConfig>) => void;
   refreshTheme: () => Promise<void>;
 }>({
   theme: null,
@@ -77,7 +77,7 @@ export const DynamicThemeProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [theme, setTheme] = useState<ThemeConfig | null>(null);
+  const [theme, setTheme] = useState<Partial<ThemeConfig> | null>(null);
 
   const applyTheme = (config: Partial<ThemeConfig>) => {
     const root = document.documentElement;
@@ -195,7 +195,7 @@ export const DynamicThemeProvider = ({
     }
   };
 
-  const updateLocalTheme = (config: ThemeConfig) => {
+  const updateLocalTheme = (config: Partial<ThemeConfig>) => {
     setTheme(config);
     applyTheme(config);
   };

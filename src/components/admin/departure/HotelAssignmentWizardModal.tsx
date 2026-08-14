@@ -25,6 +25,7 @@ import {
   getHotelEligibleDestinations,
   normalizeDestinationName,
   HotelEligibleDestination,
+  deriveRoomCountsFromAllocations,
 } from "@/utils/accommodationCalculator";
 
 interface InitialDayInfo {
@@ -43,6 +44,7 @@ interface HotelAssignmentWizardModalProps {
   tripId: string;
   departureDateStr: string;
   totalPax: number;
+  passengerAllocations?: Record<string, { room: string; vehicle: string; seat: string }>;
   initialDayInfo?: InitialDayInfo | null;
   onSaveSuccess: () => void;
 }
@@ -353,6 +355,7 @@ export default function HotelAssignmentWizardModal({
   tripId,
   departureDateStr,
   totalPax,
+  passengerAllocations,
   initialDayInfo,
   onSaveSuccess,
 }: HotelAssignmentWizardModalProps) {
@@ -607,12 +610,30 @@ export default function HotelAssignmentWizardModal({
     }
 
     // Initialize Room Counts for 100% Sync with Room Allocation Engine & Database
-    if (existingB) {
+    const derivedFromAllocations = passengerAllocations
+      ? deriveRoomCountsFromAllocations(passengerAllocations)
+      : null;
+
+    if (
+      existingB &&
+      (existingB.doubleRoomsCount > 0 ||
+        existingB.tripleRoomsCount > 0 ||
+        existingB.quadRoomsCount > 0 ||
+        existingB.doubleRooms > 0 ||
+        existingB.tripleRooms > 0 ||
+        existingB.quadRooms > 0)
+    ) {
       setDoubleRoomsCount(existingB.doubleRoomsCount ?? existingB.doubleRooms ?? 0);
       setTripleRoomsCount(existingB.tripleRoomsCount ?? existingB.tripleRooms ?? 0);
       setQuadRoomsCount(existingB.quadRoomsCount ?? existingB.quadRooms ?? 0);
       setExtraPersonsCount(existingB.extraPersonsCount ?? existingB.extraBeds ?? 0);
       setRemarks(existingB.remarks || "");
+    } else if (derivedFromAllocations && derivedFromAllocations.totalRooms > 0) {
+      setDoubleRoomsCount(derivedFromAllocations.doubleRooms);
+      setTripleRoomsCount(derivedFromAllocations.tripleRooms);
+      setQuadRoomsCount(derivedFromAllocations.quadRooms);
+      setExtraPersonsCount(derivedFromAllocations.extraPersons);
+      setRemarks(existingB?.remarks || "");
     } else {
       // Auto-suggest room allocation for total pax (e.g. 7 pax -> 3 Double Rooms or Quad + Triple)
       if (totalPax > 0) {
@@ -645,6 +666,7 @@ export default function HotelAssignmentWizardModal({
     initialDayInfo,
     departureDateStr,
     totalPax,
+    passengerAllocations,
     combinedHotelProperties,
   ]);
 

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   buildPhysicalRoomAllocation,
+  deriveRoomCountsFromAllocations,
   calculateAccommodationCost,
   derivePassengerSharing,
   derivePassengerSharingFromBookings,
@@ -188,24 +189,48 @@ export default function AccommodationWorkspace({
 
       if (hasStay && booking) {
         nights = booking.nightsCount || 1;
-        // Use explicit room counts from booking if available; fall back to authoritativeRooms
-        const dRooms = booking.doubleRoomsCount ?? authoritativeRooms;
-        const dRate = booking.doubleRate || 0;
-        const tRooms = booking.tripleRoomsCount || 0;
-        const tRate = booking.tripleRate || 0;
-        const qRooms = booking.quadRoomsCount || 0;
-        const qRate = booking.quadRate || 0;
-        const exPax = booking.extraPersonsCount || 0;
-        const exRate = booking.extraBedRate || 0;
+        const derivedRooms = deriveRoomCountsFromAllocations(passengerAllocations);
+        const hasExplicitBookingRooms =
+          (booking.doubleRoomsCount || 0) > 0 ||
+          (booking.tripleRoomsCount || 0) > 0 ||
+          (booking.quadRoomsCount || 0) > 0;
+
+        const dRooms = hasExplicitBookingRooms
+          ? (booking.doubleRoomsCount ?? 0)
+          : (derivedRooms.totalRooms > 0 ? derivedRooms.doubleRooms : authoritativeRooms);
+        const tRooms = hasExplicitBookingRooms
+          ? (booking.tripleRoomsCount ?? 0)
+          : (derivedRooms.totalRooms > 0 ? derivedRooms.tripleRooms : 0);
+        const qRooms = hasExplicitBookingRooms
+          ? (booking.quadRoomsCount ?? 0)
+          : (derivedRooms.totalRooms > 0 ? derivedRooms.quadRooms : 0);
+        const exPax = hasExplicitBookingRooms
+          ? (booking.extraPersonsCount ?? 0)
+          : (derivedRooms.totalRooms > 0 ? derivedRooms.extraPersons : 0);
+
+        const dRate = booking.doubleRate || 1200;
+        const tRate = booking.tripleRate || 1200;
+        const qRate = booking.quadRate || 1200;
+        const exRate = booking.extraBedRate || 800;
 
         const isPerPerson = (booking.pricingMethod || "per-person").toLowerCase() === "per-person";
         const dMult = isPerPerson ? 2 : 1;
         const tMult = isPerPerson ? 3 : 1;
         const qMult = isPerPerson ? 4 : 1;
 
-        let calcTotal = (dRooms * dMult * dRate + tRooms * tMult * tRate + qRooms * qMult * qRate + exPax * exRate) * nights;
+        let calcTotal =
+          (dRooms * dMult * dRate +
+            tRooms * tMult * tRate +
+            qRooms * qMult * qRate +
+            exPax * exRate) *
+          nights;
 
-        totalAmount = calcTotal > 0 ? calcTotal : (booking.totalAmount > 0 ? booking.totalAmount : 0);
+        totalAmount =
+          calcTotal > 0
+            ? calcTotal
+            : booking.totalAmount > 0
+            ? booking.totalAmount
+            : 0;
         status = "configured";
 
         const effectivePaxCount = totalPax > 0 ? totalPax : Math.max(1, authoritativeRooms * 2);

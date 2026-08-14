@@ -298,8 +298,7 @@ function AdminSidebar() {
               // Check founder-only administrative sub-items
               if (
                 urlPath === "/admin/users" ||
-                urlPath === "/admin/access-control" ||
-                urlPath === "/admin/audit-logs"
+                urlPath === "/admin/access-control"
               ) {
                 const email = (admin.email || "").toLowerCase().trim();
                 const name = (admin.name || "").toLowerCase().trim();

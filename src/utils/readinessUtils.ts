@@ -68,7 +68,7 @@ export function calculateReadinessScore(
   const transports = safeVendors.filter(
     (v: any) => v && v.vendorType === "transport",
   );
-  if (transports.length > 0 || safeFleet.length > 0) {
+  if (transports.length > 0 || safeFleet.filter(Boolean).length > 0) {
     score += 10;
   }
 

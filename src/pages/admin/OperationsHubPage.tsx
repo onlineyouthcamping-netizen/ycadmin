@@ -748,6 +748,7 @@ export default function OperationsHubPage() {
     severity: "MEDIUM",
     description: "",
     incidentType: "OTHER",
+    resolution: "",
   });
 
   // Dialogs
@@ -896,7 +897,7 @@ export default function OperationsHubPage() {
         } else if (tab === "hotels_transport") {
           const [itineraryResult, fleetResult] = await Promise.allSettled([
             opsService.getDayItinerary(tripId, depDate),
-            opsService.getTransportFleet(tripId, depDate),
+            opsService.getTransportFleet(tripId, { departureDate: depDate }),
           ]);
           if (requestId !== opsRequestId.current) return;
           if (itineraryResult.status === "fulfilled")
@@ -905,7 +906,7 @@ export default function OperationsHubPage() {
         } else if (tab === "allocation") {
           const [fleetResult, roomsResult, confirmedResult] =
             await Promise.allSettled([
-              opsService.getTransportFleet(tripId, depDate),
+              opsService.getTransportFleet(tripId, { departureDate: depDate }),
               opsService.getRoomInventory(tripId, depDate),
               opsService.getConfirmedAllocations(tripId, depDate),
             ]);
@@ -1481,6 +1482,7 @@ export default function OperationsHubPage() {
         severity: "MEDIUM",
         description: "",
         incidentType: "OTHER",
+        resolution: "",
       });
       loadTripOps(selectedTripId, selectedDepartureDate);
     } catch (err: any) {
@@ -1582,7 +1584,10 @@ export default function OperationsHubPage() {
   if (tabParam === "stationpayments" || tabParam === "station_payments" || tabParam === "station") {
     return (
       <div className="p-6 bg-slate-50 min-h-screen">
-        <StationPaymentCollection />
+        <StationPaymentCollection
+          tripId={selectedTripId || ""}
+          departureDateStr={selectedDepartureDate || ""}
+        />
       </div>
     );
   }
@@ -2415,145 +2420,6 @@ export default function OperationsHubPage() {
 
               {/* Existing workspace tabs content (accessible via departure detail sub-tabs) */}
               {/* 1. OVERVIEW TAB */}
-              {activeTab === "overview" && (
-                <div className="space-y-6">
-                  {seatConfig &&
-                    seatConfig.seatsSold >= seatConfig.alertThreshold && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-sm animate-pulse">
-                        <div className="flex items-center gap-3">
-                          <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
-                          <div>
-                            <p className="text-xs font-bold text-amber-900">
-                              Seat Capacity Warning!
-                            </p>
-                            <p className="text-[11px] text-amber-700">
-                              {seatConfig.seatsSold} seats sold out of{" "}
-                              {seatConfig.totalSeatsCap} capacity. Please
-                              reconfirm room allotments.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="px-2.5 py-1 bg-amber-200 text-amber-900 rounded-lg text-[10px] font-black uppercase">
-                            {seatConfig.seatsAvailable} Seats Left
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 space-y-6">
-                      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                          Departure Checklist Summary
-                        </h3>
-                        <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4 border border-slate-100">
-                          <div>
-                            <p className="text-2xl font-black text-slate-800">
-                              {workspaceSummary?.checklistCompletion
-                                .completed || 0}{" "}
-                              /{" "}
-                              {workspaceSummary?.checklistCompletion.total || 0}{" "}
-                              Completed
-                            </p>
-                            <p className="text-[10px] text-slate-400 font-medium">
-                              Standard checklist tasks completed.
-                            </p>
-                          </div>
-                          {(workspaceSummary?.checklistCompletion.total ||
-                            0) === 0 ? (
-                            <Button
-                              size="sm"
-                              onClick={handleInitializeChecklist}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold h-8"
-                            >
-                              Initialize checklist
-                            </Button>
-                          ) : (
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black uppercase">
-                              Initialized
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                          Active Incident Status
-                        </h3>
-                        {(workspaceSummary?.openIncidentCount || 0) === 0 ? (
-                          <div className="bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-xl p-4 text-xs font-bold text-center">
-                            ✓ All clear. No open incidents reported on this
-                            departure date.
-                          </div>
-                        ) : (
-                          <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-900">
-                            {workspaceSummary?.openIncidentCount || 0} open
-                            incident
-                            {workspaceSummary?.openIncidentCount === 1
-                              ? ""
-                              : "s"}
-                            . Open the Incidents tab for details.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                        Departure Leader
-                      </h3>
-                      {(workspaceSummary?.leaders.length || 0) > 0 ? (
-                        <div className="space-y-3">
-                          {workspaceSummary?.leaders.map(
-                            (ld: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className="bg-slate-50 border border-slate-100 rounded-xl p-4"
-                              >
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">
-                                  Leader Name{" "}
-                                  {ld.isPrimary && (
-                                    <span className="text-[9px] text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded font-black ml-1.5">
-                                      Primary
-                                    </span>
-                                  )}
-                                </p>
-                                <p className="text-xs font-black text-slate-800 mt-1">
-                                  {ld.leaderName}
-                                </p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase mt-3">
-                                  Phone Details
-                                </p>
-                                <p className="text-xs font-black text-slate-800 mt-1 flex items-center gap-2">
-                                  {ld.leaderPhone}
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(
-                                        ld.leaderPhone,
-                                      );
-                                      toast.success("Copied!");
-                                    }}
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </Button>
-                                </p>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      ) : (
-                        <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-8 text-center text-xs text-slate-400 font-medium">
-                          No Leader assigned yet.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* 2. HOTELS & TRANSPORT TAB */}
               {activeTab === "hotels_transport" && (

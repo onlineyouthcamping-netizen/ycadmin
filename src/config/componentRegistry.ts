@@ -26,24 +26,15 @@ export const COMPONENT_REGISTRY: Record<
   "vendor-directory": lazy(
     () => import("../pages/admin/VendorDirectoryPage.tsx"),
   ),
-  "guides-hub": lazy(
-    () => import("../pages/admin/GuideOperationsCenterPage.tsx"),
-  ),
   "company-documents-ops": lazy(
     () => import("../pages/admin/CompanyDocumentsPage.tsx"),
   ),
-  "reports-ops": lazy(() => import("../pages/admin/marketing/ReportsPage.tsx")),
   "approvals-hub": lazy(() => import("../pages/admin/ApprovalsHubPage.tsx")),
   "ticket-approvals": lazy(
     () => import("../pages/admin/TicketApprovalsPage.tsx"),
   ),
   accounting: lazy(() => import("../pages/admin/AccountingPage.tsx")),
   "travel-desk": lazy(() => import("../pages/admin/TravelDeskPage.tsx")),
-  hr: lazy(() => import("../pages/admin/HRPage.tsx")),
-  "attendance-logs": lazy(
-    () => import("../pages/admin/AttendanceLogsPage.tsx"),
-  ),
-  payroll: lazy(() => import("../pages/admin/PayrollPage.tsx")),
   trips: lazy(() => import("../pages/admin/TripsPage.tsx")),
   "master-database": lazy(
     () => import("../pages/admin/MasterDatabasePage.tsx"),
@@ -51,12 +42,6 @@ export const COMPONENT_REGISTRY: Record<
   website: lazy(() => import("../pages/admin/WebsiteControlCenterPage.tsx")),
   "page-builder": lazy(() => import("../pages/admin/PageBuilderPage.tsx")),
   pages: lazy(() => import("../pages/admin/PagesPage.tsx")),
-  "marketing-overview": lazy(
-    () => import("../pages/admin/marketing/MarketingOverviewPage.tsx"),
-  ),
-  "content-studio": lazy(
-    () => import("../pages/admin/marketing/ContentStudioPage.tsx"),
-  ),
   blogs: lazy(() => import("../pages/admin/BlogsPage.tsx")),
   reviews: lazy(() => import("../pages/admin/ReviewsPage.tsx")),
   "staff-profiles": lazy(() => import("../pages/admin/UserManagementPage.tsx")),
@@ -72,5 +57,4 @@ export const COMPONENT_REGISTRY: Record<
   "email-templates": lazy(
     () => import("../pages/admin/EmailTemplatesPage.tsx"),
   ),
-  "audit-logs": lazy(() => import("../pages/admin/AuditLogsPage.tsx")),
 };

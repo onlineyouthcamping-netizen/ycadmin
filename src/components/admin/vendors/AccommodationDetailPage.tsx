@@ -51,9 +51,11 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import api from "@/services/api";
-import { tripsService } from "@/services/trips.service";
 import { getDisplayVendorCode } from "@/utils/vendorUtils";
-import { RoutePricingTab } from "./RoutePricingTab";
+
+const RoutePricingTab = React.lazy(() =>
+  import("./RoutePricingTab").then((m) => ({ default: m.RoutePricingTab }))
+);
 
 interface AccommodationDetailPageProps {
   vendor: any;
@@ -156,7 +158,6 @@ export function AccommodationDetailPage({
     fleetTypes: vendor.roomTypes || "20 Seater Tempo, 17 Seater Tempo, 14 Seater Tempo, Innova, Ertiga, Dzire",
     operatingCity: vendor.city || vendor.location || "Punjab & Himachal",
     tollParkingPolicy: "Included in base tariff",
-    driverAllowance: "₹500 / Night (or Included)",
     routesCovered: vendor.notes || "Punjab, Himachal Pradesh, Ladakh, Kashmir, Uttarakhand",
     gstin: vendor.gstin || "",
     panNumber: vendor.panNumber || "",
@@ -164,6 +165,14 @@ export function AccommodationDetailPage({
     accountNumber: vendor.accountNumber || "",
     ifscCode: vendor.ifscCode || "",
     paymentTerms: vendor.paymentTerms || "30 Days Credit",
+    guideRole: vendor.guideRole || "Lead Trek Leader & High Altitude Specialist",
+    languages: vendor.languages || "",
+    certifications: vendor.certifications || "",
+    experience: vendor.experience || "",
+    cuisines: vendor.cuisines || "",
+    seatingCapacity: vendor.seatingCapacity || "",
+    operatingHours: vendor.operatingHours || "",
+    activityTypes: vendor.activityTypes || "",
     financialDetails:
       vendor.financialDetails ||
       vendor.bankDetails ||
@@ -369,6 +378,175 @@ export function AccommodationDetailPage({
     const updatedList = guideRates.filter((gr) => gr.id !== id);
     setGuideRates(updatedList);
     const updatedVendor = { ...vendor, guideRates: updatedList };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        guideRates: updatedList,
+      });
+      toast.success("Guide rate deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete from server");
+    }
+  };
+
+  // State for Meal Tariffs & Thali Rates (Restaurants / Cafes)
+  const defaultMealTariffs = [
+    {
+      id: "mt-1",
+      name: "Group Breakfast Buffet / Thali",
+      type: "BREAKFAST",
+      perPaxRate: 150,
+      inclusions: "Tea, Paratha, Puri Bhaji, Omelette",
+      isVeg: true,
+    },
+    {
+      id: "mt-2",
+      name: "Group Lunch Buffet (Veg)",
+      type: "LUNCH",
+      perPaxRate: 250,
+      inclusions: "Paneer, Dal, Rice, Roti, Salad, Sweet",
+      isVeg: true,
+    },
+    {
+      id: "mt-3",
+      name: "Group Dinner Buffet (Veg + Non-Veg)",
+      type: "DINNER",
+      perPaxRate: 350,
+      inclusions: "Chicken Curry / Paneer, Dal Fry, Jeera Rice, Gulab Jamun",
+      isVeg: false,
+    },
+  ];
+
+  const [mealTariffs, setMealTariffs] = useState<any[]>(() => {
+    let initial = vendor?.mealTariffs;
+    if (!initial && vendor?.mealPlans) {
+      try {
+        const parsed = JSON.parse(vendor.mealPlans);
+        if (Array.isArray(parsed) && parsed.length > 0) initial = parsed;
+      } catch {}
+    }
+    if (Array.isArray(initial) && initial.length > 0) {
+      return initial;
+    }
+    return defaultMealTariffs;
+  });
+
+  const [mealTariffModalOpen, setMealTariffModalOpen] = useState(false);
+  const [editingMealTariff, setEditingMealTariff] = useState<any>(null);
+  const [mealTariffForm, setMealTariffForm] = useState({
+    name: "Group Breakfast Buffet / Thali",
+    type: "BREAKFAST",
+    perPaxRate: "150",
+    inclusions: "Tea, Paratha, Puri Bhaji, Omelette",
+    isVeg: true,
+  });
+
+  const handleOpenAddMealTariff = () => {
+    setEditingMealTariff(null);
+    setMealTariffForm({
+      name: "",
+      type: "BREAKFAST",
+      perPaxRate: "200",
+      inclusions: "",
+      isVeg: true,
+    });
+    setMealTariffModalOpen(true);
+  };
+
+  const handleOpenEditMealTariff = (tariff: any) => {
+    setEditingMealTariff(tariff);
+    setMealTariffForm({
+      name: tariff.name || "",
+      type: tariff.type || "BREAKFAST",
+      perPaxRate: String(tariff.perPaxRate || 150),
+      inclusions: tariff.inclusions || "",
+      isVeg: tariff.isVeg !== false,
+    });
+    setMealTariffModalOpen(true);
+  };
+
+  const handleSaveMealTariff = async () => {
+    if (!mealTariffForm.name || !mealTariffForm.perPaxRate) {
+      toast.error("Package Name and Per Pax Rate are required");
+      return;
+    }
+    const perPax = parseInt(mealTariffForm.perPaxRate) || 0;
+
+    let updatedList: any[] = [];
+    if (editingMealTariff) {
+      updatedList = mealTariffs.map((t) =>
+        t.id === editingMealTariff.id
+          ? {
+              ...t,
+              name: mealTariffForm.name,
+              type: mealTariffForm.type,
+              perPaxRate: perPax,
+              inclusions: mealTariffForm.inclusions,
+              isVeg: mealTariffForm.isVeg,
+            }
+          : t,
+      );
+    } else {
+      const newTariff = {
+        id: `mt-${Date.now()}`,
+        name: mealTariffForm.name,
+        type: mealTariffForm.type,
+        perPaxRate: perPax,
+        inclusions: mealTariffForm.inclusions,
+        isVeg: mealTariffForm.isVeg,
+      };
+      updatedList = [...mealTariffs, newTariff];
+    }
+
+    setMealTariffs(updatedList);
+    const updatedVendor = {
+      ...vendor,
+      mealTariffs: updatedList,
+      mealPlans: JSON.stringify(updatedList),
+    };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        mealTariffs: updatedList,
+        mealPlans: JSON.stringify(updatedList),
+      });
+      toast.success("Meal tariff saved successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Saved locally, but failed to update server");
+    }
+
+    setMealTariffModalOpen(false);
+    setEditingMealTariff(null);
+  };
+
+  const handleDeleteMealTariff = async (tariffId: string) => {
+    const updatedList = mealTariffs.filter((t) => t.id !== tariffId);
+    setMealTariffs(updatedList);
+    const updatedVendor = {
+      ...vendor,
+      mealTariffs: updatedList,
+      mealPlans: JSON.stringify(updatedList),
+    };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        mealTariffs: updatedList,
+        mealPlans: JSON.stringify(updatedList),
+      });
+      toast.success("Meal tariff deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete from server");
+    }
+  };
     setVendor(updatedVendor);
     onUpdateVendor(updatedVendor);
 
@@ -1419,7 +1597,7 @@ export function AccommodationDetailPage({
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     {isTransport
-                      ? "Edit vehicle categories, operating routes, driver allowance, safety features, and banking details directly below."
+                      ? "Edit vehicle categories, operating routes, safety features, and banking details directly below."
                       : isGuide
                         ? "Edit guide language skills, daily rates, certifications, and compliance details directly below."
                         : "Edit category, rating, check-in/out times, meal plans, amenities, and GSTIN/banking details directly below."}
@@ -1477,7 +1655,7 @@ export function AccommodationDetailPage({
                         />
                       </div>
 
-                      <div>
+                      <div className="sm:col-span-2">
                         <label className="font-extrabold text-slate-700 block mb-1">
                           Toll & Parking Policy
                         </label>
@@ -1490,23 +1668,6 @@ export function AccommodationDetailPage({
                             })
                           }
                           placeholder="Included in base tariff"
-                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="font-extrabold text-slate-700 block mb-1">
-                          Driver Night Allowance
-                        </label>
-                        <Input
-                          value={overviewForm.driverAllowance}
-                          onChange={(e) =>
-                            setOverviewForm({
-                              ...overviewForm,
-                              driverAllowance: e.target.value,
-                            })
-                          }
-                          placeholder="₹500 / Night or Included"
                           className="h-8.5 bg-white text-xs border-slate-200 font-bold"
                         />
                       </div>
@@ -1922,7 +2083,9 @@ export function AccommodationDetailPage({
 
           {/* TAB: TRANSPORT VEHICLES & ROUTE PRICING (UNIFIED) */}
           {(activeTab === "vehicles" || activeTab === "route_pricing" || (isTransport && activeTab === "seasonal_pricing")) && (
-            <RoutePricingTab vendorId={vendor.id} vendorName={vendor.name} />
+            <React.Suspense fallback={<div className="p-8 text-center text-xs font-bold text-slate-400">Loading Route Pricing...</div>}>
+              <RoutePricingTab vendorId={vendor.id} vendorName={vendor.name} />
+            </React.Suspense>
           )}
 
           {/* TAB 2: CONTACT PERSONS */}
@@ -2377,52 +2540,93 @@ export function AccommodationDetailPage({
                     Configure per-head breakfast, lunch, and dinner tariffs for group bookings.
                   </p>
                 </div>
+                <Button
+                  onClick={handleOpenAddMealTariff}
+                  size="sm"
+                  className="bg-[#F97316] hover:bg-[#E05E00] text-white font-bold h-8 px-3 text-xs shadow-2xs gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Meal Tariff / Thali
+                </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
-                  <span className="font-extrabold text-slate-800 text-sm block">
-                    Group Breakfast Buffet / Thali
-                  </span>
-                  <p className="text-slate-600">
-                    Per Pax Rate:{" "}
-                    <span className="font-black text-emerald-600 text-sm">
-                      ₹150 / Pax
-                    </span>
-                  </p>
-                  <p className="text-slate-500 text-[11px]">
-                    Includes: Tea, Paratha, Puri Bhaji, Omelette
-                  </p>
+              {mealTariffs.length === 0 ? (
+                <div className="p-8 text-center bg-white border border-slate-200 rounded-xl space-y-3">
+                  <Utensils className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs font-bold text-slate-600">No meal tariffs configured yet.</p>
+                  <Button
+                    onClick={handleOpenAddMealTariff}
+                    size="sm"
+                    className="bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs"
+                  >
+                    + Add First Meal Tariff
+                  </Button>
                 </div>
-                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
-                  <span className="font-extrabold text-slate-800 text-sm block">
-                    Group Lunch Buffet (Veg)
-                  </span>
-                  <p className="text-slate-600">
-                    Per Pax Rate:{" "}
-                    <span className="font-black text-emerald-600 text-sm">
-                      ₹250 / Pax
-                    </span>
-                  </p>
-                  <p className="text-slate-500 text-[11px]">
-                    Includes: Paneer, Dal, Rice, Roti, Salad, Sweet
-                  </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {mealTariffs.map((t: any) => {
+                    const isVeg = t.isVeg !== false;
+                    return (
+                      <div
+                        key={t.id}
+                        className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5 text-xs relative group hover:border-orange-300 transition-colors flex flex-col justify-between"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-extrabold text-slate-800 text-sm leading-snug">
+                              {t.name}
+                            </span>
+                            <span
+                              className={`text-[10px] font-black uppercase px-2 py-0.5 rounded shrink-0 ${
+                                isVeg
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-red-50 text-red-700 border border-red-200"
+                              }`}
+                            >
+                              {isVeg ? "Veg" : "Non-Veg"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                              Per Pax Rate:
+                            </span>
+                            <span className="font-black text-emerald-600 text-base">
+                              ₹{t.perPaxRate?.toLocaleString("en-IN") || t.ratePerPerson || 0} / Pax
+                            </span>
+                          </div>
+
+                          {t.inclusions && (
+                            <p className="text-slate-500 text-[11px] bg-slate-50 p-2 rounded-lg border border-slate-100">
+                              <strong className="text-slate-700">Includes:</strong> {t.inclusions}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenEditMealTariff(t)}
+                            className="h-7 px-2 text-[11px] font-bold text-slate-700 hover:text-orange-600 hover:bg-orange-50 gap-1"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Edit Rate
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMealTariff(t.id)}
+                            className="h-7 px-2 text-[11px] font-bold text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2 text-xs">
-                  <span className="font-extrabold text-slate-800 text-sm block">
-                    Group Dinner Buffet (Veg + Non-Veg)
-                  </span>
-                  <p className="text-slate-600">
-                    Per Pax Rate:{" "}
-                    <span className="font-black text-emerald-600 text-sm">
-                      ₹350 / Pax
-                    </span>
-                  </p>
-                  <p className="text-slate-500 text-[11px]">
-                    Includes: Chicken Curry / Paneer, Dal Fry, Jeera Rice, Gulab Jamun
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -4044,6 +4248,106 @@ export function AccommodationDetailPage({
               className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingGuideRate ? "Update Guide Rate" : "Add Guide Rate"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MEAL TARIFF & THALI RATE MODAL */}
+      <Dialog open={mealTariffModalOpen} onOpenChange={setMealTariffModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-xl rounded-xl">
+          <DialogTitle className="text-base font-black text-slate-900">
+            {editingMealTariff ? "Edit Meal Tariff / Thali Rate" : "Add Meal Tariff / Thali Rate"}
+          </DialogTitle>
+          <p className="text-xs text-slate-500">
+            Configure negotiated per-head meal tariff for group departures at <strong>{vendor.name}</strong>.
+          </p>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Meal Package / Thali Name *
+              </label>
+              <Input
+                value={mealTariffForm.name}
+                onChange={(e) => setMealTariffForm({ ...mealTariffForm, name: e.target.value })}
+                placeholder="e.g. Group Breakfast Buffet, Special Kathiyawadi Thali"
+                className="h-8.5 text-xs font-bold"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Meal Category
+                </label>
+                <select
+                  value={mealTariffForm.type}
+                  onChange={(e) => setMealTariffForm({ ...mealTariffForm, type: e.target.value })}
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                >
+                  <option value="BREAKFAST">Breakfast</option>
+                  <option value="LUNCH">Lunch</option>
+                  <option value="DINNER">Dinner</option>
+                  <option value="SNACKS">High Tea / Snacks</option>
+                  <option value="BUFFET">All-Day Buffet</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Dietary Type
+                </label>
+                <select
+                  value={mealTariffForm.isVeg ? "veg" : "non-veg"}
+                  onChange={(e) => setMealTariffForm({ ...mealTariffForm, isVeg: e.target.value === "veg" })}
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                >
+                  <option value="veg">Pure Veg 🥬</option>
+                  <option value="non-veg">Veg + Non-Veg 🍗</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Per Pax Rate (₹/Person) *
+              </label>
+              <Input
+                type="number"
+                value={mealTariffForm.perPaxRate}
+                onChange={(e) => setMealTariffForm({ ...mealTariffForm, perPaxRate: e.target.value })}
+                placeholder="250"
+                className="h-8.5 text-xs font-bold text-emerald-600"
+              />
+            </div>
+
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Inclusions / Menu Items
+              </label>
+              <Input
+                value={mealTariffForm.inclusions}
+                onChange={(e) => setMealTariffForm({ ...mealTariffForm, inclusions: e.target.value })}
+                placeholder="e.g. Paneer Butter Masala, Dal Makhani, Rice, 3 Roti, Gulab Jamun"
+                className="h-8.5 text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+            <Button
+              variant="outline"
+              onClick={() => setMealTariffModalOpen(false)}
+              className="h-8 text-xs font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveMealTariff}
+              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+            >
+              {editingMealTariff ? "Update Meal Rate" : "Add Meal Rate"}
             </Button>
           </div>
         </DialogContent>

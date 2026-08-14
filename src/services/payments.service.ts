@@ -12,10 +12,8 @@ export const paymentsService = {
         ? rawData
         : rawData.payments || [];
       const summary = rawData.summary || {
-        totalAmount: 0,
-        advancePaid: 0,
-        remainingAmount: 0,
-        paymentStatus: "Pending",
+        totalPaid: 0,
+        paymentsCount: 0,
       };
       return { payments, summary };
     } catch (e) {
@@ -23,10 +21,8 @@ export const paymentsService = {
       return {
         payments: [],
         summary: {
-          totalAmount: 0,
-          advancePaid: 0,
-          remainingAmount: 0,
-          paymentStatus: "Pending",
+          totalPaid: 0,
+          paymentsCount: 0,
         },
       };
     }

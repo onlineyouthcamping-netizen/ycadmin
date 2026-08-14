@@ -558,10 +558,8 @@ export interface Payment {
 }
 
 export interface PaymentSummary {
-  totalAmount: number;
   totalPaid: number;
-  pending: number;
-  count: number;
+  paymentsCount: number;
 }
 
 export interface Vendor {
@@ -586,6 +584,10 @@ export interface TripVendor {
   paymentStatus: 'pending' | 'partial' | 'paid';
   paidAmount: number;
   notes?: string;
+  outgoingPaymentMode?: string;
+  onlinePersonAccount?: string;
+  cashDepositorName?: string;
+  depositAccountName?: string;
   createdAt: string;
 }
 

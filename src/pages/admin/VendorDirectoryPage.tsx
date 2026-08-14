@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
+import {
+  fetchTripVendorDirectory,
+  fetchTripsList,
+  clearTripVendorCache,
+} from "@/services/tripVendorDirectory.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -52,7 +58,11 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { VendorDashboardView } from "@/components/admin/vendors/VendorDashboardView";
-import { AccommodationDetailPage } from "@/components/admin/vendors/AccommodationDetailPage";
+const AccommodationDetailPage = lazy(() =>
+  import("@/components/admin/vendors/AccommodationDetailPage").then((m) => ({
+    default: m.AccommodationDetailPage,
+  }))
+);
 import { DuplicateVendorDialog } from "@/components/admin/vendors/DuplicateVendorDialog";
 import { AccommodationModuleView } from "@/components/admin/vendors/modules/AccommodationModuleView";
 import { TransportModuleView } from "@/components/admin/vendors/modules/TransportModuleView";
@@ -74,11 +84,20 @@ const TABS = [
 ];
 
 export default function VendorDirectoryPage() {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentCategory =
     searchParams.get("category") || searchParams.get("tab") || "accommodation";
-  const [vendors, setVendors] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const [selectedTripId, setSelectedTripId] = useState<string>(() => {
+    return (
+      searchParams.get("tripId") ||
+      localStorage.getItem("yc_vendor_selected_trip") ||
+      "MKA-1"
+    );
+  });
+
+  const [isTripDropdownOpen, setIsTripDropdownOpen] = useState(false);
   const [isSavingVendor, setIsSavingVendor] = useState(false);
   const [viewingDetailVendor, setViewingDetailVendor] = useState<any>(null);
 
@@ -88,33 +107,11 @@ export default function VendorDirectoryPage() {
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("ALL");
-  const [filterState, setFilterState] = useState("ALL");
   const [filterDestination, setFilterDestination] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
-  const [destinationsList, setDestinationsList] = useState<string[]>([]);
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [pagination, setPagination] = useState<any>({
-    total: 0,
-    page: 1,
-    limit: 10,
-    pages: 1,
-    startIndex: 0,
-    endIndex: 0,
-  });
 
   // Selected entities for Rates view
   const [selectedVendor, setSelectedVendor] = useState<any>(null);
-
-  // Trip-Scoped Vendor Directory state
-  const [tripsList, setTripsList] = useState<any[]>([]);
-  const [selectedTripId, setSelectedTripId] = useState<string>(() => {
-    return (
-      searchParams.get("tripId") ||
-      localStorage.getItem("yc_vendor_selected_trip") ||
-      ""
-    );
-  });
 
   const handleTripSelectChange = (newTripId: string) => {
     setSelectedTripId(newTripId);
@@ -124,17 +121,34 @@ export default function VendorDirectoryPage() {
     const newParams = new URLSearchParams(searchParams);
     newParams.set("tripId", newTripId);
     setSearchParams(newParams, { replace: true });
+    setViewingDetailVendor(null);
+    setFilterDestination("ALL");
   };
-  const [tripDestinations, setTripDestinations] = useState<string[]>([]);
-  const [categoryCounts, setCategoryCounts] = useState<{
-    total: number;
-    accommodation: number;
-    transport: number;
-    activities: number;
-    restaurants: number;
-    guides: number;
-    other: number;
-  }>({
+
+  // 1. Primary Query: Single batch query loading all vendors for selectedTripId
+  const {
+    data: directoryResponse,
+    isLoading: isDirectoryLoading,
+    isFetching: isDirectoryFetching,
+    refetch: refetchDirectory,
+  } = useQuery({
+    queryKey: ["trip-vendor-directory", selectedTripId],
+    queryFn: () => fetchTripVendorDirectory(selectedTripId, "ALL"),
+    enabled: !!selectedTripId,
+    staleTime: 5 * 60_000, // 5 minutes cache across tab switches
+  });
+
+  // 2. Dropdown Query: Full trips list loaded on-demand only when selector is opened
+  const { data: fetchedTripsList = [] } = useQuery({
+    queryKey: ["vendors-trips-list"],
+    queryFn: fetchTripsList,
+    enabled: isTripDropdownOpen,
+    staleTime: 10 * 60_000,
+  });
+
+  const allTripVendors = directoryResponse?.data || [];
+  const tripDestinations = directoryResponse?.destinations || [];
+  const categoryCounts = directoryResponse?.categoryCounts || {
     total: 0,
     accommodation: 0,
     transport: 0,
@@ -142,7 +156,101 @@ export default function VendorDirectoryPage() {
     restaurants: 0,
     guides: 0,
     other: 0,
-  });
+  };
+  const tripInfo = directoryResponse?.trip;
+
+  const ACCOMMODATION_TYPES = [
+    "HOTEL", "HOMESTAY", "CAMP", "RESORT", "HOSTEL", "GUEST_HOUSE",
+    "VILLA", "COTTAGE", "APARTMENT", "DORMITORY", "LUXURY_TENT",
+  ];
+
+  // Pure 0ms instant client-side filtering across tabs, search, destination, and status
+  const filteredVendors = useMemo(() => {
+    return allTripVendors.filter((v: any) => {
+      // 1. Category tab filtering
+      if (currentCategory === "accommodation") {
+        if (!ACCOMMODATION_TYPES.includes(v.type)) return false;
+      } else if (currentCategory === "transport") {
+        if (v.type !== "TRANSPORT") return false;
+      } else if (currentCategory === "activities") {
+        if (v.type !== "ACTIVITIES") return false;
+      } else if (currentCategory === "restaurants") {
+        if (v.type !== "RESTAURANT" && v.type !== "FOOD") return false;
+      } else if (currentCategory === "guides") {
+        if (v.type !== "GUIDE") return false;
+      } else if (currentCategory === "other") {
+        const known = [...ACCOMMODATION_TYPES, "TRANSPORT", "ACTIVITIES", "RESTAURANT", "FOOD", "GUIDE"];
+        if (known.includes(v.type) && v.type !== "OTHER") return false;
+      }
+
+      // 2. Search filter
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matchName = v.name?.toLowerCase().includes(q);
+        const matchContact =
+          v.contactPerson?.toLowerCase().includes(q) ||
+          v.contactNumber?.includes(q) ||
+          v.phone?.includes(q);
+        const matchCity =
+          v.city?.toLowerCase().includes(q) ||
+          v.location?.toLowerCase().includes(q);
+        if (!matchName && !matchContact && !matchCity) return false;
+      }
+
+      // 3. Destination filter
+      if (filterDestination && filterDestination !== "ALL") {
+        const dLow = filterDestination.toLowerCase();
+        const destMatch =
+          (v.city && v.city.toLowerCase() === dLow) ||
+          (v.location && v.location.toLowerCase() === dLow) ||
+          (v.destinations &&
+            v.destinations.some((d: any) => d.destinationName?.toLowerCase() === dLow));
+        if (!destMatch) return false;
+      }
+
+      // 4. Status filter
+      if (filterStatus === "ACTIVE" && v.isActive === false) return false;
+      if (filterStatus === "INACTIVE" && v.isActive !== false) return false;
+
+      return true;
+    });
+  }, [allTripVendors, currentCategory, searchTerm, filterDestination, filterStatus]);
+
+  const pagination = useMemo(
+    () => ({
+      total: filteredVendors.length,
+      page: 1,
+      limit: 100,
+      pages: 1,
+      startIndex: filteredVendors.length > 0 ? 1 : 0,
+      endIndex: filteredVendors.length,
+    }),
+    [filteredVendors.length]
+  );
+
+  const vendors = filteredVendors;
+
+  const tripsList = useMemo(() => {
+    if (fetchedTripsList.length > 0) return fetchedTripsList;
+    if (tripInfo) {
+      return [
+        {
+          id: tripInfo.id,
+          title: tripInfo.title,
+          location: tripInfo.location,
+          _count: { tripVendors: tripInfo.vendorCount },
+        },
+      ];
+    }
+    return [{ id: selectedTripId, title: selectedTripId, _count: { tripVendors: 0 } }];
+  }, [fetchedTripsList, tripInfo, selectedTripId]);
+
+  const invalidateTripVendorData = () => {
+    clearTripVendorCache(selectedTripId);
+    queryClient.invalidateQueries({
+      queryKey: ["trip-vendor-directory", selectedTripId],
+    });
+  };
 
   // Costing inputs
   const [costingPax, setCostingPax] = useState("10");
@@ -239,130 +347,6 @@ export default function VendorDirectoryPage() {
     remarks: "",
   });
 
-  const [paymentsList, setPaymentsList] = useState<any[]>([]);
-
-  // Load Data from Server APIs
-  const loadData = async (targetPage = 1, categoryOverride?: string) => {
-    setLoading(true);
-    try {
-      const catToUse =
-        categoryOverride !== undefined ? categoryOverride : currentCategory;
-      let catParam = "ALL";
-      if (catToUse === "accommodation")
-        catParam =
-          "HOTEL,RESORT,HOMESTAY,HOSTEL,GUEST_HOUSE,VILLA,CAMP,COTTAGE,APARTMENT,DORMITORY,LUXURY_TENT";
-      else if (catToUse === "transport") catParam = "TRANSPORT";
-      else if (catToUse === "activities") catParam = "ACTIVITIES";
-      else if (catToUse === "restaurants") catParam = "RESTAURANT,FOOD,MEALS";
-      else if (catToUse === "guides") catParam = "GUIDE";
-      else if (catToUse === "camping") catParam = "CAMPING,CAMP";
-      else if (catToUse === "other") catParam = "OTHER";
-
-      const queryParams = new URLSearchParams();
-      if (searchTerm) queryParams.set("search", searchTerm);
-      if (catParam !== "ALL") queryParams.set("type", catParam);
-      if (filterDestination !== "ALL")
-        queryParams.set("destination", filterDestination);
-      if (filterStatus !== "ALL")
-        queryParams.set(
-          "isActive",
-          filterStatus === "ACTIVE" ? "true" : "false",
-        );
-      if (selectedTripId) {
-        queryParams.set("tripId", selectedTripId);
-      }
-      queryParams.set("page", targetPage.toString());
-      queryParams.set("limit", "10");
-
-      const [res, analyticsRes, destRes] = await Promise.all([
-        api.get(`/vendors/directory?${queryParams.toString()}`),
-        api
-          .get("/vendors/directory/analytics")
-          .catch(() => ({ data: { data: null } })),
-        api
-          .get("/vendors/directory/destinations")
-          .catch(() => ({ data: { data: [] } })),
-      ]);
-
-      const vendorData = res.data?.data || [];
-      const pag = res.data?.pagination || {
-        total: vendorData.length,
-        page: 1,
-        limit: 10,
-        pages: 1,
-        startIndex: vendorData.length > 0 ? 1 : 0,
-        endIndex: vendorData.length,
-      };
-
-      setVendors(vendorData);
-      setPagination(pag);
-
-      if (res.data?.categoryCounts) {
-        setCategoryCounts(res.data.categoryCounts);
-      }
-      if (analyticsRes.data?.data) setAnalytics(analyticsRes.data.data);
-      if (destRes.data?.data) setDestinationsList(destRes.data.data);
-
-      const payRes = await api
-        .get("/vendors/directory/payments")
-        .catch(() => ({ data: { data: [] } }));
-      setPaymentsList(payRes.data?.data || []);
-    } catch (err: any) {
-      toast.error(
-        "Failed to load directory data: " +
-          (err.response?.data?.message || err.message),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load trips list on mount
-  useEffect(() => {
-    api
-      .get("/vendors/trips")
-      .then((res) => {
-        if (
-          res.data?.success &&
-          Array.isArray(res.data.data) &&
-          res.data.data.length > 0
-        ) {
-          const list = res.data.data;
-          setTripsList(list);
-
-          const savedTripId =
-            searchParams.get("tripId") ||
-            localStorage.getItem("yc_vendor_selected_trip");
-          const isValid = list.some((t: any) => t.id === savedTripId);
-          if (savedTripId && isValid) {
-            setSelectedTripId(savedTripId);
-          } else {
-            setSelectedTripId(list[0].id);
-          }
-        }
-      })
-      .catch(() => null);
-  }, []);
-
-  // Fetch trip destinations when selectedTripId changes
-  useEffect(() => {
-    setViewingDetailVendor(null);
-    if (selectedTripId) {
-      api
-        .get(`/vendors/trips/${selectedTripId}/destinations`)
-        .then((res) => {
-          if (res.data?.success && Array.isArray(res.data.data)) {
-            setTripDestinations(res.data.data);
-          }
-        })
-        .catch(() => null);
-    } else {
-      setTripDestinations([]);
-    }
-    setFilterDestination("ALL");
-    if (selectedTripId) loadData(1, currentCategory);
-  }, [selectedTripId, currentCategory, searchParams, filterStatus, filterDestination]);
-
   const handleRemoveVendorFromTrip = async (vendorId: string, vendorName: string) => {
     if (!selectedTripId) return;
     const tripTitle = tripsList.find((t) => t.id === selectedTripId)?.title || "this trip";
@@ -370,7 +354,7 @@ export default function VendorDirectoryPage() {
     try {
       await api.delete(`/vendors/trips/${selectedTripId}/remove/${vendorId}`);
       toast.success(`Removed "${vendorName}" from trip (vendor record preserved)`);
-      loadData();
+      invalidateTripVendorData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to remove vendor from trip");
     }
@@ -472,7 +456,7 @@ export default function VendorDirectoryPage() {
 
     // Pre-save duplicate check
     if (!editingVendor && !force) {
-      const match = vendors.find(
+      const match = allTripVendors.find(
         (v) =>
           (v.name && v.name.toLowerCase() === vendorForm.name.toLowerCase()) ||
           (vendorForm.contactNumber &&
@@ -508,7 +492,7 @@ export default function VendorDirectoryPage() {
       }
       setVendorModalOpen(false);
       setDuplicateDialogOpen(false);
-      loadData();
+      invalidateTripVendorData();
     } catch (err: any) {
       toast.error(
         "Failed to save vendor: " +
@@ -524,8 +508,7 @@ export default function VendorDirectoryPage() {
     try {
       await api.delete(`/vendors/directory/${id}`);
       toast.success("Vendor deactivated successfully");
-      setVendors((prev) => prev.filter((v) => v.id !== id));
-      loadData();
+      invalidateTripVendorData();
     } catch (err: any) {
       toast.error("Deactivation failed: " + (err.response?.data?.message || err.message));
     }
@@ -543,7 +526,7 @@ export default function VendorDirectoryPage() {
       await api.post(endpoint, payload);
       toast.success("Rate successfully registered!");
       setRateModalOpen(false);
-      loadData();
+      invalidateTripVendorData();
     } catch (err: any) {
       toast.error("Failed to create rate: " + err.message);
     }
@@ -551,10 +534,10 @@ export default function VendorDirectoryPage() {
 
   const runCosting = async () => {
     // Run mock pricing calculation or direct pricing engine logic
-    if (vendors.length === 0) return;
+    if (allTripVendors.length === 0) return;
     try {
       // Find hotel rate
-      const hotel = vendors.find(
+      const hotel = allTripVendors.find(
         (v) => v.type === "HOTEL" && v.roomRates.length > 0,
       );
       const transport = vendors.find(
@@ -609,7 +592,7 @@ export default function VendorDirectoryPage() {
       await api.post("/vendors/directory/payments", paymentForm);
       toast.success("Payment logged successfully!");
       setPaymentModalOpen(false);
-      loadData();
+      invalidateTripVendorData();
     } catch (err: any) {
       toast.error("Payment failed: " + err.message);
     }
@@ -636,7 +619,13 @@ export default function VendorDirectoryPage() {
           {/* Trip Selector */}
           <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
             <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider px-2">Trip:</span>
-            <Select value={selectedTripId} onValueChange={handleTripSelectChange}>
+            <Select
+              value={selectedTripId}
+              onValueChange={handleTripSelectChange}
+              onOpenChange={(open) => {
+                if (open) setIsTripDropdownOpen(true);
+              }}
+            >
               <SelectTrigger className="w-[260px] h-8 text-xs font-bold bg-white border-slate-200 shadow-2xs">
                 <SelectValue placeholder="— Select Trip —" />
               </SelectTrigger>
@@ -676,7 +665,12 @@ export default function VendorDirectoryPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setSearchParams({ category: tab.id })}
+                onClick={() => {
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set("category", tab.id);
+                  if (selectedTripId) newParams.set("tripId", selectedTripId);
+                  setSearchParams(newParams, { replace: true });
+                }}
                 className={cn(
                   "flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer",
                   isActive
@@ -702,18 +696,25 @@ export default function VendorDirectoryPage() {
 
       {/* Detail View Overlay */}
       {viewingDetailVendor ? (
-        <AccommodationDetailPage
-          vendor={viewingDetailVendor}
-          onBack={() => setViewingDetailVendor(null)}
-          onUpdateVendor={loadData}
-        />
+        <React.Suspense fallback={<div className="p-12 text-center text-xs font-bold text-slate-400">Loading vendor details...</div>}>
+          <AccommodationDetailPage
+            vendor={viewingDetailVendor}
+            onBack={() => setViewingDetailVendor(null)}
+            onUpdateVendor={invalidateTripVendorData}
+          />
+        </React.Suspense>
       ) : (
         <>
           {/* Main Module Switcher based on current URL category */}
           {currentCategory === "dashboard" && (
             <VendorDashboardView
               vendors={vendors}
-              onSelectCategory={(cat) => setSearchParams({ category: cat })}
+              onSelectCategory={(cat) => {
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set("category", cat);
+                if (selectedTripId) newParams.set("tripId", selectedTripId);
+                setSearchParams(newParams, { replace: true });
+              }}
             />
           )}
 
@@ -726,9 +727,9 @@ export default function VendorDirectoryPage() {
             </div>
           ) : (
           <>{ (() => {
-            const activeDestinations = tripDestinations.length > 0 ? tripDestinations : destinationsList;
+            const activeDestinations = tripDestinations;
             const handleDeleteOrRemove = (id: string) => {
-              const target = vendors.find((v) => v.id === id);
+              const target = allTripVendors.find((v) => v.id === id);
               handleRemoveVendorFromTrip(id, target?.name || "Vendor");
             };
 
@@ -736,7 +737,7 @@ export default function VendorDirectoryPage() {
               <>
                 {currentCategory === "accommodation" && (
                   <AccommodationModuleView
-                    vendors={vendors}
+                    vendors={filteredVendors}
                     destinations={activeDestinations}
                     pagination={pagination}
                     searchTerm={searchTerm}
@@ -745,8 +746,8 @@ export default function VendorDirectoryPage() {
                     onDestinationChange={setFilterDestination}
                     filterStatus={filterStatus}
                     onStatusChange={setFilterStatus}
-                    onRefresh={() => loadData(1)}
-                    onPageChange={(p) => loadData(p)}
+                    onRefresh={refetchDirectory}
+                    onPageChange={() => {}}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
                     onAddVendor={() => handleOpenAddVendor("accommodation")}
                     onEditVendor={(v) => {
@@ -760,7 +761,7 @@ export default function VendorDirectoryPage() {
 
                 {currentCategory === "transport" && (
                   <TransportModuleView
-                    vendors={vendors}
+                    vendors={filteredVendors}
                     destinations={activeDestinations}
                     pagination={pagination}
                     searchTerm={searchTerm}
@@ -769,8 +770,8 @@ export default function VendorDirectoryPage() {
                     onDestinationChange={setFilterDestination}
                     filterStatus={filterStatus}
                     onStatusChange={setFilterStatus}
-                    onRefresh={() => loadData(1)}
-                    onPageChange={(p) => loadData(p)}
+                    onRefresh={refetchDirectory}
+                    onPageChange={() => {}}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
                     onAddVendor={() => handleOpenAddVendor("transport")}
                     onEditVendor={(v) => {
@@ -784,7 +785,7 @@ export default function VendorDirectoryPage() {
 
                 {currentCategory === "activities" && (
                   <ActivitiesModuleView
-                    vendors={vendors}
+                    vendors={filteredVendors}
                     destinations={activeDestinations}
                     pagination={pagination}
                     searchTerm={searchTerm}
@@ -793,8 +794,8 @@ export default function VendorDirectoryPage() {
                     onDestinationChange={setFilterDestination}
                     filterStatus={filterStatus}
                     onStatusChange={setFilterStatus}
-                    onRefresh={() => loadData(1)}
-                    onPageChange={(p) => loadData(p)}
+                    onRefresh={refetchDirectory}
+                    onPageChange={() => {}}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
                     onAddVendor={() => handleOpenAddVendor("activities")}
                     onEditVendor={(v) => {
@@ -808,7 +809,7 @@ export default function VendorDirectoryPage() {
 
                 {currentCategory === "restaurants" && (
                   <RestaurantsModuleView
-                    vendors={vendors}
+                    vendors={filteredVendors}
                     destinations={activeDestinations}
                     pagination={pagination}
                     searchTerm={searchTerm}
@@ -817,8 +818,8 @@ export default function VendorDirectoryPage() {
                     onDestinationChange={setFilterDestination}
                     filterStatus={filterStatus}
                     onStatusChange={setFilterStatus}
-                    onRefresh={() => loadData(1)}
-                    onPageChange={(p) => loadData(p)}
+                    onRefresh={refetchDirectory}
+                    onPageChange={() => {}}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
                     onAddVendor={() => handleOpenAddVendor("restaurants")}
                     onEditVendor={(v) => {
@@ -832,7 +833,7 @@ export default function VendorDirectoryPage() {
 
                 {currentCategory === "guides" && (
                   <GuidesModuleView
-                    vendors={vendors}
+                    vendors={filteredVendors}
                     destinations={activeDestinations}
                     pagination={pagination}
                     searchTerm={searchTerm}
@@ -841,8 +842,8 @@ export default function VendorDirectoryPage() {
                     onDestinationChange={setFilterDestination}
                     filterStatus={filterStatus}
                     onStatusChange={setFilterStatus}
-                    onRefresh={() => loadData(1)}
-                    onPageChange={(p) => loadData(p)}
+                    onRefresh={refetchDirectory}
+                    onPageChange={() => {}}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
                     onAddVendor={() => handleOpenAddVendor("guides")}
                     onEditVendor={(v) => {
@@ -856,7 +857,7 @@ export default function VendorDirectoryPage() {
 
                 {currentCategory === "other" && (
                   <OtherVendorsModuleView
-                    vendors={vendors}
+                    vendors={filteredVendors}
                     destinations={activeDestinations}
                     pagination={pagination}
                     searchTerm={searchTerm}
@@ -865,8 +866,8 @@ export default function VendorDirectoryPage() {
                     onDestinationChange={setFilterDestination}
                     filterStatus={filterStatus}
                     onStatusChange={setFilterStatus}
-                    onRefresh={() => loadData(1)}
-                    onPageChange={(p) => loadData(p)}
+                    onRefresh={refetchDirectory}
+                    onPageChange={() => {}}
                     onSelectVendor={(v) => setViewingDetailVendor(v)}
                     onAddVendor={() => handleOpenAddVendor("other")}
                     onEditVendor={(v) => {

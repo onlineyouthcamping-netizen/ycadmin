@@ -368,9 +368,15 @@ export const opsService = {
     return res.data?.data;
   },
 
-  async confirmAllocation(allocationRunId: string): Promise<any> {
+  async confirmAllocation(
+    allocationRunId: string,
+    roomAllocations?: any[],
+    vehicleAllocations?: any[],
+  ): Promise<any> {
     const res = await api.post(`/ops/auto-allocate/confirm`, {
       allocationRunId,
+      ...(roomAllocations ? { roomAllocations } : {}),
+      ...(vehicleAllocations ? { vehicleAllocations } : {}),
     });
     return res.data;
   },

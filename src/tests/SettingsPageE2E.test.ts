@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
 import { ADMIN_ROUTES } from "../config/routes.config";
 import { COMPONENT_REGISTRY } from "../config/componentRegistry";

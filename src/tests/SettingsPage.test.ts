@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
 import { SETTINGS_TABS } from "../pages/admin/SettingsPage";
 import { calculatePasswordStrength } from "../pages/admin/settings/components/PasswordStrengthMeter";

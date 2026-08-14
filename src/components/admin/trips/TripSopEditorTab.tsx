@@ -24,8 +24,22 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { sopsService, OpsSopTaskTemplateData } from "@/services/sops.service";
+import { sopsService } from "@/services/sops.service";
 import { useStaffUsers } from "@/hooks/useStaffUsers";
+
+interface OpsSopTaskTemplateData {
+  id?: string;
+  taskName: string;
+  instructions?: string;
+  category?: string;
+  taskType?: string;
+  stage: string;
+  relativeOffset: number;
+  defaultAssignee?: string;
+  priority: string;
+  isRequired: boolean;
+  sortOrder?: number;
+}
 
 interface TripSopEditorTabProps {
   tripId?: string;
@@ -125,9 +139,13 @@ export default function TripSopEditorTab({
     setLoading(true);
     try {
       const template = await sopsService.getSopByTrip(tripId);
-      if (template && template.activeVersion && template.activeVersion.taskTemplates) {
-        setTasks(template.activeVersion.taskTemplates);
-        if (onUpdateTasks) onUpdateTasks(template.activeVersion.taskTemplates);
+      const activeVersion = template?.versions?.find(
+        (v) => v.id === template?.activeVersionId,
+      );
+      if (template && activeVersion && activeVersion.taskTemplates) {
+        setTasks(activeVersion.taskTemplates as OpsSopTaskTemplateData[]);
+        if (onUpdateTasks)
+          onUpdateTasks(activeVersion.taskTemplates as OpsSopTaskTemplateData[]);
       }
     } catch (err) {
       console.error("Fetch Trip SOP error:", err);

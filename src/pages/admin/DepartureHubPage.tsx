@@ -1419,7 +1419,15 @@ export default function DepartureHubPage() {
   const [selectedBookingForRoomAlloc, setSelectedBookingForRoomAlloc] =
     useState<any | null>(null);
   const [modalAllocations, setModalAllocations] = useState<
-    Record<string, { roomType: string; coupleWith: string; roomNo: string }>
+    Record<
+      string,
+      {
+        roomType: string;
+        coupleWith: string;
+        roomNo?: string;
+        groupId?: string;
+      }
+    >
   >({});
 
   // Tasks filter
@@ -2047,7 +2055,7 @@ export default function DepartureHubPage() {
           });
 
           // Also restore manualRooms from saved allocation room numbers
-          const savedRoomNumbers = [...new Set(rooms.map((r: any) => r.roomNumber as string))];
+          const savedRoomNumbers = [...new Set((rooms as any[]).map((r: any) => r.roomNumber as string))].filter(Boolean) as string[];
           if (savedRoomNumbers.length > 0) {
             setManualRooms(savedRoomNumbers);
           }
@@ -2070,7 +2078,7 @@ useEffect(() => {
 
   // 1. Fetch departure fleet
   opsService
-    .getTransportFleet(tripId, departureDateStr, { includeRates: true })
+    .getTransportFleet(tripId, { departureDate: departureDateStr, includeRates: true })
     .then(setFleetVehicles)
     .catch(() => setFleetVehicles([]));
 
@@ -2448,7 +2456,7 @@ useEffect(() => {
   const [transportNotesForm, setTransportNotesForm] = useState("");
 
   // Hotel Pricing Automation states
-  const [pricingMethod, setPricingMethod] = useState<"PER_PERSON" | "PER_ROOM">("PER_PERSON");
+  const [pricingMethod, setPricingMethod] = useState<string>("per-person");
 
   // Per Room Rates
   const [doubleRate, setDoubleRate] = useState(2200);
@@ -2500,7 +2508,7 @@ useEffect(() => {
   let childCost = 0;
   let calculatedTotalCost = 0;
 
-  if (pricingMethod === "PER_PERSON") {
+  if ((pricingMethod || "per-person").toLowerCase() === "per-person") {
     adultCost = totalAdults * adultRate * hotelNightsCount;
     childCost = totalChild * childRate * hotelNightsCount;
     calculatedTotalCost = adultCost + childCost;
@@ -2515,7 +2523,7 @@ useEffect(() => {
   const hotelGst = 0;
   const grandTotalCost = calculatedTotalCost;
 
-  const totalPaxCapacity = pricingMethod === "PER_PERSON" ? totalAdults + totalChild : (doubleRoomsCount * 2) + (tripleRoomsCount * 3) + (quadRoomsCount * 4) + extraPersonsCount;
+  const totalPaxCapacity = (pricingMethod || "per-person").toLowerCase() === "per-person" ? totalAdults + totalChild : (doubleRoomsCount * 2) + (tripleRoomsCount * 3) + (quadRoomsCount * 4) + extraPersonsCount;
 
   const formatDateToYYYYMMDD = (dateObj: Date) => {
     const y = dateObj.getFullYear();
@@ -3173,92 +3181,116 @@ useEffect(() => {
   };
 
   // Dynamic Overview Calculations
-  const stats = useMemo(() => {
-    const confirmedBookings = bookings.filter(
-      (b: any) => b.status !== "cancelled",
-    );
+  const stats = useMemo(
+    () => {
+      const confirmedBookings = bookings.filter(
+        (b: any) => b.status !== "cancelled",
+      );
 
-    // Revenue & Customer Payments
-    const totalRevenue = confirmedBookings.reduce(
-      (sum: number, b: any) => sum + (b.totalAmount || b.amount || 0),
-      0,
-    );
-    const customerPaid = confirmedBookings.reduce(
-      (sum: number, b: any) => sum + (b.advancePaid || 0),
-      0,
-    );
-    const customerOutstanding = confirmedBookings.reduce(
-      (sum: number, b: any) => sum + (b.remainingAmount || 0),
-      0,
-    );
-    const totalParticipants = confirmedBookings.reduce(
-      (sum: number, b: any) => sum + (b.numberOfTravelers || 1),
-      0,
-    );
-    const outstandingParticipantsCount = confirmedBookings.filter(
-      (b: any) => (b.remainingAmount || 0) > 0,
-    ).length;
+      // Revenue & Customer Payments
+      const totalRevenue = confirmedBookings.reduce(
+        (sum: number, b: any) => sum + (b.totalAmount || b.amount || 0),
+        0,
+      );
+      const customerPaid = confirmedBookings.reduce(
+        (sum: number, b: any) => sum + (b.advancePaid || 0),
+        0,
+      );
+      const customerOutstanding = confirmedBookings.reduce(
+        (sum: number, b: any) => sum + (b.remainingAmount || 0),
+        0,
+      );
+      const totalParticipants = confirmedBookings.reduce(
+        (sum: number, b: any) => sum + (b.numberOfTravelers || 1),
+        0,
+      );
+      const outstandingParticipantsCount = confirmedBookings.filter(
+        (b: any) => (b.remainingAmount || 0) > 0,
+      ).length;
 
-    // Vendor Payments (filtered from tripVendors state)
-    const hotelsCost = tripVendors
-      .filter((v) => v.vendorType === "hotel")
-      .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
-    const hotelsPaid = tripVendors
-      .filter((v) => v.vendorType === "hotel")
-      .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
-    const transportsCost = tripVendors
-      .filter((v) => v.vendorType === "transport")
-      .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
-    const transportsPaid = tripVendors
-      .filter((v) => v.vendorType === "transport")
-      .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
-    const guidesCost = tripVendors
-      .filter((v) => v.vendorType === "guide")
-      .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
-    const guidesPaid = tripVendors
-      .filter((v) => v.vendorType === "guide")
-      .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+      // Vendor Payments (filtered from tripVendors state)
+      const hotelsCost = tripVendors
+        .filter((v) => v.vendorType === "hotel")
+        .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
+      const hotelsPaid = tripVendors
+        .filter((v) => v.vendorType === "hotel")
+        .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+      const transportsCost = tripVendors
+        .filter((v) => v.vendorType === "transport")
+        .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
+      const transportsPaid = tripVendors
+        .filter((v) => v.vendorType === "transport")
+        .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+      const guidesCost = tripVendors
+        .filter((v) => v.vendorType === "guide")
+        .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
+      const guidesPaid = tripVendors
+        .filter((v) => v.vendorType === "guide")
+        .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
 
-    const totalVendorCost = hotelsCost + transportsCost + guidesCost;
-    const totalVendorPaid = hotelsPaid + transportsPaid + guidesPaid;
-    const totalVendorPayables = totalVendorCost - totalVendorPaid;
+      const totalVendorCost = hotelsCost + transportsCost + guidesCost;
+      const totalVendorPaid = hotelsPaid + transportsPaid + guidesPaid;
+      const totalVendorPayables = totalVendorCost - totalVendorPaid;
 
-    const estProfit = totalRevenue - totalVendorCost;
-    const profitPercent =
-      totalRevenue > 0 ? ((estProfit / totalRevenue) * 100).toFixed(1) : "0";
+      const estProfit = totalRevenue - totalVendorCost;
+      const profitPercent =
+        totalRevenue > 0 ? ((estProfit / totalRevenue) * 100).toFixed(1) : "0";
 
-    const customerPaidPercent =
-      totalRevenue > 0 ? ((customerPaid / totalRevenue) * 100).toFixed(1) : "0";
-    const customerOutstandingPercent =
-      totalRevenue > 0
-        ? ((customerOutstanding / totalRevenue) * 100).toFixed(1)
-        : "0";
-    const vendorPaidPercent =
-      totalVendorCost > 0
-        ? ((totalVendorPaid / totalVendorCost) * 100).toFixed(1)
-        : "0";
-    const vendorPayablePercent =
-      totalVendorCost > 0
-        ? ((totalVendorPayables / totalVendorCost) * 100).toFixed(1)
-        : "0";
+      const customerPaidPercent =
+        totalRevenue > 0 ? ((customerPaid / totalRevenue) * 100).toFixed(1) : "0";
+      const customerOutstandingPercent =
+        totalRevenue > 0
+          ? ((customerOutstanding / totalRevenue) * 100).toFixed(1)
+          : "0";
+      const vendorPaidPercent =
+        totalVendorCost > 0
+          ? ((totalVendorPaid / totalVendorCost) * 100).toFixed(1)
+          : "0";
+      const vendorPayablePercent =
+        totalVendorCost > 0
+          ? ((totalVendorPayables / totalVendorCost) * 100).toFixed(1)
+          : "0";
 
-    return {
-      totalRevenue,
-      customerPaid,
-      customerOutstanding,
-      totalParticipants,
-      outstandingParticipantsCount,
-      totalVendorCost,
-      totalVendorPaid,
-      totalVendorPayables,
-      estProfit,
-      profitPercent,
-      customerPaidPercent,
-      customerOutstandingPercent,
-      vendorPaidPercent,
-      vendorPayablePercent,
-    };
-  }, [bookings, tripVendors]);
+      return {
+        totalRevenue,
+        customerPaid,
+        customerOutstanding,
+        totalParticipants,
+        outstandingParticipantsCount,
+        totalVendorCost,
+        totalVendorPaid,
+        totalVendorPayables,
+        estProfit,
+        profitPercent,
+        customerPaidPercent,
+        customerOutstandingPercent,
+        vendorPaidPercent,
+        vendorPayablePercent,
+        totalCollected: customerPaid,
+        totalAdvance: customerPaid,
+        totalExpenses: totalVendorPaid,
+      };
+    },
+    [bookings, tripVendors],
+  ) as {
+    totalRevenue: number;
+    customerPaid: number;
+    customerOutstanding: number;
+    totalParticipants: number;
+    outstandingParticipantsCount: number;
+    totalVendorCost: number;
+    totalVendorPaid: number;
+    totalVendorPayables: number;
+    estProfit: number;
+    profitPercent: string;
+    customerPaidPercent: string;
+    customerOutstandingPercent: string;
+    vendorPaidPercent: string;
+    vendorPayablePercent: string;
+    totalCollected: number;
+    totalAdvance: number;
+    totalExpenses: number;
+  };
 
   // Find lead guide and vehicles from tripVendors
   const [leadGuideName, setLeadGuideName] = useState("Assign Guide");
@@ -6207,7 +6239,6 @@ useEffect(() => {
                   )}
                 >
                   {tab.label}
-                  {tab.check && <Check className="w-3 h-3 text-emerald-500" />}
                   {tab.badge && (
                     <span
                       className={cn(
@@ -7692,481 +7723,6 @@ useEffect(() => {
           {/* Plan tab flattened — Hotels/Transport/Guides/Activities are now top-level tabs */}
 
           {/* ─── PLAN: ITINERARY ─── */}
-          {activeTab === "plan" && planSubTab === "itinerary" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-black text-slate-800">
-                    Itinerary
-                  </h2>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Day by day plan for this departure
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Segmented View Switcher */}
-                  <div className="flex bg-slate-100 p-0.5 rounded-[4px] border border-slate-200 shrink-0 mr-2">
-                    <button
-                      onClick={() => setItineraryViewMode("internal")}
-                      className={cn(
-                        "text-[10px] font-bold px-3 py-1 rounded-[3px] transition-all",
-                        itineraryViewMode === "internal"
-                          ? "bg-white text-slate-800 shadow-xs"
-                          : "text-slate-500 hover:text-slate-800",
-                      )}
-                    >
-                      Internal View
-                    </button>
-                    <button
-                      onClick={() => setItineraryViewMode("customer")}
-                      className={cn(
-                        "text-[10px] font-bold px-3 py-1 rounded-[3px] transition-all",
-                        itineraryViewMode === "customer"
-                          ? "bg-white text-slate-800 shadow-xs"
-                          : "text-slate-500 hover:text-slate-800",
-                      )}
-                    >
-                      Customer View
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => toast.info("View Timeline")}
-                    className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs"
-                  >
-                    <Sliders className="w-3.5 h-3.5 text-slate-400" /> View as
-                    Timeline
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleDownloadCSV(
-                        computedItinerary,
-                        "itinerary_details.csv",
-                      )
-                    }
-                    className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-400" /> Download
-                    Itinerary
-                  </button>
-                  <button
-                    onClick={() => setVersionHistoryOpen(true)}
-                    className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 shadow-xs"
-                  >
-                    <History className="w-3.5 h-3.5 text-slate-400" /> Version
-                    History
-                  </button>
-                </div>
-              </div>
-
-              {/* Metrics cards */}
-                {(() => {
-                  const dayCount = computedItinerary.length || tripDetails?.durationDays || 9;
-                  const nightCount = computedItinerary.filter((i: any) => i.stay && i.stay !== "—" && !i.stay.includes("No Stay")).length || (dayCount > 1 ? dayCount - 1 : 1);
-                  const destSet = new Set(computedItinerary.map((i: any) => i.loc).filter(Boolean));
-                  const destCount = destSet.size || 1;
-                  const actCount = computedItinerary.filter((i: any) => i.activities && i.activities !== "—" && i.activities !== "").length;
-                  const totalHotelCost = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").reduce((sum: number, h: any) => sum + (h.totalAmount || h.cost || 0), 0) || (stats.totalExpenses ? Math.round(stats.totalExpenses * 0.45) : 0);
-                  const hotelVendorCount = dbVendors.filter((v: any) => v.type?.toLowerCase() === "hotel").length;
-
-                  return (
-                    <>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                        {[
-                          {
-                            v: `${dayCount} Days / ${nightCount} Nights`,
-                            l: "Duration & Stays",
-                            icon: <Calendar className="w-4 h-4 text-blue-600" />,
-                            bg: "bg-blue-50/50",
-                          },
-                          {
-                            v: `${destCount} Destinations`,
-                            l: "Places to be visited",
-                            icon: <MapPin className="w-4 h-4 text-emerald-600" />,
-                            bg: "bg-emerald-50/50",
-                          },
-                          {
-                            v: `~${dayCount * 140} KM`,
-                            l: "Total Travel Distance",
-                            icon: <Bus className="w-4 h-4 text-cyan-600" />,
-                            bg: "bg-cyan-50/50",
-                          },
-                          {
-                            v: `${actCount} Activities`,
-                            l: "Included in itinerary",
-                            icon: <Star className="w-4 h-4 text-amber-600" />,
-                            bg: "bg-amber-50/50",
-                          },
-                        ].map((kpi) => (
-                          <div
-                            key={kpi.l}
-                            className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs flex items-center gap-3"
-                          >
-                            <div
-                              className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                                kpi.bg,
-                              )}
-                            >
-                              {kpi.icon}
-                            </div>
-                            <div>
-                              <p className="text-xs font-black text-slate-800 leading-tight">
-                                {kpi.v}
-                              </p>
-                              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                {kpi.l}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  );
-                })()}
-                
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                    <tr className="text-[9.5px] font-bold text-slate-450 uppercase tracking-wider">
-                      <th className="py-2.5 px-3 text-center border-r border-slate-100 w-16">
-                        DAY
-                      </th>
-                      <th className="py-2.5 px-3 border-r border-slate-100 w-28">
-                        DATE
-                      </th>
-                      <th className="py-2.5 px-3 border-r border-slate-100">
-                        ITINERARY PLAN & DESTINATION
-                      </th>
-                      <th className="py-2.5 px-3 border-r border-slate-100 w-44">
-                        OVERNIGHT STAY
-                      </th>
-                      {itineraryViewMode === "internal" && (
-                        <th className="py-2.5 px-3 border-r border-slate-100 w-36">
-                          TRAVEL DETAILS
-                        </th>
-                      )}
-                      <th className="py-2.5 px-3 border-r border-slate-100 w-32">
-                        MEALS
-                      </th>
-                      <th className="py-2.5 px-3 border-r border-slate-100 w-20 text-center">
-                        STATUS
-                      </th>
-                      <th className="py-2.5 px-3 text-center w-12">ACTION</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
-                    {computedItinerary.map((row, idx) => {
-                      const isDescExpanded = expandedDescs[idx];
-                      const firstLineSub = row.sub ? row.sub.split("\n")[0].replace(/^- /, "") : "";
-                      const shouldTruncate = firstLineSub.length > 55;
-                      const displayText =
-                        shouldTruncate && !isDescExpanded
-                          ? firstLineSub.substring(0, 55) + "..."
-                          : firstLineSub;
-
-                      const isStayEmpty = !row.stay || row.stay === "—";
-                      const isMealsEmpty = !row.meals || row.meals === "—";
-
-                      return (
-                        <React.Fragment key={idx}>
-                          <tr className="hover:bg-slate-50/60 transition-colors">
-                            <td className="py-2 px-3 text-center border-r border-slate-100 font-bold text-slate-700">
-                              <div className="flex items-center justify-center gap-1">
-                                {itineraryViewMode === "internal" && (
-                                  <button
-                                    onClick={() =>
-                                      setExpandedRows((prev) => ({
-                                        ...prev,
-                                        [idx]: !prev[idx],
-                                      }))
-                                    }
-                                    className="text-slate-400 hover:text-slate-650 transition-colors"
-                                  >
-                                    <ChevronDown
-                                      className={cn(
-                                        "w-3.5 h-3.5 transition-transform",
-                                        expandedRows[idx] && "rotate-180",
-                                      )}
-                                    />
-                                  </button>
-                                )}
-                                <div>
-                                  <span className="block font-black text-slate-900 text-xs">{row.day}</span>
-                                  <span className="text-[9px] text-slate-400 font-bold block">
-                                    {row.wd}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-2 px-3 border-r border-slate-100 font-mono text-slate-600 font-bold text-xs">
-                              {row.date}
-                            </td>
-                            <td className="py-2 px-3 border-r border-slate-100">
-                              <div className="font-bold text-slate-900 text-xs leading-snug">
-                                {row.plan}
-                              </div>
-                              {firstLineSub && (
-                                <div className="text-[11px] text-slate-500 font-medium truncate max-w-[400px]">
-                                  {displayText}
-                                  {shouldTruncate && (
-                                    <button
-                                      onClick={() =>
-                                        setExpandedDescs((prev) => ({
-                                          ...prev,
-                                          [idx]: !prev[idx],
-                                        }))
-                                      }
-                                      className="text-orange-600 font-bold ml-1 hover:underline text-[10px]"
-                                    >
-                                      {isDescExpanded ? "Less" : "More"}
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 border-r border-slate-100">
-                              {isStayEmpty ? (
-                                <button
-                                  onClick={() =>
-                                    handleQuickAdd(row.rawIdx, "stay")
-                                  }
-                                  className="text-[10px] text-slate-400 bg-slate-50 border border-dashed border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded px-2 py-0.5 inline-flex items-center gap-1 transition-all"
-                                >
-                                  <Plus className="w-2.5 h-2.5" /> Not Added
-                                </button>
-                              ) : (
-                                <div>
-                                  <div className="font-bold text-slate-800 text-xs truncate max-w-[150px]">
-                                    {row.stay}
-                                  </div>
-                                  {row.stayType && (
-                                    <span className="text-[9px] font-bold text-slate-400 block">
-                                      {row.stayType}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                            {itineraryViewMode === "internal" && (
-                              <td className="py-2 px-3 border-r border-slate-100">
-                                {!row.distance ? (
-                                  <button
-                                    onClick={() =>
-                                      handleQuickAdd(row.rawIdx, "distance")
-                                    }
-                                    className="text-[10px] text-slate-400 bg-slate-50 border border-dashed border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded px-2 py-0.5 inline-flex items-center gap-1 transition-all"
-                                  >
-                                    <Plus className="w-2.5 h-2.5" /> Not Added
-                                  </button>
-                                ) : (
-                                  <div>
-                                    <div className="font-bold text-slate-800 text-xs">
-                                      {row.travel}
-                                    </div>
-                                    {row.travelSub && (
-                                      <div className="text-[9px] text-slate-400 font-medium truncate max-w-[130px]">
-                                        {row.travelSub}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </td>
-                            )}
-                            <td className="py-2 px-3 border-r border-slate-100">
-                              {isMealsEmpty ? (
-                                <button
-                                  onClick={() =>
-                                    handleQuickAdd(row.rawIdx, "meals")
-                                  }
-                                  className="text-[10px] text-slate-400 bg-slate-50 border border-dashed border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded px-2 py-0.5 inline-flex items-center gap-1 transition-all"
-                                >
-                                  <Plus className="w-2.5 h-2.5" /> Not Added
-                                </button>
-                              ) : (
-                                <span className="text-slate-700 font-bold text-xs">
-                                  {row.meals}
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 border-r border-slate-100 text-center">
-                              <span
-                                className={cn(
-                                  "text-[8px] font-black border px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider",
-                                  row.status === "INCOMPLETE"
-                                    ? "bg-amber-50 text-amber-600 border-amber-200"
-                                    : "bg-emerald-50 text-emerald-700 border-emerald-200",
-                                )}
-                              >
-                                {row.status}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3 text-center">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-slate-400 hover:bg-slate-100 hover:text-slate-700 rounded"
-                                  >
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="w-36 bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50"
-                                >
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleQuickAdd(row.rawIdx, "edit")
-                                    }
-                                    className="text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
-                                  >
-                                    Edit Day Details
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </td>
-                          </tr>
-                          {expandedRows[idx] &&
-                            itineraryViewMode === "internal" && (
-                              <tr className="bg-slate-50/50">
-                                <td
-                                  colSpan={
-                                    itineraryViewMode === "internal" ? 9 : 8
-                                  }
-                                  className="p-3.5 border-t border-b border-slate-100"
-                                >
-                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-[11px] font-medium text-slate-650">
-                                    <div>
-                                      <span className="block text-[9.5px] uppercase font-bold text-slate-400">
-                                        Departure Time
-                                      </span>
-                                      {row.departureTime ? (
-                                        <span className="text-slate-800 font-semibold">
-                                          {row.departureTime}
-                                        </span>
-                                      ) : (
-                                        <button
-                                          onClick={() =>
-                                            handleQuickAdd(
-                                              row.rawIdx,
-                                              "departureTime",
-                                            )
-                                          }
-                                          className="text-blue-500 hover:underline mt-0.5 block"
-                                        >
-                                          + Add Departure Time
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <span className="block text-[9.5px] uppercase font-bold text-slate-400">
-                                        Arrival Time
-                                      </span>
-                                      {row.arrivalTime ? (
-                                        <span className="text-slate-800 font-semibold">
-                                          {row.arrivalTime}
-                                        </span>
-                                      ) : (
-                                        <button
-                                          onClick={() =>
-                                            handleQuickAdd(
-                                              row.rawIdx,
-                                              "arrivalTime",
-                                            )
-                                          }
-                                          className="text-blue-500 hover:underline mt-0.5 block"
-                                        >
-                                          + Add Arrival Time
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <span className="block text-[9.5px] uppercase font-bold text-slate-400">
-                                        Distance
-                                      </span>
-                                      {row.distance ? (
-                                        <span className="text-slate-800 font-semibold">
-                                          {row.distance}
-                                        </span>
-                                      ) : (
-                                        <button
-                                          onClick={() =>
-                                            handleQuickAdd(
-                                              row.rawIdx,
-                                              "distance",
-                                            )
-                                          }
-                                          className="text-blue-500 hover:underline mt-0.5 block"
-                                        >
-                                          + Add Distance
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <span className="block text-[9.5px] uppercase font-bold text-slate-400">
-                                        Driving Hours
-                                      </span>
-                                      {row.drivingHours ? (
-                                        <span className="text-slate-800 font-semibold">
-                                          {row.drivingHours}
-                                        </span>
-                                      ) : (
-                                        <button
-                                          onClick={() =>
-                                            handleQuickAdd(
-                                              row.rawIdx,
-                                              "drivingHours",
-                                            )
-                                          }
-                                          className="text-blue-500 hover:underline mt-0.5 block"
-                                        >
-                                          + Add Driving Hours
-                                        </button>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <span className="block text-[9.5px] uppercase font-bold text-slate-400">
-                                        Assigned Vehicle
-                                      </span>
-                                      {row.assignedVehicle ? (
-                                        <span className="text-slate-800 font-semibold">
-                                          {row.assignedVehicle}
-                                        </span>
-                                      ) : (
-                                        <button
-                                          onClick={() =>
-                                            handleQuickAdd(
-                                              row.rawIdx,
-                                              "assignedVehicle",
-                                            )
-                                          }
-                                          className="text-blue-500 hover:underline mt-0.5 block"
-                                        >
-                                          + Assign Vehicle
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-[6px] p-3.5">
-                <Info className="w-4 h-4 text-[#F97316] shrink-0 mt-0.5" />
-                <span>
-                  All times are tentative and subject to change due to weather,
-                  traffic or operational reasons.
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* Quick Edit Itinerary Day Modal */}
           <Dialog
@@ -8651,6 +8207,7 @@ useEffect(() => {
             tripId={tripId}
             departureDateStr={departureDateStr}
             totalPax={allPassengers.length}
+            passengerAllocations={passengerAllocations}
             initialDayInfo={selectedWizardDayInfo}
             onSaveSuccess={fetchPageData}
           />
@@ -9255,10 +8812,12 @@ useEffect(() => {
                               acc[r.roomNumber] = {
                                 type: r.roomType,
                                 members: [],
+                                passengerIds: [],
                                 genders: [],
                                 rawGenders: [],
                               };
                             acc[r.roomNumber].members.push(r.travelerName);
+                            acc[r.roomNumber].passengerIds.push(r.passengerId);
                             acc[r.roomNumber].genders.push(r.genderGroup);
                             acc[r.roomNumber].rawGenders.push(r.rawGender);
                             return acc;
@@ -9290,16 +8849,26 @@ useEffect(() => {
                                   );
                                   setPassengerAllocations((prev) => {
                                     const updated = { ...prev };
-                                    Object.entries(updated).forEach(
-                                      ([name, alloc]) => {
-                                        if (alloc.room === roomNum) {
-                                          updated[name] = {
-                                            ...alloc,
-                                            room: "—",
-                                          };
-                                        }
-                                      },
-                                    );
+                                    rData.members.forEach((mName: string, mIdx: number) => {
+                                      const passId = rData.passengerIds ? rData.passengerIds[mIdx] : null;
+                                      if (updated[mName]) {
+                                        updated[mName] = {
+                                          ...updated[mName],
+                                          room: "—",
+                                        };
+                                      }
+                                      if (passId && updated[passId]) {
+                                        updated[passId] = {
+                                          ...updated[passId],
+                                          room: "—",
+                                        };
+                                      }
+                                      const pObj = allPassengers.find((p: any) => p.name === mName || (passId && p.id === passId));
+                                      if (pObj) {
+                                        if (pObj.id && updated[pObj.id]) updated[pObj.id] = { ...updated[pObj.id], room: "—" };
+                                        if (pObj.name && updated[pObj.name]) updated[pObj.name] = { ...updated[pObj.name], room: "—" };
+                                      }
+                                    });
                                     return updated;
                                   });
                                   toast.success(`Deleted room: ${roomNum}`);
@@ -9316,20 +8885,43 @@ useEffect(() => {
                                 e.preventDefault();
                                 const travelerName =
                                   e.dataTransfer.getData("travelerName");
-                                if (!travelerName) return;
+                                const passengerId =
+                                  e.dataTransfer.getData("passengerId");
+                                if (!travelerName && !passengerId) return;
+
                                 setPassengerAllocations((prev) => {
-                                  const current = prev[travelerName] || {
-                                    room: "—",
-                                    vehicle: "—",
-                                    seat: "—",
+                                  const pObj = allPassengers.find(
+                                    (p: any) =>
+                                      (passengerId && p.id === passengerId) ||
+                                      (travelerName && p.name === travelerName) ||
+                                      (travelerName && p.name?.toLowerCase() === travelerName.toLowerCase()),
+                                  );
+
+                                  const current =
+                                    (pObj?.id && prev[pObj.id]) ||
+                                    (pObj?.name && prev[pObj.name]) ||
+                                    prev[travelerName] || {
+                                      room: "—",
+                                      vehicle: "—",
+                                      seat: "—",
+                                    };
+
+                                  const entry = {
+                                    ...current,
+                                    room: roomNum,
                                   };
-                                  return {
+
+                                  const updated = {
                                     ...prev,
-                                    [travelerName]: {
-                                      ...current,
-                                      room: roomNum,
-                                    },
+                                    [travelerName]: entry,
                                   };
+
+                                  if (pObj) {
+                                    if (pObj.id) updated[pObj.id] = { ...entry };
+                                    if (pObj.name) updated[pObj.name] = { ...entry };
+                                  }
+
+                                  return updated;
                                 });
                                 toast.success(
                                   `Moved ${travelerName} to ${roomNum}`,
@@ -9339,6 +8931,7 @@ useEffect(() => {
                               {rData.members
                                 .filter(Boolean)
                                 .map((m: string, i: number) => {
+                                  const passId = rData.passengerIds ? rData.passengerIds[i] : null;
                                   const rawG = (rData.rawGenders[i] || "").toLowerCase();
                                   let dotColor = "bg-emerald-500"; // default
                                   if (rawG === "male") dotColor = "bg-blue-500";
@@ -9350,9 +8943,15 @@ useEffect(() => {
                                       draggable
                                       onDragStart={(e) => {
                                         e.dataTransfer.setData("travelerName", m);
+                                        if (passId) {
+                                          e.dataTransfer.setData("passengerId", passId);
+                                        } else {
+                                          const pObj = allPassengers.find((p: any) => p.name === m);
+                                          if (pObj?.id) e.dataTransfer.setData("passengerId", pObj.id);
+                                        }
                                       }}
                                       className="text-[11px] font-bold text-slate-655 flex items-center gap-1.5 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2 py-1 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none"
-                                      onClick={() => handleOpenShuffle({ name: m })}
+                                      onClick={() => handleOpenShuffle({ name: m, id: passId })}
                                     >
                                       <span className={`h-1.5 w-1.5 ${dotColor} rounded-full shrink-0`} />
                                       {m}
@@ -9386,7 +8985,7 @@ useEffect(() => {
                     <div className="space-y-3">
                       {Object.entries(
                         computedVehicleAllocations.reduce(
-                          (acc: Record<string, any>, v) => {
+                           (acc: Record<string, any>, v) => {
                             if (!acc[v.fleetId]) acc[v.fleetId] = [];
                             acc[v.fleetId].push(v);
                             return acc;
@@ -9405,20 +9004,37 @@ useEffect(() => {
                               e.preventDefault();
                               const travelerName =
                                 e.dataTransfer.getData("travelerName");
-                              if (!travelerName) return;
+                              const passengerId =
+                                e.dataTransfer.getData("passengerId");
+                              if (!travelerName && !passengerId) return;
+
                               const fleetName =
                                 fleetItem?.name || "Tempo Traveller";
                               setPassengerAllocations((prev) => {
-                                const current = prev[travelerName] || {
-                                  room: "—",
-                                  vehicle: "—",
-                                  seat: "—",
-                                };
+                                const pObj = allPassengers.find(
+                                  (p: any) =>
+                                    (passengerId && p.id === passengerId) ||
+                                    (travelerName && p.name === travelerName) ||
+                                    (travelerName && p.name?.toLowerCase() === travelerName.toLowerCase()),
+                                );
+
+                                const current =
+                                  (pObj?.id && prev[pObj.id]) ||
+                                  (pObj?.name && prev[pObj.name]) ||
+                                  prev[travelerName] || {
+                                    room: "—",
+                                    vehicle: "—",
+                                    seat: "—",
+                                  };
+
                                 const entry = { ...current, vehicle: fleetName };
                                 const updated = { ...prev, [travelerName]: entry };
-                                // Also find passenger by name and write by id
-                                const pObj = allPassengers.find((p: any) => p.name === travelerName);
-                                if (pObj?.id) updated[pObj.id] = { ...entry };
+
+                                if (pObj) {
+                                  if (pObj.id) updated[pObj.id] = { ...entry };
+                                  if (pObj.name) updated[pObj.name] = { ...entry };
+                                }
+
                                 return updated;
                               });
                               toast.success(
@@ -9463,9 +9079,15 @@ useEffect(() => {
                                     draggable
                                     onDragStart={(e) => {
                                       e.dataTransfer.setData("travelerName", t.travelerName);
+                                      if (t.passengerId) {
+                                        e.dataTransfer.setData("passengerId", t.passengerId);
+                                      } else {
+                                        const pObj = allPassengers.find((p: any) => p.name === t.travelerName);
+                                        if (pObj?.id) e.dataTransfer.setData("passengerId", pObj.id);
+                                      }
                                     }}
                                     className="text-[11px] font-bold text-slate-650 truncate flex items-center gap-2 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2 py-1 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none"
-                                    onClick={() => handleOpenShuffle({ name: t.travelerName })}
+                                    onClick={() => handleOpenShuffle({ name: t.travelerName, id: t.passengerId })}
                                   >
                                     <span className={`text-[9px] font-black font-mono ${theme} border px-1.5 py-0.2 rounded shrink-0`}>
                                       #{t.seatNumber || i + 1}

@@ -1094,6 +1094,7 @@ export default function AccountingPage() {
         mode: isCash ? "Cash" : isUpi ? "UPI" : "Bank Transfer",
         inflow: e.amount,
         outflow: 0,
+        status: "APPROVED",
         category: "Booking Payment",
         categoryColor: "bg-blue-500",
         addedBy: e.salesperson?.name || "System",
@@ -1118,6 +1119,7 @@ export default function AccountingPage() {
       mode: "Bank Transfer",
       inflow: 0,
       outflow: a.paidAmount,
+      status: "APPROVED",
       category:
         typeof a.vendorId === "object" && a.vendorId.type
           ? a.vendorId.type.toUpperCase() === "HOTEL"
@@ -1148,6 +1150,7 @@ export default function AccountingPage() {
     mode: e.outgoingPaymentMode || "UPI",
     inflow: 0,
     outflow: e.amount,
+    status: "APPROVED",
     category: e.category || "Utilities",
     categoryColor: "bg-orange-500",
     addedBy: "Admin",
@@ -1670,7 +1673,7 @@ export default function AccountingPage() {
     { id: "overview", label: "Overview" },
     { id: "transactions", label: "Transactions" },
     { id: "cash_book", label: "Cash Book" },
-    { id: "personal_collections", label: "Personal Collections" },
+    { id: "bank_accounts", label: "Personal Collections" },
     { id: "vendor_payments", label: "Vendor Payments" },
     { id: "office_expenses", label: "Office Expenses" },
     { id: "payments", label: "Payments" },
@@ -1862,20 +1865,6 @@ export default function AccountingPage() {
                 <div className="text-lg font-bold text-slate-800 mt-2">
                   ₹ {card.val.toLocaleString("en-IN")}
                 </div>
-                {card.trend && (
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <span
-                      className={cn(
-                        "text-[9px] font-bold px-1 py-0.5 rounded",
-                        card.type === "up"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-red-50 text-red-500",
-                      )}
-                    >
-                      {card.type === "up" ? "▲" : "▼"} {card.trend}
-                    </span>
-                  </div>
-                )}
                 {card.subtitle && (
                   <div className="text-[10px] text-slate-500 font-medium mt-1.5">
                     {card.subtitle}
@@ -2905,7 +2894,7 @@ export default function AccountingPage() {
       )}
 
       {/* PERSONAL COLLECTIONS TAB (Replaces Bank Accounts) */}
-      {(activeTab === "personal_collections" || activeTab === "bank_accounts") && (
+      {(activeTab === "bank_accounts") && (
         <div className="space-y-6">
           {/* Summary KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3925,21 +3914,6 @@ export default function AccountingPage() {
                 <div className="text-lg font-black text-slate-800 mt-2">
                   ₹ {card.val}
                 </div>
-                {card.trend && (
-                  <div className="text-[9.5px] font-semibold text-slate-400 mt-1">
-                    vs Last Month{" "}
-                    <span
-                      className={cn(
-                        "font-bold",
-                        card.type === "up"
-                          ? "text-emerald-600"
-                          : "text-red-500",
-                      )}
-                    >
-                      {card.trend}
-                    </span>
-                  </div>
-                )}
                 {card.sub && (
                   <div className="text-[9.5px] text-slate-450 font-bold mt-1">
                     {card.sub}

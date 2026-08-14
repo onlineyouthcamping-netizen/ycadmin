@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Plus,
@@ -273,6 +272,18 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
       loadData();
     } catch (err: any) {
       toast.error("Failed to duplicate group");
+    }
+  };
+
+  // Delete Group
+  const handleDeleteGroup = async (groupId: string, routeName: string) => {
+    if (!confirm(`Permanently delete route contract "${routeName}" and all its vehicle rates?`)) return;
+    try {
+      await api.delete(`/vendors/directory/route-pricing/${groupId}`);
+      toast.success("Route contract deleted successfully");
+      loadData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete route contract");
     }
   };
 
@@ -539,23 +550,23 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                       <span className="text-xs font-bold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
                         {group.pickupLocation} → {group.dropLocation}
                       </span>
-                      <Badge variant="outline" className="text-[10px] font-extrabold bg-orange-50 text-orange-700 border-orange-200">
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
                         {group.durationDays} Days / {group.durationNights} Nights
-                      </Badge>
+                      </span>
                       {group.season && (
-                        <Badge variant="outline" className="text-[10px] font-extrabold bg-blue-50 text-blue-700 border-blue-200">
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                           {group.season} SEASON
-                        </Badge>
+                        </span>
                       )}
                       {group.pickupDropIncluded && (
-                        <Badge variant="outline" className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Pickup & Drop Included
-                        </Badge>
+                        </span>
                       )}
                       {!group.isActive && (
-                        <Badge variant="destructive" className="text-[10px]">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
                           Inactive
-                        </Badge>
+                        </span>
                       )}
                     </div>
 
@@ -633,6 +644,17 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                       className="h-7.5 text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer"
                     >
                       {group.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeleteGroup(group.id, group.routeName)}
+                      className="h-7.5 text-xs font-bold text-red-600 bg-white border-red-200 hover:bg-red-50 hover:text-red-700 cursor-pointer"
+                      title="Delete Route Contract"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1 text-red-500" />
+                      Delete
                     </Button>
                   </div>
                 </div>
@@ -718,16 +740,15 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                               </td>
 
                               <td className="py-3 px-4">
-                                <Badge
-                                  variant={rate.isActive ? "outline" : "secondary"}
-                                  className={`text-[10px] font-bold ${
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                                     rate.isActive
                                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                      : "bg-slate-100 text-slate-500"
+                                      : "bg-slate-100 text-slate-500 border-slate-200"
                                   }`}
                                 >
                                   {rate.isActive ? "Active" : "Inactive"}
-                                </Badge>
+                                </span>
                               </td>
 
                               <td className="py-3 px-4 text-right">

@@ -198,6 +198,41 @@ export function buildPhysicalRoomAllocation(
 }
 
 /**
+ * Derive room count breakdown (Double, Triple, Quad, Extra) directly from room allocations.
+ */
+export function deriveRoomCountsFromAllocations(
+  passengerAllocations: Record<string, { room: string; vehicle: string; seat: string }>
+) {
+  const allocation = buildPhysicalRoomAllocation(passengerAllocations);
+  let doubleRooms = 0;
+  let tripleRooms = 0;
+  let quadRooms = 0;
+  let extraPersons = 0;
+
+  allocation.rooms.forEach((r) => {
+    if (r.paxCount === 2 || r.paxCount === 1) {
+      doubleRooms += 1;
+    } else if (r.paxCount === 3) {
+      tripleRooms += 1;
+    } else if (r.paxCount === 4) {
+      quadRooms += 1;
+    } else if (r.paxCount > 4) {
+      quadRooms += 1;
+      extraPersons += (r.paxCount - 4);
+    }
+  });
+
+  return {
+    doubleRooms,
+    tripleRooms,
+    quadRooms,
+    extraPersons,
+    totalRooms: allocation.totalRooms,
+    totalPax: allocation.totalPax,
+  };
+}
+
+/**
  * Calculate minimum physical rooms required from passenger sharing config.
  * Used when actual allocation is not yet saved.
  *
@@ -537,6 +572,19 @@ export function findHotelForDay(
     checkOut?: string | null;
     location?: string | null;
     hotelName?: string | null;
+    numberOfRooms?: number | null;
+    nightsCount?: number | null;
+    doubleRoomsCount?: number | null;
+    doubleRate?: number | null;
+    tripleRoomsCount?: number | null;
+    tripleRate?: number | null;
+    quadRoomsCount?: number | null;
+    quadRate?: number | null;
+    extraPersonsCount?: number | null;
+    extraBedRate?: number | null;
+    pricingMethod?: string | null;
+    totalAmount?: number | null;
+    updatedAt?: string | null;
   }>
 ): typeof hotelBookings[0] | null {
   if (!hotelBookings || hotelBookings.length === 0) return null;

@@ -193,7 +193,7 @@ export default function BookingLinksPage() {
   const handleDelete = async () => {
     if (!formToDelete) return;
     try {
-      await bookingLinksService.remove(formToDelete);
+      await bookingLinksService.revoke(formToDelete);
       toast.success("Record removed");
       setDeleteConfirmOpen(false);
       setFormToDelete(null);
@@ -305,8 +305,7 @@ export default function BookingLinksPage() {
         0,
       );
       // Default capacity is taken from the trip if available; otherwise show unknown.
-      const totalCapacity =
-        selectedTrip.maxGroupSize || selectedTrip.capacity || 0;
+      const totalCapacity = selectedTrip.maxGroupSize || 0;
       let status: MockDepartureDate["status"] = isPast
         ? "Completed / Past Departure"
         : "Open for Booking";
@@ -424,7 +423,7 @@ export default function BookingLinksPage() {
                 const nextDeparture =
                   typeof rawNext === "string"
                     ? rawNext
-                    : rawNext?.date || getUpcomingDefaultDates()[0];
+                    : getUpcomingDefaultDates()[0];
                 const img =
                   trip.heroImage ||
                   trip.images?.[0] ||
@@ -450,8 +449,7 @@ export default function BookingLinksPage() {
                             {trip.title}
                           </h3>
                           <span className="font-mono text-[9.5px] font-black text-[#D4541A] bg-orange-50 border border-orange-200/60 px-1.5 py-0.5 rounded-md shrink-0">
-                            {trip.tripCode ||
-                              trip.id.substring(0, 4).toUpperCase()}
+                            {trip.shortName || trip.id.substring(0, 4).toUpperCase()}
                           </span>
                         </div>
 
@@ -737,14 +735,14 @@ export default function BookingLinksPage() {
 
                 return (
                   <div
-                    key={form.id || form._id}
+                    key={form.id}
                     className="bg-white border border-[#E3EAF2] rounded-[10px] p-3.5 space-y-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="text-[11px] font-bold text-[#162B45] font-mono">
-                            Token: {(form.id || form._id || "").substring(0, 8)}
+                            Token: {(form.id || "").substring(0, 8)}
                           </p>
                           <p className="text-[9px] text-[#74839A] font-semibold mt-1">
                             Created{" "}
@@ -822,7 +820,7 @@ export default function BookingLinksPage() {
                       <Button
                         variant="outline"
                         className="h-8 rounded text-[10px] font-bold uppercase border-rose-200 text-[#E23D4D] hover:bg-rose-50"
-                        onClick={() => confirmDelete(form.id || form._id!)}
+                        onClick={() => confirmDelete(form.id!)}
                       >
                         Revoke
                       </Button>
@@ -967,9 +965,7 @@ export default function BookingLinksPage() {
               <p>
                 Token:{" "}
                 {(
-                  existingFormMatch.id ||
-                  existingFormMatch._id ||
-                  ""
+                  existingFormMatch.id || ""
                 ).substring(0, 8)}
               </p>
             </div>

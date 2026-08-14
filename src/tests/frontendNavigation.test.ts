@@ -47,6 +47,5 @@ describe("Frontend Navigation & Central Route Configuration Suite", () => {
     expect(founderRouteIds).toContain("staff-profiles");
     expect(founderRouteIds).toContain("staff-profile-detail");
     expect(founderRouteIds).toContain("roles-permissions");
-    expect(founderRouteIds).toContain("audit-logs");
   });
 });

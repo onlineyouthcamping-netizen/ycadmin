@@ -24,7 +24,20 @@ interface DepartureMoneySummaryProps {
     totalRevenue: number;
     customerPaid: number;
     customerOutstanding: number;
-    customerPaidPercent: number;
+    customerPaidPercent: number | string;
+    totalParticipants?: number;
+    outstandingParticipantsCount?: number;
+    totalVendorCost?: number;
+    totalVendorPaid?: number;
+    totalVendorPayables?: number;
+    estProfit?: number;
+    profitPercent?: string;
+    customerOutstandingPercent?: string;
+    vendorPaidPercent?: string;
+    vendorPayablePercent?: string;
+    totalCollected?: number;
+    totalAdvance?: number;
+    totalExpenses?: number;
   };
   tripVendors: any[];
 }

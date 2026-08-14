@@ -57,7 +57,8 @@ export default function TripsPage() {
           String(t.id) === String(editParam) ||
           String((t as any)._id) === String(editParam) ||
           String((t as any).slug) === String(editParam) ||
-          String(t.tripCode || (t as any).code) === String(editParam),
+          String((t as any).code || (t as any).shortName || "") ===
+            String(editParam),
       );
       if (found) {
         setEditing(found);
@@ -101,7 +102,7 @@ export default function TripsPage() {
 
   const openEdit = (t: Trip) => {
     const identifier =
-      t.id || (t as any)._id || (t as any).slug || t.tripCode || "trip";
+      t.id || (t as any)._id || (t as any).slug || (t as any).shortName || "trip";
     setSearchParams({
       edit: String(identifier),
       tab: searchParams.get("tab") || "overview",
@@ -144,7 +145,9 @@ export default function TripsPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchTitle = (t.title || "").toLowerCase().includes(q);
-        const matchCode = (t.tripCode || t.id || "").toLowerCase().includes(q);
+        const matchCode = (((t as any).shortName || t.id) || "")
+          .toLowerCase()
+          .includes(q);
         const matchLoc = (t.location || "").toLowerCase().includes(q);
         if (!matchTitle && !matchCode && !matchLoc) return false;
       }
@@ -234,33 +237,30 @@ export default function TripsPage() {
       if (copySop && t.id && newTrip?.id) {
         try {
           const sourceSop = await sopsService.getSopByTrip(t.id);
-          if (
-            sourceSop &&
-            sourceSop.activeVersion &&
-            sourceSop.activeVersion.taskTemplates
-          ) {
+          const sourceVersion = sourceSop?.versions?.find(
+            (v) => v.id === sourceSop?.activeVersionId,
+          );
+          if (sourceSop && sourceVersion && sourceVersion.taskTemplates) {
             const newTemplate = await sopsService.createSopTemplate({
               tripId: newTrip.id,
-              templateName: `${duplicatedTitle} Operations SOP`,
+              name: `${duplicatedTitle} Operations SOP`,
               description: `Copied Operations SOP from ${t.title}`,
             });
 
-            if (newTemplate && newTemplate.activeVersion) {
-              for (const task of sourceSop.activeVersion.taskTemplates) {
-                await sopsService.createTaskTemplate(
-                  newTemplate.activeVersion.id,
-                  {
-                    taskName: task.taskName,
-                    instructions: task.instructions,
-                    category: task.category,
-                    taskType: task.taskType,
-                    stage: task.stage,
-                    relativeOffset: task.relativeOffset,
-                    defaultAssignee: task.defaultAssignee,
-                    priority: task.priority,
-                    isRequired: task.isRequired,
-                  },
-                );
+            const newVersion = newTemplate?.versions?.find(
+              (v) => v.id === newTemplate?.activeVersionId,
+            );
+            if (newTemplate && newVersion) {
+              for (const task of sourceVersion.taskTemplates) {
+                await sopsService.createTaskTemplate(newVersion.id, {
+                  taskName: task.taskName,
+                  instructions: task.instructions,
+                  stage: task.stage,
+                  relativeOffset: task.relativeOffset,
+                  defaultAssignee: task.defaultAssignee,
+                  priority: task.priority,
+                  isRequired: task.isRequired,
+                });
               }
             }
           }
@@ -328,7 +328,7 @@ export default function TripsPage() {
       header: "Code",
       render: (t: Trip) => (
         <span className="text-xs text-slate-600 font-mono bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">
-          {t?.tripCode || t?.id?.substring(0, 8) || "N/A"}
+          {t?.shortName || t?.id?.substring(0, 8) || "N/A"}
         </span>
       ),
     },
