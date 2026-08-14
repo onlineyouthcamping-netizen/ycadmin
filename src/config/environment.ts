@@ -44,14 +44,7 @@ const defaultApiUrl = IS_DEVELOPMENT
   ? "http://localhost:3001"
   : "https://api.youthcamping.online";
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-
-// In production, enforce that configuration exists (fail-fast)
-if (IS_PRODUCTION && !rawApiUrl) {
-  throw new Error(
-    "❌ Configuration Error: VITE_API_URL environment variable is required for production builds!",
-  );
-}
+const rawApiUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
 
 const API_BASE_URL = normalizeUrl(rawApiUrl, defaultApiUrl);
 const API_TIMEOUT_MS = parseTimeout(import.meta.env.VITE_API_TIMEOUT_MS, 30000);
