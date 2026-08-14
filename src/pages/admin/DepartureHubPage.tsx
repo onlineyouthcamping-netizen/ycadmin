@@ -1342,16 +1342,16 @@ export default function DepartureHubPage() {
               email: p.email || "—",
               pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
               amount: perPersonAmount,
-              paidAmount: perPersonPaid,
-              balance: perPersonBalance,
-              notes: "Co-traveler",
+              notes: p.notes || (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
               isLead: false,
               gender: p.gender || "Male",
               age: p.age || 24,
-              ticketStatus: p.ticketStatus || b.trainTicketStatus || "PENDING",
+              status: p.status || (p.isCancelled ? "CANCELLED" : "CONFIRMED"),
+              isCancelled: p.isCancelled === true || p.status === "CANCELLED" || p.status === "cancelled" || b.status === "cancelled",
+              ticketStatus: p.ticketStatus || (p.isCancelled ? "CANCELLED" : b.trainTicketStatus) || "PENDING",
               ticketVerified:
                 p.ticketStatus === "CONFIRMED" ||
-                b.trainTicketStatus === "CONFIRMED",
+                (!p.isCancelled && b.trainTicketStatus === "CONFIRMED"),
               documentStatus: p.idProof ? "Verified" : "Missing",
             });
           });
@@ -5654,6 +5654,9 @@ useEffect(() => {
         amount: perPersonAmount,
         paidAmount: perPersonPaid,
         balance: perPersonBalance,
+        status: b.status || "CONFIRMED",
+        isCancelled: b.status === "cancelled" || b.status === "CANCELLED",
+        notes: b.notes || b.adminNotes || "",
       };
 
       const personsList = [leadPassenger];
@@ -5671,6 +5674,17 @@ useEffect(() => {
             email: p.email || "—",
             pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
             isLead: false,
+            status: p.status || (p.isCancelled ? "CANCELLED" : "CONFIRMED"),
+            isCancelled:
+              p.isCancelled === true ||
+              p.status === "CANCELLED" ||
+              p.status === "cancelled" ||
+              b.status === "cancelled" ||
+              b.status === "CANCELLED",
+            notes:
+              p.notes ||
+              p.remarks ||
+              (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : ""),
             roomType:
               coRoomInfo.roomType ||
               p.roomSharing ||
@@ -7502,11 +7516,17 @@ useEffect(() => {
                             bg.passengers.map((p: any) => (
                               <tr
                                 key={p.id || p.name}
-                                className="hover:bg-slate-50/30 transition-colors"
+                                className={cn(
+                                  "transition-colors",
+                                  p.isCancelled
+                                    ? "bg-red-100/90 hover:bg-red-200/90 border-l-4 border-l-red-600 shadow-xs"
+                                    : "hover:bg-slate-50/30",
+                                )}
                               >
                                 <td className="p-3 text-center">
                                   <input
                                     type="checkbox"
+                                    disabled={p.isCancelled}
                                     checked={!!selectedPassengerIds[p.id]}
                                     onChange={(e) => {
                                       setSelectedPassengerIds((prev) => ({
@@ -7514,14 +7534,17 @@ useEffect(() => {
                                         [p.id]: e.target.checked,
                                       }));
                                     }}
-                                    className="rounded-[2px] border-slate-300 text-[#F97316] focus:ring-[#F97316] cursor-pointer"
+                                    className="rounded-[2px] border-slate-300 text-[#F97316] focus:ring-[#F97316] cursor-pointer disabled:opacity-40"
                                   />
                                 </td>
                                 <td className="p-3 pl-6">
                                   <div className="flex items-center gap-1.5">
                                     <div
                                       className={cn(
-                                        "font-bold text-slate-800 hover:text-blue-600 hover:underline cursor-pointer",
+                                        "font-bold hover:underline cursor-pointer",
+                                        p.isCancelled
+                                          ? "text-red-950 line-through font-extrabold"
+                                          : "text-slate-800 hover:text-blue-600",
                                         !p.isLead &&
                                           "text-slate-650 font-medium pl-2 border-l border-slate-300",
                                       )}
@@ -7545,19 +7568,27 @@ useEffect(() => {
                                         p.name
                                       )}
                                     </div>
-                                    {!p.isLead && !p.coupleWith && (
-                                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                                        co-traveler
+                                    {p.isCancelled ? (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-red-600 text-white shadow-2xs">
+                                        CANCELLED
                                       </span>
+                                    ) : (
+                                      !p.isLead &&
+                                      !p.coupleWith && (
+                                        <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                          co-traveler
+                                        </span>
+                                      )
                                     )}
                                   </div>
                                   <div
                                     className={cn(
-                                      "text-[10px] text-slate-400",
+                                      "text-[10px]",
+                                      p.isCancelled ? "text-red-800 font-bold" : "text-slate-400",
                                       !p.isLead && "pl-4",
                                     )}
                                   >
-                                    {p.gender}, {p.age} yrs
+                                    {p.gender}, {p.age} yrs {p.isCancelled ? "• CANCELLED" : ""}
                                   </div>
                                 </td>
                                 <td className="p-3 font-mono text-slate-600">
