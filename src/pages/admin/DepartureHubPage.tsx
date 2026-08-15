@@ -7,7 +7,7 @@ import { calculateRoomOccupancy } from "@/utils/departure/accommodationCalculato
 import { saveActivityToBackend } from "@/utils/departure/activityMapper";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Users,
   Calendar,
@@ -1153,13 +1153,20 @@ const generateMockBookings = (tripId: string, departureDateStr: string) => {
 
 export default function DepartureHubPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // Guarantee immediate synchronization with browser URL location
+  const currentParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
 
   // Extract from departureId if present (format: tripId_YYYY-MM-DD)
-  const departureIdParam = searchParams.get("departureId");
-  let resolvedTripId = searchParams.get("tripId") || "MKA-0705";
+  const departureIdParam = currentParams.get("departureId");
+  let resolvedTripId = currentParams.get("tripId") || "";
   let resolvedDepartureDateStr =
-    searchParams.get("departureDate") || "2027-07-05";
+    currentParams.get("departureDate") || currentParams.get("date") || "";
 
   if (departureIdParam && departureIdParam.includes("_")) {
     const idx = departureIdParam.indexOf("_");
@@ -1167,35 +1174,50 @@ export default function DepartureHubPage() {
     resolvedDepartureDateStr = departureIdParam.substring(idx + 1);
   }
 
+  if (!resolvedTripId) resolvedTripId = "MKA-0705";
+  if (!resolvedDepartureDateStr) resolvedDepartureDateStr = "2027-07-05";
+
   const tripId = resolvedTripId;
   const departureDateStr = resolvedDepartureDateStr;
 
-  let rawTab = (searchParams.get("tab") || "overview").toLowerCase().trim();
+  let rawTab = (currentParams.get("tab") || "overview").toLowerCase().trim();
   // Tab ID normalization
-  if (["hotel", "accommodations", "accommodation", "itinerary"].includes(rawTab)) {
+  if (["hotel", "hotels", "accommodations", "accommodation", "itinerary"].includes(rawTab)) {
     rawTab = "hotels";
-  } else if (rawTab === "allocation" || rawTab === "tempo") {
+  } else if (["transport", "allocation", "tempo", "fleet", "vehicles"].includes(rawTab)) {
     rawTab = "transport";
-  } else if (rawTab === "manifest") {
+  } else if (["passengers", "manifest", "pax"].includes(rawTab)) {
     rawTab = "passengers";
-  } else if (["ticketing", "tasks"].includes(rawTab)) {
+  } else if (["operations", "ops", "ticketing", "tasks", "checklist"].includes(rawTab)) {
     rawTab = "operations";
-  } else if (["money", "payments", "reports"].includes(rawTab)) {
+  } else if (["finance", "money", "payments", "accounting"].includes(rawTab)) {
     rawTab = "finance";
   } else if (["station", "stationpayments", "station_payments"].includes(rawTab)) {
     rawTab = "stationpayments";
+  } else if (["documents", "docs"].includes(rawTab)) {
+    rawTab = "documents";
+  } else if (["reports", "report"].includes(rawTab)) {
+    rawTab = "reports";
+  } else if (["guides", "guide"].includes(rawTab)) {
+    rawTab = "guides";
+  } else if (["activities", "activity"].includes(rawTab)) {
+    rawTab = "activities";
   }
   const activeTab = rawTab;
 
   const setActiveTab = (tab: string) => {
-    const nextParams: Record<string, string> = { tab };
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.set("tab", tab);
     if (departureIdParam) {
-      nextParams.departureId = departureIdParam;
+      nextParams.set("departureId", departureIdParam);
     } else {
-      nextParams.tripId = tripId;
-      nextParams.departureDate = departureDateStr;
+      if (tripId) nextParams.set("tripId", tripId);
+      if (departureDateStr) nextParams.set("departureDate", departureDateStr);
     }
-    setSearchParams(nextParams);
+    navigate({
+      pathname: location.pathname,
+      search: `?${nextParams.toString()}`,
+    });
   };
 
   const initializationKeyRef = useRef<string | null>(null);
