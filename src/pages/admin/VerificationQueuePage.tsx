@@ -140,12 +140,28 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function VerificationQueuePage() {
+interface VerificationQueuePageProps {
+  defaultQueue?: "booking" | "train";
+  hideHeader?: boolean;
+  hideSideNav?: boolean;
+}
+
+export default function VerificationQueuePage({
+  defaultQueue = "booking",
+  hideHeader = false,
+  hideSideNav = false,
+}: VerificationQueuePageProps) {
   const { admin } = useAuthStore();
 
   const [activeQueue, setActiveQueue] = useState<"booking" | "train">(
-    "booking",
+    defaultQueue,
   );
+
+  useEffect(() => {
+    if (defaultQueue) {
+      setActiveQueue(defaultQueue);
+    }
+  }, [defaultQueue]);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -445,38 +461,104 @@ export default function VerificationQueuePage() {
   };
 
   return (
-    <div className="space-y-4 font-sans select-none antialiased text-[#162B45] px-4 py-4 bg-[#F4F7FB] min-h-screen">
-      {/* 1. COMPACT PAGE HEADER */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2] bg-transparent">
-        <div className="space-y-0.5">
-          <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat">
-            Verification & Approvals
-          </h1>
-          <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-            Review booking and train-ticket requests before final confirmation.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
-            <Input
-              placeholder="Search booking ID, customer, trip, PNR..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
-            />
+    <div
+      className={cn(
+        "space-y-4 font-sans select-none antialiased text-[#162B45]",
+        !hideHeader && "px-4 py-4 bg-[#F4F7FB] min-h-screen",
+      )}
+    >
+      {/* 1. COMPACT PAGE HEADER (if not embedded) */}
+      {!hideHeader ? (
+        <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2] bg-transparent">
+          <div className="space-y-0.5">
+            <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat">
+              Verification & Approvals
+            </h1>
+            <p className="text-[#74839A] text-[12px] font-[500] leading-none">
+              Review booking and train-ticket requests before final confirmation.
+            </p>
           </div>
-          <Button
-            onClick={loadQueue}
-            className="h-8.5 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-[600] flex items-center gap-1 shadow-sm transition-all"
-          >
-            <RotateCw className="w-3.5 h-3.5 text-[#74839A]" /> Refresh
-          </Button>
-        </div>
-      </div>
 
-      {/* 2. APPROVAL SUMMARY KPI ROW (78px - 84px height, exact top-right icon alignment) */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
+              <Input
+                placeholder="Search booking ID, customer, trip, PNR..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
+              />
+            </div>
+            <Button
+              onClick={loadQueue}
+              className="h-8.5 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-[600] flex items-center gap-1 shadow-sm transition-all"
+            >
+              <RotateCw className="w-3.5 h-3.5 text-[#74839A]" /> Refresh
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <div className="flex items-center gap-2">
+            <div className="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200/70">
+              <button
+                onClick={() => setActiveQueue("booking")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
+                  activeQueue === "booking"
+                    ? "bg-white text-[#F97316] shadow-sm"
+                    : "text-slate-600 hover:text-slate-900",
+                )}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Bookings
+                {bookingPendingCount > 0 && (
+                  <span className="ml-1 text-[9px] bg-orange-100 text-[#F97316] px-1.5 py-0.2 rounded font-black">
+                    {bookingPendingCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveQueue("train")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
+                  activeQueue === "train"
+                    ? "bg-white text-[#F97316] shadow-sm"
+                    : "text-slate-600 hover:text-slate-900",
+                )}
+              >
+                <Train className="w-3.5 h-3.5" />
+                Train Tickets
+                {trainPendingCount > 0 && (
+                  <span className="ml-1 text-[9px] bg-orange-100 text-[#F97316] px-1.5 py-0.2 rounded font-black">
+                    {trainPendingCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
+              <Input
+                placeholder="Search booking ID, customer, trip, PNR..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#F97316] outline-none"
+              />
+            </div>
+            <Button
+              onClick={loadQueue}
+              className="h-8.5 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-[600] flex items-center gap-1 shadow-sm transition-all"
+            >
+              <RotateCw className="w-3.5 h-3.5 text-[#74839A]" /> Refresh
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 2. APPROVAL SUMMARY KPI ROW */}
       <div className="grid grid-cols-4 gap-4">
         {/* KPI 1: Pending Review */}
         <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
@@ -551,89 +633,91 @@ export default function VerificationQueuePage() {
         </div>
       </div>
 
-      {/* 3. TWO-PANE APPROVAL WORKSPACE */}
+      {/* 3. APPROVAL WORKSPACE */}
       <div className="flex items-start gap-4">
-        {/* LEFT PANEL: Approval Type Navigation */}
-        <div className="w-[230px] bg-white border border-[#E3EAF2] rounded-[8px] p-2 space-y-2 shrink-0 shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
-          <p className="text-[8.5px] font-bold text-[#74839A] uppercase tracking-wider px-2.5 py-1.5 font-montserrat">
-            Approval Types
-          </p>
+        {/* LEFT PANEL: Approval Type Navigation (if sideNav not hidden) */}
+        {!hideSideNav && (
+          <div className="w-[230px] bg-white border border-[#E3EAF2] rounded-[8px] p-2 space-y-2 shrink-0 shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
+            <p className="text-[8.5px] font-bold text-[#74839A] uppercase tracking-wider px-2.5 py-1.5 font-montserrat">
+              Approval Types
+            </p>
 
-          <div className="space-y-1">
-            {/* Booking Verification */}
-            <button
-              onClick={() => setActiveQueue("booking")}
-              className={cn(
-                "w-full h-10 px-2.5 rounded text-left flex items-center justify-between text-[11.5px] font-[600] transition-all",
-                activeQueue === "booking"
-                  ? "bg-slate-50 text-[#162B45] border-l-[3px] border-[#F97316] font-bold shadow-xs"
-                  : "text-[#74839A] hover:bg-slate-50/70 hover:text-[#162B45]",
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <ShieldCheck
-                  className={cn(
-                    "w-4 h-4",
-                    activeQueue === "booking"
-                      ? "text-[#F97316]"
-                      : "text-[#74839A]",
-                  )}
-                />
-                <span>Booking Verification</span>
-              </div>
-              {bookingPendingCount > 0 && (
-                <span
-                  className={cn(
-                    "text-[9px] px-1.5 py-0.2 rounded font-black",
-                    activeQueue === "booking"
-                      ? "bg-[#F97316] text-white"
-                      : "bg-[#E3EAF2] text-[#162B45]",
-                  )}
-                >
-                  {bookingPendingCount}
-                </span>
-              )}
-            </button>
+            <div className="space-y-1">
+              {/* Booking Verification */}
+              <button
+                onClick={() => setActiveQueue("booking")}
+                className={cn(
+                  "w-full h-10 px-2.5 rounded text-left flex items-center justify-between text-[11.5px] font-[600] transition-all",
+                  activeQueue === "booking"
+                    ? "bg-slate-50 text-[#162B45] border-l-[3px] border-[#F97316] font-bold shadow-xs"
+                    : "text-[#74839A] hover:bg-slate-50/70 hover:text-[#162B45]",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldCheck
+                    className={cn(
+                      "w-4 h-4",
+                      activeQueue === "booking"
+                        ? "text-[#F97316]"
+                        : "text-[#74839A]",
+                    )}
+                  />
+                  <span>Booking Verification</span>
+                </div>
+                {bookingPendingCount > 0 && (
+                  <span
+                    className={cn(
+                      "text-[9px] px-1.5 py-0.2 rounded font-black",
+                      activeQueue === "booking"
+                        ? "bg-[#F97316] text-white"
+                        : "bg-[#E3EAF2] text-[#162B45]",
+                    )}
+                  >
+                    {bookingPendingCount}
+                  </span>
+                )}
+              </button>
 
-            {/* Train Ticket Approvals */}
-            <button
-              onClick={() => setActiveQueue("train")}
-              className={cn(
-                "w-full h-10 px-2.5 rounded text-left flex items-center justify-between text-[11.5px] font-[600] transition-all",
-                activeQueue === "train"
-                  ? "bg-slate-50 text-[#162B45] border-l-[3px] border-[#F97316] font-bold shadow-xs"
-                  : "text-[#74839A] hover:bg-slate-50/70 hover:text-[#162B45]",
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Train
-                  className={cn(
-                    "w-4 h-4",
-                    activeQueue === "train"
-                      ? "text-[#F97316]"
-                      : "text-[#74839A]",
-                  )}
-                />
-                <span>Train Ticket Approvals</span>
-              </div>
-              {trainPendingCount > 0 && (
-                <span
-                  className={cn(
-                    "text-[9px] px-1.5 py-0.2 rounded font-black",
-                    activeQueue === "train"
-                      ? "bg-[#F97316] text-white"
-                      : "bg-[#E3EAF2] text-[#162B45]",
-                  )}
-                >
-                  {trainPendingCount}
-                </span>
-              )}
-            </button>
+              {/* Train Ticket Approvals */}
+              <button
+                onClick={() => setActiveQueue("train")}
+                className={cn(
+                  "w-full h-10 px-2.5 rounded text-left flex items-center justify-between text-[11.5px] font-[600] transition-all",
+                  activeQueue === "train"
+                    ? "bg-slate-50 text-[#162B45] border-l-[3px] border-[#F97316] font-bold shadow-xs"
+                    : "text-[#74839A] hover:bg-slate-50/70 hover:text-[#162B45]",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Train
+                    className={cn(
+                      "w-4 h-4",
+                      activeQueue === "train"
+                        ? "text-[#F97316]"
+                        : "text-[#74839A]",
+                    )}
+                  />
+                  <span>Train Ticket Approvals</span>
+                </div>
+                {trainPendingCount > 0 && (
+                  <span
+                    className={cn(
+                      "text-[9px] px-1.5 py-0.2 rounded font-black",
+                      activeQueue === "train"
+                        ? "bg-[#F97316] text-white"
+                        : "bg-[#E3EAF2] text-[#162B45]",
+                    )}
+                  >
+                    {trainPendingCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* RIGHT PANEL: Selected Approval Queue */}
-        <div className="flex-1 bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden flex flex-col">
+        <div className="flex-1 w-full bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden flex flex-col">
           {/* 4. REDESIGN THE QUEUE HEADER */}
           <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2.5 shrink-0">

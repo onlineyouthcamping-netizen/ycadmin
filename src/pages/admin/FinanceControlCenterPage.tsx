@@ -123,9 +123,22 @@ export default function FinanceControlCenterPage({
 }) {
   const { admin: currentUser } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const defaultTabFromApprovalHub: QueueTab | undefined =
+    tabParam === "payment-approvals"
+      ? "incoming"
+      : tabParam === "vendor-bills"
+      ? "vendor"
+      : tabParam === "refund-requests"
+      ? "refunds"
+      : tabParam === "expense-claims"
+      ? "expenses"
+      : undefined;
+
   const activeTab =
     (searchParams.get("queue") as QueueTab) ||
     (searchParams.get("subtab") as QueueTab) ||
+    defaultTabFromApprovalHub ||
     "cash";
 
   // Data states
@@ -588,8 +601,8 @@ export default function FinanceControlCenterPage({
       toast.error("Enter a valid amount to use");
       return;
     }
-    if (numAmount > selectedCreditForApply.remainingBalance) {
-      toast.error(`Cannot apply more than remaining balance of ₹${selectedCreditForApply.remainingBalance.toLocaleString("en-IN")}`);
+    if (numAmount > (selectedCreditForApply.remainingBalance || 0)) {
+      toast.error(`Cannot apply more than remaining balance of ₹${Number(selectedCreditForApply.remainingBalance || 0).toLocaleString("en-IN")}`);
       return;
     }
 
@@ -1000,25 +1013,20 @@ export default function FinanceControlCenterPage({
       {/* ─────────────────────────────────────────────────────────────
           1. CASH VERIFICATION TAB
          ───────────────────────────────────────────────────────────── */}
-      {activeTab === "cash" && (
-        <Card className="rounded-lg border border-slate-200 shadow-xs bg-white">
-          <CardHeader className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-900">Cash Verification Queue</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
-                Audit cash collected by sales reps against booking records before closing handovers.
-              </CardDescription>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+      {activeTab === "cash" && !isLoading && (
+        <FinanceQueueCard
+          title="Cash Verification"
+          description="Match sales cash submissions to booking records before closing the handover."
+          toolbar={
+            <>
               <Input
-                placeholder="Search salesperson, booking ID..."
+                placeholder="Search salesperson, booking…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 text-xs w-56 bg-white"
+                className="h-8 text-xs w-full sm:w-56 bg-white"
               />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-8 text-xs w-32 bg-white">
+                <SelectTrigger className="h-8 text-xs w-full sm:w-32 bg-white">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1029,284 +1037,407 @@ export default function FinanceControlCenterPage({
                   <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="py-2.5 px-4">Salesperson</th>
-                    <th className="py-2.5 px-4">Booking & Customer</th>
-                    <th className="py-2.5 px-4 text-right">Expected</th>
-                    <th className="py-2.5 px-4 text-right">Submitted</th>
-                    <th className="py-2.5 px-4 text-right">Difference</th>
-                    <th className="py-2.5 px-4">Submitted Date</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4 text-right">Action</th>
+            </>
+          }
+        >
+          {cashQueue.length === 0 ? (
+            <FinanceEmptyState title="No cash submissions" description="Nothing matches the current filters." />
+          ) : (
+            <FinanceTable>
+              <FinanceTableHead
+                columns={[
+                  { label: "Salesperson" },
+                  { label: "Booking" },
+                  { label: "Expected", align: "right" },
+                  { label: "Submitted", align: "right" },
+                  { label: "Difference", align: "right" },
+                  { label: "Date" },
+                  { label: "Status" },
+                  { label: "Action", align: "right" },
+                ]}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {cashQueue.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70">
+                    <td className={cn(financeTd, "font-semibold text-slate-800")}>
+                      {item.salespersonName}
+                      <div className="text-[10px] text-slate-400 font-medium">{item.salespersonEmail || item.salespersonPhone || "Sales"}</div>
+                    </td>
+                    <td className={financeTd}>
+                      <span className="font-mono font-bold text-slate-900">{item.bookingId}</span>
+                      <div className="text-slate-500 text-[11px]">{item.customerName} • {item.tripName}</div>
+                    </td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.expectedAmount} tone="muted" /></td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.submittedAmount} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <MoneyAmount
+                        value={item.difference === 0 ? null : item.difference}
+                        signed
+                        tone={item.difference < 0 ? "debit" : "credit"}
+                        empty="—"
+                      />
+                    </td>
+                    <td className={cn(financeTd, "text-slate-500 font-mono text-[11px]")}>{safeFormatDate(item.submittedAt)}</td>
+                    <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenCashModal(item)}
+                        className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
+                      >
+                        Review
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {cashQueue.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
-                        No cash submissions found matching criteria.
-                      </td>
-                    </tr>
-                  ) : (
-                    cashQueue.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-slate-800">
-                          {item.salespersonName}
-                          <div className="text-[10px] text-slate-400">{item.salespersonEmail || item.salespersonPhone || "Sales Rep"}</div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-slate-900">{item.bookingId}</span>
-                          <div className="text-slate-500 text-[11px]">{item.customerName} • {item.tripName}</div>
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono font-medium text-slate-700">
-                          ₹{item.expectedAmount.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                          ₹{item.submittedAmount.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold">
-                          <span className={cn(item.difference === 0 ? "text-slate-400" : item.difference < 0 ? "text-red-600" : "text-emerald-600")}>
-                            {item.difference === 0 ? "—" : `${item.difference > 0 ? "+" : ""}₹${item.difference.toLocaleString("en-IN")}`}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
-                          {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString("en-IN") : "—"}
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-bold uppercase",
-                              item.status === "APPROVED"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : item.status === "REJECTED"
-                                ? "bg-rose-50 text-rose-700 border-rose-200"
-                                : item.status === "DISCREPANCY"
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : "bg-blue-50 text-blue-700 border-blue-200"
-                            )}
-                          >
-                            {item.status}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenCashModal(item)}
-                            className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
-                          >
-                            Verify
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </tbody>
+            </FinanceTable>
+          )}
+        </FinanceQueueCard>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           2. INCOMING PAYMENTS TAB
          ───────────────────────────────────────────────────────────── */}
-      {activeTab === "incoming" && (
-        <Card className="rounded-lg border border-slate-200 shadow-xs bg-white">
-          <CardHeader className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-900">Incoming Payments Verification</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
-                Direct online/bank UPI transfers recorded for bookings pending Controller verification.
-              </CardDescription>
-            </div>
+      {activeTab === "incoming" && !isLoading && (
+        <FinanceQueueCard
+          title="Incoming Payments"
+          description="Bank / UPI collections waiting for controller verification."
+          toolbar={
             <Input
-              placeholder="Search booking, reference ID..."
+              placeholder="Search booking, reference…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 text-xs w-64 bg-white"
+              className="h-8 text-xs w-full sm:w-64 bg-white"
             />
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="py-2.5 px-4">Booking ID</th>
-                    <th className="py-2.5 px-4">Customer & Trip</th>
-                    <th className="py-2.5 px-4 text-right">Amount</th>
-                    <th className="py-2.5 px-4">Mode & Reference</th>
-                    <th className="py-2.5 px-4">Collection Account</th>
-                    <th className="py-2.5 px-4">Submitted By</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4 text-right">Action</th>
+          }
+        >
+          {incomingQueue.length === 0 ? (
+            <FinanceEmptyState title="No incoming payments" description="Nothing is waiting for verification." />
+          ) : (
+            <FinanceTable>
+              <FinanceTableHead
+                columns={[
+                  { label: "Booking" },
+                  { label: "Customer" },
+                  { label: "Amount", align: "right" },
+                  { label: "Mode" },
+                  { label: "Account" },
+                  { label: "Submitted by" },
+                  { label: "Status" },
+                  { label: "Action", align: "right" },
+                ]}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {incomingQueue.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70">
+                    <td className={cn(financeTd, "font-mono font-bold text-slate-900")}>{item.bookingId}</td>
+                    <td className={financeTd}>
+                      <span className="font-semibold text-slate-800">{item.customerName}</span>
+                      <div className="text-[10px] text-slate-400">{item.tripName}</div>
+                    </td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.amount} /></td>
+                    <td className={financeTd}>
+                      <span className="font-semibold text-slate-700">{item.paymentMode}</span>
+                      <div className="font-mono text-[10px] text-slate-400">{item.referenceNumber || "—"}</div>
+                    </td>
+                    <td className={cn(financeTd, "text-slate-600")}>{item.collectionAccountName || item.bankName || "Primary"}</td>
+                    <td className={cn(financeTd, "text-slate-500")}>{item.submittedBy}</td>
+                    <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedIncomingItem(item);
+                          setIncomingAction("VERIFY");
+                          setIncomingNotes("");
+                          setIncomingReason("");
+                          setIsIncomingModalOpen(true);
+                        }}
+                        className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
+                      >
+                        Review
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {incomingQueue.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
-                        No incoming payments pending verification.
-                      </td>
-                    </tr>
-                  ) : (
-                    incomingQueue.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900">{item.bookingId}</td>
-                        <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-800">{item.customerName}</span>
-                          <div className="text-[10px] text-slate-400">{item.tripName}</div>
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                          ₹{item.amount.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-700">{item.paymentMode}</span>
-                          <div className="font-mono text-[10px] text-slate-400">{item.referenceNumber || "—"}</div>
-                        </td>
-                        <td className="py-3 px-4 text-slate-600 font-medium">{item.collectionAccountName || item.bankName || "Primary Bank"}</td>
-                        <td className="py-3 px-4 text-slate-500">{item.submittedBy}</td>
-                        <td className="py-3 px-4">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-bold uppercase",
-                              item.status === "APPROVED"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : item.status === "REJECTED"
-                                ? "bg-rose-50 text-rose-700 border-rose-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
-                            )}
-                          >
-                            {item.status}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedIncomingItem(item);
-                              setIsIncomingModalOpen(true);
-                            }}
-                            className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
-                          >
-                            Verify
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </tbody>
+            </FinanceTable>
+          )}
+        </FinanceQueueCard>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           3. OUTGOING / VENDOR PAYMENTS TAB
          ───────────────────────────────────────────────────────────── */}
-      {activeTab === "vendor" && (
-        <Card className="rounded-lg border border-slate-200 shadow-xs bg-white">
-          <CardHeader className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-900">Outgoing Vendor Payments</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
-                Authoritative vendor tariff disbursements scoped strictly per trip.
-              </CardDescription>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="py-2.5 px-4">Vendor</th>
-                    <th className="py-2.5 px-4">Trip Package</th>
-                    <th className="py-2.5 px-4">Service Type</th>
-                    <th className="py-2.5 px-4 text-right">Agreed Tariff</th>
-                    <th className="py-2.5 px-4 text-right">Paid Amount</th>
-                    <th className="py-2.5 px-4 text-right">Outstanding</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4 text-right">Action</th>
+      {activeTab === "vendor" && !isLoading && (
+        <FinanceQueueCard
+          title="Vendor Payments"
+          description="Trip-scoped vendor tariffs and outstanding disbursements."
+        >
+          {vendorQueue.length === 0 ? (
+            <FinanceEmptyState title="No vendor payouts" description="No outstanding vendor payment requests." />
+          ) : (
+            <FinanceTable>
+              <FinanceTableHead
+                columns={[
+                  { label: "Vendor" },
+                  { label: "Trip" },
+                  { label: "Service" },
+                  { label: "Tariff", align: "right" },
+                  { label: "Paid", align: "right" },
+                  { label: "Outstanding", align: "right" },
+                  { label: "Status" },
+                  { label: "Action", align: "right" },
+                ]}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {vendorQueue.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70">
+                    <td className={cn(financeTd, "font-semibold text-slate-800")}>
+                      {item.vendorName}
+                      <div className="text-[10px] text-slate-400">{item.vendorPhone || "—"}</div>
+                    </td>
+                    <td className={financeTd}>
+                      <span className="font-semibold text-slate-800">{item.tripTitle}</span>
+                      <div className="text-[10px] text-slate-400">{item.tripLocation}</div>
+                    </td>
+                    <td className={cn(financeTd, "uppercase text-[10px] font-bold text-slate-600")}>{item.vendorType}</td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.agreedTariff} tone="muted" /></td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.paidAmount} tone="credit" /></td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.outstandingAmount} tone="outstanding" /></td>
+                    <td className={financeTd}><FinanceStatusBadge status={item.paymentStatus} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedVendorItem(item);
+                          setVendorPayAmount(item.outstandingAmount);
+                          setVendorPayMode("Bank Transfer");
+                          setVendorTxnRef("");
+                          setVendorNotes("");
+                          setIsVendorModalOpen(true);
+                        }}
+                        className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
+                      >
+                        Record Payout
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {vendorQueue.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
-                        No vendor payment requests found.
-                      </td>
-                    </tr>
-                  ) : (
-                    vendorQueue.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-slate-800">
-                          {item.vendorName}
-                          <div className="text-[10px] text-slate-400">{item.vendorPhone || "Contact"}</div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-semibold text-slate-800">{item.tripTitle}</span>
-                          <div className="text-[10px] text-slate-400">{item.tripLocation}</div>
-                        </td>
-                        <td className="py-3 px-4 text-slate-600 uppercase text-[10px] font-bold">{item.vendorType}</td>
-                        <td className="py-3 px-4 text-right font-mono font-medium text-slate-700">
-                          ₹{item.agreedTariff.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600">
-                          ₹{item.paidAmount.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-rose-600">
-                          ₹{item.outstandingAmount.toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-bold uppercase",
-                              item.paymentStatus === "paid" || item.paymentStatus === "verified"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : item.paymentStatus === "partial"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
-                            )}
-                          >
-                            {item.paymentStatus}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedVendorItem(item);
-                              setVendorPayAmount(item.outstandingAmount);
-                              setIsVendorModalOpen(true);
-                            }}
-                            className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
-                          >
-                            Record Payout
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </tbody>
+            </FinanceTable>
+          )}
+        </FinanceQueueCard>
+      )}
+
+      {activeTab === "ticketing" && !isLoading && (
+        <FinanceQueueCard
+          title="Ticket Margin Audit"
+          description="Compare actual ticket cost against package allowance before approval."
+        >
+          {ticketingQueue.length === 0 ? (
+            <FinanceEmptyState title="No tickets to audit" description="Ticketing queue is clear." />
+          ) : (
+            <FinanceTable>
+              <FinanceTableHead
+                columns={[
+                  { label: "Booking" },
+                  { label: "PNR / Train" },
+                  { label: "Route" },
+                  { label: "Cost", align: "right" },
+                  { label: "Allowance", align: "right" },
+                  { label: "Margin", align: "right" },
+                  { label: "Status" },
+                  { label: "Action", align: "right" },
+                ]}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {ticketingQueue.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70">
+                    <td className={financeTd}>
+                      <span className="font-mono font-bold text-slate-900">{item.bookingId}</span>
+                      <div className="text-[11px] text-slate-500">{item.customerName} • {item.tripName}</div>
+                    </td>
+                    <td className={financeTd}>
+                      <span className="font-mono font-bold">{item.pnr}</span>
+                      <div className="text-[10px] text-slate-400">{item.trainNo} · {item.preferredClass}</div>
+                    </td>
+                    <td className={cn(financeTd, "text-slate-600")}>{item.fromStation} → {item.toStation}</td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.actualTicketCost} /></td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.packageAllowance} tone="muted" /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <MoneyAmount value={item.ticketingMargin} signed tone={item.ticketingMargin >= 0 ? "credit" : "debit"} />
+                    </td>
+                    <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTicketItem(item);
+                          setTicketAuditedCost(item.actualTicketCost);
+                          setTicketAction(item.variance && item.variance !== 0 ? "FLAG_VARIANCE" : "APPROVE");
+                          setTicketNotes("");
+                          setIsTicketModalOpen(true);
+                        }}
+                        className="h-7 text-xs font-semibold border-slate-200"
+                      >
+                        Audit
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </FinanceTable>
+          )}
+        </FinanceQueueCard>
+      )}
+
+      {activeTab === "departures" && !isLoading && (
+        <FinanceQueueCard title="Departure Payouts" description="Guide and field payouts tied to departing trips.">
+          {departuresQueue.length === 0 ? (
+            <FinanceEmptyState title="No departure payouts" />
+          ) : (
+            <FinanceTable>
+              <FinanceTableHead
+                columns={[
+                  { label: "Payout" },
+                  { label: "Recipient" },
+                  { label: "Trip" },
+                  { label: "Amount", align: "right" },
+                  { label: "Submitted" },
+                  { label: "Status" },
+                  { label: "Action", align: "right" },
+                ]}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {departuresQueue.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70">
+                    <td className={financeTd}>
+                      <span className="font-semibold text-slate-800">{item.title}</span>
+                      <div className="text-[10px] text-slate-400 uppercase">{item.type}</div>
+                    </td>
+                    <td className={cn(financeTd, "text-slate-700")}>{item.recipient}</td>
+                    <td className={cn(financeTd, "font-mono text-slate-600")}>{item.tripCode}</td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.amount} /></td>
+                    <td className={cn(financeTd, "text-[11px] text-slate-500")}>{item.submittedBy} · {safeFormatDate(item.submittedAt)}</td>
+                    <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <div className="flex justify-end gap-1.5">
+                        <FinanceApproveButton
+                          onClick={() => setPendingQueueAction({ kind: "departure", id: item.id, action: "APPROVE", title: item.title })}
+                        >
+                          Approve
+                        </FinanceApproveButton>
+                        <FinanceRejectButton
+                          onClick={() => setPendingQueueAction({ kind: "departure", id: item.id, action: "REJECT", title: item.title })}
+                        >
+                          Reject
+                        </FinanceRejectButton>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </FinanceTable>
+          )}
+        </FinanceQueueCard>
+      )}
+
+      {activeTab === "expenses" && !isLoading && (
+        <FinanceQueueCard title="Miscellaneous Expenses" description="Office and field expense claims awaiting controller sign-off.">
+          {expensesQueue.length === 0 ? (
+            <FinanceEmptyState title="No expense claims" />
+          ) : (
+            <FinanceTable>
+              <FinanceTableHead
+                columns={[
+                  { label: "Expense" },
+                  { label: "Category" },
+                  { label: "Amount", align: "right" },
+                  { label: "Mode" },
+                  { label: "Receipt" },
+                  { label: "Submitted" },
+                  { label: "Status" },
+                  { label: "Action", align: "right" },
+                ]}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {expensesQueue.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70">
+                    <td className={cn(financeTd, "font-semibold text-slate-800")}>{item.title}</td>
+                    <td className={cn(financeTd, "text-slate-600")}>{item.category}</td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.amount} tone="debit" /></td>
+                    <td className={financeTd}>{item.paymentMode}</td>
+                    <td className={cn(financeTd, "font-mono text-[11px]")}>{item.receiptNumber || "—"}</td>
+                    <td className={cn(financeTd, "text-[11px] text-slate-500")}>{item.submittedBy} · {safeFormatDate(item.submittedAt)}</td>
+                    <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <div className="flex justify-end gap-1.5">
+                        <FinanceApproveButton
+                          onClick={() => setPendingQueueAction({ kind: "expense", id: item.id, action: "APPROVE", title: item.title })}
+                        >
+                          Approve
+                        </FinanceApproveButton>
+                        <FinanceRejectButton
+                          onClick={() => setPendingQueueAction({ kind: "expense", id: item.id, action: "REJECT", title: item.title })}
+                        >
+                          Reject
+                        </FinanceRejectButton>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </FinanceTable>
+          )}
+        </FinanceQueueCard>
+      )}
+
+      {activeTab === "discrepancies" && !isLoading && (
+        <FinanceQueueCard title="Discrepancies" description="Flagged mismatches between expected and submitted amounts.">
+          {discrepanciesQueue.length === 0 ? (
+            <FinanceEmptyState title="No discrepancies" description="All submissions currently match expected amounts." />
+          ) : (
+            <FinanceTable>
+              <FinanceTableHead
+                columns={[
+                  { label: "Type" },
+                  { label: "Reference" },
+                  { label: "Party" },
+                  { label: "Expected", align: "right" },
+                  { label: "Submitted", align: "right" },
+                  { label: "Difference", align: "right" },
+                  { label: "Reason" },
+                  { label: "Status" },
+                ]}
+              />
+              <tbody className="divide-y divide-slate-100">
+                {discrepanciesQueue.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70">
+                    <td className={financeTd}><FinanceStatusBadge status={item.type} /></td>
+                    <td className={cn(financeTd, "font-mono font-bold")}>{item.sourceRef}</td>
+                    <td className={financeTd}>
+                      <span className="font-semibold">{item.salespersonName || item.customerName}</span>
+                      <div className="text-[10px] text-slate-400">{item.tripName}</div>
+                    </td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.expectedAmount} tone="muted" /></td>
+                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.submittedAmount} /></td>
+                    <td className={cn(financeTd, "text-right")}>
+                      <MoneyAmount value={item.difference} signed tone={item.difference < 0 ? "debit" : "credit"} />
+                    </td>
+                    <td className={cn(financeTd, "text-slate-600 max-w-[200px] truncate")}>{item.reason || "—"}</td>
+                    <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </FinanceTable>
+          )}
+        </FinanceQueueCard>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
@@ -1376,10 +1507,10 @@ export default function FinanceControlCenterPage({
                           </Badge>
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                          {ref.refundAmount > 0 ? `₹${ref.refundAmount.toLocaleString("en-IN")}` : "—"}
+                          {Number(ref.refundAmount || 0) > 0 ? `₹${Number(ref.refundAmount || 0).toLocaleString("en-IN")}` : "—"}
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-orange-600">
-                          {ref.creditNoteAmount > 0 ? `₹${ref.creditNoteAmount.toLocaleString("en-IN")}` : "—"}
+                          {Number(ref.creditNoteAmount || 0) > 0 ? `₹${Number(ref.creditNoteAmount || 0).toLocaleString("en-IN")}` : "—"}
                         </td>
                         <td className="py-3 px-4">
                           <Badge
@@ -1399,27 +1530,22 @@ export default function FinanceControlCenterPage({
                         <td className="py-3 px-4 text-right">
                           {ref.status === "PENDING_APPROVAL" ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                size="sm"
+                              <FinanceApproveButton
                                 onClick={() => {
                                   setSelectedRefundForAction(ref);
                                   setShowRefundApproveDialog(true);
                                 }}
-                                className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
                               >
                                 Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              </FinanceApproveButton>
+                              <FinanceRejectButton
                                 onClick={() => {
                                   setSelectedRefundForAction(ref);
                                   setShowRefundRejectDialog(true);
                                 }}
-                                className="h-7 text-xs font-bold border-rose-200 text-rose-600 hover:bg-rose-50"
                               >
                                 Reject
-                              </Button>
+                              </FinanceRejectButton>
                             </div>
                           ) : (
                             <span className="text-[11px] text-slate-400 font-mono">
@@ -1479,13 +1605,13 @@ export default function FinanceControlCenterPage({
                         <td className="py-3 px-4 font-mono font-bold text-slate-900">{cred.code || cred.refundId}</td>
                         <td className="py-3 px-4 font-mono font-medium text-slate-700">{cred.bookingId}</td>
                         <td className="py-3 px-4 text-right font-mono font-medium text-slate-700">
-                          ₹{cred.originalAmount.toLocaleString("en-IN")}
+                          ₹{Number(cred.originalAmount || 0).toLocaleString("en-IN")}
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-medium text-slate-500">
-                          ₹{cred.totalUsed.toLocaleString("en-IN")}
+                          ₹{Number(cred.totalUsed || 0).toLocaleString("en-IN")}
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600">
-                          ₹{cred.remainingBalance.toLocaleString("en-IN")}
+                          ₹{Number(cred.remainingBalance || 0).toLocaleString("en-IN")}
                         </td>
                         <td className="py-3 px-4">
                           <span className="font-mono text-[11px] text-slate-700">
@@ -1604,11 +1730,11 @@ export default function FinanceControlCenterPage({
                             {tix.source && tix.destination ? `${tix.source} ➔ ${tix.destination}` : "—"}
                           </td>
                           <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                            ₹{tix.cost.toLocaleString("en-IN")}
+                            ₹{Number(tix.cost || 0).toLocaleString("en-IN")}
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-slate-600">
                             {tix.packageAllowance !== null && tix.packageAllowance !== undefined
-                              ? `₹${tix.packageAllowance.toLocaleString("en-IN")}`
+                              ? `₹${Number(tix.packageAllowance || 0).toLocaleString("en-IN")}`
                               : "—"}
                           </td>
                           <td className="py-3 px-4 text-right font-mono font-bold">
@@ -1622,7 +1748,7 @@ export default function FinanceControlCenterPage({
                               )}
                             >
                               {tix.ticketingMargin !== null && tix.ticketingMargin !== undefined
-                                ? `₹${tix.ticketingMargin.toLocaleString("en-IN")}`
+                                ? `₹${Number(tix.ticketingMargin || 0).toLocaleString("en-IN")}`
                                 : "—"}
                             </span>
                           </td>
@@ -1645,18 +1771,7 @@ export default function FinanceControlCenterPage({
                             {tix.status === "PENDING_VERIFICATION" ? (
                               <Button
                                 size="sm"
-                                onClick={async () => {
-                                  try {
-                                    await financeControllerService.tickets.verify(tix.id, {
-                                      cost: tix.cost,
-                                      packageAllowance: tix.packageAllowance || undefined,
-                                    });
-                                    toast.success(`Ticket ${tix.pnr || tix.id} verified`);
-                                    fetchAllData();
-                                  } catch (err: any) {
-                                    toast.error(err.response?.data?.message || "Verification failed");
-                                  }
-                                }}
+                                onClick={() => setConfirmTicketVerifyId(tix.id)}
                                 className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
                               >
                                 Verify
@@ -1831,13 +1946,13 @@ export default function FinanceControlCenterPage({
                           <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
                             <td className="py-3 px-4 font-mono font-bold text-slate-900 text-sm">{c.code}</td>
                             <td className="py-3 px-4 font-bold text-slate-800">
-                              {c.discountType === "PERCENTAGE" ? `${c.discountValue}%` : `₹${c.discountValue.toLocaleString("en-IN")}`}
+                              {c.discountType === "PERCENTAGE" ? `${c.discountValue}%` : `₹${Number(c.discountValue || 0).toLocaleString("en-IN")}`}
                             </td>
                             <td className="py-3 px-4 font-mono text-slate-600">
                               {c.currentUsesCount} / {c.maxUsesTotal || "Unlimited"}
                             </td>
                             <td className="py-3 px-4 font-mono text-slate-700">
-                              {c.maxDiscountAmount ? `₹${c.maxDiscountAmount.toLocaleString("en-IN")}` : "No Cap"}
+                              {c.maxDiscountAmount ? `₹${Number(c.maxDiscountAmount || 0).toLocaleString("en-IN")}` : "No Cap"}
                             </td>
                             <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
                               {new Date(c.validUntil).toLocaleDateString("en-IN")}
@@ -1939,12 +2054,12 @@ export default function FinanceControlCenterPage({
                     <div className="font-bold">{couponValidationResult.message}</div>
                     {couponValidationResult.data && (
                       <div className="space-y-0.5 font-mono text-[11px] pt-1 border-t border-emerald-200/60">
-                        <div>Original: ₹{couponValidationResult.data.originalAmount.toLocaleString("en-IN")}</div>
+                        <div>Original: ₹{Number(couponValidationResult.data.originalAmount || 0).toLocaleString("en-IN")}</div>
                         <div className="text-emerald-700 font-bold">
-                          Discount: -₹{couponValidationResult.data.discountAmount.toLocaleString("en-IN")}
+                          Discount: -₹{Number(couponValidationResult.data.discountAmount || 0).toLocaleString("en-IN")}
                         </div>
                         <div className="font-extrabold">
-                          Final Amount: ₹{couponValidationResult.data.finalAmount.toLocaleString("en-IN")}
+                          Final Amount: ₹{Number(couponValidationResult.data.finalAmount || 0).toLocaleString("en-IN")}
                         </div>
                       </div>
                     )}
@@ -2086,13 +2201,13 @@ export default function FinanceControlCenterPage({
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase">Expected</div>
                   <div className="font-mono font-bold text-sm text-slate-800 mt-0.5">
-                    ₹{selectedCashItem.expectedAmount.toLocaleString("en-IN")}
+                    ₹{Number(selectedCashItem.expectedAmount || 0).toLocaleString("en-IN")}
                   </div>
                 </div>
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase">Submitted</div>
                   <div className="font-mono font-bold text-sm text-slate-900 mt-0.5">
-                    ₹{selectedCashItem.submittedAmount.toLocaleString("en-IN")}
+                    ₹{Number(selectedCashItem.submittedAmount || 0).toLocaleString("en-IN")}
                   </div>
                 </div>
                 <div>
@@ -2102,12 +2217,12 @@ export default function FinanceControlCenterPage({
                       "font-mono font-extrabold text-sm mt-0.5",
                       selectedCashItem.difference === 0
                         ? "text-slate-500"
-                        : selectedCashItem.difference < 0
+                        : (selectedCashItem.difference || 0) < 0
                         ? "text-rose-600"
                         : "text-emerald-600"
                     )}
                   >
-                    ₹{selectedCashItem.difference.toLocaleString("en-IN")}
+                    ₹{Number(selectedCashItem.difference || 0).toLocaleString("en-IN")}
                   </div>
                 </div>
               </div>
@@ -2303,8 +2418,8 @@ export default function FinanceControlCenterPage({
             <div className="space-y-3 py-2 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
                 <div>Booking: <span className="font-mono font-bold text-slate-900">{selectedRefundForAction.bookingId}</span></div>
-                <div>Cash Portion: <span className="font-mono font-bold text-slate-900">₹{selectedRefundForAction.refundAmount.toLocaleString("en-IN")}</span></div>
-                <div>Credit Portion: <span className="font-mono font-bold text-orange-600">₹{selectedRefundForAction.creditNoteAmount.toLocaleString("en-IN")}</span></div>
+                <div>Cash Portion: <span className="font-mono font-bold text-slate-900">₹{Number(selectedRefundForAction.refundAmount || 0).toLocaleString("en-IN")}</span></div>
+                <div>Credit Portion: <span className="font-mono font-bold text-orange-600">₹{Number(selectedRefundForAction.creditNoteAmount || 0).toLocaleString("en-IN")}</span></div>
               </div>
 
               <div>
@@ -2379,7 +2494,7 @@ export default function FinanceControlCenterPage({
             <div className="space-y-3 py-2 text-xs">
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
                 <div>Credit Code: <span className="font-mono font-bold text-slate-900">{selectedCreditForApply.code || selectedCreditForApply.refundId}</span></div>
-                <div>Available Balance: <span className="font-mono font-bold text-emerald-600">₹{selectedCreditForApply.remainingBalance.toLocaleString("en-IN")}</span></div>
+                <div>Available Balance: <span className="font-mono font-bold text-emerald-600">₹{Number(selectedCreditForApply.remainingBalance || 0).toLocaleString("en-IN")}</span></div>
               </div>
 
               <div>
@@ -2645,8 +2760,252 @@ export default function FinanceControlCenterPage({
             <Button variant="outline" size="sm" onClick={() => setShowCreateTaskModal(false)} className="h-8 text-xs">
               Cancel
             </Button>
-            <Button size="sm" onClick={handleCreateTask} className="h-8 text-xs font-bold bg-[#FF4D00] hover:bg-[#E04400] text-white">
+            <Button size="sm" onClick={handleCreateTask} className={financePrimaryBtn}>
               Create Task
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isIncomingModalOpen} onOpenChange={setIsIncomingModalOpen}>
+        <DialogContent className="max-w-lg bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-[#0B1528]">Verify Incoming Payment</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Booking <span className="font-mono font-bold text-slate-800">{selectedIncomingItem?.bookingId}</span>
+              {" · "}
+              {selectedIncomingItem?.customerName}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedIncomingItem && (
+            <div className="space-y-3 py-1 text-xs">
+              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Amount</div>
+                  <MoneyAmount value={selectedIncomingItem.amount} className="text-sm" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Mode</div>
+                  <div className="font-semibold text-slate-800 mt-0.5">{selectedIncomingItem.paymentMode}</div>
+                  <div className="font-mono text-[10px] text-slate-400">{selectedIncomingItem.referenceNumber || "No ref"}</div>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Decision</label>
+                <Select value={incomingAction} onValueChange={(v: any) => setIncomingAction(v)}>
+                  <SelectTrigger className="h-8 text-xs bg-white mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VERIFY">Verify payment</SelectItem>
+                    <SelectItem value="FLAG_DISCREPANCY">Flag discrepancy</SelectItem>
+                    <SelectItem value="REJECT">Reject</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {incomingAction === "REJECT" && (
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-rose-600">Rejection reason</label>
+                  <Input value={incomingReason} onChange={(e) => setIncomingReason(e.target.value)} className="h-8 text-xs mt-1 border-rose-300" />
+                </div>
+              )}
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Notes</label>
+                <Textarea value={incomingNotes} onChange={(e) => setIncomingNotes(e.target.value)} className="text-xs resize-none h-16 mt-1" />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsIncomingModalOpen(false)} className="h-8 text-xs">Cancel</Button>
+            <Button
+              size="sm"
+              onClick={handleIncomingActionSubmit}
+              disabled={isSubmittingAction}
+              className={cn("h-8 text-xs font-bold text-white", incomingAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : financePrimaryBtn)}
+            >
+              {isSubmittingAction ? "Saving…" : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isVendorModalOpen} onOpenChange={setIsVendorModalOpen}>
+        <DialogContent className="max-w-lg bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-[#0B1528]">Record Vendor Payout</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              {selectedVendorItem?.vendorName} · {selectedVendorItem?.tripTitle}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedVendorItem && (
+            <div className="space-y-3 py-1 text-xs">
+              <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Tariff</div>
+                  <MoneyAmount value={selectedVendorItem.agreedTariff} tone="muted" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Paid</div>
+                  <MoneyAmount value={selectedVendorItem.paidAmount} tone="credit" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Outstanding</div>
+                  <MoneyAmount value={selectedVendorItem.outstandingAmount} tone="outstanding" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-500">This payout (₹)</label>
+                  <Input type="number" value={vendorPayAmount} onChange={(e) => setVendorPayAmount(Number(e.target.value))} className="h-8 text-xs font-mono mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Mode</label>
+                  <Select value={vendorPayMode} onValueChange={setVendorPayMode}>
+                    <SelectTrigger className="h-8 text-xs bg-white mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="UPI">UPI</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">UTR / reference</label>
+                <Input value={vendorTxnRef} onChange={(e) => setVendorTxnRef(e.target.value)} className="h-8 text-xs font-mono mt-1" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Notes</label>
+                <Textarea value={vendorNotes} onChange={(e) => setVendorNotes(e.target.value)} className="text-xs resize-none h-16 mt-1" />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsVendorModalOpen(false)} className="h-8 text-xs">Cancel</Button>
+            <Button size="sm" onClick={handleVendorActionSubmit} disabled={isSubmittingAction} className={financePrimaryBtn}>
+              {isSubmittingAction ? "Saving…" : "Confirm payout"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isTicketModalOpen} onOpenChange={setIsTicketModalOpen}>
+        <DialogContent className="max-w-lg bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-[#0B1528]">Ticket Margin Audit</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              {selectedTicketItem?.pnr} · {selectedTicketItem?.bookingId}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTicketItem && (
+            <div className="space-y-3 py-1 text-xs">
+              <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Cost</div>
+                  <MoneyAmount value={selectedTicketItem.actualTicketCost} />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Allowance</div>
+                  <MoneyAmount value={selectedTicketItem.packageAllowance} tone="muted" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">Margin</div>
+                  <MoneyAmount value={selectedTicketItem.ticketingMargin} signed tone={selectedTicketItem.ticketingMargin >= 0 ? "credit" : "debit"} />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Audited cost (₹)</label>
+                <Input type="number" value={ticketAuditedCost} onChange={(e) => setTicketAuditedCost(Number(e.target.value))} className="h-8 text-xs font-mono mt-1" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Decision</label>
+                <Select value={ticketAction} onValueChange={(v: any) => setTicketAction(v)}>
+                  <SelectTrigger className="h-8 text-xs bg-white mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="APPROVE">Approve</SelectItem>
+                    <SelectItem value="FLAG_VARIANCE">Flag variance</SelectItem>
+                    <SelectItem value="REJECT">Reject</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Notes</label>
+                <Textarea value={ticketNotes} onChange={(e) => setTicketNotes(e.target.value)} className="text-xs resize-none h-16 mt-1" />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsTicketModalOpen(false)} className="h-8 text-xs">Cancel</Button>
+            <Button
+              size="sm"
+              onClick={handleTicketAuditSubmit}
+              disabled={isSubmittingAction}
+              className={cn("h-8 text-xs font-bold text-white", ticketAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : financePrimaryBtn)}
+            >
+              {isSubmittingAction ? "Saving…" : "Confirm decision"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(pendingQueueAction)} onOpenChange={(open) => !open && setPendingQueueAction(null)}>
+        <DialogContent className="max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className={cn("text-base font-bold", pendingQueueAction?.action === "REJECT" ? "text-rose-700" : "text-[#0B1528]")}>
+              {pendingQueueAction?.action === "REJECT" ? "Reject" : "Approve"} {pendingQueueAction?.kind === "expense" ? "expense" : "payout"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              {pendingQueueAction?.title}. This is recorded in the finance audit trail.
+            </DialogDescription>
+          </DialogHeader>
+          {pendingQueueAction?.action === "REJECT" && (
+            <div className="space-y-1 text-xs">
+              <label className="text-[10px] font-bold uppercase text-rose-600">Reason</label>
+              <Textarea value={queueActionReason} onChange={(e) => setQueueActionReason(e.target.value)} className="text-xs resize-none h-20 border-rose-300" />
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPendingQueueAction(null)} className="h-8 text-xs">Cancel</Button>
+            <Button
+              size="sm"
+              onClick={handleQueueActionConfirm}
+              disabled={isSubmittingAction}
+              className={cn("h-8 text-xs font-bold text-white", pendingQueueAction?.action === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700")}
+            >
+              {isSubmittingAction ? "Saving…" : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(confirmTicketVerifyId)} onOpenChange={(open) => !open && setConfirmTicketVerifyId(null)}>
+        <DialogContent className="max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-[#0B1528]">Verify ticket</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Confirm cost and allowance for this repository ticket. This cannot be undone from this screen.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setConfirmTicketVerifyId(null)} className="h-8 text-xs">Cancel</Button>
+            <Button
+              size="sm"
+              className="h-7 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={async () => {
+                const tix = financeTicketsList.find((t) => t.id === confirmTicketVerifyId);
+                if (!tix) return;
+                try {
+                  await financeControllerService.tickets.verify(tix.id, {
+                    cost: tix.cost,
+                    packageAllowance: tix.packageAllowance || undefined,
+                  });
+                  toast.success(`Ticket ${tix.pnr || tix.id} verified`);
+                  setConfirmTicketVerifyId(null);
+                  fetchAllData();
+                } catch (err: any) {
+                  toast.error(err.response?.data?.message || "Verification failed");
+                }
+              }}
+            >
+              Confirm verify
             </Button>
           </DialogFooter>
         </DialogContent>

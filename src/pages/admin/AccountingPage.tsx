@@ -82,7 +82,7 @@ import api from "@/services/api";
 import { opsService } from "@/services/ops.service";
 import { vendorsService } from "@/services/vendors.service";
 import type { Vendor } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, formatINR } from "@/lib/utils";
 import FinanceControlCenterPage from "./FinanceControlCenterPage";
 import {
   LineChart,
@@ -1768,25 +1768,25 @@ export default function AccountingPage() {
 
   const tabs: { id: TabId; label: string }[] = [
     { id: "overview", label: "Overview" },
-    { id: "control_center", label: "Control Center (Verification Queues)" },
-    { id: "transactions", label: "Transactions & Ledger" },
+    { id: "control_center", label: "Control Center" },
+    { id: "transactions", label: "Ledger" },
     { id: "cash_book", label: "Cash Book" },
-    { id: "bank_accounts", label: "Collection Accounts" },
-    { id: "vendor_payments", label: "Vendor Payments" },
-    { id: "office_expenses", label: "Office Expenses" },
-    { id: "profit_loss", label: "Profit & Loss" },
-    { id: "trip_profitability", label: "Trip Profitability" },
+    { id: "bank_accounts", label: "Accounts" },
+    { id: "vendor_payments", label: "Vendors" },
+    { id: "office_expenses", label: "Expenses" },
+    { id: "profit_loss", label: "P&L" },
+    { id: "trip_profitability", label: "Trip P&L" },
     { id: "reports", label: "Reports" },
   ];
 
   return (
-    <div className="space-y-3 md:space-y-6 pb-28 md:pb-20 p-3 md:p-6 animate-fade-in bg-[#F4F7FB] min-h-screen">
+    <div className="space-y-3 md:space-y-5 pb-28 md:pb-16 p-3 md:p-6 bg-[#F4F7FB] min-h-screen">
       {/* Header and Filter controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 sm:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
         <div className="min-w-0">
-          <h1 className="text-base md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#F97316] shrink-0" />
-            Accounting{" "}
+          <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">
+            <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#FF4D00] shrink-0" />
+            Finance{" "}
             {activeTab === "overview" && (
               <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
                 / Overview
@@ -1804,18 +1804,48 @@ export default function AccountingPage() {
             )}
             {activeTab === "bank_accounts" && (
               <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Collection Accounts
+                / Accounts
+              </span>
+            )}
+            {activeTab === "transactions" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / Ledger
+              </span>
+            )}
+            {activeTab === "vendor_payments" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / Vendors
+              </span>
+            )}
+            {activeTab === "office_expenses" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / Expenses
+              </span>
+            )}
+            {activeTab === "profit_loss" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / P&L
+              </span>
+            )}
+            {activeTab === "trip_profitability" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / Trip P&L
+              </span>
+            )}
+            {activeTab === "reports" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / Reports
               </span>
             )}
           </h1>
           <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
             {activeTab === "cash_book"
-              ? "Record all cash inflows and outflows across accounts."
+              ? "Record cash inflows and outflows across accounts."
               : activeTab === "bank_accounts"
-                ? "Manage official company and individual collection accounts, cash registers, and fund submissions."
+                ? "Company and personal collection accounts, cash registers, and submissions."
                 : activeTab === "control_center"
-                  ? "Finance control center, verification queues, and audit trail."
-                  : "Manage transactions, collections, vendor disbursements, cash books and trip profitability."}
+                  ? "Verification queues, approvals, and audit trail."
+                  : "Collections, payouts, cash book, and trip profitability in one place."}
           </p>
           {/* Mobile: compact active-period line replaces the long uppercase blurb */}
           <p className="md:hidden text-[11px] text-slate-500 font-semibold mt-0.5 truncate">
@@ -1886,7 +1916,7 @@ export default function AccountingPage() {
               "shrink-0 snap-start whitespace-nowrap text-[11px] md:text-xs font-semibold shadow-none transition-all cursor-pointer",
               "rounded-full border px-3 py-1.5 md:rounded-none md:border-0 md:border-b-2 md:px-1 md:pb-2 md:pt-1.5 md:bg-transparent md:hover:bg-transparent",
               activeTab === tab.id
-                ? "bg-[#0B1329] border-[#0B1329] text-white font-bold md:bg-transparent md:border-[#F97316] md:text-[#F97316]"
+                ? "bg-[#0B1528] border-[#0B1528] text-white font-bold md:bg-transparent md:border-[#FF4D00] md:text-[#FF4D00]"
                 : "bg-white border-slate-200 text-slate-600 md:border-transparent md:text-slate-500 md:hover:text-slate-700",
             )}
           >
@@ -1897,9 +1927,7 @@ export default function AccountingPage() {
 
       {/* CONTROL CENTER TAB (Verification Queues & Separation of Duties Engine) */}
       {activeTab === "control_center" && (
-        <div className="-mx-6 -mt-6">
-          <FinanceControlCenterPage />
-        </div>
+        <FinanceControlCenterPage embedded />
       )}
 
       {/* Interactive Date Preset Bar for other tabs */}
@@ -1921,8 +1949,8 @@ export default function AccountingPage() {
                 onClick={() => applyDatePreset(preset)}
                 className={cn(
                   "shrink-0 snap-start whitespace-nowrap px-2.5 md:px-3 py-1.5 rounded-full md:rounded-[3px] transition-all cursor-pointer",
-                  selectedPreset === preset
-                    ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-extrabold shadow-2xs"
+                    selectedPreset === preset
+                    ? "bg-orange-50 border border-[#FF4D00]/50 text-[#FF4D00] font-extrabold shadow-2xs"
                     : "border border-slate-200 md:border-transparent hover:bg-slate-50 hover:text-slate-800",
                 )}
               >
@@ -1964,51 +1992,56 @@ export default function AccountingPage() {
                 label: "Total Collection",
                 val: totalApprovedCollection,
                 subtitle: `${dynamicInflows.length} payment${dynamicInflows.length !== 1 ? "s" : ""} received`,
-                type: "up",
+                tone: "credit" as const,
               },
               {
-                label: "Total Payments (Vendors)",
+                label: "Vendor Payments",
                 val: totalVendorPaid,
                 subtitle: "Vendor disbursements",
-                type: "neutral",
+                tone: "debit" as const,
               },
               {
                 label: "Office Expenses",
                 val: totalOfficeExpenses,
                 subtitle: `${dynamicOfficeExpenses.length} expense${dynamicOfficeExpenses.length !== 1 ? "s" : ""} logged`,
-                type: "neutral",
+                tone: "debit" as const,
               },
               {
                 label: "Cash in Hand",
                 val: Math.max(0, cashInHand),
                 subtitle: cashInHand < 0 ? "Deficit" : "Net available",
-                type: cashInHand >= 0 ? "up" : "down",
+                tone: cashInHand >= 0 ? ("credit" as const) : ("debit" as const),
               },
               {
-                label: "Outstanding (Customers)",
+                label: "Outstanding Customers",
                 val: outstandingCustomers,
                 subtitle: `${outstandingBookingsCount} booking${outstandingBookingsCount !== 1 ? "s" : ""} unpaid`,
-                type: "neutral",
+                tone: "outstanding" as const,
               },
               {
-                label: "Outstanding (Vendors)",
+                label: "Outstanding Vendors",
                 val: outstandingVendors,
                 subtitle: `${outstandingVendorsCount} vendor${outstandingVendorsCount !== 1 ? "s" : ""} pending`,
-                type: "neutral",
+                tone: "outstanding" as const,
               },
             ].map((card, i) => (
               <Card
                 key={i}
-                className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)] min-w-0"
+                className="rounded-xl border border-[#E2E8F0] p-3 md:p-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)] min-w-0"
               >
                 <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wide truncate">
                   {card.label}
                 </div>
                 <div
-                  title={`₹ ${card.val.toLocaleString("en-IN")}`}
-                  className="text-base md:text-lg font-bold text-slate-800 mt-1 md:mt-2 tabular-nums truncate"
+                  title={formatINR(card.val)}
+                  className={cn(
+                    "text-base md:text-lg font-bold mt-1 md:mt-2 tabular-nums truncate",
+                    card.tone === "credit" && "text-emerald-700",
+                    card.tone === "debit" && "text-rose-700",
+                    card.tone === "outstanding" && "text-amber-700",
+                  )}
                 >
-                  ₹ {card.val.toLocaleString("en-IN")}
+                  {formatINR(card.val)}
                 </div>
                 {card.subtitle && (
                   <div className="text-[10px] text-slate-500 font-medium mt-1 md:mt-1.5 truncate">
