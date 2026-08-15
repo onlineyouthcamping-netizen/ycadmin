@@ -143,30 +143,8 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
         api.get(`/vendors/directory/${vendorId}/vehicles`),
       ]);
       if (groupsRes.data?.success) setGroups(groupsRes.data.data);
-      if (vehiclesRes.data?.success) {
-        if (vehiclesRes.data.data.length > 0) {
-          setVehicles(vehiclesRes.data.data);
-        } else {
-          // Auto-seed standard master vehicles if empty
-          const defaults = [
-            { name: "20 Seater Tempo Traveller", cap: 20, sell: 19 },
-            { name: "17 Seater Tempo Traveller", cap: 17, sell: 16 },
-            { name: "13 Seater Tempo Traveller", cap: 13, sell: 12 },
-            { name: "Toyota Innova Crysta", cap: 7, sell: 6 },
-            { name: "Maruti Suzuki Ertiga", cap: 6, sell: 6 },
-            { name: "Suzuki Jimny / Thar", cap: 4, sell: 4 },
-          ];
-          for (const d of defaults) {
-            await api.post(`/vendors/directory/${vendorId}/vehicles`, {
-              vehicleName: d.name,
-              advertisedCapacity: d.cap,
-              sellableSeats: d.sell,
-              hasAC: true,
-            }).catch(() => null);
-          }
-          const reloadVeh = await api.get(`/vendors/directory/${vendorId}/vehicles`);
-          if (reloadVeh.data?.success) setVehicles(reloadVeh.data.data);
-        }
+      if (vehiclesRes.data?.success && Array.isArray(vehiclesRes.data.data)) {
+        setVehicles(vehiclesRes.data.data);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to load data");

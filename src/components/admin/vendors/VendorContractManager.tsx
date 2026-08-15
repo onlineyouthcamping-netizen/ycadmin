@@ -43,7 +43,7 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
 
   useEffect(() => {
     fetchContracts();
-  }, [selectedVendor]);
+  }, [selectedVendor?.id]);
 
   const handleSaveContract = async () => {
     if (!selectedVendor) return;
