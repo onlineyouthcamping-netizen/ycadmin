@@ -379,6 +379,25 @@ export default function AccountingPage() {
     }
   };
 
+  // Delete Collection Account State
+  const [accountToDelete, setAccountToDelete] = useState<any | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!accountToDelete) return;
+    setDeletingAccount(true);
+    try {
+      await collectionAccountsService.deleteAccount(accountToDelete.id);
+      toast.success(`Collection account "${accountToDelete.accountName || accountToDelete.name}" deleted successfully`);
+      setAccountToDelete(null);
+      loadPersonalCollections();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete collection account");
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   const loadPersonalCollections = async (start?: Date, end?: Date) => {
     setLoadingPersonalCollections(true);
     try {
@@ -2938,57 +2957,36 @@ export default function AccountingPage() {
           {/* Summary KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-xs">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Total Collected
-                  </p>
-                  <h3 className="text-xl font-extrabold text-slate-800 mt-1">
-                    ₹ {personalCollectionsSummary.totalCollected.toLocaleString("en-IN")}
-                  </h3>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                  <Wallet className="w-5 h-5" />
-                </div>
-              </div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                TOTAL COLLECTED
+              </p>
+              <h3 className="text-xl font-extrabold text-slate-800 mt-1">
+                ₹ {personalCollectionsSummary.totalCollected.toLocaleString("en-IN")}
+              </h3>
               <p className="text-[10px] text-slate-400 font-semibold mt-2">
                 Total inflows collected across all Company & Individual receiving accounts
               </p>
             </Card>
 
             <Card className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-xs">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Total Transferred
-                  </p>
-                  <h3 className="text-xl font-extrabold text-emerald-600 mt-1">
-                    ₹ {personalCollectionsSummary.totalSubmitted.toLocaleString("en-IN")}
-                  </h3>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-              </div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                TOTAL TRANSFERRED
+              </p>
+              <h3 className="text-xl font-extrabold text-slate-800 mt-1">
+                ₹ {personalCollectionsSummary.totalSubmitted.toLocaleString("en-IN")}
+              </h3>
               <p className="text-[10px] text-slate-400 font-semibold mt-2">
                 Funds transferred/settled to YouthCamping central treasury
               </p>
             </Card>
 
             <Card className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-xs">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Pending in Accounts
-                  </p>
-                  <h3 className="text-xl font-extrabold text-amber-600 mt-1">
-                    ₹ {personalCollectionsSummary.totalPending.toLocaleString("en-IN")}
-                  </h3>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                  <Clock className="w-5 h-5" />
-                </div>
-              </div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                PENDING IN ACCOUNTS
+              </p>
+              <h3 className="text-xl font-extrabold text-slate-800 mt-1">
+                ₹ {personalCollectionsSummary.totalPending.toLocaleString("en-IN")}
+              </h3>
               <p className="text-[10px] text-slate-400 font-semibold mt-2">
                 Net remaining balance held in collection accounts
               </p>
@@ -3026,25 +3024,14 @@ export default function AccountingPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddCollectionAccountModal(true)}
-                className="h-8.5 px-3.5 rounded-[4px] font-semibold text-xs border-slate-200 bg-white text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-xs"
-              >
-                <Plus className="w-3.5 h-3.5 text-orange-500" />
-                Add Account
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => handleOpenRecordSubmission()}
-                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
-              >
-                <ArrowRightLeft className="w-3.5 h-3.5" />
-                Record Transfer
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              onClick={() => setShowAddCollectionAccountModal(true)}
+              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Account
+            </Button>
           </div>
 
           {/* Collection Accounts Table */}
@@ -3053,14 +3040,14 @@ export default function AccountingPage() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-[#E2E8F0]">
                   <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="p-3 border-r border-slate-100">Collection Account</th>
-                    <th className="p-3 border-r border-slate-100">Account Details</th>
-                    <th className="p-3 border-r border-slate-100 text-right">Total Collected</th>
-                    <th className="p-3 border-r border-slate-100 text-right">Total Transferred</th>
-                    <th className="p-3 border-r border-slate-100 text-right">Pending Balance</th>
-                    <th className="p-3 border-r border-slate-100 text-center">Status</th>
-                    <th className="p-3 border-r border-slate-100">Last Collection</th>
-                    <th className="p-3 text-center">Actions</th>
+                    <th className="p-3 border-r border-slate-100">COLLECTION ACCOUNT</th>
+                    <th className="p-3 border-r border-slate-100">ACCOUNT DETAILS</th>
+                    <th className="p-3 border-r border-slate-100 text-right">TOTAL COLLECTED</th>
+                    <th className="p-3 border-r border-slate-100 text-right">TOTAL TRANSFERRED</th>
+                    <th className="p-3 border-r border-slate-100 text-right">PENDING BALANCE</th>
+                    <th className="p-3 border-r border-slate-100 text-center">STATUS</th>
+                    <th className="p-3 border-r border-slate-100">LAST COLLECTION</th>
+                    <th className="p-3 text-center">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
@@ -3093,41 +3080,23 @@ export default function AccountingPage() {
                         return matchSearch && matchStatus;
                       })
                       .map((account) => {
-                        const accType = account.accountType || "COMPANY";
-                        const typeBadgeColor =
-                          accType === "COMPANY"
-                            ? "bg-blue-50 text-blue-700 border-blue-200"
-                            : accType === "INDIVIDUAL"
-                              ? "bg-purple-50 text-purple-700 border-purple-200"
-                              : accType === "CASH"
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : "bg-slate-50 text-slate-700 border-slate-200";
+                        const isSettled =
+                          account.status === "Settled" ||
+                          account.status === "SETTLED" ||
+                          account.pending === 0;
 
                         return (
                           <tr
                             key={account.id}
-                            onClick={() => handleOpenPersonDetail(account)}
-                            className="hover:bg-slate-50/70 transition-colors cursor-pointer"
+                            className="hover:bg-slate-50/70 transition-colors"
                           >
-                            <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-xs shrink-0">
-                                  {accType === "CASH" ? "💵" : accType === "INDIVIDUAL" ? "👤" : "🏛️"}
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5">
-                                    <p className="font-extrabold text-slate-800 text-xs">
-                                      {account.accountName || account.name}
-                                    </p>
-                                    <span className={cn("text-[8.5px] font-bold px-1.5 py-0.2 rounded border uppercase", typeBadgeColor)}>
-                                      {accType}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-slate-400 font-semibold">
-                                    {account.accountHolderName || account.email}
-                                  </p>
-                                </div>
-                              </div>
+                            <td className="p-3 border-r border-slate-100">
+                              <p className="font-extrabold text-slate-800 text-xs">
+                                {account.accountName || account.name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                {account.accountHolderName || account.email || "—"}
+                              </p>
                             </td>
                             <td className="p-3 border-r border-slate-100 text-slate-600 text-xs">
                               {account.bankName && (
@@ -3139,29 +3108,27 @@ export default function AccountingPage() {
                               {account.upiId && (
                                 <p className="font-mono text-[10px] text-blue-600">{account.upiId}</p>
                               )}
-                              {!account.bankName && !account.upiId && (
+                              {!account.bankName && !account.maskedAccountNumber && !account.upiId && (
                                 <span className="text-[10px] text-slate-400 font-mono">—</span>
                               )}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-700">
                               ₹ {account.totalCollected.toLocaleString("en-IN")}
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-600">
+                            <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-700">
                               ₹ {account.totalSubmitted.toLocaleString("en-IN")}
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-extrabold text-amber-600">
+                            <td className="p-3 border-r border-slate-100 text-right font-extrabold text-slate-800">
                               ₹ {account.pending.toLocaleString("en-IN")}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-center">
                               <span
                                 className={cn(
-                                  "text-[8.5px] font-black px-2 py-0.5 rounded-[3px] uppercase tracking-wider inline-block",
-                                  account.status === "Settled"
-                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                                    : "bg-amber-50 text-amber-600 border border-amber-100",
+                                  "text-xs font-bold",
+                                  isSettled ? "text-emerald-600" : "text-amber-600",
                                 )}
                               >
-                                {account.status}
+                                {isSettled ? "Settled" : "Pending"}
                               </span>
                             </td>
                             <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">
@@ -3174,20 +3141,27 @@ export default function AccountingPage() {
                                 : "—"}
                             </td>
                             <td className="p-3 text-center">
-                              <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-center gap-1.5">
                                 <button
                                   onClick={() => handleOpenPersonDetail(account)}
-                                  className="h-7 px-2.5 text-[10.5px] font-bold text-slate-650 hover:bg-slate-100 rounded border border-slate-200 flex items-center gap-1"
+                                  className="h-7 px-3 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 rounded border border-slate-200 shadow-xs transition-colors"
                                   title="View Account Detail Ledger"
                                 >
-                                  <Eye className="w-3.5 h-3.5 text-slate-500" /> Ledger
+                                  Ledger
                                 </button>
                                 <button
                                   onClick={() => handleOpenRecordSubmission(account.id)}
-                                  className="h-7 px-2 text-[10.5px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 flex items-center gap-1"
+                                  className="h-7 px-3 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 rounded border border-slate-200 shadow-xs transition-colors"
                                   title="Record Fund Transfer to Company"
                                 >
-                                  + Transfer
+                                  Transfer
+                                </button>
+                                <button
+                                  onClick={() => setAccountToDelete(account)}
+                                  className="h-7 px-3 text-xs font-medium text-red-600 bg-white hover:bg-red-50 rounded border border-red-200 shadow-xs transition-colors"
+                                  title="Delete Account"
+                                >
+                                  Delete
                                 </button>
                               </div>
                             </td>
@@ -6049,6 +6023,41 @@ export default function AccountingPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Collection Account Confirmation Modal */}
+      <Dialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
+        <DialogContent className="rounded-[4px] border-[#E2E8F0] p-6 bg-white shadow-lg max-w-sm">
+          <DialogHeader className="border-b border-[#E2E8F0] pb-3">
+            <DialogTitle className="text-sm font-bold text-slate-800">
+              Delete Account
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-2">
+              Are you sure you want to delete this collection account? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4 border-t border-[#E2E8F0] flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setAccountToDelete(null)}
+              disabled={deletingAccount}
+              className="h-8 px-4 rounded-[4px] font-semibold text-xs border border-slate-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleDeleteAccount}
+              disabled={deletingAccount}
+              className="h-8 px-4 rounded-[4px] font-semibold text-xs bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deletingAccount ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
