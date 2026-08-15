@@ -1202,8 +1202,18 @@ export default function DepartureHubPage() {
 
   // Data states
   const [bookings, setBookings] = useState<any[]>([]);
+  const [passengerAllocations, setPassengerAllocations] = useState<
+    Record<string, { room: string; vehicle: string; seat: string }>
+  >({});
   const allPassengers = useMemo(() => {
     const arr: any[] = [];
+    const opsRoomByTraveler = new Map<string, string>();
+    Object.values(passengerAllocations || {}).forEach((alloc: any) => {
+      if (!alloc?.name || !alloc?.room || alloc.room === "—") return;
+      opsRoomByTraveler.set(String(alloc.name).trim().toLowerCase(), alloc.room);
+      if (alloc.id) opsRoomByTraveler.set(String(alloc.id), alloc.room);
+    });
+
     bookings
       .filter((b: any) => !isPassengerCancelled(null, b))
       .forEach((b: any) => {
@@ -1232,8 +1242,15 @@ export default function DepartureHubPage() {
 
         const leadName = b.fullName || b.name;
         const leadRoomInfo = personsRoomDetails[leadName] || {};
+        const opsLeadRoom =
+          opsRoomByTraveler.get(String(leadName || "").trim().toLowerCase()) ||
+          opsRoomByTraveler.get(String(b.id || "")) ||
+          null;
         const leadRoomNo =
-          leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—";
+          opsLeadRoom ||
+          leadRoomInfo.roomNo ||
+          passengersObj?.details?.roomAllocation ||
+          "—";
         const leadRoomType =
           leadRoomInfo.roomType ||
           b.roomSharing ||
@@ -1324,7 +1341,10 @@ export default function DepartureHubPage() {
             if (normalizeCompareName(p.name) === normLeadName) return;
 
             const coRoomInfo = personsRoomDetails[p.name] || {};
-            const coRoomNo = coRoomInfo.roomNo || "—";
+            const opsCoRoom =
+              opsRoomByTraveler.get(String(p.name || "").trim().toLowerCase()) ||
+              null;
+            const coRoomNo = opsCoRoom || coRoomInfo.roomNo || "—";
             const coRoomType =
               coRoomInfo.roomType ||
               p.roomSharing ||
@@ -1364,7 +1384,7 @@ export default function DepartureHubPage() {
         }
       });
     return arr;
-  }, [bookings, departureDateStr]);
+  }, [bookings, departureDateStr, passengerAllocations]);
   const [itineraryList, setItineraryList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [engineStats, setEngineStats] = useState<any>(null);
@@ -1453,9 +1473,6 @@ export default function DepartureHubPage() {
   // Payments filter
   const [payStatusFilter, setPayStatusFilter] = useState("All");
 
-  const [passengerAllocations, setPassengerAllocations] = useState<
-    Record<string, { room: string; vehicle: string; seat: string }>
-  >({});
   const [allocFleet, setAllocFleet] = useState<any[]>([]);
   const [fleetVehicles, setFleetVehicles] = useState<any[]>([]);
   const [vendorDirectoryFleet, setVendorDirectoryFleet] = useState<any[]>([]);
@@ -1571,6 +1588,7 @@ export default function DepartureHubPage() {
     e.preventDefault();
     const cap = parseInt(newVehicleCapacity) || 17;
     const vName = newVehicleName || `${newVehicleType || 'Tempo'} ${allocFleet.length + 1}`;
+    const enteredCost = Number(newVehicleCost);
 
     try {
       // 1. If an existing departure vehicle is selected
@@ -1594,12 +1612,16 @@ export default function DepartureHubPage() {
       }
 
       // 2. Save new transport fleet record to backend database linked to vendorId if selected
+      if (!Number.isFinite(enteredCost) || enteredCost < 0) {
+        toast.error("Enter the agreed vehicle cost; no default transport price is applied.");
+        return;
+      }
       const savedVehicle = await opsService.createTransportFleet(
         tripId,
         {
           vehicleType: newVehicleType || "17 Seater Tempo",
           capacity: cap,
-          totalAmount: parseFloat(newVehicleCost) || 35000,
+          totalAmount: enteredCost,
           driverName: vName,
           notes: newVehicleVendor || "General Vendor",
           vendorId: selectedVendorId || undefined,
@@ -1855,7 +1877,7 @@ export default function DepartureHubPage() {
         api.get(`/departures/resolve?tripId=${tripId}&date=${departureDateStr}`, { signal }),
         api.get(`/departure-engine/${tripId}/${departureDateStr}/passenger-stats`, { signal }),
         api.get(`/ops/itinerary/${tripId}?departureDate=${departureDateStr}`, { signal }),
-        api.get(`/vendors/directory?limit=100`, { signal }),
+        api.get(`/vendors/directory?tripId=${encodeURIComponent(tripId)}&limit=100`, { signal }),
         api.get(`/trips/${tripId}`, { signal }),
         api.get(`/ops/hotels/${tripId}?departureDate=${departureDateStr}`, { signal }),
         api.get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`, { signal }),
@@ -2094,25 +2116,6 @@ useEffect(() => {
     .then(async (res) => {
       let vendors = res.data?.data || [];
 
-      // If no vendors explicitly mapped to tripId in tripVendors table, fetch trip assignments
-      if (vendors.length === 0) {
-        try {
-          const tripRes = await api.get(`/vendors/trip/${tripId}`);
-          const tripAssignments = tripRes.data?.data || [];
-          if (tripAssignments.length > 0) {
-            vendors = tripAssignments.map((a: any) => a.vendor || a).filter(Boolean);
-          }
-        } catch {
-          /* silent fallback */
-        }
-      }
-
-      // If still empty (no vendor mapped to trip in Vendor Management), fetch global transport vendors as fallback
-      if (vendors.length === 0) {
-        const allRes = await api.get('/vendors/directory?type=TRANSPORT&limit=100');
-        vendors = allRes.data?.data || [];
-      }
-
       const masterItems: any[] = [];
       const seenKeys = new Set<string>();
 
@@ -2134,8 +2137,9 @@ useEffect(() => {
             const vRates = g.vehicleRates || g.routeRates || [];
             if (Array.isArray(vRates)) {
               vRates.forEach((vr: any) => {
-                const vType = vr.vehicleNameSnapshot || vr.vehicleType || "17 Seater Tempo Traveller";
-                const cap = vr.advertisedCapacity || vr.capacity || (vType.match(/\d+/) ? parseInt(vType.match(/\d+/)[0]) : 17);
+                const vType = vr.vehicle?.vehicleName || vr.vehicleNameSnapshot || vr.vehicleType;
+                if (!vType) return;
+                const cap = vr.vehicle?.advertisedCapacity || vr.advertisedCapacity || vr.capacity || (vType.match(/\d+/) ? parseInt(vType.match(/\d+/)[0]) : 17);
                 const sellable = vr.sellableSeats || cap;
                 const cost = Number(vr.totalVehicleAmount || vr.amount || 0);
                 extractedVehicles.push({
@@ -2156,7 +2160,7 @@ useEffect(() => {
             const vType = r.vehicleType || r.model || "17 Seater Tempo Traveller";
             const cap = r.advertisedCapacity || r.seatCapacity || r.capacity || 17;
             const sellable = r.sellableSeats || cap;
-            const cost = Number(r.totalVehicleAmount || r.amount || r.rate || 0);
+            const cost = Number(r.totalVehicleCost || r.totalVehicleAmount || r.amount || r.rate || 0);
             extractedVehicles.push({
               id: r.id,
               vehicleType: vType,
@@ -2165,17 +2169,6 @@ useEffect(() => {
               cost: cost,
             });
           });
-        }
-
-        // 3. Fallback: Default vehicles if vendor has no rates configured
-        if (extractedVehicles.length === 0) {
-          extractedVehicles = [
-            { vehicleType: "20 Seater Tempo Traveller", capacity: 20, sellableSeats: 17, cost: 64000 },
-            { vehicleType: "17 Seater Tempo Traveller", capacity: 17, sellableSeats: 16, cost: 52000 },
-            { vehicleType: "14 Seater Tempo Traveller", capacity: 14, sellableSeats: 13, cost: 48000 },
-            { vehicleType: "Toyota Innova Crysta", capacity: 7, sellableSeats: 5, cost: 40000 },
-            { vehicleType: "Maruti Suzuki Ertiga", capacity: 6, sellableSeats: 5, cost: 36000 },
-          ];
         }
 
         extractedVehicles.forEach((r: any) => {
@@ -8615,6 +8608,11 @@ useEffect(() => {
 
                       <option value="custom">+ Custom Vehicle</option>
                     </select>
+                    {vendorDirectoryFleet.length === 0 && (
+                      <p className="mt-1 text-[10px] font-medium text-amber-700">
+                        No priced transport vendor is mapped to this trip. Assign a trip vendor or use a custom vehicle with an explicit cost.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
@@ -8661,13 +8659,13 @@ useEffect(() => {
                     <input
                       type="number"
                       required
-                      readOnly={selectedVehicleId !== '' && selectedVehicleId !== 'custom'}
+                      readOnly={selectedVehicleId !== '' && selectedVehicleId !== 'custom' && newVehicleCost !== ''}
                       placeholder="45000"
                       value={newVehicleCost}
                       onChange={(e) => setNewVehicleCost(e.target.value)}
                       className={cn(
                         "h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400",
-                        selectedVehicleId !== '' && selectedVehicleId !== 'custom' && "bg-slate-50 font-bold text-slate-700 cursor-not-allowed"
+                        selectedVehicleId !== '' && selectedVehicleId !== 'custom' && newVehicleCost !== '' && "bg-slate-50 font-bold text-slate-700 cursor-not-allowed"
                       )}
                     />
                   </div>

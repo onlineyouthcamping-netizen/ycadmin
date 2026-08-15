@@ -126,6 +126,14 @@ export interface OpsTransportFleet {
   advancePaid?: number;
   balanceAmount?: number;
   notes?: string;
+  /** Advisory catalog tariff from OpsVehicleRate / OpsTransportRate — does not replace totalAmount */
+  tariff?: {
+    amount: number;
+    rateBasis?: string;
+    source?: string;
+    rateId?: string;
+    sellableSeats?: number | null;
+  } | null;
 }
 
 export interface OpsRoomInventory {

@@ -604,7 +604,11 @@ export default function ReportsConsole({
         roomSharing: "Triple",
         roomType: "Deluxe",
         emergencyContact: "9876543211",
-        roomNo: b.passengers?.details?.roomAllocation || "—",
+        roomNo:
+          b.passengers?.details?.personsRoomDetails?.[b.fullName || b.name]
+            ?.roomNo ||
+          b.passengers?.details?.roomAllocation ||
+          "—",
         paymentStatus: paymentLabel,
         amount: b.totalAmount || 12000,
         paidAmount: b.advancePaid || 0,
@@ -644,7 +648,11 @@ export default function ReportsConsole({
             roomSharing: "Triple",
             roomType: "Deluxe",
             emergencyContact: "9876543211",
-            roomNo: b.passengers?.details?.roomAllocation || "—",
+            roomNo:
+              b.passengers?.details?.personsRoomDetails?.[p?.name || b.fullName || b.name]
+                ?.roomNo ||
+              b.passengers?.details?.roomAllocation ||
+              "—",
             paymentStatus: paymentLabel,
             amount: 0,
             paidAmount: 0,

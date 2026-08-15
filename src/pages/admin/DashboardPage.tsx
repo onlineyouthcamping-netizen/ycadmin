@@ -140,12 +140,22 @@ export default function DashboardPage() {
   }, [dateFilter]);
 
   return (
-    <div className="space-y-6 pb-12 select-none px-4 py-3 bg-[#F4F7FB] min-h-screen text-[#162B45] font-sans antialiased">
+    <div className="space-y-6 select-none -mx-3 sm:-mx-6 -mt-3 sm:-mt-6 px-3 sm:px-6 pt-3 sm:pt-6 bg-[#F4F7FB] min-h-full text-[#162B45] font-sans antialiased">
       {/* ─── MOBILE DASHBOARD VIEW (<768px) ─── */}
       <div className="block md:hidden">
         <MobileDashboardView
-          onOpenNewBooking={() => {}}
-          onOpenSearch={() => {}}
+          stats={stats}
+          loading={loading}
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+          userPerms={userPerms}
+          userRole={userRole}
+          onOpenNewBooking={() =>
+            window.dispatchEvent(new Event("yc:open-new-booking"))
+          }
+          onOpenSearch={() =>
+            window.dispatchEvent(new Event("yc:open-global-search"))
+          }
         />
       </div>
 

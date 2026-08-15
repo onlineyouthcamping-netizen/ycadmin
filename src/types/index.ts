@@ -513,6 +513,10 @@ export interface DashboardStats {
   pendingVendorsCost?: number;
   pendingVendorsCount?: number;
   attentionItems?: { label: string; count: number; color: string; urgent?: boolean; path: string }[];
+  tripsRunningNow?: { code: string; name: string; size: number; stay: string }[];
+  tripsDepartingNext7Days?: { name: string; date: string; count: string; status: string }[];
+  todaysSchedule?: { time: string; label: string; color: string }[];
+  cashFlow?: { collectionToday: number; paymentsToday: number; netCashInflow: number };
 }
 
 export type TripFormData = Omit<Trip, "id" | "createdAt" | "updatedAt">;
