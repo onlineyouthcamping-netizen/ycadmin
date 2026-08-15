@@ -85,13 +85,13 @@ export function BookingsToolbar({
 
   return (
     <div className="flex flex-col shrink-0">
-      {/* MAIN TOOLBAR */}
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-6 h-14 font-sans shadow-xs">
-        <div className="flex items-center gap-4 flex-1">
+      {/* MAIN TOOLBAR — search hidden on mobile (MobileBookingsView owns search) */}
+      <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-3 md:px-6 h-12 md:h-14 font-sans shadow-xs">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="font-extrabold text-slate-800 text-sm tracking-tight hidden md:block">
             Bookings
           </div>
-          <div className="flex-1 max-w-[320px] relative">
+          <div className="hidden md:block flex-1 max-w-[320px] relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <Input
               type="text"
@@ -101,8 +101,11 @@ export function BookingsToolbar({
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
+          <div className="md:hidden font-extrabold text-slate-800 text-sm tracking-tight">
+            Bookings
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           <button
             className="w-8 h-8 rounded-[6px] border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
             onClick={fetchAll}
@@ -112,7 +115,7 @@ export function BookingsToolbar({
           </button>
           <button
             className={cn(
-              "w-8 h-8 rounded-[6px] border flex items-center justify-center transition-colors cursor-pointer",
+              "hidden md:flex w-8 h-8 rounded-[6px] border items-center justify-center transition-colors cursor-pointer",
               showSidebar
                 ? "bg-[#FF6B00]/10 border-[#FF6B00]/20 text-[#FF6B00]"
                 : "border-slate-200 hover:bg-slate-50 text-slate-600",
@@ -123,7 +126,7 @@ export function BookingsToolbar({
             <Filter className="w-4 h-4" />
           </button>
           <button
-            className="w-8 h-8 rounded-[6px] border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+            className="hidden md:flex w-8 h-8 rounded-[6px] border border-slate-200 hover:bg-slate-50 items-center justify-center text-slate-600 transition-colors cursor-pointer"
             onClick={handleExportCSV}
             title="Export CSV"
           >
@@ -139,8 +142,8 @@ export function BookingsToolbar({
         </div>
       </div>
 
-      {/* ACTION CHIPS BAR */}
-      <div className="flex items-center gap-3 px-6 py-2.5 bg-slate-50 border-b border-slate-200 overflow-x-auto flex-shrink-0 no-scrollbar">
+      {/* ACTION CHIPS — horizontal scroll strip on mobile */}
+      <div className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-2.5 bg-slate-50 border-b border-slate-200 overflow-x-auto flex-shrink-0 no-scrollbar snap-x snap-mandatory">
         {chips.map((chip) => {
           const isActive = quickFilter === chip.value;
           return (
@@ -150,7 +153,7 @@ export function BookingsToolbar({
                 setQuickFilter(isActive ? "confirmed_bookings" : chip.value)
               }
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold shadow-xs transition-colors whitespace-nowrap",
+                "flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-full border text-[11px] md:text-xs font-bold shadow-xs transition-colors whitespace-nowrap snap-start shrink-0",
                 isActive
                   ? "bg-[#0F172A] border-[#0F172A] text-white"
                   : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
@@ -163,16 +166,6 @@ export function BookingsToolbar({
                 )}
               />
               <span>{chip.label}</span>
-              <span
-                className={cn(
-                  "px-1.5 rounded-full text-[9px]",
-                  isActive
-                    ? "bg-white/20 text-white"
-                    : "bg-slate-100 text-slate-500",
-                )}
-              >
-                {chip.count}
-              </span>
             </button>
           );
         })}

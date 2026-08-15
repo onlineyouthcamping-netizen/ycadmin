@@ -2221,7 +2221,7 @@ export default function BookingDetailsView({
             <button
               onClick={handleRevertConfirmation}
               disabled={revertingLoading}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs"
+              className="hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs"
             >
               {revertingLoading ? "Reverting..." : "Revert Confirmation"}
             </button>
@@ -2261,14 +2261,14 @@ export default function BookingDetailsView({
 
       {/* Inline alerts */}
       {flowStatus === "Confirmed" || booking.status === "confirmed" ? (
-        <div className="mx-6 mt-4 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-xs text-emerald-800 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded uppercase leading-none">
+        <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 bg-emerald-50 border border-emerald-200 rounded-xl px-3 sm:px-4 py-3 text-xs text-emerald-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded uppercase leading-none shrink-0">
               CONFIRMED
             </span>
-            <span className="font-semibold">This booking is confirmed.</span>
+            <span className="font-semibold truncate">This booking is confirmed.</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => {
                 setConfirmTotal((booking.totalAmount || 0).toString());
@@ -2276,26 +2276,26 @@ export default function BookingDetailsView({
                 setConfirmEmail(booking.email || "");
                 setIsConfirming(!isConfirming);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all shrink-0 cursor-pointer shadow-2xs"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-2 sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center"
             >
               {isConfirming ? "Hide Panel" : "Update Ticket & Send Email"}
             </button>
             <button
               onClick={handleRevertConfirmation}
               disabled={revertingLoading}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all shrink-0 cursor-pointer shadow-2xs"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] uppercase px-3 py-2 sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center"
             >
               {revertingLoading ? "Reverting..." : "Revert Confirmation"}
             </button>
           </div>
         </div>
       ) : (
-        <div className="mx-6 mt-4 bg-[#fffbea] border border-[#fce588] rounded-xl px-4 py-3 text-xs text-slate-700 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="bg-[#f0ad4e] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase leading-none">
+        <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 bg-[#fffbea] border border-[#fce588] rounded-xl px-3 sm:px-4 py-3 text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-start sm:items-center gap-2 min-w-0">
+            <span className="bg-[#f0ad4e] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase leading-none shrink-0">
               {flowStatus}
             </span>
-            <span>
+            <span className="leading-snug">
               {flowStatus === "Cancelled"
                 ? "This booking was cancelled."
                 : flowStatus === "Expired"
@@ -2315,7 +2315,7 @@ export default function BookingDetailsView({
                 setConfirmEmail(booking.email || "");
                 setIsConfirming(true);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all shrink-0 cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-2 sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer text-center"
             >
               Confirm Booking
             </button>

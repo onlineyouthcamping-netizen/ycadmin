@@ -726,7 +726,7 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased -mx-6 -my-6">
+    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased -mx-3 -my-3 md:-mx-6 md:-my-6">
       <BookingsToolbar
         searchInput={searchInput}
         setSearchInput={setSearchInput}
@@ -744,7 +744,7 @@ export default function BookingsPage() {
         {/* CONTENT & TABLE AREA */}
         <div className="zoho-content-left flex-1 flex flex-col overflow-y-auto md:overflow-hidden bg-white">
           {/* MOBILE BOOKINGS VIEW (<768px) */}
-          <div className="block md:hidden p-3 pb-24">
+          <div className="block md:hidden p-3 pb-28">
             <MobileBookingsView
               bookings={filteredBookings}
               onSelectBooking={(b) => setDetailsTarget(b.rawBooking || b)}
