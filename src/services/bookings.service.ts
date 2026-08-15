@@ -233,8 +233,12 @@ export const bookingsService = {
   },
 
   async getEmailLogs(bookingId: string): Promise<any[]> {
+    try {
+      const res = await api.get(`/emails/logs/booking/${bookingId}`);
+      if (res.data?.data) return res.data.data;
+    } catch (_) {}
     const res = await api.get(`/emails/logs/${bookingId}`);
-    return res.data.data || (Array.isArray(res.data) ? res.data : []);
+    return res.data?.data || (Array.isArray(res.data) ? res.data : []);
   },
 
   async getActivityLogs(bookingId: string): Promise<any[]> {
