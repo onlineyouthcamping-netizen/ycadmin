@@ -133,6 +133,12 @@ export default function OperationsHubPage() {
   const [filterTripId, setFilterTripId] = useState<string>("all");
   const [filterGuide, setFilterGuide] = useState<string>("all");
 
+  // Mobile card lists render progressively so a long roster stays scrollable
+  const MOBILE_PAGE_SIZE = 8;
+  const [mobileVisibleCounts, setMobileVisibleCounts] = useState<
+    Record<string, number>
+  >({});
+
   const computedDepartures = useMemo(() => {
     const list: any[] = [];
     const normalizeDate = (val: any) => {
@@ -323,6 +329,10 @@ export default function OperationsHubPage() {
     });
   }, [computedDepartures, filterTripId, filterStatus, filterDateRange]);
 
+  useEffect(() => {
+    setMobileVisibleCounts({});
+  }, [filterTripId, filterStatus, filterDateRange]);
+
   const liveDepartures = useMemo(
     () => filteredDepartures.filter((d) => d.isLive),
     [filteredDepartures],
@@ -335,19 +345,23 @@ export default function OperationsHubPage() {
   const renderDeparturesTable = (
     departuresList: any[],
     emptyMessage: string,
+    groupKey = "default",
   ) => {
     if (departuresList.length === 0) {
       return (
-        <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-8 text-center text-slate-400 font-medium text-xs">
+        <div className="bg-white border border-[#E2E8F0] rounded-xl md:rounded-[4px] p-6 md:p-8 text-center text-slate-400 font-medium text-xs">
           {emptyMessage}
         </div>
       );
     }
 
     const isSide = layoutMode === "side_by_side";
+    const mobileVisible = mobileVisibleCounts[groupKey] ?? MOBILE_PAGE_SIZE;
+    const mobileRows = departuresList.slice(0, mobileVisible);
+    const mobileRemaining = departuresList.length - mobileRows.length;
 
     return (
-      <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm overflow-hidden">
+      <div className="bg-white border border-[#E2E8F0] rounded-xl md:rounded-[4px] shadow-sm overflow-hidden">
         <table className="w-full text-left text-xs border-collapse hidden md:table">
           <thead>
             <tr className="border-b border-[#E2E8F0] bg-slate-50/70 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -513,140 +527,99 @@ export default function OperationsHubPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden flex flex-col divide-y divide-slate-100 bg-white">
-          {departuresList.map((row, idx) => {
-            const radius = 12;
-            const strokeWidth = 2.5;
-            const circumference = 2 * Math.PI * radius;
-            const strokeDashoffset =
-              circumference - (row.readiness / 100) * circumference;
-
-            return (
-              <div
-                key={idx}
-                className="p-4 flex flex-col gap-3 cursor-pointer hover:bg-slate-50/50 transition-colors"
-                onClick={() => {
-                  navigate(
-                    `/admin/departure-workspace?departureId=${row.tripId}_${row.departureDateStr}&tab=overview`,
-                  );
-                }}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#F97316] text-sm">
-                        {row.code}
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded-[2px] bg-slate-100 text-slate-500 font-bold text-[9px] uppercase">
-                        CONFIRMED
-                      </span>
-                    </div>
-                    <div
-                      className="font-bold text-slate-800 text-[11.5px] mt-1 max-w-[200px] truncate"
-                      title={row.trip}
-                    >
-                      {row.trip}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold mt-1">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span>
-                        {row.date}{" "}
-                        <span className="text-slate-400 font-normal">
-                          ({row.day})
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    {!isSide && (
-                      <span
-                        className={cn(
-                          "px-2 py-0.5 rounded-[2px] border text-[9px] font-black uppercase tracking-wider",
-                          row.statusColor,
-                        )}
-                      >
-                        {row.status}
-                      </span>
+          {mobileRows.map((row, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="w-full text-left p-3 flex items-start gap-2.5 active:bg-slate-50 transition-colors"
+              onClick={() => {
+                navigate(
+                  `/admin/departure-workspace?departureId=${row.tripId}_${row.departureDateStr}&tab=overview`,
+                );
+              }}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-bold text-[#F97316] text-[11px] tracking-tight shrink-0">
+                    {row.code}
+                  </span>
+                  <span
+                    className={cn(
+                      "px-1.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-wider shrink-0",
+                      row.statusColor,
                     )}
-                    {row.readiness === 100 ? (
-                      <div className="w-[28px] h-[28px] rounded-full border-2 border-emerald-500 flex items-center justify-center bg-emerald-50/50 text-emerald-600 font-bold text-[9px] mt-1">
-                        ✓
-                      </div>
-                    ) : (
-                      <div className="relative flex items-center justify-center w-8 h-8 mt-1">
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r={radius}
-                            stroke="#E2E8F0"
-                            strokeWidth={strokeWidth}
-                            fill="transparent"
-                          />
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r={radius}
-                            stroke={row.readinessColor}
-                            strokeWidth={strokeWidth}
-                            fill="transparent"
-                            strokeDasharray={circumference}
-                            strokeDashoffset={strokeDashoffset}
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span className="absolute text-[8px] font-bold text-slate-700">
-                          {row.readiness}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  >
+                    {row.status}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-[4px] border border-slate-100 mt-1">
-                  <div>
-                    <div className="text-slate-400 font-bold text-[9px] uppercase">
-                      Days Left
-                    </div>
-                    <div
-                      className={cn(
-                        "font-bold text-[11.5px] mt-0.5",
-                        row.daysColor,
-                      )}
-                    >
-                      {row.daysLeft}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-slate-400 font-bold text-[9px] uppercase">
-                      Pax
-                    </div>
-                    <div className="mt-0.5">
-                      <span className="font-semibold text-slate-700">
-                        {row.participantCount ?? row.pax ?? 0}
-                      </span>
-                    </div>
-                  </div>
-                  {!isSide && (
-                    <div className="col-span-2 mt-1">
-                      <div className="text-slate-400 font-bold text-[9px] uppercase">
-                        Outstanding Balance
-                      </div>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span
-                          className={cn("font-bold text-sm", row.balanceColor)}
-                        >
-                          {row.balance}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-semibold">
-                          {row.balanceSub}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                <div className="font-bold text-slate-800 text-[13px] leading-snug mt-1 truncate">
+                  {row.trip}
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold mt-1 min-w-0">
+                  <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                  <span className="truncate">
+                    {row.date} ({row.day})
+                  </span>
+                  <span className="text-slate-300">·</span>
+                  <span className={cn("shrink-0", row.daysColor)}>
+                    {row.daysLeft}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-600">
+                    <Users className="w-3 h-3 text-slate-400" />
+                    {row.participantCount ?? row.pax ?? 0} pax
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold tabular-nums",
+                      row.balanceColor,
+                    )}
+                  >
+                    {row.balance}
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    {row.balanceSub}
+                  </span>
                 </div>
               </div>
-            );
-          })}
+
+              <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-full flex flex-col items-center justify-center text-[10px] font-black tabular-nums border-2",
+                    row.readiness >= 90
+                      ? "border-emerald-500 bg-emerald-50/60 text-emerald-600"
+                      : row.readiness >= 50
+                        ? "border-amber-400 bg-amber-50/60 text-amber-600"
+                        : "border-rose-300 bg-rose-50/60 text-rose-600",
+                  )}
+                >
+                  {row.readiness}%
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+              </div>
+            </button>
+          ))}
+
+          {mobileRemaining > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                setMobileVisibleCounts((prev) => ({
+                  ...prev,
+                  [groupKey]: mobileVisible + MOBILE_PAGE_SIZE,
+                }))
+              }
+              className="py-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider bg-slate-50/70 active:bg-slate-100"
+            >
+              Load {Math.min(mobileRemaining, MOBILE_PAGE_SIZE)} more ·{" "}
+              {mobileRemaining} left
+            </button>
+          )}
         </div>
       </div>
     );
@@ -1583,7 +1556,7 @@ export default function OperationsHubPage() {
 
   if (tabParam === "stationpayments" || tabParam === "station_payments" || tabParam === "station") {
     return (
-      <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="p-3 md:p-6 pb-28 md:pb-6 bg-slate-50 min-h-screen">
         <StationPaymentCollection
           tripId={selectedTripId || ""}
           departureDateStr={selectedDepartureDate || ""}
@@ -1593,21 +1566,24 @@ export default function OperationsHubPage() {
   }
 
   return (
-    <div className="space-y-6 pb-20 p-6 bg-[#F4F7FB] min-h-screen -mx-6 -mt-6">
+    <div className="space-y-4 md:space-y-6 pb-28 md:pb-20 p-3 md:p-6 bg-[#F4F7FB] min-h-screen -mx-3 md:-mx-6 -mt-3 md:-mt-6">
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* UPCOMING TRIPS LIST VIEW                                       */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       {opsView === "trips_list" && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 md:space-y-6 animate-fade-in">
           {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
-            <div>
-              <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
+            <div className="min-w-0">
+              <h1 className="text-base md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
                 Departures Hub
               </h1>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
+              <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
                 Track upcoming departures, readiness status and key operations
                 at a glance.
+              </p>
+              <p className="md:hidden text-[11px] text-slate-500 font-medium mt-0.5">
+                {computedDepartures.length} departures tracked
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1615,94 +1591,121 @@ export default function OperationsHubPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => toast.info("Refreshing...")}
-                className="h-8.5 text-xs font-semibold rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center gap-1.5 shadow-xs"
+                title="Refresh"
+                aria-label="Refresh"
+                className="h-9 w-9 md:h-8.5 md:w-auto px-0 md:px-3 text-xs font-semibold rounded-lg md:rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center justify-center gap-1.5 shadow-xs shrink-0"
               >
-                <RefreshCw className="w-3.5 h-3.5 animate-spin-once" /> Refresh
+                <RefreshCw className="w-4 h-4 md:w-3.5 md:h-3.5 animate-spin-once" />
+                <span className="hidden md:inline">Refresh</span>
               </Button>
               <Button
                 onClick={() => navigate("/admin/bookings")}
-                className="h-8.5 text-xs font-semibold rounded-[4px] bg-[#F97316] text-white hover:bg-[#F97316]/90 px-4 shadow-sm flex items-center gap-1.5"
+                className="h-9 md:h-8.5 flex-1 md:flex-none text-xs font-semibold rounded-lg md:rounded-[4px] bg-[#F97316] text-white hover:bg-[#F97316]/90 px-3 md:px-4 shadow-sm flex items-center justify-center gap-1.5"
               >
-                <Plus className="w-4 h-4" /> New Booking
+                <Plus className="w-4 h-4 shrink-0" /> New Booking
               </Button>
             </div>
           </div>
 
           {/* KPI Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-[4px]">
-                <CalendarCheck className="w-5 h-5" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+            {[
+              {
+                label: "Upcoming Departures",
+                value: computedDepartures.length,
+                caption: "Next 30 days",
+                valueClass: "text-slate-800",
+                iconClass: "bg-blue-50 text-blue-600",
+                Icon: CalendarCheck,
+              },
+              {
+                label: "Ready",
+                value: computedDepartures.filter((d) => d.status === "READY")
+                  .length,
+                caption: "Ready to depart (95-100%)",
+                valueClass: "text-emerald-650",
+                iconClass: "bg-emerald-50 text-emerald-600",
+                Icon: CheckCircle2,
+              },
+              {
+                label: "Needs Attention",
+                value: computedDepartures.filter(
+                  (d) => d.readiness >= 50 && d.readiness < 90,
+                ).length,
+                caption: "Departures (70-94%)",
+                valueClass: "text-amber-650",
+                iconClass: "bg-amber-50 text-amber-600",
+                Icon: AlertTriangle,
+              },
+              {
+                label: "Critical",
+                value: computedDepartures.filter((d) => d.readiness < 50)
+                  .length,
+                caption: "Departures (<70%)",
+                valueClass: "text-rose-650",
+                iconClass: "bg-rose-50 text-rose-600",
+                Icon: ShieldAlert,
+              },
+            ].map(({ label, value, caption, valueClass, iconClass, Icon }) => (
+              <div
+                key={label}
+                className="bg-white border border-[#E2E8F0] rounded-xl md:rounded-[4px] p-2.5 md:p-4 shadow-sm flex items-center gap-2.5 md:gap-4 min-w-0"
+              >
+                <div
+                  className={cn(
+                    "p-1.5 md:p-3 rounded-lg md:rounded-[4px] shrink-0",
+                    iconClass,
+                  )}
+                >
+                  <Icon className="w-4 h-4 md:w-5 md:h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] md:text-[10px] font-bold text-slate-450 uppercase tracking-wider truncate">
+                    {label}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-lg md:text-2xl font-black leading-tight md:mt-0.5 tabular-nums",
+                      valueClass,
+                    )}
+                  >
+                    {value}
+                  </p>
+                  <p className="hidden md:block text-[10px] text-slate-500">
+                    {caption}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">
-                  UPCOMING DEPARTURES
-                </p>
-                <p className="text-2xl font-black text-slate-800 mt-0.5">
-                  {computedDepartures.length}
-                </p>
-                <p className="text-[10px] text-slate-500">Next 30 days</p>
-              </div>
-            </div>
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-[4px]">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">
-                  READY
-                </p>
-                <p className="text-2xl font-black text-emerald-650 mt-0.5">
-                  {
-                    computedDepartures.filter((d) => d.status === "READY")
-                      .length
-                  }
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  Ready to depart (95-100%)
-                </p>
-              </div>
-            </div>
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-[4px]">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">
-                  NEEDS ATTENTION
-                </p>
-                <p className="text-2xl font-black text-amber-650 mt-0.5">
-                  {
-                    computedDepartures.filter(
-                      (d) => d.readiness >= 50 && d.readiness < 90,
-                    ).length
-                  }
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  Departures (70-94%)
-                </p>
-              </div>
-            </div>
-            <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-rose-50 text-rose-600 rounded-[4px]">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">
-                  CRITICAL
-                </p>
-                <p className="text-2xl font-black text-rose-650 mt-0.5">
-                  {computedDepartures.filter((d) => d.readiness < 50).length}
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  Departures (&lt;70%)
-                </p>
-              </div>
-            </div>
+            ))}
+          </div>
+
+          {/* Mobile status chips — the desktop filter bar is too wide for 430px */}
+          <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar snap-x scroll-px-3 -mx-3 px-3">
+            {[
+              { id: "all", label: "All" },
+              { id: "live", label: "Live" },
+              { id: "upcoming", label: "Upcoming" },
+              { id: "ready", label: "Ready" },
+              { id: "planning", label: "In Planning" },
+            ].map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setFilterStatus(chip.id)}
+                className={cn(
+                  "shrink-0 snap-start px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border transition-colors",
+                  filterStatus === chip.id
+                    ? "bg-[#0B1329] border-[#0B1329] text-white"
+                    : "bg-white border-slate-200 text-slate-600",
+                )}
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
 
           {/* Filters Row */}
-          <div className="flex flex-wrap items-center gap-4 bg-white border border-[#E2E8F0] p-4 rounded-[4px] shadow-sm mt-6">
+          <div className="hidden md:flex flex-wrap items-center gap-4 bg-white border border-[#E2E8F0] p-4 rounded-[4px] shadow-sm mt-6">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase">
                 Date Range
@@ -1799,13 +1802,13 @@ export default function OperationsHubPage() {
           <div
             className={cn(
               layoutMode === "side_by_side"
-                ? "grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6"
-                : "space-y-6 mt-6",
+                ? "grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6"
+                : "space-y-4 md:space-y-6 mt-4 md:mt-6",
             )}
           >
             {/* Live Departures Section */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-[#E65100] tracking-tight flex items-center gap-1.5">
+            <div className="space-y-2 md:space-y-3">
+              <h3 className="text-[13px] md:text-sm font-bold text-[#E65100] tracking-tight flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#FF5400] animate-pulse" />
                 Live Trips{" "}
                 <span className="text-slate-400 font-semibold text-xs">
@@ -1815,12 +1818,13 @@ export default function OperationsHubPage() {
               {renderDeparturesTable(
                 liveDepartures,
                 "No live trips currently running.",
+                "live",
               )}
             </div>
 
             {/* Upcoming Departures Section */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1">
+            <div className="space-y-2 md:space-y-3">
+              <h3 className="text-[13px] md:text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1">
                 Upcoming Trips{" "}
                 <span className="text-slate-400 font-semibold text-xs">
                   ({upcomingDepartures.length})
@@ -1829,15 +1833,21 @@ export default function OperationsHubPage() {
               {renderDeparturesTable(
                 upcomingDepartures,
                 "No upcoming trips scheduled.",
+                "upcoming",
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-[#E65100] text-xs font-semibold bg-[#FFF8E6] border border-[#FFE0B2] p-4 rounded-md shadow-xs mt-6">
-            <CalendarCheck className="w-4 h-4 text-[#FF5400] flex-shrink-0" />
+          <div className="flex items-start md:items-center gap-2 text-[#E65100] text-[11px] md:text-xs font-semibold bg-[#FFF8E6] border border-[#FFE0B2] p-3 md:p-4 rounded-lg md:rounded-md shadow-xs mt-4 md:mt-6">
+            <CalendarCheck className="w-4 h-4 text-[#FF5400] flex-shrink-0 mt-0.5 md:mt-0" />
             <span>
-              Click on Readiness % or View to see detailed checklist, payments,
-              documents and more for each departure.
+              <span className="md:hidden">
+                Tap a departure to open its checklist, payments and documents.
+              </span>
+              <span className="hidden md:inline">
+                Click on Readiness % or View to see detailed checklist, payments,
+                documents and more for each departure.
+              </span>
             </span>
           </div>
         </div>
@@ -1847,17 +1857,18 @@ export default function OperationsHubPage() {
       {/* DEPARTURE DETAIL VIEW                                          */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       {opsView === "departure_detail" && selectedDeparture && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 md:space-y-6 animate-fade-in">
           {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
-            <div>
-              <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                <Compass className="w-5 h-5 text-[#F97316]" /> Trip Operations{" "}
-                <span className="text-slate-400 font-medium text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
+            <div className="min-w-0">
+              <h1 className="text-base md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2 min-w-0">
+                <Compass className="w-4 h-4 md:w-5 md:h-5 text-[#F97316] shrink-0" />{" "}
+                Trip Operations{" "}
+                <span className="text-slate-400 font-medium text-[11px] md:text-sm truncate">
                   / {selectedDeparture.tripName} ({selectedDeparture.code})
                 </span>
               </h1>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
+              <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
                 Manage upcoming departures, track readiness, and coordinate
                 operations.
               </p>
@@ -2003,7 +2014,7 @@ export default function OperationsHubPage() {
           </div>
 
           {/* ── Sub-tabs ── */}
-          <div className="flex border-b border-[#E2E8F0] overflow-x-auto gap-2 no-scrollbar bg-white -mx-6 px-6 -mt-4 mb-6 shadow-2xs">
+          <div className="flex border-b border-[#E2E8F0] overflow-x-auto gap-2 no-scrollbar snap-x bg-white -mx-3 md:-mx-6 px-3 md:px-6 -mt-2 md:-mt-4 mb-4 md:mb-6 shadow-2xs">
             {[
               { id: "overview", label: "Overview" },
               {
