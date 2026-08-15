@@ -256,16 +256,15 @@ export function AccommodationDetailPage({
   };
 
   useEffect(() => {
-    if (!vendor?.id) return;
-    setVendor(vendor);
+    if (!initialVendor?.id) return;
+    setVendor(initialVendor);
     loadVendorVehicles();
 
     // 1. Sync guide & activity rates from prop
-    if (vendor.guideRates || vendor.activityRates) {
+    if (initialVendor.guideRates || initialVendor.activityRates) {
       try {
-        const raw = vendor.activityRates || vendor.guideRates;
-        const parsed =
-          typeof raw === "string" ? JSON.parse(raw) : raw;
+        const raw = initialVendor.activityRates || initialVendor.guideRates;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
         if (Array.isArray(parsed) && parsed.length > 0) {
           setGuideRates(parsed);
           setActivityRates(parsed);
@@ -274,23 +273,23 @@ export function AccommodationDetailPage({
     }
 
     // 2. Sync meal tariffs from prop
-    if (vendor.mealPlans || vendor.mealTariffs) {
+    if (initialVendor.mealPlans || initialVendor.mealTariffs) {
       try {
-        const raw = vendor.mealTariffs || vendor.mealPlans;
+        const raw = initialVendor.mealTariffs || initialVendor.mealPlans;
         const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
         if (Array.isArray(parsed) && parsed.length > 0) setMealTariffs(parsed);
       } catch (e) {}
     }
 
     // 3. Sync contacts from prop
-    setContacts(deriveContactsFromVendor(vendor));
+    setContacts(deriveContactsFromVendor(initialVendor));
 
     // 4. Sync overviewForm from prop
-    setOverviewForm(extractOverviewState(vendor));
+    setOverviewForm(extractOverviewState(initialVendor));
 
-    // 5. Fetch latest live vendor record from server to guarantee persistence
+    // 5. Fetch latest live vendor record from server ONCE on initial load
     api
-      .get(`/vendors/directory/${vendor.id}`)
+      .get(`/vendors/directory/${initialVendor.id}`)
       .then((res) => {
         if (res?.data?.data) {
           const fresh = res.data.data;
@@ -298,8 +297,7 @@ export function AccommodationDetailPage({
           if (fresh.guideRates || fresh.activityRates) {
             try {
               const raw = fresh.activityRates || fresh.guideRates;
-              const parsed =
-                typeof raw === "string" ? JSON.parse(raw) : raw;
+              const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
               if (Array.isArray(parsed) && parsed.length > 0) {
                 setGuideRates(parsed);
                 setActivityRates(parsed);
@@ -321,7 +319,7 @@ export function AccommodationDetailPage({
       .catch((err) => {
         console.warn("Could not fetch live vendor details:", err);
       });
-  }, [vendor?.id, vendor?.guideRates, vendor?.mealPlans, vendor?.mealTariffs, vendor?.vendorContacts, extractOverviewState]);
+  }, [initialVendor?.id, extractOverviewState]);
 
   const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
     if (vendor.transportRates && vendor.transportRates.length > 0) {
