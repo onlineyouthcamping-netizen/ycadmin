@@ -65,8 +65,23 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
-import { cn } from "@/lib/utils";
+import { cn, formatINR, safeFormatDate } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
+import {
+  FinanceStatusBadge,
+  MoneyAmount,
+  FinanceEmptyState,
+  FinanceLoadingBlock,
+  FinanceQueueCard,
+  FinanceKpiCard,
+  FinanceTable,
+  FinanceTableHead,
+  financeTd,
+  financePrimaryBtn,
+  FinancePrimaryButton,
+  FinanceApproveButton,
+  FinanceRejectButton,
+} from "@/modules/finance/finance.ui";
 import type {
   FinanceControlCenterStats,
   CashSubmissionItem,
@@ -101,7 +116,11 @@ type QueueTab =
   | "discrepancies"
   | "audit";
 
-export default function FinanceControlCenterPage() {
+export default function FinanceControlCenterPage({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const { admin: currentUser } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab =
@@ -148,17 +167,34 @@ export default function FinanceControlCenterPage() {
   // ── Incoming Payment Modal ──
   const [selectedIncomingItem, setSelectedIncomingItem] = useState<IncomingPaymentItem | null>(null);
   const [isIncomingModalOpen, setIsIncomingModalOpen] = useState(false);
+  const [incomingAction, setIncomingAction] = useState<"VERIFY" | "REJECT" | "FLAG_DISCREPANCY">("VERIFY");
+  const [incomingNotes, setIncomingNotes] = useState("");
+  const [incomingReason, setIncomingReason] = useState("");
 
   // ── Vendor Payout Modal ──
   const [selectedVendorItem, setSelectedVendorItem] = useState<VendorPaymentRequestItem | null>(null);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
   const [vendorPayAmount, setVendorPayAmount] = useState<number>(0);
   const [vendorPayMode, setVendorPayMode] = useState("Bank Transfer");
+  const [vendorTxnRef, setVendorTxnRef] = useState("");
+  const [vendorNotes, setVendorNotes] = useState("");
 
   // ── Ticketing Price Audit Modal ──
   const [selectedTicketItem, setSelectedTicketItem] = useState<TicketFinanceAuditItem | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [ticketAuditedCost, setTicketAuditedCost] = useState<number>(0);
+  const [ticketAction, setTicketAction] = useState<"APPROVE" | "FLAG_VARIANCE" | "REJECT">("APPROVE");
+  const [ticketNotes, setTicketNotes] = useState("");
+  const [confirmTicketVerifyId, setConfirmTicketVerifyId] = useState<string | null>(null);
+
+  // ── Departure / Expense confirm ──
+  const [pendingQueueAction, setPendingQueueAction] = useState<{
+    kind: "departure" | "expense";
+    id: string;
+    action: "APPROVE" | "REJECT" | "PAID";
+    title: string;
+  } | null>(null);
+  const [queueActionReason, setQueueActionReason] = useState("");
 
   // ── Refunds & Credit Notes Modals ──
   const [refundSubTab, setRefundSubTab] = useState<"ALL" | "PENDING_APPROVAL" | "COMPLETED" | "REJECTED">("ALL");
@@ -363,6 +399,104 @@ export default function FinanceControlCenterPage() {
       fetchAllData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update cash submission");
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  const handleIncomingActionSubmit = async () => {
+    if (!selectedIncomingItem) return;
+    if (incomingAction === "REJECT" && !incomingReason.trim()) {
+      toast.error("Rejection requires an explicit reason");
+      return;
+    }
+    setIsSubmittingAction(true);
+    try {
+      await financeControllerService.performIncomingAction(selectedIncomingItem.id, {
+        action: incomingAction,
+        notes: incomingNotes.trim() || undefined,
+        reason: incomingReason.trim() || undefined,
+      });
+      toast.success(`Incoming payment ${incomingAction.toLowerCase().replace(/_/g, " ")}`);
+      setIsIncomingModalOpen(false);
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update incoming payment");
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  const handleVendorActionSubmit = async () => {
+    if (!selectedVendorItem) return;
+    if (!vendorPayAmount || vendorPayAmount <= 0) {
+      toast.error("Enter a valid payout amount");
+      return;
+    }
+    setIsSubmittingAction(true);
+    try {
+      await financeControllerService.performVendorAction(selectedVendorItem.id, {
+        action: "RECORD_PAYMENT",
+        paidAmount: vendorPayAmount,
+        paymentMode: vendorPayMode,
+        transactionRef: vendorTxnRef.trim() || undefined,
+        notes: vendorNotes.trim() || undefined,
+      });
+      toast.success("Vendor payout recorded");
+      setIsVendorModalOpen(false);
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to record vendor payout");
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  const handleTicketAuditSubmit = async () => {
+    if (!selectedTicketItem) return;
+    setIsSubmittingAction(true);
+    try {
+      await financeControllerService.performTicketingAction(selectedTicketItem.id, {
+        action: ticketAction,
+        auditedCost: ticketAuditedCost || undefined,
+        notes: ticketNotes.trim() || undefined,
+      });
+      toast.success(`Ticket audit ${ticketAction.toLowerCase().replace(/_/g, " ")}`);
+      setIsTicketModalOpen(false);
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update ticket audit");
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  const handleQueueActionConfirm = async () => {
+    if (!pendingQueueAction) return;
+    if (pendingQueueAction.action === "REJECT" && !queueActionReason.trim()) {
+      toast.error("Rejection requires an explicit reason");
+      return;
+    }
+    setIsSubmittingAction(true);
+    try {
+      if (pendingQueueAction.kind === "departure") {
+        await financeControllerService.performDepartureAction(pendingQueueAction.id, {
+          action: pendingQueueAction.action,
+          notes: queueActionReason.trim() || undefined,
+        });
+      } else {
+        await financeControllerService.performExpenseAction(pendingQueueAction.id, {
+          action: pendingQueueAction.action === "PAID" ? "APPROVE" : pendingQueueAction.action,
+          notes: queueActionReason.trim() || undefined,
+          reason: queueActionReason.trim() || undefined,
+        });
+      }
+      toast.success("Decision recorded");
+      setPendingQueueAction(null);
+      setQueueActionReason("");
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to record decision");
     } finally {
       setIsSubmittingAction(false);
     }
@@ -638,24 +772,57 @@ export default function FinanceControlCenterPage() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-[#FF4D00]" />
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Finance Control Center</h1>
-            <Badge variant="outline" className="text-[10px] font-bold border-[#FF4D00]/30 text-[#FF4D00] bg-orange-50/50">
-              Controller Hub
-            </Badge>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Verification queues, cash settlement, refund workflows, ticket repository, coupons & immutable audit trails.
-          </p>
-        </div>
+  const queueCounts: Record<QueueTab, number> = {
+    cash: cashQueue.filter((c) => c.status === "PENDING").length,
+    incoming: incomingQueue.filter((i) => i.status === "PENDING").length,
+    vendor: vendorQueue.filter((v) => v.paymentStatus === "pending" || v.paymentStatus === "partial").length,
+    departures: departuresQueue.filter((d) => d.status === "PENDING" || d.status === "APPROVED").length,
+    ticketing: ticketingQueue.filter((t) => t.status === "PENDING").length,
+    refunds: refundsList.filter((r) => r.status === "PENDING_APPROVAL").length,
+    credits: activeCreditsList.length,
+    ticket_repository: financeTicketsList.filter((t) => t.status === "PENDING_VERIFICATION").length,
+    tasks: taskDashboard?.overdueCount || 0,
+    coupons: couponsList.filter((c) => c.status === "ACTIVE").length,
+    expenses: expensesQueue.filter((e) => e.status === "PENDING").length,
+    discrepancies: discrepanciesQueue.filter((d) => d.status === "PENDING").length,
+    audit: auditTrailList.length,
+  };
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+  const queueTabs: { id: QueueTab; label: string }[] = [
+    { id: "cash", label: "Cash" },
+    { id: "incoming", label: "Incoming" },
+    { id: "vendor", label: "Vendors" },
+    { id: "ticketing", label: "Ticketing" },
+    { id: "refunds", label: "Refunds" },
+    { id: "credits", label: "Credits" },
+    { id: "ticket_repository", label: "Tickets" },
+    { id: "tasks", label: "Tasks" },
+    { id: "coupons", label: "Coupons" },
+    { id: "departures", label: "Departures" },
+    { id: "expenses", label: "Expenses" },
+    { id: "discrepancies", label: "Discrepancies" },
+    { id: "audit", label: "Audit" },
+  ];
+
+  return (
+    <div className="space-y-4 md:space-y-5">
+      <div className={cn(
+        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3",
+        !embedded && "border-b border-slate-200 pb-4",
+      )}>
+        {!embedded && (
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-[#FF4D00]" />
+              <h1 className="text-lg md:text-xl font-bold text-[#0B1528] tracking-tight">Finance Control Center</h1>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Approvals, cash, refunds, ticketing, vendors, and audit — one queue.
+            </p>
+          </div>
+        )}
+
+        <div className={cn("flex items-center gap-2 w-full sm:w-auto", embedded && "ml-auto")}>
           <Button
             variant="outline"
             size="sm"
@@ -668,19 +835,14 @@ export default function FinanceControlCenterPage() {
           </Button>
 
           {activeTab === "refunds" && (
-            <Button
-              size="sm"
-              onClick={() => setShowCreateRefundModal(true)}
-              className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-xs"
-            >
+            <FinancePrimaryButton onClick={() => setShowCreateRefundModal(true)}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Request Refund
-            </Button>
+            </FinancePrimaryButton>
           )}
 
           {activeTab === "coupons" && (
-            <Button
-              size="sm"
+            <FinancePrimaryButton
               onClick={() => {
                 setEditingCoupon(null);
                 setCouponForm({
@@ -697,33 +859,24 @@ export default function FinanceControlCenterPage() {
                 });
                 setShowCouponModal(true);
               }}
-              className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-xs"
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               New Coupon
-            </Button>
+            </FinancePrimaryButton>
           )}
 
           {activeTab === "ticket_repository" && (
-            <Button
-              size="sm"
-              onClick={() => setShowBulkUploadModal(true)}
-              className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-xs"
-            >
+            <FinancePrimaryButton onClick={() => setShowBulkUploadModal(true)}>
               <Upload className="h-3.5 w-3.5 mr-1.5" />
-              Bulk CSV Ingest
-            </Button>
+              Bulk CSV
+            </FinancePrimaryButton>
           )}
 
           {activeTab === "tasks" && (
-            <Button
-              size="sm"
-              onClick={() => setShowCreateTaskModal(true)}
-              className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-xs"
-            >
+            <FinancePrimaryButton onClick={() => setShowCreateTaskModal(true)}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Assign Task
-            </Button>
+            </FinancePrimaryButton>
           )}
 
           {activeTab === "audit" && (
@@ -740,116 +893,109 @@ export default function FinanceControlCenterPage() {
         </div>
       </div>
 
-      {/* ── 8 KPI Dashboard Cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2 md:gap-2.5">
         {[
           {
             id: "incoming" as QueueTab,
-            label: "Incoming Pending",
-            val: incomingQueue.filter((i) => i.status === "PENDING").length,
-            sub: `₹${(stats?.todayCollections || 0).toLocaleString("en-IN")} Today`,
-            active: activeTab === "incoming",
+            label: "Incoming",
+            val: queueCounts.incoming,
+            sub: `${formatINR(stats?.todayCollections || 0)} today`,
+            alert: true,
           },
           {
             id: "cash" as QueueTab,
-            label: "Cash Pending",
-            val: cashQueue.filter((c) => c.status === "PENDING").length,
-            sub: `₹${(stats?.cashPendingAmount || 0).toLocaleString("en-IN")} Submissions`,
-            active: activeTab === "cash",
+            label: "Cash",
+            val: queueCounts.cash,
+            sub: `${formatINR(stats?.cashPendingAmount || 0)} pending`,
+            alert: true,
           },
           {
             id: "vendor" as QueueTab,
-            label: "Outgoing Pending",
-            val: vendorQueue.filter((v) => v.paymentStatus === "pending" || v.paymentStatus === "partial").length,
-            sub: "Vendor Disbursements",
-            active: activeTab === "vendor",
+            label: "Vendors",
+            val: queueCounts.vendor,
+            sub: "Outstanding payouts",
+            alert: true,
           },
           {
             id: "ticketing" as QueueTab,
-            label: "Ticket Audit",
-            val: ticketingQueue.filter((t) => t.status === "PENDING").length,
-            sub: "Margin Verification",
-            active: activeTab === "ticketing",
+            label: "Ticketing",
+            val: queueCounts.ticketing,
+            sub: "Margin audit",
+            alert: true,
           },
           {
             id: "refunds" as QueueTab,
-            label: "Refunds Pending",
-            val: refundsList.filter((r) => r.status === "PENDING_APPROVAL").length,
-            sub: "Approval Queue",
-            active: activeTab === "refunds",
+            label: "Refunds",
+            val: queueCounts.refunds,
+            sub: "Needs approval",
+            alert: true,
           },
           {
             id: "credits" as QueueTab,
-            label: "Active Credits",
-            val: activeCreditsList.length,
-            sub: "Store Credits",
-            active: activeTab === "credits",
+            label: "Credits",
+            val: queueCounts.credits,
+            sub: "Store credit open",
+            alert: false,
           },
           {
             id: "discrepancies" as QueueTab,
             label: "Discrepancies",
-            val: discrepanciesQueue.filter((d) => d.status === "PENDING").length,
-            sub: "Mismatches Flagged",
-            active: activeTab === "discrepancies",
+            val: queueCounts.discrepancies,
+            sub: "Mismatches",
+            alert: true,
           },
           {
             id: "tasks" as QueueTab,
-            label: "Overdue Tasks",
-            val: taskDashboard?.overdueCount || 0,
-            sub: `${taskDashboard?.completionRate || 0}% Completion`,
-            active: activeTab === "tasks",
+            label: "Overdue",
+            val: queueCounts.tasks,
+            sub: `${taskDashboard?.completionRate || 0}% complete`,
+            alert: true,
           },
         ].map((item) => (
-          <div
+          <FinanceKpiCard
             key={item.id}
+            label={item.label}
+            value={item.val}
+            sub={item.sub}
+            active={activeTab === item.id}
+            alert={item.alert}
             onClick={() => handleTabChange(item.id)}
-            className={cn(
-              "p-3 rounded-lg border transition-all cursor-pointer flex flex-col justify-between select-none",
-              item.active
-                ? "bg-orange-50/70 border-[#FF4D00] shadow-xs"
-                : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60"
-            )}
-          >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">
-              {item.label}
-            </div>
-            <div className="text-lg font-extrabold text-slate-900 mt-1 font-mono">{item.val}</div>
-            <div className="text-[10px] font-medium text-slate-500 truncate mt-0.5">{item.sub}</div>
-          </div>
+          />
         ))}
       </div>
 
-      {/* ── Tab Navigation Strip ── */}
-      <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto no-scrollbar pb-1 text-xs font-semibold">
-        {[
-          { id: "cash", label: "Cash Verification" },
-          { id: "incoming", label: "Incoming Payments" },
-          { id: "vendor", label: "Outgoing / Vendor" },
-          { id: "ticketing", label: "Ticket Verification" },
-          { id: "refunds", label: "Refunds" },
-          { id: "credits", label: "Credit Notes" },
-          { id: "ticket_repository", label: "Ticket Repository" },
-          { id: "tasks", label: "Task Board" },
-          { id: "coupons", label: "Coupons" },
-          { id: "departures", label: "Departure Payouts" },
-          { id: "expenses", label: "Misc Expenses" },
-          { id: "discrepancies", label: "Discrepancies" },
-          { id: "audit", label: "Audit Trail" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabChange(tab.id as QueueTab)}
-            className={cn(
-              "px-3 py-2 rounded-t-md transition-all whitespace-nowrap cursor-pointer border-b-2 font-bold",
-              activeTab === tab.id
-                ? "border-[#FF4D00] text-[#FF4D00] bg-orange-50/40"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="sticky top-[72px] z-20 -mx-1 px-1 bg-[#F4F7FB]/95 backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 border-b border-slate-200 overflow-x-auto no-scrollbar">
+          {queueTabs.map((tab) => {
+            const count = queueCounts[tab.id];
+            const showCount = ["cash", "incoming", "vendor", "ticketing", "refunds", "discrepancies", "expenses", "departures", "tasks"].includes(tab.id);
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={cn(
+                  "shrink-0 px-3 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors",
+                  activeTab === tab.id
+                    ? "border-[#FF4D00] text-[#FF4D00]"
+                    : "border-transparent text-slate-500 hover:text-slate-800",
+                )}
+              >
+                {tab.label}
+                {showCount && count > 0 && (
+                  <span className={cn(
+                    "ml-1.5 inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full text-[10px] font-bold",
+                    activeTab === tab.id ? "bg-[#FF4D00] text-white" : "bg-amber-100 text-amber-800",
+                  )}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {isLoading && <FinanceLoadingBlock />}
 
       {/* ─────────────────────────────────────────────────────────────
           1. CASH VERIFICATION TAB
