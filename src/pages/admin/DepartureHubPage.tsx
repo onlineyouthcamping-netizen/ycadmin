@@ -8607,7 +8607,7 @@ useEffect(() => {
                         <optgroup label="Assigned Departure Fleet">
                           {fleetVehicles.map((v) => (
                             <option key={v.id} value={v.id}>
-                              {v.vehicleType} – {v.vendor?.name || v.notes || 'Vendor'} ({v.capacity} Seats) – ₹{v.tariff?.amount ?? v.totalAmount}
+                              {v.vehicleType} – {v.vendor?.name || v.notes || 'Vendor'} ({v.capacity} Seats) – ₹{Number(v.tariff?.amount ?? v.totalAmount ?? 0).toLocaleString('en-IN')}
                             </option>
                           ))}
                         </optgroup>
