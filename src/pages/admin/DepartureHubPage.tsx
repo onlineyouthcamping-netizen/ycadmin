@@ -1180,44 +1180,48 @@ export default function DepartureHubPage() {
   const tripId = resolvedTripId;
   const departureDateStr = resolvedDepartureDateStr;
 
-  let rawTab = (currentParams.get("tab") || "overview").toLowerCase().trim();
-  // Tab ID normalization
-  if (["hotel", "hotels", "accommodations", "accommodation", "itinerary"].includes(rawTab)) {
-    rawTab = "hotels";
-  } else if (["transport", "allocation", "tempo", "fleet", "vehicles"].includes(rawTab)) {
-    rawTab = "transport";
-  } else if (["passengers", "manifest", "pax"].includes(rawTab)) {
-    rawTab = "passengers";
-  } else if (["operations", "ops", "ticketing", "tasks", "checklist"].includes(rawTab)) {
-    rawTab = "operations";
-  } else if (["finance", "money", "payments", "accounting"].includes(rawTab)) {
-    rawTab = "finance";
-  } else if (["station", "stationpayments", "station_payments"].includes(rawTab)) {
-    rawTab = "stationpayments";
-  } else if (["documents", "docs"].includes(rawTab)) {
-    rawTab = "documents";
-  } else if (["reports", "report"].includes(rawTab)) {
-    rawTab = "reports";
-  } else if (["guides", "guide"].includes(rawTab)) {
-    rawTab = "guides";
-  } else if (["activities", "activity"].includes(rawTab)) {
-    rawTab = "activities";
-  }
-  const activeTab = rawTab;
+  const normalizeTab = (raw: string) => {
+    const t = (raw || "overview").toLowerCase().trim();
+    if (["hotel", "hotels", "accommodations", "accommodation", "itinerary"].includes(t)) return "hotels";
+    if (["transport", "allocation", "tempo", "fleet", "vehicles"].includes(t)) return "transport";
+    if (["passengers", "manifest", "pax"].includes(t)) return "passengers";
+    if (["operations", "ops", "ticketing", "tasks", "checklist"].includes(t)) return "operations";
+    if (["finance", "money", "payments", "accounting"].includes(t)) return "finance";
+    if (["station", "stationpayments", "station_payments"].includes(t)) return "stationpayments";
+    if (["documents", "docs"].includes(t)) return "documents";
+    if (["reports", "report"].includes(t)) return "reports";
+    if (["guides", "guide"].includes(t)) return "guides";
+    if (["activities", "activity"].includes(t)) return "activities";
+    return t || "overview";
+  };
+
+  const [activeTab, setActiveTabState] = useState<string>(() =>
+    normalizeTab(new URLSearchParams(location.search).get("tab") || "overview"),
+  );
+
+  useEffect(() => {
+    const nextTab = normalizeTab(new URLSearchParams(location.search).get("tab") || "overview");
+    setActiveTabState((prev) => (prev !== nextTab ? nextTab : prev));
+  }, [location.search]);
 
   const setActiveTab = (tab: string) => {
+    const normalized = normalizeTab(tab);
+    setActiveTabState(normalized);
     const nextParams = new URLSearchParams(location.search);
-    nextParams.set("tab", tab);
+    nextParams.set("tab", normalized);
     if (departureIdParam) {
       nextParams.set("departureId", departureIdParam);
     } else {
       if (tripId) nextParams.set("tripId", tripId);
       if (departureDateStr) nextParams.set("departureDate", departureDateStr);
     }
-    navigate({
-      pathname: location.pathname,
-      search: `?${nextParams.toString()}`,
-    });
+    navigate(
+      {
+        pathname: location.pathname,
+        search: `?${nextParams.toString()}`,
+      },
+      { replace: false },
+    );
   };
 
   const initializationKeyRef = useRef<string | null>(null);
@@ -6119,17 +6123,8 @@ useEffect(() => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased">
-      {/* ─── MOBILE DEPARTURE WORKSPACE (<768px) ─── */}
-      <div className="block md:hidden p-3 pb-24 overflow-y-auto">
-        <MobileDepartureWorkspace
-          departureName={tripDetails?.title || tripId}
-          departureDate={departureDateStr}
-          passengers={allPassengers}
-        />
-      </div>
-
-      {/* ─── DESKTOP DEPARTURE HUB (>=768px) ─── */}
-      <div className="hidden md:flex flex-col flex-1 overflow-hidden">
+      {/* ─── RESPONSIVE DEPARTURE HUB ─── */}
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
         <div className="bg-white border-b border-[#E2E8F0] shadow-xs">
           {/* Breadcrumb & Back Button */}
@@ -9875,10 +9870,21 @@ useEffect(() => {
           )}
           {/* ── STATION PAYMENT COLLECTION ── */}
           {activeTab === "stationpayments" && (
-            <StationPaymentCollection
-              tripId={tripId}
-              departureDateStr={departureDateStr}
-            />
+            <>
+              <div className="hidden md:block">
+                <StationPaymentCollection
+                  tripId={tripId}
+                  departureDateStr={departureDateStr}
+                />
+              </div>
+              <div className="block md:hidden">
+                <MobileDepartureWorkspace
+                  departureName={tripDetails?.title || tripId}
+                  departureDate={departureDateStr}
+                  passengers={allPassengers}
+                />
+              </div>
+            </>
           )}
           {bookingModalOpen && selectedBooking && (
             <BookingDetailsModal

@@ -104,7 +104,13 @@ export default function OperationsHubPage() {
     | "incidents"
     | "accounting"
     | "reports"
-  >("overview");
+  >((tabParam as any) || "overview");
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam as any);
+    }
+  }, [tabParam]);
 
   // ─── Upcoming Trips / Departure Detail View ───
   const [opsView, setOpsView] = useState<"trips_list" | "departure_detail">(
