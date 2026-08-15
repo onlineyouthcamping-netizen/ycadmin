@@ -203,7 +203,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
         <button
           type="button"
-          onClick={() => navigate("/admin/departures")}
+          onClick={() => navigate("/admin/operations")}
           className="p-3 rounded-2xl bg-[#0B1329] text-white shadow-md text-left flex flex-col justify-between h-[88px] active:scale-95 transition-all"
         >
           <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
@@ -290,7 +290,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           <MetricCard
             label="DEPARTURES • NEXT 7D"
             icon={<Calendar className="w-4 h-4 text-blue-600" />}
-            onClick={() => navigate("/admin/departures")}
+            onClick={() => navigate("/admin/operations")}
             loading={loading}
             value={stats?.tripsDepartingNext7Days?.length}
             caption={
@@ -329,7 +329,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
                 <button
                   key={`${departure.name}-${departure.date}-${index}`}
                   type="button"
-                  onClick={() => navigate("/admin/departures")}
+                  onClick={() => navigate("/admin/operations")}
                   className="w-full flex items-center justify-between gap-2 p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl text-left active:bg-slate-100 transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">

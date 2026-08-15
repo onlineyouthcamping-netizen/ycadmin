@@ -45,7 +45,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
   const modules = [
     { title: "Dashboard", url: "/admin", icon: BarChart3 },
     { title: "Bookings Ledger", url: "/admin/bookings", icon: Ticket },
-    { title: "Departure Hub", url: "/admin/departures", icon: Compass },
+    { title: "Departure Hub", url: "/admin/operations", icon: Compass },
     { title: "Expeditions & Trips", url: "/admin/trips", icon: MapPin },
     { title: "Payments & Accounting", url: "/admin/accounting", icon: DollarSign },
     {

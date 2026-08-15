@@ -348,6 +348,10 @@ const App = () => (
 
                 {/* Operations */}
                 <Route
+                  path="/admin/departures"
+                  element={<Navigate to="/admin/operations" replace />}
+                />
+                <Route
                   path="/admin/operations"
                   element={
                     <AdminRoute requiredPermission="ops.view">
