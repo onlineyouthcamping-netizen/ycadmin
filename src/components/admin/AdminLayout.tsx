@@ -716,7 +716,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <header className="h-[56px] flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 shrink-0 z-20 sticky top-0">
             <div className="flex items-center gap-3.5 min-w-0">
               <SidebarTrigger className="w-8 h-8 rounded-[6px] text-[#0A192F] hover:bg-[#F1F5F9] border-none bg-transparent flex items-center justify-center shrink-0 transition-colors" />
-              <h1 className="text-[16px] font-bold text-[#0A192F] tracking-[0.03em] uppercase leading-none truncate flex items-center">
+              <h1 className="text-[13px] md:text-[16px] font-bold text-[#0A192F] tracking-[0.03em] uppercase leading-none truncate flex items-center">
                 {(() => {
                   const parts = location.pathname.split("/").filter(Boolean);
                   if (

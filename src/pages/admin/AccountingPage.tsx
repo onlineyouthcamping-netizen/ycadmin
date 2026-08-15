@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
   IndianRupee,
@@ -148,6 +148,14 @@ export default function AccountingPage() {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
+
+  // Keep the active tab visible inside the scrollable mobile tab strip.
+  const tabStripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    tabStripRef.current
+      ?.querySelector<HTMLElement>(`[data-tab-id="${activeTab}"]`)
+      ?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [activeTab]);
 
   const [selectedPreset, setSelectedPreset] = useState("Today");
 
@@ -1734,45 +1742,49 @@ export default function AccountingPage() {
   ];
 
   return (
-    <div className="space-y-6 pb-20 p-6 animate-fade-in bg-[#F4F7FB] min-h-screen">
+    <div className="space-y-3 md:space-y-6 pb-28 md:pb-20 p-3 md:p-6 animate-fade-in bg-[#F4F7FB] min-h-screen">
       {/* Header and Filter controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <Banknote className="w-5 h-5 text-[#F97316]" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 sm:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
+        <div className="min-w-0">
+          <h1 className="text-base md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#F97316] shrink-0" />
             Accounting{" "}
             {activeTab === "cash_book" && (
-              <span className="text-slate-400 font-medium text-sm">
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
                 / Cash Book
               </span>
             )}
             {activeTab === "bank_accounts" && (
-              <span className="text-slate-400 font-medium text-sm">
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
                 / Collection Accounts
               </span>
             )}
           </h1>
-          <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
+          <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
             {activeTab === "cash_book"
               ? "Record all cash inflows and outflows across accounts."
               : activeTab === "bank_accounts"
                 ? "Manage official company and individual collection accounts, cash registers, and fund submissions."
                 : "Manage transactions, collections, vendor disbursements, cash books and trip profitability."}
           </p>
+          {/* Mobile: compact active-period line replaces the long uppercase blurb */}
+          <p className="md:hidden text-[11px] text-slate-500 font-semibold mt-0.5 truncate">
+            {selectedPreset} · {dateRange}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
           {activeTab === "cash_book" && (
             <Button
               variant="outline"
               size="sm"
-              className="h-8.5 text-xs font-semibold rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center gap-1.5 shadow-xs"
+              className="h-9 md:h-8.5 text-xs font-semibold rounded-lg md:rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center gap-1.5 shadow-xs shrink-0"
             >
               <Download className="w-3.5 h-3.5" /> Import
             </Button>
           )}
 
-          {/* Date Range Picker */}
-          <div className="relative">
+          {/* Date Range Picker (desktop only — mobile uses the preset bar below) */}
+          <div className="relative hidden sm:block">
             <Input
               type="text"
               value={dateRange}
@@ -1788,38 +1800,43 @@ export default function AccountingPage() {
             <Button
               size="sm"
               onClick={() => setShowAddCollectionAccountModal(true)}
-              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
+              className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
             >
-              <Plus className="w-4 h-4" />
-              Add Collection Account
+              <Plus className="w-4 h-4 shrink-0" />
+              <span className="truncate">Add Collection Account</span>
             </Button>
           ) : (
             <Button
               size="sm"
               onClick={() => setShowCreate(true)}
-              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
+              className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 shrink-0" />
               {activeTab === "cash_book" ? "New Entry" : "Add Payment"}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center w-full border-b border-[#E2E8F0] bg-transparent p-0 h-9 rounded-none gap-6 justify-start mb-6 overflow-x-auto no-scrollbar">
+      {/* Navigation Tabs — scroll-snapped strip on mobile, underline row on desktop */}
+      <div
+        ref={tabStripRef}
+        className="flex items-center w-full md:border-b md:border-[#E2E8F0] bg-transparent p-0 md:h-9 rounded-none gap-2 md:gap-6 justify-start mb-3 md:mb-6 overflow-x-auto no-scrollbar snap-x scroll-px-3 -mx-3 px-3 md:mx-0 md:px-0"
+      >
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            data-tab-id={tab.id}
             onClick={() => {
               setActiveTab(tab.id as TabId);
               setSearchParams({ tab: tab.id });
             }}
             className={cn(
-              "bg-transparent hover:bg-transparent border-b-2 border-transparent data-[state=active]:border-[#F97316] data-[state=active]:bg-transparent rounded-none px-1 pb-2 pt-1.5 text-xs font-semibold text-slate-500 data-[state=active]:text-slate-800 shadow-none whitespace-nowrap transition-all",
+              "shrink-0 snap-start whitespace-nowrap text-[11px] md:text-xs font-semibold shadow-none transition-all cursor-pointer",
+              "rounded-full border px-3 py-1.5 md:rounded-none md:border-0 md:border-b-2 md:px-1 md:pb-2 md:pt-1.5 md:bg-transparent md:hover:bg-transparent",
               activeTab === tab.id
-                ? "border-[#F97316] text-slate-850 font-bold"
-                : "hover:text-slate-700",
+                ? "bg-[#0B1329] border-[#0B1329] text-white font-bold md:bg-transparent md:border-[#F97316] md:text-slate-850"
+                : "bg-white border-slate-200 text-slate-600 md:border-transparent md:text-slate-500 md:hover:text-slate-700",
             )}
           >
             {tab.label}
@@ -1828,8 +1845,8 @@ export default function AccountingPage() {
       </div>
 
       {/* Interactive Date Preset Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-2.5 rounded-[4px] border border-slate-200 shadow-xs mb-6">
-        <div className="flex flex-wrap gap-1 text-xs font-semibold text-slate-500">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white p-2 md:p-2.5 rounded-xl md:rounded-[4px] border border-slate-200 shadow-xs mb-3 md:mb-6">
+        <div className="flex w-full sm:w-auto gap-1 sm:flex-wrap overflow-x-auto no-scrollbar snap-x text-[11px] md:text-xs font-semibold text-slate-500">
           {[
             "Today",
             "Yesterday",
@@ -1843,10 +1860,10 @@ export default function AccountingPage() {
               key={preset}
               onClick={() => applyDatePreset(preset)}
               className={cn(
-                "px-3 py-1.5 rounded-[3px] transition-all cursor-pointer",
+                "shrink-0 snap-start whitespace-nowrap px-2.5 md:px-3 py-1.5 rounded-full md:rounded-[3px] transition-all cursor-pointer",
                 selectedPreset === preset
                   ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-extrabold shadow-2xs"
-                  : "hover:bg-slate-50 hover:text-slate-800 border border-transparent",
+                  : "border border-slate-200 md:border-transparent hover:bg-slate-50 hover:text-slate-800",
               )}
             >
               {preset}
@@ -1854,8 +1871,14 @@ export default function AccountingPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+        {/* Range input: always on desktop, on mobile only for a custom range (header already shows the active range) */}
+        <div
+          className={cn(
+            "items-center gap-2 w-full sm:w-auto",
+            selectedPreset === "Custom Range" ? "flex" : "hidden sm:flex",
+          )}
+        >
+          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider shrink-0">
             Range:
           </span>
           <Input
@@ -1865,16 +1888,16 @@ export default function AccountingPage() {
               setDateRange(e.target.value);
             }}
             placeholder="01 Aug 2026 - 31 Aug 2026"
-            className="h-7 text-xs w-52 rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700 shadow-none"
+            className="h-8 sm:h-7 text-xs flex-1 sm:flex-none sm:w-52 rounded-lg sm:rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700 shadow-none"
           />
         </div>
       </div>
 
       {/* OVERVIEW TAB */}
       {activeTab === "overview" && (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* 6 KPI Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-2 md:gap-3.5">
             {[
               {
                 label: "Total Collection",
@@ -1915,16 +1938,19 @@ export default function AccountingPage() {
             ].map((card, i) => (
               <Card
                 key={i}
-                className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
+                className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)] min-w-0"
               >
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide truncate">
+                <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wide truncate">
                   {card.label}
                 </div>
-                <div className="text-lg font-bold text-slate-800 mt-2">
+                <div
+                  title={`₹ ${card.val.toLocaleString("en-IN")}`}
+                  className="text-base md:text-lg font-bold text-slate-800 mt-1 md:mt-2 tabular-nums truncate"
+                >
                   ₹ {card.val.toLocaleString("en-IN")}
                 </div>
                 {card.subtitle && (
-                  <div className="text-[10px] text-slate-500 font-medium mt-1.5">
+                  <div className="text-[10px] text-slate-500 font-medium mt-1 md:mt-1.5 truncate">
                     {card.subtitle}
                   </div>
                 )}
@@ -1932,9 +1958,9 @@ export default function AccountingPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
             {/* 1. Cash Flow Overview Line Chart */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm lg:col-span-2 space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm lg:col-span-2 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Cash Flow Overview
@@ -2019,7 +2045,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* 2. Pending Vendor Payments Table */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Pending Vendor Payments
@@ -2086,9 +2112,9 @@ export default function AccountingPage() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             {/* 3. Recent Transactions List */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Recent Transactions
@@ -2137,7 +2163,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* 4. Top Expenses Donut Chart */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Top Expenses (Month)
@@ -2199,7 +2225,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* 5. Expense by Category Horizontal Bars */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Expense by Category
@@ -2248,7 +2274,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* 6. Bank & Cash Summary */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Bank & Cash Summary
@@ -2294,9 +2320,9 @@ export default function AccountingPage() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
             {/* 8. Trip Profitability Summary Table */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm lg:col-span-2 space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm lg:col-span-2 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Trip Profitability Summary
@@ -2356,7 +2382,7 @@ export default function AccountingPage() {
 
             <div className="grid grid-cols-1 gap-6">
               {/* 7. Quick Actions Panel */}
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+              <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Quick Actions
                 </h3>
@@ -2401,7 +2427,7 @@ export default function AccountingPage() {
               </Card>
 
               {/* 9. Monthly Summary Card */}
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col justify-between space-y-4">
+              <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col justify-between space-y-4">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Monthly Summary (July 2024)
                 </h3>
@@ -2474,9 +2500,9 @@ export default function AccountingPage() {
 
       {/* CASH BOOK TAB */}
       {activeTab === "cash_book" && (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* 4 KPI Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
             {[
               {
                 label: "Opening Cash Balance",
@@ -2505,11 +2531,11 @@ export default function AccountingPage() {
             ].map((card, i) => (
               <Card
                 key={i}
-                className="rounded-[4px] border border-[#E2E8F0] p-4.5 bg-white shadow-sm flex items-center gap-4"
+                className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-2.5 md:p-4.5 bg-white shadow-sm flex items-center gap-2.5 md:gap-4 min-w-0"
               >
                 <div
                   className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center text-base shrink-0",
+                    "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-base shrink-0",
                     card.type === "up"
                       ? "bg-emerald-50 text-emerald-600"
                       : card.type === "down"
@@ -2529,14 +2555,17 @@ export default function AccountingPage() {
                     <Compass className="w-5 h-5" />
                   )}
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                <div className="min-w-0">
+                  <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wide truncate">
                     {card.label}
                   </div>
-                  <div className="text-base font-black mt-1 text-slate-800">
+                  <div
+                    title={`₹ ${card.val.toLocaleString("en-IN")}`}
+                    className="text-sm md:text-base font-black mt-1 text-slate-800 tabular-nums truncate"
+                  >
                     ₹ {card.val.toLocaleString("en-IN")}
                   </div>
-                  <div className="text-[9px] text-slate-450 font-semibold mt-0.5">
+                  <div className="text-[9px] text-slate-450 font-semibold mt-0.5 truncate">
                     {card.desc}
                   </div>
                 </div>
@@ -2545,7 +2574,7 @@ export default function AccountingPage() {
           </div>
 
           {/* Sub-tabs layout */}
-          <div className="flex border-b border-slate-200 gap-6 text-xs font-bold text-slate-400">
+          <div className="flex border-b border-slate-200 gap-4 md:gap-6 text-[11px] md:text-xs font-bold text-slate-400 overflow-x-auto no-scrollbar whitespace-nowrap">
             <button className="border-b-2 border-[#F97316] text-[#F97316] pb-2 px-1">
               All Transactions
             </button>
@@ -2558,10 +2587,10 @@ export default function AccountingPage() {
           </div>
 
           {/* Filters & Table Card */}
-          <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+          <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
             {/* Filter Toolbar */}
             <div className="flex flex-wrap gap-2 items-center bg-slate-50/50 p-2.5 rounded-[4px] border border-slate-100">
-              <div className="relative w-48">
+              <div className="relative w-full sm:w-48">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <Input
                   placeholder="Search particulars..."
@@ -2750,9 +2779,9 @@ export default function AccountingPage() {
           </Card>
 
           {/* Bottom Summaries: Cash Handler, Movement, and Approval Statistics */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
             {/* Cash Handler Summary */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">
                 Cash Handler Summary{" "}
                 <span className="text-slate-400 text-[10px] font-normal normal-case ml-1">
@@ -2808,7 +2837,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Cash Movement Summary */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">
                 Cash Movement Summary
               </h3>
@@ -2859,7 +2888,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Approval Summary */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">
                 Approval Summary
               </h3>
@@ -2953,7 +2982,7 @@ export default function AccountingPage() {
 
       {/* COLLECTION ACCOUNTS TAB */}
       {(activeTab === "bank_accounts") && (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* Summary KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-xs">
@@ -3178,7 +3207,7 @@ export default function AccountingPage() {
 
       {/* VENDOR PAYMENTS TAB */}
       {activeTab === "vendor_payments" && (
-        <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+        <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
               Vendor Payments Queue
@@ -3297,10 +3326,10 @@ export default function AccountingPage() {
 
       {/* OFFICE EXPENSES TAB */}
       {activeTab === "office_expenses" && (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left: Office Expenses Table */}
-            <Card className="flex-1 rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="flex-1 rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
@@ -3397,7 +3426,7 @@ export default function AccountingPage() {
             {/* Right: Sidebar widgets */}
             <div className="w-full lg:w-80 space-y-6 shrink-0">
               {/* Expense Summary */}
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-3.5">
+              <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-3.5">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Expense Summary
@@ -3442,7 +3471,7 @@ export default function AccountingPage() {
               </Card>
 
               {/* Top Categories Donut Chart */}
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+              <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">
                   Top Categories{" "}
                   <span className="text-slate-400 text-[10px] font-normal normal-case ml-1">
@@ -3487,7 +3516,7 @@ export default function AccountingPage() {
               </Card>
 
               {/* Recent Expenses */}
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+              <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Recent Expenses
@@ -3545,7 +3574,7 @@ export default function AccountingPage() {
 
       {/* TRANSACTIONS TAB (UNIFIED FINANCIAL LOG) */}
       {activeTab === "transactions" && (
-        <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+        <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
@@ -3558,7 +3587,7 @@ export default function AccountingPage() {
 
             {/* Toolbar Filters */}
             <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative w-48">
+              <div className="relative w-full sm:w-48">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <Input
                   value={search}
@@ -3787,7 +3816,7 @@ export default function AccountingPage() {
 
       {/* PAYMENTS TAB (CUSTOMER LEDGER LIST) */}
       {activeTab === "payments" && (
-        <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+        <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
           <div className="flex flex-wrap gap-4 items-center justify-between shadow-none p-0 bg-transparent">
             <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -3935,9 +3964,9 @@ export default function AccountingPage() {
 
       {/* PROFIT & LOSS TAB */}
       {activeTab === "profit_loss" && (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* Metrics Cards Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-3.5">
             {[
               {
                 label: "Total Revenue",
@@ -3972,16 +4001,19 @@ export default function AccountingPage() {
             ].map((card, i) => (
               <Card
                 key={i}
-                className="rounded-[4px] border border-[#E2E8F0] p-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
+                className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)] min-w-0"
               >
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide truncate">
+                <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wide truncate">
                   {card.label}
                 </div>
-                <div className="text-lg font-black text-slate-800 mt-2">
+                <div
+                  title={`₹ ${card.val}`}
+                  className="text-base md:text-lg font-black text-slate-800 mt-1 md:mt-2 tabular-nums truncate"
+                >
                   ₹ {card.val}
                 </div>
                 {card.sub && (
-                  <div className="text-[9.5px] text-slate-450 font-bold mt-1">
+                  <div className="text-[9.5px] text-slate-450 font-bold mt-1 truncate">
                     {card.sub}
                   </div>
                 )}
@@ -3990,9 +4022,9 @@ export default function AccountingPage() {
           </div>
 
           {/* Income Statement Detailed breakdown row */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-6">
             {/* Income Card */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col justify-between min-h-[350px]">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col justify-between min-h-[350px]">
               <div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">
                   Income
@@ -4029,7 +4061,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Direct Trip Expenses Card */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col justify-between min-h-[350px]">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col justify-between min-h-[350px]">
               <div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">
                   Direct Trip Expenses (Cost of Sales)
@@ -4075,7 +4107,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Office & Operating Expenses Card */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col justify-between min-h-[350px]">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col justify-between min-h-[350px]">
               <div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">
                   Office & Operating Expenses
@@ -4117,8 +4149,8 @@ export default function AccountingPage() {
             </Card>
 
             {/* Profit Summary & Charts Card */}
-            <div className="space-y-6">
-              <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <div className="space-y-3 md:space-y-6">
+              <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">
                   Profit Summary
                 </h3>
@@ -4188,9 +4220,9 @@ export default function AccountingPage() {
           </div>
 
           {/* Monthly Comparison and Profitable Trips Register Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-6">
             {/* Monthly Comparison */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">
                 Monthly Comparison
               </h3>
@@ -4252,7 +4284,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Top Profitable Trips */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">
                 Top Profitable Trips{" "}
                 <span className="text-slate-400 text-[10px] font-normal normal-case ml-1">
@@ -4307,7 +4339,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Loss Making Trips */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2">
                 Loss Making Trips{" "}
                 <span className="text-slate-400 text-[10px] font-normal normal-case ml-1">
@@ -4354,7 +4386,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Net Profit Donut Chart Widget */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm flex flex-col justify-between">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm flex flex-col justify-between">
               <h4 className="text-[10.5px] font-black text-slate-800 uppercase tracking-wide">
                 Monthly Net Profit
               </h4>
@@ -4373,9 +4405,9 @@ export default function AccountingPage() {
           </div>
 
           {/* Refund Summary, Adjustments, Other Income, Notes Footer Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-6">
             {/* Refund Summary */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5 text-orange-500" /> Refund
                 Summary
@@ -4407,7 +4439,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Adjustments */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-blue-500" /> Adjustments
               </h3>
@@ -4440,7 +4472,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Other Income */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-1.5">
                 <IndianRupee className="w-3.5 h-3.5 text-emerald-500" /> Other
                 Income
@@ -4466,7 +4498,7 @@ export default function AccountingPage() {
             </Card>
 
             {/* Notes */}
-            <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-2">
+            <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-2">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-slate-400" /> Notes
               </h3>
@@ -4481,7 +4513,7 @@ export default function AccountingPage() {
 
       {/* TRIP PROFITABILITY TAB */}
       {activeTab === "trip_profitability" && (
-        <Card className="rounded-[4px] border border-[#E2E8F0] p-5 bg-white shadow-sm space-y-4">
+        <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
             Trip-wise Profitability Register
           </h3>
@@ -4540,7 +4572,7 @@ export default function AccountingPage() {
 
       {/* REPORTS TAB */}
       {activeTab === "reports" && (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* Popular Reports Section */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -4552,7 +4584,7 @@ export default function AccountingPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-2 md:gap-3.5">
               {[
                 {
                   label: "Profit & Loss Statement",
@@ -4593,7 +4625,7 @@ export default function AccountingPage() {
               ].map((r, idx) => (
                 <div
                   key={idx}
-                  className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-3xs flex flex-col justify-between min-h-[140px] hover:border-slate-300 transition-colors cursor-pointer"
+                  className="bg-white border border-[#E2E8F0] rounded-xl md:rounded-[6px] p-3 md:p-4 shadow-3xs flex flex-col justify-between min-h-[110px] md:min-h-[140px] hover:border-slate-300 transition-colors cursor-pointer"
                 >
                   <div>
                     <div
