@@ -82,9 +82,6 @@ const ApprovalsHubPage = lazy(
 const VerificationQueuePage = lazy(
   () => import("./pages/admin/VerificationQueuePage.tsx"),
 );
-const TicketApprovalsPage = lazy(
-  () => import("./pages/admin/TicketApprovalsPage.tsx"),
-);
 
 // ── Finance ──
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
@@ -446,11 +443,7 @@ const App = () => (
                 />
                 <Route
                   path="/admin/ticket-approvals"
-                  element={
-                    <AdminRoute requiredPermission="tickets.approve">
-                      <TicketApprovalsPage />
-                    </AdminRoute>
-                  }
+                  element={<Navigate to="/admin/approvals-hub" replace />}
                 />
 
                 {/* Unified Finance Control Hub */}

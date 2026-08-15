@@ -15,12 +15,10 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
 import VerificationQueuePage from "./VerificationQueuePage";
-import TicketApprovalsPage from "./TicketApprovalsPage";
 import FinanceControlCenterPage from "./FinanceControlCenterPage";
 
 type ApprovalTab =
   | "booking-verification"
-  | "ticket-approvals"
   | "payment-approvals"
   | "vendor-bills"
   | "refund-requests"
@@ -37,12 +35,6 @@ const TABS: {
     label: "Booking Verification",
     icon: ShieldCheck,
     description: "Verify booking details and documents",
-  },
-  {
-    key: "ticket-approvals",
-    label: "Ticket Approvals",
-    icon: Ticket,
-    description: "Review generated tickets before issuing",
   },
   {
     key: "payment-approvals",
@@ -124,7 +116,6 @@ export default function ApprovalsHubPage() {
       {/* Content */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm min-h-[400px]">
         {activeTab === "booking-verification" && <VerificationQueuePage />}
-        {activeTab === "ticket-approvals" && <TicketApprovalsPage />}
         {["payment-approvals", "vendor-bills", "refund-requests", "expense-claims"].includes(activeTab) && (
           <FinanceControlCenterPage />
         )}

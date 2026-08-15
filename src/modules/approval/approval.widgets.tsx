@@ -37,12 +37,6 @@ export const ApprovalQueueWidget: React.FC<DashboardWidgetContextProps> = ({
           path: "/admin/approvals-hub",
         },
         {
-          label: "Ticket Approvals",
-          count: ticketPendingCount,
-          color: "text-[#F97316] bg-[#FFF7E6] border-[#FFD580]",
-          path: "/admin/ticket-approvals",
-        },
-        {
           label: "Refund Requests",
           count: 1,
           color: "text-[#2563EB] bg-[#EFF6FF] border-[#B8D4FF]",

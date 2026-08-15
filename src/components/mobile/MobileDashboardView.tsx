@@ -11,6 +11,8 @@ import {
   Compass,
   AlertTriangle,
   CheckCircle2,
+  Users,
+  Train,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -135,6 +137,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
     userRole,
   );
   const canViewTrips = hasPermission(userPerms, PERMISSIONS.TRIPS_VIEW, userRole);
+  const canViewTicketing = hasPermission(userPerms, "tickets.view", userRole);
 
   const periodPrefix = PERIOD_PREFIX[dateFilter] || "TOTAL";
 

@@ -30,9 +30,6 @@ export const COMPONENT_REGISTRY: Record<
     () => import("../pages/admin/CompanyDocumentsPage.tsx"),
   ),
   "approvals-hub": lazy(() => import("../pages/admin/ApprovalsHubPage.tsx")),
-  "ticket-approvals": lazy(
-    () => import("../pages/admin/TicketApprovalsPage.tsx"),
-  ),
   accounting: lazy(() => import("../pages/admin/AccountingPage.tsx")),
   "travel-desk": lazy(() => import("../pages/admin/TravelDeskPage.tsx")),
   trips: lazy(() => import("../pages/admin/TripsPage.tsx")),

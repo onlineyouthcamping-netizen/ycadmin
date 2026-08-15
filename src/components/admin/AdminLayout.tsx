@@ -139,7 +139,6 @@ const sidebarModules: SidebarModule[] = [
         title: "Booking Verification",
         url: "/admin/approvals-hub?tab=booking-verification",
       },
-      { title: "Ticket Approvals", url: "/admin/ticket-approvals" },
       {
         title: "Refund Requests",
         url: "/admin/approvals-hub?tab=refund-requests",
@@ -350,7 +349,6 @@ function AdminSidebar() {
                   "tickets.approve",
                   "accounting.view",
                 ],
-                "/admin/ticket-approvals": ["tickets.approve", "tickets.view"],
                 "/admin/accounting": ["accounting.view", "finance.view"],
                 "/admin/travel-desk": [
                   "tickets.view",

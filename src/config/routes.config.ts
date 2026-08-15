@@ -173,14 +173,6 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     },
     breadcrumbLabel: "Approval Center / Booking Verification",
   },
-  {
-    id: "ticket-approvals",
-    label: "Ticket Approvals",
-    path: "/admin/ticket-approvals",
-    permission: "tickets.approve",
-    navigation: { visible: true, group: "Approval Center", iconName: "Ticket" },
-    breadcrumbLabel: "Approval Center / Ticket Approvals",
-  },
 
   // Finance Module
   {
