@@ -165,17 +165,40 @@ export function PassengerDrawer({
     paymentStatusText === "completed" ||
     (booking?.remainingAmount !== undefined && booking.remainingAmount <= 0);
 
+  // Preview modal state
+  const [previewModalDoc, setPreviewModalDoc] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
+
   // Aggregate all passenger documents from all available sources
   const allPassengerDocs = (() => {
     const list: any[] = [];
+    const pId = String(passenger?.id || "");
+
+    const getFullDocUrl = (url?: string, docId?: string) => {
+      if (url && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:"))) {
+        return url;
+      }
+      if (url && url.startsWith("/")) {
+        return `${API_BASE_URL}${url}`;
+      }
+      if (docId && booking?.id) {
+        return `${API_BASE_URL}/api/bookings/${booking.id}/documents/${docId}`;
+      }
+      return url || "";
+    };
 
     if (Array.isArray(formData.documents)) {
       formData.documents.forEach((d: any) => {
-        if (d && (d.url || d.fileUrl)) {
+        if (d && (d.url || d.fileUrl || d.id)) {
+          const finalUrl = getFullDocUrl(d.url || d.fileUrl, d.id);
           list.push({
-            id: d.id || `doc-${d.url}`,
+            id: d.id || `doc-${d.url || Math.random()}`,
             title: d.title || d.originalFileName || "Aadhaar / ID Proof",
-            url: d.url || d.fileUrl,
+            url: finalUrl,
+            fileUrl: finalUrl,
+            mimeType: d.mimeType,
           });
         }
       });
@@ -183,11 +206,14 @@ export function PassengerDrawer({
 
     if (Array.isArray(passenger?.documents)) {
       passenger.documents.forEach((d: any) => {
-        if (d && (d.url || d.fileUrl)) {
+        if (d && (d.url || d.fileUrl || d.id)) {
+          const finalUrl = getFullDocUrl(d.url || d.fileUrl, d.id);
           list.push({
-            id: d.id || `pdoc-${d.url}`,
+            id: d.id || `pdoc-${d.url || Math.random()}`,
             title: d.title || d.originalFileName || "Aadhaar / ID Proof",
-            url: d.url || d.fileUrl,
+            url: finalUrl,
+            fileUrl: finalUrl,
+            mimeType: d.mimeType,
           });
         }
       });
@@ -196,33 +222,43 @@ export function PassengerDrawer({
     if (Array.isArray((booking as any)?.documents)) {
       (booking as any).documents.forEach((d: any) => {
         if (
-          String(d.passengerId) === String(passenger.id) ||
-          (passenger.id === "primary" && (!d.passengerId || d.passengerId === "primary"))
+          String(d.passengerId) === pId ||
+          (pId === "primary" && (!d.passengerId || d.passengerId === "primary" || d.passengerId === "main")) ||
+          (pId === "main" && (!d.passengerId || d.passengerId === "primary" || d.passengerId === "main"))
         ) {
+          const finalUrl = getFullDocUrl(d.url || d.fileUrl, d.id);
           list.push({
             id: d.id,
-            title: d.originalFileName || d.title || "Document",
-            url: d.url || d.fileUrl,
+            title: d.originalFileName || d.title || "Aadhaar / ID Proof",
+            url: finalUrl,
+            fileUrl: finalUrl,
+            mimeType: d.mimeType,
           });
         }
       });
     }
 
     const directIdUrl =
+      (formData as any).aadhaarUrl ||
+      (formData as any).idProofUrl ||
       (formData as any).idProof ||
       formData.aadhaar ||
-      (passenger as any).idProof ||
-      passenger.aadhaar;
+      (passenger as any)?.aadhaarUrl ||
+      (passenger as any)?.idProofUrl ||
+      (passenger as any)?.idProof ||
+      passenger?.aadhaar;
 
     if (
       directIdUrl &&
       typeof directIdUrl === "string" &&
-      (directIdUrl.startsWith("http") || directIdUrl.startsWith("/"))
+      (directIdUrl.startsWith("http") || directIdUrl.startsWith("/") || directIdUrl.startsWith("data:"))
     ) {
+      const finalUrl = getFullDocUrl(directIdUrl);
       list.push({
-        id: `direct-idproof-${passenger.id}`,
+        id: `direct-idproof-${pId}`,
         title: "Aadhaar / ID Proof",
-        url: directIdUrl,
+        url: finalUrl,
+        fileUrl: finalUrl,
       });
     }
 
@@ -628,31 +664,47 @@ export function PassengerDrawer({
 
             {allPassengerDocs.length > 0 ? (
               <div className="space-y-2">
-                {allPassengerDocs.map((doc: any) => (
-                  <div key={doc.id || doc.url} className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 overflow-hidden min-w-0">
-                      <CreditCard className="w-4 h-4 text-orange-600 shrink-0" />
-                      <span className="font-bold text-slate-800 truncate">{doc.title || "Aadhaar / ID Proof"}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <a
-                        href={doc.url || doc.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 hover:underline font-bold text-[10px] flex items-center gap-0.5 px-1.5 py-0.5"
+                {allPassengerDocs.map((doc: any) => {
+                  const docUrl = doc.url || doc.fileUrl;
+                  const isPdf = docUrl?.toLowerCase().includes(".pdf") || doc.mimeType?.includes("pdf");
+                  return (
+                    <div key={doc.id || docUrl} className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs hover:bg-slate-100/70 transition-colors">
+                      <div
+                        className="flex items-center gap-2 overflow-hidden min-w-0 cursor-pointer flex-1"
+                        onClick={() => setPreviewModalDoc({ url: docUrl, title: doc.title || "Aadhaar / ID Proof" })}
                       >
-                        View <ExternalLink className="w-3 h-3" />
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveDoc(doc.id)}
-                        className="text-rose-600 hover:text-rose-700 font-bold text-[10px] px-1.5 py-0.5"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <CreditCard className="w-4 h-4 text-orange-600 shrink-0" />
+                        <span className="font-bold text-slate-800 truncate hover:text-orange-600">{doc.title || "Aadhaar / ID Proof"}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewModalDoc({ url: docUrl, title: doc.title || "Aadhaar / ID Proof" })}
+                          className="bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-[10px] flex items-center gap-0.5 px-2 py-1 rounded border border-orange-200"
+                        >
+                          View <ExternalLink className="w-3 h-3" />
+                        </button>
+                        <a
+                          href={docUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-slate-500 hover:text-slate-800 font-bold text-[10px] px-1.5 py-1"
+                          title="Open in new tab"
+                        >
+                          ↗
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDoc(doc.id)}
+                          className="text-rose-600 hover:text-rose-700 font-bold text-[10px] px-1.5 py-0.5"
+                          title="Remove document"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="p-4 border border-dashed border-slate-200 rounded-lg text-center text-slate-400 text-xs italic">
@@ -661,6 +713,52 @@ export function PassengerDrawer({
             )}
           </TabsContent>
         </Tabs>
+
+        {/* In-drawer Document Preview Modal */}
+        {previewModalDoc && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-orange-600" />
+                  <span className="font-bold text-slate-900 text-sm">{previewModalDoc.title}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={previewModalDoc.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded"
+                  >
+                    Open Original <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewModalDoc(null)}
+                    className="text-slate-400 hover:text-slate-700 font-bold text-base px-2 py-0.5"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-slate-100 min-h-[300px]">
+                {previewModalDoc.url.toLowerCase().includes(".pdf") ? (
+                  <iframe
+                    src={previewModalDoc.url}
+                    className="w-full h-[500px] rounded border border-slate-200 bg-white"
+                    title={previewModalDoc.title}
+                  />
+                ) : (
+                  <img
+                    src={previewModalDoc.url}
+                    alt={previewModalDoc.title}
+                    className="max-h-[500px] max-w-full object-contain rounded shadow-xs"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

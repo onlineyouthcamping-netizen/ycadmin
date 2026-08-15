@@ -15,6 +15,8 @@ export interface NormalizedPassenger {
   roomSharing: string;
   foodPreference: string;
   aadhaar: string;
+  aadhaarUrl?: string;
+  idProofUrl?: string;
   documents: any[];
   formattedAgeGender: string; // e.g. "24y / M"
   emergencyContact: string;
@@ -296,15 +298,79 @@ export function normalizePassenger(
   const remarks = pObj.remarks || "";
   const internalNotes = pObj.internalNotes || "";
 
-  // Match documents
-  let documents: any[] = [];
+  // Extract direct ID / Aadhaar proof URL if present
+  const directIdProof =
+    pObj.aadhaarUrl ||
+    pObj.idProofUrl ||
+    (typeof pObj.aadhaar === "string" && (pObj.aadhaar.startsWith("http") || pObj.aadhaar.startsWith("/")) ? pObj.aadhaar : null) ||
+    (typeof pObj.idProof === "string" && (pObj.idProof.startsWith("http") || pObj.idProof.startsWith("/")) ? pObj.idProof : null) ||
+    (index === 0 && bookingDetails.aadhaarUrl) ||
+    (index === 0 && bookingDetails.idProofUrl) ||
+    null;
+
+  // Match documents from all available sources
+  const docList: any[] = [];
+
   if (booking && Array.isArray(booking.documents)) {
-    documents = booking.documents.filter(
-      (d: any) => d.passengerId === id || (index === 0 && !d.passengerId),
-    );
-  } else if (Array.isArray(pObj.documents)) {
-    documents = pObj.documents;
+    booking.documents.forEach((d: any) => {
+      if (
+        d &&
+        (String(d.passengerId) === String(id) ||
+          (index === 0 && (!d.passengerId || d.passengerId === "primary" || d.passengerId === "main")))
+      ) {
+        docList.push({
+          id: d.id || `bdoc-${d.storagePath || Math.random()}`,
+          title: d.originalFileName || d.title || "Aadhaar / ID Proof",
+          originalFileName: d.originalFileName || d.title || "Aadhaar / ID Proof",
+          url: d.url || d.fileUrl || (booking.id && d.id ? `/api/bookings/${booking.id}/documents/${d.id}` : ""),
+          fileUrl: d.url || d.fileUrl || (booking.id && d.id ? `/api/bookings/${booking.id}/documents/${d.id}` : ""),
+          mimeType: d.mimeType || "application/octet-stream",
+          fileSize: d.fileSize,
+          status: d.status || "UPLOADED",
+          uploadedAt: d.createdAt || d.uploadedAt,
+        });
+      }
+    });
   }
+
+  if (Array.isArray(pObj.documents)) {
+    pObj.documents.forEach((d: any) => {
+      if (d) {
+        docList.push({
+          id: d.id || `pdoc-${d.url || Math.random()}`,
+          title: d.title || d.originalFileName || "Document",
+          originalFileName: d.originalFileName || d.title || "Document",
+          url: d.url || d.fileUrl || "",
+          fileUrl: d.url || d.fileUrl || "",
+          mimeType: d.mimeType,
+          uploadedAt: d.uploadedAt || d.createdAt,
+        });
+      }
+    });
+  }
+
+  if (directIdProof) {
+    docList.push({
+      id: `direct-idproof-${id}`,
+      title: "Aadhaar / ID Proof",
+      originalFileName: "Aadhaar / ID Proof",
+      url: directIdProof,
+      fileUrl: directIdProof,
+      mimeType: "image/jpeg",
+    });
+  }
+
+  // De-duplicate documents
+  const documents = docList.filter(
+    (doc, idx, self) =>
+      doc &&
+      (doc.url || doc.id) &&
+      self.findIndex(
+        (d) =>
+          (d.url && doc.url && d.url === doc.url) ||
+          (d.id && doc.id && d.id === doc.id),
+      ) === idx,
+  );
 
   const isCancelled =
     pObj.isCancelled === true ||
@@ -327,6 +393,8 @@ export function normalizePassenger(
     roomSharing: String(roomSharing),
     foodPreference: String(foodPreference),
     aadhaar: String(aadhaar),
+    aadhaarUrl: directIdProof || undefined,
+    idProofUrl: directIdProof || undefined,
     documents,
     formattedAgeGender,
     emergencyContact: String(emergencyContact),

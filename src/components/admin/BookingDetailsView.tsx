@@ -129,6 +129,11 @@ export default function BookingDetailsView({
   const [selectedPassengerIds, setSelectedPassengerIds] = useState<string[]>([]);
   const [isPassengerDrawerOpen, setIsPassengerDrawerOpen] = useState(false);
   const [activePassenger, setActivePassenger] = useState<any>(null);
+  const [docPreviewModal, setDocPreviewModal] = useState<{
+    url: string;
+    title: string;
+    passengerName?: string;
+  } | null>(null);
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
   const [editedCustomerName, setEditedCustomerName] = useState(
     booking.fullName || booking.name || "",
@@ -3332,27 +3337,37 @@ export default function BookingDetailsView({
                                               <button
                                                 type="button"
                                                 onClick={() => {
-                                                  setSelectedDoc({
-                                                    ...doc,
-                                                    passengerName: normP.name,
-                                                    passengerId: normP.id,
-                                                  });
-                                                  setShowDocPreview(true);
+                                                  const docUrl = doc.url || doc.fileUrl;
+                                                  if (docUrl) {
+                                                    const fullUrl = docUrl.startsWith("http://") || docUrl.startsWith("https://") || docUrl.startsWith("data:") || docUrl.startsWith("blob:")
+                                                      ? docUrl
+                                                      : `${API_BASE_URL}${docUrl.startsWith("/") ? "" : "/"}${docUrl}`;
+                                                    setDocPreviewModal({
+                                                      url: fullUrl,
+                                                      title: doc.originalFileName || doc.title || "Aadhaar / ID Proof",
+                                                      passengerName: normP.name,
+                                                    });
+                                                  } else {
+                                                    handleViewDoc(
+                                                      normP.id,
+                                                      doc.originalFileName || doc.title || "Aadhaar / ID Proof",
+                                                      doc.id,
+                                                    );
+                                                  }
                                                 }}
-                                                className="text-[9px] text-orange-600 hover:text-orange-700 font-bold"
+                                                className="text-[9px] text-orange-600 hover:text-orange-700 font-bold cursor-pointer"
                                               >
                                                 View
                                               </button>
                                               <button
                                                 type="button"
                                                 onClick={() =>
-                                                  handleDeleteDocument(
-                                                    doc.id,
-                                                    doc.url,
+                                                  handleRemoveDoc(
                                                     p.id,
+                                                    doc.id,
                                                   )
                                                 }
-                                                className="text-[9px] text-red-500 hover:text-red-700 font-bold"
+                                                className="text-[9px] text-red-500 hover:text-red-700 font-bold cursor-pointer"
                                               >
                                                 Delete
                                               </button>
@@ -6523,6 +6538,57 @@ export default function BookingDetailsView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Document Preview Modal */}
+      {docPreviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-5 h-5 text-orange-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">{docPreviewModal.title}</h3>
+                  {docPreviewModal.passengerName && (
+                    <p className="text-[11px] text-slate-500 font-medium">Passenger: {docPreviewModal.passengerName}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={docPreviewModal.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Open in New Tab <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setDocPreviewModal(null)}
+                  className="text-slate-400 hover:text-slate-700 font-bold text-lg px-2.5 py-1 rounded-lg hover:bg-slate-200/60 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-slate-100 min-h-[350px]">
+              {docPreviewModal.url.toLowerCase().includes(".pdf") ? (
+                <iframe
+                  src={docPreviewModal.url}
+                  className="w-full h-[550px] rounded-lg border border-slate-200 bg-white"
+                  title={docPreviewModal.title}
+                />
+              ) : (
+                <img
+                  src={docPreviewModal.url}
+                  alt={docPreviewModal.title}
+                  className="max-h-[550px] max-w-full object-contain rounded-lg shadow-md"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
