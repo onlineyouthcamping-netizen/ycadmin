@@ -428,7 +428,7 @@ export default function DeparturePayments({
           .catch(() => ({ bookings: [], receipts: [] })),
         opsService.getVendorPayments(tripId, departureDateStr).catch(() => []),
         api.get("/vendors/directory").catch(() => ({ data: { data: [] } })),
-        opsService.getTripExpenses(tripId).catch(() => []),
+        opsService.getTripExpenses(tripId, departureDateStr).catch(() => []),
         trainTicketService
           .getFinanceSummary({ tripId, departureDate: departureDateStr })
           .catch(() => ({ summary: {}, tickets: [] })),
