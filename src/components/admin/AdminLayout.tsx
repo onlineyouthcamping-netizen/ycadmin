@@ -136,8 +136,20 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       {
-        title: "Booking Verification",
+        title: "Train Ticket Approvals",
+        url: "/admin/approvals-hub?tab=train-verification",
+      },
+      {
+        title: "Booking & Docs Verification",
         url: "/admin/approvals-hub?tab=booking-verification",
+      },
+      {
+        title: "Incoming Payments",
+        url: "/admin/approvals-hub?tab=payment-approvals",
+      },
+      {
+        title: "Outgoing Vendor Payments",
+        url: "/admin/approvals-hub?tab=vendor-bills",
       },
       {
         title: "Refund Requests",
