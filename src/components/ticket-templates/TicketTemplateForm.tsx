@@ -52,6 +52,9 @@ export function TicketTemplateForm({
     defaultCoach: initialData?.defaultCoach || "",
     boardingPoint: initialData?.boardingPoint || "",
     droppingPoint: initialData?.droppingPoint || "",
+    estimatedTicketCost: initialData?.estimatedTicketCost
+      ? String(initialData.estimatedTicketCost)
+      : "",
 
     // Flight
     flightAirline: initialData?.flightAirline || "",
@@ -399,6 +402,27 @@ export function TicketTemplateForm({
             </div>
           </>
         )}
+
+        <div className="space-y-1.5 col-span-2 md:col-span-1">
+          <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+            Internal Estimated Ticket Cost (₹ / Pax)
+          </label>
+          <Input
+            type="number"
+            placeholder="e.g. 1850"
+            value={formData.estimatedTicketCost}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                estimatedTicketCost: e.target.value,
+              })
+            }
+            className="h-8.5 text-xs rounded-[4px] border-[#E2E8F0] font-bold text-emerald-600"
+          />
+          <p className="text-[10px] text-slate-400">
+            Package-included internal cost per person for operational costing and trip profitability.
+          </p>
+        </div>
 
         <div className="space-y-1.5 col-span-2">
           <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">

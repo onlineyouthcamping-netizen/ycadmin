@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { opsService } from "@/services/ops.service";
+import { trainTicketService } from "@/services/trainTicket.service";
 import api from "@/services/api";
 
 interface DeparturePaymentsProps {
@@ -64,6 +65,7 @@ export default function DeparturePayments({
   const [receipts, setReceipts] = useState<any[]>([]);
   const [vendorPayments, setVendorPayments] = useState<any[]>([]);
   const [dbVendors, setDbVendors] = useState<any[]>([]);
+  const [trainTickets, setTrainTickets] = useState<any[]>([]);
 
   // Local state for Activities, Misc Expenses, and Adjustments
   const [activityPayments, setActivityPayments] = useState<any[]>([]);
@@ -420,13 +422,16 @@ export default function DeparturePayments({
   // Fetch API data and merge cleanly with defaults if API is empty
   const fetchData = async () => {
     try {
-      const [clientRes, vendorRes, vendorsDirRes, expensesRes] = await Promise.all([
+      const [clientRes, vendorRes, vendorsDirRes, expensesRes, trainSummaryRes] = await Promise.all([
         opsService
           .getClientPayments(tripId, departureDateStr)
           .catch(() => ({ bookings: [], receipts: [] })),
         opsService.getVendorPayments(tripId, departureDateStr).catch(() => []),
         api.get("/vendors/directory").catch(() => ({ data: { data: [] } })),
         opsService.getTripExpenses(tripId).catch(() => []),
+        trainTicketService
+          .getFinanceSummary({ tripId, departureDate: departureDateStr })
+          .catch(() => ({ summary: {}, tickets: [] })),
       ]);
 
       const mergedBookings =
@@ -498,14 +503,12 @@ export default function DeparturePayments({
               paid > 0
                 ? [
                     {
-                      date:
-                        departureDateStr ||
-                        new Date().toISOString().substring(0, 10),
+                      date: new Date().toISOString().substring(0, 10),
                       amount: paid,
-                      method: "Bank Transfer",
-                      txnId: `ADV-${(tv.id || "101").slice(-6)}`,
+                      method: "Auto-Assigned Trip Rate",
+                      txnId: "AUTO-SYNC",
                       type: "ADVANCE",
-                      status: "Paid",
+                      status: statusLabel,
                     },
                   ]
                 : [],
@@ -513,16 +516,16 @@ export default function DeparturePayments({
         }
       });
 
-      // Filter categorized trip expenses
-      const fetchedExpenses = Array.isArray(expensesRes) ? expensesRes : [];
-      const activities = fetchedExpenses.filter((e: any) => e.category === "activities" || e.category === "Activity");
-      const misc = fetchedExpenses.filter((e: any) => e.category === "misc" || e.category === "Emergency" || e.category === "Miscellaneous");
-      const recons = fetchedExpenses.filter((e: any) => e.category === "reconciliation" || e.category === "Refund" || e.category === "Dispute");
+      // Filter and map Trip Expenses into local activities and misc
+      const activities = (expensesRes || []).filter((e: any) => e.category === "ACTIVITIES");
+      const misc = (expensesRes || []).filter((e: any) => e.category === "MISCELLANEOUS" || e.category === "OTHER");
+      const recons = (expensesRes || []).filter((e: any) => e.category === "ADJUSTMENT");
 
       setBookings(mergedBookings);
       setReceipts(clientRes.receipts || []);
       setVendorPayments(mergedVendors);
       setDbVendors(vendorsDirRes.data?.data || []);
+      setTrainTickets(trainSummaryRes?.tickets || []);
 
       if (activities.length > 0) setActivityPayments(activities);
       if (misc.length > 0) setMiscPayments(misc);
@@ -532,6 +535,7 @@ export default function DeparturePayments({
       console.error("fetchData error in DeparturePayments:", err);
       setBookings([]);
       setVendorPayments([]);
+      setTrainTickets([]);
     }
   };
 
@@ -539,19 +543,39 @@ export default function DeparturePayments({
     fetchData();
   }, [tripId, departureDateStr, tripVendors]);
 
-  // Live Calculated Stats across all 5 categories
+  // Live Calculated Stats across all categories
   const calculatedStats = useMemo(() => {
     const activeBookings = bookings;
     const activeVendors = vendorPayments;
     const activeActivities = activityPayments;
     const activeMisc = miscPayments;
 
+    const totalPax =
+      activeBookings.reduce((sum, b) => {
+        if (b.numberOfTravelers && Number(b.numberOfTravelers) > 0) {
+          return sum + Number(b.numberOfTravelers);
+        }
+        try {
+          const parsed =
+            typeof b.passengers === "string"
+              ? JSON.parse(b.passengers)
+              : b.passengers;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return sum + parsed.length;
+          }
+        } catch {
+          // ignore
+        }
+        return sum + 1;
+      }, 0) || 1;
+
+    // 1. CLIENT / SALES REVENUE
     const totalClientRevenue = activeBookings.reduce(
-      (s, b) => s + (b.totalAmount || 0),
+      (sum, b) => sum + (Number(b.totalAmount) || 0),
       0,
     );
     const clientAmountReceived = activeBookings.reduce(
-      (s, b) => s + (b.advancePaid || 0),
+      (sum, b) => sum + (Number(b.advancePaid) || 0),
       0,
     );
     const clientOutstandingBalance = Math.max(
@@ -560,15 +584,16 @@ export default function DeparturePayments({
     );
     const clientCollectedPercent =
       totalClientRevenue > 0
-        ? ((clientAmountReceived / totalClientRevenue) * 100).toFixed(1)
+        ? ((clientAmountReceived / totalClientRevenue) * 100).toFixed(0)
         : "0";
 
+    // 2. VENDOR EXPENSES
     const totalVendorPayable = activeVendors.reduce(
-      (s, v) => s + (v.agreedAmount || 0),
+      (sum, v) => sum + (Number(v.agreedAmount) || 0),
       0,
     );
     const vendorAmountPaid = activeVendors.reduce(
-      (s, v) => s + (v.advancePaid || 0),
+      (sum, v) => sum + (Number(v.advancePaid) || 0),
       0,
     );
     const vendorOutstandingBalance = Math.max(
@@ -579,6 +604,69 @@ export default function DeparturePayments({
       totalVendorPayable > 0
         ? ((vendorAmountPaid / totalVendorPayable) * 100).toFixed(0)
         : "0";
+
+    // Category Breakdowns
+    const hotelVendors = activeVendors.filter((v) => v.category === "Hotels");
+    const transportVendors = activeVendors.filter(
+      (v) => v.category === "Transport",
+    );
+    const guideVendors = activeVendors.filter((v) => v.category === "Guides");
+
+    const totalHotelsCost = hotelVendors.reduce(
+      (s, v) => s + (v.agreedAmount || 0),
+      0,
+    );
+    const totalHotelsPaid = hotelVendors.reduce(
+      (s, v) => s + (v.advancePaid || 0),
+      0,
+    );
+    const totalHotelsDue = Math.max(0, totalHotelsCost - totalHotelsPaid);
+
+    const totalTransportsCost = transportVendors.reduce(
+      (s, v) => s + (v.agreedAmount || 0),
+      0,
+    );
+    const totalTransportsPaid = transportVendors.reduce(
+      (s, v) => s + (v.advancePaid || 0),
+      0,
+    );
+    const totalTransportsDue = Math.max(
+      0,
+      totalTransportsCost - totalTransportsPaid,
+    );
+
+    const totalGuidesCost = guideVendors.reduce(
+      (s, v) => s + (v.agreedAmount || 0),
+      0,
+    );
+    const totalGuidesPaid = guideVendors.reduce(
+      (s, v) => s + (v.advancePaid || 0),
+      0,
+    );
+    const totalGuidesDue = Math.max(0, totalGuidesCost - totalGuidesPaid);
+
+    // 3. TRAIN TICKETS (INCLUDED IN PACKAGE COST CENTER)
+    const companyTrainTickets = trainTickets.filter((t) => t.paidBy !== "CUSTOMER");
+    let totalTrainCost = 0;
+    let totalTrainPaid = 0;
+    companyTrainTickets.forEach((t) => {
+      const amt = Number(t.ticketAmount || 0);
+      const rCharge = Number(t.railwayCancellationCharge || 0);
+      const yCharge = Number(t.ycCancellationCharge || 0);
+
+      if (t.ticketStatus === "CONFIRMED" || t.ticketStatus === "BOOKED") {
+        totalTrainCost += amt;
+        totalTrainPaid += amt;
+      } else if (t.ticketStatus === "CANCELLED") {
+        totalTrainCost += rCharge + yCharge;
+        if (t.refundStatus === "COMPLETED") {
+          totalTrainPaid += rCharge + yCharge;
+        }
+      } else {
+        totalTrainCost += amt;
+      }
+    });
+    const totalTrainDue = Math.max(0, totalTrainCost - totalTrainPaid);
 
     const totalActivityCost = activeActivities.reduce(
       (s, a) => s + (a.totalCost || 0),
@@ -604,14 +692,29 @@ export default function DeparturePayments({
     const miscPendingApproval = totalMiscExpenses - miscApproved;
 
     const totalCosts =
-      totalVendorPayable + totalActivityCost + totalMiscExpenses;
+      totalVendorPayable + totalActivityCost + totalTrainCost + totalMiscExpenses;
     const estimatedProfit = totalClientRevenue - totalCosts;
     const profitMargin =
       totalClientRevenue > 0
         ? ((estimatedProfit / totalClientRevenue) * 100).toFixed(1)
         : "0.0";
 
+    // Unit Economics Per Pax
+    const revenuePerPax = Math.round(totalClientRevenue / totalPax);
+    const receivedPerPax = Math.round(clientAmountReceived / totalPax);
+    const outstandingPerPax = Math.round(clientOutstandingBalance / totalPax);
+
+    const hotelsCostPerPax = Math.round(totalHotelsCost / totalPax);
+    const transportsCostPerPax = Math.round(totalTransportsCost / totalPax);
+    const guidesCostPerPax = Math.round(totalGuidesCost / totalPax);
+    const trainCostPerPax = Math.round(totalTrainCost / totalPax);
+    const activitiesCostPerPax = Math.round(totalActivityCost / totalPax);
+    const miscCostPerPax = Math.round(totalMiscExpenses / totalPax);
+    const totalCostsPerPax = Math.round(totalCosts / totalPax);
+    const profitPerPax = Math.round(estimatedProfit / totalPax);
+
     return {
+      totalPax,
       totalClientRevenue,
       clientAmountReceived,
       clientOutstandingBalance,
@@ -620,6 +723,18 @@ export default function DeparturePayments({
       vendorAmountPaid,
       vendorOutstandingBalance,
       vendorPaidPercent,
+      totalHotelsCost,
+      totalHotelsPaid,
+      totalHotelsDue,
+      totalTransportsCost,
+      totalTransportsPaid,
+      totalTransportsDue,
+      totalGuidesCost,
+      totalGuidesPaid,
+      totalGuidesDue,
+      totalTrainCost,
+      totalTrainPaid,
+      totalTrainDue,
       totalActivityCost,
       activityAmountPaid,
       activityPending,
@@ -630,8 +745,19 @@ export default function DeparturePayments({
       totalCosts,
       estimatedProfit,
       profitMargin,
+      revenuePerPax,
+      receivedPerPax,
+      outstandingPerPax,
+      hotelsCostPerPax,
+      transportsCostPerPax,
+      guidesCostPerPax,
+      trainCostPerPax,
+      activitiesCostPerPax,
+      miscCostPerPax,
+      totalCostsPerPax,
+      profitPerPax,
     };
-  }, [bookings, vendorPayments, activityPayments, miscPayments]);
+  }, [bookings, vendorPayments, activityPayments, miscPayments, trainTickets]);
 
   // Helper currency formatting
   const formatCurrency = (val: number) => {
@@ -653,6 +779,20 @@ export default function DeparturePayments({
       }
     } catch {}
     return "Lead Passenger";
+  };
+
+  const getPassengerCount = (booking: any) => {
+    if (booking.numberOfTravelers && Number(booking.numberOfTravelers) > 0) {
+      return Number(booking.numberOfTravelers);
+    }
+    try {
+      const parsed =
+        typeof booking.passengers === "string"
+          ? JSON.parse(booking.passengers)
+          : booking.passengers;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed.length;
+    } catch {}
+    return 1;
   };
 
   // CSV Exporter
@@ -1264,6 +1404,364 @@ export default function DeparturePayments({
             </div>
           </div>
 
+          {/* DEPARTURE UNIT ECONOMICS & PER-PERSON ACCOUNTING MATRIX */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <div className="bg-slate-900 text-white p-3.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-100">
+                  Unit Economics & Cost Center Matrix
+                </span>
+                <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                  Per-Person Accounting
+                </span>
+              </div>
+              <div className="text-xs font-medium text-slate-400">
+                Total Departure Pax:{" "}
+                <span className="text-white font-black">
+                  {calculatedStats.totalPax} Travelers
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse font-sans">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-2.5 px-4">Cost Center / Financial Stream</th>
+                    <th className="py-2.5 px-4 text-right">Agreed / Total (₹)</th>
+                    <th className="py-2.5 px-4 text-right">Paid / Received (₹)</th>
+                    <th className="py-2.5 px-4 text-right">Balance Due (₹)</th>
+                    <th className="py-2.5 px-4 text-right font-mono bg-orange-50/60 text-orange-950 font-black">
+                      Per Person (₹/Pax)
+                    </th>
+                    <th className="py-2.5 px-4 text-center">% of Revenue</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {/* 1. REVENUE */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span className="font-bold text-slate-900">
+                          Gross Customer Revenue
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block ml-4">
+                        Confirmed booking packages
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-slate-900 font-mono">
+                      {formatCurrency(calculatedStats.totalClientRevenue)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-emerald-600 font-mono">
+                      {formatCurrency(calculatedStats.clientAmountReceived)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-amber-600 font-mono">
+                      {formatCurrency(calculatedStats.clientOutstandingBalance)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-blue-700 bg-orange-50/60 font-mono">
+                      ₹{calculatedStats.revenuePerPax.toLocaleString("en-IN")}/pax
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-bold text-slate-600">
+                      100.0%
+                    </td>
+                  </tr>
+
+                  {/* 2. HOTELS */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span className="font-bold text-slate-800">
+                          Hotel & Accommodation Stays
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block ml-4">
+                        Rooms, camps & homestay contracts
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-slate-800 font-mono">
+                      {formatCurrency(calculatedStats.totalHotelsCost)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-semibold text-slate-700 font-mono">
+                      {formatCurrency(calculatedStats.totalHotelsPaid)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
+                      {formatCurrency(calculatedStats.totalHotelsDue)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-orange-700 bg-orange-50/60 font-mono">
+                      ₹{calculatedStats.hotelsCostPerPax.toLocaleString("en-IN")}/pax
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
+                      {calculatedStats.totalClientRevenue > 0
+                        ? (
+                            (calculatedStats.totalHotelsCost /
+                              calculatedStats.totalClientRevenue) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
+                      %
+                    </td>
+                  </tr>
+
+                  {/* 3. TRANSPORT */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span className="font-bold text-slate-800">
+                          Transport & Fleet Vehicles
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block ml-4">
+                        Tempo travellers, cabs & drivers
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-slate-800 font-mono">
+                      {formatCurrency(calculatedStats.totalTransportsCost)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-semibold text-slate-700 font-mono">
+                      {formatCurrency(calculatedStats.totalTransportsPaid)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
+                      {formatCurrency(calculatedStats.totalTransportsDue)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-amber-700 bg-orange-50/60 font-mono">
+                      ₹
+                      {calculatedStats.transportsCostPerPax.toLocaleString(
+                        "en-IN",
+                      )}
+                      /pax
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
+                      {calculatedStats.totalClientRevenue > 0
+                        ? (
+                            (calculatedStats.totalTransportsCost /
+                              calculatedStats.totalClientRevenue) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
+                      %
+                    </td>
+                  </tr>
+
+                  {/* 4. GUIDES */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="font-bold text-slate-800">
+                          Trek Leaders & Local Guides
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block ml-4">
+                        Trip leads, mountain guides & crew
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-slate-800 font-mono">
+                      {formatCurrency(calculatedStats.totalGuidesCost)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-semibold text-slate-700 font-mono">
+                      {formatCurrency(calculatedStats.totalGuidesPaid)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
+                      {formatCurrency(calculatedStats.totalGuidesDue)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-emerald-700 bg-orange-50/60 font-mono">
+                      ₹{calculatedStats.guidesCostPerPax.toLocaleString("en-IN")}/pax
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
+                      {calculatedStats.totalClientRevenue > 0
+                        ? (
+                            (calculatedStats.totalGuidesCost /
+                              calculatedStats.totalClientRevenue) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
+                      %
+                    </td>
+                  </tr>
+
+                  {/* 5. TRAIN TICKETS (PACKAGE INCLUDED) */}
+                  <tr className="hover:bg-slate-50/60 transition-colors bg-indigo-50/30">
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                        <span className="font-bold text-slate-800">
+                          Train Tickets (Package Included)
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block ml-4">
+                        Company-paid railway reservations & net cancellations
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-slate-800 font-mono">
+                      {formatCurrency(calculatedStats.totalTrainCost)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-semibold text-slate-700 font-mono">
+                      {formatCurrency(calculatedStats.totalTrainPaid)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
+                      {formatCurrency(calculatedStats.totalTrainDue)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-indigo-700 bg-indigo-50/60 font-mono">
+                      ₹{calculatedStats.trainCostPerPax.toLocaleString("en-IN")}/pax
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
+                      {calculatedStats.totalClientRevenue > 0
+                        ? (
+                            (calculatedStats.totalTrainCost /
+                              calculatedStats.totalClientRevenue) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
+                      %
+                    </td>
+                  </tr>
+
+                  {/* 6. ACTIVITIES */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-purple-500" />
+                        <span className="font-bold text-slate-800">
+                          Adventure & Paid Activities
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block ml-4">
+                        Rafting, permits, entry tickets & sports
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-slate-800 font-mono">
+                      {formatCurrency(calculatedStats.totalActivityCost)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-semibold text-slate-700 font-mono">
+                      {formatCurrency(calculatedStats.activityAmountPaid)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
+                      {formatCurrency(calculatedStats.activityPending)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-purple-700 bg-orange-50/60 font-mono">
+                      ₹
+                      {calculatedStats.activitiesCostPerPax.toLocaleString(
+                        "en-IN",
+                      )}
+                      /pax
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
+                      {calculatedStats.totalClientRevenue > 0
+                        ? (
+                            (calculatedStats.totalActivityCost /
+                              calculatedStats.totalClientRevenue) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
+                      %
+                    </td>
+                  </tr>
+
+                  {/* 6. MISC */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-slate-500" />
+                        <span className="font-bold text-slate-800">
+                          Miscellaneous & Enroute Ops
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block ml-4">
+                        Tolls, meals, first aid & emergency expenses
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-slate-800 font-mono">
+                      {formatCurrency(calculatedStats.totalMiscExpenses)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-semibold text-slate-700 font-mono">
+                      {formatCurrency(calculatedStats.miscApproved)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-bold text-amber-600 font-mono">
+                      {formatCurrency(calculatedStats.miscPendingApproval)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-black text-slate-700 bg-orange-50/60 font-mono">
+                      ₹{calculatedStats.miscCostPerPax.toLocaleString("en-IN")}/pax
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
+                      {calculatedStats.totalClientRevenue > 0
+                        ? (
+                            (calculatedStats.totalMiscExpenses /
+                              calculatedStats.totalClientRevenue) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
+                      %
+                    </td>
+                  </tr>
+
+                  {/* 7. NET MARGIN / PROFIT */}
+                  <tr className="bg-slate-50 font-black text-xs border-t-2 border-slate-200">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "w-2.5 h-2.5 rounded-full",
+                            calculatedStats.estimatedProfit >= 0
+                              ? "bg-emerald-500"
+                              : "bg-red-500",
+                          )}
+                        />
+                        <span className="font-black text-slate-900 uppercase">
+                          Net Realized Departure Profit
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-medium block ml-4">
+                        Revenue minus all vendor & operational costs
+                      </span>
+                    </td>
+                    <td
+                      className={cn(
+                        "py-3 px-4 text-right font-black font-mono text-sm",
+                        calculatedStats.estimatedProfit >= 0
+                          ? "text-emerald-700"
+                          : "text-red-600",
+                      )}
+                    >
+                      {formatCurrency(calculatedStats.estimatedProfit)}
+                    </td>
+                    <td className="py-3 px-4 text-right font-semibold text-slate-600 font-mono">
+                      Cost: {formatCurrency(calculatedStats.totalCosts)}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-slate-400">
+                      —
+                    </td>
+                    <td
+                      className={cn(
+                        "py-3 px-4 text-right font-black bg-orange-100/70 font-mono text-sm",
+                        calculatedStats.profitPerPax >= 0
+                          ? "text-emerald-800"
+                          : "text-red-700",
+                      )}
+                    >
+                      ₹{calculatedStats.profitPerPax.toLocaleString("en-IN")}/pax
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded font-black text-xs",
+                          Number(calculatedStats.profitMargin) >= 0
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-red-100 text-red-800",
+                        )}
+                      >
+                        {calculatedStats.profitMargin}%
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* Quick Actions Bar */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -1595,14 +2093,41 @@ export default function DeparturePayments({
                             <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
                               {b.phone || "—"}
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
-                              {formatCurrency(b.totalAmount)}
+                            <td className="p-3 border-r border-slate-100 text-right">
+                              <span className="font-black text-slate-900 block font-mono">
+                                {formatCurrency(b.totalAmount)}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono block">
+                                {formatCurrency(
+                                  Math.round(b.totalAmount / getPassengerCount(b)),
+                                )}
+                                /pax ({getPassengerCount(b)}{" "}
+                                {getPassengerCount(b) === 1 ? "Pax" : "Pax"})
+                              </span>
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-black text-emerald-700">
-                              {formatCurrency(b.advancePaid)}
+                            <td className="p-3 border-r border-slate-100 text-right">
+                              <span className="font-black text-emerald-700 block font-mono">
+                                {formatCurrency(b.advancePaid)}
+                              </span>
+                              <span className="text-[10px] text-emerald-600/70 font-mono block">
+                                {formatCurrency(
+                                  Math.round(
+                                    (b.advancePaid || 0) / getPassengerCount(b),
+                                  ),
+                                )}
+                                /pax
+                              </span>
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-black text-amber-600">
-                              {formatCurrency(balance)}
+                            <td className="p-3 border-r border-slate-100 text-right">
+                              <span className="font-black text-amber-600 block font-mono">
+                                {formatCurrency(balance)}
+                              </span>
+                              <span className="text-[10px] text-amber-600/70 font-mono block">
+                                {formatCurrency(
+                                  Math.round(balance / getPassengerCount(b)),
+                                )}
+                                /pax
+                              </span>
                             </td>
                             <td className="p-3 border-r border-slate-100 text-center">
                               <span

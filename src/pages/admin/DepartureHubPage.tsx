@@ -3199,10 +3199,25 @@ useEffect(() => {
         (sum: number, b: any) => sum + (b.remainingAmount || 0),
         0,
       );
-      const totalParticipants = confirmedBookings.reduce(
-        (sum: number, b: any) => sum + (b.numberOfTravelers || 1),
-        0,
-      );
+      const totalParticipants =
+        confirmedBookings.reduce((sum: number, b: any) => {
+          let count = 0;
+          if (b.numberOfTravelers && Number(b.numberOfTravelers) > 0) {
+            count = Number(b.numberOfTravelers);
+          } else if (Array.isArray(b.passengers) && b.passengers.length > 0) {
+            count = b.passengers.length;
+          } else if (typeof b.passengers === "string") {
+            try {
+              const p = JSON.parse(b.passengers);
+              count = Array.isArray(p) && p.length > 0 ? p.length : 1;
+            } catch {
+              count = 1;
+            }
+          } else {
+            count = 1;
+          }
+          return sum + count;
+        }, 0) || (allPassengers && allPassengers.length > 0 ? allPassengers.length : 1);
       const outstandingParticipantsCount = confirmedBookings.filter(
         (b: any) => (b.remainingAmount || 0) > 0,
       ).length;
@@ -5548,6 +5563,56 @@ useEffect(() => {
     };
   }, [allPassengers]);
 
+  const paxDemographics = useMemo(() => {
+    const activePax = allPassengers.filter((p: any) => !p.isCancelled);
+    const total = activePax.length || engineStats?.summary?.total || 0;
+
+    let men = 0;
+    let women = 0;
+    activePax.forEach((p: any) => {
+      const g = String(p.gender || "").toLowerCase().trim();
+      if (
+        g.startsWith("f") ||
+        g.includes("female") ||
+        g.includes("woman") ||
+        g.includes("girl")
+      ) {
+        women++;
+      } else {
+        men++;
+      }
+    });
+
+    if (total > 0 && men === 0 && women === 0) {
+      men = engineStats?.summary?.men || engineStats?.groups?.male?.length || 0;
+      women = engineStats?.summary?.women || engineStats?.groups?.female?.length || 0;
+    }
+
+    const twinTravelers = activePax.filter((p: any) => {
+      const rs = String(p.roomSharing || p.roomType || "").toLowerCase();
+      return (
+        rs.includes("double") ||
+        rs.includes("twin") ||
+        (p.coupleWith && p.coupleWith !== "—" && p.coupleWith !== "")
+      );
+    }).length;
+
+    const twinPairs = Math.max(
+      Math.floor(twinTravelers / 2),
+      engineStats?.summary?.twinPairs ||
+        engineStats?.groups?.couples?.length ||
+        engineStats?.groups?.pairs?.length ||
+        0,
+    );
+
+    return {
+      total,
+      men,
+      women,
+      twinPairs,
+    };
+  }, [allPassengers, engineStats]);
+
   const pickupOptions = useMemo(() => {
     const s = new Set<string>();
     allPassengers.forEach((p) => {
@@ -6910,81 +6975,103 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* ENGINE STATISTICS PANEL */}
-              {engineStats && (
-                <div className="bg-slate-800 text-white p-5 rounded-[8px] shadow-sm mb-4">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-sm font-black tracking-wide flex items-center gap-2">
-                        <Settings className="w-4 h-4 text-orange-400" />
-                        Passenger Engine Output
-                      </h3>
-                      <p className="text-[11px] text-slate-400 mt-1">Structured payload for downstream Assignment Engines</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5",
-                        engineStats.readiness?.status === "Ready" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
-                      )}>
-                        {engineStats.readiness?.status === "Ready" ? <Check className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-                        {engineStats.readiness?.status} - {engineStats.readiness?.reason}
-                      </div>
-                      <span className="text-[10px] font-bold bg-slate-700 px-2 py-1 rounded text-slate-300">LIVE</span>
-                    </div>
+              {/* PASSENGER ENGINE OUTPUT / DEMOGRAPHICS PANEL */}
+              <div className="bg-slate-800 text-white p-5 rounded-[8px] shadow-sm mb-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-sm font-black tracking-wide flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-orange-400" />
+                      Passenger Engine Output
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Structured payload for downstream Assignment Engines
+                    </p>
                   </div>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Pax</p>
-                      <p className="text-xl font-black">{engineStats.summary?.total || 0}</p>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        "text-[10px] font-bold px-2.5 py-1 rounded flex items-center gap-1.5",
+                        paxDemographics.total > 0
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                          : "bg-red-500/20 text-red-400 border border-red-500/30",
+                      )}
+                    >
+                      {paxDemographics.total > 0 ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <AlertTriangle className="w-3 h-3" />
+                      )}
+                      {paxDemographics.total > 0
+                        ? "Ready - Manifest Verified"
+                        : "Action Required - No Passengers"}
                     </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Adults</p>
-                      <p className="text-xl font-black">{engineStats.summary?.adults || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Children</p>
-                      <p className="text-xl font-black">{engineStats.summary?.children || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Seniors</p>
-                      <p className="text-xl font-black">{engineStats.summary?.seniors || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Twin Pairs</p>
-                      <p className="text-xl font-black text-pink-400">{engineStats?.groups?.couples?.length || engineStats?.groups?.pairs?.length || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Families</p>
-                      <p className="text-xl font-black text-blue-400">{engineStats.groups?.families?.length || 0}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-700 grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Gender Split</p>
-                      <p className="text-sm font-bold">{engineStats.groups?.male?.length || 0} Male / {engineStats.groups?.female?.length || 0} Female</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Guides & Drivers</p>
-                      <p className="text-sm font-bold text-orange-400">{engineStats.summary?.guides || 0} Guides / {engineStats.summary?.drivers || 0} Drivers</p>
-                    </div>
-                    {engineStats.warnings && engineStats.warnings.length > 0 && (
-                      <div className="col-span-3 mt-2">
-                         <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5"><AlertTriangle className="w-3 h-3" /> Validation Warnings ({engineStats.warnings.length})</p>
-                         <div className="flex flex-wrap gap-2">
-                           {engineStats.warnings.slice(0, 5).map((w: string, i: number) => (
-                              <span key={i} className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-1 rounded">{w}</span>
-                           ))}
-                           {engineStats.warnings.length > 5 && (
-                              <span className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-1 rounded">+{engineStats.warnings.length - 5} more</span>
-                           )}
-                         </div>
-                      </div>
-                    )}
+                    <span className="text-[10px] font-bold bg-slate-700 px-2 py-1 rounded text-slate-300">
+                      LIVE
+                    </span>
                   </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Total Pax
+                    </p>
+                    <p className="text-2xl font-black text-white mt-1">
+                      {paxDemographics.total}
+                    </p>
+                  </div>
+                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Men (Male)
+                    </p>
+                    <p className="text-2xl font-black text-blue-400 mt-1">
+                      {paxDemographics.men}
+                    </p>
+                  </div>
+                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Female
+                    </p>
+                    <p className="text-2xl font-black text-pink-400 mt-1">
+                      {paxDemographics.women}
+                    </p>
+                  </div>
+                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Twin Pairs
+                    </p>
+                    <p className="text-2xl font-black text-orange-400 mt-1">
+                      {paxDemographics.twinPairs}
+                    </p>
+                  </div>
+                </div>
+
+                {engineStats?.warnings && engineStats.warnings.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-slate-700">
+                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3 h-3" /> Validation Warnings (
+                      {engineStats.warnings.length})
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {engineStats.warnings
+                        .slice(0, 5)
+                        .map((w: string, i: number) => (
+                          <span
+                            key={i}
+                            className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-1 rounded"
+                          >
+                            {w}
+                          </span>
+                        ))}
+                      {engineStats.warnings.length > 5 && (
+                        <span className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-1 rounded">
+                          +{engineStats.warnings.length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* KPI cards */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">

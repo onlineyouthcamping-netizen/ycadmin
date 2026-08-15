@@ -81,10 +81,30 @@ export function AccommodationDetailPage({
 }: AccommodationDetailPageProps) {
   const [vendor, setVendor] = useState<any>(initialVendor);
   const typeUpper = (vendor.type || vendor.accommodationType || vendor.category || "").toUpperCase();
-  const isTransport = typeUpper.includes("TRANSPORT") || typeUpper.includes("FLEET") || typeUpper.includes("VEHICLE");
-  const isGuide = typeUpper.includes("GUIDE") || typeUpper.includes("LEADER") || typeUpper.includes("TREK");
-  const isActivity = typeUpper.includes("ACTIVITIES") || typeUpper.includes("ACTIVITY") || typeUpper.includes("ADVENTURE");
-  const isRestaurant = typeUpper.includes("RESTAURANT") || typeUpper.includes("FOOD") || typeUpper.includes("MEAL") || typeUpper.includes("DINING");
+  const isTransport =
+    typeUpper.includes("TRANSPORT") ||
+    typeUpper.includes("FLEET") ||
+    typeUpper.includes("VEHICLE");
+  const isGuide =
+    typeUpper.includes("GUIDE") ||
+    typeUpper.includes("LEADER") ||
+    typeUpper.includes("TREK");
+  const isActivity =
+    typeUpper.includes("ACTIVITIES") ||
+    typeUpper.includes("ACTIVITY") ||
+    typeUpper.includes("ADVENTURE");
+  const isRestaurant =
+    typeUpper.includes("RESTAURANT") ||
+    typeUpper.includes("FOOD") ||
+    typeUpper.includes("MEAL") ||
+    typeUpper.includes("DINING");
+  const isOther =
+    typeUpper.includes("OTHER") ||
+    typeUpper.includes("MISC") ||
+    typeUpper.includes("EQUIPMENT") ||
+    typeUpper.includes("GEAR") ||
+    typeUpper.includes("PERMIT") ||
+    typeUpper === "GENERAL";
 
   const dynamicTabs = useMemo(() => {
     if (isTransport) {
@@ -118,13 +138,30 @@ export function AccommodationDetailPage({
       return [
         { id: "overview", label: "Overview", icon: Utensils },
         { id: "contacts", label: "Contacts", icon: Phone },
-        { id: "meal_tariffs", label: "Meal Tariffs & Thali Rates", icon: DollarSign },
+        {
+          id: "meal_tariffs",
+          label: "Meal Tariffs & Thali Rates",
+          icon: DollarSign,
+        },
+        { id: "ledger", label: "Payment Ledger", icon: CreditCard },
+        { id: "timeline", label: "Activity Timeline", icon: History },
+      ];
+    }
+    if (isOther) {
+      return [
+        { id: "overview", label: "Overview", icon: Building2 },
+        { id: "contacts", label: "Contacts", icon: Phone },
+        {
+          id: "services_tariffs",
+          label: "Services & Tariffs",
+          icon: DollarSign,
+        },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
       ];
     }
     return [
-      { id: "overview", label: "Overview", icon: Building2 },
+      { id: "overview", label: "Overview", icon: Hotel },
       { id: "contacts", label: "Contacts", icon: Phone },
       { id: "rooms", label: "Rooms", icon: Bed },
       { id: "seasonal_pricing", label: "Seasonal Pricing", icon: Calendar },
@@ -132,7 +169,7 @@ export function AccommodationDetailPage({
       { id: "price_history", label: "Price History", icon: TrendingUp },
       { id: "timeline", label: "Activity Timeline", icon: History },
     ];
-  }, [isTransport, isGuide, isActivity, isRestaurant]);
+  }, [isTransport, isGuide, isActivity, isRestaurant, isOther]);
 
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -150,10 +187,11 @@ export function AccommodationDetailPage({
     const isG = type.includes("GUIDE") || type.includes("LEADER") || type.includes("TREK");
     const isRest = type.includes("RESTAURANT") || type.includes("FOOD") || type.includes("MEAL") || type.includes("DINING");
     const isAct = type.includes("ACTIVITIES") || type.includes("ACTIVITY") || type.includes("ADVENTURE") || type.includes("EXPERIENCE");
+    const isOth = type.includes("OTHER") || type.includes("MISC") || type.includes("EQUIPMENT") || type.includes("GEAR") || type.includes("PERMIT") || type === "GENERAL";
 
     return {
       name: v?.name || "",
-      accommodationType: v?.accommodationType || v?.type || "HOTEL",
+      accommodationType: v?.accommodationType || v?.type || (isOth ? "OTHER" : "HOTEL"),
       starRating: v?.starRating || 3,
       checkInTime: v?.checkInTime || "12:00 PM",
       checkOutTime: v?.checkOutTime || "11:00 AM",
@@ -179,6 +217,16 @@ export function AccommodationDetailPage({
       seatingCapacity: v?.seatingCapacity || meta.seatingCapacity || (isRest ? v?.roomTypes : "") || "",
       operatingHours: v?.operatingHours || meta.operatingHours || (isRest || isAct ? v?.earlyCheckInPolicy : "") || "",
       activityTypes: v?.activityTypes || meta.activityTypes || (isAct ? v?.roomTypes : "") || "",
+      servicesOffered:
+        v?.servicesOffered ||
+        meta.servicesOffered ||
+        (isOth ? v?.roomTypes || v?.customCategory || "Equipment Rental & Logistics" : "") ||
+        "",
+      description:
+        v?.description ||
+        meta.description ||
+        (v?.notes && !v.notes.startsWith("{") ? v.notes : "") ||
+        "",
       financialDetails:
         v?.financialDetails ||
         v?.bankDetails ||
@@ -737,6 +785,159 @@ export function AccommodationDetailPage({
         guideRates: JSON.stringify(updatedList),
       });
       toast.success("Activity rate deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete from server");
+    }
+  };
+
+  // State for Other Vendor Services & Equipment Tariffs
+  const defaultOtherRates = [
+    {
+      id: "oth-1",
+      name: "Tents & Sleeping Bag Rental",
+      category: "EQUIPMENT",
+      rate: 350,
+      unit: "Per Set / Day",
+      notes: "Includes 2-person waterproof dome tent and sub-zero sleeping bag",
+    },
+    {
+      id: "oth-2",
+      name: "Local Forest & Wildlife Permit Clearance",
+      category: "PERMITS",
+      rate: 200,
+      unit: "Per Person",
+      notes: "Forest checkpoint entry fee and local authority liaison",
+    },
+  ];
+
+  const [otherRates, setOtherRates] = useState<any[]>(() => {
+    let initial =
+      vendor?.otherRates || vendor?.activityRates || vendor?.guideRates;
+    if (typeof initial === "string") {
+      try {
+        const parsed = JSON.parse(initial);
+        if (Array.isArray(parsed) && parsed.length > 0) initial = parsed;
+      } catch {}
+    }
+    if (Array.isArray(initial) && initial.length > 0) {
+      return initial;
+    }
+    return defaultOtherRates;
+  });
+
+  const [otherRateModalOpen, setOtherRateModalOpen] = useState(false);
+  const [editingOtherRate, setEditingOtherRate] = useState<any>(null);
+  const [otherRateForm, setOtherRateForm] = useState({
+    name: "Tents & Sleeping Bag Rental",
+    category: "EQUIPMENT",
+    rate: "350",
+    unit: "Per Set / Day",
+    notes: "",
+  });
+
+  const handleOpenAddOtherRate = () => {
+    setEditingOtherRate(null);
+    setOtherRateForm({
+      name: "",
+      category: "EQUIPMENT",
+      rate: "500",
+      unit: "Per Unit / Day",
+      notes: "",
+    });
+    setOtherRateModalOpen(true);
+  };
+
+  const handleOpenEditOtherRate = (rate: any) => {
+    setEditingOtherRate(rate);
+    setOtherRateForm({
+      name: rate.name || "",
+      category: rate.category || "EQUIPMENT",
+      rate: String(rate.rate || rate.perPaxRate || 500),
+      unit: rate.unit || "Per Unit / Day",
+      notes: rate.notes || rate.inclusions || "",
+    });
+    setOtherRateModalOpen(true);
+  };
+
+  const handleSaveOtherRate = async () => {
+    if (!otherRateForm.name || !otherRateForm.rate) {
+      toast.error("Service Name and Rate are required");
+      return;
+    }
+    const rateNum = parseInt(otherRateForm.rate) || 0;
+
+    let updatedList: any[] = [];
+    if (editingOtherRate) {
+      updatedList = otherRates.map((t) =>
+        t.id === editingOtherRate.id
+          ? {
+              ...t,
+              name: otherRateForm.name,
+              category: otherRateForm.category,
+              rate: rateNum,
+              unit: otherRateForm.unit,
+              notes: otherRateForm.notes,
+            }
+          : t,
+      );
+    } else {
+      const newRate = {
+        id: `oth-${Date.now()}`,
+        name: otherRateForm.name,
+        category: otherRateForm.category,
+        rate: rateNum,
+        unit: otherRateForm.unit,
+        notes: otherRateForm.notes,
+      };
+      updatedList = [...otherRates, newRate];
+    }
+
+    setOtherRates(updatedList);
+    const updatedVendor = {
+      ...vendor,
+      otherRates: updatedList,
+      activityRates: updatedList,
+      guideRates: JSON.stringify(updatedList),
+    };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        otherRates: updatedList,
+        activityRates: updatedList,
+        guideRates: JSON.stringify(updatedList),
+      });
+      toast.success("Service tariff saved successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Saved locally, but failed to update server");
+    }
+
+    setOtherRateModalOpen(false);
+    setEditingOtherRate(null);
+  };
+
+  const handleDeleteOtherRate = async (rateId: string) => {
+    const updatedList = otherRates.filter((t) => t.id !== rateId);
+    setOtherRates(updatedList);
+    const updatedVendor = {
+      ...vendor,
+      otherRates: updatedList,
+      activityRates: updatedList,
+      guideRates: JSON.stringify(updatedList),
+    };
+    setVendor(updatedVendor);
+    onUpdateVendor(updatedVendor);
+
+    try {
+      await api.patch(`/vendors/directory/${vendor.id}`, {
+        otherRates: updatedList,
+        activityRates: updatedList,
+        guideRates: JSON.stringify(updatedList),
+      });
+      toast.success("Service tariff deleted successfully!");
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete from server");
@@ -1589,8 +1790,18 @@ export function AccommodationDetailPage({
               )}
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-2">
-              <span>
-                {vendor.accommodationType || vendor.type || "Stay Partner"}
+              <span className="font-bold text-slate-700">
+                {isOther
+                  ? "Other Vendor Partner"
+                  : isGuide
+                    ? "Guide & Trek Leader"
+                    : isTransport
+                      ? "Transport & Fleet Vendor"
+                      : isActivity
+                        ? "Adventure & Activities Vendor"
+                        : isRestaurant
+                          ? "Restaurant & Food Partner"
+                          : vendor.accommodationType || vendor.type || "Stay Partner"}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
@@ -1797,7 +2008,9 @@ export function AccommodationDetailPage({
                           ? "Restaurant & Meal Plans Profile"
                           : isActivity
                             ? "Adventure & Activity Profile"
-                            : "Property & Compliance Profile"}
+                            : isOther
+                              ? "Vendor & Service Compliance Profile"
+                              : "Property & Compliance Profile"}
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     {isTransport
@@ -1808,7 +2021,9 @@ export function AccommodationDetailPage({
                           ? "Edit cuisines, seating capacity, operating hours, and banking details directly below."
                           : isActivity
                             ? "Edit activity offerings, operating site, safety features, and banking details directly below."
-                            : "Edit category, rating, check-in/out times, meal plans, amenities, and GSTIN/banking details directly below."}
+                            : isOther
+                              ? "Edit services provided, operating location, terms, and banking details directly below."
+                              : "Edit category, rating, check-in/out times, meal plans, amenities, and GSTIN/banking details directly below."}
                   </p>
                 </div>
                 <Button
@@ -2172,6 +2387,66 @@ export function AccommodationDetailPage({
                             })
                           }
                           placeholder="e.g. GoPro 4K Video, Certified Pilot, Lifejackets & Helmets, First Aid Box, Waiting Lounge"
+                          className="bg-white text-xs border-slate-200 font-medium min-h-[70px]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : isOther ? (
+                  <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-slate-700" /> Vendor &
+                      Operational Info
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Primary Services / Category
+                        </label>
+                        <Input
+                          value={overviewForm.servicesOffered || ""}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              servicesOffered: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Equipment Rental, Permits, Logistics"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Operating Location / Hub
+                        </label>
+                        <Input
+                          value={overviewForm.operatingCity || ""}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              operatingCity: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Manali, Shimla, Kaza"
+                          className="h-8.5 bg-white text-xs border-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-extrabold text-slate-700 block mb-1">
+                          Service Scope & Operating Terms
+                        </label>
+                        <Textarea
+                          value={overviewForm.description || ""}
+                          onChange={(e) =>
+                            setOverviewForm({
+                              ...overviewForm,
+                              description: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Specialized camping equipment rental, tents, sleeping bags, and mountain permits."
                           className="bg-white text-xs border-slate-200 font-medium min-h-[70px]"
                         />
                       </div>
@@ -2984,6 +3259,99 @@ export function AccommodationDetailPage({
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB FOR OTHER VENDORS: SERVICES & TARIFFS */}
+          {activeTab === "services_tariffs" && isOther && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Vendor Services, Equipment & Tariffs
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Negotiated tariffs for equipment rental, permits, logistics, and specialty services.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleOpenAddOtherRate}
+                  size="sm"
+                  className="h-8 bg-[#F97316] hover:bg-[#ea580c] text-white text-xs font-bold gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Service Tariff
+                </Button>
+              </div>
+
+              {otherRates.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <Building2 className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs font-bold text-slate-600">
+                    No service tariffs configured yet
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Add equipment rental rates, permit fees, or service tariffs for this vendor.
+                  </p>
+                  <Button
+                    onClick={handleOpenAddOtherRate}
+                    className="h-7.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-3 mt-2 cursor-pointer shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add First Service Tariff
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {otherRates.map((rate) => (
+                    <div
+                      key={rate.id}
+                      className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5 text-xs flex flex-col justify-between hover:border-slate-300 transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <span className="font-extrabold text-slate-900 text-sm leading-snug">
+                            {rate.name}
+                          </span>
+                          <span className="shrink-0 bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide border border-slate-200">
+                            {rate.category || "SERVICE"}
+                          </span>
+                        </div>
+                        <p className="text-slate-600">
+                          Tariff Rate:{" "}
+                          <span className="font-black text-emerald-600 text-sm">
+                            ₹{Number(rate.rate || rate.perPaxRate || 0).toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-slate-400 text-[11px] ml-1 font-medium">
+                            / {rate.unit || "Unit"}
+                          </span>
+                        </p>
+                        {rate.notes && (
+                          <p className="text-slate-500 text-[11px] pt-1 border-t border-slate-100 mt-2">
+                            {rate.notes}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+                        <Button
+                          onClick={() => handleOpenEditOtherRate(rate)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-[11px] font-bold text-slate-600 hover:text-orange-600 hover:bg-orange-50 cursor-pointer"
+                        >
+                          <Pencil className="w-3 h-3 mr-1" /> Edit Tariff
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteOtherRate(rate.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -4539,6 +4907,139 @@ export function AccommodationDetailPage({
               className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingActivityRate ? "Update Activity Rate" : "Add Activity Rate"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* OTHER VENDOR SERVICE TARIFF MODAL */}
+      <Dialog
+        open={otherRateModalOpen}
+        onOpenChange={setOtherRateModalOpen}
+      >
+        <DialogContent className="max-w-md bg-white p-5 rounded-xl shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-black text-slate-800 flex items-center justify-between border-b pb-2 border-slate-100">
+              <span className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-orange-500" />
+                {editingOtherRate
+                  ? "Edit Service Tariff"
+                  : "Add New Service Tariff"}
+              </span>
+              <span className="text-[10px] font-extrabold uppercase bg-orange-50 text-orange-700 px-2 py-0.5 rounded border border-orange-200">
+                Other Vendor
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-3 text-xs">
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Service / Item Name *
+              </label>
+              <Input
+                value={otherRateForm.name}
+                onChange={(e) =>
+                  setOtherRateForm({ ...otherRateForm, name: e.target.value })
+                }
+                placeholder="e.g. Tents & Sleeping Bag Rental, Wildlife Permit Clearance"
+                className="h-8.5 text-xs font-bold"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Service Category
+                </label>
+                <select
+                  value={otherRateForm.category}
+                  onChange={(e) =>
+                    setOtherRateForm({
+                      ...otherRateForm,
+                      category: e.target.value,
+                    })
+                  }
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                >
+                  <option value="EQUIPMENT">Equipment Rental 🎒</option>
+                  <option value="PERMITS">Permits & Clearances 📜</option>
+                  <option value="LOGISTICS">Logistics & Porters 📦</option>
+                  <option value="CAMPING">Camping Gear ⛺</option>
+                  <option value="CATERING">Catering / Food 🍲</option>
+                  <option value="OTHER">General Services ⚙️</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-extrabold text-slate-800 block mb-1">
+                  Tariff Rate (₹) *
+                </label>
+                <Input
+                  type="number"
+                  value={otherRateForm.rate}
+                  onChange={(e) =>
+                    setOtherRateForm({
+                      ...otherRateForm,
+                      rate: e.target.value,
+                    })
+                  }
+                  placeholder="500"
+                  className="h-8.5 text-xs font-bold text-emerald-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Pricing Unit / Basis
+              </label>
+              <Input
+                value={otherRateForm.unit}
+                onChange={(e) =>
+                  setOtherRateForm({
+                    ...otherRateForm,
+                    unit: e.target.value,
+                  })
+                }
+                placeholder="e.g. Per Set / Day, Per Person, Fixed Per Group"
+                className="h-8.5 text-xs font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="font-extrabold text-slate-800 block mb-1">
+                Notes & Terms
+              </label>
+              <Input
+                value={otherRateForm.notes}
+                onChange={(e) =>
+                  setOtherRateForm({
+                    ...otherRateForm,
+                    notes: e.target.value,
+                  })
+                }
+                placeholder="e.g. Includes delivery to base camp, 24-hr advance booking required"
+                className="h-8.5 text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+            <Button
+              variant="outline"
+              onClick={() => setOtherRateModalOpen(false)}
+              className="h-8 text-xs font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveOtherRate}
+              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+            >
+              {editingOtherRate
+                ? "Update Service Tariff"
+                : "Add Service Tariff"}
             </Button>
           </div>
         </DialogContent>

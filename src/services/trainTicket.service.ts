@@ -27,8 +27,22 @@ export interface TrainTicket {
   approvalStatus: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "REOPENED";
   isLocked: boolean;
   ticketAmount: number;
+  paidBy?: "COMPANY" | "CUSTOMER" | string;
+  fareBreakdown?: {
+    baseFare?: number;
+    reservationCharge?: number;
+    superfastCharge?: number;
+    gst?: number;
+    otherCharges?: number;
+  };
   amountMode?: string;
   refundAmount: number;
+  railwayCancellationCharge?: number;
+  ycCancellationCharge?: number;
+  refundStatus?: "NONE" | "PENDING" | "INITIATED" | "COMPLETED" | "FAILED" | string;
+  refundCompletedAt?: string;
+  refundTransactionRef?: string;
+  reticketAdjustment?: number;
   cancellationReason?: string;
   internalNote?: string;
   ticketBookingPerson?: string;
@@ -43,10 +57,16 @@ export interface TrainTicket {
   supersededBy?: TrainTicket;
   submittedBy?: { id: string; name: string };
   booking?: {
+    id?: string;
     bookingId: string;
     name: string;
     fullName?: string;
+    tripId?: string;
     tripName?: string;
+    departureDate?: string;
+    totalAmount?: number;
+    advancePaid?: number;
+    remainingAmount?: number;
     salesAdminId?: string;
   };
 }
@@ -69,6 +89,7 @@ export interface TrainTemplate {
   journeyDate?: string;
   boardingPoint?: string;
   droppingPoint?: string;
+  estimatedTicketCost?: number;
 
   flightAirline?: string;
   flightNumber?: string;
@@ -87,6 +108,24 @@ export interface TrainTemplate {
   trip?: { id: string; title: string };
 }
 
+export interface TicketFinanceSummary {
+  summary: {
+    totalTickets: number;
+    totalCost: number;
+    confirmedCost: number;
+    pendingCost: number;
+    cancelledCost: number;
+    railwayCancellationCharges: number;
+    ycCancellationCharges: number;
+    refundsPending: number;
+    refundsCompleted: number;
+    companyPaidCost: number;
+    customerPaidCost: number;
+    netCompanyCost: number;
+  };
+  tickets: TrainTicket[];
+}
+
 export const trainTicketService = {
   // Booking-level operations
   async getTicketsByBooking(bookingId: string): Promise<TrainTicket[]> {
@@ -97,6 +136,7 @@ export const trainTicketService = {
   async createTicket(bookingId: string, data: any): Promise<TrainTicket> {
     const res = await api.post(`/train-tickets/booking/${bookingId}`, {
       travelerName: data.travelerName || "Guest",
+      passengerReference: data.passengerReference || "DEPARTURE",
       pnr: data.pnr || "",
       trainName: data.trainName || "",
       trainNumber: data.trainNumber || "",
@@ -109,6 +149,8 @@ export const trainTicketService = {
       ticketStatus: data.ticketStatus || "PENDING",
       approvalStatus: data.approvalStatus || "DRAFT",
       ticketAmount: parseFloat(data.ticketAmount) || 0,
+      paidBy: data.paidBy || "COMPANY",
+      fareBreakdown: data.fareBreakdown || null,
       internalNote: data.internalNote || "",
       ticketBookingPerson: data.ticketBookingPerson || "",
       amountMode: data.amountMode || "PAYMENT_LINK",
@@ -153,20 +195,48 @@ export const trainTicketService = {
 
   async cancelTicket(
     ticketId: string,
-    data: { reason: string; refundAmount?: number },
+    data: {
+      reason: string;
+      railwayCancellationCharge?: number;
+      ycCancellationCharge?: number;
+      refundAmount?: number;
+      notes?: string;
+    },
   ): Promise<TrainTicket> {
-    const res = await api.post(`/train-tickets/${ticketId}/cancel`, {
-      reason: data.reason,
-      refundAmount: data.refundAmount || 0,
-    });
+    const res = await api.post(`/train-tickets/${ticketId}/cancel`, data);
     return res.data?.data;
   },
 
   async rebookTicket(
     ticketId: string,
-  ): Promise<{ oldTicketId: string; newTicket: TrainTicket }> {
-    const res = await api.post(`/train-tickets/${ticketId}/rebook`);
+    data?: any,
+  ): Promise<{ oldTicketId: string; newTicket: TrainTicket; financials?: any }> {
+    const res = await api.post(`/train-tickets/${ticketId}/rebook`, data || {});
     return res.data?.data;
+  },
+
+  async recordRefund(
+    ticketId: string,
+    data: {
+      refundStatus: string;
+      transactionRef?: string;
+      amount?: number;
+      notes?: string;
+      paymentMode?: string;
+    },
+  ): Promise<TrainTicket> {
+    const res = await api.post(`/train-tickets/${ticketId}/record-refund`, data);
+    return res.data?.data;
+  },
+
+  async getFinanceSummary(params?: {
+    tripId?: string;
+    departureDate?: string;
+    status?: string;
+    paidBy?: string;
+  }): Promise<TicketFinanceSummary> {
+    const res = await api.get("/train-tickets/finance-summary", { params });
+    return res.data?.data || { summary: {}, tickets: [] };
   },
 
   // Bulk operation

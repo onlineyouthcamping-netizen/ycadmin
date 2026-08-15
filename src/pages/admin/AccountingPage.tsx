@@ -1455,19 +1455,24 @@ export default function AccountingPage() {
       const tripVendors = vendorAssignments.filter(
         (v) => v.tripRef?.title === r.tripName || v.tripCode === r.tripName,
       );
-      const cost = tripVendors.reduce((sum, v) => sum + v.totalAmount, 0);
-      const paid = tripVendors.reduce((sum, v) => sum + (v.paidAmount || 0), 0);
-      const profit = r.amount - cost;
+      const vendorCost = tripVendors.reduce((sum, v) => sum + v.totalAmount, 0);
+      const trainCost = Number(r.trainTicketCost || 0);
+      const totalCost = vendorCost + trainCost;
+      const vendorPaid = tripVendors.reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+      const totalPaid = vendorPaid + trainCost;
+      const profit = r.amount - totalCost;
       const pct = r.amount > 0 ? Math.round((profit / r.amount) * 100) : 0;
       return {
         name: r.tripName,
         date: "Active",
         revenue: r.amount,
-        cost,
+        vendorCost,
+        trainCost,
+        cost: totalCost,
         profit,
         pct,
-        paid,
-        pending: cost - paid,
+        paid: totalPaid,
+        pending: Math.max(0, totalCost - totalPaid),
       };
     }) || [];
 
@@ -4523,13 +4528,15 @@ export default function AccountingPage() {
               <thead>
                 <tr className="border-b border-[#E2E8F0] bg-slate-50 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                   <th className="px-4 py-3">Trip Name</th>
-                  <th className="px-4 py-3">Departure Date</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Revenue</th>
                   <th className="px-4 py-3 text-right">Vendor Cost</th>
+                  <th className="px-4 py-3 text-right">Train Ticket Cost</th>
+                  <th className="px-4 py-3 text-right">Total Ops Cost</th>
                   <th className="px-4 py-3 text-right">Gross Profit</th>
                   <th className="px-4 py-3 text-right">Margin %</th>
-                  <th className="px-4 py-3 text-right">Paid to Vendors</th>
-                  <th className="px-4 py-3 text-right">Pending Cost</th>
+                  <th className="px-4 py-3 text-right">Disbursed</th>
+                  <th className="px-4 py-3 text-right">Pending Payables</th>
                 </tr>
               </thead>
               <tbody>
@@ -4548,6 +4555,12 @@ export default function AccountingPage() {
                       ₹{item.revenue.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-550">
+                      ₹{(item.vendorCost || 0).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-indigo-600">
+                      ₹{(item.trainCost || 0).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-slate-800">
                       ₹{item.cost.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right font-bold text-emerald-500">

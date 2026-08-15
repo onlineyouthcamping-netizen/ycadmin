@@ -66,6 +66,9 @@ export function TicketTemplateList({
               </th>
             )}
             <th className="px-4 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+              Ticket Cost
+            </th>
+            <th className="px-4 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">
               Status
             </th>
             <th className="px-4 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right">
@@ -140,6 +143,15 @@ export function TicketTemplateList({
                     </div>
                   </td>
                 )}
+                <td className="px-4 py-3">
+                  {template.estimatedTicketCost ? (
+                    <span className="font-extrabold text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      ₹{Number(template.estimatedTicketCost).toLocaleString("en-IN")}/pax
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 text-[10px] italic">Not set</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={cn(
