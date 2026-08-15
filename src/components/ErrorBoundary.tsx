@@ -22,17 +22,19 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("🔥 React Crash caught by ErrorBoundary:", error, errorInfo);
+    console.error("React Crash caught by ErrorBoundary:", error, errorInfo);
     if (
       error &&
       error.message &&
       (error.message.includes("dynamically imported module") ||
         error.message.includes("module script") ||
-        error.message.includes("Importing a module script failed"))
+        error.message.includes("Importing a module script failed") ||
+        error.message.includes("Failed to fetch dynamically"))
     ) {
-      const isRetry = sessionStorage.getItem("chunk_retry_attempt");
-      if (!isRetry) {
-        sessionStorage.setItem("chunk_retry_attempt", "true");
+      const lastReload = sessionStorage.getItem("chunk_retry_timestamp");
+      const now = Date.now();
+      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+        sessionStorage.setItem("chunk_retry_timestamp", now.toString());
         window.location.reload();
       }
     }
