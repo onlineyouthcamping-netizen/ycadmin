@@ -1190,11 +1190,10 @@ export function AccommodationDetailPage({
 
   const handleSaveHeaderInfo = async () => {
     try {
-      const updated = { ...vendor, ...headerForm };
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, headerForm);
+      const updated = res.data?.data || { ...vendor, ...headerForm };
       setVendor(updated);
-      await api
-        .patch(`/vendors/directory/${vendor.id}`, headerForm)
-        .catch(() => {});
+      onUpdateVendor(updated);
       logActivity(
         "PROFILE_UPDATED",
         `Updated vendor info: ${headerForm.name} (${headerForm.city || vendor.city})`,
@@ -1202,26 +1201,24 @@ export function AccommodationDetailPage({
       setHeaderModalOpen(false);
       toast.success("Vendor Name & Location updated!");
     } catch (err: any) {
-      toast.error("Failed to update vendor header: " + err.message);
+      toast.error(err.response?.data?.message || "Failed to update vendor header: " + err.message);
     }
   };
 
   // Save Overview Updates
   const handleSaveOverview = async () => {
     try {
-      const updated = { ...vendor, ...overviewForm };
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, overviewForm);
+      const updated = res.data?.data || { ...vendor, ...overviewForm };
       setVendor(updated);
-      await api
-        .patch(`/vendors/directory/${vendor.id}`, overviewForm)
-        .catch(() => {});
       onUpdateVendor(updated);
       logActivity(
         "PROFILE_UPDATED",
         "Updated vendor operational specs & financial compliance",
       );
-      toast.success("Property Overview updated successfully!");
-    } catch (err) {
-      toast.error("Failed to save overview");
+      toast.success("Overview updated successfully!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to save overview");
     }
   };
 
