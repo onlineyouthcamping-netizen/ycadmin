@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [creatingAnnouncement, setCreatingAnnouncement] = useState(false);
 
-  const [dateFilter, setDateFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("today");
 
   const [currentDateString] = useState(() => {
     return new Date().toLocaleDateString("en-IN", {
@@ -120,6 +120,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     Promise.all([
       dashboardService.getStats(dateFilter),
@@ -127,16 +128,24 @@ export default function DashboardPage() {
       announcementsService.getAll().catch(() => []),
     ])
       .then(([data, pendingCount, list]) => {
-        setStats(data);
+        if (cancelled) return;
+        setStats(data || null);
         setTicketPendingCount(pendingCount);
         setAnnouncements(list);
         setLoadingAnnouncements(false);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Failed to load dashboard stats:", err);
+        setStats(null);
         setLoading(false);
         setLoadingAnnouncements(false);
+        toast.error("Could not load live dashboard stats. Check API connection.");
       });
+    return () => {
+      cancelled = true;
+    };
   }, [dateFilter]);
 
   return (
