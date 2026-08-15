@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Building2,
   Phone,
@@ -200,65 +200,40 @@ export function AccommodationDetailPage({
 
   // State for Transport Vehicles & Routes
   const [transportVehicles, setTransportVehicles] = useState<any[]>([]);
+  const vendorId = initialVendor?.id;
+  const hasLoadedRef = useRef<string | null>(null);
 
-  const loadVendorVehicles = async () => {
-    if (!vendor?.id) return;
+  const loadVendorVehicles = useCallback(async () => {
+    if (!vendorId || !isTransport) return;
     try {
-      const res = await api.get(`/vendors/directory/${vendor.id}/vehicles`);
+      const res = await api.get(`/vendors/directory/${vendorId}/vehicles`);
       if (res.data?.success && Array.isArray(res.data.data)) {
-        if (res.data.data.length > 0) {
-          setTransportVehicles(
-            res.data.data.map((v: any) => ({
-              id: v.id,
-              model: v.vehicleName,
-              capacity: v.advertisedCapacity,
-              sellableSeats: v.sellableSeats,
-              acType: v.hasAC ? "AC" : "Non-AC",
-              plateNumber: v.plateNumber || "PB-08",
-              status: v.isActive ? "Active" : "Inactive",
-            }))
-          );
-        } else {
-          // Seed default master vehicles for quick start
-          const defaultModels = [
-            { name: "20 Seater Tempo Traveller", cap: 20, sell: 19 },
-            { name: "17 Seater Tempo Traveller", cap: 17, sell: 16 },
-            { name: "14 Seater Tempo Traveller", cap: 14, sell: 13 },
-            { name: "Toyota Innova Crysta", cap: 7, sell: 6 },
-            { name: "Maruti Suzuki Ertiga", cap: 6, sell: 6 },
-            { name: "Swift Dzire Sedan", cap: 4, sell: 4 },
-          ];
-          for (const m of defaultModels) {
-            await api.post(`/vendors/directory/${vendor.id}/vehicles`, {
-              vehicleName: m.name,
-              advertisedCapacity: m.cap,
-              sellableSeats: m.sell,
-              hasAC: true,
-            }).catch(() => null);
-          }
-          const reloadRes = await api.get(`/vendors/directory/${vendor.id}/vehicles`);
-          if (reloadRes.data?.success) {
-            setTransportVehicles(
-              reloadRes.data.data.map((v: any) => ({
-                id: v.id,
-                model: v.vehicleName,
-                capacity: v.advertisedCapacity,
-                sellableSeats: v.sellableSeats,
-                acType: v.hasAC ? "AC" : "Non-AC",
-                plateNumber: v.plateNumber || "PB-08",
-                status: v.isActive ? "Active" : "Inactive",
-              }))
-            );
-          }
-        }
+        setTransportVehicles(
+          res.data.data.map((v: any) => ({
+            id: v.id,
+            model: v.vehicleName,
+            capacity: v.advertisedCapacity,
+            sellableSeats: v.sellableSeats,
+            acType: v.hasAC ? "AC" : "Non-AC",
+            plateNumber: v.plateNumber || "PB-08",
+            status: v.isActive ? "Active" : "Inactive",
+          }))
+        );
       }
     } catch (e) {}
-  };
+  }, [vendorId, isTransport]);
 
   useEffect(() => {
-    if (!initialVendor?.id) return;
+    if (!vendorId) return;
+    if (hasLoadedRef.current === vendorId) return;
+    hasLoadedRef.current = vendorId;
+
+    let isMounted = true;
     setVendor(initialVendor);
-    loadVendorVehicles();
+
+    if (isTransport) {
+      loadVendorVehicles();
+    }
 
     // 1. Sync guide & activity rates from prop
     if (initialVendor.guideRates || initialVendor.activityRates) {
@@ -287,10 +262,11 @@ export function AccommodationDetailPage({
     // 4. Sync overviewForm from prop
     setOverviewForm(extractOverviewState(initialVendor));
 
-    // 5. Fetch latest live vendor record from server ONCE on initial load
+    // 5. Fetch latest live vendor record from server ONCE per vendorId
     api
-      .get(`/vendors/directory/${initialVendor.id}`)
+      .get(`/vendors/directory/${vendorId}`)
       .then((res) => {
+        if (!isMounted) return;
         if (res?.data?.data) {
           const fresh = res.data.data;
           setVendor(fresh);
@@ -319,7 +295,11 @@ export function AccommodationDetailPage({
       .catch((err) => {
         console.warn("Could not fetch live vendor details:", err);
       });
-  }, [initialVendor?.id, extractOverviewState]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [vendorId, isTransport, extractOverviewState, initialVendor, loadVendorVehicles]);
 
   const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
     if (vendor.transportRates && vendor.transportRates.length > 0) {
