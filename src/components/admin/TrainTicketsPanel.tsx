@@ -81,6 +81,48 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
+function ApprovalPill({ status }: { status?: string }) {
+  const s = (status || "DRAFT").toUpperCase();
+  if (s === "APPROVED") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+        Approved
+      </span>
+    );
+  }
+  if (s === "SUBMITTED") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+        <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
+        Pending Approval
+      </span>
+    );
+  }
+  if (s === "REJECTED") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+        <XCircle className="w-2.5 h-2.5 text-rose-600" />
+        Rejected
+      </span>
+    );
+  }
+  if (s === "REOPENED") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-orange-50 text-orange-700 border border-orange-200">
+        <RefreshCw className="w-2.5 h-2.5 text-orange-600" />
+        Reopened
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+      <Edit3 className="w-2.5 h-2.5 text-slate-500" />
+      Draft
+    </span>
+  );
+}
+
 const emptyForm = (defaultType: "DEPARTURE" | "RETURN" = "DEPARTURE") => ({
   travelerName: "",
   passengerReference: defaultType,
@@ -144,6 +186,12 @@ export default function TrainTicketsPanel({
   >("ALL");
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
+  // Approval & Rejection Modal
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [ticketToReject, setTicketToReject] = useState<TrainTicket | null>(null);
+  const [rejectionNotes, setRejectionNotes] = useState("");
+  const [isRejecting, setIsRejecting] = useState(false);
+
   // Cancellation Modal
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [ticketToCancel, setTicketToCancel] = useState<TrainTicket | null>(null);
@@ -202,6 +250,59 @@ export default function TrainTicketsPanel({
   useEffect(() => {
     if (bookingId) loadTickets();
   }, [bookingId]);
+
+  // Approval Handlers
+  const handleApproveTicket = async (t: TrainTicket) => {
+    try {
+      await trainTicketService.approveTicket(t.id);
+      toast.success(`Ticket for ${t.travelerName} approved! ✓`);
+      loadTickets();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to approve ticket");
+    }
+  };
+
+  const handleSubmitTicket = async (t: TrainTicket) => {
+    try {
+      await trainTicketService.submitTicket(t.id);
+      toast.success(`Ticket for ${t.travelerName} submitted for approval`);
+      loadTickets();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to submit ticket");
+    }
+  };
+
+  const handleOpenReject = (t: TrainTicket) => {
+    setTicketToReject(t);
+    setRejectionNotes("");
+    setRejectModalOpen(true);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!ticketToReject) return;
+    setIsRejecting(true);
+    try {
+      await trainTicketService.rejectTicket(ticketToReject.id, rejectionNotes);
+      toast.success(`Ticket for ${ticketToReject.travelerName} rejected`);
+      setRejectModalOpen(false);
+      setTicketToReject(null);
+      loadTickets();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to reject ticket");
+    } finally {
+      setIsRejecting(false);
+    }
+  };
+
+  const handleReopenTicket = async (t: TrainTicket) => {
+    try {
+      await trainTicketService.reopenTicket(t.id, "Reopened for updates");
+      toast.success(`Ticket for ${t.travelerName} reopened to draft status`);
+      loadTickets();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to reopen ticket");
+    }
+  };
 
   // Separate Departure and Return tickets
   const departureTickets = tickets.filter(
@@ -657,14 +758,15 @@ export default function TrainTicketsPanel({
                       </td>
                       <td className="py-2 px-2">
                         {depT ? (
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusPill status={depT.ticketStatus} />
-                            <span className="font-mono text-slate-300">
-                              {depT.coach || "-"}-{depT.seatNumber || "-"}
+                            <ApprovalPill status={depT.approvalStatus} />
+                            <span className="font-mono font-bold text-slate-200">
+                              {depT.pnr ? `PNR: ${depT.pnr}` : "No PNR"}
                             </span>
-                            {depT.pnr && (
-                              <span className="font-mono text-slate-400 text-[9.5px]">
-                                PNR: {depT.pnr}
+                            {depT.trainName && (
+                              <span className="text-slate-400 text-[10px] truncate max-w-[140px]" title={depT.trainName}>
+                                • {depT.trainName}
                               </span>
                             )}
                           </div>
@@ -676,14 +778,15 @@ export default function TrainTicketsPanel({
                       </td>
                       <td className="py-2 px-2">
                         {retT ? (
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusPill status={retT.ticketStatus} />
-                            <span className="font-mono text-slate-300">
-                              {retT.coach || "-"}-{retT.seatNumber || "-"}
+                            <ApprovalPill status={retT.approvalStatus} />
+                            <span className="font-mono font-bold text-slate-200">
+                              {retT.pnr ? `PNR: ${retT.pnr}` : "No PNR"}
                             </span>
-                            {retT.pnr && (
-                              <span className="font-mono text-slate-400 text-[9.5px]">
-                                PNR: {retT.pnr}
+                            {retT.trainName && (
+                              <span className="text-slate-400 text-[10px] truncate max-w-[140px]" title={retT.trainName}>
+                                • {retT.trainName}
                               </span>
                             )}
                           </div>
@@ -971,9 +1074,9 @@ export default function TrainTicketsPanel({
                     <th className="px-4 py-2">Traveler</th>
                     <th className="px-4 py-2">Status & Lifecycle</th>
                     <th className="px-4 py-2 font-mono">PNR</th>
-                    <th className="px-4 py-2">Train / Route</th>
-                    <th className="px-4 py-2">Coach & Seat</th>
+                    <th className="px-4 py-2">Train Name & Route</th>
                     <th className="px-4 py-2">Internal Cost</th>
+                    <th className="px-4 py-2">Approval & Actions</th>
                     <th className="px-4 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1048,26 +1151,77 @@ export default function TrainTicketsPanel({
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-slate-600 font-bold">
-                        {t.pnr || "—"}
+                      <td className="px-4 py-2.5 font-mono text-slate-800 font-black">
+                        {t.pnr ? (
+                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-900 font-mono">
+                            {t.pnr}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">No PNR</span>
+                        )}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600">
-                        {t.trainName
-                          ? `${t.trainName} (${t.trainNumber || ""})`
-                          : "—"}
+                      <td className="px-4 py-2.5 text-slate-700 font-medium">
+                        <div className="font-bold text-slate-900">
+                          {t.trainName || "—"} {t.trainNumber ? `(${t.trainNumber})` : ""}
+                        </div>
                         {t.sourceStation && (
                           <span className="block text-[10px] text-slate-400">
                             {t.sourceStation} &rarr; {t.destinationStation}
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-slate-700">
-                        {t.coach ? `${t.coach}-${t.seatNumber || ""}` : "—"}
-                      </td>
                       <td className="px-4 py-2.5 font-bold text-slate-800">
                         ₹{Number(t.ticketAmount || 0).toLocaleString("en-IN")}
                       </td>
-                      <td className="px-4 py-2.5 text-right space-x-1.5">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <ApprovalPill status={t.approvalStatus} />
+                          {canApprove && t.approvalStatus === "SUBMITTED" && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveTicket(t)}
+                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0 gap-1 rounded shadow-xs"
+                                title="Approve Ticket"
+                              >
+                                <Check className="w-3 h-3" /> Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenReject(t)}
+                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-bold px-2 py-0 gap-1 rounded"
+                                title="Reject Ticket"
+                              >
+                                <Ban className="w-3 h-3" /> Reject
+                              </Button>
+                            </div>
+                          )}
+                          {canManage && (t.approvalStatus === "DRAFT" || !t.approvalStatus) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSubmitTicket(t)}
+                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-bold px-2 py-0 gap-1 rounded"
+                              title="Submit for Manager Approval"
+                            >
+                              <Send className="w-2.5 h-2.5" /> Submit
+                            </Button>
+                          )}
+                          {canManage && t.approvalStatus === "REJECTED" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReopenTicket(t)}
+                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-bold px-2 py-0 gap-1 rounded"
+                              title="Reopen Ticket to Draft"
+                            >
+                              <RotateCcw className="w-2.5 h-2.5" /> Reopen
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
                         {canManage && (
                           <>
                             {t.ticketStatus !== "CANCELLED" && (
@@ -1154,9 +1308,9 @@ export default function TrainTicketsPanel({
                     <th className="px-4 py-2">Traveler</th>
                     <th className="px-4 py-2">Status & Lifecycle</th>
                     <th className="px-4 py-2 font-mono">PNR</th>
-                    <th className="px-4 py-2">Train / Route</th>
-                    <th className="px-4 py-2">Coach & Seat</th>
+                    <th className="px-4 py-2">Train Name & Route</th>
                     <th className="px-4 py-2">Internal Cost</th>
+                    <th className="px-4 py-2">Approval & Actions</th>
                     <th className="px-4 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1231,26 +1385,77 @@ export default function TrainTicketsPanel({
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-slate-600 font-bold">
-                        {t.pnr || "—"}
+                      <td className="px-4 py-2.5 font-mono text-slate-800 font-black">
+                        {t.pnr ? (
+                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-900 font-mono">
+                            {t.pnr}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">No PNR</span>
+                        )}
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600">
-                        {t.trainName
-                          ? `${t.trainName} (${t.trainNumber || ""})`
-                          : "—"}
+                      <td className="px-4 py-2.5 text-slate-700 font-medium">
+                        <div className="font-bold text-slate-900">
+                          {t.trainName || "—"} {t.trainNumber ? `(${t.trainNumber})` : ""}
+                        </div>
                         {t.sourceStation && (
                           <span className="block text-[10px] text-slate-400">
                             {t.sourceStation} &rarr; {t.destinationStation}
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-slate-700">
-                        {t.coach ? `${t.coach}-${t.seatNumber || ""}` : "—"}
-                      </td>
                       <td className="px-4 py-2.5 font-bold text-slate-800">
                         ₹{Number(t.ticketAmount || 0).toLocaleString("en-IN")}
                       </td>
-                      <td className="px-4 py-2.5 text-right space-x-1.5">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <ApprovalPill status={t.approvalStatus} />
+                          {canApprove && t.approvalStatus === "SUBMITTED" && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveTicket(t)}
+                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0 gap-1 rounded shadow-xs"
+                                title="Approve Ticket"
+                              >
+                                <Check className="w-3 h-3" /> Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenReject(t)}
+                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-bold px-2 py-0 gap-1 rounded"
+                                title="Reject Ticket"
+                              >
+                                <Ban className="w-3 h-3" /> Reject
+                              </Button>
+                            </div>
+                          )}
+                          {canManage && (t.approvalStatus === "DRAFT" || !t.approvalStatus) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSubmitTicket(t)}
+                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-bold px-2 py-0 gap-1 rounded"
+                              title="Submit for Manager Approval"
+                            >
+                              <Send className="w-2.5 h-2.5" /> Submit
+                            </Button>
+                          )}
+                          {canManage && t.approvalStatus === "REJECTED" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReopenTicket(t)}
+                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-bold px-2 py-0 gap-1 rounded"
+                              title="Reopen Ticket to Draft"
+                            >
+                              <RotateCcw className="w-2.5 h-2.5" /> Reopen
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
                         {canManage && (
                           <>
                             {t.ticketStatus !== "CANCELLED" && (
@@ -1718,6 +1923,61 @@ export default function TrainTicketsPanel({
               className="h-8 text-xs"
             >
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* ─── REJECTION DIALOG ─── */}
+      <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Ban className="w-4 h-4 text-rose-600" /> Reject Train Ticket
+            </DialogTitle>
+          </DialogHeader>
+          {ticketToReject && (
+            <div className="space-y-3 py-2 text-xs">
+              <div className="bg-rose-50 border border-rose-200 p-2.5 rounded text-rose-900 space-y-0.5">
+                <div className="font-bold">
+                  {ticketToReject.travelerName} • PNR: {ticketToReject.pnr || "—"}
+                </div>
+                <div className="text-[11px] text-rose-700">
+                  {ticketToReject.trainName} ({ticketToReject.trainNumber || "N/A"})
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase text-slate-500">
+                  Reason for Rejection *
+                </label>
+                <Textarea
+                  value={rejectionNotes}
+                  onChange={(e) => setRejectionNotes(e.target.value)}
+                  placeholder="e.g. Incorrect train route, PNR mismatch, or wrong journey date..."
+                  rows={3}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRejectModalOpen(false)}
+              className="h-8 text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={isRejecting || !rejectionNotes.trim()}
+              onClick={handleConfirmReject}
+              size="sm"
+              className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold"
+            >
+              {isRejecting ? "Rejecting..." : "Confirm Rejection"}
             </Button>
           </DialogFooter>
         </DialogContent>

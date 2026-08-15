@@ -12,7 +12,7 @@ import {
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatINR } from "@/lib/utils";
 
 interface Passenger {
   id: string;
@@ -24,6 +24,9 @@ interface Passenger {
   paymentMethod: "CASH" | "UPI" | "ONLINE" | "PENDING";
   collected: boolean;
   seatNo?: string;
+  isLead: boolean;
+  bookingLeadName: string;
+  bookingBalance: number;
 }
 
 interface MobileDepartureWorkspaceProps {
@@ -49,38 +52,20 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
 
   const [collectedMap, setCollectedMap] = useState<Record<string, boolean>>({});
 
-  const samplePassengers: Passenger[] = [
-    {
-      id: "P1",
-      name: "Rahul Sharma",
-      phone: "+91 9876543210",
-      bookingId: "BK-8492",
-      tripName: "Spiti Valley Road Trip",
-      balance: 2500,
-      paymentMethod: "PENDING",
-      collected: false,
-      seatNo: "S3-42",
-    },
-    {
-      id: "P2",
-      name: "Priya Patel",
-      phone: "+91 9812345678",
-      bookingId: "BK-8493",
-      tripName: "Spiti Valley Road Trip",
-      balance: 0,
-      paymentMethod: "UPI",
-      collected: true,
-      seatNo: "S3-43",
-    },
-  ];
-
   const passengersList: (Passenger & { rawPassenger?: any })[] = rawPassengers.length > 0
     ? rawPassengers.map((p: any, idx: number) => {
         const id = p.id || `P-${idx}`;
+        const isLead = p.isLead !== false;
+        const rawBookingBalance = Number(
+          p.bookingBalance ?? p.balance ?? p.remainingAmount ?? 0,
+        );
+        const bookingBalance = Number.isFinite(rawBookingBalance)
+          ? Math.max(0, Math.round(rawBookingBalance))
+          : 0;
         const isCollected = collectedMap[id] !== undefined
           ? collectedMap[id]
-          : (p.balance <= 0 || p.paymentStatus === "Paid in Full");
-        const balanceVal = isCollected ? 0 : (p.balance !== undefined ? p.balance : (p.remainingAmount || 0));
+          : (bookingBalance <= 0 || p.paymentStatus === "Paid in Full");
+        const balanceVal = isCollected || !isLead ? 0 : bookingBalance;
 
         return {
           id,
@@ -89,13 +74,16 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
           bookingId: p.bookingRef || p.bookingId || p.id,
           tripName: p.tripTitle || departureName || "Trip",
           balance: balanceVal,
+          bookingBalance: isCollected ? 0 : bookingBalance,
           paymentMethod: isCollected ? "CASH" : "PENDING",
           collected: isCollected,
-          seatNo: p.seatNo || p.seatNumber || p.roomNo || `S3-${40 + idx}`,
+          seatNo: p.seatNo || p.seatNumber || undefined,
+          isLead,
+          bookingLeadName: p.leadPassengerName || p.name || p.fullName || "Traveler",
           rawPassenger: p,
         };
       })
-    : samplePassengers;
+    : [];
 
   const toggleCollection = (id: string) => {
     setCollectedMap((prev) => ({
@@ -105,10 +93,11 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
     onToggleCollection?.(id);
   };
 
-  const collectedCount = passengersList.filter((p) => p.collected).length;
-  const totalCount = passengersList.length;
+  const collectionBookings = passengersList.filter((p) => p.isLead);
+  const collectedCount = collectionBookings.filter((p) => p.collected).length;
+  const totalCount = collectionBookings.length;
   const totalPendingBalance = passengersList.reduce(
-    (sum, p) => sum + (p.collected ? 0 : p.balance),
+    (sum, p) => sum + (p.isLead && !p.collected ? p.balance : 0),
     0,
   );
 
@@ -117,7 +106,8 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.phone.includes(search) ||
       p.bookingId.toLowerCase().includes(search.toLowerCase());
-    if (filter === "pending") return matchesSearch && !p.collected;
+    if (filter === "pending")
+      return matchesSearch && p.bookingBalance > 0;
     if (filter === "collected") return matchesSearch && p.collected;
     return matchesSearch;
   });
@@ -154,7 +144,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
                 {collectedCount}
               </span>
               <span className="text-xs font-bold text-slate-400">
-                / {totalCount} travellers
+                / {totalCount} bookings
               </span>
             </div>
           </div>
@@ -163,7 +153,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
               Pending Cash
             </span>
             <span className="text-2xl font-black text-amber-400 mt-0.5 block">
-              ₹{totalPendingBalance.toLocaleString()}
+              {formatINR(totalPendingBalance)}
             </span>
           </div>
         </div>
@@ -172,7 +162,9 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
         <div className="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
           <div
             className="bg-emerald-500 h-full transition-all duration-300"
-            style={{ width: `${(collectedCount / totalCount) * 100}%` }}
+            style={{
+              width: `${totalCount > 0 ? (collectedCount / totalCount) * 100 : 0}%`,
+            }}
           />
         </div>
       </div>
@@ -231,6 +223,11 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
 
       {/* Passengers List Cards */}
       <div className="space-y-2.5">
+        {filteredPassengers.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-semibold text-slate-500">
+            No passengers found for this departure.
+          </div>
+        )}
         {filteredPassengers.map((p) => (
           <div
             key={p.id}
@@ -246,12 +243,18 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-slate-900">{p.name}</h3>
-                  <span className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
-                    {p.seatNo}
-                  </span>
+                  {p.seatNo && (
+                    <span className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
+                      {p.seatNo}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  {p.bookingId} • {p.phone}
+                  {p.bookingId}
+                  {!p.isLead && ` • Lead: ${p.bookingLeadName}`}
+                </p>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  {p.phone}
                 </p>
               </div>
 
@@ -264,7 +267,11 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
                       : "bg-amber-100 text-amber-700",
                   )}
                 >
-                  {p.collected ? "COLLECTED" : `DUE ₹${p.balance}`}
+                  {p.collected
+                    ? "COLLECTED"
+                    : p.isLead
+                      ? `DUE ${formatINR(p.balance)}`
+                      : `SHARED DUE ${formatINR(p.bookingBalance)}`}
                 </span>
               </div>
             </div>
@@ -290,19 +297,27 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
                 </a>
               </div>
 
-              <button
-                type="button"
-                onClick={() => toggleCollection(p.id)}
-                className={cn(
-                  "h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs touch-manipulation",
-                  p.collected
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                    : "bg-[#FF5400] text-white hover:bg-[#e04a00]",
-                )}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                {p.collected ? "Paid (Tap to Undo)" : `Collect ₹${p.balance}`}
-              </button>
+              {p.isLead ? (
+                <button
+                  type="button"
+                  onClick={() => toggleCollection(p.id)}
+                  className={cn(
+                    "h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs touch-manipulation",
+                    p.collected
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "bg-[#FF5400] text-white hover:bg-[#e04a00]",
+                  )}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {p.collected
+                    ? "Paid (Tap to Undo)"
+                    : `Collect ${formatINR(p.balance)}`}
+                </button>
+              ) : (
+                <span className="text-[10px] font-bold text-slate-500">
+                  Collect once under {p.bookingLeadName}
+                </span>
+              )}
             </div>
           </div>
         ))}

@@ -741,7 +741,7 @@ export default function VerificationQueuePage() {
                             PNR / Ticket State
                           </th>
                           <th className="px-3.5 py-2.5 w-[150px]">
-                            Train + Coach + Seat
+                            Train Name
                           </th>
                           <th className="px-3.5 py-2.5 w-[120px]">Submitted</th>
                           <th className="px-3.5 py-2.5 w-[110px]">
@@ -954,15 +954,10 @@ export default function VerificationQueuePage() {
                                   </span>
                                 )}
                               </td>
-                              {/* Train + Coach + Seat */}
+                              {/* Train Name */}
                               <td className="px-3.5 py-2 font-mono">
                                 <div className="text-[11px] font-semibold text-[#162B45] truncate max-w-[130px]">
-                                  {item.trainName || "—"}
-                                </div>
-                                <div className="text-[9px] text-[#74839A] font-medium mt-0.5">
-                                  {item.coach
-                                    ? `${item.coach}-${item.seatNumber || "Seat TBD"}`
-                                    : "—"}
+                                  {item.trainName || "—"} {item.trainNumber ? `(${item.trainNumber})` : ""}
                                 </div>
                               </td>
                               {/* Submitted (Submitted By + Submitted At two lines) */}

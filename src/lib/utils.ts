@@ -5,6 +5,37 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const inrFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+export function formatINR(value: unknown): string {
+  const amount = Number(value);
+  return inrFormatter.format(Number.isFinite(amount) ? Math.round(amount) : 0);
+}
+
+export function allocateWholeRupees(
+  total: unknown,
+  recipientCount: number,
+): number[] {
+  const count = Math.max(1, Math.trunc(recipientCount) || 1);
+  const numericTotal = Number(total);
+  const roundedTotal = Number.isFinite(numericTotal)
+    ? Math.round(numericTotal)
+    : 0;
+  const sign = roundedTotal < 0 ? -1 : 1;
+  const absoluteTotal = Math.abs(roundedTotal);
+  const baseAmount = Math.floor(absoluteTotal / count);
+  const remainder = absoluteTotal % count;
+
+  return Array.from(
+    { length: count },
+    (_, index) => sign * (baseAmount + (index < remainder ? 1 : 0)),
+  );
+}
+
 export function safeFormatDate(
   dateVal: any,
   options?: Intl.DateTimeFormatOptions,

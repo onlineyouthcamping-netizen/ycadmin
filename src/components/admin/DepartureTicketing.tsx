@@ -448,15 +448,10 @@ export default function DepartureTicketing({
 
                     {/* Train & Seat */}
                     <td className="p-3 border-r border-slate-100">
-                      {t.trainNumber || t.coach || t.seatBerth ? (
-                        <>
-                          <div className="font-bold text-slate-800">
-                            {t.trainName} {t.trainNumber ? `(${t.trainNumber})` : ""}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-medium">
-                            {t.coach ? `Coach: ${t.coach}` : ""} {t.seatBerth ? `| Seat: ${t.seatBerth}` : ""}
-                          </div>
-                        </>
+                      {t.trainName || t.trainNumber ? (
+                        <div className="font-bold text-slate-800">
+                          {t.trainName || "Train"} {t.trainNumber ? `(${t.trainNumber})` : ""}
+                        </div>
                       ) : (
                         <span className="text-xs text-slate-400 italic">—</span>
                       )}

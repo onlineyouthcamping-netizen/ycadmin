@@ -69,7 +69,7 @@ import {
   Sparkles,
   MessageCircle
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { allocateWholeRupees, cn } from "@/lib/utils";
 import api from "@/services/api";
 import { opsService } from "@/services/ops.service";
 import { toast } from "sonner";
@@ -1279,9 +1279,18 @@ export default function DepartureHubPage() {
         );
         const passengerCount = filteredCoPax.length + 1;
 
-        const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
-        const perPersonPaid = (b.advancePaid || 0) / passengerCount;
-        const perPersonBalance = due > 0 ? due / passengerCount : 0;
+        const allocatedAmounts = allocateWholeRupees(
+          b.totalAmount || 0,
+          passengerCount,
+        );
+        const allocatedPaid = allocateWholeRupees(
+          b.advancePaid || 0,
+          passengerCount,
+        );
+        const allocatedBalances = allocateWholeRupees(
+          due > 0 ? due : 0,
+          passengerCount,
+        );
 
         const trainOpt =
           b.trainOption ||
@@ -1311,9 +1320,10 @@ export default function DepartureHubPage() {
           emergencyContact: "9876543211",
           roomNo: leadRoomNo,
           paymentStatus: paymentLabel,
-          amount: perPersonAmount,
-          paidAmount: perPersonPaid,
-          balance: perPersonBalance,
+          amount: allocatedAmounts[0],
+          paidAmount: allocatedPaid[0],
+          balance: allocatedBalances[0],
+          bookingBalance: Math.max(0, Math.round(due)),
           paymentMode: "UPI",
           paymentDate: "2027-06-16",
           idProofType: "Aadhar Card",
@@ -1367,7 +1377,9 @@ export default function DepartureHubPage() {
               phone: p.phone || b.phone || "—",
               email: p.email || "—",
               pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
-              amount: perPersonAmount,
+              amount: allocatedAmounts[idx + 1],
+              paidAmount: allocatedPaid[idx + 1],
+              balance: allocatedBalances[idx + 1],
               notes: p.notes || (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
               isLead: false,
               gender: p.gender || "Male",
@@ -5709,9 +5721,18 @@ useEffect(() => {
       );
       const passengerCount = filteredCoPax.length + 1;
 
-      const perPersonAmount = (b.totalAmount || 12000) / passengerCount;
-      const perPersonPaid = (b.advancePaid || 0) / passengerCount;
-      const perPersonBalance = due > 0 ? due / passengerCount : 0;
+      const allocatedAmounts = allocateWholeRupees(
+        b.totalAmount || 0,
+        passengerCount,
+      );
+      const allocatedPaid = allocateWholeRupees(
+        b.advancePaid || 0,
+        passengerCount,
+      );
+      const allocatedBalances = allocateWholeRupees(
+        due > 0 ? due : 0,
+        passengerCount,
+      );
 
       const leadPassenger = {
         name: leadName,
@@ -5731,9 +5752,9 @@ useEffect(() => {
         roomNo:
           leadRoomInfo.roomNo || passengersObj?.details?.roomAllocation || "—",
         paymentStatus: paymentLabel,
-        amount: perPersonAmount,
-        paidAmount: perPersonPaid,
-        balance: perPersonBalance,
+        amount: allocatedAmounts[0],
+        paidAmount: allocatedPaid[0],
+        balance: allocatedBalances[0],
         status: b.status || "CONFIRMED",
         isCancelled: b.status === "cancelled" || b.status === "CANCELLED",
         notes: b.notes || b.adminNotes || "",
@@ -5776,9 +5797,9 @@ useEffect(() => {
             roomNo:
               coRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
             paymentStatus: paymentLabel,
-            amount: perPersonAmount,
-            paidAmount: perPersonPaid,
-            balance: perPersonBalance,
+            amount: allocatedAmounts[idx + 1],
+            paidAmount: allocatedPaid[idx + 1],
+            balance: allocatedBalances[idx + 1],
           });
         });
       }

@@ -589,13 +589,13 @@ export function PassengerDrawer({
                         {t.ticketStatus}
                       </span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-slate-600 font-mono">
-                      <span>PNR: <strong>{t.pnr || "—"}</strong></span>
-                      <span>Coach/Seat: <strong>{t.coach || "-"}-{t.seatNumber || "-"}</strong></span>
+                    <div className="flex justify-between text-[11px] text-slate-700">
+                      <span>PNR: <strong className="font-mono text-slate-900">{t.pnr || "—"}</strong></span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t.passengerReference || "Journey"}</span>
                     </div>
                     {t.sourceStation && (
                       <div className="text-[10px] text-slate-500">
-                        {t.sourceStation} &rarr; {t.destinationStation} ({t.passengerReference || "Journey"})
+                        {t.sourceStation} &rarr; {t.destinationStation}
                       </div>
                     )}
                   </div>
