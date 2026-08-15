@@ -69,7 +69,6 @@ const TABS = [
   { id: "contacts", label: "Contacts", icon: Phone },
   { id: "rooms", label: "Rooms", icon: Bed },
   { id: "seasonal_pricing", label: "Seasonal Pricing", icon: Calendar },
-  { id: "trips", label: "Trips & Destinations", icon: Users },
   { id: "ledger", label: "Payment Ledger", icon: CreditCard },
   { id: "price_history", label: "Price History", icon: TrendingUp },
   { id: "timeline", label: "Activity Timeline", icon: History },
@@ -93,7 +92,6 @@ export function AccommodationDetailPage({
         { id: "overview", label: "Overview", icon: Bus },
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "vehicles", label: "Vehicles & Route Pricing", icon: Car },
-        { id: "trips", label: "Trips & Routes", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
       ];
@@ -103,7 +101,6 @@ export function AccommodationDetailPage({
         { id: "overview", label: "Overview", icon: Compass },
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "rates_allowance", label: "Rates & Allowance", icon: DollarSign },
-        { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
       ];
@@ -113,7 +110,6 @@ export function AccommodationDetailPage({
         { id: "overview", label: "Overview", icon: Activity },
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "rates_allowance", label: "Rates & Allowance", icon: DollarSign },
-        { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
       ];
@@ -123,7 +119,6 @@ export function AccommodationDetailPage({
         { id: "overview", label: "Overview", icon: Utensils },
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "meal_tariffs", label: "Meal Tariffs & Thali Rates", icon: DollarSign },
-        { id: "trips", label: "Assigned Trips", icon: Users },
         { id: "ledger", label: "Payment Ledger", icon: CreditCard },
         { id: "timeline", label: "Activity Timeline", icon: History },
       ];
@@ -133,7 +128,6 @@ export function AccommodationDetailPage({
       { id: "contacts", label: "Contacts", icon: Phone },
       { id: "rooms", label: "Rooms", icon: Bed },
       { id: "seasonal_pricing", label: "Seasonal Pricing", icon: Calendar },
-      { id: "trips", label: "Trips & Destinations", icon: Users },
       { id: "ledger", label: "Payment Ledger", icon: CreditCard },
       { id: "price_history", label: "Price History", icon: TrendingUp },
       { id: "timeline", label: "Activity Timeline", icon: History },
@@ -3215,200 +3209,6 @@ export function AccommodationDetailPage({
             </div>
           )}
 
-          {/* TAB 7: TRIPS & DESTINATIONS MAPPING */}
-          {activeTab === "trips" && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                    Destination Mappings & Mapped Real Trips
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Trips dynamically linked via destination match or explicit assignment.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => setDestModalOpen(true)}
-                    variant="outline"
-                    className="h-8 text-xs font-bold border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Link Destination
-                  </Button>
-                  <Button
-                    onClick={() => setLinkTripModalOpen(true)}
-                    className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Link Real Trip
-                  </Button>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-4">
-                <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
-                  <span className="font-bold text-slate-700 text-[10px] uppercase block">
-                    Linked Master Destinations
-                  </span>
-                  <div className="flex gap-2 flex-wrap">
-                    {destinations.length === 0 ? (
-                      <span className="text-slate-400 italic text-xs">No destinations linked yet.</span>
-                    ) : (
-                      destinations.map((d, i) => (
-                        <span
-                          key={i}
-                          className="bg-amber-100 text-amber-800 px-3 py-1 rounded-md font-extrabold text-xs flex items-center gap-1.5"
-                        >
-                          ✓ {d}
-                          <button
-                            onClick={() => handleDeleteDestination(d)}
-                            className="hover:text-rose-700 font-black ml-1"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* SECTION 1: MAPPED DESTINATION TRIPS */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-700 text-[10px] uppercase block">
-                      Destination-Matched Active Trips ({mappedTrips.length})
-                    </span>
-                  </div>
-
-                  {mappedTrips.length === 0 ? (
-                    <div className="bg-white p-4 rounded-lg border border-slate-200 text-center space-y-2">
-                      <p className="text-slate-500 font-medium text-xs">
-                        No destination-matched trips currently linked to this vendor's location.
-                      </p>
-                    </div>
-                  ) : (
-                    mappedTrips.map((trip, idx) => {
-                      const displayCode =
-                        trip.code ||
-                        trip.shortCode ||
-                        (trip.id && trip.id.length <= 10 ? trip.id.toUpperCase() : null) ||
-                        (trip.slug && trip.slug.length <= 10 ? trip.slug.toUpperCase() : null) ||
-                        `TRIP-${idx + 1}`;
-
-                      return (
-                        <div
-                          key={trip.id || idx}
-                          className="flex justify-between items-center bg-white p-3.5 rounded-lg border border-slate-200 hover:border-orange-300 transition-colors"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <span className="px-2.5 py-1 rounded-md bg-orange-50 border border-orange-200 text-orange-700 font-mono font-black text-[10px] uppercase shrink-0 min-w-[52px] text-center">
-                              {displayCode}
-                            </span>
-                            <div className="min-w-0">
-                              <span className="font-extrabold text-slate-900 text-xs block truncate">
-                                {trip.title || trip.name}
-                              </span>
-                              <span className="text-[10px] text-slate-500 font-medium block truncate">
-                                Location: {trip.location || vendor.location || "Himachal"} • {trip.duration || "Multi-day"}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0 ml-3">
-                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded uppercase">
-                              Active Link
-                            </span>
-                            {linkedTripIds.includes(trip.id) && (
-                              <button
-                                onClick={() => {
-                                  setLinkedTripIds(linkedTripIds.filter((id) => id !== trip.id));
-                                  toast.success(`Unlinked ${trip.title}`);
-                                }}
-                                className="text-xs text-slate-400 hover:text-red-600 font-bold px-2 py-1"
-                              >
-                                Unlink
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                {/* SECTION 2: ALL AVAILABLE SYSTEM TRIPS CATALOG */}
-                <div className="space-y-3 pt-3 border-t border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-slate-800 text-xs uppercase block">
-                        All Available System Trips Catalog ({allTrips.length} Total)
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        View and 1-click link any fed trip in YouthCamping OS to this vendor.
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {allTrips.map((t, idx) => {
-                      const isLinked = mappedTrips.some((m) => m.id === t.id) || linkedTripIds.includes(t.id);
-                      const displayCode =
-                        t.code ||
-                        t.shortCode ||
-                        (t.id && t.id.length <= 10 ? t.id.toUpperCase() : null) ||
-                        (t.slug && t.slug.length <= 10 ? t.slug.toUpperCase() : null) ||
-                        `TRIP-${idx + 1}`;
-
-                      return (
-                        <div
-                          key={t.id}
-                          className={cn(
-                            "flex items-center justify-between p-3 rounded-lg border text-xs transition-colors bg-white",
-                            isLinked ? "border-emerald-200 bg-emerald-50/30" : "border-slate-200 hover:border-orange-300"
-                          )}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono font-bold text-[10px] uppercase shrink-0">
-                              {displayCode}
-                            </span>
-                            <div className="min-w-0">
-                              <span className="font-bold text-slate-900 block truncate text-[11px]">
-                                {t.title || t.name}
-                              </span>
-                              <span className="text-[10px] text-slate-500 block truncate">
-                                {t.location || "Trip"} • {t.duration || "Nights"}
-                              </span>
-                            </div>
-                          </div>
-
-                          <Button
-                            size="xs"
-                            onClick={() => {
-                              if (isLinked) {
-                                setLinkedTripIds(linkedTripIds.filter((id) => id !== t.id));
-                                toast.success(`Unlinked ${t.title}`);
-                              } else {
-                                setLinkedTripIds([...linkedTripIds, t.id]);
-                                logActivity("TRIP_LINKED", `Linked trip: ${t.title} to vendor`);
-                                toast.success(`Linked "${t.title}" to ${vendor.name}`);
-                              }
-                            }}
-                            className={cn(
-                              "h-7 text-[10px] font-bold px-2.5 shrink-0 ml-2",
-                              isLinked
-                                ? "bg-emerald-100 text-emerald-800 hover:bg-rose-100 hover:text-rose-800"
-                                : "bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-600 hover:text-white"
-                            )}
-                          >
-                            {isLinked ? "✓ Linked" : "+ Link Trip"}
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* TAB 8: PAYMENT LEDGER */}
           {activeTab === "ledger" && (
             <div className="space-y-4">
@@ -4119,68 +3919,6 @@ export function AccommodationDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Destination Modal */}
-      <Dialog open={destModalOpen} onOpenChange={setDestModalOpen}>
-        <DialogContent className="max-w-md bg-white border border-slate-200 rounded-xl p-6 shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-extrabold text-slate-800">
-              Link Master Destination
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-xs my-2">
-            <div>
-              <label className="font-bold text-slate-700 block mb-1.5">
-                Quick Select Master Destinations
-              </label>
-              <div className="flex gap-1.5 flex-wrap bg-slate-50 p-3 rounded-lg border border-slate-200 max-h-36 overflow-y-auto">
-                {MASTER_DESTINATIONS.map((dName) => {
-                  const isLinked = destinations.includes(dName);
-                  return (
-                    <button
-                      key={dName}
-                      onClick={() => {
-                        if (isLinked) handleDeleteDestination(dName);
-                        else {
-                          setDestinations([...destinations, dName]);
-                          toast.success(`Linked ${dName}`);
-                        }
-                      }}
-                      className={cn(
-                        "px-2.5 py-1 rounded text-xs font-bold transition-all border cursor-pointer",
-                        isLinked
-                          ? "bg-amber-500 text-white border-amber-600 shadow-2xs"
-                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300",
-                      )}
-                    >
-                      {isLinked ? `✓ ${dName}` : `+ ${dName}`}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Or Enter Custom Destination Name
-              </label>
-              <Input
-                value={destName}
-                onChange={(e) => setDestName(e.target.value)}
-                placeholder="e.g. Shimla / Spiti / Goa"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              onClick={handleAddDestination}
-              className="bg-[#F97316] text-white text-xs font-bold px-4 py-2"
-            >
-              Link Destination
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Ledger Modal */}
       <Dialog open={ledgerModalOpen} onOpenChange={setLedgerModalOpen}>
         <DialogContent className="max-w-md bg-white border border-slate-200 rounded-xl p-6 shadow-xl">
@@ -4801,69 +4539,6 @@ export function AccommodationDetailPage({
               className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
             >
               {editingActivityRate ? "Update Activity Rate" : "Add Activity Rate"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* LINK REAL TRIP MODAL */}
-      <Dialog open={linkTripModalOpen} onOpenChange={setLinkTripModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-xl rounded-xl">
-          <DialogTitle className="text-base font-black text-slate-900">
-            Link Real Fed Trip
-          </DialogTitle>
-          <p className="text-xs text-slate-500">
-            Select an available trip fed in YouthCamping OS to map directly to <strong>{vendor.name}</strong>.
-          </p>
-
-          <div className="space-y-3 py-3 text-xs">
-            <div>
-              <label className="font-extrabold text-slate-700 block mb-1">
-                Select Real Fed Trip
-              </label>
-              <select
-                value={selectedTripToLink}
-                onChange={(e) => setSelectedTripToLink(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
-              >
-                <option value="">-- Choose Real Trip --</option>
-                {allTrips.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title || t.name} ({t.location || "Trip"}) [{t.id}]
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLinkTripModalOpen(false)}
-              className="h-8 text-xs font-bold"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => {
-                if (!selectedTripToLink) {
-                  toast.error("Please select a trip to link");
-                  return;
-                }
-                const tripObj = allTrips.find((t) => t.id === selectedTripToLink);
-                if (!linkedTripIds.includes(selectedTripToLink)) {
-                  setLinkedTripIds([...linkedTripIds, selectedTripToLink]);
-                  logActivity("TRIP_LINKED", `Linked trip: ${tripObj?.title || selectedTripToLink} to vendor`);
-                  toast.success(`Linked "${tripObj?.title || selectedTripToLink}" to ${vendor.name}`);
-                }
-                setLinkTripModalOpen(false);
-                setSelectedTripToLink("");
-              }}
-              className="h-8 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4"
-            >
-              Link Trip
             </Button>
           </div>
         </DialogContent>
