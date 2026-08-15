@@ -3231,7 +3231,7 @@ export default function BookingDetailsView({
                             </td>
 
                             {/* Documents */}
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                               {(() => {
                                 const isGuide = currentAdmin?.role === "guide";
                                 const isSales = currentAdmin?.role === "sales";
@@ -3337,7 +3337,8 @@ export default function BookingDetailsView({
                                             <div className="flex gap-1.5 items-center">
                                               <button
                                                 type="button"
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
                                                   const docUrl = doc.url || doc.fileUrl;
                                                   if (docUrl) {
                                                     const fullUrl = docUrl.startsWith("http://") || docUrl.startsWith("https://") || docUrl.startsWith("data:") || docUrl.startsWith("blob:")
@@ -3362,12 +3363,13 @@ export default function BookingDetailsView({
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={() =>
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
                                                   handleRemoveDoc(
                                                     p.id,
                                                     doc.id,
-                                                  )
-                                                }
+                                                  );
+                                                }}
                                                 className="text-[9px] text-red-500 hover:text-red-700 font-bold cursor-pointer"
                                               >
                                                 Delete
