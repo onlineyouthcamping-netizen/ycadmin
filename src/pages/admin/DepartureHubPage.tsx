@@ -1195,18 +1195,16 @@ export default function DepartureHubPage() {
     return t || "overview";
   };
 
-  const [activeTab, setActiveTabState] = useState<string>(() =>
-    normalizeTab(new URLSearchParams(location.search).get("tab") || "overview"),
-  );
-
-  useEffect(() => {
-    const nextTab = normalizeTab(new URLSearchParams(location.search).get("tab") || "overview");
-    setActiveTabState((prev) => (prev !== nextTab ? nextTab : prev));
-  }, [location.search]);
+  const activeTab = useMemo(() => {
+    const rawTab =
+      currentParams.get("tab") ||
+      new URLSearchParams(location.search).get("tab") ||
+      "overview";
+    return normalizeTab(rawTab);
+  }, [currentParams, location.search]);
 
   const setActiveTab = (tab: string) => {
     const normalized = normalizeTab(tab);
-    setActiveTabState(normalized);
     const nextParams = new URLSearchParams(location.search);
     nextParams.set("tab", normalized);
     if (departureIdParam) {
