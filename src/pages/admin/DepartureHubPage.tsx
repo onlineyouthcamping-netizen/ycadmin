@@ -3896,12 +3896,12 @@ useEffect(() => {
               : "Payment Due"
             : "Not Assigned",
           amt: assignment
-            ? (raw?.totalAmount || assignment.agreedCost || 0).toLocaleString(
+            ? Number(raw?.totalAmount || assignment.agreedCost || 0).toLocaleString(
                 "en-IN",
               )
             : "0",
           amtSub: assignment
-            ? `Paid: ₹${(raw?.advancePaid || assignment.paidAmount || 0).toLocaleString("en-IN")}`
+            ? `Paid: ₹${Number(raw?.advancePaid || assignment.paidAmount || 0).toLocaleString("en-IN")}`
             : "No payment",
           rawAssignment: raw || assignment,
         };
@@ -3954,8 +3954,8 @@ useEffect(() => {
               : "PENDING",
           statusSub:
             raw?.confirmed === "CONFIRMED" ? "Voucher Sent" : "Payment Due",
-          amt: (raw?.totalAmount || v.agreedCost || 0).toLocaleString("en-IN"),
-          amtSub: `Paid: ₹${(raw?.advancePaid || v.paidAmount || 0).toLocaleString("en-IN")}`,
+          amt: Number(raw?.totalAmount || v.agreedCost || 0).toLocaleString("en-IN"),
+          amtSub: `Paid: ₹${Number(raw?.advancePaid || v.paidAmount || 0).toLocaleString("en-IN")}`,
           rawAssignment: raw,
         };
       });
@@ -6546,10 +6546,10 @@ useEffect(() => {
                         Outstanding Balance
                       </span>
                       <h3 className="text-lg font-black text-[#EA580C] mt-1 font-mono">
-                        ₹ {stats.customerOutstanding.toLocaleString("en-IN")}
+                        ₹ {Number(stats?.customerOutstanding || 0).toLocaleString("en-IN")}
                       </h3>
                       <p className="text-[9px] text-slate-400 mt-1">
-                        From {stats.outstandingParticipantsCount} participants
+                        From {stats?.outstandingParticipantsCount || 0} participants
                       </p>
                     </div>
                     <div className="w-7 h-7 rounded bg-amber-50 flex items-center justify-center text-[#EA580C] text-sm">
@@ -6569,7 +6569,7 @@ useEffect(() => {
                         Vendor Payables
                       </span>
                       <h3 className="text-lg font-black text-slate-900 mt-1">
-                        ₹ {stats.totalVendorPayables.toLocaleString("en-IN")}
+                        ₹ {Number(stats?.totalVendorPayables || 0).toLocaleString("en-IN")}
                       </h3>
                       <p className="text-[9px] text-slate-400 mt-1">
                         Total pending
@@ -6592,10 +6592,10 @@ useEffect(() => {
                         Profit (Est.)
                       </span>
                       <h3 className="text-lg font-black text-emerald-600 mt-1">
-                        ₹ {stats.estProfit.toLocaleString("en-IN")}
+                        ₹ {Number(stats?.estProfit || 0).toLocaleString("en-IN")}
                       </h3>
                       <p className="text-[9px] text-slate-400 mt-1">
-                        {stats.profitPercent}% of revenue
+                        {stats?.profitPercent || 0}% of revenue
                       </p>
                     </div>
                     <div className="w-7 h-7 rounded bg-emerald-50 flex items-center justify-center text-emerald-600">
@@ -6891,26 +6891,26 @@ useEffect(() => {
                       {[
                         {
                           label: "Customer Payments Received",
-                          value: `₹ ${stats.customerPaid.toLocaleString("en-IN")}`,
-                          percent: `${stats.customerPaidPercent}%`,
+                          value: `₹ ${Number(stats?.customerPaid || 0).toLocaleString("en-IN")}`,
+                          percent: `${stats?.customerPaidPercent || 0}%`,
                           color: "text-emerald-600",
                         },
                         {
                           label: "Customer Outstanding",
-                          value: `₹ ${stats.customerOutstanding.toLocaleString("en-IN")}`,
-                          percent: `${stats.customerOutstandingPercent}%`,
+                          value: `₹ ${Number(stats?.customerOutstanding || 0).toLocaleString("en-IN")}`,
+                          percent: `${stats?.customerOutstandingPercent || 0}%`,
                           color: "text-[#EA580C]",
                         },
                         {
                           label: "Vendor Payments Made",
-                          value: `₹ ${stats.totalVendorPaid.toLocaleString("en-IN")}`,
-                          percent: `${stats.vendorPaidPercent}%`,
+                          value: `₹ ${Number(stats?.totalVendorPaid || 0).toLocaleString("en-IN")}`,
+                          percent: `${stats?.vendorPaidPercent || 0}%`,
                           color: "text-slate-700",
                         },
                         {
                           label: "Vendor Payables",
-                          value: `₹ ${stats.totalVendorPayables.toLocaleString("en-IN")}`,
-                          percent: `${stats.vendorPayablePercent}%`,
+                          value: `₹ ${Number(stats?.totalVendorPayables || 0).toLocaleString("en-IN")}`,
+                          percent: `${stats?.vendorPayablePercent || 0}%`,
                           color: "text-slate-700",
                         },
                       ].map((item, idx) => (
@@ -8835,7 +8835,7 @@ useEffect(() => {
                           {v.vehicleType} ({v.capacity} Seats)
                         </p>
                         <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                          Rs.{v.cost.toLocaleString("en-IN")} - {v.vendor}
+                          Rs.{Number(v?.cost || 0).toLocaleString("en-IN")} - {v.vendor}
                         </p>
                       </div>
                       <Button
