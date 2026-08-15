@@ -394,9 +394,9 @@ export default function TripVendorsPanel({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pending">⏳ Pending</SelectItem>
-                          <SelectItem value="partial">🟡 Partial</SelectItem>
-                          <SelectItem value="paid">✅ Paid</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="partial">Partial</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
                         </SelectContent>
                       </Select>
 

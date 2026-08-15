@@ -1,4 +1,4 @@
-export type AdminRole = 'superadmin' | 'admin' | 'sales' | 'operations' | 'finance' | 'guide' | 'viewer';
+export type AdminRole = 'superadmin' | 'admin' | 'sales' | 'operations' | 'finance' | 'finance_controller' | 'guide' | 'viewer';
 
 export interface Admin {
   id: string;
@@ -716,3 +716,395 @@ export interface AuditLog {
   severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   createdAt: string;
 }
+
+// ── Finance Control Center & Verification Types ──
+
+export interface FinanceControlCenterStats {
+  todayCollections: number;
+  pendingVerificationCount: number;
+  cashPendingAmount: number;
+  cashPendingCount: number;
+  outgoingPendingAmount: number;
+  outgoingPendingCount: number;
+  ticketingPendingCount: number;
+  discrepanciesCount: number;
+  updatedAt: string;
+}
+
+export interface CashSubmissionItem {
+  id: string;
+  salespersonId?: string;
+  salespersonName: string;
+  salespersonEmail?: string;
+  salespersonPhone?: string;
+  bookingId: string;
+  customerName: string;
+  customerPhone?: string;
+  tripName: string;
+  departureDate?: string;
+  expectedAmount: number;
+  submittedAmount: number;
+  difference: number;
+  hasDiscrepancy: boolean;
+  paymentDate: string;
+  receiptNumber: string;
+  receiptUrl?: string | null;
+  notes: string;
+  status: 'PENDING' | 'UNDER_REVIEW' | 'DISCREPANCY' | 'APPROVED' | 'REJECTED' | 'RESUBMITTED' | string;
+  rejectionReason?: string | null;
+  adjustmentNote?: string | null;
+  submittedAt: string;
+  verifiedAt?: string;
+  actionedBy?: { name: string; role: string } | null;
+}
+
+export interface IncomingPaymentItem {
+  id: string;
+  bookingId: string;
+  customerName: string;
+  customerPhone?: string;
+  tripName: string;
+  amount: number;
+  paymentMode: string;
+  referenceNumber: string;
+  collectionAccountName: string;
+  bankName: string;
+  upiId?: string;
+  notes?: string;
+  status: string;
+  submittedBy: string;
+  actionedBy?: string | null;
+  createdAt: string;
+}
+
+export interface VendorPaymentRequestItem {
+  id: string;
+  tripId: string;
+  tripTitle: string;
+  tripLocation: string;
+  vendorId?: string;
+  vendorName: string;
+  vendorType: string;
+  vendorPhone?: string;
+  agreedTariff: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  paymentStatus: 'pending' | 'partial' | 'paid' | 'verified' | string;
+  outgoingPaymentMode?: string;
+  depositAccountName?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface TicketFinanceAuditItem {
+  id: string;
+  bookingId: string;
+  customerName: string;
+  tripName: string;
+  departureDate?: string;
+  paxCount: number;
+  pnr: string;
+  trainNo: string;
+  fromStation: string;
+  toStation: string;
+  journeyDate?: string;
+  preferredClass: string;
+  baseFare: number;
+  actualTicketCost: number;
+  packageAllowance: number;
+  ticketingMargin: number;
+  variance: number;
+  status: string;
+  specialNotes?: string;
+  updatedAt?: string;
+}
+
+export interface DiscrepancyItem {
+  id: string;
+  type: string;
+  sourceRef: string;
+  salespersonName: string;
+  customerName: string;
+  tripName: string;
+  expectedAmount: number;
+  submittedAmount: number;
+  difference: number;
+  reason: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface FinancialAuditLogItem {
+  id: string;
+  action: string;
+  notes?: string;
+  actorName: string;
+  actorRole: string;
+  bookingId: string;
+  customerName: string;
+  tripName: string;
+  amount: number;
+  paymentMode: string;
+  status: string;
+  timestamp: string;
+}
+
+export interface DeparturePayoutItem {
+  id: string;
+  type: string;
+  title: string;
+  recipient: string;
+  tripCode: string;
+  amount: number;
+  status: string;
+  submittedBy: string;
+  submittedAt: string;
+  notes?: string;
+}
+
+export interface MiscellaneousExpenseItem {
+  id: string;
+  category: string;
+  title: string;
+  amount: number;
+  paymentMode: string;
+  receiptNumber: string;
+  submittedBy: string;
+  submittedById?: string;
+  submittedAt: string;
+  status: string;
+  notes?: string;
+}
+
+export interface RefundTransactionItem {
+  id: string;
+  tenantId?: string;
+  bookingId: string;
+  booking?: {
+    id: string;
+    bookingId: string;
+    fullName?: string;
+    name?: string;
+    phone?: string;
+    totalAmount?: number;
+    advancePaid?: number;
+    tripName?: string;
+  };
+  refundReason: string;
+  refundMethod: 'CASH_REFUND' | 'CREDIT_NOTE' | 'HYBRID' | string;
+  refundAmount: number;
+  creditNoteAmount: number;
+  creditNoteCode?: string | null;
+  creditNoteStatus?: 'ACTIVE' | 'PARTIALLY_USED' | 'FULLY_USED' | 'EXPIRED' | string;
+  creditNoteExpiresAt?: string | null;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'PROCESSING' | 'COMPLETED' | 'REJECTED' | 'FAILED' | 'CANCELLED' | string;
+  refundReference?: string | null;
+  rejectionReason?: string | null;
+  notes?: string | null;
+  createdById?: string | null;
+  createdBy?: { id: string; name: string; email: string };
+  approvedById?: string | null;
+  approvedBy?: { id: string; name: string; email: string };
+  approvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  creditUsages?: CreditNoteUsageItem[];
+}
+
+export interface CreditNoteUsageItem {
+  id: string;
+  refundTransactionId: string;
+  targetBookingId: string;
+  targetBooking?: { id: string; bookingId: string; fullName?: string; tripName?: string };
+  amountUsed: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  notes?: string | null;
+  appliedById?: string | null;
+  appliedBy?: { id: string; name: string; email: string };
+  createdAt: string;
+}
+
+export interface CouponItem {
+  id: string;
+  code: string;
+  description?: string | null;
+  discountType: 'PERCENTAGE' | 'FIXED' | string;
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minBookingAmount?: number | null;
+  applicableTripIds?: string[] | null;
+  maxUsesTotal?: number | null;
+  maxUsesPerUser?: number | null;
+  currentUsesCount: number;
+  validFrom: string;
+  validUntil: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | string;
+  createdById?: string | null;
+  createdBy?: { id: string; name: string; email: string };
+  _count?: { redemptions: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinanceTicketItem {
+  id: string;
+  bookingId?: string | null;
+  booking?: {
+    bookingId: string;
+    fullName?: string;
+    name?: string;
+    phone?: string;
+    tripName?: string;
+    departureDate?: string;
+  };
+  type: 'TRAIN' | 'FLIGHT' | 'BUS' | 'CAB' | 'OTHER' | string;
+  pnr?: string | null;
+  ticketNumber?: string | null;
+  passengers?: any;
+  documentUrl?: string | null;
+  provider: string;
+  journeyDate?: string | null;
+  arrivalDate?: string | null;
+  source?: string | null;
+  destination?: string | null;
+  cost: number;
+  packageAllowance?: number | null;
+  ticketingMargin?: number | null;
+  status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'DISCREPANCY' | 'REJECTED' | string;
+  notes?: string | null;
+  createdById?: string | null;
+  createdBy?: { id: string; name: string; email: string };
+  verifiedById?: string | null;
+  verifiedBy?: { id: string; name: string; email: string };
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServiceRegistryItem {
+  id: string;
+  bookingId: string;
+  serviceType: 'TRAIN' | 'FLIGHT' | 'VISA' | 'HOTEL' | 'INSURANCE' | 'TRANSPORT' | 'OTHER' | string;
+  serviceName: string;
+  vendorId?: string | null;
+  costPrice: number;
+  sellingPrice: number;
+  confirmationRef?: string | null;
+  notes?: string | null;
+  assignedStaffId?: string | null;
+  assignedStaff?: { id: string; name: string; email: string };
+  status: 'PENDING' | 'BOOKED' | 'VERIFIED' | 'CANCELLED' | string;
+  verifiedById?: string | null;
+  verifiedBy?: { id: string; name: string; email: string };
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskAllotmentItem {
+  id: string;
+  title: string;
+  description?: string | null;
+  taskType: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED' | 'CANCELLED' | string;
+  assignedToId: string;
+  assignedTo?: { id: string; name: string; email: string };
+  assignedById?: string | null;
+  assignedBy?: { id: string; name: string; email: string };
+  bookingId?: string | null;
+  booking?: { bookingId: string; fullName?: string; tripName?: string };
+  tripId?: string | null;
+  vendorId?: string | null;
+  serviceId?: string | null;
+  deadline?: string | null;
+  completedAt?: string | null;
+  comments?: TaskCommentItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskCommentItem {
+  id: string;
+  taskId: string;
+  authorId: string;
+  author?: { id: string; name: string; role?: string };
+  comment: string;
+  isInternal: boolean;
+  createdAt: string;
+}
+
+export interface TaskDashboardData {
+  totalTasks: number;
+  pendingCount: number;
+  inProgressCount: number;
+  completedCount: number;
+  blockedCount: number;
+  cancelledCount: number;
+  overdueCount: number;
+  completionRate: number;
+  workloadByPerson: Array<{
+    personId: string;
+    personName: string;
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    overdue: number;
+  }>;
+}
+
+export interface AuditLogItem {
+  id: string;
+  tenantId?: string;
+  actorUserId?: string | null;
+  changedBy?: string | null;
+  bookingId?: string | null;
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  changeSummary?: string | null;
+  beforeData?: any;
+  afterData?: any;
+  oldValue?: any;
+  newValue?: any;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt: string;
+}
+
+export interface TripPnLData {
+  tripId: string;
+  tripTitle: string;
+  departureDate: string;
+  passengerSummary: {
+    totalBookings: number;
+    totalPax: number;
+  };
+  revenue: {
+    grossSellingPrice: number;
+    totalCouponDiscounts: number;
+    totalCashRefunds: number;
+    totalCreditsIssued: number;
+    netRevenue: number;
+    totalCollected: number;
+    totalDue: number;
+  };
+  directCosts: {
+    vendorContractCost: number;
+    vendorPaid: number;
+    guideCost: number;
+    guidePaid: number;
+    miscCost: number;
+    tripActivityCost: number;
+    ticketingCost: number;
+    totalDirectCost: number;
+  };
+  profitability: {
+    grossProfit: number;
+    profitMarginPercent: number;
+    isProfitable: boolean;
+  };
+}
+

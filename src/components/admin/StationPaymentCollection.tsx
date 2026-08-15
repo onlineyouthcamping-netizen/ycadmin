@@ -1093,7 +1093,7 @@ export default function StationPaymentCollection({
                     { label: "Customer", v: selectedBooking.name },
                     {
                       label: "Payment Mode",
-                      v: paymentMode === "CASH" ? "💵 Cash" : "📱 UPI / Online",
+                      v: paymentMode === "CASH" ? "Cash" : "UPI / Online",
                     },
                     ...(paymentMode === "UPI"
                       ? [{ label: "UTR / Transaction ID", v: utrNumber }]

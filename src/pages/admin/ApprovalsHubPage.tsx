@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
 import VerificationQueuePage from "./VerificationQueuePage";
 import TicketApprovalsPage from "./TicketApprovalsPage";
+import FinanceControlCenterPage from "./FinanceControlCenterPage";
 
 type ApprovalTab =
   | "booking-verification"
@@ -108,22 +109,15 @@ export default function ApprovalsHubPage() {
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
-          const isDisabled = ![
-            "booking-verification",
-            "ticket-approvals",
-          ].includes(tab.key);
           return (
             <button
               key={tab.key}
-              onClick={() => !isDisabled && handleTabChange(tab.key)}
-              disabled={isDisabled}
+              onClick={() => handleTabChange(tab.key)}
               className={cn(
                 "flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all border",
                 isActive
                   ? "bg-white text-[#F97316] border-[#F97316] shadow-sm"
-                  : isDisabled
-                    ? "bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed"
-                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800",
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800",
               )}
             >
               <Icon className={cn("w-4 h-4", isActive && "text-[#F97316]")} />
@@ -137,14 +131,8 @@ export default function ApprovalsHubPage() {
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm min-h-[400px]">
         {activeTab === "booking-verification" && <VerificationQueuePage />}
         {activeTab === "ticket-approvals" && <TicketApprovalsPage />}
-        {!["booking-verification", "ticket-approvals"].includes(activeTab) && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <ClipboardCheck className="w-10 h-10 mb-3 text-slate-300" />
-            <p className="text-sm font-semibold">Coming Soon</p>
-            <p className="text-[11px] text-slate-400 mt-1">
-              This approval module is under development.
-            </p>
-          </div>
+        {["payment-approvals", "vendor-bills", "refund-requests", "expense-claims"].includes(activeTab) && (
+          <FinanceControlCenterPage />
         )}
       </div>
     </div>

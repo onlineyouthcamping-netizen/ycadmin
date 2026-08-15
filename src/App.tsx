@@ -88,6 +88,9 @@ const TicketApprovalsPage = lazy(
 
 // ── Finance ──
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
+const FinanceControlCenterPage = lazy(
+  () => import("./pages/admin/FinanceControlCenterPage.tsx"),
+);
 
 // ── Travel Desk ──
 const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
@@ -450,9 +453,33 @@ const App = () => (
                   }
                 />
 
-                {/* Finance */}
+                {/* Unified Finance Control Hub */}
+                <Route
+                  path="/admin/finance"
+                  element={
+                    <AdminRoute requiredPermission="accounting.view">
+                      <AccountingPage />
+                    </AdminRoute>
+                  }
+                />
                 <Route
                   path="/admin/accounting"
+                  element={
+                    <AdminRoute requiredPermission="accounting.view">
+                      <AccountingPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/finance-control-center"
+                  element={
+                    <AdminRoute requiredPermission="accounting.view">
+                      <AccountingPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/finance-verification"
                   element={
                     <AdminRoute requiredPermission="accounting.view">
                       <AccountingPage />

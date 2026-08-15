@@ -140,7 +140,6 @@ const sidebarModules: SidebarModule[] = [
         url: "/admin/approvals-hub?tab=booking-verification",
       },
       { title: "Ticket Approvals", url: "/admin/ticket-approvals" },
-      { title: "Vendor Bills", url: "/admin/approvals-hub?tab=vendor-bills" },
       {
         title: "Refund Requests",
         url: "/admin/approvals-hub?tab=refund-requests",
@@ -149,7 +148,7 @@ const sidebarModules: SidebarModule[] = [
   },
   {
     title: "Finance",
-    url: "/admin/accounting",
+    url: "/admin/finance",
     icon: Banknote,
     hasSubItems: false,
   },

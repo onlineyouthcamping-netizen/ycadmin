@@ -203,7 +203,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
         <button
           type="button"
-          onClick={() => navigate("/admin/operations")}
+          onClick={() => navigate("/admin/departures")}
           className="p-3 rounded-2xl bg-[#0B1329] text-white shadow-md text-left flex flex-col justify-between h-[88px] active:scale-95 transition-all"
         >
           <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
@@ -249,39 +249,38 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
             loading={loading}
             value={stats?.totalRevenue}
             format={formatInr}
-            caption="Paid & confirmed"
+            caption={
+              stats?.collectionRate !== undefined
+                ? `${stats.collectionRate}% collected`
+                : "Paid & confirmed"
+            }
           />
         )}
 
         {canViewBookings && (
           <MetricCard
             label={`${periodPrefix} BOOKINGS`}
-            icon={<Ticket className="w-4 h-4 text-[#FF5400]" />}
+            icon={<Users className="w-4 h-4 text-orange-600" />}
             onClick={() => navigate("/admin/bookings")}
             loading={loading}
             value={stats?.totalBookings}
             caption={
-              pendingPayments === undefined
-                ? "Bookings recorded"
-                : pendingPayments > 0
-                  ? `${formatInr(pendingPayments)} pending`
-                  : "All payments settled"
+              stats?.totalTravelers
+                ? `${stats.totalTravelers} travelers`
+                : "Bookings recorded"
             }
           />
         )}
 
-        {canViewAccounting && (
+        {canViewTicketing && (
           <MetricCard
-            label="COLLECTED TODAY"
-            icon={<Wallet className="w-4 h-4 text-purple-600" />}
-            onClick={() => navigate("/admin/accounting")}
+            label="TICKETING QUEUE"
+            icon={<Train className="w-4 h-4 text-amber-600" />}
+            onClick={() => navigate("/admin/travel-desk")}
             loading={loading}
-            value={stats?.cashFlow?.collectionToday}
-            format={formatInr}
+            value={stats?.pendingTickets}
             caption={
-              netCashInflow === undefined
-                ? "Payments received"
-                : `Net ${formatInr(netCashInflow)}`
+              stats?.pendingTickets ? "Needs action" : "All cleared"
             }
           />
         )}
@@ -290,7 +289,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           <MetricCard
             label="DEPARTURES • NEXT 7D"
             icon={<Calendar className="w-4 h-4 text-blue-600" />}
-            onClick={() => navigate("/admin/operations")}
+            onClick={() => navigate("/admin/departures")}
             loading={loading}
             value={stats?.tripsDepartingNext7Days?.length}
             caption={
@@ -329,7 +328,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
                 <button
                   key={`${departure.name}-${departure.date}-${index}`}
                   type="button"
-                  onClick={() => navigate("/admin/operations")}
+                  onClick={() => navigate("/admin/departures")}
                   className="w-full flex items-center justify-between gap-2 p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl text-left active:bg-slate-100 transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">

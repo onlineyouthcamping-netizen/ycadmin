@@ -83,6 +83,7 @@ import { opsService } from "@/services/ops.service";
 import { vendorsService } from "@/services/vendors.service";
 import type { Vendor } from "@/types";
 import { cn } from "@/lib/utils";
+import FinanceControlCenterPage from "./FinanceControlCenterPage";
 import {
   LineChart,
   Line,
@@ -125,6 +126,7 @@ const MODE_LABELS: Record<string, string> = {
 };
 
 type TabId =
+  | "control_center"
   | "overview"
   | "transactions"
   | "cash_book"
@@ -141,7 +143,7 @@ export default function AccountingPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as TabId;
-  const [activeTab, setActiveTab] = useState<TabId>(tabParam || "overview");
+  const [activeTab, setActiveTab] = useState<TabId>(tabParam || "control_center");
 
   useEffect(() => {
     if (tabParam) {
@@ -157,16 +159,15 @@ export default function AccountingPage() {
       ?.scrollIntoView({ inline: "center", block: "nearest" });
   }, [activeTab]);
 
-  const [selectedPreset, setSelectedPreset] = useState("Today");
+  const [selectedPreset, setSelectedPreset] = useState("This Month");
 
-  // Compute today's dates as defaults
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  // Compute month start and end as default
+  const nowForInit = new Date();
+  const initMonthStart = new Date(nowForInit.getFullYear(), nowForInit.getMonth(), 1, 0, 0, 0);
+  const initMonthEnd = new Date(nowForInit.getFullYear(), nowForInit.getMonth() + 1, 0, 23, 59, 59);
 
-  const [activeDateStart, setActiveDateStart] = useState<Date>(todayStart);
-  const [activeDateEnd, setActiveDateEnd] = useState<Date>(todayEnd);
+  const [activeDateStart, setActiveDateStart] = useState<Date>(initMonthStart);
+  const [activeDateEnd, setActiveDateEnd] = useState<Date>(initMonthEnd);
 
   const fmt = (d: Date) =>
     d.toLocaleDateString("en-GB", {
@@ -175,13 +176,13 @@ export default function AccountingPage() {
       year: "numeric",
     });
 
-  const [dateRange, setDateRange] = useState(`${fmt(todayStart)} - ${fmt(todayEnd)}`);
+  const [dateRange, setDateRange] = useState(`${fmt(initMonthStart)} - ${fmt(initMonthEnd)}`);
 
   const applyDatePreset = (preset: string) => {
     setSelectedPreset(preset);
     const now = new Date();
-    let start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    let start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    let end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
     if (preset === "Today") {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -208,6 +209,9 @@ export default function AccountingPage() {
       const fyStartYear = curMonth >= 3 ? curYear : curYear - 1;
       start = new Date(fyStartYear, 3, 1, 0, 0, 0);
       end = new Date(fyStartYear + 1, 2, 31, 23, 59, 59);
+    } else if (preset === "All Time") {
+      start = new Date(2020, 0, 1, 0, 0, 0);
+      end = new Date(2030, 11, 31, 23, 59, 59);
     } else {
       // Custom Range — don't override active dates
       return;
@@ -1119,6 +1123,7 @@ export default function AccountingPage() {
 
   // Helper: check if a date string / ISO date falls within active date window
   const dateInRange = (dateStr: string | undefined): boolean => {
+    if (selectedPreset === "All Time") return true;
     if (!dateStr) return false;
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return false;
@@ -1734,13 +1739,13 @@ export default function AccountingPage() {
   const pendingRefundsSum = totalRefundsSum - completedRefundsSum;
 
   const tabs = [
+    { id: "control_center", label: "Control Center (Verification Queues)" },
     { id: "overview", label: "Overview" },
-    { id: "transactions", label: "Transactions" },
+    { id: "transactions", label: "Transactions & Ledger" },
     { id: "cash_book", label: "Cash Book" },
     { id: "bank_accounts", label: "Collection Accounts" },
     { id: "vendor_payments", label: "Vendor Payments" },
     { id: "office_expenses", label: "Office Expenses" },
-    { id: "payments", label: "Payments" },
     { id: "profit_loss", label: "Profit & Loss" },
     { id: "trip_profitability", label: "Trip Profitability" },
     { id: "reports", label: "Reports" },
@@ -1788,37 +1793,41 @@ export default function AccountingPage() {
             </Button>
           )}
 
-          {/* Date Range Picker (desktop only — mobile uses the preset bar below) */}
-          <div className="relative hidden sm:block">
-            <Input
-              type="text"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="h-8.5 text-xs font-semibold rounded-[4px] border-[#E2E8F0] bg-white text-slate-700 pl-3.5 pr-8 w-56 shadow-xs"
-            />
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
-              Date
-            </span>
-          </div>
+          {activeTab !== "control_center" && (
+            <>
+              {/* Date Range Picker (desktop only — mobile uses the preset bar below) */}
+              <div className="relative hidden sm:block">
+                <Input
+                  type="text"
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value)}
+                  className="h-8.5 text-xs font-semibold rounded-[4px] border-[#E2E8F0] bg-white text-slate-700 pl-3.5 pr-8 w-56 shadow-xs"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+                  Date
+                </span>
+              </div>
 
-          {activeTab === "bank_accounts" ? (
-            <Button
-              size="sm"
-              onClick={() => setShowAddCollectionAccountModal(true)}
-              className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
-            >
-              <Plus className="w-4 h-4 shrink-0" />
-              <span className="truncate">Add Collection Account</span>
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => setShowCreate(true)}
-              className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
-            >
-              <Plus className="w-4 h-4 shrink-0" />
-              {activeTab === "cash_book" ? "New Entry" : "Add Payment"}
-            </Button>
+              {activeTab === "bank_accounts" ? (
+                <Button
+                  size="sm"
+                  onClick={() => setShowAddCollectionAccountModal(true)}
+                  className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Add Collection Account</span>
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => setShowCreate(true)}
+                  className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  {activeTab === "cash_book" ? "New Entry" : "Add Payment"}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1849,54 +1858,64 @@ export default function AccountingPage() {
         ))}
       </div>
 
-      {/* Interactive Date Preset Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white p-2 md:p-2.5 rounded-xl md:rounded-[4px] border border-slate-200 shadow-xs mb-3 md:mb-6">
-        <div className="flex w-full sm:w-auto gap-1 sm:flex-wrap overflow-x-auto no-scrollbar snap-x text-[11px] md:text-xs font-semibold text-slate-500">
-          {[
-            "Today",
-            "Yesterday",
-            "This Week",
-            "This Month",
-            "Last Month",
-            "This Financial Year",
-            "Custom Range",
-          ].map((preset) => (
-            <button
-              key={preset}
-              onClick={() => applyDatePreset(preset)}
-              className={cn(
-                "shrink-0 snap-start whitespace-nowrap px-2.5 md:px-3 py-1.5 rounded-full md:rounded-[3px] transition-all cursor-pointer",
-                selectedPreset === preset
-                  ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-extrabold shadow-2xs"
-                  : "border border-slate-200 md:border-transparent hover:bg-slate-50 hover:text-slate-800",
-              )}
-            >
-              {preset}
-            </button>
-          ))}
+      {/* CONTROL CENTER TAB (Verification Queues & Separation of Duties Engine) */}
+      {activeTab === "control_center" && (
+        <div className="-mx-6 -mt-6">
+          <FinanceControlCenterPage />
         </div>
+      )}
 
-        {/* Range input: always on desktop, on mobile only for a custom range (header already shows the active range) */}
-        <div
-          className={cn(
-            "items-center gap-2 w-full sm:w-auto",
-            selectedPreset === "Custom Range" ? "flex" : "hidden sm:flex",
-          )}
-        >
-          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider shrink-0">
-            Range:
-          </span>
-          <Input
-            value={dateRange}
-            onChange={(e) => {
-              setSelectedPreset("Custom Range");
-              setDateRange(e.target.value);
-            }}
-            placeholder="01 Aug 2026 - 31 Aug 2026"
-            className="h-8 sm:h-7 text-xs flex-1 sm:flex-none sm:w-52 rounded-lg sm:rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700 shadow-none"
-          />
+      {/* Interactive Date Preset Bar for other tabs */}
+      {activeTab !== "control_center" && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white p-2 md:p-2.5 rounded-xl md:rounded-[4px] border border-slate-200 shadow-xs mb-3 md:mb-6">
+          <div className="flex w-full sm:w-auto gap-1 sm:flex-wrap overflow-x-auto no-scrollbar snap-x text-[11px] md:text-xs font-semibold text-slate-500">
+            {[
+              "Today",
+              "Yesterday",
+              "This Week",
+              "This Month",
+              "Last Month",
+              "This Financial Year",
+              "All Time",
+              "Custom Range",
+            ].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => applyDatePreset(preset)}
+                className={cn(
+                  "shrink-0 snap-start whitespace-nowrap px-2.5 md:px-3 py-1.5 rounded-full md:rounded-[3px] transition-all cursor-pointer",
+                  selectedPreset === preset
+                    ? "bg-orange-50 border border-[#F97316]/50 text-[#F97316] font-extrabold shadow-2xs"
+                    : "border border-slate-200 md:border-transparent hover:bg-slate-50 hover:text-slate-800",
+                )}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+
+          {/* Range input: always on desktop, on mobile only for a custom range */}
+          <div
+            className={cn(
+              "items-center gap-2 w-full sm:w-auto",
+              selectedPreset === "Custom Range" ? "flex" : "hidden sm:flex",
+            )}
+          >
+            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider shrink-0">
+              Range:
+            </span>
+            <Input
+              value={dateRange}
+              onChange={(e) => {
+                setSelectedPreset("Custom Range");
+                setDateRange(e.target.value);
+              }}
+              placeholder="01 Aug 2026 - 31 Aug 2026"
+              className="h-8 sm:h-7 text-xs flex-1 sm:flex-none sm:w-52 rounded-lg sm:rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700 shadow-none"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* OVERVIEW TAB */}
       {activeTab === "overview" && (

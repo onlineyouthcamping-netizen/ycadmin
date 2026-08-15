@@ -101,6 +101,12 @@ const ROLES: {
     color: "bg-amber-50 text-amber-700 border-amber-200",
   },
   {
+    value: "finance_controller",
+    label: "Finance Controller",
+    desc: "Verify & approve cash, incoming & outgoing payouts, price audits",
+    color: "bg-orange-50 text-orange-700 border-orange-200",
+  },
+  {
     value: "guide",
     label: "Guide",
     desc: "Read assigned trips & operations",
@@ -291,6 +297,45 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "station_payments.manage_accounts",
     "station_payments.verify_upi",
   ],
+  finance_controller: [
+    "dashboard.view",
+    "bookings.view",
+    "payments.view",
+    "reports.view",
+    "reports.export",
+    "accounting.view",
+    "accounting.approve",
+    "finance.control_center.view",
+    "finance.incoming.verify",
+    "finance.incoming.approve",
+    "finance.cash.verify",
+    "finance.cash.approve",
+    "finance.cash.reject",
+    "finance.outgoing.verify",
+    "finance.outgoing.approve",
+    "finance.outgoing.pay",
+    "finance.tickets.verify",
+    "finance.tickets.approve",
+    "finance.refunds.view",
+    "finance.refunds.approve",
+    "finance.discrepancy.manage",
+    "finance.reports.export",
+    "station_payments.view",
+    "station_payments.receive",
+    "station_payments.reconcile",
+    "station_payments.export",
+    "station_payments.manage_accounts",
+    "station_payments.verify_upi",
+    "vendors.view",
+    "vendors.payments.view",
+    "tickets.view",
+    "audit_logs.view",
+    "audit.view",
+    "notifications.view_own",
+    "notifications.mark_read",
+    "customers.timeline.view",
+    "customers.timeline.view_finance",
+  ],
   guide: [
     "trips.view",
     "bookings.view",
@@ -312,7 +357,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 const PERMISSION_GROUPS = [
   {
-    name: "📊 Dashboard & Analytics",
+    name: "Dashboard & Analytics",
     permissions: [
       { key: "dashboard.view", label: "View Overview Dashboard" },
       { key: "dashboard.analytics", label: "View Analytics & Charts" },
@@ -320,7 +365,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "💼 Sales & CRM",
+    name: "Sales & CRM",
     permissions: [
       { key: "inquiries.view", label: "View Leads & Inquiries" },
       { key: "inquiries.create", label: "Create Inquiries" },
@@ -333,7 +378,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "📑 Bookings & Customers",
+    name: "Bookings & Customers",
     permissions: [
       { key: "bookings.view", label: "View Assigned Bookings" },
       { key: "bookings.view_all", label: "View All Company Bookings" },
@@ -347,41 +392,40 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "🏔️ Operations & Departures Hub",
+    name: "Operations & Departures Hub",
     permissions: [
       { key: "operations.view", label: "View Departures Hub" },
       { key: "operations.edit", label: "Edit Departures & Allocations" },
       { key: "ops.view", label: "View Ops Workspace" },
       { key: "ops.manage", label: "Manage Ops Workspace" },
-      { key: "ops.allocate", label: "Allocate Hotels & Vehicles" },
-      { key: "ops.checklist", label: "Ops Master Checklists" },
-      { key: "daily_tasks.view", label: "View Daily Task Console" },
-      { key: "daily_tasks.manage", label: "Manage Daily Tasks" },
-      { key: "sops.view", label: "View SOP Library" },
-      { key: "sops.manage", label: "Manage SOP Templates" },
-      { key: "guides.view", label: "View Tour Guides" },
-      { key: "guides.manage", label: "Assign & Manage Tour Guides" },
+      { key: "ops.allocate", label: "Allocate Staff & Transport" },
+      { key: "ops.checklist", label: "Complete Pre-Departure Checklist" },
+      { key: "guides.view", label: "View Guides & Trek Leaders" },
+      { key: "guides.manage", label: "Manage Guides & Leader Profiles" },
+      { key: "recurring_tasks.view", label: "View Recurring Tasks" },
+      { key: "recurring_tasks.assign", label: "Assign Recurring Tasks" },
     ],
   },
   {
-    name: "📍 Station Payment Collection",
+    name: "Station Payment Desk",
     permissions: [
-      { key: "station_payments.view", label: "View Station Collections" },
-      { key: "station_payments.collect", label: "Collect Cash / UPI at Station" },
-      { key: "station_payments.edit_before_handover", label: "Edit Draft Receipts" },
-      { key: "station_payments.cancel", label: "Cancel Receipt" },
-      { key: "station_payments.handover", label: "Handover Cash to Leader/Finance" },
-      { key: "station_payments.receive", label: "Receive Cash Handover" },
-      { key: "station_payments.reconcile", label: "Reconcile Station Accounts" },
-      { key: "station_payments.resend_receipt", label: "Resend Receipt (Email/WA)" },
-      { key: "station_payments.manage_accounts", label: "Manage Receiving Accounts" },
-      { key: "station_payments.verify_upi", label: "Verify UPI Payments" },
+      { key: "station_payments.view", label: "View Station Cash Collections" },
+      { key: "station_payments.collect", label: "Collect Cash at Station" },
+      { key: "station_payments.edit_before_handover", label: "Edit Entry Before Handover" },
+      { key: "station_payments.cancel", label: "Cancel Cash Entry" },
+      { key: "station_payments.handover", label: "Handover Cash to Lead" },
+      { key: "station_payments.receive", label: "Receive & Verify Handover" },
+      { key: "station_payments.reconcile", label: "Reconcile Cash Desk" },
+      { key: "station_payments.export", label: "Export Station Cash Logs" },
+      { key: "station_payments.manage_accounts", label: "Manage Collection Accounts" },
+      { key: "station_payments.verify_upi", label: "Verify UPI Received at Station" },
+      { key: "station_payments.resend_receipt", label: "Resend Station Cash Receipts" },
     ],
   },
   {
-    name: "🚂 Train Ticketing Queue",
+    name: "Ticketing Queue & Train Desk",
     permissions: [
-      { key: "tickets.view", label: "View Train Ticketing Queue" },
+      { key: "tickets.view", label: "View Ticketing Queue" },
       { key: "tickets.create", label: "Create Ticket Requests" },
       { key: "tickets.edit", label: "Edit PNR & Passenger Seat" },
       { key: "tickets.submit", label: "Submit Ticket for Verification" },
@@ -393,7 +437,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "💰 Finance & Accounting",
+    name: "Finance & Accounting",
     permissions: [
       { key: "accounting.view", label: "View Accounting & General Ledger" },
       { key: "accounting.submit", label: "Submit Expense/Revenue Entries" },
@@ -405,14 +449,14 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "✈️ Travel Desk",
+    name: "Travel Desk",
     permissions: [
       { key: "travel_desk.view", label: "View Travel Desk Workspace" },
       { key: "travel_desk.manage", label: "Manage Flight / Bus / Train Desk" },
     ],
   },
   {
-    name: "🚚 Vendor Directory & Packages",
+    name: "Vendor Directory & Packages",
     permissions: [
       { key: "vendors.view", label: "View Vendor Directory" },
       { key: "vendors.create", label: "Create New Vendor" },
@@ -425,7 +469,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "📋 Trips & Product Catalog",
+    name: "Trips & Product Catalog",
     permissions: [
       { key: "trips.view", label: "View Trips Catalog" },
       { key: "trips.create", label: "Create New Trip" },
@@ -436,7 +480,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "🌐 Website & Content Builder",
+    name: "Website & Content Builder",
     permissions: [
       { key: "website.view", label: "View Website Control Center" },
       { key: "pagebuilder.view", label: "View Page Builder" },
@@ -449,7 +493,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "📧 Communications & Emails",
+    name: "Communications & Emails",
     permissions: [
       { key: "emails.view", label: "View Communication Feed" },
       { key: "emails.send", label: "Send Direct Emails / WhatsApp" },
@@ -459,7 +503,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "📁 Company Vault & Documents",
+    name: "Company Vault & Documents",
     permissions: [
       { key: "company_documents.view", label: "View Vault Documents" },
       { key: "company_documents.upload", label: "Upload Vault Documents" },
@@ -467,7 +511,7 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    name: "⚙️ Administration & Settings",
+    name: "Administration & Settings",
     permissions: [
       { key: "users.view", label: "View Staff Profiles" },
       { key: "users.manage", label: "Create / Edit / Delete Staff Accounts" },

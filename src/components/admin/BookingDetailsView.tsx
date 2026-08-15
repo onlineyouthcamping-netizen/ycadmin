@@ -93,6 +93,12 @@ import {
   collectionAccountsService,
   type CollectionAccount,
 } from "@/services/collectionAccounts.service";
+import { financeControllerService } from "@/services/financeController.service";
+import type {
+  RefundTransactionItem,
+  ServiceRegistryItem,
+  AuditLogItem,
+} from "@/types";
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -316,6 +322,145 @@ export default function BookingDetailsView({
       toast.error(e.response?.data?.message || "Failed to create collection account");
     } finally {
       setSavingNewAccount(false);
+    }
+  };
+
+  // Finance Submodules State (Services, Refunds & Credits, Finance Audit)
+  const [bookingServices, setBookingServices] = useState<ServiceRegistryItem[]>([]);
+  const [bookingRefunds, setBookingRefunds] = useState<RefundTransactionItem[]>([]);
+  const [bookingAuditLogs, setBookingAuditLogs] = useState<AuditLogItem[]>([]);
+  const [loadingFinanceData, setLoadingFinanceData] = useState(false);
+
+  // Auxiliary Service Modal State
+  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+  const [savingService, setSavingService] = useState(false);
+  const [serviceForm, setServiceForm] = useState({
+    serviceType: "HOTEL" as any,
+    vendorName: "",
+    costPrice: "",
+    sellingPrice: "",
+    remarks: "",
+  });
+
+  // Booking Refund Modal State
+  const [showBookingRefundModal, setShowBookingRefundModal] = useState(false);
+  const [submittingRefund, setSubmittingRefund] = useState(false);
+  const [refundForm, setRefundForm] = useState({
+    refundMode: "CASH" as "CASH" | "CREDIT" | "HYBRID",
+    cashAmount: "",
+    creditAmount: "",
+    bankReference: "",
+    reason: "",
+  });
+
+  const loadFinanceSubmoduleData = useCallback(async () => {
+    if (!booking?.bookingId) return;
+    setLoadingFinanceData(true);
+    try {
+      const [servicesRes, refundsRes, auditRes] = await Promise.allSettled([
+        financeControllerService.services.listByBooking(booking.bookingId),
+        financeControllerService.refunds.list({ bookingId: booking.bookingId }),
+        financeControllerService.audit.list({ bookingId: booking.bookingId }),
+      ]);
+
+      if (servicesRes.status === "fulfilled" && servicesRes.value.data) {
+        setBookingServices(servicesRes.value.data);
+      }
+      if (refundsRes.status === "fulfilled" && refundsRes.value.data) {
+        setBookingRefunds(refundsRes.value.data);
+      }
+      if (auditRes.status === "fulfilled" && auditRes.value.data) {
+        setBookingAuditLogs(auditRes.value.data);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingFinanceData(false);
+    }
+  }, [booking?.bookingId]);
+
+  useEffect(() => {
+    loadFinanceSubmoduleData();
+  }, [loadFinanceSubmoduleData]);
+
+  const handleCreateService = async () => {
+    if (!serviceForm.vendorName || !serviceForm.sellingPrice) {
+      toast.error("Please enter vendor name and selling price");
+      return;
+    }
+    setSavingService(true);
+    try {
+      await financeControllerService.services.create({
+        bookingId: booking.bookingId,
+        serviceType: serviceForm.serviceType,
+        vendorName: serviceForm.vendorName,
+        costPrice: parseFloat(serviceForm.costPrice) || 0,
+        sellingPrice: parseFloat(serviceForm.sellingPrice) || 0,
+        remarks: serviceForm.remarks,
+      });
+      toast.success("Auxiliary service recorded successfully");
+      setShowAddServiceModal(false);
+      setServiceForm({
+        serviceType: "HOTEL",
+        vendorName: "",
+        costPrice: "",
+        sellingPrice: "",
+        remarks: "",
+      });
+      loadFinanceSubmoduleData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Failed to add service");
+    } finally {
+      setSavingService(false);
+    }
+  };
+
+  const handleVerifyService = async (serviceId: string) => {
+    try {
+      await financeControllerService.services.verify(serviceId);
+      toast.success("Service marked as verified");
+      loadFinanceSubmoduleData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Failed to verify service");
+    }
+  };
+
+  const handleCreateBookingRefund = async () => {
+    const cash = parseFloat(refundForm.cashAmount) || 0;
+    const credit = parseFloat(refundForm.creditAmount) || 0;
+    const total = cash + credit;
+    if (total <= 0) {
+      toast.error("Please specify a refund amount greater than 0");
+      return;
+    }
+    if (!refundForm.reason.trim()) {
+      toast.error("Please enter a refund reason");
+      return;
+    }
+    setSubmittingRefund(true);
+    try {
+      await financeControllerService.refunds.request({
+        bookingId: booking.bookingId,
+        refundMode: refundForm.refundMode,
+        cashAmount: refundForm.refundMode === "CREDIT" ? 0 : cash,
+        creditAmount: refundForm.refundMode === "CASH" ? 0 : credit,
+        reason: refundForm.reason,
+        bankReference: refundForm.bankReference,
+      });
+      toast.success("Refund request submitted for Finance Controller verification");
+      setShowBookingRefundModal(false);
+      setRefundForm({
+        refundMode: "CASH",
+        cashAmount: "",
+        creditAmount: "",
+        bankReference: "",
+        reason: "",
+      });
+      loadFinanceSubmoduleData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Failed to submit refund request");
+    } finally {
+      setSubmittingRefund(false);
     }
   };
 
@@ -2652,6 +2797,16 @@ export default function BookingDetailsView({
                     : "Paid",
               },
               {
+                id: "services",
+                label: "Services",
+                badge: bookingServices.length ? `${bookingServices.length}` : null,
+              },
+              {
+                id: "refunds",
+                label: "Refunds & Credits",
+                badge: bookingRefunds.length ? `${bookingRefunds.length}` : null,
+              },
+              {
                 id: "operations",
                 label: "Tasks",
                 badge: tasks.length ? `${tasks.length} tasks` : null,
@@ -2668,7 +2823,7 @@ export default function BookingDetailsView({
               },
               { id: "accounting", label: "Accounting", badge: null },
               { id: "files", label: "Notes", badge: null },
-              { id: "attachments", label: "📎 Attachments", badge: null },
+              { id: "attachments", label: "Attachments", badge: null },
               {
                 id: "emails",
                 label: "Email Logs",
@@ -2678,6 +2833,11 @@ export default function BookingDetailsView({
                 id: "activity",
                 label: "Activity",
                 badge: activityLogs.length ? `${activityLogs.length}` : null,
+              },
+              {
+                id: "finance_audit",
+                label: "Audit Trail",
+                badge: bookingAuditLogs.length ? `${bookingAuditLogs.length}` : null,
               },
             ].map((tab) => (
               <button
@@ -5459,6 +5619,341 @@ export default function BookingDetailsView({
               </div>
             </div>
           )}
+
+          {/* === SERVICES TAB === */}
+          {adminActiveTab === "services" && (
+            <div className="space-y-4">
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-orange-600" /> Auxiliary Services Registry
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Contracted auxiliary services (Train, Flight, Visa, Hotel, Insurance, Transport, Other) for this booking
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAddServiceModal(true)}
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Auxiliary Service
+                  </Button>
+                </div>
+
+                {loadingFinanceData ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                    <span className="text-xs font-semibold">Loading auxiliary services...</span>
+                  </div>
+                ) : bookingServices.length === 0 ? (
+                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-slate-200">
+                    <Layers className="w-8 h-8 text-slate-300 mx-auto" />
+                    <p className="text-xs font-semibold text-slate-600">No auxiliary services recorded for this booking.</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowAddServiceModal(true)}
+                      className="text-xs font-bold border-slate-300"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Add First Service
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {bookingServices.map((srv) => {
+                      const margin = (srv.sellingPrice || 0) - (srv.costPrice || 0);
+                      const isVerified = srv.status === "VERIFIED" || srv.verifiedAt;
+                      return (
+                        <div
+                          key={srv.id}
+                          className="border border-slate-200 rounded-lg p-4 bg-white hover:border-slate-300 transition-all shadow-xs space-y-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                              {srv.serviceType}
+                            </span>
+                            <span
+                              className={cn(
+                                "px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1",
+                                isVerified
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200",
+                              )}
+                            >
+                              {isVerified ? (
+                                <>
+                                  <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verified
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="w-3 h-3 text-amber-600" /> Pending Verification
+                                </>
+                              )}
+                            </span>
+                          </div>
+
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-800">{srv.vendorName}</h4>
+                            {srv.remarks && (
+                              <p className="text-[11px] text-slate-500 font-medium mt-0.5">{srv.remarks}</p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 bg-slate-50/80 p-2.5 rounded border border-slate-150 text-[11px]">
+                            <div>
+                              <span className="text-[9px] font-bold uppercase text-slate-400 block">Cost</span>
+                              <span className="font-mono font-bold text-slate-700">₹{(srv.costPrice || 0).toLocaleString("en-IN")}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-bold uppercase text-slate-400 block">Selling</span>
+                              <span className="font-mono font-bold text-slate-800">₹{(srv.sellingPrice || 0).toLocaleString("en-IN")}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-bold uppercase text-slate-400 block">Margin</span>
+                              <span className={cn("font-mono font-bold", margin >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                                ₹{margin.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] text-slate-400">
+                            <span>
+                              Added on {safeFormatDateTime(srv.createdAt, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            {!isVerified && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleVerifyService(srv.id)}
+                                className="h-6 text-[10px] font-bold text-emerald-700 hover:bg-emerald-50 border-emerald-300"
+                              >
+                                <Check className="w-3 h-3 mr-1" /> Mark Verified
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* === REFUNDS & CREDITS TAB === */}
+          {adminActiveTab === "refunds" && (
+            <div className="space-y-4">
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-orange-600" /> Refunds & Store Credits
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Customer refund requests, manual bank UTR confirmations, and reusable credit notes
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowBookingRefundModal(true)}
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Request Refund
+                  </Button>
+                </div>
+
+                {/* Refund & Credits KPI Summary */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <span className="text-[10px] font-bold uppercase text-slate-400">Total Refunded</span>
+                    <div className="text-base font-bold text-slate-800 font-mono mt-0.5">
+                      ₹{bookingRefunds
+                        .filter((r) => r.status === "APPROVED")
+                        .reduce((acc, r) => acc + (r.totalAmount || 0), 0)
+                        .toLocaleString("en-IN")}
+                    </div>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-3">
+                    <span className="text-[10px] font-bold uppercase text-emerald-700">Active Credit Note</span>
+                    <div className="text-base font-bold text-emerald-700 font-mono mt-0.5">
+                      ₹{bookingRefunds
+                        .filter((r) => r.creditNoteStatus === "ACTIVE")
+                        .reduce((acc, r) => acc + (r.creditAmount || 0), 0)
+                        .toLocaleString("en-IN")}
+                    </div>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-3">
+                    <span className="text-[10px] font-bold uppercase text-amber-700">Pending Approvals</span>
+                    <div className="text-base font-bold text-amber-700 font-mono mt-0.5">
+                      {bookingRefunds.filter((r) => r.status === "PENDING_APPROVAL").length}
+                    </div>
+                  </div>
+                </div>
+
+                {loadingFinanceData ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                    <span className="text-xs font-semibold">Loading refunds history...</span>
+                  </div>
+                ) : bookingRefunds.length === 0 ? (
+                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-slate-200">
+                    <CreditCard className="w-8 h-8 text-slate-300 mx-auto" />
+                    <p className="text-xs font-semibold text-slate-600">No refunds or credit notes requested for this booking.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {bookingRefunds.map((ref) => (
+                      <div
+                        key={ref.id}
+                        className="border border-slate-200 rounded-lg p-4 bg-white hover:border-slate-300 transition-all shadow-xs space-y-2.5"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                              {ref.refundNumber}
+                            </span>
+                            <span className="text-xs font-bold text-slate-800">
+                              Mode: <span className="text-orange-600">{ref.refundMode}</span>
+                            </span>
+                          </div>
+                          <span
+                            className={cn(
+                              "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                              ref.status === "APPROVED"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : ref.status === "REJECTED"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200",
+                            )}
+                          >
+                            {ref.status === "PENDING_APPROVAL" ? "Pending Controller Review" : ref.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50/60 p-2.5 rounded border border-slate-150 text-[11px]">
+                          <div>
+                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Total Refund</span>
+                            <span className="font-mono font-bold text-slate-900">₹{(ref.totalAmount || 0).toLocaleString("en-IN")}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Cash/Bank</span>
+                            <span className="font-mono font-bold text-slate-700">₹{(ref.cashAmount || 0).toLocaleString("en-IN")}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Credit Note</span>
+                            <span className="font-mono font-bold text-emerald-700">₹{(ref.creditAmount || 0).toLocaleString("en-IN")}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Bank Reference</span>
+                            <span className="font-mono font-bold text-slate-700 truncate block">{ref.bankReference || "N/A"}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 font-medium">
+                          <span className="font-bold text-slate-700">Reason:</span> {ref.reason}
+                        </p>
+
+                        {ref.rejectionReason && (
+                          <p className="text-xs text-rose-600 font-medium bg-rose-50 p-2 rounded border border-rose-200">
+                            <span className="font-bold">Rejection Note:</span> {ref.rejectionReason}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center justify-between gap-1 pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+                          <span>
+                            Created {safeFormatDateTime(ref.createdAt, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {ref.approvedAt && (
+                            <span className="text-emerald-700 font-semibold">
+                              Approved {safeFormatDateTime(ref.approvedAt, { day: "2-digit", month: "short" })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* === FINANCE AUDIT TRAIL TAB === */}
+          {adminActiveTab === "finance_audit" && (
+            <div className="space-y-4">
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-orange-600" /> Immutable Financial Audit Trail
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Read-only audit history of every financial modification, verification, and approval on this booking
+                  </p>
+                </div>
+
+                {loadingFinanceData ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                    <span className="text-xs font-semibold">Loading audit trail...</span>
+                  </div>
+                ) : bookingAuditLogs.length === 0 ? (
+                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-slate-200">
+                    <History className="w-8 h-8 text-slate-300 mx-auto" />
+                    <p className="text-xs font-semibold text-slate-600">No financial audit records logged for this booking yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {bookingAuditLogs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="border border-slate-200 rounded-lg p-3.5 bg-white text-xs space-y-2"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "px-2 py-0.5 rounded font-bold uppercase",
+                                log.action === "APPROVE"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : log.action === "REJECT"
+                                    ? "bg-rose-100 text-rose-800"
+                                    : log.action === "CREATE"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-slate-100 text-slate-800",
+                              )}
+                            >
+                              {log.action}
+                            </span>
+                            <span className="font-bold text-slate-700">{log.entityType}</span>
+                          </div>
+                          <span className="text-slate-400">
+                            {safeFormatDateTime(log.createdAt, {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
+                          </span>
+                        </div>
+
+                        {log.details && (
+                          <p className="text-slate-700 font-medium leading-relaxed">{log.details}</p>
+                        )}
+
+                        <div className="text-[10px] text-slate-400 font-semibold">
+                          Actor: <span className="text-slate-700 font-bold">{log.performedBy?.name || "System"}</span> (
+                          {log.performedBy?.role || "SYSTEM"})
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column Sidebar - scrollable */}
@@ -6814,6 +7309,205 @@ export default function BookingDetailsView({
           </div>
         </div>
       )}
+
+      {/* Add Auxiliary Service Modal */}
+      <Dialog open={showAddServiceModal} onOpenChange={setShowAddServiceModal}>
+        <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-slate-200">
+          <DialogHeader className="border-b border-slate-100 pb-3">
+            <DialogTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-orange-600" /> Add Auxiliary Service
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Record a 3rd-party vendor service (Train, Flight, Hotel, Visa, Insurance, Transport) for {booking.bookingId}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3.5 py-3 text-xs">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400">Service Type</label>
+              <Select
+                value={serviceForm.serviceType}
+                onValueChange={(val: any) => setServiceForm({ ...serviceForm, serviceType: val })}
+              >
+                <SelectTrigger className="h-8.5 text-xs rounded-lg border-slate-200">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg">
+                  <SelectItem value="TRAIN">Train Ticket / Quota</SelectItem>
+                  <SelectItem value="FLIGHT">Flight Booking</SelectItem>
+                  <SelectItem value="HOTEL">Hotel / Stay Extension</SelectItem>
+                  <SelectItem value="VISA">Visa Processing</SelectItem>
+                  <SelectItem value="INSURANCE">Travel Insurance</SelectItem>
+                  <SelectItem value="TRANSPORT">Custom Cab / Transport</SelectItem>
+                  <SelectItem value="OTHER">Other Auxiliary Service</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400">Vendor / Operator Name *</label>
+              <Input
+                placeholder="e.g. IRCTC Agent / MakeMyTrip / Snow View Resort"
+                value={serviceForm.vendorName}
+                onChange={(e) => setServiceForm({ ...serviceForm, vendorName: e.target.value })}
+                className="h-8.5 text-xs rounded-lg border-slate-200"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-400">Cost Price (₹)</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 1500"
+                  value={serviceForm.costPrice}
+                  onChange={(e) => setServiceForm({ ...serviceForm, costPrice: e.target.value })}
+                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-400">Selling Price (₹) *</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 2200"
+                  value={serviceForm.sellingPrice}
+                  onChange={(e) => setServiceForm({ ...serviceForm, sellingPrice: e.target.value })}
+                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400">Notes / Remarks</label>
+              <Textarea
+                placeholder="e.g. PNR: 2481928190, 2S Sleeper extra seat"
+                value={serviceForm.remarks}
+                onChange={(e) => setServiceForm({ ...serviceForm, remarks: e.target.value })}
+                className="text-xs rounded-lg border-slate-200"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-slate-100 pt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddServiceModal(false)}
+              className="text-xs font-semibold h-8.5 rounded-lg border-slate-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateService}
+              disabled={savingService}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8.5 px-4 rounded-lg shadow-xs"
+            >
+              {savingService ? "Saving..." : "Save Service"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Booking Refund Modal */}
+      <Dialog open={showBookingRefundModal} onOpenChange={setShowBookingRefundModal}>
+        <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-slate-200">
+          <DialogHeader className="border-b border-slate-100 pb-3">
+            <DialogTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-orange-600" /> Request Booking Refund
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Submit refund request for booking {booking.bookingId} to the Finance Controller approval queue.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3.5 py-3 text-xs">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400">Refund Mode</label>
+              <Select
+                value={refundForm.refundMode}
+                onValueChange={(val: any) => setRefundForm({ ...refundForm, refundMode: val })}
+              >
+                <SelectTrigger className="h-8.5 text-xs rounded-lg border-slate-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg">
+                  <SelectItem value="CASH">Bank / Cash Refund (Direct Payout)</SelectItem>
+                  <SelectItem value="CREDIT">Store Credit Note (Reusable Voucher)</SelectItem>
+                  <SelectItem value="HYBRID">Hybrid (Partial Cash + Partial Credit)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(refundForm.refundMode === "CASH" || refundForm.refundMode === "HYBRID") && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-400">Cash / Bank Payout Amount (₹)</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={refundForm.cashAmount}
+                  onChange={(e) => setRefundForm({ ...refundForm, cashAmount: e.target.value })}
+                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                />
+              </div>
+            )}
+
+            {(refundForm.refundMode === "CREDIT" || refundForm.refundMode === "HYBRID") && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-400">Store Credit Amount (₹)</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={refundForm.creditAmount}
+                  onChange={(e) => setRefundForm({ ...refundForm, creditAmount: e.target.value })}
+                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400">Bank Reference / UPI ID (Optional)</label>
+              <Input
+                placeholder="e.g. Customer HDFC A/C or UPI: customer@okhdfcbank"
+                value={refundForm.bankReference}
+                onChange={(e) => setRefundForm({ ...refundForm, bankReference: e.target.value })}
+                className="h-8.5 text-xs rounded-lg border-slate-200"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400">Reason for Refund *</label>
+              <Textarea
+                placeholder="e.g. Traveler medical emergency, agreed 50% refund as per policy"
+                value={refundForm.reason}
+                onChange={(e) => setRefundForm({ ...refundForm, reason: e.target.value })}
+                className="text-xs rounded-lg border-slate-200"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-slate-100 pt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBookingRefundModal(false)}
+              className="text-xs font-semibold h-8.5 rounded-lg border-slate-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateBookingRefund}
+              disabled={submittingRefund}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8.5 px-4 rounded-lg shadow-xs"
+            >
+              {submittingRefund ? "Submitting..." : "Submit Refund Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
