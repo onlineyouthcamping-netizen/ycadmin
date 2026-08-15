@@ -151,11 +151,11 @@ export function AccommodationDetailPage({
       } catch {}
     }
 
-    const type = (v?.type || "").toUpperCase();
-    const isTrans = type === "TRANSPORT" || type === "FLEET";
-    const isG = type === "GUIDE" || type === "TREK_LEADER";
-    const isRest = type === "RESTAURANT" || type === "FOOD" || type === "MEALS";
-    const isAct = type === "ACTIVITIES" || type === "ACTIVITY" || type === "EXPERIENCE";
+    const type = (v?.type || v?.accommodationType || v?.category || "").toUpperCase();
+    const isTrans = type.includes("TRANSPORT") || type.includes("FLEET") || type.includes("VEHICLE");
+    const isG = type.includes("GUIDE") || type.includes("LEADER") || type.includes("TREK");
+    const isRest = type.includes("RESTAURANT") || type.includes("FOOD") || type.includes("MEAL") || type.includes("DINING");
+    const isAct = type.includes("ACTIVITIES") || type.includes("ACTIVITY") || type.includes("ADVENTURE") || type.includes("EXPERIENCE");
 
     return {
       name: v?.name || "",
@@ -1822,14 +1822,20 @@ export function AccommodationDetailPage({
                         ? "Guide Profile & Certifications"
                         : isRestaurant
                           ? "Restaurant & Meal Plans Profile"
-                          : "Property & Compliance Profile"}
+                          : isActivity
+                            ? "Adventure & Activity Profile"
+                            : "Property & Compliance Profile"}
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     {isTransport
                       ? "Edit vehicle categories, operating routes, safety features, and banking details directly below."
                       : isGuide
                         ? "Edit guide language skills, daily rates, certifications, and compliance details directly below."
-                        : "Edit category, rating, check-in/out times, meal plans, amenities, and GSTIN/banking details directly below."}
+                        : isRestaurant
+                          ? "Edit cuisines, seating capacity, operating hours, and banking details directly below."
+                          : isActivity
+                            ? "Edit activity offerings, operating site, safety features, and banking details directly below."
+                            : "Edit category, rating, check-in/out times, meal plans, amenities, and GSTIN/banking details directly below."}
                   </p>
                 </div>
                 <Button
