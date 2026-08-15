@@ -1581,7 +1581,7 @@ export default function OperationsHubPage() {
           {/* Page Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
             <div className="min-w-0">
-              <h1 className="text-base md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">
                 Departures Hub
               </h1>
               <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
@@ -1606,7 +1606,7 @@ export default function OperationsHubPage() {
               </Button>
               <Button
                 onClick={() => navigate("/admin/bookings")}
-                className="h-9 md:h-8.5 flex-1 md:flex-none text-xs font-semibold rounded-lg md:rounded-[4px] bg-[#F97316] text-white hover:bg-[#F97316]/90 px-3 md:px-4 shadow-sm flex items-center justify-center gap-1.5"
+                className="h-9 md:h-8.5 flex-1 md:flex-none text-xs font-semibold rounded-lg md:rounded-md bg-[#FF4D00] text-white hover:bg-[#E04400] px-3 md:px-4 shadow-xs flex items-center justify-center gap-1.5"
               >
                 <Plus className="w-4 h-4 shrink-0" /> New Booking
               </Button>

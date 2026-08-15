@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, ChevronDown, Megaphone } from "lucide-react";
+import { Calendar, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 import { dashboardService } from "@/services/dashboard.service";
 import { ticketApprovalService } from "@/services/ticketApproval.service";
@@ -149,8 +149,7 @@ export default function DashboardPage() {
   }, [dateFilter]);
 
   return (
-    <div className="space-y-6 select-none -mx-3 sm:-mx-6 -mt-3 sm:-mt-6 px-3 sm:px-6 pt-3 sm:pt-6 bg-[#F4F7FB] min-h-full text-[#162B45] font-sans antialiased">
-      {/* ─── MOBILE DASHBOARD VIEW (<768px) ─── */}
+    <div className="space-y-5 select-none min-h-full text-[#0B1528]">
       <div className="block md:hidden">
         <MobileDashboardView
           stats={stats}
@@ -169,27 +168,25 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── DESKTOP DASHBOARD VIEW (>=768px) ─── */}
-      <div className="hidden md:block space-y-6">
-        {/* ─── SUB-HEADER BAR ─── */}
-        <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] h-[40px] px-5 flex items-center justify-between font-sans -mx-4 -mt-3 mb-3">
-          <div className="text-[12px] font-normal text-[#64748B]">
+      <div className="hidden md:block space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="text-[12px] font-medium text-slate-500">
             {currentDateString}
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-[6px] px-3 py-1 text-[12px] font-medium text-[#0A192F] cursor-pointer hover:bg-slate-50 transition-colors">
-              <span className="uppercase font-bold text-[10px] text-orange-600">
-                {userRole ? `${userRole} VIEW` : "OPERATOR VIEW"}
+            <div className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-md px-2.5 py-1 text-[11px] font-semibold text-[#0B1528]">
+              <span className="uppercase text-[10px] text-[#FF4D00]">
+                {userRole ? `${userRole} view` : "Operator"}
               </span>
-              <ChevronDown className="w-3 h-3 text-[#64748B]" />
             </div>
 
-            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[6px] px-2 py-1 text-[11px] font-semibold text-[#0A192F]">
-              <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
+            <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-md px-2 py-1 text-[11px] font-semibold text-[#0B1528]">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="bg-transparent border-0 outline-none cursor-pointer text-[#0A192F] font-medium text-[11px]"
+                className="bg-transparent border-0 outline-none cursor-pointer text-[#0B1528] font-medium text-[11px]"
               >
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
@@ -214,8 +211,8 @@ export default function DashboardPage() {
               {/* Render Section Header for Non-KPI Categories */}
               {cat !== "kpi" && (
                 <div className="pt-2 pb-1 border-b border-slate-200/80 flex items-center justify-between">
-                  <h2 className="text-[11px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  <h2 className="text-[11px] font-bold text-[#0B1528] uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D00]" />
                     {info.title}
                   </h2>
                   <span className="text-[10px] text-slate-400 font-semibold">
@@ -294,7 +291,7 @@ export default function DashboardPage() {
               <Button
                 type="submit"
                 disabled={creatingAnnouncement}
-                className="h-9 text-xs font-semibold bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg px-4"
+                className="h-9 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white rounded-lg px-4"
               >
                 {creatingAnnouncement ? "Publishing..." : "Publish"}
               </Button>

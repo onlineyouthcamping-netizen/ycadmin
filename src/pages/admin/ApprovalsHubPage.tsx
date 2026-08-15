@@ -114,12 +114,12 @@ export default function ApprovalsHubPage() {
   };
 
   return (
-    <div className="space-y-4 font-sans antialiased text-[#162B45] select-none p-4 bg-[#F4F7FB] min-h-screen -mx-6 -mt-6">
+    <div className="space-y-4 font-sans antialiased text-[#0B1528] p-1 bg-transparent min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2] bg-transparent">
         <div className="space-y-0.5">
           <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none flex items-center gap-2 font-montserrat">
-            <ClipboardCheck className="w-5 h-5 text-[#F97316]" />
+            <ClipboardCheck className="w-5 h-5 text-[#FF4D00]" />
             Approval Center
           </h1>
           <p className="text-[#74839A] text-[12px] font-[500] leading-none">
@@ -141,18 +141,18 @@ export default function ApprovalsHubPage() {
               className={cn(
                 "flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all border shadow-2xs",
                 isActive
-                  ? "bg-white text-[#F97316] border-[#F97316] shadow-sm ring-1 ring-orange-200/50"
+                  ? "bg-white text-[#FF4D00] border-[#FF4D00] shadow-sm"
                   : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900",
               )}
             >
-              <Icon className={cn("w-4 h-4", isActive ? "text-[#F97316]" : "text-slate-400")} />
+              <Icon className={cn("w-4 h-4", isActive ? "text-[#FF4D00]" : "text-slate-400")} />
               <span>{tab.label}</span>
               {badgeCount > 0 && (
                 <span
                   className={cn(
                     "text-[9.5px] font-black px-1.5 py-0.2 rounded-full",
                     isActive
-                      ? "bg-orange-100 text-[#F97316]"
+                      ? "bg-orange-100 text-[#FF4D00]"
                       : "bg-slate-100 text-slate-600",
                   )}
                 >

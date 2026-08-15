@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
-import { toast } from "@/components/ui/sonner";
+import { ROLE_PERMISSIONS } from "@/lib/permissions";
 import {
   Dialog,
   DialogContent,
@@ -60,9 +60,9 @@ import {
   History,
   Wrench,
   CreditCard,
-  BarChart3,
   ChevronRight,
   ShoppingCart,
+  ShoppingBag,
   CheckSquare,
   Briefcase,
   Megaphone,
@@ -71,9 +71,12 @@ import {
   Key,
   ShieldCheck,
   Sliders,
+  Route,
+  BadgeCheck,
+  Wallet,
+  Tent,
+  Settings2,
 } from "lucide-react";
-import { AdminContainer } from "@/components/layout";
-import { hasPermission, ROLE_PERMISSIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -103,12 +106,12 @@ const sidebarModules: SidebarModule[] = [
   {
     title: "Dashboard",
     url: "/admin",
-    icon: BarChart3,
+    icon: LayoutDashboard,
     hasSubItems: false,
   },
   {
     title: "Sales",
-    icon: Briefcase,
+    icon: ShoppingBag,
     hasSubItems: true,
     subItems: [
       { title: "Payments", url: "/admin/accounting" },
@@ -119,40 +122,40 @@ const sidebarModules: SidebarModule[] = [
   },
   {
     title: "Operations",
-    icon: Compass,
+    icon: Route,
     hasSubItems: true,
     subItems: [
-      { title: "Departures Hub", url: "/admin/operations" },
-      { title: "Station Payments", url: "/admin/operations?tab=stationpayments" },
-      { title: "Daily Task Console", url: "/admin/operations/daily-tasks" },
-      { title: "SOP & Checklists", url: "/admin/operations/sops" },
-      { title: "Vendor Management", url: "/admin/vendors" },
-      { title: "Company Documents", url: "/admin/company-documents" },
+      { title: "Departures", url: "/admin/operations" },
+      { title: "Station payments", url: "/admin/operations?tab=stationpayments" },
+      { title: "Daily tasks", url: "/admin/operations/daily-tasks" },
+      { title: "SOP & checklists", url: "/admin/operations/sops" },
+      { title: "Vendors", url: "/admin/vendors" },
+      { title: "Company docs", url: "/admin/company-documents" },
     ],
   },
   {
     title: "Approval Center",
-    icon: ClipboardCheck,
+    icon: BadgeCheck,
     hasSubItems: true,
     subItems: [
       {
-        title: "Train Ticket Approvals",
+        title: "Train tickets",
         url: "/admin/approvals-hub?tab=train-verification",
       },
       {
-        title: "Booking & Docs Verification",
+        title: "Booking & docs",
         url: "/admin/approvals-hub?tab=booking-verification",
       },
       {
-        title: "Incoming Payments",
+        title: "Incoming payments",
         url: "/admin/approvals-hub?tab=payment-approvals",
       },
       {
-        title: "Outgoing Vendor Payments",
+        title: "Vendor payouts",
         url: "/admin/approvals-hub?tab=vendor-bills",
       },
       {
-        title: "Refund Requests",
+        title: "Refunds",
         url: "/admin/approvals-hub?tab=refund-requests",
       },
     ],
@@ -160,22 +163,22 @@ const sidebarModules: SidebarModule[] = [
   {
     title: "Finance",
     url: "/admin/finance",
-    icon: Banknote,
+    icon: Wallet,
     hasSubItems: false,
   },
   {
     title: "Travel Desk",
     url: "/admin/travel-desk",
-    icon: Plane,
+    icon: Ticket,
     hasSubItems: false,
   },
   {
     title: "Business",
-    icon: Globe,
+    icon: Tent,
     hasSubItems: true,
     subItems: [
-      { title: "Trips / Products", url: "/admin/trips" },
-      { title: "Master Database", url: "/admin/master-database" },
+      { title: "Trips", url: "/admin/trips" },
+      { title: "Master data", url: "/admin/master-database" },
       { title: "Website", url: "/admin/website" },
       { title: "Pages", url: "/admin/pages" },
       { title: "Blogs", url: "/admin/blogs" },
@@ -186,14 +189,14 @@ const sidebarModules: SidebarModule[] = [
   },
   {
     title: "Administration",
-    icon: Settings,
+    icon: Settings2,
     hasSubItems: true,
     subItems: [
-      { title: "Users & Roles", url: "/admin/users" },
-      { title: "Roles & Permissions", url: "/admin/access-control" },
-      { title: "Email Templates", url: "/admin/email-templates" },
+      { title: "Users", url: "/admin/users" },
+      { title: "Roles", url: "/admin/access-control" },
+      { title: "Email templates", url: "/admin/email-templates" },
       { title: "Settings", url: "/admin/settings" },
-      { title: "My Profile", url: "/admin/my-profile" },
+      { title: "Profile", url: "/admin/my-profile" },
     ],
   },
 ];
@@ -263,12 +266,12 @@ function AdminSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-[#1E293B] shadow-lg">
-      <SidebarContent className="scrollbar-hide flex flex-col h-full bg-[#0B1329] text-slate-400 font-sans">
+    <Sidebar collapsible="icon" className="border-r border-[#152238] shadow-none">
+      <SidebarContent className="scrollbar-hide flex flex-col h-full bg-[#0B1528] text-slate-400">
         {/* Brand / Logo Header */}
         <div
           className={cn(
-            "flex items-center justify-start border-b border-[#1E293B] shrink-0 h-16 px-3 bg-[#0B1329] overflow-hidden",
+            "flex items-center justify-start border-b border-[#152238] shrink-0 h-14 px-3 bg-[#0B1528] overflow-hidden",
             collapsed && "justify-center px-0",
           )}
         >
@@ -276,23 +279,23 @@ function AdminSidebar() {
             <div className="flex items-center gap-2 py-0.5 w-full overflow-hidden">
               <img
                 src="/footer-logo.png"
-                className="h-14 sm:h-16 max-h-16 w-auto object-contain scale-150 sm:scale-175 origin-left transition-transform duration-200"
-                alt="YouthCamping White Logo"
+                className="h-9 w-auto object-contain origin-left"
+                alt="YouthCamping"
               />
             </div>
           ) : (
-            <div className="h-11 w-11 rounded-xl bg-[#0B1329] border border-[#1E293B] flex items-center justify-center p-0.5 shadow-sm overflow-hidden">
+            <div className="h-8 w-8 rounded-lg bg-[#0B1528] border border-[#1E293B] flex items-center justify-center overflow-hidden">
               <img
                 src="/footer-logo.png"
-                className="w-full h-full object-contain scale-135"
-                alt="YouthCamping Logo"
+                className="w-full h-full object-contain"
+                alt="YouthCamping"
               />
             </div>
           )}
         </div>
 
         {/* Navigation Items List */}
-        <div className="flex-1 overflow-y-auto no-scrollbar py-3.5 px-2.5 space-y-1">
+        <div className="flex-1 overflow-y-auto no-scrollbar py-4 px-3 space-y-0.5">
           {sidebarModules.map((mod) => {
             const hasSub = mod.hasSubItems;
 
@@ -350,6 +353,7 @@ function AdminSidebar() {
                   "accounting.view",
                 ],
                 "/admin/accounting": ["accounting.view", "finance.view"],
+                "/admin/finance": ["accounting.view", "finance.view"],
                 "/admin/travel-desk": [
                   "tickets.view",
                   "tickets.create",
@@ -477,42 +481,53 @@ function AdminSidebar() {
             const isExpanded = expandedModule === mod.title || isAnySubActive;
 
             return (
-              <div key={mod.title} className="flex flex-col gap-0.5">
-                {/* Module Header Row */}
+              <div key={mod.title} className="flex flex-col">
                 <button
                   onClick={() => handleModuleClick(mod)}
                   className={cn(
-                    "flex items-center w-full h-[40px] rounded-xl px-3 transition-all relative text-left text-xs font-semibold tracking-tight cursor-pointer",
+                    "group/nav flex items-center w-full h-10 rounded-md px-1.5 transition-colors relative text-left cursor-pointer",
+                    collapsed && "justify-center px-0",
                     isModuleActive
-                      ? "text-white bg-gradient-to-r from-orange-500/15 via-orange-500/10 to-transparent border border-orange-500/25 shadow-xs font-bold"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                      ? "text-white"
+                      : "text-slate-400 hover:text-slate-100",
                   )}
                 >
-                  {isModuleActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3.5px] h-5 bg-gradient-to-b from-[#FF6B00] to-orange-600 rounded-r-full shadow-xs" />
+                  {isModuleActive && !collapsed && (
+                    <span className="absolute left-0 top-2.5 bottom-2.5 w-[2px] rounded-full bg-[#FF4D00]" />
                   )}
-                  <mod.icon
+                  <span
                     className={cn(
-                      "h-4 w-4 shrink-0 transition-colors mr-3",
-                      isModuleActive ? "text-[#FF6B00]" : "text-slate-400",
+                      "flex h-7 w-7 items-center justify-center rounded-md shrink-0 transition-colors",
+                      collapsed ? "" : "mr-2.5",
+                      isModuleActive
+                        ? "bg-[#FF4D00]/12 text-[#FF4D00]"
+                        : "text-slate-400 group-hover/nav:text-slate-200 group-hover/nav:bg-white/[0.04]",
                     )}
-                  />
+                  >
+                    <mod.icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                  </span>
                   {!collapsed && (
-                    <span className="flex-1 truncate">{mod.title}</span>
+                    <span
+                      className={cn(
+                        "flex-1 truncate text-[13px] tracking-[-0.01em]",
+                        isModuleActive ? "font-semibold" : "font-medium",
+                      )}
+                    >
+                      {mod.title}
+                    </span>
                   )}
 
                   {!collapsed &&
                     hasSub &&
                     (isExpanded ? (
-                      <ChevronDown className="h-3.5 w-3.5 text-slate-400 ml-auto" />
+                      <ChevronDown className="h-3.5 w-3.5 text-slate-500 ml-auto shrink-0" strokeWidth={1.75} />
                     ) : (
-                      <ChevronRight className="h-3.5 w-3.5 text-slate-500 ml-auto" />
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-600 ml-auto shrink-0" strokeWidth={1.75} />
                     ))}
                 </button>
 
-                {/* Sub-items block */}
                 {!collapsed && hasSub && isExpanded && (
-                  <div className="pl-4 pr-1 py-1 flex flex-col gap-0.5 border-l-2 border-slate-800 ml-5 mt-0.5 space-y-0.5">
+                  <div className="ml-[22px] pl-3 pr-1 py-1 mb-1.5 flex flex-col gap-0.5 border-l border-white/10">
                     {visibleSubItems.map((sub) => {
                       const active = isSubActive(sub.url);
                       return (
@@ -523,17 +538,14 @@ function AdminSidebar() {
                             if (isMobile) setOpenMobile(false);
                           }}
                           className={cn(
-                            "text-xs font-medium py-2 px-3 rounded-lg transition-all flex items-center justify-between truncate cursor-pointer",
+                            "text-[12px] py-1.5 px-2 rounded-md transition-colors flex items-center cursor-pointer leading-snug",
                             active
-                              ? "text-[#FF6B00] bg-orange-500/10 font-bold border border-orange-500/20 shadow-xs"
-                              : "text-slate-400 hover:text-white hover:bg-slate-800/40",
+                              ? "text-white font-semibold bg-white/[0.06]"
+                              : "text-slate-400 font-medium hover:text-slate-200 hover:bg-white/[0.04]",
                           )}
                           activeClassName=""
                         >
-                          <span className="truncate">{sub.title}</span>
-                          {active && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] shrink-0" />
-                          )}
+                          <span>{sub.title}</span>
                         </NavLink>
                       );
                     })}
@@ -544,18 +556,17 @@ function AdminSidebar() {
           })}
         </div>
 
-        {/* Footer / Profile & Logout Card */}
-        <div className="p-3 border-t border-slate-800 bg-[#070D1C] space-y-2">
+        <div className="p-3 border-t border-[#152238] space-y-2">
           {!collapsed && admin && (
-            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-900/80 border border-slate-800/80">
-              <div className="w-7 h-7 rounded-lg bg-[#FF6B00] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+            <div className="flex items-center gap-2.5 px-1 py-1">
+              <div className="w-7 h-7 rounded-md bg-[#FF4D00] text-white flex items-center justify-center font-semibold text-[11px] shrink-0">
                 {admin.name ? admin.name.charAt(0).toUpperCase() : "A"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-extrabold text-white truncate leading-tight">
-                  {admin.name || "Admin Operator"}
+                <p className="text-[12px] font-semibold text-white truncate leading-tight">
+                  {admin.name || "Admin"}
                 </p>
-                <p className="text-[10px] font-semibold text-[#FF6B00] capitalize truncate">
+                <p className="text-[10px] font-medium text-slate-500 capitalize truncate mt-0.5">
                   {admin.role || "Operator"}
                 </p>
               </div>
@@ -566,12 +577,12 @@ function AdminSidebar() {
             variant="ghost"
             size={collapsed ? "icon" : "default"}
             onClick={handleLogout}
-            className="w-full text-slate-400 hover:text-red-400 hover:bg-red-500/10 justify-start h-9 rounded-xl px-2.5 transition-colors cursor-pointer"
+            className="w-full text-slate-500 hover:text-rose-300 hover:bg-rose-500/10 justify-start h-8 rounded-md px-2 cursor-pointer"
           >
-            <LogOut className="h-4 w-4 mr-2.5 text-slate-400" />
+            <LogOut className="h-3.5 w-3.5 mr-2" strokeWidth={1.75} />
             {!collapsed && (
-              <span className="text-xs font-extrabold tracking-tight">
-                Logout System
+              <span className="text-[12px] font-medium tracking-tight">
+                Log out
               </span>
             )}
           </Button>
@@ -681,11 +692,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
-        <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white opacity-40">
-            System Initializing...
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F7FB]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-7 w-7 animate-spin text-[#FF4D00]" />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+            Loading
           </p>
         </div>
       </div>
@@ -703,34 +714,36 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div
-        className="min-h-screen flex w-full"
-        style={{ background: "#f1f5f9" }}
+        className="min-h-screen flex w-full bg-[#F4F7FB]"
       >
         <AdminSidebar />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
           {/* Top Navbar (Strict 56px Height) */}
-          <header className="h-[56px] flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 shrink-0 z-20 sticky top-0">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <SidebarTrigger className="w-8 h-8 rounded-[6px] text-[#0A192F] hover:bg-[#F1F5F9] border-none bg-transparent flex items-center justify-center shrink-0 transition-colors" />
-              <h1 className="text-[13px] md:text-[16px] font-bold text-[#0A192F] tracking-[0.03em] uppercase leading-none truncate flex items-center">
+          <header className="h-14 flex items-center justify-between border-b border-[#E2E8F0] bg-white px-3 sm:px-5 shrink-0 z-20 sticky top-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <SidebarTrigger className="w-8 h-8 rounded-md text-[#0B1528] hover:bg-slate-100 border-none bg-transparent flex items-center justify-center shrink-0" />
+              <h1 className="text-sm md:text-[15px] font-semibold text-[#0B1528] tracking-tight leading-none truncate">
                 {(() => {
                   const parts = location.pathname.split("/").filter(Boolean);
                   if (
                     parts.length === 0 ||
                     (parts.length === 1 && parts[0] === "admin")
                   ) {
-                    return "DASHBOARD";
+                    return "Dashboard";
                   }
-                  if (location.pathname.startsWith("/admin/accounting")) {
+                  if (
+                    location.pathname.startsWith("/admin/accounting") ||
+                    location.pathname.startsWith("/admin/finance")
+                  ) {
                     const tab = searchParams.get("tab") || "overview";
-                    return `ACCOUNTING — ${tab.replace(/_/g, " ").toUpperCase()}`;
+                    return `Finance · ${tab.replace(/_/g, " ")}`;
                   }
                   if (location.pathname.startsWith("/admin/operations")) {
-                    return "DEPARTURES HUB";
+                    return "Departures";
                   }
                   const lastPart = parts.pop() || "";
-                  return lastPart.replace(/-/g, " ").toUpperCase();
+                  return lastPart.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
                 })()}
               </h1>
             </div>
@@ -746,7 +759,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   readOnly
                   placeholder="Search anything... (Press Ctrl+K)"
                   style={{ paddingLeft: "38px" }}
-                  className="h-[36px] w-[320px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] text-[13px] font-normal text-[#0A192F] placeholder:text-[#64748B] focus:outline-none focus:border-[#F97316] !pl-[38px] pr-14 shadow-none cursor-pointer"
+                  className="h-9 w-[280px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[13px] font-normal text-[#0B1528] placeholder:text-[#64748B] focus:outline-none focus:border-[#FF4D00] !pl-[38px] pr-14 shadow-none cursor-pointer"
                 />
                 <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white bg-[#0A192F] px-1.5 py-0.5 rounded-[4px] tracking-normal font-sans pointer-events-none z-10">
                   ⌘K
@@ -771,7 +784,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         <span className="text-[13px] font-semibold text-[#0A192F] leading-tight">
                           {admin?.name || (admin as any)?.fullName || "User"}
                         </span>
-                        <span className="text-[9px] font-bold text-[#F97316] uppercase tracking-[0.08em] leading-none mt-0.5">
+                        <span className="text-[9px] font-bold text-[#FF4D00] uppercase tracking-[0.08em] leading-none mt-0.5">
                           {(admin?.email || "")
                             .toLowerCase()
                             .includes("hemal") ||
@@ -796,7 +809,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       <p className="text-[10px] font-medium text-slate-500 truncate">
                         {admin?.email}
                       </p>
-                      <span className="inline-block mt-1 text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-orange-50 text-[#F97316] border border-orange-200">
+                      <span className="inline-block mt-1 text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-orange-50 text-[#FF4D00] border border-orange-200">
                         {(admin?.email || "").toLowerCase().includes("hemal") ||
                         admin?.email === "hemal.patel@youthcamping.online"
                           ? "FOUNDER"
@@ -864,10 +877,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         e.preventDefault();
                         logout();
                       }}
-                      className="text-xs font-bold text-white bg-[#F97316] hover:bg-[#EA580C] focus:bg-[#EA580C] focus:text-white cursor-pointer rounded-lg py-2 px-3 mt-1.5 flex items-center justify-center shadow-xs transition-all"
+                      className="text-xs font-semibold text-rose-600 hover:bg-rose-50 focus:bg-rose-50 focus:text-rose-700 cursor-pointer rounded-md py-2 px-3 mt-1 flex items-center"
                     >
-                      <LogOut className="w-4 h-4 mr-2 text-white" />
-                      Logout
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Log out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -877,7 +890,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <div className="hidden sm:flex items-center gap-2 pl-1">
                 <Button
                   onClick={() => setBookingModalOpen(true)}
-                  className="bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-[6px] h-8 px-3.5 font-semibold text-[11px] flex items-center gap-1 shadow-xs transition-all"
+                  className="bg-[#0B1528] hover:bg-[#16233c] text-white rounded-md h-8 px-3 font-semibold text-[11px] flex items-center gap-1 shadow-none"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   New Booking
@@ -888,57 +901,27 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1 flex overflow-hidden">
             {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 pb-20 md:pb-6">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 pb-20 md:pb-5 bg-[#F4F7FB]">
               <div className="w-full min-h-full">{children}</div>
             </main>
 
             {/* Help Sidebar */}
             {showHelpPanel && (
-              <aside className="w-[380px] border-l bg-white hidden 2xl:flex flex-col overflow-y-auto p-12 no-scrollbar">
-                <div className="space-y-12">
-                  <section className="space-y-8">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">
-                        Resources
-                      </h3>
-                      <HelpCircle className="w-4 h-4 text-slate-300" />
-                    </div>
-                    <div className="bg-slate-50 rounded-[40px] p-10 border border-slate-100 relative overflow-hidden group">
-                      <div className="relative z-10 space-y-6">
-                        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-premium">
-                          <BookOpen className="w-6 h-6 text-slate-900" />
-                        </div>
-                        <div className="space-y-2">
-                          <h4 className="font-bold text-lg tracking-tight text-slate-900">
-                            Knowledge Base
-                          </h4>
-                          <p className="text-[12px] text-slate-500 font-medium leading-relaxed">
-                            Learn how to configure your platform with our
-                            step-by-step tutorials.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-8">
-                    <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">
-                      Pro Tips
+              <aside className="w-[280px] border-l bg-white hidden 2xl:flex flex-col overflow-y-auto p-5 no-scrollbar">
+                <div className="space-y-6">
+                  <section className="space-y-3">
+                    <h3 className="font-semibold text-[11px] uppercase tracking-wider text-slate-400">
+                      Resources
                     </h3>
-                    <div className="bg-primary rounded-[40px] p-10 text-white relative overflow-hidden shadow-luxury">
-                      <div className="relative z-10 space-y-6">
-                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center">
-                          <Sparkles className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="space-y-2">
-                          <h4 className="font-bold text-xl tracking-tight leading-tight">
-                            Master the platform like a pro.
-                          </h4>
-                          <p className="text-[12px] text-white/80 font-medium">
-                            Join our weekly webinars to learn about advanced
-                            growth features.
-                          </p>
-                        </div>
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                      <div className="space-y-2">
+                        <BookOpen className="w-4 h-4 text-[#FF4D00]" />
+                        <h4 className="font-semibold text-sm text-[#0B1528]">
+                          Knowledge Base
+                        </h4>
+                        <p className="text-[12px] text-slate-500 leading-relaxed">
+                          Step-by-step guides for configuring the platform.
+                        </p>
                       </div>
                     </div>
                   </section>
@@ -968,7 +951,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <div className="max-h-[380px] overflow-y-auto p-3.5 space-y-4">
             {isSearching ? (
               <div className="flex items-center justify-center py-8 gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-[#FF6B00]" />
+                <Loader2 className="w-4 h-4 animate-spin text-[#FF4D00]" />
                 <span className="text-xs text-slate-450 font-bold uppercase tracking-wider">
                   Searching Database...
                 </span>

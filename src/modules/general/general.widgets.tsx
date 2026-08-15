@@ -1,11 +1,12 @@
 import React from "react";
+import { Plus } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
 import type {
   DashboardWidget,
   DashboardWidgetContextProps,
 } from "@/config/dashboardWidgetRegistry";
+import { DashCard, DashHead, dashLink } from "@/modules/dashboard.chrome";
 
-// Announcements Widget
 export const AnnouncementsWidget: React.FC<DashboardWidgetContextProps> = ({
   announcements,
   loadingAnnouncements,
@@ -15,66 +16,64 @@ export const AnnouncementsWidget: React.FC<DashboardWidgetContextProps> = ({
   userPerms,
   userRole,
 }) => (
-  <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
-    <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Announcements
-      </span>
-      <div className="flex items-center gap-2">
-        {hasPermission(userPerms, PERMISSIONS.SETTINGS_VIEW, userRole) && (
+  <DashCard>
+    <DashHead
+      title="Announcements"
+      action={
+        <>
+          {hasPermission(userPerms, PERMISSIONS.SETTINGS_VIEW, userRole) && (
+            <button
+              type="button"
+              onClick={() => setShowAddAnnouncement(true)}
+              className={cnDashAction()}
+            >
+              <Plus className="w-3 h-3" strokeWidth={2.25} />
+              Add
+            </button>
+          )}
           <button
-            onClick={() => setShowAddAnnouncement(true)}
-            className="text-[10px] font-bold text-[#F97316] bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-0.5 rounded transition-all"
+            type="button"
+            onClick={() => setShowAllAnnouncements(true)}
+            className={dashLink}
           >
-            + Add
+            View all
           </button>
-        )}
-        <span
-          onClick={() => setShowAllAnnouncements(true)}
-          className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
-        >
-          View All
-        </span>
-      </div>
-    </div>
-    <div className="p-3.5 flex-1 space-y-3 text-[12px] overflow-y-auto max-h-[160px] no-scrollbar">
+        </>
+      }
+    />
+    <div className="px-4 py-3.5 flex-1 space-y-3 text-[12px] overflow-y-auto max-h-[180px] no-scrollbar">
       {loadingAnnouncements ? (
-        <p className="text-[11px] text-[#74839A] italic">
-          Loading announcements...
-        </p>
+        <p className="text-[12px] text-slate-400">Loading…</p>
       ) : announcements.length === 0 ? (
-        <p className="text-[11px] text-[#74839A] italic text-center py-2">
-          No announcements posted.
-        </p>
+        <p className="text-[12px] text-slate-400 text-center py-4">No announcements yet.</p>
       ) : (
         announcements.slice(0, 5).map((ann: any) => (
-          <div
-            key={ann.id}
-            className="space-y-0.5 pb-1 border-b border-[#E3EAF2]/30 last:border-0"
-          >
-            <p className="font-bold text-[#162B45] leading-tight">
-              {ann.title}
-            </p>
-            <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-              By {ann.author} •{" "}
-              {(() => {
-                const diffMs =
-                  new Date().getTime() - new Date(ann.createdAt).getTime();
-                const diffMins = Math.floor(diffMs / (1000 * 60));
-                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                if (diffMins < 1) return "just now";
-                if (diffMins < 60) return `${diffMins}m ago`;
-                if (diffHrs < 24) return `${diffHrs}h ago`;
-                return `${diffDays}d ago`;
-              })()}
+          <div key={ann.id} className="space-y-1 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
+            <p className="font-semibold text-[#0B1528] leading-snug">{ann.title}</p>
+            <p className="text-[10px] text-slate-400 font-medium">
+              {ann.author} · {relativeTime(ann.createdAt)}
             </p>
           </div>
         ))
       )}
     </div>
-  </div>
+  </DashCard>
 );
+
+function cnDashAction() {
+  return "inline-flex items-center gap-1 text-[11px] font-semibold text-[#FF4D00] hover:text-[#E04400] whitespace-nowrap";
+}
+
+function relativeTime(createdAt: string) {
+  const diffMs = new Date().getTime() - new Date(createdAt).getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  return `${diffDays}d ago`;
+}
 
 // Today's Tasks Widget
 export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
@@ -90,19 +89,16 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
   const offset = circumference - pct * circumference;
 
   return (
-    <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
-      <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-        <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-          Today's Tasks
-        </span>
-        <span
-          onClick={() => navigate("/admin/bookings")}
-          className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
-        >
-          View All
-        </span>
-      </div>
-      <div className="p-3.5 flex-1 flex items-center gap-4">
+    <DashCard>
+      <DashHead
+        title="Today's tasks"
+        action={
+          <button type="button" onClick={() => navigate("/admin/bookings")} className={dashLink}>
+            View all
+          </button>
+        }
+      />
+      <div className="px-4 py-3.5 flex-1 flex items-center gap-4">
         <div className="relative w-[60px] h-[60px] flex items-center justify-center shrink-0">
           <svg className="w-full h-full transform -rotate-90">
             <circle
@@ -148,7 +144,7 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </DashCard>
   );
 };
 
@@ -158,19 +154,16 @@ export const RecentBookingsWidget: React.FC<DashboardWidgetContextProps> = ({
   loading,
   navigate,
 }) => (
-  <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
-    <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Recent Bookings
-      </span>
-      <span
-        onClick={() => navigate("/admin/bookings")}
-        className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
-      >
-        View All
-      </span>
-    </div>
-    <div className="p-3.5 flex-1 space-y-2.5 overflow-y-auto max-h-[160px] no-scrollbar text-[12px]">
+  <DashCard>
+    <DashHead
+      title="Recent bookings"
+      action={
+        <button type="button" onClick={() => navigate("/admin/bookings")} className={dashLink}>
+          View all
+        </button>
+      }
+    />
+    <div className="px-4 py-3.5 flex-1 space-y-3 overflow-y-auto max-h-[180px] no-scrollbar text-[12px]">
       {loading ? (
         <p className="text-[11px] text-[#74839A] italic">
           Loading transactions...
@@ -202,7 +195,7 @@ export const RecentBookingsWidget: React.FC<DashboardWidgetContextProps> = ({
         ))
       )}
     </div>
-  </div>
+  </DashCard>
 );
 
 export const generalWidgets: DashboardWidget[] = [

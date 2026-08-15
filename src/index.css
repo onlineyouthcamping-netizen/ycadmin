@@ -8,12 +8,12 @@
   :root {
     /* Brand Color Palette */
     --color-primary-orange: #ff4d00;
-    --color-navy: #0a2463;
+    --color-navy: #0b1528;
     --color-text-charcoal: #2d3748;
     --color-white: #ffffff;
 
     /* Premium Minimalist Palette */
-    --primary-hex: #0a2463; /* Dark Navy Backgrounds */
+    --primary-hex: #0b1528; /* Dark Navy Backgrounds */
     --background-hex: #ffffff;
     --foreground-hex: #2d3748; /* Charcoal Text */
 
@@ -197,43 +197,43 @@
 
   /* Unified Premium SaaS Styles */
   .admin-title {
-    @apply text-[28px] font-semibold tracking-tight text-slate-900;
+    @apply text-xl font-bold tracking-tight text-[#0B1528];
   }
 
   .admin-heading {
-    @apply text-[20px] font-medium tracking-tight text-slate-900;
+    @apply text-base font-semibold tracking-tight text-[#0B1528];
   }
 
   .admin-card-title {
-    @apply text-[16px] font-medium text-slate-900;
+    @apply text-sm font-semibold text-[#0B1528];
   }
 
   .admin-body {
-    @apply text-[14px] font-normal text-slate-500 leading-relaxed;
+    @apply text-[13px] font-normal text-slate-500 leading-relaxed;
   }
 
   .admin-label {
-    @apply text-[12px] font-normal text-slate-400;
+    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400;
   }
 
   .admin-card {
-    @apply bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs;
+    @apply bg-white border border-slate-200 rounded-xl p-4 shadow-xs;
   }
 
   .admin-input {
-    @apply h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold focus:border-[#FF6B00] focus:outline-none transition-all w-full bg-white text-slate-900 placeholder:text-slate-400;
+    @apply h-8 rounded-lg border border-slate-200 px-3 text-xs font-semibold focus:border-[#FF4D00] focus:outline-none transition-colors w-full bg-white text-slate-900 placeholder:text-slate-400;
   }
 
   .admin-button {
-    @apply h-8 rounded-lg px-3.5 text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-50 inline-flex items-center justify-center gap-1.5 select-none cursor-pointer;
+    @apply h-8 rounded-lg px-3.5 text-xs font-semibold transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5 select-none cursor-pointer;
   }
 
   .admin-button-primary {
-    @apply admin-button bg-[#0F172A] hover:bg-[#1E293B] text-white shadow-xs;
+    @apply admin-button bg-[#0B1528] hover:bg-[#16233c] text-white shadow-xs;
   }
 
   .admin-button-accent {
-    @apply admin-button bg-[#FF6B00] hover:bg-[#E05E00] text-white shadow-xs;
+    @apply admin-button bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-xs;
   }
 
   .admin-button-secondary {
@@ -252,8 +252,8 @@
     @apply admin-button bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900;
   }
 
-  .admin-[#FF6B00] {
-    @apply text-[#FF6B00];
+  .admin-[#FF4D00] {
+    @apply text-[#FF4D00];
   }
 
   .admin-section {

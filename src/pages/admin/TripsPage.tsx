@@ -492,7 +492,7 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="p-3 md:p-6 pb-32 md:pb-6 bg-[#FAFAFA] min-h-screen font-sans text-slate-900">
+    <div className="p-0 md:p-0 pb-32 md:pb-0 bg-transparent min-h-screen text-[#0B1528]">
       {/* ─── Page Header & Key Actions ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4 mb-3 md:mb-5">
         <div className="min-w-0">
@@ -500,7 +500,7 @@ export default function TripsPage() {
             <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">
               Expeditions
             </h1>
-            <span className="bg-orange-50 text-[#FF5400] text-[9px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider shrink-0">
+            <span className="bg-orange-50 text-[#FF4D00] text-[9px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider shrink-0">
               Catalog OS
             </span>
           </div>
@@ -532,7 +532,7 @@ export default function TripsPage() {
           </Button>
           <Button
             onClick={openCreate}
-            className="h-9 md:h-8 flex-1 md:flex-none px-3 md:px-3.5 rounded-lg text-xs font-bold bg-[#FF5400] hover:bg-[#e04a00] text-white shadow-xs gap-1.5"
+            className="h-9 md:h-8 flex-1 md:flex-none px-3 md:px-3.5 rounded-lg text-xs font-bold bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-xs gap-1.5"
           >
             <Plus className="w-3.5 h-3.5 shrink-0" /> New Expedition
           </Button>
@@ -619,7 +619,7 @@ export default function TripsPage() {
                 className={cn(
                   "shrink-0 snap-start px-3 py-1.5 text-[11px] md:text-xs font-semibold rounded-full md:rounded-md transition-all whitespace-nowrap border",
                   categoryTab === tab.id
-                    ? "bg-[#0B1329] border-[#0B1329] text-white md:bg-white md:border-slate-200/80 md:text-[#FF5400] md:shadow-2xs"
+                    ? "bg-[#0B1528] border-[#0B1528] text-white md:bg-white md:border-slate-200/80 md:text-[#FF4D00] md:shadow-2xs"
                     : "bg-white border-slate-200 text-slate-600 md:border-transparent md:bg-transparent md:text-slate-500 md:hover:text-slate-900 md:hover:bg-slate-100/60",
                 )}
               >
@@ -637,14 +637,14 @@ export default function TripsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search trips..."
-                className="h-9 md:h-8 w-full md:w-48 pl-8 pr-3 text-xs bg-white border border-slate-200/80 rounded-lg md:rounded-md outline-none focus:border-[#FF5400] transition-all"
+                className="h-9 md:h-8 w-full md:w-48 pl-8 pr-3 text-xs bg-white border border-slate-200/80 rounded-lg md:rounded-md outline-none focus:border-[#FF4D00] transition-all"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 md:h-8 text-xs font-semibold bg-white border border-slate-200/80 rounded-lg md:rounded-md px-2 md:px-2.5 text-slate-700 outline-none cursor-pointer focus:border-[#FF5400] shrink-0"
+              className="h-9 md:h-8 text-xs font-semibold bg-white border border-slate-200/80 rounded-lg md:rounded-md px-2 md:px-2.5 text-slate-700 outline-none cursor-pointer focus:border-[#FF4D00] shrink-0"
             >
               <option value="all">All Statuses</option>
               <option value="published">Published</option>

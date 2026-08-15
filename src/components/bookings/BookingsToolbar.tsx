@@ -117,7 +117,7 @@ export function BookingsToolbar({
             className={cn(
               "hidden md:flex w-8 h-8 rounded-[6px] border items-center justify-center transition-colors cursor-pointer",
               showSidebar
-                ? "bg-[#FF6B00]/10 border-[#FF6B00]/20 text-[#FF6B00]"
+                ? "bg-[#FF4D00]/10 border-[#FF4D00]/30 text-[#FF4D00]"
                 : "border-slate-200 hover:bg-slate-50 text-slate-600",
             )}
             onClick={() => setShowSidebar(!showSidebar)}
@@ -155,7 +155,7 @@ export function BookingsToolbar({
               className={cn(
                 "flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-full border text-[11px] md:text-xs font-bold shadow-xs transition-colors whitespace-nowrap snap-start shrink-0",
                 isActive
-                  ? "bg-[#0F172A] border-[#0F172A] text-white"
+                  ? "bg-[#0B1528] border-[#0B1528] text-white"
                   : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
               )}
             >
