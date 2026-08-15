@@ -352,7 +352,7 @@ function AdminSidebar() {
                   "tickets.approve",
                   "accounting.view",
                 ],
-                "/admin/accounting": ["accounting.view", "finance.view"],
+                "/admin/accounting": ["accounting.view", "finance.view", "payments.view"],
                 "/admin/finance": ["accounting.view", "finance.view"],
                 "/admin/travel-desk": [
                   "tickets.view",
@@ -736,6 +736,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     location.pathname.startsWith("/admin/accounting") ||
                     location.pathname.startsWith("/admin/finance")
                   ) {
+                    if ((admin?.role || "").toLowerCase() === "sales") {
+                      return "Payments";
+                    }
                     const tab = searchParams.get("tab") || "overview";
                     return `Finance · ${tab.replace(/_/g, " ")}`;
                   }

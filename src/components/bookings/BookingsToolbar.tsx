@@ -11,9 +11,20 @@ import {
   Compass,
   AlertCircle,
   CheckCircle2,
+  LayoutList,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+
+export type BookingQueueId =
+  | "all"
+  | "needs_attention"
+  | "payment_pending"
+  | "ticket_pending"
+  | "ops_pending"
+  | "today_departure"
+  | "refund_approval"
+  | "completed_bookings";
 
 interface BookingsToolbarProps {
   searchInput: string;
@@ -25,7 +36,25 @@ interface BookingsToolbarProps {
   fetchAll: () => void;
   handleExportCSV: () => void;
   setShowTrips: (val: boolean) => void;
+  counts?: Partial<Record<BookingQueueId, number>>;
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 }
+
+const CHIPS: {
+  label: string;
+  value: BookingQueueId;
+  icon: typeof LayoutList;
+}[] = [
+  { label: "All", value: "all", icon: LayoutList },
+  { label: "Attention", value: "needs_attention", icon: HelpCircle },
+  { label: "Payment due", value: "payment_pending", icon: Wallet },
+  { label: "Tickets", value: "ticket_pending", icon: Ticket },
+  { label: "Operations", value: "ops_pending", icon: ShieldAlert },
+  { label: "Today", value: "today_departure", icon: Compass },
+  { label: "Refunds", value: "refund_approval", icon: AlertCircle },
+  { label: "Completed", value: "completed_bookings", icon: CheckCircle2 },
+];
 
 export function BookingsToolbar({
   searchInput,
@@ -37,135 +66,107 @@ export function BookingsToolbar({
   fetchAll,
   handleExportCSV,
   setShowTrips,
+  counts = {},
+  hasActiveFilters = false,
+  onClearFilters,
 }: BookingsToolbarProps) {
-  const chips = [
-    {
-      label: "Needs Attention",
-      value: "needs_attention",
-      count: 4,
-      icon: HelpCircle,
-    },
-    {
-      label: "Payment Pending",
-      value: "payment_pending",
-      count: 6,
-      icon: Wallet,
-    },
-    {
-      label: "Ticket Pending",
-      value: "ticket_pending",
-      count: 3,
-      icon: Ticket,
-    },
-    {
-      label: "Operations Pending",
-      value: "ops_pending",
-      count: 2,
-      icon: ShieldAlert,
-    },
-    {
-      label: "Today's Departure",
-      value: "today_departure",
-      count: 1,
-      icon: Compass,
-    },
-    {
-      label: "Refund Approval",
-      value: "refund_approval",
-      count: 0,
-      icon: AlertCircle,
-    },
-    {
-      label: "Completed",
-      value: "completed_bookings",
-      count: 18,
-      icon: CheckCircle2,
-    },
-  ];
-
   return (
-    <div className="flex flex-col shrink-0">
-      {/* MAIN TOOLBAR — search hidden on mobile (MobileBookingsView owns search) */}
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-3 md:px-6 h-12 md:h-14 font-sans shadow-xs">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="font-extrabold text-slate-800 text-sm tracking-tight hidden md:block">
-            Bookings
-          </div>
-          <div className="hidden md:block flex-1 max-w-[320px] relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            <Input
-              type="text"
-              className="w-full h-8 pl-8 pr-3 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border-slate-200 rounded-[6px] text-xs outline-none transition-colors"
-              placeholder="Search bookings..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-          </div>
-          <div className="md:hidden font-extrabold text-slate-800 text-sm tracking-tight">
-            Bookings
-          </div>
+    <div className="flex flex-col shrink-0 border-b border-[#E8EEF4]">
+      <div className="flex items-center gap-3 px-4 md:px-5 h-12">
+        <div className="hidden md:block relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+          <Input
+            type="text"
+            className="w-full h-8 pl-8 pr-3 bg-[#F8FAFC] border-[#E8EEF4] rounded-md text-[12px] shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/30"
+            placeholder="Search guest, phone, trip…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
         </div>
-        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+        <div className="md:hidden font-semibold text-[#0B1528] text-sm">Bookings</div>
+
+        <div className="ml-auto flex items-center gap-1 shrink-0">
+          {hasActiveFilters && onClearFilters && (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="hidden sm:inline-flex h-8 px-2.5 text-[11px] font-semibold text-[#FF4D00] hover:bg-orange-50 rounded-md"
+            >
+              Clear
+            </button>
+          )}
           <button
-            className="w-8 h-8 rounded-[6px] border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+            type="button"
+            className="h-8 w-8 rounded-md text-slate-500 hover:text-[#0B1528] hover:bg-slate-50 flex items-center justify-center"
             onClick={fetchAll}
             title="Refresh"
           >
-            <RotateCw className="w-4 h-4" />
+            <RotateCw className="w-3.5 h-3.5" strokeWidth={1.75} />
           </button>
           <button
+            type="button"
             className={cn(
-              "hidden md:flex w-8 h-8 rounded-[6px] border items-center justify-center transition-colors cursor-pointer",
+              "hidden md:flex h-8 w-8 rounded-md items-center justify-center",
               showSidebar
-                ? "bg-[#FF4D00]/10 border-[#FF4D00]/30 text-[#FF4D00]"
-                : "border-slate-200 hover:bg-slate-50 text-slate-600",
+                ? "text-[#FF4D00] bg-orange-50"
+                : "text-slate-500 hover:text-[#0B1528] hover:bg-slate-50",
             )}
             onClick={() => setShowSidebar(!showSidebar)}
-            title="Toggle Sidebar Filters"
+            title="Filters"
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-3.5 h-3.5" strokeWidth={1.75} />
           </button>
           <button
-            className="hidden md:flex w-8 h-8 rounded-[6px] border border-slate-200 hover:bg-slate-50 items-center justify-center text-slate-600 transition-colors cursor-pointer"
+            type="button"
+            className="hidden md:flex h-8 w-8 rounded-md text-slate-500 hover:text-[#0B1528] hover:bg-slate-50 items-center justify-center"
             onClick={handleExportCSV}
             title="Export CSV"
           >
-            <FileDown className="w-4 h-4" />
+            <FileDown className="w-3.5 h-3.5" strokeWidth={1.75} />
           </button>
           <button
-            className="hidden sm:flex h-8 px-3.5 border border-slate-200 hover:bg-slate-50 rounded-[6px] text-xs text-slate-700 font-semibold items-center gap-1.5 transition-colors cursor-pointer bg-white"
+            type="button"
+            className="hidden sm:flex h-8 px-2.5 rounded-md text-[12px] font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-slate-50 items-center gap-1.5"
             onClick={() => setShowTrips(true)}
             title="Trip Manager"
           >
-            <Link2 className="w-3.5 h-3.5" /> Trips
+            <Link2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+            Trips
           </button>
         </div>
       </div>
 
-      {/* ACTION CHIPS — horizontal scroll strip on mobile */}
-      <div className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-2.5 bg-slate-50 border-b border-slate-200 overflow-x-auto flex-shrink-0 no-scrollbar snap-x snap-mandatory">
-        {chips.map((chip) => {
+      <div className="flex items-end gap-0 px-2 md:px-4 overflow-x-auto no-scrollbar">
+        {CHIPS.map((chip) => {
           const isActive = quickFilter === chip.value;
+          const count = counts[chip.value];
           return (
             <button
               key={chip.value}
-              onClick={() =>
-                setQuickFilter(isActive ? "confirmed_bookings" : chip.value)
-              }
+              type="button"
+              onClick={() => setQuickFilter(isActive && chip.value !== "all" ? "all" : chip.value)}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-full border text-[11px] md:text-xs font-bold shadow-xs transition-colors whitespace-nowrap snap-start shrink-0",
+                "flex items-center gap-1.5 px-3 py-2 text-[12px] whitespace-nowrap border-b-2 transition-colors shrink-0",
                 isActive
-                  ? "bg-[#0B1528] border-[#0B1528] text-white"
-                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                  ? "border-[#FF4D00] text-[#0B1528] font-semibold"
+                  : "border-transparent text-slate-500 hover:text-[#0B1528] font-medium",
               )}
             >
               <chip.icon
-                className={cn(
-                  "w-3.5 h-3.5",
-                  isActive ? "text-white" : "text-slate-500",
-                )}
+                className={cn("w-3.5 h-3.5", isActive ? "text-[#FF4D00]" : "text-slate-400")}
+                strokeWidth={1.75}
               />
               <span>{chip.label}</span>
+              {typeof count === "number" && (
+                <span
+                  className={cn(
+                    "min-w-[1.25rem] text-center text-[10px] tabular-nums",
+                    isActive ? "text-[#FF4D00] font-semibold" : "text-slate-400",
+                  )}
+                >
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}

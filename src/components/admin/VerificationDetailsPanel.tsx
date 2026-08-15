@@ -28,6 +28,9 @@ import {
   Copy,
   Edit2,
   Bed,
+  Paperclip,
+  ExternalLink,
+  FileCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,6 +194,7 @@ export default function VerificationDetailsPanel({
   const [activeTab, setActiveTab] = useState<"verification" | "ticket">(
     "verification",
   );
+  const [viewingDocId, setViewingDocId] = useState<string | null>(null);
 
   // Form states for adding/editing ticket
   const [showForm, setShowForm] = useState(false);
@@ -478,6 +482,27 @@ export default function VerificationDetailsPanel({
     setActionLoading(false);
   };
 
+  // ── DOCUMENT VIEWER ──
+  const handleViewDocument = async (docId: string, passengerId: string) => {
+    if (viewingDocId === docId) return;
+    setViewingDocId(docId);
+    try {
+      const blob = await bookingsService.downloadDocument(
+        fullBooking?.id || bookingId,
+        passengerId,
+        docId,
+      );
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      // Revoke after a short delay to allow the tab to load
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (err: any) {
+      toast.error("Failed to open document. Please try again.");
+    } finally {
+      setViewingDocId(null);
+    }
+  };
+
   const handleTicketRebook = async (ticketId: string) => {
     if (
       !confirm(
@@ -627,6 +652,211 @@ export default function VerificationDetailsPanel({
 
             {/* Content Area - 4-Tier Verification & Operations Hierarchy */}
             <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+
+              {/* ─────────────────────────────────────────────────────────────
+                  TIER 0: 📎 PASSENGER ID DOCUMENTS (Booking Verification Only)
+                 ───────────────────────────────────────────────────────────── */}
+              {queueType === "booking" && (() => {
+                // Parse passengers
+                const rawPassengers = fullBooking?.passengers;
+                let passengerList: any[] = [];
+                if (Array.isArray(rawPassengers)) {
+                  passengerList = rawPassengers;
+                } else if (rawPassengers && typeof rawPassengers === "object") {
+                  passengerList = rawPassengers.persons || [];
+                }
+
+                // All uploaded booking documents
+                const allDocs: any[] = Array.isArray(fullBooking?.documents) ? fullBooking.documents : [];
+
+                // Build per-passenger doc map
+                const docsByPassenger: Record<string, any[]> = {};
+                allDocs.forEach((doc) => {
+                  const pid = doc.passengerId || "unknown";
+                  if (!docsByPassenger[pid]) docsByPassenger[pid] = [];
+                  docsByPassenger[pid].push(doc);
+                });
+
+                // Also collect docs for passengers not in the docsByPassenger map
+                const allPassengerIds = passengerList.map((p: any) => p.id || p.passengerId || p._id || "").filter(Boolean);
+                const unlinkedDocs = allDocs.filter((d) => !allPassengerIds.includes(d.passengerId));
+
+                const totalPassengers = passengerList.length || 1;
+                const passengersWithDocs = allPassengerIds.filter((pid) => docsByPassenger[pid]?.length > 0).length;
+                const allComplete = allDocs.length > 0 && (passengerList.length === 0 || passengersWithDocs >= totalPassengers);
+                const anyMissing = !allComplete;
+
+                const formatSize = (bytes: number) => {
+                  if (!bytes) return "";
+                  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+                  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                };
+
+                return (
+                  <div className="space-y-2.5">
+                    {/* Section header */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
+                        <Paperclip className="w-4 h-4 text-[#FF4D00]" />
+                        0. Passenger ID Documents
+                        <span className={cn(
+                          "ml-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded",
+                          allDocs.length === 0
+                            ? "bg-amber-100 text-amber-700"
+                            : allComplete
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        )}>
+                          {allDocs.length} doc{allDocs.length !== 1 ? "s" : ""}
+                        </span>
+                      </h3>
+                    </div>
+
+                    {/* Missing documents warning banner */}
+                    {anyMissing && passengerList.length > 0 && (
+                      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-800">
+                            Documents Incomplete — {passengersWithDocs}/{totalPassengers} passengers have uploads
+                          </p>
+                          <p className="text-[9px] text-amber-700 mt-0.5">
+                            Request changes if ID proof is missing before verifying.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No docs at all */}
+                    {allDocs.length === 0 && (
+                      <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4 text-center space-y-1.5">
+                        <FileText className="w-6 h-6 text-slate-300 mx-auto" />
+                        <p className="text-[10.5px] font-bold text-slate-600">No Documents Uploaded</p>
+                        <p className="text-[9.5px] text-slate-400 max-w-xs mx-auto">
+                          Agent has not uploaded any passenger ID proofs yet. Request changes.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Per-passenger document list */}
+                    {passengerList.length > 0 && allDocs.length > 0 && (
+                      <div className="space-y-2">
+                        {passengerList.map((p: any, idx: number) => {
+                          const pid = p.id || p.passengerId || p._id || "";
+                          const pName = p.name || p.fullName || `Traveler ${idx + 1}`;
+                          const pDocs = pid ? (docsByPassenger[pid] || []) : [];
+                          const hasDocs = pDocs.length > 0;
+
+                          return (
+                            <div key={pid || idx} className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {hasDocs ? (
+                                    <FileCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                  ) : (
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                  )}
+                                  <span className="text-[11px] font-bold text-slate-800">{pName}</span>
+                                  {p.age && (
+                                    <span className="text-[9px] text-slate-400 font-semibold">{p.age}y / {p.gender || "—"}</span>
+                                  )}
+                                </div>
+                                <span className={cn(
+                                  "text-[8.5px] font-extrabold uppercase px-1.5 py-0.5 rounded",
+                                  hasDocs
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-amber-100 text-amber-700"
+                                )}>
+                                  {hasDocs ? `${pDocs.length} doc${pDocs.length > 1 ? "s" : ""}` : "Missing"}
+                                </span>
+                              </div>
+
+                              {hasDocs && (
+                                <div className="space-y-1.5">
+                                  {pDocs.map((doc: any) => (
+                                    <div
+                                      key={doc.id}
+                                      className="flex items-center justify-between bg-white border border-slate-200/60 rounded-lg px-2.5 py-2"
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <div className="w-6 h-6 rounded bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                                          <FileText className="w-3 h-3 text-[#FF4D00]" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="text-[10px] font-semibold text-slate-800 truncate max-w-[160px]">
+                                            {doc.originalFileName || doc.documentType || "ID Proof"}
+                                          </p>
+                                          <p className="text-[8.5px] text-slate-400 font-medium">
+                                            {doc.documentType} · {formatSize(doc.fileSize)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleViewDocument(doc.id, pid)}
+                                        disabled={viewingDocId === doc.id}
+                                        className="flex items-center gap-1 text-[9.5px] font-bold text-[#FF4D00] hover:underline disabled:opacity-50 disabled:cursor-wait shrink-0 ml-2"
+                                        title="View document in new tab"
+                                      >
+                                        {viewingDocId === doc.id ? (
+                                          <Loader2 className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <ExternalLink className="w-3 h-3" />
+                                        )}
+                                        View
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Docs uploaded but no passenger manifest (fallback) */}
+                    {allDocs.length > 0 && passengerList.length === 0 && (
+                      <div className="space-y-1.5">
+                        {allDocs.map((doc: any) => (
+                          <div
+                            key={doc.id}
+                            className="flex items-center justify-between bg-white border border-slate-200/60 rounded-lg px-2.5 py-2"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-6 h-6 rounded bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                                <FileText className="w-3 h-3 text-[#FF4D00]" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold text-slate-800 truncate max-w-[180px]">
+                                  {doc.originalFileName || "Document"}
+                                </p>
+                                <p className="text-[8.5px] text-slate-400 font-medium">
+                                  {doc.documentType} · {formatSize(doc.fileSize)}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleViewDocument(doc.id, doc.passengerId || "")}
+                              disabled={viewingDocId === doc.id}
+                              className="flex items-center gap-1 text-[9.5px] font-bold text-[#FF4D00] hover:underline disabled:opacity-50 disabled:cursor-wait shrink-0 ml-2"
+                            >
+                              {viewingDocId === doc.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <ExternalLink className="w-3 h-3" />
+                              )}
+                              View
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* ─────────────────────────────────────────────────────────────
                   TIER 1: 🚆 TRAIN TICKETS (PNR Manifest, Coach, Berth, Train Details)
                  ───────────────────────────────────────────────────────────── */}

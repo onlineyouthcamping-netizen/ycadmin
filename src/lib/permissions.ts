@@ -133,6 +133,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "bookings.create",
     "bookings.edit",
     "payments.view",
+    "accounting.submit",
     "inquiries.view",
     "inquiries.create",
     "inquiries.edit",

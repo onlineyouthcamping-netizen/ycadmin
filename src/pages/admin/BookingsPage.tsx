@@ -519,6 +519,36 @@ export default function BookingsPage() {
     return 15;
   };
 
+  const isTicketPending = (b: Booking) =>
+    b.trainTicketStatus === "Pending" ||
+    b.trainTicketStatus === "Waitlisted" ||
+    (Boolean(b.ticketStatus) && b.ticketStatus !== "ISSUED");
+
+  const isTodayDeparture = (b: Booking) => {
+    if (!b.departureDate) return false;
+    const d = new Date(b.departureDate);
+    const n = new Date();
+    return (
+      d.getFullYear() === n.getFullYear() &&
+      d.getMonth() === n.getMonth() &&
+      d.getDate() === n.getDate()
+    );
+  };
+
+  const isOpsPending = (b: Booking) =>
+    b.status === "confirmed" && getProgress(b) < 85;
+
+  const isRefundQueue = (b: Booking) =>
+    b.status === "cancelled" ||
+    b.status === "expired" ||
+    String(b.paymentStatus || "").toLowerCase().includes("refund");
+
+  const isNeedsAttention = (b: Booking) =>
+    b.status === "pending" ||
+    Number(b.remainingAmount || 0) > 0 ||
+    isTicketPending(b) ||
+    isOpsPending(b);
+
   const getNextAction = (b: Booking) => {
     if (b.status === "pending") return "Confirm Booking";
     if (b.remainingAmount > 0) return "Collect Balance";
@@ -551,20 +581,24 @@ export default function BookingsPage() {
           b.status !== "abandoned"
         )
           return false;
+      } else if (quickFilter === "needs_attention") {
+        if (!isNeedsAttention(b)) return false;
       } else if (quickFilter === "payment_pending") {
         if (b.remainingAmount <= 0) return false;
+      } else if (quickFilter === "ticket_pending" || quickFilter === "ticket_verification") {
+        if (!isTicketPending(b)) return false;
+      } else if (quickFilter === "ops_pending" || quickFilter === "ops_blocked") {
+        if (!isOpsPending(b)) return false;
+      } else if (quickFilter === "today_departure") {
+        if (!isTodayDeparture(b)) return false;
+      } else if (quickFilter === "refund_approval") {
+        if (!isRefundQueue(b)) return false;
       } else if (quickFilter === "payment_overdue") {
         if (b.remainingAmount <= 0) return false;
         if (!b.departureDate) return false;
         const diff = new Date(b.departureDate).getTime() - new Date().getTime();
         const days = diff / (1000 * 60 * 60 * 24);
         if (days > 3) return false;
-      } else if (quickFilter === "ticket_verification") {
-        if (
-          b.trainTicketStatus !== "Pending" &&
-          b.trainTicketStatus !== "Waitlisted"
-        )
-          return false;
       } else if (quickFilter === "departing_7_days") {
         if (!b.departureDate) return false;
         const diff = new Date(b.departureDate).getTime() - new Date().getTime();
@@ -615,6 +649,29 @@ export default function BookingsPage() {
     filterSalesAdmin,
     currentAdmin,
   ]);
+
+  const queueCounts = useMemo(
+    () => ({
+      all: bookings.length,
+      needs_attention: bookings.filter(isNeedsAttention).length,
+      payment_pending: bookings.filter((b) => Number(b.remainingAmount || 0) > 0).length,
+      ticket_pending: bookings.filter(isTicketPending).length,
+      ops_pending: bookings.filter(isOpsPending).length,
+      today_departure: bookings.filter(isTodayDeparture).length,
+      refund_approval: bookings.filter(isRefundQueue).length,
+      completed_bookings: bookings.filter(
+        (b) => b.status === "confirmed" && getProgress(b) === 100,
+      ).length,
+    }),
+    [bookings],
+  );
+
+  const hasActiveFilters =
+    search !== "" ||
+    filterTrip !== "all" ||
+    filterSalesAdmin !== "all" ||
+    selectedStatuses.length > 0 ||
+    (quickFilter !== "all" && quickFilter !== "confirmed_bookings");
 
   const [bulkModalAction, setBulkModalAction] = useState<string | null>(null);
   const [bulkSalesperson, setBulkSalesperson] = useState("");
@@ -726,7 +783,8 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased -mx-3 -my-3 md:-mx-6 md:-my-6">
+    <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 -my-3 md:-mx-5 md:-my-5 p-3 md:p-5">
+      <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
       <BookingsToolbar
         searchInput={searchInput}
         setSearchInput={setSearchInput}
@@ -737,6 +795,9 @@ export default function BookingsPage() {
         fetchAll={fetchAll}
         handleExportCSV={handleExportCSV}
         setShowTrips={setShowTrips}
+        counts={queueCounts}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={clearFilters}
       />
 
       {/* MAIN CONTAINER */}
@@ -754,52 +815,6 @@ export default function BookingsPage() {
 
           {/* DESKTOP CONTENT & TABLE (>=768px) */}
           <div className="hidden md:flex flex-col flex-1 overflow-hidden">
-            {/* APPLIED FILTER INDICATOR */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 flex-shrink-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-slate-500">Showing:</span>
-                <span className="text-slate-800 font-bold capitalize text-[12px]">
-                  {quickFilter.replace("_", " ")}
-                </span>
-                {(selectedStatuses.length > 0 ||
-                  filterTrip !== "all" ||
-                  filterSalesAdmin !== "all" ||
-                  search !== "") && <span className="text-slate-400">|</span>}
-                {selectedStatuses.length > 0 && (
-                  <span className="bg-slate-200 text-slate-700 font-semibold px-2 py-0.5 rounded text-[10px]">
-                    Statuses: {selectedStatuses.join(", ")}
-                  </span>
-                )}
-                {filterTrip !== "all" && (
-                  <span className="bg-slate-200 text-slate-700 font-semibold px-2 py-0.5 rounded text-[10px]">
-                    Trip: {filterTrip}
-                  </span>
-                )}
-                {filterSalesAdmin !== "all" && (
-                  <span className="bg-slate-200 text-slate-700 font-semibold px-2 py-0.5 rounded text-[10px]">
-                    Executive: {filterSalesAdmin}
-                  </span>
-                )}
-                {search !== "" && (
-                  <span className="bg-slate-200 text-slate-700 font-semibold px-2 py-0.5 rounded text-[10px] truncate max-w-[120px]">
-                    Query: "{search}"
-                  </span>
-                )}
-              </div>
-              {(search !== "" ||
-                filterTrip !== "all" ||
-                filterSalesAdmin !== "all" ||
-                selectedStatuses.length > 0 ||
-                quickFilter !== "confirmed_bookings") && (
-                <button
-                  onClick={clearFilters}
-                  className="text-orange-600 hover:text-orange-700 font-bold text-[11px] hover:underline flex items-center gap-0.5"
-                >
-                  [Clear Filters]
-                </button>
-              )}
-            </div>
-
             <div className="zoho-table-area flex-1 overflow-y-auto overflow-x-hidden min-h-0 bg-white">
               {loading ? (
                 <div className="flex-1 flex items-center justify-center text-slate-400 py-10 font-bold">
@@ -818,13 +833,13 @@ export default function BookingsPage() {
                 </div>
               ) : (
                 <div className="flex-1 overflow-auto">
-                  <table className="w-full text-left text-xs border-collapse bg-white font-sans border border-slate-200">
+                  <table className="w-full text-left text-[12px] border-collapse bg-white font-sans">
                     <thead className="sticky top-0 bg-white z-10">
-                      <tr className="bg-slate-50 text-slate-650 border-b border-slate-200">
-                        <th className="p-2.5 w-10 text-center border-r border-slate-200">
+                      <tr className="border-b border-[#E8EEF4] text-slate-400">
+                        <th className="pl-4 pr-2 py-2.5 w-10 text-center">
                           <input
                             type="checkbox"
-                            className="rounded-[4px] border-slate-300 text-[#0F172A] focus:ring-[#0F172A] cursor-pointer"
+                            className="rounded border-slate-300 text-[#0B1528] focus:ring-[#FF4D00] cursor-pointer"
                             checked={
                               selectedIds.length === filteredBookings.length &&
                               filteredBookings.length > 0
@@ -832,53 +847,22 @@ export default function BookingsPage() {
                             onChange={selectAll}
                           />
                         </th>
-                        <th className="p-2.5 w-3 border-r border-slate-200"></th>
-                        <th className="p-2.5 w-28 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
-                          Customer
+                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
+                          Guest
                         </th>
-                        <th className="p-2.5 w-24 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
-                          Phone
+                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
+                          Trip
                         </th>
-                        <th className="p-2.5 w-16 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200 text-center">
-                          Age/Gender
-                        </th>
-                        <th className="p-2.5 w-24 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
-                          Trip Code
-                        </th>
-                        <th className="p-2.5 w-24 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
-                          Departure
-                        </th>
-                        <th className="p-2.5 w-14 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
-                          Days
-                        </th>
-                        <th className="p-2.5 w-12 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
-                          Pass.
-                        </th>
-                        <th className="p-2.5 w-24 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
+                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
                           Executive
                         </th>
-                        <th className="p-2.5 w-20 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200">
-                          Package
+                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-right">
+                          Payment
                         </th>
-                        <th className="p-2.5 w-24 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200 text-right pr-4">
-                          Balance
-                        </th>
-                        <th className="p-2.5 w-24 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200 text-right pr-4">
-                          Received
-                        </th>
-                        <th className="p-2.5 w-28 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200 text-center">
-                          Progress
-                        </th>
-                        <th className="p-2.5 w-28 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200 text-center">
-                          Next Action
-                        </th>
-                        <th className="p-2.5 w-24 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200 text-center">
+                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
                           Status
                         </th>
-                        <th className="p-2.5 w-28 text-[9px] font-bold uppercase tracking-wider border-r border-slate-200 text-center">
-                          Last Activity
-                        </th>
-                        <th className="p-2.5 w-56 text-[9px] font-bold uppercase tracking-wider pl-2">
+                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider pr-4">
                           Actions
                         </th>
                       </tr>
@@ -968,153 +952,115 @@ export default function BookingsPage() {
                           <tr
                             key={b.id}
                             className={cn(
-                              "hover:bg-[#F8FAFC]/75 border-b border-slate-200/60 transition-colors h-[38px] cursor-pointer text-xs select-none",
-                              isSelected
-                                ? "bg-amber-50/20 border-l border-l-[#FF6B00]"
-                                : "",
+                              "hover:bg-[#F8FAFC] border-b border-[#F1F5F9] transition-colors cursor-pointer text-[12px] select-none",
+                              isSelected && "bg-orange-50/40",
                             )}
                             onClick={() => setPreviewTarget(b)}
                           >
                             <td
-                              className="p-2.5 text-center border-r border-slate-150"
+                              className="pl-4 pr-2 py-3 text-center"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <input
                                 type="checkbox"
-                                className="rounded-[4px] border-slate-300 text-[#0F172A] focus:ring-[#0F172A] cursor-pointer"
+                                className="rounded border-slate-300 text-[#0B1528] focus:ring-[#FF4D00] cursor-pointer"
                                 checked={isSelected}
                                 onChange={() => toggleSelect(b.id)}
                               />
                             </td>
-                            <td
-                              className={cn(
-                                "p-2.5 w-3 border-r border-slate-150 relative overflow-hidden",
-                                (b.status === "confirmed" && progress < 85) ||
-                                  (b.remainingAmount > 0 &&
-                                    b.departureDate &&
-                                    (new Date(b.departureDate).getTime() -
-                                      new Date().getTime()) /
-                                      (1000 * 60 * 60 * 24) <=
-                                      3)
-                                  ? "bg-[#dc2626]"
-                                  : b.status === "pending"
-                                    ? "bg-[#d97706]"
-                                    : b.status === "confirmed" && progress < 100
-                                      ? "bg-[#2563eb]"
-                                      : progress === 100
-                                        ? "bg-[#16a34a]"
-                                        : "bg-[#94a3b8]",
-                              )}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <td
-                              className="p-2.5 border-r border-slate-150 font-bold text-slate-800 truncate"
-                              title={b.fullName}
-                            >
-                              {b.fullName}
-                            </td>
-                            <td
-                              className="p-2.5 border-r border-slate-150 font-mono text-slate-500 truncate"
-                              title={b.mobile}
-                            >
-                              {b.mobile}
-                            </td>
-                            <td className="p-2.5 border-r border-slate-150 text-center font-medium text-slate-650">
-                              {normalizePassenger(b).formattedAgeGender}
-                            </td>
-                            <td
-                              className="p-2.5 border-r border-slate-150 font-bold text-slate-700 truncate"
-                              title={b.tripName || b.tripId}
-                            >
-                              {b.tripId}
-                            </td>
-                            <td className="p-2.5 border-r border-slate-150 text-slate-600 font-medium">
-                              {safeFormatDate(
-                                b.departureDate,
-                                { day: "2-digit", month: "short" },
-                                "No Dep",
-                              )}
-                            </td>
-                            <td className="p-2.5 border-r border-slate-150 text-slate-550 font-medium text-center">
-                              {days}d
-                            </td>
-                            <td className="p-2.5 border-r border-slate-150 text-slate-755 font-bold text-center">
-                              {b.numberOfTravelers || 1}
-                            </td>
-                            <td
-                              className="p-2.5 border-r border-slate-150 text-slate-600 truncate"
-                              title={meta.bookedBy}
-                            >
-                              {meta.bookedBy}
-                            </td>
-                            <td className="p-2.5 border-r border-slate-150 text-slate-550 font-medium">
-                              {b.trainClass || "Sleeper"}
-                            </td>
-                            <td className="p-2.5 border-r border-slate-150 text-right pr-4 font-mono font-bold text-red-650">
-                              ₹
-                              {Number(b.remainingAmount || 0).toLocaleString(
-                                "en-IN",
-                              )}
-                            </td>
-                            <td
-                              className={cn(
-                                "p-2.5 border-r border-slate-150 text-right pr-4 font-mono",
-                                getPaymentReceivedColorClass(
-                                  b.status,
-                                  b.paymentStatus,
-                                ),
-                              )}
-                            >
-                              ₹
-                              {Number(b.advancePaid || 0).toLocaleString(
-                                "en-IN",
-                              )}
-                            </td>
-                            <td className="p-2.5 border-r border-slate-150 text-center">
-                              <div className="flex items-center gap-1.5 justify-center">
-                                <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                                  <div
-                                    className="h-full bg-[#12B76A] rounded-full"
-                                    style={{ width: `${progress}%` }}
-                                  />
+                            <td className="px-3 py-3 min-w-[180px]">
+                              <div className="flex items-start gap-2.5">
+                                <span
+                                  className={cn(
+                                    "mt-1 w-[3px] h-8 rounded-full shrink-0",
+                                    (b.status === "confirmed" && progress < 85) ||
+                                      (b.remainingAmount > 0 &&
+                                        b.departureDate &&
+                                        (new Date(b.departureDate).getTime() -
+                                          new Date().getTime()) /
+                                          (1000 * 60 * 60 * 24) <=
+                                          3)
+                                      ? "bg-[#dc2626]"
+                                      : b.status === "pending"
+                                        ? "bg-[#d97706]"
+                                        : b.status === "confirmed" && progress < 100
+                                          ? "bg-[#2563eb]"
+                                          : progress === 100
+                                            ? "bg-[#16a34a]"
+                                            : "bg-[#94a3b8]",
+                                  )}
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-[#0B1528] truncate leading-tight">
+                                    {b.fullName}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                    {b.mobile}
+                                    {normalizePassenger(b).formattedAgeGender
+                                      ? ` · ${normalizePassenger(b).formattedAgeGender}`
+                                      : ""}
+                                  </p>
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-500 w-6 text-right">
-                                  {progress}%
-                                </span>
                               </div>
                             </td>
-                            <td
-                              className="p-2.5 border-r border-slate-150 text-center truncate"
-                              title={nextAction}
-                            >
-                              <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-650 font-bold text-[9.5px] uppercase tracking-wider">
-                                {nextAction}
-                              </span>
+                            <td className="px-3 py-3 min-w-[160px]">
+                              <p className="font-semibold text-[#0B1528] truncate leading-tight">
+                                {b.tripId || b.tripName}
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                                {safeFormatDate(
+                                  b.departureDate,
+                                  { day: "2-digit", month: "short" },
+                                  "No date",
+                                )}
+                                {" · "}
+                                {days}d · {b.numberOfTravelers || 1} pax
+                                {b.trainClass ? ` · ${b.trainClass}` : ""}
+                              </p>
                             </td>
-                            <td className="p-2.5 border-r border-slate-150 text-center">
+                            <td className="px-3 py-3 text-slate-600 truncate max-w-[140px]" title={meta.bookedBy}>
+                              {meta.bookedBy}
+                            </td>
+                            <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap">
+                              <p
+                                className={cn(
+                                  "font-semibold leading-tight",
+                                  Number(b.remainingAmount || 0) > 0
+                                    ? "text-[#E04400]"
+                                    : "text-emerald-600",
+                                )}
+                              >
+                                ₹{Number(b.remainingAmount || 0).toLocaleString("en-IN")}
+                                <span className="ml-1 text-[10px] font-medium text-slate-400">
+                                  due
+                                </span>
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                ₹{Number(b.advancePaid || 0).toLocaleString("en-IN")} in
+                              </p>
+                            </td>
+                            <td className="px-3 py-3 min-w-[140px]">
                               <span
                                 className={cn(
-                                  "inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[9px] font-extrabold border uppercase tracking-wider min-w-[70px]",
+                                  "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold",
                                   flowStatus === "Confirmed"
-                                    ? "bg-green-50 text-green-700 border-green-200"
+                                    ? "bg-emerald-50 text-emerald-700"
                                     : flowStatus === "Completed"
-                                      ? "bg-teal-50 text-teal-700 border-teal-200"
+                                      ? "bg-teal-50 text-teal-700"
                                       : flowStatus === "Cancelled"
-                                        ? "bg-red-50 text-red-700 border-red-200"
-                                        : "bg-amber-50 text-amber-700 border-amber-200",
+                                        ? "bg-rose-50 text-rose-700"
+                                        : "bg-amber-50 text-amber-700",
                                 )}
                               >
                                 {flowStatus}
                               </span>
+                              <p className="text-[11px] text-slate-400 mt-1 truncate" title={nextAction}>
+                                {nextAction}
+                                {activityTime ? ` · ${activityTime}` : ""}
+                              </p>
                             </td>
                             <td
-                              className="p-2.5 border-r border-slate-150 text-center text-slate-550 font-medium truncate"
-                              title={activityTime}
-                            >
-                              {activityTime}
-                            </td>
-                            <td
-                              className="p-2.5 pl-2"
+                              className="px-3 py-3 pr-4"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex items-center gap-1 justify-start pl-1">

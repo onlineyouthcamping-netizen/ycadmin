@@ -967,8 +967,16 @@ export default function VerificationQueuePage({
                                 </span>
                               </td>
                               {/* Documents checklist summary */}
-                              <td className="px-3.5 py-2 text-[#74839A] font-medium">
-                                {completedDocs}/{totalDocs} complete
+                              <td className="px-3.5 py-2 font-medium">
+                                {Array.isArray(b.documents) && b.documents.length > 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-[#16A34A] bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                    {b.documents.length} doc{b.documents.length !== 1 ? "s" : ""} uploaded
+                                  </span>
+                                ) : item.checklist ? (
+                                  <span className="text-[#74839A]">{completedDocs}/{totalDocs} complete</span>
+                                ) : (
+                                  <span className="text-amber-600 text-[10px] font-semibold">0 uploaded</span>
+                                )}
                               </td>
                               {/* Ticketing Status */}
                               <td className="px-3.5 py-2">

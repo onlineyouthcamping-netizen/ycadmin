@@ -142,8 +142,10 @@ export default function AccountingPage() {
   const { admin: user } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isSalesPaymentsOnly = (user?.role || "").toLowerCase() === "sales";
 
   const normalizeMainTab = (raw: string | null): TabId => {
+    if (isSalesPaymentsOnly) return "transactions";
     if (!raw) return "overview";
     const t = raw.toLowerCase().trim();
     if (["control_center", "control", "verification", "queue", "queues"].includes(t)) return "control_center";
@@ -597,7 +599,12 @@ export default function AccountingPage() {
           ...(fStatus !== "ALL" ? { status: fStatus } : {}),
           ...(fMode !== "ALL" ? { paymentMode: fMode } : {}),
         }),
-        bookingsService.getAll({ limit: 1000 }).catch(() => null),
+        bookingsService
+          .getAll({
+            limit: 1000,
+            ...(isSalesPaymentsOnly && user?.id ? { salesAdminId: user.id } : {}),
+          })
+          .catch(() => null),
       ]);
       if (result) {
         setEntries(result.data);
@@ -616,7 +623,7 @@ export default function AccountingPage() {
     } finally {
       setLoading(false);
     }
-  }, [fMode, fStatus, page, pageSize, search]);
+  }, [fMode, fStatus, isSalesPaymentsOnly, page, pageSize, search, user?.id]);
 
   const loadReports = useCallback(async () => {
     setReportsLoading(true);
@@ -819,16 +826,18 @@ export default function AccountingPage() {
   }, [load]);
 
   useEffect(() => {
+    if (isSalesPaymentsOnly) return;
     loadReports();
     loadVendorAssignments();
     loadPersonalCollections();
-  }, [loadReports]);
+  }, [isSalesPaymentsOnly, loadReports]);
 
   // Re-fetch personal collections whenever the active date window changes
   useEffect(() => {
+    if (isSalesPaymentsOnly) return;
     loadPersonalCollections(activeDateStart, activeDateEnd);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDateStart, activeDateEnd]);
+  }, [activeDateStart, activeDateEnd, isSalesPaymentsOnly]);
 
   useEffect(() => {
     setPage(1);
@@ -1092,6 +1101,10 @@ export default function AccountingPage() {
   // Map ALL collected booking payments into income transactions
   const bookingEntries = bookings
     .filter((b) => {
+      if (isSalesPaymentsOnly && user?.id) {
+        const ownerId = b.salesAdminId || b.salesAdmin?.id || b.salesperson?.id;
+        if (ownerId && ownerId !== user.id) return false;
+      }
       const paid = Number(
         b.advancePaid ??
           b.advance ??
@@ -1266,11 +1279,13 @@ export default function AccountingPage() {
         }))
       : [];
 
-  const rawTransactions = [
-    ...dynamicInflows,
-    ...dynamicOutflows,
-    ...dynamicOfficeExpenses,
-  ];
+  const rawTransactions = isSalesPaymentsOnly
+    ? [...dynamicInflows]
+    : [
+        ...dynamicInflows,
+        ...dynamicOutflows,
+        ...dynamicOfficeExpenses,
+      ];
 
   // ── Date-filtered KPI values (computed from rawTransactions) ──────────────
   const totalApprovedCollection = rawTransactions
@@ -1766,18 +1781,20 @@ export default function AccountingPage() {
     .reduce((sum, t) => sum + t.outflow, 0);
   const pendingRefundsSum = totalRefundsSum - completedRefundsSum;
 
-  const tabs: { id: TabId; label: string }[] = [
-    { id: "overview", label: "Overview" },
-    { id: "control_center", label: "Control Center" },
-    { id: "transactions", label: "Ledger" },
-    { id: "cash_book", label: "Cash Book" },
-    { id: "bank_accounts", label: "Accounts" },
-    { id: "vendor_payments", label: "Vendors" },
-    { id: "office_expenses", label: "Expenses" },
-    { id: "profit_loss", label: "P&L" },
-    { id: "trip_profitability", label: "Trip P&L" },
-    { id: "reports", label: "Reports" },
-  ];
+  const tabs: { id: TabId; label: string }[] = isSalesPaymentsOnly
+    ? [{ id: "transactions", label: "Incoming Payments" }]
+    : [
+        { id: "overview", label: "Overview" },
+        { id: "control_center", label: "Control Center" },
+        { id: "transactions", label: "Ledger" },
+        { id: "cash_book", label: "Cash Book" },
+        { id: "bank_accounts", label: "Accounts" },
+        { id: "vendor_payments", label: "Vendors" },
+        { id: "office_expenses", label: "Expenses" },
+        { id: "profit_loss", label: "P&L" },
+        { id: "trip_profitability", label: "Trip P&L" },
+        { id: "reports", label: "Reports" },
+      ];
 
   return (
     <div className="space-y-3 md:space-y-5 pb-28 md:pb-16 p-3 md:p-6 bg-[#F4F7FB] min-h-screen">
@@ -1786,7 +1803,7 @@ export default function AccountingPage() {
         <div className="min-w-0">
           <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">
             <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#FF4D00] shrink-0" />
-            Finance{" "}
+            {isSalesPaymentsOnly ? "Payments" : "Finance"}{" "}
             {activeTab === "overview" && (
               <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
                 / Overview
@@ -1809,7 +1826,7 @@ export default function AccountingPage() {
             )}
             {activeTab === "transactions" && (
               <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Ledger
+                {isSalesPaymentsOnly ? "/ Incoming" : "/ Ledger"}
               </span>
             )}
             {activeTab === "vendor_payments" && (
@@ -1839,7 +1856,9 @@ export default function AccountingPage() {
             )}
           </h1>
           <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
-            {activeTab === "cash_book"
+            {isSalesPaymentsOnly
+              ? "Your customer collections only. Vendor payouts and expenses are hidden."
+              : activeTab === "cash_book"
               ? "Record cash inflows and outflows across accounts."
               : activeTab === "bank_accounts"
                 ? "Company and personal collection accounts, cash registers, and submissions."
@@ -1903,6 +1922,7 @@ export default function AccountingPage() {
       </div>
 
       {/* Navigation Tabs — scroll-snapped strip on mobile, underline row on desktop */}
+      {!isSalesPaymentsOnly && (
       <div
         ref={tabStripRef}
         className="flex items-center w-full md:border-b md:border-[#E2E8F0] bg-transparent p-0 md:h-9 rounded-none gap-2 md:gap-6 justify-start mb-3 md:mb-6 overflow-x-auto no-scrollbar snap-x scroll-px-3 -mx-3 px-3 md:mx-0 md:px-0"
@@ -1924,6 +1944,7 @@ export default function AccountingPage() {
           </button>
         ))}
       </div>
+      )}
 
       {/* CONTROL CENTER TAB (Verification Queues & Separation of Duties Engine) */}
       {activeTab === "control_center" && (
@@ -3672,10 +3693,12 @@ export default function AccountingPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-                Transactions
+                {isSalesPaymentsOnly ? "Incoming Payments" : "Transactions"}
               </h3>
               <p className="text-[10px] text-slate-500 font-medium">
-                All your money in and out, in one place
+                {isSalesPaymentsOnly
+                  ? "Customer collections from your bookings"
+                  : "All your money in and out, in one place"}
               </p>
             </div>
 
@@ -3714,8 +3737,12 @@ export default function AccountingPage() {
                   <th className="px-3.5 py-2.5">Account</th>
                   <th className="px-3.5 py-2.5">Payment Mode</th>
                   <th className="px-3.5 py-2.5 text-right">Income (₹)</th>
-                  <th className="px-3.5 py-2.5 text-right">Expense (₹)</th>
-                  <th className="px-3.5 py-2.5 text-right">Balance (₹)</th>
+                  {!isSalesPaymentsOnly && (
+                    <>
+                      <th className="px-3.5 py-2.5 text-right">Expense (₹)</th>
+                      <th className="px-3.5 py-2.5 text-right">Balance (₹)</th>
+                    </>
+                  )}
                   <th className="px-3.5 py-2.5">Category</th>
                   <th className="px-3.5 py-2.5">Added By</th>
                   <th className="px-3.5 py-2.5 text-right">Actions</th>
@@ -3727,7 +3754,7 @@ export default function AccountingPage() {
                     {/* Day Section Header Row */}
                     <tr className="bg-slate-50/80 font-bold text-slate-600 border-b border-slate-100">
                       <td
-                        colSpan={12}
+                        colSpan={isSalesPaymentsOnly ? 10 : 12}
                         className="px-3.5 py-2 text-[10px] uppercase tracking-wide"
                       >
                         {dateHeader}
@@ -3785,14 +3812,18 @@ export default function AccountingPage() {
                             ? t.inflow.toLocaleString("en-IN")
                             : "—"}
                         </td>
-                        <td className="px-3.5 py-2.5 text-right font-bold text-red-500">
-                          {t.outflow > 0
-                            ? t.outflow.toLocaleString("en-IN")
-                            : "—"}
-                        </td>
-                        <td className="px-3.5 py-2.5 text-right font-bold text-slate-700">
-                          ₹ {t.balance.toLocaleString()}
-                        </td>
+                        {!isSalesPaymentsOnly && (
+                          <>
+                            <td className="px-3.5 py-2.5 text-right font-bold text-red-500">
+                              {t.outflow > 0
+                                ? t.outflow.toLocaleString("en-IN")
+                                : "—"}
+                            </td>
+                            <td className="px-3.5 py-2.5 text-right font-bold text-slate-700">
+                              ₹ {t.balance.toLocaleString()}
+                            </td>
+                          </>
+                        )}
                         <td className="px-3.5 py-2.5">
                           <span className="text-[10px] text-slate-600 font-bold flex items-center gap-1.5">
                             <span
@@ -3862,6 +3893,8 @@ export default function AccountingPage() {
                     .toLocaleString()}
                 </span>
               </div>
+              {!isSalesPaymentsOnly && (
+                <>
               <div className="flex flex-col items-end">
                 <span className="text-[10px] text-slate-400 font-bold uppercase">
                   Total Expense
@@ -3903,6 +3936,8 @@ export default function AccountingPage() {
                   ).toLocaleString()}
                 </span>
               </div>
+                </>
+              )}
             </div>
           </div>
         </Card>
