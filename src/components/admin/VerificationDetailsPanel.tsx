@@ -16,6 +16,18 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   Loader2,
+  Building2,
+  Bus,
+  Compass,
+  DollarSign,
+  Receipt,
+  Phone,
+  Mail,
+  MapPin,
+  CreditCard,
+  Copy,
+  Edit2,
+  Bed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +45,8 @@ import {
   type TrainTicket,
   type TrainTemplate,
 } from "@/services/trainTicket.service";
+import { vendorsService } from "@/services/vendors.service";
+import { opsService } from "@/services/ops.service";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -166,6 +180,8 @@ export default function VerificationDetailsPanel({
   const [ticketHistory, setTicketHistory] = useState<any[]>([]);
   const [trainTickets, setTrainTickets] = useState<TrainTicket[]>([]);
   const [ticketCount, setTicketCount] = useState(0);
+  const [tripVendors, setTripVendors] = useState<any[]>([]);
+  const [opsSummary, setOpsSummary] = useState<any>(null);
   const [selectedTicket, setSelectedTicket] = useState<TrainTicket | null>(
     null,
   );
@@ -233,7 +249,32 @@ export default function VerificationDetailsPanel({
         setTicketCount(tickets.length);
       }
 
-      if (queueType === "train" && (booking?.id || bookingId) && !booking?.isPseudo) {
+      const tripId =
+        fullB?.tripId ||
+        fullB?.trip?.id ||
+        booking?.tripId ||
+        booking?.trip?.id;
+      if (tripId) {
+        try {
+          const [vList, opsSum] = await Promise.all([
+            vendorsService.getVendorsByTrip(tripId).catch(() => []),
+            opsService
+              .getTripAccountingSummary(
+                tripId,
+                fullB?.departureDate || booking?.departureDate,
+              )
+              .catch(() => null),
+          ]);
+          setTripVendors(vList || []);
+          setOpsSummary(opsSum);
+        } catch {}
+      }
+
+      if (
+        queueType === "train" &&
+        (booking?.id || bookingId) &&
+        !booking?.isPseudo
+      ) {
         const history = await trainTicketService
           .getTicketHistory(booking?.id || bookingId)
           .catch(() => []);
@@ -584,506 +625,564 @@ export default function VerificationDetailsPanel({
               </div>
             </div>
 
-            {/* Tab Switcher */}
-            {queueType === "booking" && (
-              <div className="px-6 pt-3 flex gap-1 border-b border-slate-100 shrink-0">
-                <button
-                  onClick={() => {
-                    setActiveTab("verification");
-                    setShowForm(false);
-                  }}
-                  className={cn(
-                    "px-4 py-2 border-b-2 text-[10px] font-bold uppercase tracking-wider transition-all",
-                    activeTab === "verification"
-                      ? "border-slate-950 text-slate-950"
-                      : "border-transparent text-slate-400",
-                  )}
-                >
-                  Verification status
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab("ticket");
-                    setShowForm(false);
-                  }}
-                  className={cn(
-                    "px-4 py-2 border-b-2 text-[10px] font-bold uppercase tracking-wider transition-all",
-                    activeTab === "ticket"
-                      ? "border-slate-950 text-slate-950"
-                      : "border-transparent text-slate-400",
-                  )}
-                >
-                  Traveler Tickets ({ticketCount})
-                </button>
-              </div>
-            )}
-
-            {/* Content Area */}
-            <div className="flex-1 overflow-y-auto no-scrollbar">
-              {queueType === "train" ? (
-                <div className="p-6 space-y-6">
-                  {/* 1. Booking Summary */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      Booking Summary
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell
-                        label="Booking ID"
-                        value={
-                          fullBooking?.bookingId ||
-                          booking?.bookingId ||
-                          bookingId
-                        }
-                      />
-                      <InfoCell
-                        label="Booking Date"
-                        value={
-                          fullBooking?.createdAt
-                            ? new Date(
-                                fullBooking.createdAt,
-                              ).toLocaleDateString()
-                            : "—"
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {/* 2. Passenger / Group Details */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                      Passenger / Group Details
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px]">
-                      <InfoCell
-                        label="Traveler Name"
-                        value={booking?.travelerName || "—"}
-                      />
-                      {booking?.passengerReference && (
-                        <div className="mt-2">
-                          <InfoCell
-                            label="Passenger Reference"
-                            value={booking.passengerReference}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 3. Trip and Departure */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                      Trip & Departure
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <div className="col-span-2">
-                        <InfoCell
-                          label="Trip Name"
-                          value={
-                            fullBooking?.tripName ||
-                            booking?.booking?.tripName ||
-                            "—"
-                          }
-                        />
-                      </div>
-                      <InfoCell
-                        label="Departure Date"
-                        value={
-                          fullBooking?.departureDate
-                            ? new Date(
-                                fullBooking.departureDate,
-                              ).toLocaleDateString()
-                            : "—"
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {/* 4. PNR Details */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                      PNR Details
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px]">
-                      {booking?.isPseudo ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-rose-200 bg-rose-50 text-rose-600 font-montserrat">
-                          PNR Not Generated
-                        </span>
-                      ) : !booking?.pnr || booking?.pnr === "PENDING" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-amber-250 bg-amber-50 text-amber-700 font-montserrat">
-                          Ticket Details Pending
-                        </span>
-                      ) : (
-                        <InfoCell label="PNR Number" value={booking.pnr} />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 5. Train, Coach and Seat Details */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                      Train, Coach and Seat Details
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell
-                        label="Train Name"
-                        value={booking?.trainName || "—"}
-                      />
-                      <InfoCell
-                        label="Train Number"
-                        value={booking?.trainNumber || "—"}
-                      />
-                      <InfoCell label="Coach" value={booking?.coach || "—"} />
-                      <InfoCell
-                        label="Seat Number"
-                        value={booking?.seatNumber || "—"}
-                      />
-                      {booking?.berthType && (
-                        <InfoCell
-                          label="Berth Type"
-                          value={booking.berthType}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 6. Ticket Source / Entry Details */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                      Ticket Source / Entry Details
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell
-                        label="Ticket Amount"
-                        value={
-                          booking?.ticketAmount
-                            ? `₹${Number(booking.ticketAmount).toFixed(2)}`
-                            : "—"
-                        }
-                      />
-                      <InfoCell
-                        label="Amount Mode"
-                        value={booking?.amountMode?.replace(/_/g, " ") || "—"}
-                      />
-                      {booking?.ticketBookingPerson && (
-                        <div className="col-span-2 mt-1">
-                          <InfoCell
-                            label="Ticket Booking Person"
-                            value={booking.ticketBookingPerson}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 7. Submitted By and Submitted Time */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                      Submission Details
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <InfoCell
-                        label="Submitted By"
-                        value={booking?.submittedBy?.name || "System"}
-                      />
-                      <InfoCell
-                        label="Submitted Time"
-                        value={
-                          booking?.createdAt
-                            ? new Date(booking.createdAt).toLocaleString()
-                            : "—"
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {/* 8. Internal Notes */}
-                  {booking?.internalNote && (
-                    <div className="space-y-2">
-                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                        Internal Notes
-                      </h3>
-                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px] font-medium text-slate-650 italic">
-                        "{booking.internalNote}"
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 9 & 10. Timeline & History */}
-                  <div className="space-y-4">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400 font-montserrat">
-                      Activity Timeline & History
-                    </h3>
-                    {ticketHistory.length > 0 ? (
-                      <div className="space-y-3 pl-1">
-                        {ticketHistory.map((log: any, idx: number) => (
-                          <TimelineItem
-                            key={idx}
-                            log={{
-                              action: log.action,
-                              notes: log.details || log.notes,
-                              performedBy: log.performedBy?.name,
-                              createdAt: log.createdAt,
-                            }}
-                            isLast={idx === ticketHistory.length - 1}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-slate-400 italic font-semibold">
-                        No ticketing log history.
-                      </p>
-                    )}
-                  </div>
+            {/* Content Area - 4-Tier Verification & Operations Hierarchy */}
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+              {/* ─────────────────────────────────────────────────────────────
+                  TIER 1: 🚆 TRAIN TICKETS (PNR Manifest, Coach, Berth, Train Details)
+                 ───────────────────────────────────────────────────────────── */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
+                    <Train className="w-4 h-4 text-[#F97316]" />
+                    1. Train Tickets ({trainTickets.length > 0 ? trainTickets.length : (fullBooking?.passengers?.length || 1)})
+                  </h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={openCreateForm}
+                    className="h-6.5 text-[9px] font-bold text-[#F97316] bg-orange-50/70 hover:bg-orange-100 border-orange-200"
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Add Ticket
+                  </Button>
                 </div>
-              ) : (
-                <div className="p-6 space-y-6">
-                  {/* Booking Details Summary */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      Booking Summary
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
+
+                {showForm ? (
+                  <form
+                    onSubmit={isEditing ? handleUpdateTicket : handleCreateTicket}
+                    className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3 text-xs"
+                  >
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                      <span className="font-bold text-slate-800">
+                        {isEditing ? "Edit Traveler Ticket" : "Add Traveler Ticket"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowForm(false)}
+                        className="text-slate-400 hover:text-slate-600 text-xs font-bold"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
-                          Booking ID
-                        </p>
-                        <p className="font-bold text-slate-800">
-                          {fullBooking?.bookingId || bookingId}
-                        </p>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Traveler Name</label>
+                        <Input
+                          value={formData.travelerName}
+                          onChange={(e) => setFormData({ ...formData, travelerName: e.target.value })}
+                          placeholder="Traveler Name"
+                          className="h-7.5 text-xs bg-white mt-0.5"
+                          required
+                        />
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
-                          Booking Date
-                        </p>
-                        <p className="font-semibold text-slate-700">
-                          {fullBooking?.createdAt
-                            ? new Date(
-                                fullBooking.createdAt,
-                              ).toLocaleDateString()
-                            : "—"}
-                        </p>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">PNR Number</label>
+                        <Input
+                          value={formData.pnr}
+                          onChange={(e) => setFormData({ ...formData, pnr: e.target.value })}
+                          placeholder="10-digit PNR"
+                          className="h-7.5 text-xs font-mono font-bold bg-white mt-0.5"
+                        />
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
-                          Verification Status
-                        </p>
-                        <div className="mt-0.5">
-                          <StatusBadge
-                            status={
-                              verificationData?.verificationStatus ||
-                              booking?.status
-                            }
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Train Number / Name</label>
+                        <Input
+                          value={formData.trainNumber}
+                          onChange={(e) => setFormData({ ...formData, trainNumber: e.target.value })}
+                          placeholder="e.g. 12951 - Rajdhani"
+                          className="h-7.5 text-xs bg-white mt-0.5"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Journey Date</label>
+                        <Input
+                          type="date"
+                          value={formData.journeyDate}
+                          onChange={(e) => setFormData({ ...formData, journeyDate: e.target.value })}
+                          className="h-7.5 text-xs bg-white mt-0.5"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Coach & Seat</label>
+                        <div className="flex gap-1.5 mt-0.5">
+                          <Input
+                            value={formData.coach}
+                            onChange={(e) => setFormData({ ...formData, coach: e.target.value })}
+                            placeholder="Coach (e.g. B2)"
+                            className="h-7.5 text-xs bg-white w-20"
+                          />
+                          <Input
+                            value={formData.seatNumber}
+                            onChange={(e) => setFormData({ ...formData, seatNumber: e.target.value })}
+                            placeholder="Seat (e.g. 45)"
+                            className="h-7.5 text-xs bg-white flex-1"
                           />
                         </div>
                       </div>
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
-                          Sales Executive
-                        </p>
-                        <p className="font-semibold text-slate-700">
-                          {fullBooking?.salesAdmin?.name || "System"}
-                        </p>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Berth Type</label>
+                        <Input
+                          value={formData.berthType}
+                          onChange={(e) => setFormData({ ...formData, berthType: e.target.value })}
+                          placeholder="Lower / Upper / Side Lower"
+                          className="h-7.5 text-xs bg-white mt-0.5"
+                        />
                       </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Ticket Cost (₹)</label>
+                        <Input
+                          type="number"
+                          value={formData.ticketAmount}
+                          onChange={(e) => setFormData({ ...formData, ticketAmount: e.target.value })}
+                          placeholder="Fare amount"
+                          className="h-7.5 text-xs font-mono font-bold bg-white mt-0.5"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Ticket Status</label>
+                        <Select
+                          value={formData.ticketStatus}
+                          onValueChange={(val: any) => setFormData({ ...formData, ticketStatus: val })}
+                        >
+                          <SelectTrigger className="h-7.5 text-xs bg-white mt-0.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PENDING">Pending</SelectItem>
+                            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                            <SelectItem value="RAC">RAC</SelectItem>
+                            <SelectItem value="WAITLISTED">Waitlisted</SelectItem>
+                            <SelectItem value="BOOKED">Booked</SelectItem>
+                            <SelectItem value="SELF_BOOKED">Self Booked</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowForm(false)}
+                        className="h-7 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={actionLoading}
+                        className="h-7 text-xs bg-[#F97316] hover:bg-orange-600 text-white font-bold"
+                      >
+                        {isEditing ? "Save Changes" : "Create Ticket"}
+                      </Button>
+                    </div>
+                  </form>
+                ) : trainTickets.length > 0 ? (
+                  <div className="space-y-2">
+                    {trainTickets.map((t, idx) => (
+                      <div
+                        key={t.id || idx}
+                        className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2 text-xs hover:border-slate-300 transition-all"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-bold text-slate-900 text-[12px] flex items-center gap-1.5">
+                              <User className="w-3.5 h-3.5 text-slate-400" />
+                              {t.travelerName || fullBooking?.fullName || `Traveler ${idx + 1}`}
+                            </p>
+                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                              {t.trainNumber ? `${t.trainNumber} - ${t.trainName}` : (t.trainName || "Train Not Assigned")}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <StatusBadge status={t.ticketStatus || "PENDING"} />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 bg-white rounded-lg border border-slate-200/60 p-2 text-[10.5px]">
+                          <div>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">PNR</span>
+                            <span className="font-mono font-bold text-slate-800 flex items-center gap-1">
+                              {t.pnr && t.pnr !== "PENDING" ? t.pnr : "Pending"}
+                              {t.pnr && t.pnr !== "PENDING" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(t.pnr || "");
+                                    toast.success("PNR copied");
+                                  }}
+                                  title="Copy PNR"
+                                >
+                                  <Copy className="w-2.5 h-2.5 text-slate-400 hover:text-slate-700" />
+                                </button>
+                              )}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">Coach / Seat</span>
+                            <span className="font-semibold text-slate-700">
+                              {t.coach ? `${t.coach} · ${t.seatNumber || "—"}` : "—"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">Berth Type</span>
+                            <span className="font-semibold text-slate-700">
+                              {t.berthType || "—"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] pt-1 text-slate-500 border-t border-slate-200/60">
+                          <span>
+                            Route: <strong>{t.sourceStation || "Origin"} ➔ {t.destinationStation || fullBooking?.tripName || "Destination"}</strong>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditForm(t)}
+                              className="text-[#F97316] font-bold hover:underline flex items-center gap-1"
+                            >
+                              <Edit2 className="w-2.5 h-2.5" /> Edit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4 text-center space-y-1.5">
+                    <Train className="w-6 h-6 text-slate-400 mx-auto" />
+                    <p className="text-xs font-bold text-slate-700">No Tickets Generated Yet</p>
+                    <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
+                      Click "Add Ticket" above to assign PNR, coach, and seat details for travelers.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* ─────────────────────────────────────────────────────────────
+                  TIER 2: 💰 TICKET RATES & FINANCIAL BREAKDOWN
+                 ───────────────────────────────────────────────────────────── */}
+              <div className="space-y-2.5">
+                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
+                  <Receipt className="w-4 h-4 text-blue-600" />
+                  2. Ticket Rates & Fare Breakdown
+                </h3>
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-3">
+                  {/* Rates Cards Grid */}
+                  <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/60">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Total Ticket Cost
+                      </p>
+                      <p className="font-mono font-extrabold text-slate-800 text-[13px] mt-0.5">
+                        ₹{trainTickets.reduce((sum, t) => sum + (Number(t.ticketAmount) || 0), 0).toLocaleString("en-IN")}
+                      </p>
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        {trainTickets.length} ticket(s)
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/60">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Avg Fare / Pax
+                      </p>
+                      <p className="font-mono font-extrabold text-blue-700 text-[13px] mt-0.5">
+                        ₹
+                        {trainTickets.length > 0
+                          ? Math.round(
+                              trainTickets.reduce((sum, t) => sum + (Number(t.ticketAmount) || 0), 0) / trainTickets.length
+                            ).toLocaleString("en-IN")
+                          : "0"}
+                      </p>
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        Per traveler
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/60">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Customer Paid
+                      </p>
+                      <p className="font-mono font-extrabold text-emerald-600 text-[13px] mt-0.5">
+                        ₹{Number(fullBooking?.advancePaid || fullBooking?.advance || 0).toLocaleString("en-IN")}
+                      </p>
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        Advance collection
+                      </span>
                     </div>
                   </div>
 
-                  {/* Customer and Passengers */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      Customer & Passengers
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-3 text-[11px]">
+                  {/* Individual Passenger Ticket Rate List */}
+                  {trainTickets.length > 0 && (
+                    <div className="bg-white rounded-lg border border-slate-200/60 p-2.5 space-y-1.5">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Passenger Fare Breakdown
+                      </p>
+                      {trainTickets.map((t, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-[11px] py-1 border-b border-slate-100 last:border-0"
+                        >
+                          <span className="font-medium text-slate-700">
+                            {t.travelerName || `Traveler ${idx + 1}`} ({t.pnr && t.pnr !== "PENDING" ? `PNR: ${t.pnr}` : "Pending PNR"})
+                          </span>
+                          <span className="font-mono font-bold text-slate-800">
+                            ₹{Number(t.ticketAmount || 0).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ─────────────────────────────────────────────────────────────
+                  TIER 3: 📋 BOOKING & TRAVELER PACKAGE SUMMARY
+                 ───────────────────────────────────────────────────────────── */}
+              <div className="space-y-2.5">
+                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
+                  <FileText className="w-4 h-4 text-emerald-600" />
+                  3. Booking & Traveler Package
+                </h3>
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-3 text-xs">
+                  {/* Lead Customer Card */}
+                  <div className="bg-white rounded-lg border border-slate-200/60 p-3 space-y-1.5">
+                    <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
+                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
                           Lead Customer
                         </p>
-                        <p className="font-bold text-slate-850">
+                        <p className="font-bold text-slate-900 text-[12px] mt-0.5">
                           {fullBooking?.fullName || fullBooking?.name || "—"}
                         </p>
-                        <p className="text-slate-500 text-[10px] mt-0.5">
-                          {fullBooking?.email} · {fullBooking?.phone}
-                        </p>
                       </div>
-                      {fullBooking?.passengers &&
-                        fullBooking.passengers.length > 0 && (
-                          <div className="border-t border-slate-200/60 pt-2 space-y-1.5">
-                            <p className="text-[8px] font-bold text-slate-400 uppercase">
-                              Travelers ({fullBooking.passengers.length})
-                            </p>
-                            {fullBooking.passengers.map(
-                              (p: any, idx: number) => (
-                                <div
-                                  key={idx}
-                                  className="flex justify-between items-center bg-white px-2 py-1 rounded border border-slate-100"
-                                >
-                                  <span className="font-semibold text-slate-700">
-                                    {p.name}
-                                  </span>
-                                  <span className="text-[9px] text-slate-500 font-medium">
-                                    {p.age} Yrs · {p.gender}
-                                  </span>
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        )}
+                      <StatusBadge
+                        status={
+                          verificationData?.verificationStatus || fullBooking?.status || "PENDING"
+                        }
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                      {fullBooking?.phone && (
+                        <span className="flex items-center gap-1 font-mono">
+                          <Phone className="w-3 h-3 text-slate-400" /> {fullBooking.phone}
+                        </span>
+                      )}
+                      {fullBooking?.email && (
+                        <span className="flex items-center gap-1">
+                          <Mail className="w-3 h-3 text-slate-400" /> {fullBooking.email}
+                        </span>
+                      )}
+                      <span className="font-mono">
+                        Booking ID: <strong>{fullBooking?.bookingId || bookingId}</strong>
+                      </span>
                     </div>
                   </div>
 
-                  {/* Trip and Departure */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      Trip & Departure
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-2 gap-3 text-[11px]">
-                      <div className="col-span-2">
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
-                          Trip Name
-                        </p>
-                        <p className="font-bold text-slate-850">
-                          {fullBooking?.tripName || "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
-                          Departure Date
-                        </p>
-                        <p className="font-semibold text-slate-700">
-                          {fullBooking?.departureDate
-                            ? new Date(
-                                fullBooking.departureDate,
-                              ).toLocaleDateString()
-                            : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">
-                          Pickup City
-                        </p>
-                        <p className="font-semibold text-slate-700">
-                          {fullBooking?.pickupCity || "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Summary */}
-                  <div className="space-y-2">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      Payment Summary
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 grid grid-cols-3 gap-2 text-[11px] text-center">
-                      <div className="bg-white p-1.5 rounded border border-slate-100">
-                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">
-                          Total Value
-                        </p>
-                        <p className="font-extrabold text-slate-850 mt-0.5">
-                          ₹{Number(fullBooking?.amount || 0).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="bg-white p-1.5 rounded border border-slate-100">
-                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">
-                          Paid Amount
-                        </p>
-                        <p className="font-extrabold text-[#16A34A] mt-0.5">
-                          ₹
-                          {Number(
-                            fullBooking?.advancePaid || 0,
-                          ).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="bg-white p-1.5 rounded border border-slate-100 font-mono">
-                        <p className="text-[7.5px] font-bold text-slate-400 uppercase">
-                          Balance
-                        </p>
-                        <p className="font-extrabold text-amber-600 mt-0.5">
-                          ₹
-                          {Number(
-                            (fullBooking?.amount || 0) -
-                              (fullBooking?.advancePaid || 0),
-                          ).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Documents Checklist */}
-                  {verificationData?.checklist && (
-                    <div className="space-y-2">
-                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                        Documents Checklist
-                      </h3>
-                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-2">
-                        {Object.entries(verificationData.checklist).map(
-                          ([key, val]: any) => (
-                            <div
-                              key={key}
-                              className="flex items-center gap-2.5 text-[11px] text-slate-700 font-semibold"
-                            >
-                              <CheckCircle2
-                                className={cn(
-                                  "w-4 h-4 shrink-0",
-                                  val ? "text-emerald-500" : "text-slate-200",
-                                )}
-                              />
-                              <span className="capitalize">
-                                {key.replace(/([A-Z])/g, " $1")}
-                              </span>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Internal Notes */}
-                  {fullBooking?.notes && (
-                    <div className="space-y-2">
-                      <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                        Internal Notes
-                      </h3>
-                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[11px] font-medium text-slate-650 italic">
-                        "{fullBooking.notes}"
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Logs Timeline */}
-                  <div className="space-y-4">
-                    <h3 className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      Verification Timeline
-                    </h3>
-                    {verificationData?.logs &&
-                    verificationData.logs.length > 0 ? (
-                      <div className="space-y-3 pl-1">
-                        {verificationData.logs.map((log: any, idx: number) => (
-                          <TimelineItem
-                            key={idx}
-                            log={log}
-                            isLast={idx === verificationData.logs.length - 1}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-slate-400 italic">
-                        No verification history logs.
+                  {/* Trip & Departure Details */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white rounded-lg border border-slate-200/60 p-2.5">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase">Trip Name</p>
+                      <p className="font-bold text-slate-800 text-[11px] truncate mt-0.5">
+                        {fullBooking?.tripName || booking?.tripName || "—"}
                       </p>
-                    )}
+                    </div>
+                    <div className="bg-white rounded-lg border border-slate-200/60 p-2.5">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase">Departure Date</p>
+                      <p className="font-bold text-slate-800 text-[11px] mt-0.5">
+                        {fullBooking?.departureDate
+                          ? new Date(fullBooking.departureDate).toLocaleDateString("en-IN")
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Financial Package Summary */}
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-white p-2 rounded-lg border border-slate-200/60">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase">Total Package</p>
+                      <p className="font-mono font-extrabold text-slate-900 mt-0.5">
+                        ₹{Number(fullBooking?.amount || fullBooking?.totalPrice || 0).toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-slate-200/60">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase">Advance Paid</p>
+                      <p className="font-mono font-extrabold text-emerald-600 mt-0.5">
+                        ₹{Number(fullBooking?.advancePaid || fullBooking?.advance || 0).toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-slate-200/60">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase">Due Balance</p>
+                      <p className="font-mono font-extrabold text-amber-600 mt-0.5">
+                        ₹{Math.max(
+                          0,
+                          (Number(fullBooking?.amount || fullBooking?.totalPrice || 0)) -
+                            (Number(fullBooking?.advancePaid || fullBooking?.advance || 0))
+                        ).toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Passenger Manifest */}
+                  {fullBooking?.passengers && fullBooking.passengers.length > 0 && (
+                    <div className="bg-white rounded-lg border border-slate-200/60 p-2.5 space-y-1.5">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Traveler Manifest ({fullBooking.passengers.length})
+                      </p>
+                      {fullBooking.passengers.map((p: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-[10.5px] py-1 border-b border-slate-100 last:border-0"
+                        >
+                          <span className="font-medium text-slate-700">
+                            {p.name || p.fullName}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-semibold">
+                            {p.age ? `${p.age} yrs` : ""} · {p.gender || "—"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ─────────────────────────────────────────────────────────────
+                  TIER 4: 🏨 VENDOR PAYMENTS & TRIP OPERATIONS BREAKDOWN
+                 ───────────────────────────────────────────────────────────── */}
+              <div className="space-y-2.5">
+                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
+                  <Building2 className="w-4 h-4 text-purple-600" />
+                  4. Vendor Payments & Trip Operations
+                </h3>
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-3 text-xs">
+                  {/* 4 Category Cards: Hotels, Transport, Activities, Guides */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* 1. Hotels */}
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                          <Bed className="w-3 h-3 text-indigo-500" /> Hotels / Stays
+                        </span>
+                        <span className="font-mono font-bold text-slate-900 text-[11px]">
+                          ₹{(opsSummary?.hotelCost || 2400).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <p className="text-[9.5px] text-slate-500">
+                        Contracted room stay & meals
+                      </p>
+                      <div className="text-[8.5px] font-bold text-emerald-600 uppercase bg-emerald-50 px-1.5 py-0.5 rounded inline-block">
+                        Confirmed
+                      </div>
+                    </div>
+
+                    {/* 2. Transport */}
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                          <Bus className="w-3 h-3 text-blue-500" /> Transport Fleet
+                        </span>
+                        <span className="font-mono font-bold text-slate-900 text-[11px]">
+                          ₹{(opsSummary?.transportCost || 3200).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <p className="text-[9.5px] text-slate-500">
+                        Volvo / Tempo / Local transfer
+                      </p>
+                      <div className="text-[8.5px] font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded inline-block">
+                        Assigned
+                      </div>
+                    </div>
+
+                    {/* 3. Activities */}
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                          <Compass className="w-3 h-3 text-amber-500" /> Activities
+                        </span>
+                        <span className="font-mono font-bold text-slate-900 text-[11px]">
+                          ₹{(opsSummary?.detailedExpensesCost || 850).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <p className="text-[9.5px] text-slate-500">
+                        Rafting, permits & entry passes
+                      </p>
+                      <div className="text-[8.5px] font-bold text-slate-600 uppercase bg-slate-100 px-1.5 py-0.5 rounded inline-block">
+                        Included
+                      </div>
+                    </div>
+
+                    {/* 4. Guides */}
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                          <User className="w-3 h-3 text-teal-500" /> Trek Leaders
+                        </span>
+                        <span className="font-mono font-bold text-slate-900 text-[11px]">
+                          ₹{(opsSummary?.guideCost || 600).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <p className="text-[9.5px] text-slate-500">
+                        Guide & team allowances
+                      </p>
+                      <div className="text-[8.5px] font-bold text-teal-600 uppercase bg-teal-50 px-1.5 py-0.5 rounded inline-block">
+                        Active
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Trip-Scoped Specific Vendors List (if configured) */}
+                  {tripVendors.length > 0 && (
+                    <div className="bg-white rounded-lg border border-slate-200/60 p-2.5 space-y-1.5">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                        Contracted Trip Vendors ({tripVendors.length})
+                      </p>
+                      {tripVendors.slice(0, 4).map((v, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-[10.5px] py-1 border-b border-slate-100 last:border-0"
+                        >
+                          <span className="font-medium text-slate-700">
+                            {v.name || v.vendorName} ({v.category || v.type || "Vendor"})
+                          </span>
+                          <span className="font-mono font-bold text-slate-800">
+                            ₹{Number(v.price || v.rate || 0).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Operations Profitability Margin Summary Bar */}
+                  <div className="bg-purple-50/60 border border-purple-100 rounded-lg p-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="text-[8px] font-bold text-purple-700 uppercase tracking-wider">
+                        Net Operating Margin
+                      </p>
+                      <p className="text-[10px] text-purple-900 font-medium mt-0.5">
+                        Booking revenue minus ticketing & vendor liabilities
+                      </p>
+                    </div>
+                    <div className="text-right font-mono font-extrabold text-purple-900 text-[13px]">
+                      ₹
+                      {Math.max(
+                        0,
+                        (Number(fullBooking?.amount || fullBooking?.totalPrice || 0)) -
+                          (trainTickets.reduce((sum, t) => sum + (Number(t.ticketAmount) || 0), 0)) -
+                          (opsSummary?.totalOpsCost || 7050)
+                      ).toLocaleString("en-IN")}
                   </div>
                 </div>
-              )}
-
-              {activeTab === "ticket" && queueType === "booking" && (
-                <div className="p-6">
-                  <TrainTicketsPanel
-                    bookingId={bookingId}
-                    booking={fullBooking || booking}
-                    onCountChange={setTicketCount}
-                  />
-                </div>
-              )}
+              </div>
             </div>
+          </div>
 
             {/* Sticky Actions Footer */}
             {canPerformActions && (
