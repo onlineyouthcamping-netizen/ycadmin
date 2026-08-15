@@ -42,6 +42,7 @@ export default function TripsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [vendorTrip, setVendorTrip] = useState<Trip | null>(null);
   const [sortModalOpen, setSortModalOpen] = useState(false);
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(12);
 
   const editParam = searchParams.get("edit");
   const isNewParam = searchParams.get("new") === "true";
@@ -155,6 +156,10 @@ export default function TripsPage() {
       return true;
     });
   }, [trips, statusFilter, categoryTab, searchQuery]);
+
+  useEffect(() => {
+    setMobileVisibleCount(12);
+  }, [statusFilter, categoryTab, searchQuery]);
 
   const handleSave = async (data: TripFormData, editingId?: string) => {
     const payload = {
@@ -487,112 +492,120 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="p-3 sm:p-6 bg-[#FAFAFA] min-h-screen font-sans text-slate-900">
+    <div className="p-3 md:p-6 pb-32 md:pb-6 bg-[#FAFAFA] min-h-screen font-sans text-slate-900">
       {/* ─── Page Header & Key Actions ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4 mb-3 md:mb-5">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
+            <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">
               Expeditions
             </h1>
-            <span className="bg-orange-50 text-[#FF5400] text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider">
+            <span className="bg-orange-50 text-[#FF5400] text-[9px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider shrink-0">
               Catalog OS
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="hidden md:block text-xs text-slate-500 mt-0.5">
             Manage itineraries, pricing, variants & website display.
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 md:gap-2 md:flex-wrap">
           <Button
             variant="outline"
             onClick={() => setSortModalOpen(true)}
-            className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
+            title="Reorder catalog"
+            aria-label="Reorder catalog"
+            className="h-9 w-9 md:h-8 md:w-auto px-0 md:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5 shrink-0"
           >
-            <GripVertical className="w-3.5 h-3.5 text-slate-400" /> Reorder
+            <GripVertical className="w-4 h-4 md:w-3.5 md:h-3.5 text-slate-400" />
+            <span className="hidden md:inline">Reorder</span>
           </Button>
           <Button
             variant="outline"
             onClick={handleShuffle}
-            className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5"
+            title="Shuffle catalog order"
+            aria-label="Shuffle catalog order"
+            className="h-9 w-9 md:h-8 md:w-auto px-0 md:px-3 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs gap-1.5 shrink-0"
           >
-            <Shuffle className="w-3.5 h-3.5 text-slate-400" /> Shuffle
+            <Shuffle className="w-4 h-4 md:w-3.5 md:h-3.5 text-slate-400" />
+            <span className="hidden md:inline">Shuffle</span>
           </Button>
           <Button
             onClick={openCreate}
-            className="h-8 px-3 sm:px-3.5 rounded-lg text-xs font-bold bg-[#FF5400] hover:bg-[#e04a00] text-white shadow-xs gap-1.5"
+            className="h-9 md:h-8 flex-1 md:flex-none px-3 md:px-3.5 rounded-lg text-xs font-bold bg-[#FF5400] hover:bg-[#e04a00] text-white shadow-xs gap-1.5"
           >
-            <Plus className="w-3.5 h-3.5" /> New Expedition
+            <Plus className="w-3.5 h-3.5 shrink-0" /> New Expedition
           </Button>
         </div>
       </div>
 
       {/* ─── Compact Metrics Strip ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-              Total
-            </span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block">
-              {metrics.total}
-            </span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3 md:mb-5">
+        {[
+          {
+            label: "Total",
+            value: metrics.total,
+            valueClass: "text-slate-900",
+            badge: "ALL",
+            badgeClass: "bg-slate-50 border-slate-100 text-slate-400",
+          },
+          {
+            label: "Published",
+            value: metrics.published,
+            valueClass: "text-emerald-600",
+            badge: "LIVE",
+            badgeClass: "bg-emerald-50 border-emerald-100 text-emerald-600",
+          },
+          {
+            label: "Drafts",
+            value: metrics.draft,
+            valueClass: "text-amber-600",
+            badge: "DEV",
+            badgeClass: "bg-amber-50 border-amber-100 text-amber-600",
+          },
+          {
+            label: "Categories",
+            value: metrics.categories,
+            valueClass: "text-[#FF5400]",
+            badge: "CAT",
+            badgeClass: "bg-orange-50 border-orange-100 text-[#FF5400]",
+          },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="bg-white border border-slate-200/80 rounded-xl p-2.5 md:p-3.5 shadow-2xs flex items-center justify-between gap-2 min-w-0"
+          >
+            <div className="min-w-0">
+              <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest block truncate">
+                {card.label}
+              </span>
+              <span
+                className={cn(
+                  "text-lg md:text-xl font-black mt-0.5 block tabular-nums",
+                  card.valueClass,
+                )}
+              >
+                {card.value}
+              </span>
+            </div>
+            <div
+              className={cn(
+                "w-7 h-7 md:w-8 md:h-8 rounded-lg border flex items-center justify-center font-bold text-[10px] md:text-xs shrink-0",
+                card.badgeClass,
+              )}
+            >
+              {card.badge}
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-xs">
-            ALL
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-              Published
-            </span>
-            <span className="text-xl font-black text-emerald-600 mt-0.5 block">
-              {metrics.published}
-            </span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">
-            LIVE
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-              Drafts
-            </span>
-            <span className="text-xl font-black text-amber-600 mt-0.5 block">
-              {metrics.draft}
-            </span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 font-bold text-xs">
-            DEV
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-              Categories
-            </span>
-            <span className="text-xl font-black text-[#FF5400] mt-0.5 block">
-              {metrics.categories}
-            </span>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF5400] font-bold text-xs">
-            CAT
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* ─── Compact Controls Bar & Data Table Container ─── */}
       <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden">
         {/* Controls Bar */}
-        <div className="p-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+        <div className="p-2.5 md:p-3 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-3 bg-slate-50/50">
+          {/* Category Tabs — scroll-snapped chip strip on mobile */}
+          <div className="flex items-center gap-1.5 md:gap-1 overflow-x-auto no-scrollbar snap-x scroll-px-2.5 -mx-2.5 px-2.5 md:mx-0 md:px-0">
             {[
               { id: "all", label: "All Catalog" },
               { id: "backpacking", label: "Backpacking" },
@@ -604,10 +617,10 @@ export default function TripsPage() {
                 type="button"
                 onClick={() => setCategoryTab(tab.id)}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap",
+                  "shrink-0 snap-start px-3 py-1.5 text-[11px] md:text-xs font-semibold rounded-full md:rounded-md transition-all whitespace-nowrap border",
                   categoryTab === tab.id
-                    ? "bg-white text-[#FF5400] shadow-2xs border border-slate-200/80"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/60",
+                    ? "bg-[#0B1329] border-[#0B1329] text-white md:bg-white md:border-slate-200/80 md:text-[#FF5400] md:shadow-2xs"
+                    : "bg-white border-slate-200 text-slate-600 md:border-transparent md:bg-transparent md:text-slate-500 md:hover:text-slate-900 md:hover:bg-slate-100/60",
                 )}
               >
                 {tab.label}
@@ -615,23 +628,23 @@ export default function TripsPage() {
             ))}
           </div>
 
-          {/* Filters & Status */}
+          {/* Single search field + compact status filter */}
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div className="relative flex-1 md:flex-none">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter trips..."
-                className="h-8 pl-8 pr-3 text-xs bg-white border border-slate-200/80 rounded-md outline-none focus:border-[#FF5400] w-48 transition-all"
+                placeholder="Search trips..."
+                className="h-9 md:h-8 w-full md:w-48 pl-8 pr-3 text-xs bg-white border border-slate-200/80 rounded-lg md:rounded-md outline-none focus:border-[#FF5400] transition-all"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-8 text-xs font-semibold bg-white border border-slate-200/80 rounded-md px-2.5 text-slate-700 outline-none cursor-pointer focus:border-[#FF5400]"
+              className="h-9 md:h-8 text-xs font-semibold bg-white border border-slate-200/80 rounded-lg md:rounded-md px-2 md:px-2.5 text-slate-700 outline-none cursor-pointer focus:border-[#FF5400] shrink-0"
             >
               <option value="all">All Statuses</option>
               <option value="published">Published</option>
@@ -640,8 +653,163 @@ export default function TripsPage() {
           </div>
         </div>
 
-        {/* Data Table */}
-        <div className="p-2">
+        {/* Mobile: card list (the desktop table has too many columns for 430px) */}
+        <div className="md:hidden">
+          {loading ? (
+            <div className="divide-y divide-slate-100">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-3 flex gap-3">
+                  <div className="h-12 w-12 rounded-lg bg-slate-100 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2 py-0.5">
+                    <div className="h-3 bg-slate-100 animate-pulse rounded w-3/4" />
+                    <div className="h-2.5 bg-slate-100 animate-pulse rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 px-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+                <Search className="h-5 w-5 text-slate-300" />
+              </div>
+              <p className="text-xs font-medium text-slate-400 italic">
+                No expeditions found
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="divide-y divide-slate-100">
+                {filtered.slice(0, mobileVisibleCount).map((t, idx) => {
+                  const img =
+                    t.heroImage ||
+                    t.images?.[0] ||
+                    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400";
+                  const isPub = t.status === "published";
+                  const price = Number(t?.price);
+                  const meta = [
+                    t.location &&
+                    t.location.toLowerCase() !== "destination"
+                      ? t.location
+                      : null,
+                    t.duration,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
+
+                  return (
+                    <div key={t.id || idx} className="p-3 flex gap-3">
+                      <img
+                        src={img}
+                        alt={t.title || ""}
+                        className="h-12 w-12 rounded-lg object-cover border border-slate-200 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(t)}
+                            className="text-sm font-semibold text-slate-900 text-left leading-snug line-clamp-2 min-w-0"
+                          >
+                            {t.title || "Untitled Expedition"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleStatus(t)}
+                            className={cn(
+                              "shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                              isPub
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                : "bg-orange-50 text-[#FF5400] border-orange-100",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "w-1.5 h-1.5 rounded-full",
+                                isPub ? "bg-emerald-500" : "bg-[#FF5400]",
+                              )}
+                            />
+                            {isPub ? "Active" : "Draft"}
+                          </button>
+                        </div>
+
+                        {meta && (
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                            {meta}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[10px] text-slate-600 font-mono bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                              {t?.shortName || t?.id?.substring(0, 8) || "N/A"}
+                            </span>
+                            <span className="text-xs font-bold text-slate-900 tabular-nums">
+                              ₹{isNaN(price) ? "0" : price.toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setVendorTrip(t)}
+                              aria-label="Manage vendors"
+                              className="h-8 w-8 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                            >
+                              <Building2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(t)}
+                              aria-label="Edit expedition"
+                              className="h-8 w-8 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDuplicateTrip(t)}
+                              aria-label="Duplicate expedition"
+                              className="h-8 w-8 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(t.id)}
+                              aria-label="Delete expedition"
+                              className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {filtered.length > mobileVisibleCount && (
+                <div className="p-3 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    onClick={() => setMobileVisibleCount((c) => c + 12)}
+                    className="w-full h-9 rounded-lg text-xs font-semibold border-slate-200 text-slate-700 bg-white"
+                  >
+                    Load more ({filtered.length - mobileVisibleCount} left)
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Desktop: full data table */}
+        <div className="hidden md:block p-2">
           <DataTable
             columns={columns}
             data={filtered}
