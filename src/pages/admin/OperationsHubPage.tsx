@@ -3724,13 +3724,13 @@ export default function OperationsHubPage() {
                                     : "—"}
                                 </td>
                                 <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-800">
-                                  ₹{row.totalAmount.toLocaleString("en-IN")}
+                                  ₹{Number(row.totalAmount || 0).toLocaleString("en-IN")}
                                 </td>
                                 <td className="p-3 border-r border-slate-100 text-right text-emerald-750 font-black">
-                                  ₹{row.amountPaid.toLocaleString("en-IN")}
+                                  ₹{Number(row.amountPaid || 0).toLocaleString("en-IN")}
                                 </td>
                                 <td className="p-3 border-r border-slate-100 text-right text-red-600 font-black">
-                                  ₹{row.dueAmount.toLocaleString("en-IN")}
+                                  ₹{Number(row.dueAmount || 0).toLocaleString("en-IN")}
                                 </td>
                                 <td className="p-3 border-r border-slate-100 text-center">
                                   <span

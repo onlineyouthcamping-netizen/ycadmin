@@ -1373,8 +1373,10 @@ export default function DepartureHubPage() {
         };
         arr.push({ id: b.id, name: leadName, ...base, isLead: true });
         if (Array.isArray(passengersObj?.persons)) {
+          let coPaxIdx = 0;
           passengersObj.persons.forEach((p: any, idx: number) => {
             if (normalizeCompareName(p.name) === normLeadName) return;
+            coPaxIdx++;
 
             const coRoomInfo = personsRoomDetails[p.name] || {};
             const opsCoRoom =
@@ -1403,9 +1405,9 @@ export default function DepartureHubPage() {
               phone: p.phone || b.phone || "—",
               email: p.email || "—",
               pickupPoint: p.pickupPoint || b.pickupCity || "Ahmedabad",
-              amount: allocatedAmounts[idx + 1],
-              paidAmount: allocatedPaid[idx + 1],
-              balance: allocatedBalances[idx + 1],
+              amount: allocatedAmounts[coPaxIdx] || 0,
+              paidAmount: allocatedPaid[coPaxIdx] || 0,
+              balance: allocatedBalances[coPaxIdx] || 0,
               notes: p.notes || (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
               isLead: false,
               gender: p.gender || "Male",
@@ -5789,9 +5791,11 @@ useEffect(() => {
       const personsList = [leadPassenger];
 
       if (Array.isArray(passengersObj?.persons)) {
+        let coPaxIdx = 0;
         passengersObj.persons.forEach((p: any, idx: number) => {
           // Prevent duplicating lead if they are listed in persons too
           if (normalizeCompareName(p.name) === normLeadName) return;
+          coPaxIdx++;
           const coRoomInfo = personsRoomDetails[p.name] || {};
           personsList.push({
             name: p.name,
@@ -5823,9 +5827,9 @@ useEffect(() => {
             roomNo:
               coRoomInfo.roomNo || b.passengers?.details?.roomAllocation || "—",
             paymentStatus: paymentLabel,
-            amount: allocatedAmounts[idx + 1],
-            paidAmount: allocatedPaid[idx + 1],
-            balance: allocatedBalances[idx + 1],
+            amount: allocatedAmounts[coPaxIdx] || 0,
+            paidAmount: allocatedPaid[coPaxIdx] || 0,
+            balance: allocatedBalances[coPaxIdx] || 0,
           });
         });
       }
@@ -7164,7 +7168,7 @@ useEffect(() => {
                     {passengerStats.partial}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    ₹{passengerStats.outstandingPartial.toLocaleString("en-IN")}{" "}
+                    ₹{Number(passengerStats?.outstandingPartial || 0).toLocaleString("en-IN")}{" "}
                     due
                   </p>
                 </div>
@@ -7180,10 +7184,10 @@ useEffect(() => {
                     Pending Due
                   </p>
                   <p className="text-xl font-black text-red-600 leading-tight">
-                    ₹{passengerStats.totalDue.toLocaleString("en-IN")}
+                    ₹{Number(passengerStats?.totalDue || 0).toLocaleString("en-IN")}
                   </p>
                   <p className="text-[10px] text-red-400 font-bold mt-0.5">
-                    {passengerStats.withDue} passengers with due
+                    {passengerStats?.withDue || 0} passengers with due
                   </p>
                 </div>
                 {/* Cancelled */}
@@ -7596,11 +7600,11 @@ useEffect(() => {
                                       Total:{" "}
                                       <span className="font-bold text-slate-700">
                                         ₹
-                                        {bg.totalAmount.toLocaleString("en-IN")}
+                                        {Number(bg?.totalAmount || 0).toLocaleString("en-IN")}
                                       </span>{" "}
                                       | Paid:{" "}
                                       <span className="font-bold text-emerald-600">
-                                        ₹{bg.paidAmount.toLocaleString("en-IN")}
+                                        ₹{Number(bg?.paidAmount || 0).toLocaleString("en-IN")}
                                       </span>
                                     </div>
                                     <div>
@@ -7608,12 +7612,12 @@ useEffect(() => {
                                       <span
                                         className={cn(
                                           "font-bold",
-                                          bg.balance > 0
+                                          (bg?.balance || 0) > 0
                                             ? "text-red-650"
                                             : "text-emerald-600",
                                         )}
                                       >
-                                        ₹{bg.balance.toLocaleString("en-IN")}
+                                        ₹{Number(bg?.balance || 0).toLocaleString("en-IN")}
                                       </span>
                                     </div>
                                   </div>
@@ -7764,26 +7768,26 @@ useEffect(() => {
                                   />
                                   <div className="text-[10px] text-slate-400 mt-0.5">
                                     Paid: ₹
-                                    {p.paidAmount.toLocaleString("en-IN")} / pax
+                                    {Number(p?.paidAmount || 0).toLocaleString("en-IN")} / pax
                                   </div>
                                 </td>
                                 <td
                                   className={cn(
                                     "p-3 text-right font-bold",
-                                    p.balance > 0
+                                    (p?.balance || 0) > 0
                                       ? "text-red-500"
                                       : "text-emerald-600",
                                   )}
                                 >
                                   <div>
-                                    ₹{p.balance.toLocaleString("en-IN")}{" "}
+                                    ₹{Number(p?.balance || 0).toLocaleString("en-IN")}{" "}
                                     <span className="text-[10px] font-normal text-slate-400">
                                       / pax
                                     </span>
                                   </div>
                                   <div className="text-[9.5px] text-slate-400 font-normal mt-0.5">
                                     Group Due: ₹
-                                    {bg.balance.toLocaleString("en-IN")}
+                                    {Number(bg?.balance || 0).toLocaleString("en-IN")}
                                   </div>
                                 </td>
 
