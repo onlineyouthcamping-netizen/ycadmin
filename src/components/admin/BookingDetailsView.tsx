@@ -2268,7 +2268,7 @@ export default function BookingDetailsView({
             </span>
             <span className="font-semibold truncate">This booking is confirmed.</span>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => {
                 setConfirmTotal((booking.totalAmount || 0).toString());
@@ -2276,14 +2276,14 @@ export default function BookingDetailsView({
                 setConfirmEmail(booking.email || "");
                 setIsConfirming(!isConfirming);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-2 sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9.5px] sm:text-[10px] leading-tight uppercase px-2 sm:px-3 h-8 sm:h-auto sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center flex items-center justify-center"
             >
-              {isConfirming ? "Hide Panel" : "Update Ticket & Send Email"}
+              {isConfirming ? "Hide Panel" : "Update Ticket & Email"}
             </button>
             <button
               onClick={handleRevertConfirmation}
               disabled={revertingLoading}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] uppercase px-3 py-2 sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[9.5px] sm:text-[10px] leading-tight uppercase px-2 sm:px-3 h-8 sm:h-auto sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center flex items-center justify-center"
             >
               {revertingLoading ? "Reverting..." : "Revert Confirmation"}
             </button>
@@ -2315,7 +2315,7 @@ export default function BookingDetailsView({
                 setConfirmEmail(booking.email || "");
                 setIsConfirming(true);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 py-2 sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer text-center"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 h-8 sm:h-auto sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer text-center flex items-center justify-center"
             >
               Confirm Booking
             </button>
