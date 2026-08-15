@@ -56,6 +56,10 @@ export function PassengerDrawer({
   const [isSaving, setIsSaving] = useState(false);
   const [tickets, setTickets] = useState<any[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [previewModalDoc, setPreviewModalDoc] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
   const tabsListRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll active tab into view (Requirement 7)
@@ -88,13 +92,12 @@ export function PassengerDrawer({
     }
   }, [passenger?.id, booking?.id]);
 
-  if (!passenger) return null;
-
   const handleChange = (field: keyof NormalizedPassenger, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
+    if (!passenger) return;
     setIsSaving(true);
     try {
       await onSave(passenger.id, formData);
@@ -165,11 +168,7 @@ export function PassengerDrawer({
     paymentStatusText === "completed" ||
     (booking?.remainingAmount !== undefined && booking.remainingAmount <= 0);
 
-  // Preview modal state
-  const [previewModalDoc, setPreviewModalDoc] = useState<{
-    url: string;
-    title: string;
-  } | null>(null);
+  if (!passenger && !isOpen) return null;
 
   // Aggregate all passenger documents from all available sources
   const allPassengerDocs = (() => {
