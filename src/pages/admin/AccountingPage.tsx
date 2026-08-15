@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   IndianRupee,
   Filter,
@@ -134,6 +134,7 @@ type TabId =
 
 export default function AccountingPage() {
   const { admin: user } = useAuthStore();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as TabId;
   const [activeTab, setActiveTab] = useState<TabId>(tabParam || "overview");
@@ -683,35 +684,6 @@ export default function AccountingPage() {
             }
           });
         } catch {}
-      }
-
-      // If departure vendor queue is empty, fallback to departure hub mapped vendors
-      if (allAssignments.length === 0) {
-        const defaultDepartureVendors = [
-          { name: "Ambrosia Grand Shimla", type: "HOTEL", cost: 9000, paid: 0 },
-          { name: "Ambrosia Grand Shimla", type: "HOTEL", cost: 9000, paid: 0 },
-          { name: "Snowland Homestay Tabo", type: "HOTEL", cost: 9000, paid: 0 },
-          { name: "Hotel Snow View", type: "HOTEL", cost: 9000, paid: 0 },
-          { name: "Karma Homestay", type: "HOTEL", cost: 9000, paid: 0 },
-          { name: "Manali Grand Hotel", type: "HOTEL", cost: 38997, paid: 0 },
-          { name: "Spiti Siddharth", type: "HOTEL", cost: 9000, paid: 0 },
-          { name: "SMDD Transport Fleets", type: "TRANSPORT", cost: 18000, paid: 0 },
-          { name: "dikshu sharmab", type: "GUIDE", cost: 100000, paid: 0 },
-        ];
-        defaultDepartureVendors.forEach((v, idx) => {
-          allAssignments.push({
-            id: `def-dep-${idx}`,
-            vendorId: { name: v.name, type: v.type },
-            vendorName: v.name,
-            tripName: "Spiti Valley Road Trip",
-            tripCode: "SPT-1",
-            tripId: "SPT-1_2026-08-18",
-            totalAmount: v.cost,
-            paidAmount: v.paid,
-            dueDate: "18 Aug 2026",
-            paymentStatus: v.paid >= v.cost && v.cost > 0 ? "paid" : v.paid > 0 ? "partial" : "pending",
-          });
-        });
       }
 
       setVendorAssignments(allAssignments);
@@ -3789,8 +3761,20 @@ export default function AccountingPage() {
                     key={entry.id}
                     className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
                   >
-                    <td className="px-4 py-3 font-semibold text-slate-700">
-                      #{entry.booking?.bookingId}
+                    <td className="px-4 py-3 font-semibold">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/admin/bookings?id=${entry.booking?.id || entry.booking?.bookingId || entry.bookingId}`,
+                          )
+                        }
+                        className="font-mono text-orange-600 hover:text-orange-700 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                        title="Open Booking Workspace"
+                      >
+                        #{entry.booking?.bookingId || entry.bookingId}
+                        <ArrowUpRight className="w-3 h-3 text-slate-400" />
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col text-slate-800 font-bold">
@@ -4851,7 +4835,7 @@ export default function AccountingPage() {
                 <SelectTrigger className="h-8.5 text-xs rounded-[4px] border-[#E2E8F0]">
                   <SelectValue placeholder="Select Booking" />
                 </SelectTrigger>
-                <SelectContent className="rounded-[4px]">
+                <SelectContent className="rounded-[4px] max-h-60">
                   {bookings.map((b) => (
                     <SelectItem key={b.id} value={b.bookingId}>
                       {b.fullName || b.name} ({b.bookingId}) - {b.tripName}
@@ -4859,6 +4843,67 @@ export default function AccountingPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              {(() => {
+                const selectedB = bookings.find(
+                  (b) => b.bookingId === form.bookingId || b.id === form.bookingId,
+                );
+                if (!selectedB) return null;
+                const total = Number(
+                  selectedB.totalAmount || selectedB.totalPrice || 0,
+                );
+                const paid = Number(
+                  selectedB.advancePaid || selectedB.advance || 0,
+                );
+                const rem = Math.max(0, total - paid);
+
+                return (
+                  <div className="bg-slate-50 border border-slate-200 rounded p-2.5 space-y-1.5 text-xs mt-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-800">
+                        {selectedB.fullName || selectedB.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                        {selectedB.phone || selectedB.mobile || "No phone"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 font-medium">
+                      Trip: <strong>{selectedB.tripName || "Trip"}</strong>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200 text-center text-[10px]">
+                      <div className="bg-white p-1 rounded border border-slate-100">
+                        <div className="text-slate-400 font-bold">TOTAL</div>
+                        <div className="font-mono font-bold text-slate-800">
+                          ₹{total.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-white p-1 rounded border border-slate-100">
+                        <div className="text-emerald-600 font-bold">PAID</div>
+                        <div className="font-mono font-bold text-emerald-700">
+                          ₹{paid.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="bg-white p-1 rounded border border-slate-100">
+                        <div className="text-amber-600 font-bold">DUE</div>
+                        <div className="font-mono font-bold text-amber-700">
+                          ₹{rem.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    {rem > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((prev) => ({ ...prev, amount: String(rem) }))
+                        }
+                        className="w-full text-center text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 py-1 rounded transition-colors"
+                      >
+                        Autofill Due Balance (₹{rem.toLocaleString()})
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="space-y-1.5">

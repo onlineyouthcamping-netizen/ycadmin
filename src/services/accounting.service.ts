@@ -15,11 +15,21 @@ export interface AccountingEntry {
   createdAt: string;
   updatedAt: string;
   booking?: {
+    id?: string;
     bookingId: string;
     name: string;
     fullName?: string;
+    email?: string;
+    phone?: string;
+    mobile?: string;
+    tripId?: string;
     tripName?: string;
     totalAmount: number;
+    advancePaid?: number;
+    remainingAmount?: number;
+    paymentStatus?: string;
+    payment_status?: string;
+    departureDate?: string;
     adjustedPrice?: number;
     numberOfTravelers?: number;
     salesAdminId?: string;
