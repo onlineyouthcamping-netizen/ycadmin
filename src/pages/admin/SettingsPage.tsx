@@ -25,27 +25,19 @@ export default function SettingsPage() {
 
   const [profile, setProfile] = useState<Admin | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<SettingsTabId>("account");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const path = location.pathname;
+  const tabParam = searchParams.get("tab") as SettingsTabId;
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const activeTab: SettingsTabId =
+    tabParam && SETTINGS_TABS.some((t) => t.id === tabParam)
+      ? tabParam
+      : path.includes("security") || path.includes("change-password")
+        ? "security"
+        : "account";
 
-  useEffect(() => {
-    const path = location.pathname;
-    const tabParam = searchParams.get("tab") as SettingsTabId;
-
-    if (tabParam && SETTINGS_TABS.some((t) => t.id === tabParam)) {
-      setActiveTab(tabParam);
-    } else if (path.includes("security") || path.includes("change-password")) {
-      setActiveTab("security");
-    } else if (path.includes("profile") || path.includes("my-profile")) {
-      setActiveTab("account");
-    } else {
-      setActiveTab("account");
-    }
-  }, [location, searchParams]);
+  const handleTabChange = (tabId: SettingsTabId) => {
+    setSearchParams({ tab: tabId }, { replace: true });
+  };
 
   const fetchProfile = async () => {
     try {
@@ -60,10 +52,9 @@ export default function SettingsPage() {
     }
   };
 
-  const handleTabChange = (tabId: SettingsTabId) => {
-    setActiveTab(tabId);
-    setSearchParams({ tab: tabId }, { replace: true });
-  };
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const handleGlobalReset = () => {
     fetchProfile();

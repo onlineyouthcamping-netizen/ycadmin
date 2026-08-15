@@ -74,18 +74,12 @@ export default function ApprovalsHubPage() {
   const { admin } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as ApprovalTab;
-  const [activeTab, setActiveTab] = useState<ApprovalTab>(
-    "booking-verification",
-  );
-
-  useEffect(() => {
-    if (tabParam && TABS.some((t) => t.key === tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
+  const activeTab: ApprovalTab =
+    tabParam && TABS.some((t) => t.key === tabParam)
+      ? tabParam
+      : "booking-verification";
 
   const handleTabChange = (key: ApprovalTab) => {
-    setActiveTab(key);
     setSearchParams({ tab: key });
   };
 
