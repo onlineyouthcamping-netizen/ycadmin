@@ -299,7 +299,8 @@ export function AccommodationDetailPage({
     return () => {
       isMounted = false;
     };
-  }, [vendorId, isTransport, extractOverviewState, initialVendor, loadVendorVehicles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorId]);
 
   const [transportRoutes, setTransportRoutes] = useState<any[]>(() => {
     if (vendor.transportRates && vendor.transportRates.length > 0) {
