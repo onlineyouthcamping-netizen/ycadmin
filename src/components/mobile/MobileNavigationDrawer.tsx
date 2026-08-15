@@ -9,7 +9,6 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import {
   BarChart3,
-  Users,
   Ticket,
   MapPin,
   Compass,
@@ -45,7 +44,6 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
 
   const modules = [
     { title: "Dashboard", url: "/admin", icon: BarChart3 },
-    { title: "Sales & Leads", url: "/admin/inquiries", icon: Users },
     { title: "Bookings Ledger", url: "/admin/bookings", icon: Ticket },
     { title: "Departure Hub", url: "/admin/departures", icon: Compass },
     { title: "Expeditions & Trips", url: "/admin/trips", icon: MapPin },

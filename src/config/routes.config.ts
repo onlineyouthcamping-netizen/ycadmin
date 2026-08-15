@@ -80,7 +80,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     label: "Inquiries",
     path: "/admin/inquiries",
     permission: "inquiries.view",
-    navigation: { visible: true, group: "Sales", iconName: "MessageSquare" },
+    navigation: { visible: false, group: "Sales", iconName: "MessageSquare" },
     breadcrumbLabel: "Sales / Inquiries",
   },
   {

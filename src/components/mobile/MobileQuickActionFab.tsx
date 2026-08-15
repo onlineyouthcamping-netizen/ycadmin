@@ -4,14 +4,10 @@ import {
   Plus,
   X,
   Ticket,
-  UserPlus,
   FileText,
   CreditCard,
   DollarSign,
-  MessageSquare,
-  Phone,
   Search,
-  QrCode,
 } from "lucide-react";
 import {
   Sheet,
@@ -42,17 +38,6 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       onClick: () => {
         setIsOpen(false);
         onOpenNewBooking();
-      },
-    },
-    {
-      id: "lead",
-      label: "New Lead",
-      desc: "Add prospective inquiry",
-      icon: UserPlus,
-      color: "bg-blue-50 text-blue-600 border-blue-100",
-      onClick: () => {
-        setIsOpen(false);
-        navigate("/admin/inquiries?action=new");
       },
     },
     {

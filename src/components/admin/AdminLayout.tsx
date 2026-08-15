@@ -111,8 +111,6 @@ const sidebarModules: SidebarModule[] = [
     icon: Briefcase,
     hasSubItems: true,
     subItems: [
-      { title: "Inquiries", url: "/admin/inquiries" },
-
       { title: "Quotations", url: "/admin/quotations" },
       { title: "Booking Links", url: "/admin/booking-forms" },
       { title: "Bookings", url: "/admin/bookings" },
@@ -1017,7 +1015,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   {[
                     { title: "Dashboard Overview", path: "/admin" },
                     { title: "Bookings Ledger", path: "/admin/bookings" },
-                    { title: "Inquiries & Leads", path: "/admin/inquiries" },
                     { title: "Staff Directory", path: "/admin/hr?tab=staff" },
                     {
                       title: "Company Legal Documents",
