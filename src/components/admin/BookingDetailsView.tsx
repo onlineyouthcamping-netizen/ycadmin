@@ -89,6 +89,10 @@ import EmailComposerDrawer from "./EmailComposerDrawer";
 import EmailLogsTimeline from "./EmailLogsTimeline";
 import { erpService } from "@/services/erp.service";
 import BookingAttachmentsTab from "./BookingAttachmentsTab";
+import {
+  collectionAccountsService,
+  type CollectionAccount,
+} from "@/services/collectionAccounts.service";
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -249,6 +253,71 @@ export default function BookingDetailsView({
   const [payComments, setPayComments] = useState("");
   const [payCollectedByAdminId, setPayCollectedByAdminId] = useState("");
   const [staffList, setStaffList] = useState<any[]>([]);
+
+  // Collection Accounts State
+  const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
+  const [payCollectionAccountId, setPayCollectionAccountId] = useState("");
+  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
+  const [newAccName, setNewAccName] = useState("");
+  const [newAccHolder, setNewAccHolder] = useState("");
+  const [newAccType, setNewAccType] = useState("INDIVIDUAL");
+  const [newAccMethods, setNewAccMethods] = useState<string[]>(["UPI", "BANK_TRANSFER"]);
+  const [newAccUpi, setNewAccUpi] = useState("");
+  const [newAccBank, setNewAccBank] = useState("");
+  const [newAccNumber, setNewAccNumber] = useState("");
+  const [newAccIfsc, setNewAccIfsc] = useState("");
+  const [savingNewAccount, setSavingNewAccount] = useState(false);
+
+  const loadCollectionAccounts = useCallback(async () => {
+    try {
+      const res = await collectionAccountsService.getAccounts({ activeOnly: true });
+      if (res.data && res.data.length > 0) {
+        setCollectionAccounts(res.data);
+        if (!payCollectionAccountId) {
+          setPayCollectionAccountId(res.data[0].id);
+        }
+      }
+    } catch {}
+  }, [payCollectionAccountId]);
+
+  useEffect(() => {
+    loadCollectionAccounts();
+  }, [loadCollectionAccounts]);
+
+  const handleQuickCreateAccount = async () => {
+    if (!newAccName.trim()) {
+      return toast.error("Please enter account name");
+    }
+    setSavingNewAccount(true);
+    try {
+      const created = await collectionAccountsService.createAccount({
+        accountName: newAccName.trim(),
+        accountHolderName: newAccHolder.trim() || newAccName.trim(),
+        accountType: newAccType,
+        paymentMethods: newAccMethods,
+        upiId: newAccUpi.trim() || undefined,
+        bankName: newAccBank.trim() || undefined,
+        accountNumber: newAccNumber.trim() || undefined,
+        ifsc: newAccIfsc.trim() || undefined,
+        isActive: true,
+      });
+
+      toast.success(`Account "${created.accountName}" created and selected!`);
+      setCollectionAccounts((prev) => [created, ...prev]);
+      setPayCollectionAccountId(created.id);
+      setShowAddAccountModal(false);
+      setNewAccName("");
+      setNewAccHolder("");
+      setNewAccUpi("");
+      setNewAccBank("");
+      setNewAccNumber("");
+      setNewAccIfsc("");
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Failed to create collection account");
+    } finally {
+      setSavingNewAccount(false);
+    }
+  };
 
   useEffect(() => {
     api
@@ -1563,15 +1632,10 @@ export default function BookingDetailsView({
           bookingId: booking.id,
           amount: amt,
           paymentMode: payMode,
+          collectionAccountId: payCollectionAccountId || undefined,
           notes: payComments,
-          collectedByAdminId: payCollectedByAdminId || booking.salesAdminId,
+          collectedByAdminId: currentAdmin?.id || booking.salesAdminId,
         });
-
-        if (payCollectedByAdminId && payCollectedByAdminId !== booking.salesAdminId) {
-          await bookingsService.update(booking.id, {
-            salesAdminId: payCollectedByAdminId,
-          }).catch(() => null);
-        }
 
         if (booking.status !== "confirmed" && booking.status !== "cancelled") {
           await bookingsService.update(booking.id, {
@@ -1580,7 +1644,7 @@ export default function BookingDetailsView({
           await handleSendEmail("confirmation").catch(() => null);
           toast.success("Payment recorded, booking confirmed & confirmation voucher email sent!");
         } else {
-          toast.success("Payment recorded & mapped to Personal Collections!");
+          toast.success("Payment recorded & mapped to Collection Account!");
         }
         setShowCreatePayment(false);
         setPayComments("");
@@ -3602,12 +3666,19 @@ export default function BookingDetailsView({
                                       )
                                     }
                                   >
-                                    <td className="px-4 py-3 font-semibold flex items-center gap-1.5">
-                                      <span className="text-[8px] font-bold px-1 rounded uppercase bg-slate-200 text-slate-700 font-mono">
+                                    <td className="px-4 py-3 font-semibold flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase bg-slate-200 text-slate-700 font-mono">
                                         {p.paymentMode || "Unknown"}
                                       </span>
-                                      {p.notes ||
-                                        `${booking.bookingId} payment`}
+                                      {p.collectionAccount && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                          🏛️ {p.collectionAccount.accountName}
+                                        </span>
+                                      )}
+                                      <span>
+                                        {p.notes ||
+                                          `${booking.bookingId} payment`}
+                                      </span>
                                     </td>
                                     <td className="px-4 py-3 text-slate-400 font-mono">
                                       {processor}
@@ -3630,6 +3701,16 @@ export default function BookingDetailsView({
                                         className="px-6 py-4 border-t border-b border-slate-200"
                                       >
                                         <div className="max-w-xl space-y-2 text-xs text-slate-750">
+                                          {p.collectionAccount && (
+                                            <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
+                                              <span className="text-blue-700 font-bold">
+                                                Collection Account
+                                              </span>
+                                              <span className="col-span-2 font-bold text-blue-900">
+                                                {p.collectionAccount.accountName} ({p.collectionAccount.accountType})
+                                              </span>
+                                            </div>
+                                          )}
                                           <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
                                             <span className="text-red-600 font-bold">
                                               Processor
@@ -6015,20 +6096,29 @@ export default function BookingDetailsView({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-550">
-                      Collected By (Person / Staff)
-                    </label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-bold uppercase text-slate-550">
+                        Collection Account
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddAccountModal(true)}
+                        className="text-[9px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-0.5"
+                      >
+                        <Plus className="w-2.5 h-2.5" /> Add Account
+                      </button>
+                    </div>
                     <Select
-                      value={payCollectedByAdminId}
-                      onValueChange={setPayCollectedByAdminId}
+                      value={payCollectionAccountId}
+                      onValueChange={setPayCollectionAccountId}
                     >
                       <SelectTrigger className="h-8 text-xs font-semibold border-slate-200">
-                        <SelectValue placeholder="Select Staff" />
+                        <SelectValue placeholder="Select Collection Account" />
                       </SelectTrigger>
                       <SelectContent>
-                        {staffList.map((staff) => (
-                          <SelectItem key={staff.id} value={staff.id}>
-                            {staff.name || staff.email}
+                        {collectionAccounts.map((acc) => (
+                          <SelectItem key={acc.id} value={acc.id}>
+                            {acc.accountName} ({acc.accountType})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -6094,6 +6184,138 @@ export default function BookingDetailsView({
               >
                 {savingPayment ? "Saving..." : "Save"}
               </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Add Collection Account Modal */}
+      <Dialog open={showAddAccountModal} onOpenChange={setShowAddAccountModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-orange-500" /> Add Collection Account
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Create a new financial receiving account (Company, Individual, Bank, UPI, or Cash).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-xs">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-500">
+                Account Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="e.g. Nikulbhai Patel Account or YouthCamping HDFC"
+                value={newAccName}
+                onChange={(e) => setNewAccName(e.target.value)}
+                className="h-8 text-xs font-medium"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-500">
+                  Account Type
+                </label>
+                <Select value={newAccType} onValueChange={setNewAccType}>
+                  <SelectTrigger className="h-8 text-xs font-semibold">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="COMPANY">Company Account</SelectItem>
+                    <SelectItem value="INDIVIDUAL">Individual Account</SelectItem>
+                    <SelectItem value="BANK">Bank Account</SelectItem>
+                    <SelectItem value="UPI">UPI Account</SelectItem>
+                    <SelectItem value="CASH">Cash Desk</SelectItem>
+                    <SelectItem value="CARD">Card POS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-500">
+                  Account Holder Name
+                </label>
+                <Input
+                  placeholder="e.g. Nikulbhai Patel"
+                  value={newAccHolder}
+                  onChange={(e) => setNewAccHolder(e.target.value)}
+                  className="h-8 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-500">
+                  UPI ID (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. nikulbhai@upi"
+                  value={newAccUpi}
+                  onChange={(e) => setNewAccUpi(e.target.value)}
+                  className="h-8 text-xs font-medium"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-500">
+                  Bank Name (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. State Bank of India"
+                  value={newAccBank}
+                  onChange={(e) => setNewAccBank(e.target.value)}
+                  className="h-8 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-500">
+                  Account Number (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. 50200084920192"
+                  value={newAccNumber}
+                  onChange={(e) => setNewAccNumber(e.target.value)}
+                  className="h-8 text-xs font-medium"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-500">
+                  IFSC Code (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. SBIN0004821"
+                  value={newAccIfsc}
+                  onChange={(e) => setNewAccIfsc(e.target.value.toUpperCase())}
+                  className="h-8 text-xs font-medium font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddAccountModal(false)}
+                disabled={savingNewAccount}
+                className="h-8 text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleQuickCreateAccount}
+                disabled={savingNewAccount || !newAccName.trim()}
+                className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold"
+              >
+                {savingNewAccount ? "Creating..." : "Create & Select"}
+              </Button>
             </div>
           </div>
         </DialogContent>

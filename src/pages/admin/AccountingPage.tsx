@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
   IndianRupee,
   Filter,
@@ -72,6 +72,10 @@ import {
   accountingService,
   type AccountingEntry,
 } from "@/services/accounting.service";
+import {
+  collectionAccountsService,
+  type CollectionAccount,
+} from "@/services/collectionAccounts.service";
 import { tripsService } from "@/services/trips.service";
 import { bookingsService } from "@/services/bookings.service";
 import api from "@/services/api";
@@ -318,6 +322,62 @@ export default function AccountingPage() {
     notes: "",
   });
   const [submittingPayment, setSubmittingPayment] = useState(false);
+
+  // Collection Account Creation State
+  const [showAddCollectionAccountModal, setShowAddCollectionAccountModal] = useState(false);
+  const [newAccForm, setNewAccForm] = useState({
+    accountName: "",
+    accountHolderName: "",
+    accountType: "COMPANY",
+    paymentMethods: ["UPI", "BANK_TRANSFER"],
+    bankName: "",
+    accountNumber: "",
+    ifsc: "",
+    upiId: "",
+    description: "",
+  });
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  const handleCreateCollectionAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAccForm.accountName.trim()) {
+      toast.error("Please enter account name");
+      return;
+    }
+    setSavingAccount(true);
+    try {
+      await collectionAccountsService.createAccount({
+        accountName: newAccForm.accountName.trim(),
+        accountHolderName: newAccForm.accountHolderName.trim() || newAccForm.accountName.trim(),
+        accountType: newAccForm.accountType,
+        paymentMethods: newAccForm.paymentMethods,
+        bankName: newAccForm.bankName.trim() || undefined,
+        accountNumber: newAccForm.accountNumber.trim() || undefined,
+        ifsc: newAccForm.ifsc.trim() || undefined,
+        upiId: newAccForm.upiId.trim() || undefined,
+        description: newAccForm.description.trim() || undefined,
+        isActive: true,
+      });
+      toast.success(`Collection account "${newAccForm.accountName}" created successfully!`);
+      setShowAddCollectionAccountModal(false);
+      setNewAccForm({
+        accountName: "",
+        accountHolderName: "",
+        accountType: "COMPANY",
+        paymentMethods: ["UPI", "BANK_TRANSFER"],
+        bankName: "",
+        accountNumber: "",
+        ifsc: "",
+        upiId: "",
+        description: "",
+      });
+      loadPersonalCollections();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to create collection account");
+    } finally {
+      setSavingAccount(false);
+    }
+  };
 
   const loadPersonalCollections = async (start?: Date, end?: Date) => {
     setLoadingPersonalCollections(true);
@@ -1645,7 +1705,7 @@ export default function AccountingPage() {
     { id: "overview", label: "Overview" },
     { id: "transactions", label: "Transactions" },
     { id: "cash_book", label: "Cash Book" },
-    { id: "bank_accounts", label: "Personal Collections" },
+    { id: "bank_accounts", label: "Collection Accounts" },
     { id: "vendor_payments", label: "Vendor Payments" },
     { id: "office_expenses", label: "Office Expenses" },
     { id: "payments", label: "Payments" },
@@ -1667,11 +1727,18 @@ export default function AccountingPage() {
                 / Cash Book
               </span>
             )}
+            {activeTab === "bank_accounts" && (
+              <span className="text-slate-400 font-medium text-sm">
+                / Collection Accounts
+              </span>
+            )}
           </h1>
           <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
             {activeTab === "cash_book"
               ? "Record all cash inflows and outflows across accounts."
-              : "Manage transactions, collections, vendor disbursements, cash books and trip profitability."}
+              : activeTab === "bank_accounts"
+                ? "Manage official company and individual collection accounts, cash registers, and fund submissions."
+                : "Manage transactions, collections, vendor disbursements, cash books and trip profitability."}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -1701,11 +1768,11 @@ export default function AccountingPage() {
           {activeTab === "bank_accounts" ? (
             <Button
               size="sm"
-              onClick={handleOpenAddBank}
+              onClick={() => setShowAddCollectionAccountModal(true)}
               className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              Add Bank Account
+              Add Collection Account
             </Button>
           ) : (
             <Button
@@ -2865,7 +2932,7 @@ export default function AccountingPage() {
         </div>
       )}
 
-      {/* PERSONAL COLLECTIONS TAB (Replaces Bank Accounts) */}
+      {/* COLLECTION ACCOUNTS TAB */}
       {(activeTab === "bank_accounts") && (
         <div className="space-y-6">
           {/* Summary KPI Cards */}
@@ -2885,7 +2952,7 @@ export default function AccountingPage() {
                 </div>
               </div>
               <p className="text-[10px] text-slate-400 font-semibold mt-2">
-                Total money collected from customers by staff
+                Total inflows collected across all Company & Individual receiving accounts
               </p>
             </Card>
 
@@ -2893,7 +2960,7 @@ export default function AccountingPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Total Submitted
+                    Total Transferred
                   </p>
                   <h3 className="text-xl font-extrabold text-emerald-600 mt-1">
                     ₹ {personalCollectionsSummary.totalSubmitted.toLocaleString("en-IN")}
@@ -2904,7 +2971,7 @@ export default function AccountingPage() {
                 </div>
               </div>
               <p className="text-[10px] text-slate-400 font-semibold mt-2">
-                Submitted/paid to YouthCamping accounts
+                Funds transferred/settled to YouthCamping central treasury
               </p>
             </Card>
 
@@ -2912,7 +2979,7 @@ export default function AccountingPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Total Pending
+                    Pending in Accounts
                   </p>
                   <h3 className="text-xl font-extrabold text-amber-600 mt-1">
                     ₹ {personalCollectionsSummary.totalPending.toLocaleString("en-IN")}
@@ -2923,7 +2990,7 @@ export default function AccountingPage() {
                 </div>
               </div>
               <p className="text-[10px] text-slate-400 font-semibold mt-2">
-                Calculated Pending Balance (Total Collected - Total Submitted)
+                Net remaining balance held in collection accounts
               </p>
             </Card>
           </div>
@@ -2937,7 +3004,7 @@ export default function AccountingPage() {
                   type="text"
                   value={personalSearch}
                   onChange={(e) => setPersonalSearch(e.target.value)}
-                  placeholder="Search employee/person..."
+                  placeholder="Search collection account, holder, bank, UPI..."
                   className="h-8.5 w-full pl-8 text-xs rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
@@ -2952,36 +3019,47 @@ export default function AccountingPage() {
                   </SelectTrigger>
                   <SelectContent className="rounded-[4px]">
                     <SelectItem value="ALL">All Status</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="PENDING">Pending Balance</SelectItem>
                     <SelectItem value="SETTLED">Settled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <Button
-              size="sm"
-              onClick={() => handleOpenRecordSubmission()}
-              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Record Submission
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddCollectionAccountModal(true)}
+                className="h-8.5 px-3.5 rounded-[4px] font-semibold text-xs border-slate-200 bg-white text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5 text-orange-500" />
+                Add Account
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleOpenRecordSubmission()}
+                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center gap-1.5 shadow-sm"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5" />
+                Record Transfer
+              </Button>
+            </div>
           </div>
 
-          {/* Person Collections Table */}
+          {/* Collection Accounts Table */}
           <Card className="rounded-[4px] border border-[#E2E8F0] overflow-hidden shadow-xs bg-white">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 border-b border-[#E2E8F0]">
                   <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="p-3 border-r border-slate-100">Person / Employee</th>
+                    <th className="p-3 border-r border-slate-100">Collection Account</th>
+                    <th className="p-3 border-r border-slate-100">Account Details</th>
                     <th className="p-3 border-r border-slate-100 text-right">Total Collected</th>
-                    <th className="p-3 border-r border-slate-100 text-right">Total Submitted</th>
-                    <th className="p-3 border-r border-slate-100 text-right">Pending Amount</th>
+                    <th className="p-3 border-r border-slate-100 text-right">Total Transferred</th>
+                    <th className="p-3 border-r border-slate-100 text-right">Pending Balance</th>
                     <th className="p-3 border-r border-slate-100 text-center">Status</th>
                     <th className="p-3 border-r border-slate-100">Last Collection</th>
-                    <th className="p-3 border-r border-slate-100">Last Submission</th>
                     <th className="p-3 text-center">Actions</th>
                   </tr>
                 </thead>
@@ -2989,103 +3067,133 @@ export default function AccountingPage() {
                   {loadingPersonalCollections ? (
                     <tr>
                       <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">
-                        Loading personal collections...
+                        Loading collection accounts...
                       </td>
                     </tr>
                   ) : personalCollections.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">
-                        No collections found
+                        No collection accounts found. Click "Add Account" to create one.
                       </td>
                     </tr>
                   ) : (
                     personalCollections
                       .filter((p) => {
+                        const q = personalSearch.toLowerCase();
                         const matchSearch =
                           !personalSearch ||
-                          p.name.toLowerCase().includes(personalSearch.toLowerCase()) ||
-                          p.email.toLowerCase().includes(personalSearch.toLowerCase());
+                          (p.accountName || p.name || "").toLowerCase().includes(q) ||
+                          (p.accountHolderName || p.email || "").toLowerCase().includes(q) ||
+                          (p.bankName || "").toLowerCase().includes(q) ||
+                          (p.upiId || "").toLowerCase().includes(q) ||
+                          (p.accountType || "").toLowerCase().includes(q);
                         const matchStatus =
                           personalStatusFilter === "ALL" ||
                           p.status.toUpperCase() === personalStatusFilter.toUpperCase();
                         return matchSearch && matchStatus;
                       })
-                      .map((person) => (
-                        <tr
-                          key={person.id}
-                          onClick={() => handleOpenPersonDetail(person)}
-                          className="hover:bg-slate-50/70 transition-colors cursor-pointer"
-                        >
-                          <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
-                                {person.name.substring(0, 2).toUpperCase()}
+                      .map((account) => {
+                        const accType = account.accountType || "COMPANY";
+                        const typeBadgeColor =
+                          accType === "COMPANY"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : accType === "INDIVIDUAL"
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : accType === "CASH"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-slate-50 text-slate-700 border-slate-200";
+
+                        return (
+                          <tr
+                            key={account.id}
+                            onClick={() => handleOpenPersonDetail(account)}
+                            className="hover:bg-slate-50/70 transition-colors cursor-pointer"
+                          >
+                            <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold text-xs shrink-0">
+                                  {accType === "CASH" ? "💵" : accType === "INDIVIDUAL" ? "👤" : "🏛️"}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="font-extrabold text-slate-800 text-xs">
+                                      {account.accountName || account.name}
+                                    </p>
+                                    <span className={cn("text-[8.5px] font-bold px-1.5 py-0.2 rounded border uppercase", typeBadgeColor)}>
+                                      {accType}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 font-semibold">
+                                    {account.accountHolderName || account.email}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-extrabold text-slate-800 text-xs">{person.name}</p>
-                                <p className="text-[10px] text-slate-400 font-semibold">{person.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-700">
-                            ₹ {person.totalCollected.toLocaleString("en-IN")}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-600">
-                            ₹ {person.totalSubmitted.toLocaleString("en-IN")}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-right font-extrabold text-amber-600">
-                            ₹ {person.pending.toLocaleString("en-IN")}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-center">
-                            <span
-                              className={cn(
-                                "text-[8.5px] font-black px-2 py-0.5 rounded-[3px] uppercase tracking-wider inline-block",
-                                person.status === "Settled"
-                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                                  : "bg-amber-50 text-amber-600 border border-amber-100",
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-slate-600 text-xs">
+                              {account.bankName && (
+                                <p className="font-semibold text-slate-700 text-[11px]">{account.bankName}</p>
                               )}
-                            >
-                              {person.status}
-                            </span>
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">
-                            {person.lastCollection
-                              ? new Date(person.lastCollection).toLocaleDateString("en-IN", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "—"}
-                          </td>
-                          <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">
-                            {person.lastSubmission
-                              ? new Date(person.lastSubmission).toLocaleDateString("en-IN", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "—"}
-                          </td>
-                          <td className="p-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                onClick={() => handleOpenPersonDetail(person)}
-                                className="h-7 px-2.5 text-[10.5px] font-bold text-slate-650 hover:bg-slate-100 rounded border border-slate-200 flex items-center gap-1"
-                                title="View Person Detail Ledger"
+                              {account.maskedAccountNumber && (
+                                <p className="font-mono text-[10px] text-slate-400">{account.maskedAccountNumber}</p>
+                              )}
+                              {account.upiId && (
+                                <p className="font-mono text-[10px] text-blue-600">{account.upiId}</p>
+                              )}
+                              {!account.bankName && !account.upiId && (
+                                <span className="text-[10px] text-slate-400 font-mono">—</span>
+                              )}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-700">
+                              ₹ {account.totalCollected.toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-bold text-emerald-600">
+                              ₹ {account.totalSubmitted.toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-extrabold text-amber-600">
+                              ₹ {account.pending.toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-center">
+                              <span
+                                className={cn(
+                                  "text-[8.5px] font-black px-2 py-0.5 rounded-[3px] uppercase tracking-wider inline-block",
+                                  account.status === "Settled"
+                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                    : "bg-amber-50 text-amber-600 border border-amber-100",
+                                )}
                               >
-                                <Eye className="w-3.5 h-3.5 text-slate-500" /> View
-                              </button>
-                              <button
-                                onClick={() => handleOpenRecordSubmission(person.id)}
-                                className="h-7 px-2 text-[10.5px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 flex items-center gap-1"
-                                title="Record Submission"
-                              >
-                                + Submit
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                                {account.status}
+                              </span>
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">
+                              {account.lastCollection
+                                ? new Date(account.lastCollection).toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })
+                                : "—"}
+                            </td>
+                            <td className="p-3 text-center">
+                              <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  onClick={() => handleOpenPersonDetail(account)}
+                                  className="h-7 px-2.5 text-[10.5px] font-bold text-slate-650 hover:bg-slate-100 rounded border border-slate-200 flex items-center gap-1"
+                                  title="View Account Detail Ledger"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-slate-500" /> Ledger
+                                </button>
+                                <button
+                                  onClick={() => handleOpenRecordSubmission(account.id)}
+                                  className="h-7 px-2 text-[10.5px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 flex items-center gap-1"
+                                  title="Record Fund Transfer to Company"
+                                >
+                                  + Transfer
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>
@@ -5489,17 +5597,22 @@ export default function AccountingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Person Collection Detail Modal */}
+      {/* Collection Account Detail Ledger Modal */}
       <Dialog open={showPersonDetailModal} onOpenChange={setShowPersonDetailModal}>
         <DialogContent className="rounded-[6px] border-[#E2E8F0] p-6 bg-white shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="border-b border-[#E2E8F0] pb-3">
             <div className="flex justify-between items-center pr-6">
               <div>
-                <DialogTitle className="text-base font-extrabold text-slate-800">
-                  {personDetailData?.employee?.name || selectedPersonForDetail?.name || "Person Collections Detail"}
-                </DialogTitle>
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-base font-extrabold text-slate-800">
+                    {personDetailData?.employee?.name || selectedPersonForDetail?.accountName || selectedPersonForDetail?.name || "Collection Account Ledger"}
+                  </DialogTitle>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 uppercase">
+                    {personDetailData?.employee?.accountType || selectedPersonForDetail?.accountType || "ACCOUNT"}
+                  </span>
+                </div>
                 <DialogDescription className="text-xs text-slate-400 font-semibold mt-0.5">
-                  {personDetailData?.employee?.email || selectedPersonForDetail?.email} · Personal Collections Ledger
+                  {personDetailData?.employee?.email || selectedPersonForDetail?.accountHolderName || selectedPersonForDetail?.email} · Collection & Transfer Ledger
                 </DialogDescription>
               </div>
               <span
@@ -5531,13 +5644,13 @@ export default function AccountingPage() {
                   </p>
                 </div>
                 <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-[4px] p-3.5">
-                  <p className="text-[9.5px] font-bold text-emerald-600 uppercase tracking-wider">Total Submitted</p>
+                  <p className="text-[9.5px] font-bold text-emerald-600 uppercase tracking-wider">Total Transferred</p>
                   <p className="text-lg font-extrabold text-emerald-600 mt-0.5">
                     ₹ {(personDetailData?.summary?.totalSubmitted || 0).toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div className="bg-amber-50/50 border border-amber-200/60 rounded-[4px] p-3.5">
-                  <p className="text-[9.5px] font-bold text-amber-600 uppercase tracking-wider">Pending Amount</p>
+                  <p className="text-[9.5px] font-bold text-amber-600 uppercase tracking-wider">Pending Balance</p>
                   <p className="text-lg font-extrabold text-amber-600 mt-0.5">
                     ₹ {(personDetailData?.summary?.pending || 0).toLocaleString("en-IN")}
                   </p>
@@ -5552,16 +5665,16 @@ export default function AccountingPage() {
                 <Button
                   size="sm"
                   onClick={() => handleOpenRecordSubmission(selectedPersonForDetail?.id)}
-                  className="h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px]"
+                  className="h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] flex items-center gap-1.5"
                 >
-                  + Record Submission to YouthCamping
+                  <ArrowRightLeft className="w-3.5 h-3.5" /> Record Fund Transfer to Company
                 </Button>
               </div>
 
               {/* Collections Transactions Table */}
               <div className="space-y-2">
                 <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Collection Transactions ({personDetailData?.collectionTransactions?.length || 0})
+                  Collection Receipts & Inflows ({personDetailData?.collectionTransactions?.length || 0})
                 </h5>
                 <div className="border border-slate-200 rounded-[4px] overflow-hidden bg-white">
                   <table className="w-full text-left text-xs">
@@ -5570,31 +5683,54 @@ export default function AccountingPage() {
                         <th className="p-2.5">Date</th>
                         <th className="p-2.5">Booking ID</th>
                         <th className="p-2.5">Customer / Passenger</th>
+                        <th className="p-2.5">Trip</th>
                         <th className="p-2.5">Mode</th>
                         <th className="p-2.5 text-right">Amount Collected</th>
-                        <th className="p-2.5">Ref / Transaction ID</th>
+                        <th className="p-2.5">Ref / Txn ID</th>
                         <th className="p-2.5">Notes</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
                       {(personDetailData?.collectionTransactions || []).length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-4 text-center text-slate-400 text-xs">
-                            No collection transactions recorded
+                          <td colSpan={8} className="p-4 text-center text-slate-400 text-xs">
+                            No collection transactions recorded in this account
                           </td>
                         </tr>
                       ) : (
                         personDetailData.collectionTransactions.map((tx: any) => (
                           <tr key={tx.id} className="hover:bg-slate-50/50">
-                            <td className="p-2.5 text-slate-500">
+                            <td className="p-2.5 text-slate-500 whitespace-nowrap">
                               {new Date(tx.date).toLocaleDateString("en-IN", {
                                 day: "2-digit",
                                 month: "short",
                                 year: "numeric",
                               })}
                             </td>
-                            <td className="p-2.5 font-bold text-slate-800">{tx.bookingId}</td>
-                            <td className="p-2.5 text-slate-700 font-semibold">{tx.customerName}</td>
+                            <td className="p-2.5 font-bold">
+                              {tx.bookingDbId ? (
+                                <Link
+                                  to={`/admin/bookings/${tx.bookingDbId}`}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 font-bold"
+                                  title="Open Booking 360 Workspace"
+                                >
+                                  #{tx.bookingId}
+                                </Link>
+                              ) : (
+                                <span className="text-slate-800 font-bold">#{tx.bookingId}</span>
+                              )}
+                            </td>
+                            <td className="p-2.5 text-slate-700 font-semibold">
+                              <div>
+                                <p>{tx.customerName}</p>
+                                {tx.phone && tx.phone !== "N/A" && (
+                                  <p className="text-[10px] text-slate-400 font-mono">{tx.phone}</p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-2.5 text-slate-600 text-[11px] font-medium">
+                              {tx.tripName || "—"}
+                            </td>
                             <td className="p-2.5 font-bold text-slate-600">{tx.paymentMode}</td>
                             <td className="p-2.5 text-right font-extrabold text-slate-800">
                               ₹ {tx.amountCollected.toLocaleString("en-IN")}
@@ -5612,14 +5748,14 @@ export default function AccountingPage() {
               {/* Submissions Transactions Table */}
               <div className="space-y-2 pt-2">
                 <h5 className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
-                  Submission Transactions ({personDetailData?.submissionTransactions?.length || 0})
+                  Fund Transfers & Submissions to Company ({personDetailData?.submissionTransactions?.length || 0})
                 </h5>
                 <div className="border border-slate-200 rounded-[4px] overflow-hidden bg-white">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-emerald-50/60 border-b border-emerald-100 text-[9px] font-bold text-emerald-700 uppercase">
                       <tr>
                         <th className="p-2.5">Date</th>
-                        <th className="p-2.5 text-right">Amount Submitted</th>
+                        <th className="p-2.5 text-right">Amount Transferred</th>
                         <th className="p-2.5">Payment Mode</th>
                         <th className="p-2.5">Reference Number</th>
                         <th className="p-2.5">Recorded By</th>
@@ -5630,13 +5766,13 @@ export default function AccountingPage() {
                       {(personDetailData?.submissionTransactions || []).length === 0 ? (
                         <tr>
                           <td colSpan={6} className="p-4 text-center text-slate-400 text-xs">
-                            No submissions recorded yet
+                            No transfers recorded yet
                           </td>
                         </tr>
                       ) : (
                         personDetailData.submissionTransactions.map((sub: any) => (
                           <tr key={sub.id} className="hover:bg-slate-50/50">
-                            <td className="p-2.5 text-slate-500">
+                            <td className="p-2.5 text-slate-500 whitespace-nowrap">
                               {new Date(sub.date).toLocaleDateString("en-IN", {
                                 day: "2-digit",
                                 month: "short",
@@ -5662,34 +5798,34 @@ export default function AccountingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Record Employee Submission Modal */}
+      {/* Record Fund Transfer / Submission Modal */}
       <Dialog open={showRecordSubmissionModal} onOpenChange={setShowRecordSubmissionModal}>
         <DialogContent className="rounded-[4px] border-[#E2E8F0] p-6 bg-white shadow-lg max-w-md">
           <DialogHeader className="border-b border-[#E2E8F0] pb-3">
-            <DialogTitle className="text-xs font-black text-slate-800 uppercase tracking-wider">
-              Record Employee Submission
+            <DialogTitle className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <ArrowRightLeft className="w-4 h-4 text-emerald-600" /> Record Fund Transfer / Submission
             </DialogTitle>
             <DialogDescription className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              Record when an employee/person submits collected funds to YouthCamping
+              Record when money from a collection account is transferred or settled into YouthCamping central treasury
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmitEmployeePayment} className="space-y-4 pt-4">
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
-                Employee / Person
+                From Collection Account
               </label>
               <Select
                 value={submissionForm.employeeAdminId}
                 onValueChange={(val) => setSubmissionForm({ ...submissionForm, employeeAdminId: val })}
               >
                 <SelectTrigger className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px] font-semibold">
-                  <SelectValue placeholder="Select Employee" />
+                  <SelectValue placeholder="Select Account" />
                 </SelectTrigger>
                 <SelectContent className="rounded-[4px]">
                   {personalCollections.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} (Pending: ₹{p.pending.toLocaleString()})
+                      {p.accountName || p.name} (Pending: ₹{p.pending.toLocaleString()})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -5699,7 +5835,7 @@ export default function AccountingPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
-                  Amount Submitted (₹)
+                  Amount Transferred (₹)
                 </label>
                 <Input
                   type="number"
@@ -5723,9 +5859,9 @@ export default function AccountingPage() {
                     <SelectValue placeholder="Mode" />
                   </SelectTrigger>
                   <SelectContent className="rounded-[4px]">
-                    <SelectItem value="CASH">CASH</SelectItem>
                     <SelectItem value="BANK_TRANSFER">BANK TRANSFER</SelectItem>
                     <SelectItem value="UPI">UPI</SelectItem>
+                    <SelectItem value="CASH">CASH</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -5748,7 +5884,7 @@ export default function AccountingPage() {
                 Notes / Remarks
               </label>
               <Input
-                placeholder="Handed over cash at office / Transferred to HDFC"
+                placeholder="Transferred to YouthCamping HDFC Account"
                 value={submissionForm.notes}
                 onChange={(e) => setSubmissionForm({ ...submissionForm, notes: e.target.value })}
                 className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
@@ -5771,7 +5907,145 @@ export default function AccountingPage() {
                 disabled={submittingPayment}
                 className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                {submittingPayment ? "Recording..." : "Record Submission"}
+                {submittingPayment ? "Recording..." : "Record Transfer"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Collection Account Modal */}
+      <Dialog open={showAddCollectionAccountModal} onOpenChange={setShowAddCollectionAccountModal}>
+        <DialogContent className="rounded-[4px] border-[#E2E8F0] p-6 bg-white shadow-lg max-w-md">
+          <DialogHeader className="border-b border-[#E2E8F0] pb-3">
+            <DialogTitle className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-orange-500" /> Add Collection Account
+            </DialogTitle>
+            <DialogDescription className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              Create an official Company, Individual, or Cash receiving account
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleCreateCollectionAccount} className="space-y-3.5 pt-4 text-xs">
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                Account Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="e.g. Nikulbhai Patel Account or YouthCamping HDFC"
+                value={newAccForm.accountName}
+                onChange={(e) => setNewAccForm({ ...newAccForm, accountName: e.target.value })}
+                className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  Account Type
+                </label>
+                <Select
+                  value={newAccForm.accountType}
+                  onValueChange={(val) => setNewAccForm({ ...newAccForm, accountType: val })}
+                >
+                  <SelectTrigger className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px] font-semibold">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[4px]">
+                    <SelectItem value="COMPANY">Company Account</SelectItem>
+                    <SelectItem value="INDIVIDUAL">Individual Account</SelectItem>
+                    <SelectItem value="BANK">Bank Account</SelectItem>
+                    <SelectItem value="UPI">UPI Account</SelectItem>
+                    <SelectItem value="CASH">Cash Desk</SelectItem>
+                    <SelectItem value="CARD">Card POS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  Account Holder Name
+                </label>
+                <Input
+                  placeholder="e.g. Nikulbhai Patel"
+                  value={newAccForm.accountHolderName}
+                  onChange={(e) => setNewAccForm({ ...newAccForm, accountHolderName: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  UPI ID (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. nikulbhai@upi"
+                  value={newAccForm.upiId}
+                  onChange={(e) => setNewAccForm({ ...newAccForm, upiId: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  Bank Name (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. State Bank of India"
+                  value={newAccForm.bankName}
+                  onChange={(e) => setNewAccForm({ ...newAccForm, bankName: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  Account Number (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. 50200084920192"
+                  value={newAccForm.accountNumber}
+                  onChange={(e) => setNewAccForm({ ...newAccForm, accountNumber: e.target.value })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
+                  IFSC Code (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. SBIN0004821"
+                  value={newAccForm.ifsc}
+                  onChange={(e) => setNewAccForm({ ...newAccForm, ifsc: e.target.value.toUpperCase() })}
+                  className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px] font-mono"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-[#E2E8F0]">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddCollectionAccountModal(false)}
+                disabled={savingAccount}
+                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs border border-slate-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={savingAccount || !newAccForm.accountName.trim()}
+                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white"
+              >
+                {savingAccount ? "Creating..." : "Create Account"}
               </Button>
             </DialogFooter>
           </form>
