@@ -59,7 +59,7 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       color: "bg-emerald-50 text-emerald-600 border-emerald-100",
       onClick: () => {
         setIsOpen(false);
-        navigate("/admin/bookings?action=collect");
+        navigate("/admin/accounting");
       },
     },
     {

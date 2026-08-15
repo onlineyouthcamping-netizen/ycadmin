@@ -243,9 +243,9 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
       <div className="grid grid-cols-2 gap-2.5">
         {canViewAccounting && (
           <MetricCard
-            label={`${periodPrefix} SALES`}
+            label={`${periodPrefix} PAYMENTS`}
             icon={<TrendingUp className="w-4 h-4 text-emerald-600" />}
-            onClick={() => navigate("/admin/bookings")}
+            onClick={() => navigate("/admin/accounting")}
             loading={loading}
             value={stats?.totalRevenue}
             format={formatInr}

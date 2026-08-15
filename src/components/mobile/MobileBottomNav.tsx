@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, MapPin, Ticket, Menu } from "lucide-react";
+import { LayoutDashboard, CreditCard, MapPin, Ticket, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileBottomNavProps {
@@ -21,6 +21,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       path: "/admin",
       isActive:
         location.pathname === "/admin" || location.pathname === "/admin/",
+    },
+    {
+      id: "payments",
+      label: "Payments",
+      icon: CreditCard,
+      path: "/admin/accounting",
+      isActive: location.pathname.startsWith("/admin/accounting"),
     },
     {
       id: "trips",
