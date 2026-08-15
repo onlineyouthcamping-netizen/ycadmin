@@ -142,14 +142,42 @@ export default function AccountingPage() {
   const { admin: user } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab") as TabId;
-  const [activeTab, setActiveTab] = useState<TabId>(tabParam || "control_center");
+
+  const normalizeMainTab = (raw: string | null): TabId => {
+    if (!raw) return "overview";
+    const t = raw.toLowerCase().trim();
+    if (["control_center", "control", "verification", "queue", "queues"].includes(t)) return "control_center";
+    if (["overview", "summary", "dashboard"].includes(t)) return "overview";
+    if (["transactions", "ledger", "all_transactions"].includes(t)) return "transactions";
+    if (["cash_book", "cash", "cashbook"].includes(t)) return "cash_book";
+    if (["bank_accounts", "bank", "banks", "collection_accounts", "accounts"].includes(t)) return "bank_accounts";
+    if (["vendor_payments", "vendor", "vendors", "disbursements"].includes(t)) return "vendor_payments";
+    if (["office_expenses", "expenses", "expense", "office"].includes(t)) return "office_expenses";
+    if (["payments", "incoming", "collections"].includes(t)) return "transactions";
+    if (["profit_loss", "pnl", "profit", "loss"].includes(t)) return "profit_loss";
+    if (["trip_profitability", "trips", "trip"].includes(t)) return "trip_profitability";
+    if (["reports", "report"].includes(t)) return "reports";
+    return "overview";
+  };
+
+  const rawTabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<TabId>(() => normalizeMainTab(rawTabParam));
 
   useEffect(() => {
-    if (tabParam) {
-      setActiveTab(tabParam);
+    const nextTab = normalizeMainTab(searchParams.get("tab"));
+    setActiveTab((prev) => (prev !== nextTab ? nextTab : prev));
+  }, [searchParams]);
+
+  const handleMainTabChange = (tabId: TabId) => {
+    const normalized = normalizeMainTab(tabId);
+    setActiveTab(normalized);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", normalized);
+    if (normalized !== "control_center") {
+      nextParams.delete("queue");
     }
-  }, [tabParam]);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   // Keep the active tab visible inside the scrollable mobile tab strip.
   const tabStripRef = useRef<HTMLDivElement>(null);
@@ -1738,9 +1766,9 @@ export default function AccountingPage() {
     .reduce((sum, t) => sum + t.outflow, 0);
   const pendingRefundsSum = totalRefundsSum - completedRefundsSum;
 
-  const tabs = [
-    { id: "control_center", label: "Control Center (Verification Queues)" },
+  const tabs: { id: TabId; label: string }[] = [
     { id: "overview", label: "Overview" },
+    { id: "control_center", label: "Control Center (Verification Queues)" },
     { id: "transactions", label: "Transactions & Ledger" },
     { id: "cash_book", label: "Cash Book" },
     { id: "bank_accounts", label: "Collection Accounts" },
@@ -1759,6 +1787,16 @@ export default function AccountingPage() {
           <h1 className="text-base md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#F97316] shrink-0" />
             Accounting{" "}
+            {activeTab === "overview" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / Overview
+              </span>
+            )}
+            {activeTab === "control_center" && (
+              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                / Control Center
+              </span>
+            )}
             {activeTab === "cash_book" && (
               <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
                 / Cash Book
@@ -1775,7 +1813,9 @@ export default function AccountingPage() {
               ? "Record all cash inflows and outflows across accounts."
               : activeTab === "bank_accounts"
                 ? "Manage official company and individual collection accounts, cash registers, and fund submissions."
-                : "Manage transactions, collections, vendor disbursements, cash books and trip profitability."}
+                : activeTab === "control_center"
+                  ? "Finance control center, verification queues, and audit trail."
+                  : "Manage transactions, collections, vendor disbursements, cash books and trip profitability."}
           </p>
           {/* Mobile: compact active-period line replaces the long uppercase blurb */}
           <p className="md:hidden text-[11px] text-slate-500 font-semibold mt-0.5 truncate">
@@ -1841,15 +1881,12 @@ export default function AccountingPage() {
           <button
             key={tab.id}
             data-tab-id={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id as TabId);
-              setSearchParams({ tab: tab.id });
-            }}
+            onClick={() => handleMainTabChange(tab.id)}
             className={cn(
               "shrink-0 snap-start whitespace-nowrap text-[11px] md:text-xs font-semibold shadow-none transition-all cursor-pointer",
               "rounded-full border px-3 py-1.5 md:rounded-none md:border-0 md:border-b-2 md:px-1 md:pb-2 md:pt-1.5 md:bg-transparent md:hover:bg-transparent",
               activeTab === tab.id
-                ? "bg-[#0B1329] border-[#0B1329] text-white font-bold md:bg-transparent md:border-[#F97316] md:text-slate-850"
+                ? "bg-[#0B1329] border-[#0B1329] text-white font-bold md:bg-transparent md:border-[#F97316] md:text-[#F97316]"
                 : "bg-white border-slate-200 text-slate-600 md:border-transparent md:text-slate-500 md:hover:text-slate-700",
             )}
           >
@@ -2075,7 +2112,7 @@ export default function AccountingPage() {
                   Pending Vendor Payments
                 </h3>
                 <button
-                  onClick={() => setActiveTab("vendor_payments")}
+                  onClick={() => handleMainTabChange("vendor_payments")}
                   className="text-[10px] font-bold text-primary-orange hover:underline uppercase"
                 >
                   View All
@@ -2144,7 +2181,7 @@ export default function AccountingPage() {
                   Recent Transactions
                 </h3>
                 <button
-                  onClick={() => setActiveTab("payments")}
+                  onClick={() => handleMainTabChange("transactions")}
                   className="text-[10px] font-bold text-primary-orange hover:underline uppercase"
                 >
                   View All
@@ -2193,7 +2230,7 @@ export default function AccountingPage() {
                   Top Expenses (Month)
                 </h3>
                 <button
-                  onClick={() => setActiveTab("reports")}
+                  onClick={() => handleMainTabChange("reports")}
                   className="text-[10px] font-bold text-primary-orange hover:underline uppercase"
                 >
                   View All
@@ -2255,7 +2292,7 @@ export default function AccountingPage() {
                   Expense by Category
                 </h3>
                 <button
-                  onClick={() => setActiveTab("reports")}
+                  onClick={() => handleMainTabChange("reports")}
                   className="text-[10px] font-bold text-primary-orange hover:underline uppercase"
                 >
                   View All
@@ -2304,7 +2341,7 @@ export default function AccountingPage() {
                   Bank & Cash Summary
                 </h3>
                 <button
-                  onClick={() => setActiveTab("bank_accounts")}
+                  onClick={() => handleMainTabChange("bank_accounts")}
                   className="text-[10px] font-bold text-primary-orange hover:underline uppercase"
                 >
                   View All
@@ -2352,7 +2389,7 @@ export default function AccountingPage() {
                   Trip Profitability Summary
                 </h3>
                 <button
-                  onClick={() => setActiveTab("trip_profitability")}
+                  onClick={() => handleMainTabChange("trip_profitability")}
                   className="text-[10px] font-bold text-primary-orange hover:underline uppercase"
                 >
                   View All
@@ -2421,7 +2458,7 @@ export default function AccountingPage() {
                     </span>
                   </button>
                   <button
-                    onClick={() => setActiveTab("vendor_payments")}
+                    onClick={() => handleMainTabChange("vendor_payments")}
                     className="p-3 bg-slate-50 border border-slate-100 hover:bg-[#F97316]/5 hover:border-[#F97316]/20 transition-all rounded-[4px] flex flex-col items-center justify-center text-center gap-1.5 group"
                   >
                     <ArrowDownRight className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform" />
@@ -2430,7 +2467,7 @@ export default function AccountingPage() {
                     </span>
                   </button>
                   <button
-                    onClick={() => setActiveTab("office_expenses")}
+                    onClick={() => handleMainTabChange("office_expenses")}
                     className="p-3 bg-slate-50 border border-slate-100 hover:bg-[#F97316]/5 hover:border-[#F97316]/20 transition-all rounded-[4px] flex flex-col items-center justify-center text-center gap-1.5 group"
                   >
                     <CreditCard className="w-5 h-5 text-[#F97316] group-hover:scale-110 transition-transform" />
@@ -2439,7 +2476,7 @@ export default function AccountingPage() {
                     </span>
                   </button>
                   <button
-                    onClick={() => setActiveTab("bank_accounts")}
+                    onClick={() => handleMainTabChange("bank_accounts")}
                     className="p-3 bg-slate-50 border border-slate-100 hover:bg-[#F97316]/5 hover:border-[#F97316]/20 transition-all rounded-[4px] flex flex-col items-center justify-center text-center gap-1.5 group"
                   >
                     <ArrowRightLeft className="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform" />

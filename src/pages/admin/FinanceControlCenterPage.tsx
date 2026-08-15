@@ -104,7 +104,10 @@ type QueueTab =
 export default function FinanceControlCenterPage() {
   const { admin: currentUser } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = (searchParams.get("tab") as QueueTab) || "cash";
+  const activeTab =
+    (searchParams.get("queue") as QueueTab) ||
+    (searchParams.get("subtab") as QueueTab) ||
+    "cash";
 
   // Data states
   const [stats, setStats] = useState<FinanceControlCenterStats | null>(null);
@@ -241,8 +244,13 @@ export default function FinanceControlCenterPage() {
   const [showAuditDrawer, setShowAuditDrawer] = useState(false);
   const [auditEntityFilter, setAuditEntityFilter] = useState("ALL");
 
-  const handleTabChange = (tab: QueueTab) => {
-    setSearchParams({ tab });
+  const handleTabChange = (queue: QueueTab) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("queue", queue);
+    if (!next.has("tab")) {
+      next.set("tab", "control_center");
+    }
+    setSearchParams(next, { replace: true });
   };
 
   const fetchAllData = useCallback(async () => {
