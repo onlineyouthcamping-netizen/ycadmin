@@ -506,7 +506,12 @@ export default function AccountingPage() {
 
   const handleOpenRecordSubmission = (personId?: string) => {
     setSubmissionForm({
-      employeeAdminId: personId || (selectedPersonForDetail?.employee?.id || selectedPersonForDetail?.id || ""),
+      employeeAdminId:
+        personId ||
+        user?.id ||
+        (selectedPersonForDetail?.employee?.id ||
+          selectedPersonForDetail?.id ||
+          ""),
       amount: "",
       paymentMode: "CASH",
       referenceNumber: "",
@@ -517,8 +522,13 @@ export default function AccountingPage() {
 
   const handleSubmitEmployeePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!submissionForm.employeeAdminId || !submissionForm.amount) {
-      toast.error("Please select an employee and enter an amount");
+    const employeeId =
+      submissionForm.employeeAdminId ||
+      user?.id ||
+      selectedPersonForDetail?.employee?.id ||
+      selectedPersonForDetail?.id;
+    if (!employeeId || !submissionForm.amount) {
+      toast.error("Please select an employee/account and enter an amount");
       return;
     }
     const amt = Number(submissionForm.amount);
@@ -530,20 +540,33 @@ export default function AccountingPage() {
     setSubmittingPayment(true);
     try {
       const res = await accountingService.recordEmployeeSubmission({
-        employeeAdminId: submissionForm.employeeAdminId,
+        employeeAdminId: employeeId,
         amount: amt,
         paymentMode: submissionForm.paymentMode,
         referenceNumber: submissionForm.referenceNumber || undefined,
         notes: submissionForm.notes || undefined,
       });
-      toast.success(res?.message || "Submission recorded successfully!");
+      toast.success(
+        res?.message || "Submission sent for finance approval successfully!",
+      );
       setShowRecordSubmissionModal(false);
       loadPersonalCollections();
-      if (selectedPersonForDetail?.employee?.id === submissionForm.employeeAdminId || selectedPersonForDetail?.id === submissionForm.employeeAdminId) {
-        handleOpenPersonDetail({ id: submissionForm.employeeAdminId, name: selectedPersonForDetail?.name || selectedPersonForDetail?.employee?.name });
+      load();
+      if (
+        selectedPersonForDetail?.employee?.id === employeeId ||
+        selectedPersonForDetail?.id === employeeId
+      ) {
+        handleOpenPersonDetail({
+          id: employeeId,
+          name:
+            selectedPersonForDetail?.name ||
+            selectedPersonForDetail?.employee?.name,
+        });
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to record submission");
+      toast.error(
+        err?.response?.data?.message || "Failed to record submission for approval",
+      );
     } finally {
       setSubmittingPayment(false);
     }
@@ -1942,7 +1965,27 @@ export default function AccountingPage() {
                 </span>
               </div>
 
-              {activeTab === "bank_accounts" ? (
+              {isSalesPaymentsOnly || activeTab === "payments" ? (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleOpenRecordSubmission()}
+                    variant="outline"
+                    className="h-9 md:h-8.5 px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Apply for Submission (Cash / Online)</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowCreate(true)}
+                    className="h-9 md:h-8.5 px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Record Payment (Send for Approval)</span>
+                  </Button>
+                </div>
+              ) : activeTab === "bank_accounts" ? (
                 <Button
                   size="sm"
                   onClick={() => setShowAddCollectionAccountModal(true)}
@@ -4139,26 +4182,25 @@ export default function AccountingPage() {
                       <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                     </SelectContent>
                   </Select>
-                  {isSalesPaymentsOnly && (
-                    <div className="flex items-center gap-1.5 ml-auto">
-                      <Button
-                        size="sm"
-                        onClick={() => setShowRecordSubmissionModal(true)}
-                        variant="outline"
-                        className="h-8.5 text-xs font-semibold rounded-[4px] border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
-                      >
-                        Submit Cash
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => setShowCreate(true)}
-                        className="h-8.5 text-xs font-semibold rounded-[4px] bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center gap-1"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Record Payment
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenRecordSubmission()}
+                      variant="outline"
+                      className="h-8.5 text-xs font-semibold rounded-[4px] border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-1.5 shadow-xs"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5" />
+                      Apply for Submission (Cash / Online)
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowCreate(true)}
+                      className="h-8.5 text-xs font-semibold rounded-[4px] bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Record Payment (Send for Approval)
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -5297,14 +5339,16 @@ export default function AccountingPage() {
       {/* --- MODALS & DIALOGS --- */}
 
       {/* Create Payment Modal */}
+      {/* Create Manual Entry / Send for Approval Modal */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-md rounded-[4px] border border-slate-200 bg-white p-5 shadow-md">
           <DialogHeader className="border-b border-[#E2E8F0] pb-3">
-            <DialogTitle className="text-sm font-bold uppercase tracking-tight text-slate-800">
-              Add Collection Entry
+            <DialogTitle className="text-sm font-bold uppercase tracking-tight text-slate-800 flex items-center gap-2">
+              <Banknote className="w-4 h-4 text-[#FF4D00]" />
+              Record Payment & Send for Approval
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 font-semibold mt-1">
-              Log a new traveler payment collection for approval.
+              Log a customer collection. It will be submitted with status <span className="text-amber-600 font-bold">Pending Verification</span> and sent to Finance for approval.
             </DialogDescription>
           </DialogHeader>
 
@@ -5417,18 +5461,19 @@ export default function AccountingPage() {
                 </SelectTrigger>
                 <SelectContent className="rounded-[4px]">
                   <SelectItem value="CASH">Cash</SelectItem>
-                  <SelectItem value="UPI">UPI</SelectItem>
-                  <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem value="UPI">UPI / QR</SelectItem>
+                  <SelectItem value="BANK_TRANSFER">Bank Transfer (NEFT/IMPS)</SelectItem>
+                  <SelectItem value="ONLINE">Online Payment Gateway</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                Reference Number (Optional)
+                Reference Number (UTR / Cheque / Cash Receipt)
               </label>
               <Input
-                placeholder="e.g. UPI transaction ID / Bank Ref"
+                placeholder="e.g. UPI Ref / UTR / Cash Receipt No."
                 value={form.referenceNumber}
                 onChange={(e) =>
                   setForm({ ...form, referenceNumber: e.target.value })
@@ -5439,10 +5484,10 @@ export default function AccountingPage() {
 
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                Internal Notes
+                Internal Notes / Remarks
               </label>
               <Textarea
-                placeholder="e.g. Paid in cash during briefing..."
+                placeholder="e.g. Received via UPI screenshot verified..."
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 className="text-xs rounded-[4px] border-[#E2E8F0]"
@@ -5463,9 +5508,9 @@ export default function AccountingPage() {
             <Button
               onClick={handleCreate}
               disabled={creating}
-              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white"
+              className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center gap-1.5"
             >
-              {creating ? "Saving..." : "Submit Collection"}
+              {creating ? "Submitting..." : "Submit & Send for Approval"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -6175,36 +6220,42 @@ export default function AccountingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Record Fund Transfer / Submission Modal */}
+      {/* Apply for Submission Approval (Cash / Online) Modal */}
       <Dialog open={showRecordSubmissionModal} onOpenChange={setShowRecordSubmissionModal}>
         <DialogContent className="rounded-[4px] border-[#E2E8F0] p-6 bg-white shadow-lg max-w-md">
           <DialogHeader className="border-b border-[#E2E8F0] pb-3">
-            <DialogTitle className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <ArrowRightLeft className="w-4 h-4 text-emerald-600" /> Record Fund Transfer / Submission
+            <DialogTitle className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <ArrowRightLeft className="w-4 h-4 text-emerald-600" /> Apply for Submission Approval (Cash / Online)
             </DialogTitle>
-            <DialogDescription className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              Record when money from a collection account is transferred or settled into YouthCamping central treasury
+            <DialogDescription className="text-xs text-slate-500 font-semibold mt-0.5">
+              Submit collected funds (Cash Handover or Online Transfer) to Finance for verification and settlement into company accounts.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmitEmployeePayment} className="space-y-4 pt-4">
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
-                From Collection Account
+                Collection Source / Account
               </label>
               <Select
-                value={submissionForm.employeeAdminId}
+                value={submissionForm.employeeAdminId || user?.id || ""}
                 onValueChange={(val) => setSubmissionForm({ ...submissionForm, employeeAdminId: val })}
               >
                 <SelectTrigger className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px] font-semibold">
                   <SelectValue placeholder="Select Account" />
                 </SelectTrigger>
                 <SelectContent className="rounded-[4px]">
-                  {personalCollections.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.accountName || p.name} (Pending: ₹{p.pending.toLocaleString()})
+                  {personalCollections.length > 0 ? (
+                    personalCollections.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.accountName || p.name} (Pending: ₹{p.pending.toLocaleString()})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={user?.id || "current_user"}>
+                      {user?.name || "My Account"} (Sales Register)
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -6212,7 +6263,7 @@ export default function AccountingPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
-                  Amount Transferred (₹)
+                  Amount to Submit (₹)
                 </label>
                 <Input
                   type="number"
@@ -6226,7 +6277,7 @@ export default function AccountingPage() {
 
               <div className="space-y-1.5">
                 <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
-                  Payment Mode
+                  Submission Mode
                 </label>
                 <Select
                   value={submissionForm.paymentMode}
@@ -6236,9 +6287,10 @@ export default function AccountingPage() {
                     <SelectValue placeholder="Mode" />
                   </SelectTrigger>
                   <SelectContent className="rounded-[4px]">
-                    <SelectItem value="BANK_TRANSFER">BANK TRANSFER</SelectItem>
-                    <SelectItem value="UPI">UPI</SelectItem>
-                    <SelectItem value="CASH">CASH</SelectItem>
+                    <SelectItem value="CASH">Cash Handover</SelectItem>
+                    <SelectItem value="UPI">UPI Transfer</SelectItem>
+                    <SelectItem value="BANK_TRANSFER">Bank Transfer (NEFT/IMPS)</SelectItem>
+                    <SelectItem value="ONLINE">Online Settlement</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -6246,10 +6298,10 @@ export default function AccountingPage() {
 
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
-                Reference / UTR / Transaction ID
+                Reference / UTR / Cash Voucher No.
               </label>
               <Input
-                placeholder="e.g. UTR9281039120"
+                placeholder="e.g. UTR9281039120 / Cash Voucher #104"
                 value={submissionForm.referenceNumber}
                 onChange={(e) => setSubmissionForm({ ...submissionForm, referenceNumber: e.target.value })}
                 className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
@@ -6258,10 +6310,10 @@ export default function AccountingPage() {
 
             <div className="space-y-1.5">
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-450">
-                Notes / Remarks
+                Notes / Handed Over To
               </label>
               <Input
-                placeholder="Transferred to YouthCamping HDFC Account"
+                placeholder="e.g. Handed over to Finance Desk / Deposited to HDFC Bank"
                 value={submissionForm.notes}
                 onChange={(e) => setSubmissionForm({ ...submissionForm, notes: e.target.value })}
                 className="h-8.5 text-xs border-[#E2E8F0] rounded-[4px]"
@@ -6282,9 +6334,10 @@ export default function AccountingPage() {
                 type="submit"
                 size="sm"
                 disabled={submittingPayment}
-                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="h-8.5 px-4 rounded-[4px] font-semibold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
               >
-                {submittingPayment ? "Recording..." : "Record Transfer"}
+                <ArrowRightLeft className="w-3.5 h-3.5" />
+                {submittingPayment ? "Submitting..." : "Apply for Submission Approval"}
               </Button>
             </DialogFooter>
           </form>

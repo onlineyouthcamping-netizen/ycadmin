@@ -67,7 +67,8 @@ import {
   Activity,
   CalendarCheck,
   Sparkles,
-  MessageCircle
+  MessageCircle,
+  Save,
 } from "lucide-react";
 import { allocateWholeRupees, cn } from "@/lib/utils";
 import api from "@/services/api";
@@ -6137,34 +6138,58 @@ useEffect(() => {
     documents:   "+ Upload Document",
   };
 
+  const rawTripCode = (
+    tripDetails?.tripCode ||
+    tripDetails?.code ||
+    tripId ||
+    "DEP"
+  )
+    .toString()
+    .trim();
+  const shortDepartureCode =
+    rawTripCode.length > 14
+      ? rawTripCode.replace(/[^a-zA-Z0-9]/g, "").substring(0, 4).toUpperCase() ||
+        "DEP"
+      : rawTripCode;
+  const fullDepartureId =
+    departureRecord?.departureCode ||
+    `DEP-${String(tripId).toUpperCase()}-${departureDateStr}`;
+  const isOverviewTab = activeTab === "overview";
+  const currentDepartureStatus = departureRecord?.status || "Planning";
+
+  const openEditDeparture = () => {
+    setEditGuideName(leadGuideName);
+    setEditDepartureOpen(true);
+  };
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased">
+    <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden md:overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased">
       {/* ─── RESPONSIVE DEPARTURE HUB ─── */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 md:overflow-hidden">
         {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
         <div className="bg-white border-b border-[#E2E8F0] shadow-xs">
-          {/* Breadcrumb & Back Button */}
-          <div className="px-4 sm:px-6 pt-3 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+          {/* Breadcrumb (desktop) — mobile uses a single Back control in the title row */}
+          <div className="hidden md:flex px-4 sm:px-6 pt-3 items-center justify-between gap-3 min-w-0">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 min-w-0">
               <span
                 onClick={() => navigate("/admin/operations")}
-                className="hover:text-slate-600 cursor-pointer"
+                className="hover:text-slate-600 cursor-pointer shrink-0"
               >
                 Departures Hub
               </span>
-              <ChevronRight className="w-3.5 h-3.5" />
-              <span className="hover:text-slate-600 cursor-pointer">
-                {tripId}
+              <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+              <span className="hover:text-slate-600 cursor-pointer truncate">
+                {shortDepartureCode}
               </span>
-              <ChevronRight className="w-3.5 h-3.5" />
-              <span className="text-slate-700 font-bold capitalize">
+              <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-slate-700 font-bold capitalize shrink-0">
                 {activeTab}
               </span>
             </div>
 
             <button
               onClick={() => navigate("/admin/operations")}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-[4px] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-[4px] transition-colors cursor-pointer shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
               Back to Departures Hub
@@ -6172,120 +6197,122 @@ useEffect(() => {
           </div>
 
           {/* Title row */}
-          <div className="px-4 sm:px-6 pt-2 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="px-3 sm:px-6 pt-3 md:pt-2 pb-0 flex flex-col md:flex-row md:items-start justify-between gap-3 min-w-0">
+            <div className="flex items-start gap-2.5 min-w-0">
               <button
                 onClick={() => navigate("/admin/operations")}
-                className="flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1.5 rounded-[4px] transition-colors cursor-pointer shrink-0"
+                className="md:hidden flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1.5 rounded-[4px] transition-colors cursor-pointer shrink-0"
                 title="Back to Departures Hub"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
                 <span>Back</span>
               </button>
-              <div className="w-8 h-8 rounded-[4px] bg-[#FFF0E6] flex items-center justify-center text-[#F97316] shrink-0">
+              <div className="hidden sm:flex w-8 h-8 rounded-[4px] bg-[#FFF0E6] items-center justify-center text-[#FF4D00] shrink-0">
                 <Compass className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <div>
-                  <span className="text-[9.5px] font-black text-[#F97316] uppercase tracking-wider block mb-0.5">
-                    Departure Operations Workspace
-                  </span>
-                  <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none font-mono whitespace-nowrap">
-                    {departureRecord?.departureCode || `DEP-${tripId.toUpperCase()}-${departureDateStr}`}
-                  </h1>
-                </div>
-                {(() => {
-                  const status = departureRecord?.status || "Planning";
-                  const statusColors: Record<string, string> = {
-                    Planning: "bg-amber-100 text-amber-800 border-amber-200",
-                    Ready: "bg-blue-100 text-blue-800 border-blue-200",
-                    Confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-                    "In Progress": "bg-indigo-100 text-indigo-800 border-indigo-200",
-                    Completed: "bg-slate-100 text-slate-800 border-slate-200",
-                    Cancelled: "bg-rose-100 text-rose-800 border-rose-200",
-                  };
-                  return (
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border ${statusColors[status] || "bg-slate-100 text-slate-800 border-slate-200"}`}>
-                      {status}
-                    </span>
-                  );
-                })()}
-                <span className="text-slate-300">•</span>
-                <span className="text-sm text-slate-600 font-semibold">
-                  {tripDetails?.title || "Trip Departure"}
+              <div className="min-w-0 flex-1">
+                <span className="text-[9.5px] font-black text-[#FF4D00] uppercase tracking-wider block mb-0.5">
+                  <span className="md:hidden">Workspace</span>
+                  <span className="hidden md:inline">Departure Operations Workspace</span>
                 </span>
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <h1 className="text-lg sm:text-xl font-black text-[#0B1528] tracking-tight leading-none font-mono">
+                    {shortDepartureCode}
+                  </h1>
+                  {(() => {
+                    const status = currentDepartureStatus;
+                    const statusColors: Record<string, string> = {
+                      Planning: "bg-amber-100 text-amber-800 border-amber-200",
+                      Ready: "bg-blue-100 text-blue-800 border-blue-200",
+                      Confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+                      "In Progress": "bg-indigo-100 text-indigo-800 border-indigo-200",
+                      Completed: "bg-slate-100 text-slate-800 border-slate-200",
+                      Cancelled: "bg-rose-100 text-rose-800 border-rose-200",
+                    };
+                    return (
+                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border shrink-0 ${statusColors[status] || "bg-slate-100 text-slate-800 border-slate-200"}`}>
+                        {status}
+                      </span>
+                    );
+                  })()}
+                </div>
+                <p className="text-sm text-slate-600 font-semibold mt-1 break-words">
+                  {tripDetails?.title || "Trip Departure"}
+                </p>
+                <p className="text-[10px] font-mono text-slate-400 mt-0.5 break-all leading-snug">
+                  {fullDepartureId}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0 relative w-full sm:w-auto mt-3 sm:mt-0">
+            <div className="grid grid-cols-2 md:flex md:flex-wrap md:items-center gap-2 min-w-0 relative w-full md:w-auto">
               {/* Dynamic Status Transition Buttons */}
-              {(() => {
-                const currentStatus = departureRecord?.status || "Planning";
-                if (currentStatus === "Planning") {
-                  return (
-                    <button
-                      disabled={updatingStatus}
-                      onClick={() => handleStatusChange("Ready")}
-                      className="text-[11px] font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors"
-                    >
-                      Mark Ready
-                    </button>
-                  );
-                }
-                if (currentStatus === "Ready") {
-                  return (
-                    <button
-                      disabled={updatingStatus}
-                      onClick={() => handleStatusChange("Confirmed")}
-                      className="text-[11px] font-bold border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors shadow-xs"
-                    >
-                      Confirm Departure
-                    </button>
-                  );
-                }
-                if (currentStatus === "Confirmed") {
-                  return (
-                    <button
-                      disabled={updatingStatus}
-                      onClick={() => handleStatusChange("In Progress")}
-                      className="text-[11px] font-bold border border-indigo-300 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors shadow-xs"
-                    >
-                      Start Trip (In Progress)
-                    </button>
-                  );
-                }
-                if (currentStatus === "In Progress") {
-                  return (
-                    <button
-                      disabled={updatingStatus}
-                      onClick={() => handleStatusChange("Completed")}
-                      className="text-[11px] font-bold border border-slate-300 bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 sm:py-1.5 rounded-[4px] transition-colors shadow-xs"
-                    >
-                      Complete Departure
-                    </button>
-                  );
-                }
-                return null;
-              })()}
+              {currentDepartureStatus === "Planning" && (
+                <button
+                  disabled={updatingStatus}
+                  onClick={() => handleStatusChange("Ready")}
+                  className="min-w-0 text-[11px] font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors"
+                >
+                  Mark Ready
+                </button>
+              )}
+              {currentDepartureStatus === "Ready" && (
+                <button
+                  disabled={updatingStatus}
+                  onClick={() => handleStatusChange("Confirmed")}
+                  className="min-w-0 text-[11px] font-bold border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                >
+                  <span className="md:hidden">Confirm</span>
+                  <span className="hidden md:inline">Confirm Departure</span>
+                </button>
+              )}
+              {currentDepartureStatus === "Confirmed" && (
+                <button
+                  disabled={updatingStatus}
+                  onClick={() => handleStatusChange("In Progress")}
+                  className="min-w-0 text-[11px] font-bold border border-indigo-300 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                >
+                  <span className="md:hidden">Start Trip</span>
+                  <span className="hidden md:inline">Start Trip (In Progress)</span>
+                </button>
+              )}
+              {currentDepartureStatus === "In Progress" && (
+                <button
+                  disabled={updatingStatus}
+                  onClick={() => handleStatusChange("Completed")}
+                  className="min-w-0 text-[11px] font-bold border border-slate-300 bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                >
+                  <span className="md:hidden">Complete</span>
+                  <span className="hidden md:inline">Complete Departure</span>
+                </button>
+              )}
 
               <button
-                onClick={() => {
-                  setEditGuideName(leadGuideName);
-                  setEditDepartureOpen(true);
-                }}
-                className="text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 sm:py-1.5 transition-colors w-full"
+                onClick={openEditDeparture}
+                className="hidden md:inline-flex min-w-0 text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 transition-colors"
               >
                 Edit Departure
               </button>
-              <div className="relative w-full">
+              <div className="relative min-w-0">
                 <button
                   onClick={() => setMoreActionsOpen(!moreActionsOpen)}
-                  className="w-full justify-center text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 sm:py-1.5 flex items-center gap-1 transition-colors"
+                  className="w-full justify-center text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-2.5 py-2 md:px-3 md:py-1.5 flex items-center gap-1 transition-colors"
                 >
-                  More Actions <ChevronDown className="w-3 h-3" />
+                  <span className="md:hidden">More</span>
+                  <span className="hidden md:inline">More Actions</span>
+                  <ChevronDown className="w-3 h-3 shrink-0" />
                 </button>
                 {moreActionsOpen && (
-                  <div className="absolute right-0 mt-1 w-full sm:w-44 bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50 text-left">
+                  <div className="absolute right-0 mt-1 w-44 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50 text-left">
+                    <button
+                      onClick={() => {
+                        openEditDeparture();
+                        setMoreActionsOpen(false);
+                      }}
+                      className="md:hidden w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 font-bold"
+                    >
+                      Edit Departure
+                    </button>
                     <button
                       onClick={() => {
                         handlePrintManifest();
@@ -6295,7 +6322,7 @@ useEffect(() => {
                     >
                       Print Manifest
                     </button>
-                    {(departureRecord?.status || "Planning") !== "Cancelled" && (
+                    {currentDepartureStatus !== "Cancelled" && (
                       <button
                         onClick={() => {
                           handleStatusChange("Cancelled");
@@ -6309,104 +6336,122 @@ useEffect(() => {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => {
-                  if (activeTab === "passengers") {
-                    setAddPassengerOpen(true);
-                  } else if (activeTab === "operations" && opsSubTab === "tasks") {
-                    setAddTaskModalOpen(true);
-                  } else if (activeTab === "documents") {
-                    const input = document.createElement("input");
-                    input.type = "file";
-                    input.onchange = (e: any) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        toast.success(
-                          `Document "${file.name}" uploaded successfully!`,
-                        );
-                      }
-                    };
-                    input.click();
-                  } else if (activeTab === "activities") {
-                    setActivityModalOpen(true);
-                  } else if (activeTab === "hotels") {
-                    setHotelWizardStep(1);
-                    setIsAddHotelWizardOpen(true);
-                  } else if (activeTab === "guides") {
-                    setAddGuideOpen(true);
-                  } else {
-                    toast.success(
-                      `${ctaLabel[activeTab] || "Action"} triggered!`,
-                    );
-                  }
-                }}
-                className="col-span-2 sm:col-span-1 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-4 py-2 sm:py-1.5 flex items-center justify-center gap-1.5 transition-colors shadow-sm w-full"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {ctaLabel[activeTab] || "Action"}
-              </button>
+              {isOverviewTab ? (
+                <button
+                  onClick={openEditDeparture}
+                  className="md:hidden col-span-2 min-w-0 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] px-4 py-2 flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                >
+                  Edit Departure
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (activeTab === "passengers") {
+                      setAddPassengerOpen(true);
+                    } else if (activeTab === "operations" && opsSubTab === "tasks") {
+                      setAddTaskModalOpen(true);
+                    } else if (activeTab === "documents") {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.onchange = (e: any) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          toast.success(
+                            `Document "${file.name}" uploaded successfully!`,
+                          );
+                        }
+                      };
+                      input.click();
+                    } else if (activeTab === "activities") {
+                      setActivityModalOpen(true);
+                    } else if (activeTab === "hotels") {
+                      setHotelWizardStep(1);
+                      setIsAddHotelWizardOpen(true);
+                    } else if (activeTab === "guides") {
+                      setAddGuideOpen(true);
+                    } else {
+                      toast.success(
+                        `${ctaLabel[activeTab] || "Action"} triggered!`,
+                      );
+                    }
+                  }}
+                  className="col-span-2 md:col-span-1 min-w-0 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] px-4 py-2 md:py-1.5 flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{ctaLabel[activeTab] || "Action"}</span>
+                </button>
+              )}
+              {isOverviewTab && (
+                <button
+                  onClick={openEditDeparture}
+                  className="hidden md:inline-flex text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-4 py-1.5 items-center justify-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Edit Departure
+                </button>
+              )}
             </div>
           </div>
 
           {/* Meta row */}
-          <div className="px-4 sm:px-6 py-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] font-semibold text-slate-500 border-t border-slate-100 mt-2">
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />{" "}
-              {dateAndDurationLabel}
+          <div className="px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] font-semibold text-slate-500 border-t border-slate-100 mt-2 min-w-0">
+            <span className="flex items-center gap-1.5 min-w-0">
+              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
+              <span className="break-words">{dateAndDurationLabel}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-slate-400" />{" "}
+              <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
               {passengerStats.total} Participants
             </span>
-            <span className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-slate-400" /> Lead Guide:{" "}
-              {leadGuideName}
+            <span className="flex items-center gap-1.5 min-w-0">
+              <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
+              <span className="truncate">Lead Guide: {leadGuideName}</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <Bus className="w-3.5 h-3.5 text-slate-400" />{" "}
-              {transportVehiclesLabel}
-            </span>
-            <span className="w-full sm:w-auto sm:ml-auto text-slate-400 font-mono text-[10.5px]">
-              {departureRecord?.departureCode || `DEP-${tripId.toUpperCase()}-${departureDateStr}`}
+            <span className="flex items-center gap-1.5 min-w-0">
+              <Bus className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
+              <span className="truncate">{transportVehiclesLabel}</span>
             </span>
           </div>
 
-          {/* Tab bar */}
-          <div className="px-4 sm:px-6 flex gap-0 text-[11.5px] font-semibold overflow-x-auto no-scrollbar border-t border-slate-100">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "pb-3 pt-3 px-3 transition-all border-b-2 whitespace-nowrap flex items-center gap-1.5",
-                    isActive
-                      ? "text-[#F97316] border-[#F97316] font-bold"
-                      : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200",
-                  )}
-                >
-                  {tab.label}
-                  {tab.badge && (
-                    <span
-                      className={cn(
-                        "text-[8px] font-extrabold px-1.5 rounded-full h-4 min-w-[16px] flex items-center justify-center",
-                        isActive
-                          ? "bg-[#F97316] text-white"
-                          : "bg-red-500 text-white",
-                      )}
-                    >
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          {/* Tab bar — horizontal scroll, no wrap, extra end pad so last tab isn’t clipped */}
+          <div className="min-w-0 border-t border-slate-100 overflow-x-auto no-scrollbar">
+            <div className="flex flex-nowrap gap-0 text-[11.5px] font-semibold px-3 sm:px-6 pr-12 sm:pr-6">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "pb-3 pt-3 px-2.5 sm:px-3 transition-all border-b-2 whitespace-nowrap flex items-center gap-1.5 shrink-0",
+                      isActive
+                        ? "text-[#FF4D00] border-[#FF4D00] font-bold"
+                        : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200",
+                    )}
+                  >
+                    {tab.label}
+                    {tab.badge ? (
+                      <span
+                        className={cn(
+                          "text-[8px] font-extrabold px-1.5 rounded-full h-4 min-w-[16px] flex items-center justify-center",
+                          isActive
+                            ? "bg-[#FF4D00] text-white"
+                            : "bg-red-500 text-white",
+                        )}
+                      >
+                        {tab.badge}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+              <span className="shrink-0 w-8 md:w-0" aria-hidden />
+            </div>
           </div>
         </div>
 
         {/* ═══════════════════════════════════════════ CONTENT ═══════════════════════════════════════════ */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 md:overflow-y-auto p-3 sm:p-6 space-y-4 min-w-0 pb-24 md:pb-6">
           {/* ──────────────────────── OVERVIEW ──────────────────────── */}
           {activeTab === "overview" && (
             <div className="space-y-4">
@@ -6433,17 +6478,17 @@ useEffect(() => {
                 const missingList = readinessData?.missingItems || [];
 
                 return (
-                  <div className="bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs overflow-hidden">
-                    <div className="flex bg-slate-900 text-white p-4 items-center justify-between">
-                      <div className="flex gap-4 items-center">
-                        <h3 className="font-black text-lg font-mono">
-                          {departureRecord?.departureCode || `DEP-${tripId.toUpperCase()}-${departureDateStr}`}
+                  <div className="bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs overflow-hidden min-w-0">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-[#0B1528] text-white px-3 py-2.5 sm:p-4 min-w-0">
+                      <div className="flex gap-2 sm:gap-3 items-center min-w-0">
+                        <h3 className="font-black text-base sm:text-lg font-mono shrink-0">
+                          {shortDepartureCode}
                         </h3>
-                        <span className={`border px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${rStatus === "READY" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" : "bg-amber-500/20 text-amber-400 border-amber-500/50"}`}>
+                        <span className={`border px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider shrink-0 ${rStatus === "READY" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" : "bg-amber-500/20 text-amber-400 border-amber-500/50"}`}>
                           {rStatus}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] text-slate-400 font-bold uppercase">Readiness</span>
                         <span className={`font-black text-lg ${rStatus === "READY" ? "text-emerald-400" : "text-amber-400"}`}>{rScore}%</span>
                       </div>
@@ -6463,13 +6508,13 @@ useEffect(() => {
                     )}
 
                     {/* Departure Readiness Summary Cockpit */}
-                    <div className="p-4 bg-slate-900 text-white border-b border-slate-800">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-orange-400">Departure Readiness Summary</span>
-                        <span className="text-xs font-mono font-bold text-slate-300">Live DB Operational Status</span>
+                    <div className="px-3 py-2.5 sm:p-4 bg-[#0B1528] text-white border-b border-slate-800 min-w-0">
+                      <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2 min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#FF4D00] truncate">Readiness Summary</span>
+                        <span className="hidden sm:inline text-xs font-mono font-bold text-slate-300 shrink-0">Live DB Operational Status</span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center text-xs">
-                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-1.5 sm:gap-2 text-center text-xs">
+                        <div className="bg-slate-800/80 p-2 sm:p-2.5 rounded-lg border border-slate-700 min-w-0">
                           <p className="text-[9px] text-slate-400 font-bold uppercase">Hotels</p>
                           <p className={`font-black text-sm mt-0.5 ${isHotelsConfirmed ? "text-emerald-400" : "text-amber-400"}`}>
                             {overviewHotels.length} / {computedHotels.length || 7} Confirmed
@@ -7008,30 +7053,28 @@ useEffect(() => {
 
           {/* ──────────────────────── PASSENGERS ──────────────────────── */}
           {activeTab === "passengers" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-black text-slate-800">
+            <div className="space-y-4 min-w-0">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
+                <div className="min-w-0">
+                  <h2 className="text-base font-black text-[#0B1528]">
                     Passengers
                   </h2>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-[11px] text-slate-600 mt-0.5">
                     {filteredPassengers.length} Passengers •{" "}
                     {filteredBookingGroups.length} Bookings
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handlePrintManifest()}
-                    className="text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-400" /> Download
-                  </button>
-                </div>
+                <button 
+                  onClick={() => handlePrintManifest()}
+                  className="w-full sm:w-auto justify-center text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 inline-flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" /> Download
+                </button>
               </div>
 
               {/* PASSENGER ENGINE OUTPUT / DEMOGRAPHICS PANEL */}
               <div className="bg-slate-800 text-white p-5 rounded-[8px] shadow-sm mb-4">
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 min-w-0">
                   <div>
                     <h3 className="text-sm font-black tracking-wide flex items-center gap-2">
                       <Settings className="w-4 h-4 text-orange-400" />
@@ -8632,8 +8675,8 @@ useEffect(() => {
           {activeTab === "transport" && (
             <div className="space-y-4">
               {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 min-w-0">
+                <div className="min-w-0">
                   <h2 className="text-base font-black text-slate-800">
                     Room & Vehicle Allocation
                   </h2>
@@ -8642,40 +8685,40 @@ useEffect(() => {
                     manual shuffling
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto min-w-0">
                   <Button
                     size="sm"
                     onClick={() => handleSaveAllocationsToDb(false)}
                     disabled={isSavingAllocations}
-                    className="h-8.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] shadow-sm flex items-center gap-1.5"
+                    className="h-8.5 w-full sm:w-auto text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] shadow-sm flex items-center justify-center gap-1.5"
                   >
                     {isSavingAllocations ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
                     ) : (
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5 shrink-0" />
                     )}
                     {isSavingAllocations ? "Saving..." : "Save to Database"}
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleTriggerAutoAllocate}
-                    className="h-8.5 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] shadow-sm flex items-center gap-1.5"
+                    className="h-8.5 w-full sm:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm flex items-center justify-center gap-1.5"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" /> Run Auto-Allocation
+                    <RefreshCw className="w-3.5 h-3.5 shrink-0" /> Run Auto-Allocation
                   </Button>
                 </div>
               </div>
 
               {/* Step 2: Vehicle Fleet Input */}
               <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <div className="flex items-center gap-2">
-                    <Bus className="w-4 h-4 text-[#F97316]" />
-                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b border-slate-100 pb-2 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Bus className="w-4 h-4 text-[#FF4D00] shrink-0" />
+                    <h3 className="text-xs font-black text-[#0B1528] uppercase tracking-wider">
                       Step 2: Vehicle Fleet Input
                     </h3>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400">
+                  <span className="text-[10px] font-medium text-slate-500">
                     Add available tempos/cars for this departure
                   </span>
                 </div>
@@ -8945,30 +8988,30 @@ useEffect(() => {
               </div>
 
               {/* WhatsApp Generated Lists Bar */}
-              <div className="bg-slate-900 border border-slate-800 rounded-[6px] p-4 flex items-center justify-between text-white shadow-sm">
-                <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider">
-                    Step 5: Output - Auto-Generated WhatsApp Lists
+              <div className="bg-white border border-[#E8EEF4] rounded-[6px] p-3 sm:p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 min-w-0 shadow-xs">
+                <div className="min-w-0">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#0B1528]">
+                    Step 5: Output — Auto-Generated WhatsApp Lists
                   </h3>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
                     Ready to copy and paste directly into WhatsApp departure
                     groups.
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto min-w-0">
                   <Button
                     size="sm"
                     onClick={handleCopyTempoList}
-                    className="h-8.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase flex items-center gap-1.5 rounded border border-slate-700"
+                    className="h-9 w-full sm:w-auto bg-[#F4F7FB] hover:bg-[#EEF2F7] text-[#0B1528] font-bold text-xs uppercase flex items-center justify-center gap-1.5 rounded border border-[#E8EEF4]"
                   >
-                    <Copy className="w-3.5 h-3.5" /> Copy Tempo List
+                    <Copy className="w-3.5 h-3.5 shrink-0" /> Copy Tempo List
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleCopyRoomList}
-                    className="h-8.5 bg-[#F97316] hover:bg-[#E05E00] text-white font-bold text-xs uppercase flex items-center gap-1.5 rounded"
+                    className="h-9 w-full sm:w-auto bg-[#FF4D00] hover:bg-[#E04500] text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 rounded"
                   >
-                    <Copy className="w-3.5 h-3.5" /> Copy Room List
+                    <Copy className="w-3.5 h-3.5 shrink-0" /> Copy Room List
                   </Button>
                 </div>
               </div>
@@ -8977,15 +9020,15 @@ useEffect(() => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Hotel Group Assignments */}
                 <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2 min-w-0">
+                    <h3 className="text-xs font-black text-[#0B1528] uppercase tracking-wider">
                       Hotel Group Assignments
                     </h3>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setAddRoomModalOpen(true)}
-                      className="h-7 text-[10px] font-bold text-[#F97316] border-[#F97316]/20 hover:bg-[#F97316]/5 rounded px-2"
+                      className="h-7 w-full sm:w-auto text-[10px] font-bold text-[#FF4D00] border-[#FF4D00]/20 hover:bg-[#FFF0E6] rounded px-2"
                     >
                       + Add Room
                     </Button>
@@ -9308,25 +9351,28 @@ useEffect(() => {
               </div>
 
               {/* Save Allocations to DB + Clear */}
-              <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-end gap-2">
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowClearAllocationsDialog(true)}
-                    className="h-8 text-[11px] font-bold text-red-500 border-red-200 hover:bg-red-50 rounded-[4px]"
-                  >
-                    Clear DB Allocations
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={isSavingAllocations}
-                    onClick={() => handleSaveAllocationsToDb(false)}
-                    className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px]"
-                  >
-                    {isSavingAllocations ? "Saving..." : "💾 Save to Database"}
-                  </Button>
-                </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 min-w-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowClearAllocationsDialog(true)}
+                  className="h-8 w-full sm:w-auto text-[11px] font-bold text-red-500 border-red-200 hover:bg-red-50 rounded-[4px]"
+                >
+                  Clear DB Allocations
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={isSavingAllocations}
+                  onClick={() => handleSaveAllocationsToDb(false)}
+                  className="h-8 w-full sm:w-auto text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] flex items-center justify-center gap-1.5"
+                >
+                  {isSavingAllocations ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5 shrink-0" />
+                  )}
+                  {isSavingAllocations ? "Saving..." : "Save to Database"}
+                </Button>
               </div>
 
               {/* Clear Allocations Confirmation Dialog */}
@@ -9375,30 +9421,28 @@ useEffect(() => {
           {/* ──────────────────────── GUIDES ──────────────────────── */}
           {/* ─── PLAN: GUIDES ─── */}
           {activeTab === "guides" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-black text-slate-800">
+            <div className="space-y-4 min-w-0">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between min-w-0">
+                <div className="min-w-0">
+                  <h2 className="text-base font-black text-[#0B1528]">
                     Guides & Crew
                   </h2>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-[11px] text-slate-600 mt-0.5">
                     Manage guides assigned to this departure — payment tracking
                     and day-wise allocation
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setAddGuideOpen((v) => !v)}
-                    className="h-8.5 text-xs font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] shadow-sm flex items-center gap-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Assign Guide
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setAddGuideOpen((v) => !v)}
+                  className="hidden md:inline-flex h-8.5 w-full md:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Assign Guide
+                </Button>
               </div>
 
               {/* KPI Cards — live from dbGuides */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3.5">
                 {[
                   {
                     v: String(dbGuides.length),
@@ -9423,13 +9467,13 @@ useEffect(() => {
                 ].map((k) => (
                   <div
                     key={k.l}
-                    className="bg-white border border-[#E2E8F0] rounded-[6px] p-3.5 shadow-xs"
+                    className="bg-white border border-[#E8EEF4] rounded-[6px] p-2.5 sm:p-3.5 shadow-xs min-w-0"
                   >
-                    <p className="text-2xl font-black text-slate-800">{k.v}</p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">
+                    <p className="text-lg sm:text-2xl font-black text-[#0B1528] truncate">{k.v}</p>
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mt-0.5">
                       {k.l}
                     </p>
-                    <p className="text-[9.5px] text-slate-400 font-semibold mt-0.5">
+                    <p className="text-[9.5px] text-slate-500 font-medium mt-0.5">
                       {k.sub}
                     </p>
                   </div>
@@ -9445,7 +9489,7 @@ useEffect(() => {
                   <p className="text-[11px] font-black text-orange-700 uppercase tracking-wider">
                     Assign Guide to Departure
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                         Guide Name *
@@ -9606,10 +9650,17 @@ useEffect(() => {
               )}
 
               {/* Guides Table — live from dbGuides */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[6px] overflow-hidden shadow-xs">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 border-b border-[#E2E8F0]">
-                    <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="bg-white border border-[#E8EEF4] rounded-[6px] overflow-hidden shadow-xs min-w-0">
+                {dbGuides.length === 0 ? (
+                  <div className="p-6 sm:p-8 text-center text-[12px] text-slate-600 font-medium leading-relaxed">
+                    No guides assigned yet. Use Assign Guide to add the first
+                    guide.
+                  </div>
+                ) : (
+                <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full min-w-[720px] text-left text-xs border-collapse">
+                  <thead className="bg-slate-50 border-b border-[#E8EEF4]">
+                    <tr className="text-[9.5px] font-bold text-slate-600 uppercase tracking-wider">
                       <th className="p-3 border-r border-slate-100">
                         GUIDE NAME
                       </th>
@@ -9636,19 +9687,8 @@ useEffect(() => {
                       <th className="p-3 text-center">ACTION</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
-                    {dbGuides.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={10}
-                          className="p-8 text-center text-[11px] text-slate-400 font-semibold"
-                        >
-                          No guides assigned yet. Click "Assign Guide" to add
-                          the first guide.
-                        </td>
-                      </tr>
-                    ) : (
-                      dbGuides
+                  <tbody className="divide-y divide-[#E8EEF4]">
+                    {dbGuides
                         .filter((g: any) => g.assignmentStatus !== "CANCELLED")
                         .map((g: any) => {
                           const guideDisplayName =
@@ -9757,20 +9797,21 @@ useEffect(() => {
                             </td>
                           </tr>
                         );
-                      })
-                    )}
+                      })}
                   </tbody>
                 </table>
+                </div>
+                )}
               </div>
 
               {/* Bottom summary bar */}
-              <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex items-center justify-between text-xs font-semibold">
-                <span>
+              <div className="bg-slate-50 border border-[#E8EEF4] rounded-[6px] p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs font-semibold min-w-0">
+                <span className="text-slate-600">
                   {dbGuides.length === 0
                     ? "No guides assigned"
                     : `${dbGuides.length} guide${dbGuides.length !== 1 ? "s" : ""} assigned to this departure`}
                 </span>
-                <span className="text-slate-400 text-[10px]">
+                <span className="text-slate-500 text-[10px]">
                   All changes saved to database automatically
                 </span>
               </div>

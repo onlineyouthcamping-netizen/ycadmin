@@ -77,9 +77,6 @@ import {
   Tent,
   Settings2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -618,6 +615,50 @@ import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
 import { MobileQuickActionFab } from "@/components/mobile/MobileQuickActionFab";
 import { MobileNavigationDrawer } from "@/components/mobile/MobileNavigationDrawer";
 
+function resolveAdminPageTitle(
+  pathname: string,
+  searchParams: URLSearchParams,
+  role?: string,
+  compact = false,
+) {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length === 0 || (parts.length === 1 && parts[0] === "admin")) {
+    return "Dashboard";
+  }
+  if (pathname.startsWith("/admin/departure-workspace")) {
+    return compact ? "Departure" : "Departure Workspace";
+  }
+  if (
+    pathname.startsWith("/admin/accounting") ||
+    pathname.startsWith("/admin/finance")
+  ) {
+    if ((role || "").toLowerCase() === "sales") {
+      return "Payments";
+    }
+    const tab = searchParams.get("tab") || "overview";
+    return `Finance · ${tab.replace(/_/g, " ")}`;
+  }
+  if (pathname.startsWith("/admin/operations")) {
+    return "Departures";
+  }
+  const lastPart = parts.pop() || "";
+  return lastPart.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function resolveAdminDisplayRole(admin: {
+  email?: string;
+  role?: string;
+} | null) {
+  const email = (admin?.email || "").toLowerCase().trim();
+  const isFounder =
+    email.includes("hemal") ||
+    email === "hemal.patel@youthcamping.online" ||
+    admin?.role === "superadmin";
+  if (isFounder) return "Founder";
+  const raw = (admin?.role || "staff").replace(/_/g, " ");
+  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+}
+
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { admin, isAuthenticated, isLoading, checkAuth, logout } = useAuthStore();
   const location = useLocation();
@@ -744,186 +785,183 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <AdminSidebar />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-          {/* Top Navbar (Strict 56px Height) */}
-          <header className="h-14 flex items-center justify-between border-b border-[#E2E8F0] bg-white px-3 sm:px-5 shrink-0 z-20 sticky top-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <SidebarTrigger className="w-8 h-8 rounded-md text-[#0B1528] hover:bg-slate-100 border-none bg-transparent flex items-center justify-center shrink-0" />
-              <h1 className="text-sm md:text-[15px] font-semibold text-[#0B1528] tracking-tight leading-none truncate">
-                {(() => {
-                  const parts = location.pathname.split("/").filter(Boolean);
-                  if (
-                    parts.length === 0 ||
-                    (parts.length === 1 && parts[0] === "admin")
-                  ) {
-                    return "Dashboard";
-                  }
-                  if (
-                    location.pathname.startsWith("/admin/accounting") ||
-                    location.pathname.startsWith("/admin/finance")
-                  ) {
-                    if ((admin?.role || "").toLowerCase() === "sales") {
-                      return "Payments";
-                    }
-                    const tab = searchParams.get("tab") || "overview";
-                    return `Finance · ${tab.replace(/_/g, " ")}`;
-                  }
-                  if (location.pathname.startsWith("/admin/operations")) {
-                    return "Departures";
-                  }
-                  const lastPart = parts.pop() || "";
-                  return lastPart.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-                })()}
+          {/* Top command strip — 56px */}
+          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-[#E8EEF4] bg-white px-3 sm:px-6">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <SidebarTrigger className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-[#0B1528] hover:bg-[#F4F7FB]" />
+              <h1 className="min-w-0 truncate text-[15px] font-semibold leading-none tracking-tight text-[#0B1528]">
+                <span className="md:hidden">
+                  {resolveAdminPageTitle(
+                    location.pathname,
+                    searchParams,
+                    admin?.role,
+                    true,
+                  )}
+                </span>
+                <span className="hidden md:inline">
+                  {resolveAdminPageTitle(
+                    location.pathname,
+                    searchParams,
+                    admin?.role,
+                  )}
+                </span>
               </h1>
             </div>
 
-            <div className="flex items-center gap-4 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label={isMac ? "Search (Command K)" : "Search (Control K)"}
+              className="hidden h-8 w-[14.5rem] shrink-0 items-center gap-2 rounded-md bg-[#F4F7FB] px-2.5 text-left transition-colors hover:bg-[#EEF2F7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30 md:flex"
+            >
+              <Search
+                className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                strokeWidth={1.75}
+              />
+              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-400">
+                Search
+              </span>
+              <kbd className="inline-flex shrink-0 items-center gap-0.5">
+                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-white px-1 text-[10px] font-medium leading-none text-slate-400">
+                  {isMac ? "⌘" : "Ctrl"}
+                </span>
+                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-white px-1 text-[10px] font-medium leading-none text-slate-400">
+                  K
+                </span>
+              </kbd>
+            </button>
+
+            <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(true)}
-                className="hidden md:flex items-center gap-2 h-9 w-[220px] lg:w-[260px] px-2.5 rounded-md bg-[#F8FAFC] border border-[#E8EEF4] text-left hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:border-[#FF4D00] transition-colors"
+                aria-label="Search"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528] md:hidden"
               >
-                <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />
-                <span className="flex-1 text-[13px] text-slate-400 truncate">Search</span>
-                <kbd className="inline-flex items-center gap-0.5 shrink-0">
-                  <span className="h-5 min-w-5 px-1 rounded border border-slate-200 bg-white text-[10px] font-medium text-slate-500 flex items-center justify-center">
-                    {isMac ? "⌘" : "Ctrl"}
-                  </span>
-                  <span className="h-5 min-w-5 px-1 rounded border border-slate-200 bg-white text-[10px] font-medium text-slate-500 flex items-center justify-center">
-                    K
-                  </span>
-                </kbd>
+                <Search className="h-4 w-4" strokeWidth={1.75} />
               </button>
 
-              {/* Notifications & Help */}
-              <div className="flex items-center gap-3">
-                {/* Top-Right Profile Avatar Dropdown (Tightened 4px Chevron Spacing & 2px Border) */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1.5 outline-none hover:opacity-90 transition-all text-left">
-                      <img
-                        src={
-                          admin?.avatarUrl ||
-                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
-                        }
-                        className="w-8 h-8 rounded-full object-cover border-2 border-[#E2E8F0]"
-                        alt={admin?.name || "User"}
-                      />
-                      <div className="hidden lg:flex flex-col text-left mr-0.5">
-                        <span className="text-[13px] font-semibold text-[#0A192F] leading-tight">
-                          {admin?.name || (admin as any)?.fullName || "User"}
-                        </span>
-                        <span className="text-[9px] font-bold text-[#FF4D00] uppercase tracking-[0.08em] leading-none mt-0.5">
-                          {(admin?.email || "")
-                            .toLowerCase()
-                            .includes("hemal") ||
-                          admin?.email === "hemal.patel@youthcamping.online"
-                            ? "FOUNDER"
-                            : admin?.role === "superadmin"
-                              ? "FOUNDER"
-                              : admin?.role?.toUpperCase() || "STAFF"}
-                        </span>
-                      </div>
-                      <ChevronDown className="w-2.5 h-2.5 text-[#64748B] hidden lg:block" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56 p-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-8 items-center gap-2 rounded-md px-1 text-left outline-none transition-colors hover:bg-[#F4F7FB] focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30"
                   >
-                    <div className="px-2.5 py-2 border-b border-slate-100 mb-1 bg-slate-50/60 rounded-lg">
-                      <p className="text-xs font-bold text-slate-800 truncate">
-                        {admin?.name || "User"}
-                      </p>
-                      <p className="text-[10px] font-medium text-slate-500 truncate">
-                        {admin?.email}
-                      </p>
-                      <span className="inline-block mt-1 text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-orange-50 text-[#FF4D00] border border-orange-200">
-                        {(admin?.email || "").toLowerCase().includes("hemal") ||
-                        admin?.email === "hemal.patel@youthcamping.online"
-                          ? "FOUNDER"
-                          : admin?.role || "Staff"}
+                    <img
+                      src={
+                        admin?.avatarUrl ||
+                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                      }
+                      className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[#E2E8F0]"
+                      alt={admin?.name || "User"}
+                    />
+                    <span className="hidden items-baseline gap-1.5 lg:inline-flex">
+                      <span className="text-[13px] font-medium leading-none text-[#0B1528]">
+                        {admin?.name || (admin as any)?.fullName || "User"}
                       </span>
-                    </div>
-
-                    <DropdownMenuItem
-                      onClick={() => navigate("/admin/profile")}
-                      className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
-                    >
-                      <User className="w-4 h-4 mr-2 text-slate-500" />
-                      My Profile
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      onClick={() => navigate("/admin/settings")}
-                      className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
-                    >
-                      <Settings className="w-4 h-4 mr-2 text-slate-500" />
-                      Settings
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      onClick={() => navigate("/admin/change-password")}
-                      className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
-                    >
-                      <Key className="w-4 h-4 mr-2 text-slate-500" />
-                      Change Password
-                    </DropdownMenuItem>
-
-                    {/* Founder Only Extra Menu Options */}
-                    {((admin?.email || "").toLowerCase().includes("hemal") ||
-                      admin?.email === "hemal.patel@youthcamping.online") && (
-                      <>
-                        <DropdownMenuSeparator className="my-1 border-slate-100" />
-                        <DropdownMenuItem
-                          onClick={() => navigate("/admin/people/staff")}
-                          className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
-                        >
-                          <Users className="w-4 h-4 mr-2 text-orange-600" />
-                          Manage Staff Profiles
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => navigate("/admin/roles")}
-                          className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
-                        >
-                          <ShieldCheck className="w-4 h-4 mr-2 text-orange-600" />
-                          Roles & Custom Roles
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => navigate("/admin/permission-matrix")}
-                          className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
-                        >
-                          <Sliders className="w-4 h-4 mr-2 text-orange-600" />
-                          Permission Matrix
-                        </DropdownMenuItem>
-                      </>
-                    )}
-
-                    <DropdownMenuSeparator className="my-1 border-slate-100" />
-
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        logout();
-                      }}
-                      className="text-xs font-semibold text-rose-600 hover:bg-rose-50 focus:bg-rose-50 focus:text-rose-700 cursor-pointer rounded-md py-2 px-3 mt-1 flex items-center"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="hidden sm:flex items-center gap-2 pl-1">
-                <Button
-                  onClick={() => setBookingModalOpen(true)}
-                  className="bg-[#0B1528] hover:bg-[#16233c] text-white rounded-md h-8 px-3 font-semibold text-[11px] flex items-center gap-1 shadow-none"
+                      <span className="text-[12px] font-medium leading-none text-slate-400">
+                        {resolveAdminDisplayRole(admin)}
+                      </span>
+                    </span>
+                    <ChevronDown className="hidden h-3 w-3 text-slate-400 lg:block" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 p-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  New Booking
-                </Button>
-              </div>
+                  <div className="px-2.5 py-2 border-b border-slate-100 mb-1 bg-slate-50/60 rounded-lg">
+                    <p className="text-xs font-bold text-slate-800 truncate">
+                      {admin?.name || "User"}
+                    </p>
+                    <p className="text-[10px] font-medium text-slate-500 truncate">
+                      {admin?.email}
+                    </p>
+                    <span className="mt-1 inline-block text-[11px] font-medium capitalize text-slate-500">
+                      {resolveAdminDisplayRole(admin)}
+                    </span>
+                  </div>
+
+                  <DropdownMenuItem
+                    onClick={() => navigate("/admin/profile")}
+                    className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                  >
+                    <User className="w-4 h-4 mr-2 text-slate-500" />
+                    My Profile
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => navigate("/admin/settings")}
+                    className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                  >
+                    <Settings className="w-4 h-4 mr-2 text-slate-500" />
+                    Settings
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => navigate("/admin/change-password")}
+                    className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                  >
+                    <Key className="w-4 h-4 mr-2 text-slate-500" />
+                    Change Password
+                  </DropdownMenuItem>
+
+                  {((admin?.email || "").toLowerCase().includes("hemal") ||
+                    admin?.email === "hemal.patel@youthcamping.online") && (
+                    <>
+                      <DropdownMenuSeparator className="my-1 border-slate-100" />
+                      <DropdownMenuItem
+                        onClick={() => navigate("/admin/people/staff")}
+                        className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                      >
+                        <Users className="w-4 h-4 mr-2 text-orange-600" />
+                        Manage Staff Profiles
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => navigate("/admin/roles")}
+                        className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                      >
+                        <ShieldCheck className="w-4 h-4 mr-2 text-orange-600" />
+                        Roles & Custom Roles
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => navigate("/admin/permission-matrix")}
+                        className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                      >
+                        <Sliders className="w-4 h-4 mr-2 text-orange-600" />
+                        Permission Matrix
+                      </DropdownMenuItem>
+                    </>
+                  )}
+
+                  <DropdownMenuSeparator className="my-1 border-slate-100" />
+
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      logout();
+                    }}
+                    className="text-xs font-semibold text-rose-600 hover:bg-rose-50 focus:bg-rose-50 focus:text-rose-700 cursor-pointer rounded-md py-2 px-3 mt-1 flex items-center"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <span
+                aria-hidden
+                className="hidden h-4 w-px bg-[#E8EEF4] sm:block"
+              />
+
+              <button
+                type="button"
+                onClick={() => setBookingModalOpen(true)}
+                className="hidden h-8 items-center gap-1.5 rounded-md border border-[#0B1528]/15 bg-white px-2.5 text-[12px] font-medium text-[#0B1528] transition-colors hover:border-[#0B1528] hover:bg-[#0B1528] hover:text-white sm:inline-flex"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+                New Booking
+              </button>
             </div>
           </header>
 

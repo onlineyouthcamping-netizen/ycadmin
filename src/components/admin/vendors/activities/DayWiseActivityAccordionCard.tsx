@@ -75,32 +75,32 @@ const SIX_OPERATIONAL_STATUSES = [
   {
     value: "DRAFT",
     label: "Draft",
-    bg: "bg-slate-100 text-slate-700 border-slate-300",
+    bg: "bg-slate-100 text-slate-600 border-slate-200",
   },
   {
     value: "CONFIRMED",
     label: "Confirmed",
-    bg: "bg-blue-50 text-blue-700 border-blue-200",
+    bg: "bg-slate-100 text-slate-700 border-slate-200",
   },
   {
     value: "READY",
     label: "Ready",
-    bg: "bg-amber-50 text-amber-700 border-amber-200",
+    bg: "bg-amber-50 text-amber-800 border-amber-100",
   },
   {
     value: "STARTED",
     label: "Started",
-    bg: "bg-purple-50 text-purple-700 border-purple-200",
+    bg: "bg-slate-100 text-[#0B1528] border-slate-200",
   },
   {
     value: "COMPLETED",
     label: "Completed",
-    bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    bg: "bg-emerald-50 text-emerald-800 border-emerald-100",
   },
   {
     value: "RECONCILED",
     label: "Reconciled",
-    bg: "bg-teal-50 text-teal-800 border-teal-300",
+    bg: "bg-slate-100 text-slate-600 border-slate-200",
   },
 ] as const;
 
@@ -285,51 +285,51 @@ export default function DayWiseActivityAccordionCard({
       {/* HEADER BAR — COMPACT INFORMATION-DENSE SUMMARY (COLLAPSED VIEW) */}
       <div
         onClick={() => setExpanded(!expanded)}
-        className="p-4 cursor-pointer flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 select-none hover:bg-slate-50/70 transition-colors"
+        className="p-3 sm:p-4 cursor-pointer flex flex-col xl:flex-row items-start xl:items-center justify-between gap-3 select-none hover:bg-slate-50/70 transition-colors min-w-0"
       >
-        {/* Left: Inclusion Badge + Time + Activity Name + Status Badge */}
-        <div className="flex items-center gap-3.5 min-w-[260px]">
-          <div className="px-2.5 py-1.5 bg-slate-100 rounded-lg text-slate-800 font-bold text-sm font-mono whitespace-nowrap">
+        {/* Left: Time stacked above title on mobile so 360px doesn’t crush the row */}
+        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3.5 min-w-0 w-full">
+          <div className="px-2.5 py-1 bg-[#F4F7FB] rounded-md text-[#0B1528] font-bold text-xs font-mono whitespace-nowrap w-fit shrink-0 border border-[#E8EEF4]">
             {scheduledTime}
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-[#0B1528] text-sm sm:text-base break-words leading-snug">
+              {activityName}
+            </h4>
+            <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
               <span
                 className={cn(
-                  "px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider border",
+                  "px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border",
                   isIncluded
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                    : "bg-purple-50 text-purple-700 border-purple-300",
+                    ? "bg-slate-100 text-slate-600 border-slate-200"
+                    : "bg-[#FF4D00]/10 text-[#FF4D00] border-[#FF4D00]/20",
                 )}
               >
-                {isIncluded ? "Included Activity" : "Optional Add-on"}
+                {isIncluded ? "Included" : "Optional"}
               </span>
-              <h4 className="font-bold text-slate-900 text-base">
-                {activityName}
-              </h4>
               <span
                 className={cn(
-                  "px-2 py-0.5 rounded-full text-xs font-semibold border",
+                  "px-1.5 py-0.5 rounded text-[10px] font-medium border",
                   currentStatusObj.bg,
                 )}
               >
                 {currentStatusObj.label}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Vendor:{" "}
-              <strong className="text-slate-800">{activity.vendorName}</strong>
+              <strong className="text-[#0B1528] font-semibold">{activity.vendorName}</strong>
             </p>
           </div>
         </div>
 
         {/* Center: Key Metrics Summary based on Included vs Optional */}
-        <div className="flex flex-wrap items-center gap-6 text-xs bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs bg-[#F4F7FB] px-3 py-2 rounded-xl border border-[#E8EEF4] w-full min-w-0">
           {isIncluded ? (
             vendorCost > 0 ? (
               <>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">
+                  <span className="text-slate-500 block text-[11px]">
                     Vendor Cost
                   </span>
                   <strong className="text-slate-900 font-bold text-sm">

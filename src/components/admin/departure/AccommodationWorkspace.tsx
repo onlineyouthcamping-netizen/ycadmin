@@ -288,16 +288,16 @@ export default function AccommodationWorkspace({
   return (
     <div className="space-y-4">
       {/* ── Header ── */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-base font-black text-slate-800">Hotels & Accommodations</h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between min-w-0">
+        <div className="min-w-0">
+          <h2 className="text-base font-black text-[#0B1528]">Hotels & Accommodations</h2>
+          <p className="text-[11px] text-slate-600 mt-0.5">
             Click a day to view hotel details, room allocation and per-pax cost
           </p>
         </div>
         <button
           onClick={() => onEditHotel({ id: "" })}
-          className="bg-[#F97316] hover:bg-[#E05E00] text-white px-4 py-2 rounded text-xs font-bold transition-colors shadow-xs"
+          className="hidden md:inline-flex bg-[#FF4D00] hover:bg-[#E04500] text-white px-4 py-2 rounded text-xs font-bold transition-colors shadow-xs"
         >
           + Add / Change Hotel
         </button>
@@ -886,8 +886,8 @@ function DayDetailDrawer({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
         {/* ── Manual Stay / No Stay Switch Bar ── */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between shadow-2xs">
-          <div className="flex items-center gap-2.5">
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-2xs min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shadow-2xs shrink-0 transition-colors",
               row.hasStay ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
