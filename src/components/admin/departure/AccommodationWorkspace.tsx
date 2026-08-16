@@ -788,8 +788,15 @@ function DayDetailDrawer({
     });
   }, [booking, totalPax]);
 
-  // ── Derive day-specific sharing from booking or fallback to global passengerSharing ──
+  // ── Derive day-specific sharing: physical allocation is ground truth ──
   const daySharing = useMemo(() => {
+    // When we have actual physical room assignments, always use passengerSharing
+    // (which is derived from the deduplicated physical allocation).
+    // Booking room counts may be stale/wrong from previous saves.
+    if (physicalRoomAllocation.rooms.length > 0) {
+      return passengerSharing;
+    }
+    // No physical allocation — fall back to booking saved data
     if (booking) {
       const dPax = booking.doublePax ?? ((booking.doubleRoomsCount || 0) * 2);
       const tPax = booking.triplePax ?? ((booking.tripleRoomsCount || 0) * 3);
@@ -805,7 +812,7 @@ function DayDetailDrawer({
       }
     }
     return passengerSharing;
-  }, [booking, passengerSharing]);
+  }, [booking, passengerSharing, physicalRoomAllocation]);
 
   // ── Room allocation display: physical allocation > booking room counts > suggestion ──
   const roomsToShow = useMemo(() => {
