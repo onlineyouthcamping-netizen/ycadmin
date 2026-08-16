@@ -464,7 +464,7 @@ export default function VerificationQueuePage({
     <div
       className={cn(
         "space-y-4 font-sans select-none antialiased text-[#162B45]",
-        !hideHeader && "px-4 py-4 bg-[#F4F7FB] min-h-screen",
+        !hideHeader && "px-4 py-4 bg-[#F4F7FB] min-h-0",
       )}
     >
       {/* 1. COMPACT PAGE HEADER (if not embedded) */}

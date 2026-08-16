@@ -132,9 +132,14 @@
     font-style: normal !important;
   }
 
+  html {
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-[#F4F7FB] text-[#162B45] antialiased;
     font-family: "Montserrat", sans-serif !important;
+    /* Do not lock overflow/position here — AdminLayout main is the touch scroller. */
   }
 
   ::selection {
@@ -334,17 +339,42 @@
   }
 }
 
-/* Responsive Mobile Margin Adjustment */
+/* Admin app shell: dvh with svh fallback so iOS chrome doesn't clip the only scroller. */
+.admin-app-shell {
+  min-height: 0;
+  height: 100svh;
+  max-height: 100svh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.admin-main-scroll {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.pb-safe {
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* Horizontal bleed can cancel main padding; vertical negative margin must not
+   expand past the scrollport (iOS rubber-band / clipped 56px header). */
 @media (max-width: 639.98px) {
   .-mx-6 {
     margin-left: -0.75rem !important;
     margin-right: -0.75rem !important;
   }
-  .-my-6 {
-    margin-top: -0.75rem !important;
-    margin-bottom: -0.75rem !important;
+  .-my-6,
+  .-my-3 {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
-  .-mt-6 {
-    margin-top: -0.75rem !important;
+  .-mt-6,
+  .-mt-3 {
+    margin-top: 0 !important;
   }
 }

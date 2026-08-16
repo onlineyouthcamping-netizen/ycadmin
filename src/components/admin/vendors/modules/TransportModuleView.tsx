@@ -1,24 +1,8 @@
 import React from "react";
-import {
-  Bus,
-  MapPin,
-  Plus,
-  RotateCw,
-  Eye,
-  Pencil,
-  Trash2,
-  Search,
-} from "lucide-react";
+import { Bus, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDisplayVendorCode } from "@/utils/vendorUtils";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { VendorSearchToolbar } from "@/components/admin/vendors/VendorSearchToolbar";
 
 interface TransportModuleViewProps {
   vendors: any[];
@@ -61,43 +45,19 @@ export function TransportModuleView({
 
   return (
     <div className="space-y-4">
-      {/* Contextual Filters */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs flex flex-wrap gap-2.5 items-center">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-          <Input
-            placeholder="Search operator, vehicle, or city..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8.5 text-xs bg-white border-slate-200 rounded-lg pl-8.5 focus:border-[#F97316]"
-          />
-        </div>
-        <Select value={filterDestination} onValueChange={onDestinationChange}>
-          <SelectTrigger className="h-8.5 w-44 text-xs border-slate-200 rounded-lg bg-white">
-            <SelectValue placeholder="Destination" />
-          </SelectTrigger>
-          <SelectContent className="text-xs bg-white">
-            <SelectItem value="ALL">All Destinations</SelectItem>
-            {destinations.map((d, i) => (
-              <SelectItem key={i} value={d}>
-                📍 {d}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          onClick={onRefresh}
-          variant="outline"
-          className="h-8.5 px-3 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg cursor-pointer"
-        >
-          <RotateCw className="w-3.5 h-3.5" />
-        </Button>
-      </div>
+      <VendorSearchToolbar
+        searchTerm={searchTerm}
+        onSearchChange={onSearchChange}
+        placeholder="Search operator, vehicle, or city"
+        destinations={destinations}
+        filterDestination={filterDestination}
+        onDestinationChange={onDestinationChange}
+        onReset={onRefresh}
+      />
 
-      {/* Clean Full-Width Transport Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-        <table className="w-full text-xs text-left border-collapse">
-          <thead className="bg-slate-50 text-slate-500 uppercase font-black tracking-wider text-[10px] border-b border-slate-200">
+      <div className="overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+        <table className="w-full border-collapse text-left text-xs">
+          <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-semibold text-slate-500">
             <tr>
               <th className="py-3 px-4">Operator / Fleet Firm</th>
               <th className="py-3 px-4 whitespace-nowrap">Category</th>
@@ -122,7 +82,7 @@ export function TransportModuleView({
                     </p>
                     <Button
                       onClick={onAddVendor}
-                      className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                      className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-[#FF4D00] px-4 py-2 text-xs font-semibold text-white shadow-none hover:bg-[#E04400]"
                     >
                       <Plus className="w-4 h-4" /> Add Transport Vendor
                     </Button>
@@ -154,8 +114,8 @@ export function TransportModuleView({
                     </div>
                   </td>
                   <td className="py-2.5 px-4 whitespace-nowrap">
-                    <span className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-black px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide">
-                      TRANSPORT
+                    <span className="rounded-md border border-[#E8EEF4] bg-[#F4F7FB] px-2 py-0.5 text-[11px] font-medium text-[#0B1528]">
+                      Transport
                     </span>
                   </td>
                   <td className="py-2.5 px-4 whitespace-nowrap text-slate-700 font-medium text-xs">
@@ -169,30 +129,30 @@ export function TransportModuleView({
                       {f.phone || f.contactNumber || "—"}
                     </span>
                   </td>
-                    <td className="p-3.5 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center justify-end gap-1.5">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right">
+                      <div className="inline-flex items-center justify-end gap-0.5">
                         <button
                           type="button"
                           onClick={() => onSelectVendor(f)}
-                          className="h-7 px-3 text-[11px] font-bold text-[#F97316] hover:text-white bg-white hover:bg-[#F97316] rounded-md border border-orange-300 hover:border-[#F97316] transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                          className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-[#E8EEF4] bg-white px-2.5 text-[11px] font-medium text-[#0B1528] transition-colors hover:bg-[#F4F7FB]"
                         >
-                          <Eye className="w-3.5 h-3.5" /> Workspace
+                          <Eye className="h-3.5 w-3.5" /> Workspace
                         </button>
                         <button
                           type="button"
                           onClick={() => onEditVendor(f)}
-                          title="Edit Details"
-                          className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-100 rounded-md border border-slate-200/80 transition-colors cursor-pointer"
+                          title="Edit"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528]"
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onDeleteVendor(f.id)}
-                          title="Deactivate Vendor"
-                          className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-rose-600 bg-white hover:bg-rose-50 rounded-md border border-slate-200/80 hover:border-rose-200 transition-colors cursor-pointer"
+                          title="Deactivate"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>

@@ -1855,9 +1855,9 @@ export default function AccountingPage() {
       ];
 
   return (
-    <div className="space-y-3 md:space-y-5 pb-28 md:pb-16 p-3 md:p-6 bg-[#F4F7FB] min-h-screen">
+    <div className="space-y-3 md:space-y-5 pb-28 md:pb-16 p-3 md:p-6 bg-[#F4F7FB] min-h-0">
       {/* Header and Filter controls */}
-      <div className="flex flex-col gap-3 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 md:-mt-6 p-3 md:p-6 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">

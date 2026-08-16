@@ -273,7 +273,7 @@ export default function InquiriesPage() {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-[#F8FAFC] min-h-screen -mx-3 -my-3 sm:-mx-6 sm:-my-6 font-sans text-slate-800">
+    <div className="flex-1 flex min-h-0 md:overflow-hidden bg-[#F8FAFC] -mx-3 md:-mx-6 md:-my-6 font-sans text-slate-800">
       {/* ─── MOBILE VIEW (<768px) ─── */}
       <div className="block md:hidden w-full p-3">
         <MobileCRMLeadsView

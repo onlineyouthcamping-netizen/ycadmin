@@ -759,25 +759,25 @@ export default function HotelAssignmentWizardModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[640px] bg-white p-5 rounded-xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col font-sans">
-        {/* COMPACT HEADER */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-black text-slate-900">Hotel Assignment</h3>
-            <span className="text-xs font-bold text-slate-500">
+      <DialogContent className="max-w-[640px] bg-white p-3 sm:p-5 rounded-xl shadow-2xl border border-slate-200 overflow-hidden max-h-[min(90vh,100dvh)] flex flex-col min-h-0 font-sans">
+        {/* STICKY HEADER */}
+        <div className="flex items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3 pr-8 shrink-0 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0">
+            <h3 className="text-base font-black text-slate-900 shrink-0">Hotel Assignment</h3>
+            <span className="text-xs font-bold text-slate-500 min-w-0 break-words">
               · Day {currentDayNum} · {selectedDestination}
             </span>
           </div>
-          <span className="bg-slate-100 text-slate-800 text-xs font-black px-2.5 py-0.5 rounded-md border border-slate-200">
+          <span className="bg-slate-100 text-slate-800 text-xs font-black px-2.5 py-0.5 rounded-md border border-slate-200 shrink-0">
             {targetPaxCount} Pax
           </span>
         </div>
 
-        {/* COMPACT FORM BODY */}
-        <div className="py-3 space-y-4 overflow-y-auto pr-1 flex-1 text-xs">
+        {/* SCROLLABLE FORM BODY */}
+        <div className="py-3 pb-4 space-y-4 overflow-y-auto overscroll-contain pr-1 flex-1 min-h-0 text-xs">
           {/* SECTION 1: DESTINATION & HOTEL SELECTOR */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="space-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 min-w-0">
+            <div className="space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
                   Destination City
@@ -848,18 +848,18 @@ export default function HotelAssignmentWizardModal({
                       handleSelectHotel(placeholderHotel, newDest);
                     }
                   }}
-                  className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
+                  className="w-full min-w-0 h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
                 >
                   {destinationCitiesList.map((city) => (
                     <option key={city} value={city}>
-                      📍 {city}
+                      {city}
                     </option>
                   ))}
                 </select>
               )}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
                   Hotel Property
@@ -901,7 +901,7 @@ export default function HotelAssignmentWizardModal({
                     const matched = matchingHotels.find((h) => h.name === val);
                     if (matched) handleSelectHotel(matched);
                   }}
-                  className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
+                  className="w-full min-w-0 h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
                 >
                   {matchingHotels.map((h) => (
                     <option key={h.id} value={h.name}>
@@ -914,9 +914,9 @@ export default function HotelAssignmentWizardModal({
             </div>
           </div>
 
-          {/* SECTION 2: STAY DATES & NIGHTS (1 HORIZONTAL ROW) */}
-          <div className="grid grid-cols-3 gap-2.5 items-end bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-            <div>
+          {/* SECTION 2: STAY DATES & NIGHTS — stacked on phones so years aren't truncated */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-end bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <div className="min-w-0">
               <label className="text-[10px] font-black uppercase text-slate-500 block mb-1">
                 Check-In
               </label>
@@ -924,17 +924,17 @@ export default function HotelAssignmentWizardModal({
                 type="date"
                 value={checkInDate}
                 onChange={(e) => handleCheckInChange(e.target.value)}
-                className="w-full h-8 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-900 focus:outline-none focus:border-[#FF4D00]"
+                className="w-full min-w-0 h-9 sm:h-8 text-sm sm:text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-900 focus:outline-none focus:border-[#FF4D00]"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-[10px] font-black uppercase text-slate-500 block mb-1">
                 Nights
               </label>
               <select
                 value={nightsCount}
                 onChange={(e) => handleNightsChange(Number(e.target.value))}
-                className="w-full h-8 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-900 focus:outline-none focus:border-[#FF4D00]"
+                className="w-full min-w-0 h-9 sm:h-8 text-sm sm:text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-900 focus:outline-none focus:border-[#FF4D00]"
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                   <option key={n} value={n}>
@@ -943,7 +943,7 @@ export default function HotelAssignmentWizardModal({
                 ))}
               </select>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-[10px] font-black uppercase text-slate-500 block mb-1">
                 Check-Out
               </label>
@@ -951,21 +951,21 @@ export default function HotelAssignmentWizardModal({
                 type="date"
                 value={checkOutDate}
                 onChange={(e) => setCheckOutDate(e.target.value)}
-                className="w-full h-8 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-900 focus:outline-none focus:border-[#FF4D00]"
+                className="w-full min-w-0 h-9 sm:h-8 text-sm sm:text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-900 focus:outline-none focus:border-[#FF4D00]"
               />
             </div>
           </div>
 
           {/* SECTION 3: ROOM & PER PERSON SHARING ALLOCATION TABLE */}
-          <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
-            <div className="bg-slate-50 p-2 border-b border-slate-200 flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-700">
+          <div className="border border-slate-200 rounded-lg overflow-x-auto bg-white">
+            <div className="bg-slate-50 p-2 border-b border-slate-200 flex flex-wrap justify-between items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-700">
               <span>Per Person Sharing Allocation</span>
               <span className={cn("font-bold px-2 py-0.5 rounded text-[10px]", isPaxFullyAllocated ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800")}>
                 {paxCapacityCovered} / {targetPaxCount} Persons Allocated
               </span>
             </div>
 
-            <table className="w-full text-xs text-left border-collapse">
+            <table className="w-full min-w-[520px] text-xs text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 text-[10px] uppercase text-slate-500 font-bold bg-slate-50/50">
                   <th className="py-1.5 px-3">Sharing Type</th>
@@ -1178,10 +1178,10 @@ export default function HotelAssignmentWizardModal({
           </div>
 
           {/* SECTION 4: COST SUMMARY */}
-          <div className="flex items-center justify-between bg-orange-50/70 border border-orange-200 p-3 rounded-lg">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-orange-50/70 border border-orange-200 p-3 rounded-lg mb-1">
+            <div className="min-w-0">
               <span className="text-[10px] font-black uppercase text-slate-500 block">Total Stay Cost</span>
-              <div className="flex items-baseline gap-2">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="text-lg font-black text-slate-900 font-mono">
                   ₹{calculatedCosts.grandTotal.toLocaleString("en-IN")}
                 </span>
@@ -1190,7 +1190,7 @@ export default function HotelAssignmentWizardModal({
                 </span>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right shrink-0">
               <span className="text-[10px] font-black uppercase text-slate-400 block">Calculation Mode</span>
               <span className="text-xs font-black text-[#FF4D00] uppercase tracking-wider">Per Person</span>
             </div>
@@ -1211,12 +1211,12 @@ export default function HotelAssignmentWizardModal({
           </div>
         </div>
 
-        {/* STICKY FOOTER */}
-        <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-auto">
+        {/* STICKY FOOTER — always visible; safe-area so Save isn't flush against the home indicator */}
+        <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 mt-auto shrink-0 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+            className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
           >
             Cancel
           </button>
@@ -1224,7 +1224,7 @@ export default function HotelAssignmentWizardModal({
             type="button"
             onClick={handleSaveStayAssignment}
             disabled={isSaving}
-            className="px-5 py-2 rounded-lg text-xs font-black bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="px-4 sm:px-5 py-2 rounded-lg text-xs font-black bg-[#FF4D00] hover:bg-[#E04400] text-white shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 min-w-0"
           >
             {isSaving ? "Saving Assignment..." : "Save Stay Assignment"}
           </button>

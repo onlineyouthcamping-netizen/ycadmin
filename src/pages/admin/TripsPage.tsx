@@ -492,7 +492,7 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="p-0 md:p-0 pb-32 md:pb-0 bg-transparent min-h-screen text-[#0B1528]">
+    <div className="p-0 md:p-0 pb-32 md:pb-0 bg-transparent min-h-0 text-[#0B1528]">
       {/* ─── Page Header & Key Actions ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4 mb-3 md:mb-5">
         <div className="min-w-0">

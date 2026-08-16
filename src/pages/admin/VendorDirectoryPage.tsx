@@ -80,7 +80,7 @@ const TABS = [
   { id: "activities", label: "Activities", icon: Compass, countKey: "activities" },
   { id: "restaurants", label: "Restaurants", icon: UtensilsCrossed, countKey: "restaurants" },
   { id: "guides", label: "Guides", icon: UserCheck, countKey: "guides" },
-  { id: "other", label: "Other Vendors", icon: Building2, countKey: "other" },
+  { id: "other", label: "Other vendors", icon: Building2, countKey: "other" },
 ];
 
 export default function VendorDirectoryPage() {
@@ -601,62 +601,55 @@ export default function VendorDirectoryPage() {
   const selectedTrip = tripsList.find((t) => t.id === selectedTripId);
 
   return (
-    <div className="space-y-6 p-6 min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
-        <div>
-          <h1 className="text-lg font-black text-slate-900 tracking-tight">
-            {selectedTrip ? `${selectedTrip.title} — Vendor Directory` : "Vendor Directory"}
-          </h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+    <div className="space-y-4 p-0 min-h-0 bg-transparent text-[#0B1528]">
+      <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <p className="truncate text-[13px] font-semibold text-[#0B1528]">
+            {selectedTrip ? selectedTrip.title : "Select a trip"}
+          </p>
+          <p className="mt-0.5 text-[12px] text-slate-500">
             {selectedTrip
-              ? `${selectedTrip.location || ""} · ${selectedTrip._count?.tripVendors || 0} vendors mapped`
-              : "Select a trip to manage its vendors"}
+              ? `${selectedTrip.location || "Trip"} · ${selectedTrip._count?.tripVendors || 0} vendors`
+              : "Choose a trip to manage its vendors"}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Trip Selector */}
-          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-200">
-            <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider px-2">Trip:</span>
-            <Select
-              value={selectedTripId}
-              onValueChange={handleTripSelectChange}
-              onOpenChange={(open) => {
-                if (open) setIsTripDropdownOpen(true);
-              }}
-            >
-              <SelectTrigger className="w-[260px] h-8 text-xs font-bold bg-white border-slate-200 shadow-2xs">
-                <SelectValue placeholder="— Select Trip —" />
-              </SelectTrigger>
-              <SelectContent className="bg-white text-xs font-medium">
-                {tripsList.map((t) => (
-                  <SelectItem key={t.id} value={t.id} className="font-bold">
-                    {t.title}
-                    <span className="ml-1.5 text-[9px] font-mono text-slate-400">
-                      ({t._count?.tripVendors || 0})
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Select
+            value={selectedTripId}
+            onValueChange={handleTripSelectChange}
+            onOpenChange={(open) => {
+              if (open) setIsTripDropdownOpen(true);
+            }}
+          >
+            <SelectTrigger className="h-9 w-[min(100%,260px)] rounded-md border-[#E8EEF4] bg-white text-[12px] font-medium text-[#0B1528] shadow-none focus:ring-1 focus:ring-[#FF4D00]/30 focus:ring-offset-0">
+              <SelectValue placeholder="Select trip" />
+            </SelectTrigger>
+            <SelectContent className="bg-white text-[12px] font-medium">
+              {tripsList.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.title}
+                  <span className="ml-1.5 font-mono text-[10px] text-slate-400">
+                    ({t._count?.tripVendors || 0})
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          {/* Add Vendor — only active when a trip is selected */}
           <Button
             disabled={!selectedTripId}
             onClick={() => handleOpenAddVendor()}
-            className="bg-[#F97316] hover:bg-[#E05E00] disabled:opacity-40 text-white text-xs font-bold h-8 px-3.5 rounded-lg shadow-2xs cursor-pointer flex items-center gap-1.5"
+            className="h-9 cursor-pointer rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-semibold text-white shadow-none hover:bg-[#E04400] disabled:opacity-40"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Add Vendor
+            <Plus className="h-3.5 w-3.5" />
+            Add vendor
           </Button>
         </div>
       </div>
 
-      {/* Notion Style Slate Category Tab Segment Bar */}
       {!viewingDetailVendor && (
-        <div className="bg-slate-100/80 p-1.5 rounded-xl border border-slate-200 flex flex-wrap items-center gap-1">
+        <div className="flex items-end gap-0 overflow-x-auto no-scrollbar border-b border-[#E8EEF4]">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentCategory === tab.id;
@@ -665,6 +658,7 @@ export default function VendorDirectoryPage() {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => {
                   const newParams = new URLSearchParams(searchParams);
                   newParams.set("category", tab.id);
@@ -672,18 +666,21 @@ export default function VendorDirectoryPage() {
                   setSearchParams(newParams, { replace: true });
                 }}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer",
+                  "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-[12px] whitespace-nowrap transition-colors",
                   isActive
-                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                    ? "border-[#FF4D00] font-semibold text-[#0B1528]"
+                    : "border-transparent font-medium text-slate-500 hover:text-[#0B1528]",
                 )}
               >
-                <Icon className={cn("w-3.5 h-3.5", isActive ? "text-[#F97316]" : "text-slate-500")} />
+                <Icon
+                  className={cn("h-3.5 w-3.5", isActive ? "text-[#FF4D00]" : "text-slate-400")}
+                  strokeWidth={1.75}
+                />
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    "text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full",
-                    isActive ? "bg-[#F97316] text-white" : "bg-slate-200 text-slate-600"
+                    "min-w-[1.25rem] text-center text-[10px] tabular-nums",
+                    isActive ? "font-semibold text-[#FF4D00]" : "text-slate-400",
                   )}
                 >
                   {count}
@@ -722,7 +719,7 @@ export default function VendorDirectoryPage() {
           {!selectedTripId ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <Building2 className="w-12 h-12 text-slate-200 mb-4" />
-              <p className="text-sm font-black text-slate-500">No Trip Selected</p>
+              <p className="text-sm font-semibold text-slate-500">No trip selected</p>
               <p className="text-xs text-slate-400 font-medium mt-1">Select a trip from the dropdown above to manage its vendors</p>
             </div>
           ) : (

@@ -114,7 +114,7 @@ export default function ApprovalsHubPage() {
   };
 
   return (
-    <div className="space-y-4 font-sans antialiased text-[#0B1528] p-1 bg-transparent min-h-screen">
+    <div className="space-y-4 font-sans antialiased text-[#0B1528] p-1 bg-transparent min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2] bg-transparent">
         <div className="space-y-0.5">

@@ -1,17 +1,7 @@
 import React, { useState } from "react";
-import {
-  Hotel,
-  MapPin,
-  Plus,
-  RotateCw,
-  Eye,
-  Pencil,
-  Trash2,
-  Search,
-} from "lucide-react";
+import { Hotel, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDisplayVendorCode } from "@/utils/vendorUtils";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,6 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  VendorSearchToolbar,
+  vendorSelectFieldClass,
+} from "@/components/admin/vendors/VendorSearchToolbar";
+import { cn } from "@/lib/utils";
 
 interface AccommodationModuleViewProps {
   vendors: any[];
@@ -67,83 +62,61 @@ export function AccommodationModuleView({
 
   return (
     <div className="space-y-4">
-      {/* Contextual Filters */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs flex flex-wrap gap-2.5 items-center">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-          <Input
-            placeholder="Search property, phone, or city..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8.5 text-xs bg-white border-slate-200 rounded-lg pl-8.5 focus:border-[#F97316]"
-          />
-        </div>
-        <Select value={filterDestination} onValueChange={onDestinationChange}>
-          <SelectTrigger className="h-8.5 w-44 text-xs border-slate-200 rounded-lg bg-white">
-            <SelectValue placeholder="Destination" />
-          </SelectTrigger>
-          <SelectContent className="text-xs bg-white">
-            <SelectItem value="ALL">All Destinations</SelectItem>
-            {destinations.map((d, i) => (
-              <SelectItem key={i} value={d}>
-                📍 {d}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterStayType} onValueChange={setFilterStayType}>
-          <SelectTrigger className="h-8.5 w-40 text-xs border-slate-200 rounded-lg bg-white">
-            <SelectValue placeholder="Stay Type" />
-          </SelectTrigger>
-          <SelectContent className="text-xs bg-white">
-            <SelectItem value="ALL">All Stay Types</SelectItem>
-            <SelectItem value="HOTEL">Hotel</SelectItem>
-            <SelectItem value="RESORT">Resort</SelectItem>
-            <SelectItem value="HOMESTAY">Homestay</SelectItem>
-            <SelectItem value="HOSTEL">Hostel</SelectItem>
-            <SelectItem value="CAMP">Camp</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          onClick={onRefresh}
-          variant="outline"
-          className="h-8.5 px-3 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg cursor-pointer"
-        >
-          <RotateCw className="w-3.5 h-3.5" />
-        </Button>
-      </div>
+      <VendorSearchToolbar
+        searchTerm={searchTerm}
+        onSearchChange={onSearchChange}
+        placeholder="Search property, phone, or city"
+        destinations={destinations}
+        filterDestination={filterDestination}
+        onDestinationChange={onDestinationChange}
+        onReset={onRefresh}
+        extraFilters={
+          <Select value={filterStayType} onValueChange={setFilterStayType}>
+            <SelectTrigger className={cn(vendorSelectFieldClass, "w-full sm:w-40")}>
+              <SelectValue placeholder="All stay types" />
+            </SelectTrigger>
+            <SelectContent className="bg-white text-[12px]">
+              <SelectItem value="ALL">All stay types</SelectItem>
+              <SelectItem value="HOTEL">Hotel</SelectItem>
+              <SelectItem value="RESORT">Resort</SelectItem>
+              <SelectItem value="HOMESTAY">Homestay</SelectItem>
+              <SelectItem value="HOSTEL">Hostel</SelectItem>
+              <SelectItem value="CAMP">Camp</SelectItem>
+            </SelectContent>
+          </Select>
+        }
+      />
 
-      {/* Clean Full-Width Accommodation Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-        <table className="w-full text-xs text-left border-collapse">
-          <thead className="bg-slate-50 text-slate-500 uppercase font-black tracking-wider text-[10px] border-b border-slate-200">
+      <div className="overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+        <table className="w-full border-collapse text-left text-xs">
+          <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-semibold text-slate-500">
             <tr>
-              <th className="py-3 px-4">Vendor / Property</th>
-              <th className="py-3 px-4 whitespace-nowrap">Category</th>
-              <th className="py-3 px-4 whitespace-nowrap">Destination</th>
-              <th className="py-3 px-4 whitespace-nowrap">Contact</th>
-              <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
+              <th className="px-4 py-3">Vendor / property</th>
+              <th className="whitespace-nowrap px-4 py-3">Category</th>
+              <th className="whitespace-nowrap px-4 py-3">Destination</th>
+              <th className="whitespace-nowrap px-4 py-3">Contact</th>
+              <th className="whitespace-nowrap px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 font-medium">
+          <tbody className="divide-y divide-[#E8EEF4] font-medium">
             {hotels.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-12 text-center bg-slate-50/50">
-                  <div className="space-y-2 max-w-sm mx-auto">
-                    <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mx-auto">
-                      <Hotel className="w-6 h-6" />
+                <td colSpan={5} className="bg-[#F4F7FB]/50 p-12 text-center">
+                  <div className="mx-auto max-w-sm space-y-2">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#E8EEF4] bg-white text-[#FF4D00]">
+                      <Hotel className="h-6 w-6" />
                     </div>
-                    <p className="text-sm font-bold text-slate-800">
-                      No Accommodation Vendors Found
+                    <p className="text-sm font-semibold text-[#0B1528]">
+                      No accommodation vendors found
                     </p>
                     <p className="text-xs text-slate-500">
-                      There are no stay partners registered in this scope. Click below to add a new accommodation vendor.
+                      There are no stay partners registered in this scope. Add a new accommodation vendor to get started.
                     </p>
                     <Button
                       onClick={onAddVendor}
-                      className="mt-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                      className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-[#FF4D00] px-4 py-2 text-xs font-semibold text-white shadow-none hover:bg-[#E04400]"
                     >
-                      <Plus className="w-4 h-4" /> Add Accommodation Vendor
+                      <Plus className="h-4 w-4" /> Add vendor
                     </Button>
                   </div>
                 </td>
@@ -151,78 +124,82 @@ export function AccommodationModuleView({
             ) : (
               hotels.map((h) => {
                 const sType = (h.type || h.accommodationType || "HOTEL").toUpperCase();
+                const stayLabel = sType
+                  .replace(/_/g, " ")
+                  .toLowerCase()
+                  .replace(/\b\w/g, (c: string) => c.toUpperCase());
                 const badgeColor =
                   sType === "CAMP" || sType === "TENT"
                     ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
                     : sType === "RESORT"
                     ? "bg-purple-50 text-purple-800 border-purple-200/80"
                     : sType === "HOMESTAY"
-                    ? "bg-blue-50 text-blue-800 border-blue-200/80"
-                    : "bg-amber-50 text-amber-800 border-amber-200/80";
+                    ? "bg-[#F4F7FB] text-[#0B1528] border-[#E8EEF4]"
+                    : "bg-[#F4F7FB] text-[#0B1528] border-[#E8EEF4]";
 
                 return (
                   <tr
                     key={h.id}
-                    className="hover:bg-slate-50/80 transition-colors"
+                    className="transition-colors hover:bg-[#F4F7FB]/70"
                   >
-                    <td className="py-2.5 px-4">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-[#F97316] font-bold shrink-0">
-                          <Hotel className="w-3.5 h-3.5" />
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#E8EEF4] bg-[#F4F7FB] text-[#0B1528]">
+                          <Hotel className="h-3.5 w-3.5" />
                         </div>
                         <div>
                           <span
                             onClick={() => onSelectVendor(h)}
-                            className="font-bold text-slate-900 text-xs block leading-tight hover:text-[#F97316] cursor-pointer transition-colors"
+                            className="block cursor-pointer text-xs font-semibold leading-tight text-[#0B1528] transition-colors hover:text-[#FF4D00]"
                           >
                             {h.name}
                           </span>
-                          <span className="text-[10px] font-mono text-slate-400 font-medium">
+                          <span className="font-mono text-[10px] font-medium text-slate-400">
                             {getDisplayVendorCode(h)}
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-4 whitespace-nowrap">
-                      <span className={`font-black px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide border ${badgeColor}`}>
-                        {sType}
+                    <td className="whitespace-nowrap px-4 py-2.5">
+                      <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${badgeColor}`}>
+                        {stayLabel}
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 whitespace-nowrap text-slate-700 font-medium text-xs">
-                      📍 {h.city || h.location || "N/A"}
+                    <td className="whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-700">
+                      {h.city || h.location || "—"}
                     </td>
-                    <td className="py-2.5 px-4 whitespace-nowrap">
-                      <span className="font-bold text-slate-800 text-xs block">
+                    <td className="whitespace-nowrap px-4 py-2.5">
+                      <span className="block text-xs font-medium text-[#0B1528]">
                         {h.contactPerson || h.name}
                       </span>
-                      <span className="text-[11px] font-mono text-slate-500">
+                      <span className="font-mono text-[11px] text-slate-500">
                         {h.phone || h.contactNumber || "—"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center justify-end gap-1.5">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right">
+                      <div className="inline-flex items-center justify-end gap-0.5">
                         <button
                           type="button"
                           onClick={() => onSelectVendor(h)}
-                          className="h-7 px-2.5 text-[11px] font-bold text-[#F97316] hover:text-white bg-white hover:bg-[#F97316] rounded-md border border-orange-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                          className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-[#E8EEF4] bg-white px-2.5 text-[11px] font-medium text-[#0B1528] transition-colors hover:bg-[#F4F7FB]"
                         >
-                          <Eye className="w-3.5 h-3.5" /> Workspace
+                          <Eye className="h-3.5 w-3.5" /> Workspace
                         </button>
                         <button
                           type="button"
                           onClick={() => onEditVendor(h)}
                           title="Edit"
-                          className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-100 rounded-md border border-slate-200 transition-colors cursor-pointer"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528]"
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onDeleteVendor(h.id)}
                           title="Deactivate"
-                          className="h-7 w-7 flex items-center justify-center text-slate-400 hover:text-rose-600 bg-white hover:bg-rose-50 rounded-md border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>
@@ -234,8 +211,7 @@ export function AccommodationModuleView({
         </table>
       </div>
 
-      {/* Synchronized Pagination Footer */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 text-xs text-slate-600 font-medium">
+      <div className="flex items-center justify-between rounded-xl border border-[#E8EEF4] bg-white px-4 py-3 text-xs font-medium text-slate-500">
         <span>
           Showing {pagination?.startIndex ?? 0}–{pagination?.endIndex ?? 0} of{" "}
           {pagination?.total ?? 0} vendors
@@ -245,20 +221,20 @@ export function AccommodationModuleView({
             disabled={(pagination?.page ?? 1) <= 1}
             onClick={() => onPageChange((pagination?.page ?? 1) - 1)}
             variant="outline"
-            className="h-8 px-2.5 text-xs cursor-pointer"
+            className="h-8 cursor-pointer border-[#E8EEF4] px-2.5 text-xs text-[#0B1528]"
           >
-            &lt; Prev
+            Prev
           </Button>
-          <span className="px-2 font-bold text-slate-800">
+          <span className="px-2 font-semibold text-[#0B1528]">
             Page {pagination?.page ?? 1} of {pagination?.pages ?? 1}
           </span>
           <Button
             disabled={(pagination?.page ?? 1) >= (pagination?.pages ?? 1)}
             onClick={() => onPageChange((pagination?.page ?? 1) + 1)}
             variant="outline"
-            className="h-8 px-2.5 text-xs cursor-pointer"
+            className="h-8 cursor-pointer border-[#E8EEF4] px-2.5 text-xs text-[#0B1528]"
           >
-            Next &gt;
+            Next
           </Button>
         </div>
       </div>

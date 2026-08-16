@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams, useNavigation } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 import { ROLE_PERMISSIONS } from "@/lib/permissions";
 import {
@@ -663,6 +663,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const navigation = useNavigation();
+  const isNavigating = navigation.state === "loading";
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -777,11 +779,30 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     location.pathname.includes("/pages");
 
   return (
-    <SidebarProvider className="h-svh max-h-svh overflow-hidden">
+    <SidebarProvider className="admin-app-shell min-h-0 overflow-hidden">
       <div className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-[#F4F7FB]">
         <AdminSidebar />
 
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {/* Navigation progress bar — appears during React Router lazy-load transitions */}
+          {isNavigating && (
+            <div className="absolute top-0 left-0 right-0 z-50 h-[2px] overflow-hidden">
+              <div
+                className="h-full bg-[#FF4D00] rounded-full"
+                style={{
+                  animation: "nav-progress 1.2s ease-in-out infinite",
+                  width: "60%",
+                }}
+              />
+              <style>{`
+                @keyframes nav-progress {
+                  0%   { transform: translateX(-100%); width: 60%; }
+                  50%  { width: 80%; }
+                  100% { transform: translateX(200%); width: 60%; }
+                }
+              `}</style>
+            </div>
+          )}
           {/* Top command strip — 56px */}
           <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-[#E8EEF4] bg-white px-3 sm:px-6">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -964,8 +985,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
             {/* Main Content Area — single page scroller */}
-            <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#F4F7FB] p-3 pb-20 sm:p-5 md:pb-5">
-              <div className="w-full min-w-0">{children}</div>
+            <main className="admin-main-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-[#F4F7FB] p-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:p-5 md:pb-5">
+              <div className="w-full min-h-0 min-w-0">{children}</div>
             </main>
 
             {/* Help Sidebar */}
