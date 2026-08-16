@@ -32,9 +32,10 @@ export interface TripControlRowData {
   hotelStatus: "BOOKED" | "PENDING" | "CANCELLED" | "NOT REQUIRED";
   hotelBookingRef?: any;
   transportName: string;
-  transportStatus: "BOOKED" | "PENDING" | "NOT ASSIGNED";
+  transportStatus: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED";
   guideName: string;
   guidePhone: string;
+  guideStatus?: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED";
   checkInStatus: "CHECKED-IN" | "PENDING" | "NOT REQUIRED";
   remark: string;
 }
@@ -43,6 +44,9 @@ interface TripControlRowDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   rowData: TripControlRowData | null;
+  leadTransportName?: string;
+  leadGuideName?: string;
+  leadGuidePhone?: string;
   onEditHotel: (row: TripControlRowData) => void;
   onChangeTransport: (row: TripControlRowData) => void;
   onAssignGuide: (row: TripControlRowData) => void;
@@ -55,6 +59,9 @@ export default function TripControlRowDrawer({
   isOpen,
   onClose,
   rowData,
+  leadTransportName,
+  leadGuideName,
+  leadGuidePhone,
   onEditHotel,
   onChangeTransport,
   onAssignGuide,
@@ -69,12 +76,18 @@ export default function TripControlRowDrawer({
   React.useEffect(() => {
     if (rowData) {
       setRemarkInput(rowData.remark || "");
-      setTransportInput(rowData.transportName !== "—" ? rowData.transportName : "");
-      setGuideInput(rowData.guideName !== "—" ? rowData.guideName : "");
+      setTransportInput(rowData.transportName !== "—" && !rowData.transportName.toLowerCase().includes("not required") ? rowData.transportName : "");
+      setGuideInput(rowData.guideName !== "—" && !rowData.guideName.toLowerCase().includes("not required") ? rowData.guideName : "");
     }
   }, [rowData]);
 
   if (!rowData) return null;
+
+  const isTransportIncluded = rowData.transportStatus === "BOOKED" && rowData.transportName !== "—" && !rowData.transportName.toLowerCase().includes("not required");
+  const isGuideIncluded = rowData.guideName !== "—" && !rowData.guideName.toLowerCase().includes("not required") && rowData.guideStatus !== "NOT REQUIRED";
+
+  const defaultTransport = leadTransportName && leadTransportName !== "—" ? leadTransportName : "17 Seater Tempo";
+  const defaultGuide = leadGuideName && leadGuideName !== "—" ? leadGuideName : "Lead Guide";
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -117,6 +130,8 @@ export default function TripControlRowDrawer({
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : rowData.hotelStatus === "CANCELLED"
                     ? "bg-red-50 text-red-700 border-red-200"
+                    : rowData.hotelStatus === "NOT REQUIRED"
+                    ? "bg-slate-100 text-slate-500 border-slate-200"
                     : "bg-amber-50 text-amber-700 border-amber-200"
                 )}
               >
@@ -153,31 +168,65 @@ export default function TripControlRowDrawer({
               <Badge
                 className={cn(
                   "text-[10px] font-extrabold uppercase px-2 py-0.5 border",
-                  rowData.transportStatus === "BOOKED"
+                  isTransportIncluded
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
                 )}
               >
-                {rowData.transportStatus}
+                {isTransportIncluded ? "BOOKED / INCLUDED" : "NOT REQUIRED"}
               </Badge>
             </div>
             <div>
-              <p className="font-bold text-slate-800 text-sm">{rowData.transportName || "Standard Vehicle"}</p>
+              <p className="font-bold text-slate-800 text-sm">
+                {isTransportIncluded ? rowData.transportName : "— (No Transport Required on this day)"}
+              </p>
             </div>
+
+            {/* Quick action buttons: Included vs Not Required */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onSaveDayDetail(rowData, "vehicleType", defaultTransport)}
+                className={cn(
+                  "h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center gap-1.5 px-2",
+                  isTransportIncluded
+                    ? "bg-emerald-600 text-white border-transparent shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-200"
+                )}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Included</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSaveDayDetail(rowData, "vehicleType", "—")}
+                className={cn(
+                  "h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center gap-1.5 px-2",
+                  !isTransportIncluded
+                    ? "bg-slate-600 text-white border-transparent shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                )}
+              >
+                <X className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Not Required</span>
+              </button>
+            </div>
+
             <div className="pt-2 border-t border-slate-200">
-              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Override for {rowData.dayLabel}</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Custom Vehicle / Driver Name</label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={transportInput}
                   onChange={(e) => setTransportInput(e.target.value)}
-                  placeholder="Tempo details..."
+                  placeholder={`e.g. ${defaultTransport}`}
                   className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#F97316]"
                 />
                 <Button
                   size="sm"
-                  onClick={() => onSaveDayDetail(rowData, "vehicleType", transportInput)}
-                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs"
+                  onClick={() => onSaveDayDetail(rowData, "vehicleType", transportInput.trim() || defaultTransport)}
+                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold"
                 >
                   Save
                 </Button>
@@ -191,29 +240,73 @@ export default function TripControlRowDrawer({
               <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <UserCheck className="w-4 h-4 text-[#F97316]" /> Guide / Driver
               </span>
+              <Badge
+                className={cn(
+                  "text-[10px] font-extrabold uppercase px-2 py-0.5 border",
+                  isGuideIncluded
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-slate-100 text-slate-500 border-slate-200"
+                )}
+              >
+                {isGuideIncluded ? "BOOKED / INCLUDED" : "NOT REQUIRED"}
+              </Badge>
             </div>
             <div>
-              <p className="font-bold text-slate-800 text-sm">{rowData.guideName || "Assign Guide"}</p>
-              {rowData.guidePhone && (
+              <p className="font-bold text-slate-800 text-sm">
+                {isGuideIncluded ? rowData.guideName : "— (No Guide Required on this day)"}
+              </p>
+              {isGuideIncluded && (rowData.guidePhone || leadGuidePhone) && (
                 <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 font-mono">
-                  <Phone className="w-3 h-3 text-slate-400" /> {rowData.guidePhone}
+                  <Phone className="w-3 h-3 text-slate-400" /> {rowData.guidePhone || leadGuidePhone}
                 </p>
               )}
             </div>
+
+            {/* Quick action buttons: Included vs Not Required */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onSaveDayDetail(rowData, "guideDriverDetails", defaultGuide)}
+                className={cn(
+                  "h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center gap-1.5 px-2",
+                  isGuideIncluded
+                    ? "bg-emerald-600 text-white border-transparent shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-200"
+                )}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Included</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSaveDayDetail(rowData, "guideDriverDetails", "—")}
+                className={cn(
+                  "h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center gap-1.5 px-2",
+                  !isGuideIncluded
+                    ? "bg-slate-600 text-white border-transparent shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                )}
+              >
+                <X className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Not Required</span>
+              </button>
+            </div>
+
             <div className="pt-2 border-t border-slate-200">
-              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Override for {rowData.dayLabel}</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Custom Guide Name / Details</label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={guideInput}
                   onChange={(e) => setGuideInput(e.target.value)}
-                  placeholder="Guide / Driver details..."
+                  placeholder={`e.g. ${defaultGuide}`}
                   className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#F97316]"
                 />
                 <Button
                   size="sm"
-                  onClick={() => onSaveDayDetail(rowData, "guideDriverDetails", guideInput)}
-                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs"
+                  onClick={() => onSaveDayDetail(rowData, "guideDriverDetails", guideInput.trim() || defaultGuide)}
+                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs font-bold"
                 >
                   Save
                 </Button>

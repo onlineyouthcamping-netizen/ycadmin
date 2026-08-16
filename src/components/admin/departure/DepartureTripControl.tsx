@@ -214,17 +214,59 @@ export default function DepartureTripControl({
         ? "BOOKED"
         : "PENDING";
 
+      // Check if this day is a train transit day where transport & guide are not required by default
+      const isTrainTransitDay =
+        (dayNum === 1 && (planTitle.toLowerCase().includes("train") || planTitle.toLowerCase().includes("journey"))) ||
+        (dayNum === computedItinerary.length && (planTitle.toLowerCase().includes("arrive") || planTitle.toLowerCase().includes("train")));
+
       // Match Transport
-      let transportName = dbRow?.vehicleType || leadTransport.name;
-      let transportStatus: "BOOKED" | "PENDING" | "NOT ASSIGNED" = isNoStay
-        ? "BOOKED"
-        : transportName !== "—"
-        ? "BOOKED"
-        : "PENDING";
+      let transportName = "—";
+      let transportStatus: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED" = "NOT REQUIRED";
+
+      if (dbRow?.vehicleType) {
+        if (dbRow.vehicleType === "—" || dbRow.vehicleType.toLowerCase().includes("not required") || dbRow.vehicleType.toLowerCase().includes("none")) {
+          transportName = "—";
+          transportStatus = "NOT REQUIRED";
+        } else {
+          transportName = dbRow.vehicleType;
+          transportStatus = "BOOKED";
+        }
+      } else {
+        if (isTrainTransitDay) {
+          transportName = "—";
+          transportStatus = "NOT REQUIRED";
+        } else {
+          transportName = leadTransport.name !== "—" ? leadTransport.name : "17 Seater Tempo";
+          transportStatus = "BOOKED";
+        }
+      }
 
       // Match Guide
-      let guideName = dbRow?.guideDriverDetails || leadGuide.name;
-      let guidePhone = dbRow?.guideDriverDetails ? "" : leadGuide.phone;
+      let guideName = "—";
+      let guidePhone = "";
+      let guideStatus: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED" = "NOT REQUIRED";
+
+      if (dbRow?.guideDriverDetails) {
+        if (dbRow.guideDriverDetails === "—" || dbRow.guideDriverDetails.toLowerCase().includes("not required") || dbRow.guideDriverDetails.toLowerCase().includes("none")) {
+          guideName = "—";
+          guidePhone = "";
+          guideStatus = "NOT REQUIRED";
+        } else {
+          guideName = dbRow.guideDriverDetails;
+          guidePhone = leadGuide.name && leadGuide.name.toLowerCase().includes(dbRow.guideDriverDetails.toLowerCase()) ? leadGuide.phone : "";
+          guideStatus = "BOOKED";
+        }
+      } else {
+        if (isTrainTransitDay) {
+          guideName = "—";
+          guidePhone = "";
+          guideStatus = "NOT REQUIRED";
+        } else {
+          guideName = leadGuide.name !== "—" ? leadGuide.name : "Lead Guide";
+          guidePhone = leadGuide.phone || "";
+          guideStatus = "BOOKED";
+        }
+      }
 
       // Check-in status (from DB row if updated, or default)
       let defaultCheckIn: "CHECKED-IN" | "PENDING" | "NOT REQUIRED" = isNoStay
@@ -255,6 +297,7 @@ export default function DepartureTripControl({
         transportStatus,
         guideName,
         guidePhone,
+        guideStatus,
         checkInStatus: currentCheckIn,
         remark: currentRemark,
       };
@@ -777,10 +820,20 @@ export default function DepartureTripControl({
     }
 
     if (selectedRow && selectedRow.dayNum === row.dayNum) {
-      setSelectedRow({ 
-        ...selectedRow, 
-        [field === "vehicleType" ? "transportName" : "guideName"]: value || (field === "vehicleType" ? leadTransport.name : leadGuide.name)
-      });
+      const isNotReq = value === "—" || value.toLowerCase().includes("not required");
+      if (field === "vehicleType") {
+        setSelectedRow({ 
+          ...selectedRow, 
+          transportName: isNotReq ? "—" : value,
+          transportStatus: isNotReq ? "NOT REQUIRED" : "BOOKED"
+        });
+      } else {
+        setSelectedRow({ 
+          ...selectedRow, 
+          guideName: isNotReq ? "—" : value,
+          guideStatus: isNotReq ? "NOT REQUIRED" : "BOOKED"
+        });
+      }
     }
   };
 
@@ -1228,6 +1281,9 @@ export default function DepartureTripControl({
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         rowData={selectedRow}
+        leadTransportName={leadTransport.name}
+        leadGuideName={leadGuide.name}
+        leadGuidePhone={leadGuide.phone}
         onEditHotel={(row) => {
           onEditHotel(row.hotelBookingRef || { dayNum: row.dayNum, dayLabel: row.dayLabel, destination: row.destination, dateStr: row.dateStr });
         }}
