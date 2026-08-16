@@ -564,7 +564,15 @@ export default function HotelAssignmentWizardModal({
       ? deriveRoomCountsFromAllocations(passengerAllocations, allPassengers)
       : null;
 
-    if (
+    // Priority: derived from physical allocations (ground truth) > saved booking > auto-suggest
+    if (derivedFromAllocations && derivedFromAllocations.totalRooms > 0) {
+      // Physical room allocations exist — use those (they are deduplicated and correct)
+      setDoubleRoomsCount(derivedFromAllocations.doubleRooms);
+      setTripleRoomsCount(derivedFromAllocations.tripleRooms);
+      setQuadRoomsCount(derivedFromAllocations.quadRooms);
+      setExtraPersonsCount(derivedFromAllocations.extraPersons);
+      setRemarks(existingB?.remarks || "");
+    } else if (
       existingB &&
       (existingB.doubleRoomsCount > 0 ||
         existingB.tripleRoomsCount > 0 ||
@@ -573,17 +581,12 @@ export default function HotelAssignmentWizardModal({
         existingB.tripleRooms > 0 ||
         existingB.quadRooms > 0)
     ) {
+      // No physical allocation — use saved booking room counts
       setDoubleRoomsCount(existingB.doubleRoomsCount ?? existingB.doubleRooms ?? 0);
       setTripleRoomsCount(existingB.tripleRoomsCount ?? existingB.tripleRooms ?? 0);
       setQuadRoomsCount(existingB.quadRoomsCount ?? existingB.quadRooms ?? 0);
       setExtraPersonsCount(existingB.extraPersonsCount ?? existingB.extraBeds ?? 0);
       setRemarks(existingB.remarks || "");
-    } else if (derivedFromAllocations && derivedFromAllocations.totalRooms > 0) {
-      setDoubleRoomsCount(derivedFromAllocations.doubleRooms);
-      setTripleRoomsCount(derivedFromAllocations.tripleRooms);
-      setQuadRoomsCount(derivedFromAllocations.quadRooms);
-      setExtraPersonsCount(derivedFromAllocations.extraPersons);
-      setRemarks(existingB?.remarks || "");
     } else {
       // Auto-suggest room allocation for total pax (e.g. 7 pax -> 3 Double Rooms or Quad + Triple)
       if (totalPax > 0) {
