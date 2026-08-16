@@ -9,7 +9,7 @@
  * - Instant 1-Click Save
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Hotel,
   Minus,
@@ -310,6 +310,7 @@ export default function HotelAssignmentWizardModal({
   onSaveSuccess,
 }: HotelAssignmentWizardModalProps) {
   const [selectedDestination, setSelectedDestination] = useState<string>("");
+  const hasInitializedRef = useRef(false);
   const [selectedHotel, setSelectedHotel] = useState<any | null>(null);
   const [adminHotels, setAdminHotels] = useState<any[]>([]);
 
@@ -480,7 +481,12 @@ export default function HotelAssignmentWizardModal({
   }, [matchingHotels, selectedDestination, isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      hasInitializedRef.current = false;
+      return;
+    }
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
     const dayOffset = Math.max(0, currentDayNum - 1);
     const existingB = initialDayInfo?.existingBooking;
