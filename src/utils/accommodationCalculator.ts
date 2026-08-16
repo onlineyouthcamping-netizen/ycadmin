@@ -114,23 +114,19 @@ export function formatINR(amount: number, decimals = 0): string {
  * We group passengers by room label → count occupants per room → determine sharing type.
  */
 export function derivePassengerSharing(
-  passengerAllocations: Record<string, { room: string; vehicle: string; seat: string }>
+  passengerAllocations: Record<string, { room: string; vehicle: string; seat: string }>,
+  allPassengers?: Array<{ id: string; name: string }>
 ): PassengerSharingConfig {
-  // Group passengers by room
-  const roomGroups: Record<string, string[]> = {};
-  Object.entries(passengerAllocations).forEach(([name, alloc]) => {
-    if (!alloc.room || alloc.room === "—" || alloc.room === "Unassigned") return;
-    if (!roomGroups[alloc.room]) roomGroups[alloc.room] = [];
-    roomGroups[alloc.room].push(name);
-  });
+  // Use buildPhysicalRoomAllocation (which already deduplicates) to get correct room groups
+  const allocation = buildPhysicalRoomAllocation(passengerAllocations, allPassengers);
 
   let doublePax = 0;
   let triplePax = 0;
   let quadPax = 0;
   let otherPax = 0;
 
-  Object.values(roomGroups).forEach((occupants) => {
-    const n = occupants.length;
+  allocation.rooms.forEach((room) => {
+    const n = room.paxCount;
     if (n === 2) doublePax += 2;
     else if (n === 3) triplePax += 3;
     else if (n >= 4) quadPax += n;

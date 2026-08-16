@@ -119,7 +119,7 @@ export default function AccommodationWorkspace({
       (a) => a.room && a.room !== "—" && a.room !== "Unassigned"
     );
     if (hasAllocations) {
-      return derivePassengerSharing(passengerAllocations);
+      return derivePassengerSharing(passengerAllocations, allPassengers);
     }
     // Fallback: derive from booking passenger data
     return derivePassengerSharingFromBookings(allPassengers);
@@ -807,8 +807,14 @@ function DayDetailDrawer({
     return passengerSharing;
   }, [booking, passengerSharing]);
 
-  // ── Room allocation display derived from booking or physicalRoomAllocation ──
+  // ── Room allocation display: physical allocation > booking room counts > suggestion ──
   const roomsToShow = useMemo(() => {
+    // 1. Physical room allocation (actual saved room assignments) is the ground truth
+    if (physicalRoomAllocation.rooms.length > 0) {
+      return physicalRoomAllocation.rooms;
+    }
+
+    // 2. Booking saved room counts (only used if no physical allocation exists)
     if (booking && (booking.doubleRoomsCount || booking.tripleRoomsCount || booking.quadRoomsCount || booking.extraPersonsCount)) {
       const list: Array<{ roomLabel: string; occupants: string[]; paxCount: number }> = [];
       let roomCounter = 1;
@@ -827,10 +833,7 @@ function DayDetailDrawer({
       if (list.length > 0) return list;
     }
 
-    if (physicalRoomAllocation.rooms.length > 0) {
-      return physicalRoomAllocation.rooms;
-    }
-
+    // 3. Suggested allocation from sharing config
     const sizes = suggestRoomAllocation(daySharing);
     return sizes.map((paxCount, i) => ({
       roomLabel: `Room ${i + 1}`,
