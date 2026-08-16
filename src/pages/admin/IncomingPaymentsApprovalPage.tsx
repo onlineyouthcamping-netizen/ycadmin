@@ -28,9 +28,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
 import { cn, safeFormatDate } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
+import { useAuthStore } from "@/store/auth.store";
+import { useStaffUsers } from "@/hooks/useStaffUsers";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { IncomingPaymentItem, CashSubmissionItem } from "@/types";
 
 interface IncomingPaymentsApprovalPageProps {
@@ -40,18 +48,28 @@ interface IncomingPaymentsApprovalPageProps {
 export default function IncomingPaymentsApprovalPage({
   hideHeader = false,
 }: IncomingPaymentsApprovalPageProps) {
+  const { admin: currentUser } = useAuthStore();
+  const { staffUsers } = useStaffUsers();
+
+  const userRole = (currentUser?.role || "").toLowerCase();
+  const isSuperuserFounder =
+    ["superadmin", "founder", "admin"].includes(userRole) ||
+    (currentUser as any)?.isSuperuser;
+
   const [incomingPayments, setIncomingPayments] = useState<IncomingPaymentItem[]>([]);
   const [cashSubmissions, setCashSubmissions] = useState<CashSubmissionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [paymentType, setPaymentType] = useState<"all" | "online" | "cash">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("ALL");
 
   // Actions
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [actionModalType, setActionModalType] = useState<"verify" | "reject" | null>(null);
   const [actionNotes, setActionNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [assigningId, setAssigningId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -81,6 +99,22 @@ export default function IncomingPaymentsApprovalPage({
     loadData();
   }, [loadData]);
 
+  const handleAssignApprover = async (paymentId: string, assigneeId: string) => {
+    setAssigningId(paymentId);
+    try {
+      await financeControllerService.assignIncomingPayment(
+        paymentId,
+        assigneeId === "UNASSIGNED" ? null : assigneeId
+      );
+      toast.success("Approval assignee updated");
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to assign approver");
+    } finally {
+      setAssigningId(null);
+    }
+  };
+
   // Merge items
   const allItems = [
     ...incomingPayments.map((p) => ({
@@ -90,10 +124,12 @@ export default function IncomingPaymentsApprovalPage({
       customerName: p.customerName || "Customer",
       amount: p.amount,
       paymentMode: p.paymentMode || "PAYMENT_LINK",
-      reference: p.transactionRef || p.gatewayReference || "—",
+      reference: p.transactionRef || p.gatewayReference || p.referenceNumber || "—",
       date: p.receivedAt || p.createdAt,
       status: p.status,
-      collectedBy: "Online Gateway / Bank",
+      collectedBy: p.submittedBy || "Online Gateway / Bank",
+      assigneeId: (p as any).actionedById || (p.raw as any)?.actionedById || null,
+      assigneeName: (p as any).actionedBy || (p.raw as any)?.actionedBy?.name || null,
       notes: p.notes,
       raw: p,
     })),
@@ -108,6 +144,8 @@ export default function IncomingPaymentsApprovalPage({
       date: c.submittedAt || c.createdAt,
       status: c.status,
       collectedBy: c.salespersonName || "Sales Executive",
+      assigneeId: (c as any).actionedById || (c.raw as any)?.actionedById || null,
+      assigneeName: (c as any).actionedBy?.name || (c.raw as any)?.actionedBy?.name || null,
       notes: c.notes,
       raw: c,
     })),
@@ -115,6 +153,8 @@ export default function IncomingPaymentsApprovalPage({
     if (paymentType === "online" && item.type !== "ONLINE_OR_BANK") return false;
     if (paymentType === "cash" && item.type !== "CASH_HANDOVER") return false;
     if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
+    if (assigneeFilter === "ME" && item.assigneeId !== currentUser?.id) return false;
+    if (assigneeFilter === "UNASSIGNED" && item.assigneeId) return false;
     return true;
   });
 
@@ -302,8 +342,8 @@ export default function IncomingPaymentsApprovalPage({
       {/* 3. TABLE WORKSPACE */}
       <div className="bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden flex flex-col">
         {/* Filters Header */}
-        <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200/70">
               <button
                 onClick={() => setPaymentType("all")}
@@ -336,12 +376,23 @@ export default function IncomingPaymentsApprovalPage({
                     : "text-slate-600 hover:text-slate-900"
                 )}
               >
-                Sales Cash Handovers ({cashSubmissions.length})
+                Cash Payments & Submissions ({cashSubmissions.length})
               </button>
             </div>
+
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger className="h-8 text-xs w-40 rounded border-[#E3EAF2] bg-white font-semibold">
+                <SelectValue placeholder="Assignee Filter" />
+              </SelectTrigger>
+              <SelectContent className="rounded">
+                <SelectItem value="ALL">All Assignees</SelectItem>
+                <SelectItem value="ME">Assigned to Me</SelectItem>
+                <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded">
               {[
                 { key: "ALL", label: "ALL" },
@@ -398,91 +449,151 @@ export default function IncomingPaymentsApprovalPage({
                 <tr className="bg-slate-50/70 border-b border-[#E3EAF2] text-[9.5px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
                   <th className="px-4 py-2.5">Booking ID</th>
                   <th className="px-4 py-2.5">Customer / Group</th>
-                  <th className="px-4 py-2.5">Payment Mode</th>
+                  <th className="px-4 py-2.5">Payment Mode / Type</th>
                   <th className="px-4 py-2.5">UTR / Reference</th>
                   <th className="px-4 py-2.5 text-right">Amount</th>
                   <th className="px-4 py-2.5">Collected By</th>
+                  <th className="px-4 py-2.5">Approval Assignee</th>
                   <th className="px-4 py-2.5">Date</th>
                   <th className="px-4 py-2.5">Status</th>
                   <th className="px-4 py-2.5 text-right pr-4">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E3EAF2] text-[11px] font-semibold text-[#162B45]">
-                {allItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
-                    <td className="px-4 py-2 font-bold font-mono text-[#F97316]">
-                      {item.bookingId || "—"}
-                    </td>
-                    <td className="px-4 py-2 font-bold text-[#162B45]">
-                      {item.customerName}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge variant="outline" className="text-[9px] font-bold bg-slate-50">
-                        {item.paymentMode?.replace(/_/g, " ")}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2 font-mono text-slate-700 text-[10.5px]">
-                      {item.reference || "—"}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono font-bold text-emerald-600 text-[12px]">
-                      ₹{Number(item.amount || 0).toLocaleString("en-IN")}
-                    </td>
-                    <td className="px-4 py-2 text-slate-500 font-medium text-[10.5px]">
-                      {item.collectedBy}
-                    </td>
-                    <td className="px-4 py-2 text-slate-500 font-mono text-[10.5px]">
-                      {safeFormatDate(item.date)}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[9px] font-bold uppercase",
-                          item.status === "VERIFIED" || item.status === "APPROVED" || item.status === "COMPLETED"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : item.status === "REJECTED"
-                            ? "bg-rose-50 text-rose-700 border-rose-200"
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                        )}
-                      >
-                        {item.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2 text-right pr-4">
-                      {item.status === "PENDING_VERIFICATION" ||
-                      item.status === "PENDING_HANDOVER" ||
-                      item.status === "PENDING" ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPayment(item);
-                              setActionModalType("verify");
-                            }}
-                            className="h-6.5 text-[9.5px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-                          >
-                            Verify
-                          </Button>
-                          <Button
-                            size="sm"
+                {allItems.map((item) => {
+                  const isCash =
+                    item.type === "CASH_HANDOVER" ||
+                    item.paymentMode?.toUpperCase().includes("CASH");
+
+                  return (
+                    <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
+                      <td className="px-4 py-2 font-bold font-mono text-[#F97316]">
+                        {item.bookingId || "—"}
+                      </td>
+                      <td className="px-4 py-2 font-bold text-[#162B45]">
+                        {item.customerName}
+                      </td>
+                      <td className="px-4 py-2">
+                        {isCash ? (
+                          <Badge
                             variant="outline"
-                            onClick={() => {
-                              setSelectedPayment(item);
-                              setActionModalType("reject");
-                            }}
-                            className="h-6.5 text-[9.5px] font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
+                            className="text-[9px] font-bold bg-amber-50 text-amber-800 border-amber-300 flex items-center gap-1 w-fit"
                           >
-                            Reject
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 italic font-medium">
-                          Verified
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                            <ShieldCheck className="w-2.5 h-2.5 text-amber-600" />
+                            Cash (Superuser / Founder)
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] font-bold bg-blue-50 text-blue-800 border-blue-200 w-fit"
+                          >
+                            {item.paymentMode?.replace(/_/g, " ")} (Finance Hub)
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 font-mono text-slate-700 text-[10.5px]">
+                        {item.reference || "—"}
+                      </td>
+                      <td className="px-4 py-2 text-right font-mono font-bold text-emerald-600 text-[12px]">
+                        ₹{Number(item.amount || 0).toLocaleString("en-IN")}
+                      </td>
+                      <td className="px-4 py-2 text-slate-500 font-medium text-[10.5px]">
+                        {item.collectedBy}
+                      </td>
+                      <td className="px-4 py-2">
+                        {item.status === "PENDING_VERIFICATION" ||
+                        item.status === "PENDING_HANDOVER" ||
+                        item.status === "PENDING" ? (
+                          <Select
+                            value={item.assigneeId || "UNASSIGNED"}
+                            onValueChange={(val) => handleAssignApprover(item.id, val)}
+                            disabled={assigningId === item.id}
+                          >
+                            <SelectTrigger className="h-6.5 text-[10px] w-36 rounded border-slate-200 bg-white font-medium">
+                              <SelectValue placeholder="Assign Approver" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded">
+                              <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                              {staffUsers.map((staff) => (
+                                <SelectItem key={staff.id} value={staff.id}>
+                                  {staff.name} ({staff.role || "Staff"})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-[10px] text-slate-600 font-medium">
+                            {item.assigneeName || "Finance Team"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-slate-500 font-mono text-[10.5px]">
+                        {safeFormatDate(item.date)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[9px] font-bold uppercase",
+                            item.status === "VERIFIED" || item.status === "APPROVED" || item.status === "COMPLETED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : item.status === "REJECTED"
+                              ? "bg-rose-50 text-rose-700 border-rose-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200"
+                          )}
+                        >
+                          {item.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2 text-right pr-4">
+                        {item.status === "PENDING_VERIFICATION" ||
+                        item.status === "PENDING_HANDOVER" ||
+                        item.status === "PENDING" ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            {isCash && !isSuperuserFounder ? (
+                              <Button
+                                size="sm"
+                                disabled
+                                title="Cash approvals are restricted to Superuser / Founder accounts only"
+                                className="h-6.5 text-[9.5px] font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed flex items-center gap-1"
+                              >
+                                Superuser Only
+                              </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPayment(item);
+                                    setActionModalType("verify");
+                                  }}
+                                  className="h-6.5 text-[9.5px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                  {isCash ? "Approve Cash" : "Verify Online"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedPayment(item);
+                                    setActionModalType("reject");
+                                  }}
+                                  className="h-6.5 text-[9.5px] font-bold text-rose-600 border-rose-200 hover:bg-rose-50"
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic font-medium">
+                            Verified
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

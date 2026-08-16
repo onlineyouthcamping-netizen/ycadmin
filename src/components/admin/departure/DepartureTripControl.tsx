@@ -5,25 +5,18 @@ import {
   FileText,
   FileCode,
   Download,
-  Building,
   Bus,
-  UserCheck,
-  CheckCircle2,
   AlertCircle,
-  MessageSquare,
   ChevronRight,
   ChevronDown,
   Phone,
-  Calendar,
-  Users,
   MapPin,
   RefreshCw,
-  SlidersHorizontal,
+  Search,
   ExternalLink,
   Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +44,35 @@ interface DepartureTripControlProps {
   onEditHotel: (row: any) => void;
   onOpenTransportModal: () => void;
   onOpenGuideModal: () => void;
+}
+
+function formatOpsLabel(status: string) {
+  switch (status) {
+    case "CHECKED-IN":
+      return "Checked in";
+    case "NOT REQUIRED":
+      return "Not required";
+    case "NOT ASSIGNED":
+      return "Not assigned";
+    case "BOOKED":
+      return "Booked";
+    case "PENDING":
+      return "Pending";
+    case "CANCELLED":
+      return "Cancelled";
+    default:
+      return status;
+  }
+}
+
+function statusTone(status: string) {
+  if (status === "BOOKED" || status === "CHECKED-IN") {
+    return "bg-[#F4F7FB] text-[#0B1528]";
+  }
+  if (status === "CANCELLED") {
+    return "bg-rose-50 text-rose-700";
+  }
+  return "bg-white text-slate-500";
 }
 
 export default function DepartureTripControl({
@@ -775,261 +797,228 @@ export default function DepartureTripControl({
     });
   }, [controlRows, searchQuery, statusFilter]);
 
+  const filterChipClass = (active: boolean) =>
+    cn(
+      "px-2.5 py-1 text-[11px] font-medium rounded-md border transition-colors cursor-pointer whitespace-nowrap",
+      active
+        ? "border-[#0B1528] bg-[#0B1528] text-white"
+        : "border-[#E8EEF4] bg-white text-slate-600 hover:border-slate-300 hover:text-[#0B1528]",
+    );
+
   return (
-    <div className="space-y-4 font-sans">
-      {/* Premium Header Bar */}
-      <div className="bg-white border-t-4 border-t-[#F97316] border border-slate-200 rounded-xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#F97316] shrink-0 shadow-2xs">
-            <FileSpreadsheet className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-black text-slate-900 tracking-tight">
-                Trip Control Sheet
+    <div className="space-y-3 min-w-0 font-sans text-[#0B1528]">
+      <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 sm:p-4 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 min-w-0">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-sm font-semibold text-[#0B1528] tracking-tight">
+                Trip control sheet
               </h2>
-              <span className="bg-orange-100 text-[#F97316] text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Live Ops
-              </span>
+              {loadingDbItinerary && (
+                <RefreshCw className="w-3 h-3 animate-spin text-slate-400 shrink-0" />
+              )}
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Live operational control table replacing manual Excel sheets — click any row for quick actions
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Click a row to update hotel, fleet, guide, or check-in.
             </p>
           </div>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0">
+            <span className="text-[11px] text-slate-500 tabular-nums">
+              {summaryStats.checkedIn}/{summaryStats.total} checked in
+            </span>
+            <span className="hidden sm:inline text-slate-300" aria-hidden>
+              ·
+            </span>
+            <span className="text-[11px] text-slate-500 tabular-nums">
+              {totalPax > 0 ? totalPax : 15} pax
+            </span>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px] font-semibold border-[#E8EEF4] text-[#0B1528] bg-white hover:bg-[#F4F7FB] rounded-md px-2.5 gap-1.5 shadow-none"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  Export
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 bg-white border border-[#E8EEF4] shadow-lg rounded-lg p-1.5 z-50">
+                <DropdownMenuLabel className="text-[10px] font-semibold text-slate-400 px-2 py-1">
+                  Export formats
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={handleExportExcel}
+                  className="cursor-pointer flex items-start gap-2.5 text-xs font-medium text-slate-700 hover:bg-[#F4F7FB] rounded-md px-2 py-2"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>Excel spreadsheet (.xlsx)</span>
+                    <span className="text-[10px] font-normal text-slate-400 leading-tight">Operations and payment workbook</span>
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={handleExportPDF}
+                  className="cursor-pointer flex items-start gap-2.5 text-xs font-medium text-slate-700 hover:bg-[#F4F7FB] rounded-md px-2 py-2"
+                >
+                  <FileText className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>Printable PDF (.pdf)</span>
+                    <span className="text-[10px] font-normal text-slate-400 leading-tight">Manifest and financial breakdown</span>
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-1 border-[#E8EEF4]" />
+
+                <DropdownMenuLabel className="text-[10px] font-semibold text-slate-400 px-2 py-1">
+                  Google Sheets
+                </DropdownMenuLabel>
+
+                <DropdownMenuItem
+                  onClick={handleOpenGoogleSheets}
+                  className="cursor-pointer flex items-start gap-2.5 text-xs font-medium text-slate-700 hover:bg-[#F4F7FB] rounded-md px-2 py-2"
+                >
+                  <ExternalLink className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>Open in Google Sheets</span>
+                    <span className="text-[10px] font-normal text-slate-400 leading-tight">Copies data and opens a new sheet</span>
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={handleCopyGoogleSheetsTSV}
+                  className="cursor-pointer flex items-start gap-2.5 text-xs font-medium text-slate-700 hover:bg-[#F4F7FB] rounded-md px-2 py-2"
+                >
+                  <Copy className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>Copy for Google Sheets</span>
+                    <span className="text-[10px] font-normal text-slate-400 leading-tight">Paste directly into any sheet</span>
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-1 border-[#E8EEF4]" />
+
+                <DropdownMenuItem
+                  onClick={handleExportCSV}
+                  className="cursor-pointer flex items-start gap-2.5 text-xs font-medium text-slate-700 hover:bg-[#F4F7FB] rounded-md px-2 py-2"
+                >
+                  <FileCode className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>CSV file (.csv)</span>
+                    <span className="text-[10px] font-normal text-slate-400 leading-tight">Standard comma-separated format</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {loadingDbItinerary && (
-            <div className="flex items-center gap-1.5 bg-orange-50 text-[#F97316] text-xs font-bold px-2.5 py-1 rounded-md border border-orange-200">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              <span>Syncing...</span>
-            </div>
-          )}
-
-          {/* Checked-in Progress Counter */}
-          <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 text-xs font-bold px-3 py-1.5 flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Checked-In: {summaryStats.checkedIn} / {summaryStats.total} Days</span>
-          </Badge>
-
-          {/* Confirmed Pax Badge */}
-          <Badge variant="outline" className="bg-slate-50 text-slate-800 text-xs font-bold px-3 py-1.5 border-slate-300 flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-slate-500" />
-            <span>{totalPax > 0 ? `${totalPax} Confirmed Pax` : "15 Pax"}</span>
-          </Badge>
-
-          {/* Export Dropdown Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="sm"
-                className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shadow-xs flex items-center gap-1.5 px-3.5 transition-colors cursor-pointer"
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0">
+          <div className="relative flex-1 min-w-0 sm:max-w-md">
+            <input
+              type="text"
+              placeholder="Search city, hotel, driver, guide, date…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full min-w-0 pl-8 pr-8 py-1.5 text-xs bg-white border border-[#E8EEF4] rounded-md text-[#0B1528] placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00] font-medium"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-medium"
               >
-                <Download className="w-3.5 h-3.5" />
-                Export Trip Control Sheet
-                <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-80" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 bg-white border border-slate-200 shadow-xl rounded-lg p-1.5 z-50">
-              <DropdownMenuLabel className="text-[10px] font-extrabold uppercase text-slate-400 px-2 py-1 tracking-wider">
-                Export File Formats
-              </DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={handleExportExcel}
-                className="cursor-pointer flex items-start gap-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 rounded-md px-2 py-2 transition-colors"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span>Excel Spreadsheet (.xlsx)</span>
-                  <span className="text-[10px] font-normal text-slate-400 leading-tight">Full operations + payment workbook</span>
-                </div>
-              </DropdownMenuItem>
+                ✕
+              </button>
+            )}
+          </div>
 
-              <DropdownMenuItem
-                onClick={handleExportPDF}
-                className="cursor-pointer flex items-start gap-2.5 text-xs font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-800 rounded-md px-2 py-2 transition-colors"
-              >
-                <FileText className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span>Printable PDF Document (.pdf)</span>
-                  <span className="text-[10px] font-normal text-slate-400 leading-tight">Printable manifest & financial breakdown</span>
-                </div>
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="my-1 border-slate-100" />
-
-              <DropdownMenuLabel className="text-[10px] font-extrabold uppercase text-slate-400 px-2 py-1 tracking-wider">
-                Google Sheets Integration
-              </DropdownMenuLabel>
-
-              <DropdownMenuItem
-                onClick={handleOpenGoogleSheets}
-                className="cursor-pointer flex items-start gap-2.5 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 rounded-md px-2 py-2 transition-colors"
-              >
-                <ExternalLink className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span>Open in Google Sheets</span>
-                  <span className="text-[10px] font-normal text-slate-400 leading-tight">Copies data & opens sheet.new tab</span>
-                </div>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={handleCopyGoogleSheetsTSV}
-                className="cursor-pointer flex items-start gap-2.5 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-800 rounded-md px-2 py-2 transition-colors"
-              >
-                <Copy className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span>Copy for Google Sheets (Clipboard)</span>
-                  <span className="text-[10px] font-normal text-slate-400 leading-tight">Paste directly into any Google Sheet</span>
-                </div>
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="my-1 border-slate-100" />
-
-              <DropdownMenuItem
-                onClick={handleExportCSV}
-                className="cursor-pointer flex items-start gap-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-md px-2 py-2 transition-colors"
-              >
-                <FileCode className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span>CSV File (.csv)</span>
-                  <span className="text-[10px] font-normal text-slate-400 leading-tight">Standard comma-separated format</span>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Interactive Search & Status Filter Control Strip */}
-      <div className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Search Bar */}
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            placeholder="Search by city, hotel, driver, guide, date..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-8 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
-          />
-          <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-          {searchQuery && (
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
             <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+              type="button"
+              onClick={() => setStatusFilter("ALL")}
+              className={filterChipClass(statusFilter === "ALL")}
             >
-              ✕
+              All days ({summaryStats.total})
             </button>
-          )}
-        </div>
-
-        {/* Filter Filter Chips */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={() => setStatusFilter("ALL")}
-            className={cn(
-              "px-2.5 py-1 rounded-md text-xs font-extrabold transition-all cursor-pointer",
-              statusFilter === "ALL"
-                ? "bg-slate-900 text-white shadow-2xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            )}
-          >
-            All Days ({summaryStats.total})
-          </button>
-
-          <button
-            onClick={() => setStatusFilter("HOTEL_PENDING")}
-            className={cn(
-              "px-2.5 py-1 rounded-md text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1",
-              statusFilter === "HOTEL_PENDING"
-                ? "bg-amber-600 text-white shadow-2xs"
-                : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-            )}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            Pending Hotel ({summaryStats.pendingHotel})
-          </button>
-
-          <button
-            onClick={() => setStatusFilter("CHECKIN_PENDING")}
-            className={cn(
-              "px-2.5 py-1 rounded-md text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1",
-              statusFilter === "CHECKIN_PENDING"
-                ? "bg-amber-600 text-white shadow-2xs"
-                : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-            )}
-          >
-            <AlertCircle className="w-3 h-3" />
-            Pending Check-In ({summaryStats.pendingCheckIn})
-          </button>
-
-          <button
-            onClick={() => setStatusFilter("CHECKED_IN")}
-            className={cn(
-              "px-2.5 py-1 rounded-md text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1",
-              statusFilter === "CHECKED_IN"
-                ? "bg-emerald-600 text-white shadow-2xs"
-                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-            )}
-          >
-            <CheckCircle2 className="w-3 h-3" />
-            Checked-In ({summaryStats.checkedIn})
-          </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("HOTEL_PENDING")}
+              className={filterChipClass(statusFilter === "HOTEL_PENDING")}
+            >
+              Pending hotel ({summaryStats.pendingHotel})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("CHECKIN_PENDING")}
+              className={filterChipClass(statusFilter === "CHECKIN_PENDING")}
+            >
+              Pending check-in ({summaryStats.pendingCheckIn})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("CHECKED_IN")}
+              className={filterChipClass(statusFilter === "CHECKED_IN")}
+            >
+              Checked in ({summaryStats.checkedIn})
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* DESKTOP OPERATIONAL TABLE (>=768px) */}
-      <div className="hidden md:block bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+      <div className="hidden md:block bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left text-[12px] border-collapse">
             <thead>
-              <tr className="bg-slate-950 text-white font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
-                <th className="py-3.5 px-3.5 w-28">Date</th>
-                <th className="py-3.5 px-3.5 w-48">Stay / Destination</th>
-                <th className="py-3.5 px-3.5 w-16 text-center">Pax</th>
-                <th className="py-3.5 px-3.5 w-48">Hotel Name</th>
-                <th className="py-3.5 px-3.5 w-28 text-center">Hotel Verify</th>
-                <th className="py-3.5 px-3.5 w-40">Tempo / Fleet</th>
-                <th className="py-3.5 px-3.5 w-28 text-center">Tempo Verify</th>
-                <th className="py-3.5 px-3.5 w-40">Guide / Driver</th>
-                <th className="py-3.5 px-3.5 w-32 text-center">Check-in Status</th>
-                <th className="py-3.5 px-3.5">Remark</th>
+              <tr className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
+                <th className="py-2.5 px-3.5 w-28">Date</th>
+                <th className="py-2.5 px-3.5 w-48">Stay / destination</th>
+                <th className="py-2.5 px-3.5 w-16 text-center">Pax</th>
+                <th className="py-2.5 px-3.5 w-48">Hotel</th>
+                <th className="py-2.5 px-3.5 w-28 text-center">Hotel status</th>
+                <th className="py-2.5 px-3.5 w-40">Tempo / fleet</th>
+                <th className="py-2.5 px-3.5 w-28 text-center">Tempo status</th>
+                <th className="py-2.5 px-3.5 w-40">Guide / driver</th>
+                <th className="py-2.5 px-3.5 w-32 text-center">Check-in</th>
+                <th className="py-2.5 px-3.5">Remark</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+            <tbody className="divide-y divide-[#E8EEF4] text-slate-700">
               {filteredControlRows.length > 0 ? (
                 filteredControlRows.map((row) => (
                   <tr
                     key={row.dayNum}
                     onClick={() => handleRowClick(row)}
-                    className="hover:bg-amber-50/40 hover:border-l-4 hover:border-l-[#F97316] cursor-pointer transition-all duration-150 group border-l-4 border-l-transparent odd:bg-white even:bg-slate-50/50"
+                    className="hover:bg-[#F8FAFC] cursor-pointer group"
                   >
-                    {/* Date */}
-                    <td className="py-3.5 px-3.5 whitespace-nowrap">
+                    <td className="py-2.5 px-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md bg-slate-100 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">
-                          {row.dayNum}
+                        <span className="text-[11px] font-semibold text-[#0B1528] tabular-nums w-5 shrink-0">
+                          {String(row.dayNum).padStart(2, "0")}
                         </span>
-                        <span className="font-mono font-bold text-slate-900 text-xs">
+                        <span className="font-medium text-[#0B1528] text-[12px] tabular-nums">
                           {row.dateStr}
                         </span>
                       </div>
                     </td>
 
-                    {/* Stay / Destination */}
-                    <td className="py-3.5 px-3.5">
-                      <div className="flex items-start gap-1.5">
+                    <td className="py-2.5 px-3.5">
+                      <div className="flex items-start gap-1.5 min-w-0">
                         {row.isNightJourney ? (
-                          <Bus className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+                          <Bus className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                         ) : (
-                          <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                         )}
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-[#0B1528]">
                             {row.destination}
                           </span>
                           {row.planTitle && row.planTitle.toLowerCase() !== row.destination.toLowerCase() && (
-                            <span className="text-[10px] text-slate-400 font-medium truncate max-w-[170px]">
+                            <span className="text-[10px] text-slate-400 truncate max-w-[170px]">
                               {row.planTitle}
                             </span>
                           )}
@@ -1037,106 +1026,83 @@ export default function DepartureTripControl({
                       </div>
                     </td>
 
-                    {/* Pax Count */}
-                    <td className="py-3.5 px-3.5 text-center">
-                      <span className="inline-block bg-slate-100 text-slate-800 font-extrabold text-xs px-2 py-0.5 rounded-md font-mono">
+                    <td className="py-2.5 px-3.5 text-center">
+                      <span className="text-[12px] font-medium text-[#0B1528] tabular-nums">
                         {row.paxCount}
                       </span>
                     </td>
 
-                    {/* Hotel Name */}
-                    <td className="py-3.5 px-3.5">
-                      <div className="font-bold text-slate-900 truncate max-w-[180px]">
+                    <td className="py-2.5 px-3.5">
+                      <div className="font-medium text-[#0B1528] truncate max-w-[180px]">
                         {row.hotelName}
                       </div>
                       {row.hotelPhone && (
-                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                        <div className="text-[10px] text-slate-400 tabular-nums flex items-center gap-1 mt-0.5">
                           <Phone className="w-2.5 h-2.5 text-slate-400" /> {row.hotelPhone}
                         </div>
                       )}
                     </td>
 
-                    {/* Hotel Verify Status */}
-                    <td className="py-3.5 px-3.5 text-center">
-                      <Badge
+                    <td className="py-2.5 px-3.5 text-center">
+                      <span
                         className={cn(
-                          "text-[9px] font-extrabold uppercase px-2 py-0.5 border shadow-2xs rounded-full inline-flex items-center gap-1",
-                          row.hotelStatus === "BOOKED"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                            : row.hotelStatus === "CANCELLED"
-                            ? "bg-rose-50 text-rose-800 border-rose-300"
-                            : row.hotelStatus === "NOT REQUIRED"
-                            ? "bg-slate-100 text-slate-500 border-slate-200"
-                            : "bg-amber-50 text-amber-800 border-amber-300"
+                          "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]",
+                          statusTone(row.hotelStatus),
                         )}
                       >
-                        {row.hotelStatus === "BOOKED" && <span className="text-emerald-600">✓</span>}
-                        {row.hotelStatus === "PENDING" && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
-                        {row.hotelStatus}
-                      </Badge>
+                        {formatOpsLabel(row.hotelStatus)}
+                      </span>
                     </td>
 
-                    {/* Tempo / Fleet */}
-                    <td className="py-3.5 px-3.5 font-bold text-slate-900 truncate max-w-[150px]">
+                    <td className="py-2.5 px-3.5 font-medium text-[#0B1528] truncate max-w-[150px]">
                       {row.transportName}
                     </td>
 
-                    {/* Tempo Verify Status */}
-                    <td className="py-3.5 px-3.5 text-center">
-                      <Badge
+                    <td className="py-2.5 px-3.5 text-center">
+                      <span
                         className={cn(
-                          "text-[9px] font-extrabold uppercase px-2 py-0.5 border shadow-2xs rounded-full inline-flex items-center gap-1",
-                          row.transportStatus === "BOOKED"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                            : "bg-amber-50 text-amber-800 border-amber-300"
+                          "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]",
+                          statusTone(row.transportStatus),
                         )}
                       >
-                        {row.transportStatus === "BOOKED" && <span className="text-emerald-600">✓</span>}
-                        {row.transportStatus}
-                      </Badge>
+                        {formatOpsLabel(row.transportStatus)}
+                      </span>
                     </td>
 
-                    {/* Guide / Driver */}
-                    <td className="py-3.5 px-3.5">
-                      <div className="font-bold text-slate-900">{row.guideName}</div>
+                    <td className="py-2.5 px-3.5">
+                      <div className="font-medium text-[#0B1528]">{row.guideName}</div>
                       {row.guidePhone && (
-                        <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                        <div className="text-[10px] text-slate-400 tabular-nums flex items-center gap-1 mt-0.5">
                           <Phone className="w-2.5 h-2.5 text-slate-400" /> {row.guidePhone}
                         </div>
                       )}
                     </td>
 
-                    {/* Check-In Status */}
-                    <td className="py-3.5 px-3.5 text-center">
-                      <Badge
+                    <td className="py-2.5 px-3.5 text-center">
+                      <span
                         className={cn(
-                          "text-[9px] font-extrabold uppercase px-2.5 py-1 border shadow-2xs cursor-pointer rounded-full transition-transform active:scale-95",
-                          row.checkInStatus === "CHECKED-IN"
-                            ? "bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
-                            : row.checkInStatus === "PENDING"
-                            ? "bg-amber-500 text-white border-amber-600 hover:bg-amber-600"
-                            : "bg-slate-400 text-white border-slate-500 hover:bg-slate-500"
+                          "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]",
+                          statusTone(row.checkInStatus),
                         )}
                       >
-                        {row.checkInStatus === "CHECKED-IN" ? "✓ CHECKED-IN" : row.checkInStatus === "PENDING" ? "⚠ PENDING" : "— N/A"}
-                      </Badge>
+                        {formatOpsLabel(row.checkInStatus)}
+                      </span>
                     </td>
 
-                    {/* Remark */}
-                    <td className="py-3.5 px-3.5">
-                      <span className="text-slate-600 text-xs truncate max-w-[160px] block font-medium group-hover:text-slate-900">
-                        {row.remark || <span className="text-slate-300 italic">No remarks — click to edit</span>}
+                    <td className="py-2.5 px-3.5">
+                      <span className="text-slate-500 text-[12px] truncate max-w-[160px] block">
+                        {row.remark || <span className="text-slate-300">No remarks</span>}
                       </span>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center bg-slate-50/50">
+                  <td colSpan={10} className="py-12 text-center bg-[#F8FAFC]">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <AlertCircle className="w-8 h-8 text-slate-400" />
-                      <p className="font-bold text-slate-700 text-sm">No operational days match your filter</p>
-                      <p className="text-xs text-slate-500">Try clearing your search query or selecting "All Days".</p>
+                      <AlertCircle className="w-6 h-6 text-slate-300" />
+                      <p className="font-medium text-[#0B1528] text-sm">No days match this filter</p>
+                      <p className="text-xs text-slate-500">Clear search or choose All days.</p>
                       <Button
                         size="sm"
                         variant="outline"
@@ -1144,9 +1110,9 @@ export default function DepartureTripControl({
                           setSearchQuery("");
                           setStatusFilter("ALL");
                         }}
-                        className="mt-2 text-xs font-bold"
+                        className="mt-2 text-xs font-medium border-[#E8EEF4]"
                       >
-                        Reset Search & Filters
+                        Reset filters
                       </Button>
                     </div>
                   </td>
@@ -1157,54 +1123,67 @@ export default function DepartureTripControl({
         </div>
       </div>
 
-      {/* MOBILE RESPONSIVE CARDS (<768px) */}
-      <div className="block md:hidden space-y-3">
+      <div className="block md:hidden space-y-2 min-w-0">
+        {filteredControlRows.length === 0 && (
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-6 text-center">
+            <p className="font-medium text-[#0B1528] text-sm">No days match this filter</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("ALL");
+              }}
+              className="mt-2 text-[11px] font-medium text-[#FF4D00]"
+            >
+              Reset filters
+            </button>
+          </div>
+        )}
         {filteredControlRows.map((row) => (
           <div
             key={row.dayNum}
             onClick={() => handleRowClick(row)}
-            className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-3 cursor-pointer hover:border-[#F97316] transition-colors"
+            className="bg-white border border-[#E8EEF4] rounded-xl p-3.5 space-y-2.5 cursor-pointer min-w-0"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-slate-900 text-white text-[10px] font-bold">
-                  {row.dayLabel}
-                </Badge>
-                <span className="font-mono text-xs font-bold text-slate-800">
+            <div className="flex items-center justify-between gap-2 border-b border-[#E8EEF4] pb-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[11px] font-semibold text-[#0B1528] tabular-nums shrink-0">
+                  {String(row.dayNum).padStart(2, "0")}
+                </span>
+                <span className="text-[12px] font-medium text-[#0B1528] tabular-nums truncate">
                   {row.dateStr}
                 </span>
               </div>
-              <span className="text-xs font-bold text-slate-700">
-                {row.paxCount} PAX
+              <span className="text-[11px] text-slate-500 tabular-nums shrink-0">
+                {row.paxCount} pax
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Hotel</span>
-                <span className="font-bold text-slate-800 truncate block">{row.hotelName}</span>
-                <Badge className="text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border-emerald-200 mt-1">
-                  {row.hotelStatus}
-                </Badge>
+            <div className="grid grid-cols-2 gap-2 text-xs min-w-0">
+              <div className="min-w-0">
+                <span className="text-[10px] font-medium text-slate-400 block">Hotel</span>
+                <span className="font-medium text-[#0B1528] truncate block">{row.hotelName}</span>
+                <span className={cn("inline-flex mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]", statusTone(row.hotelStatus))}>
+                  {formatOpsLabel(row.hotelStatus)}
+                </span>
               </div>
-
-              <div>
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Transport</span>
-                <span className="font-bold text-slate-800 truncate block">{row.transportName}</span>
-                <Badge className="text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border-emerald-200 mt-1">
-                  {row.transportStatus}
-                </Badge>
+              <div className="min-w-0">
+                <span className="text-[10px] font-medium text-slate-400 block">Transport</span>
+                <span className="font-medium text-[#0B1528] truncate block">{row.transportName}</span>
+                <span className={cn("inline-flex mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]", statusTone(row.transportStatus))}>
+                  {formatOpsLabel(row.transportStatus)}
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <div>
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Guide</span>
-                <span className="font-bold text-slate-800">{row.guideName}</span>
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E8EEF4] text-xs min-w-0">
+              <div className="min-w-0">
+                <span className="text-[10px] font-medium text-slate-400 block">Guide</span>
+                <span className="font-medium text-[#0B1528] truncate block">{row.guideName}</span>
               </div>
-              <Button size="sm" variant="ghost" className="h-7 text-xs font-bold text-[#F97316]">
-                Open Details <ChevronRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
+              <span className="inline-flex items-center text-[11px] font-medium text-[#FF4D00] shrink-0">
+                Open <ChevronRight className="w-3.5 h-3.5" />
+              </span>
             </div>
           </div>
         ))}

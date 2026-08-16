@@ -120,6 +120,14 @@ export const financeControllerService = {
     return res.data;
   },
 
+  assignIncomingPayment: async (
+    id: string,
+    assigneeId: string | null
+  ): Promise<any> => {
+    const res = await api.post(`/finance/control-center/incoming/${id}/assign`, { assigneeId });
+    return res.data;
+  },
+
   performVendorAction: async (
     id: string,
     payload: {

@@ -2,17 +2,8 @@ import React, { useState } from "react";
 import {
   TrendingUp,
   Building,
-  Bus,
-  Train,
-  UserCheck,
   Users,
-  Percent,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  Calculator,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface DepartureMoneySummaryProps {
@@ -91,113 +82,110 @@ export default function DepartureMoneySummary({
   const costPerPax = Math.round(totalVendorCost / totalPax);
   const profitPerPax = Math.round(netProfit / totalPax);
 
+  const unitMetrics = [
+    { label: "Rev / pax", value: revenuePerPax },
+    { label: "Stay / pax", value: hotelPerPax },
+    { label: "Fleet / pax", value: transportPerPax },
+    ...(trainCost > 0 ? [{ label: "Train / pax", value: trainPerPax }] : []),
+    { label: "Cost / pax", value: costPerPax },
+  ];
+  const metricCols =
+    unitMetrics.length + 1 >= 6
+      ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-6"
+      : "grid-cols-2 sm:grid-cols-3 md:grid-cols-5";
+
+  const amountBlock = (n: number, emphasize = false, tone?: "ok" | "warn" | "muted") => (
+    <div className="text-right min-w-0">
+      <span
+        className={cn(
+          "tabular-nums",
+          emphasize ? "font-semibold text-sm" : "font-medium text-xs",
+          tone === "ok" ? "text-emerald-600" : tone === "warn" ? "text-[#FF4D00]" : "text-[#0B1528]",
+        )}
+      >
+        {viewMode === "perpax" ? fmtPax(n) : fmt(n)}
+      </span>
+      {viewMode === "both" && (
+        <span className="text-[10px] text-slate-400 block tabular-nums">{fmtPax(n)}</span>
+      )}
+    </div>
+  );
+
   return (
-    <div className="space-y-3">
-      {/* TOP BAR: PER PERSON UNIT ECONOMICS STRIP & VIEW SWITCHER */}
-      <div className="bg-slate-900 text-white rounded-xl p-3.5 shadow-md flex flex-wrap items-center justify-between gap-3 border border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
-            <Calculator className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-200">
-                Per-Person Unit Economics
-              </span>
-              <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                {totalPax} {totalPax === 1 ? "Pax" : "Pax"}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              Live per-traveler realization, train ticketing baseline & net margin for this departure
+    <div className="space-y-3 min-w-0 pb-8 md:pb-0">
+      <div className="bg-white border border-[#E8EEF4] rounded-xl p-3.5 sm:p-4 min-w-0 text-[#0B1528]">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 min-w-0">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-[#0B1528] tracking-tight">
+              Per-person unit economics
+            </h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {totalPax} travellers · realisation, cost, and margin per person
             </p>
+          </div>
+          <div className="inline-flex items-center rounded-md border border-[#E8EEF4] bg-[#F4F7FB] p-0.5 self-start shrink-0">
+            {(
+              [
+                { id: "both", label: "Split" },
+                { id: "perpax", label: "Per pax" },
+                { id: "aggregate", label: "Total" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setViewMode(opt.id)}
+                className={cn(
+                  "px-2.5 py-1 rounded text-[11px] font-medium transition-colors",
+                  viewMode === opt.id
+                    ? "bg-white text-[#0B1528] shadow-xs"
+                    : "text-slate-500 hover:text-[#0B1528]",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* METRICS STRIP */}
-        <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-          <div className="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-            <span className="text-[10px] font-sans font-semibold text-slate-400 block uppercase">Rev/Pax</span>
-            <span className="text-emerald-400 font-black font-mono">₹{revenuePerPax.toLocaleString("en-IN")}</span>
-          </div>
-          <div className="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-            <span className="text-[10px] font-sans font-semibold text-slate-400 block uppercase">Stay/Pax</span>
-            <span className="text-blue-400 font-bold font-mono">₹{hotelPerPax.toLocaleString("en-IN")}</span>
-          </div>
-          <div className="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-            <span className="text-[10px] font-sans font-semibold text-slate-400 block uppercase">Fleet/Pax</span>
-            <span className="text-amber-400 font-bold font-mono">₹{transportPerPax.toLocaleString("en-IN")}</span>
-          </div>
-          {trainCost > 0 && (
-            <div className="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-              <span className="text-[10px] font-sans font-semibold text-indigo-300 block uppercase">Train/Pax</span>
-              <span className="text-indigo-400 font-bold font-mono">₹{trainPerPax.toLocaleString("en-IN")}</span>
+        <div className={cn("mt-3 grid gap-2 min-w-0", metricCols)}>
+          {unitMetrics.map((m) => (
+            <div
+              key={m.label}
+              className="border border-[#E8EEF4] rounded-lg px-2.5 py-2 min-w-0 bg-white"
+            >
+              <p className="text-[10px] font-medium text-slate-400">{m.label}</p>
+              <p className="text-sm font-semibold text-[#0B1528] tabular-nums mt-0.5">
+                ₹{m.value.toLocaleString("en-IN")}
+              </p>
             </div>
-          )}
-          <div className="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-            <span className="text-[10px] font-sans font-semibold text-slate-400 block uppercase">Cost/Pax</span>
-            <span className="text-slate-300 font-bold font-mono">₹{costPerPax.toLocaleString("en-IN")}</span>
-          </div>
-          <div className={cn(
-            "px-3 py-1.5 rounded-lg border",
-            profitPerPax >= 0 
-              ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-300" 
-              : "bg-red-950/60 border-red-500/40 text-red-300"
-          )}>
-            <span className="text-[10px] font-sans font-semibold text-slate-300 block uppercase">Profit/Pax</span>
-            <span className="font-black font-mono">₹{profitPerPax.toLocaleString("en-IN")}</span>
-          </div>
-
-          {/* VIEW SWITCHER */}
-          <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700 text-[11px] font-sans">
-            <button
-              type="button"
-              onClick={() => setViewMode("both")}
+          ))}
+          <div className="border border-[#E8EEF4] rounded-lg px-2.5 py-2 min-w-0 bg-white col-span-2 sm:col-span-1">
+            <p className="text-[10px] font-medium text-slate-400">Profit / pax</p>
+            <p
               className={cn(
-                "px-2.5 py-1 rounded font-bold transition-all",
-                viewMode === "both" ? "bg-orange-500 text-white shadow-xs" : "text-slate-400 hover:text-white"
+                "text-sm font-semibold tabular-nums mt-0.5",
+                profitPerPax >= 0 ? "text-emerald-600" : "text-rose-600",
               )}
             >
-              Split
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("perpax")}
-              className={cn(
-                "px-2.5 py-1 rounded font-bold transition-all",
-                viewMode === "perpax" ? "bg-orange-500 text-white shadow-xs" : "text-slate-400 hover:text-white"
-              )}
-            >
-              Per Pax
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("aggregate")}
-              className={cn(
-                "px-2.5 py-1 rounded font-bold transition-all",
-                viewMode === "aggregate" ? "bg-orange-500 text-white shadow-xs" : "text-slate-400 hover:text-white"
-              )}
-            >
-              Total
-            </button>
+              ₹{profitPerPax.toLocaleString("en-IN")}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* 3-PANEL CONSOLIDATED P&L SUMMARY HEADER */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {/* Panel 1: Customer Receivables */}
-        <div className="bg-white border border-emerald-200 rounded-[8px] p-4 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-emerald-600" />
-              <p className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">
-                Customer Receivables
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-w-0">
+        <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <p className="text-[12px] font-semibold text-[#0B1528]">
+                Customer receivables
               </p>
             </div>
-            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px] font-bold">
-              {paidPct}% Collected
-            </Badge>
+            <span className="text-[10px] font-medium text-slate-400 tabular-nums shrink-0">
+              {paidPct}% collected
+            </span>
           </div>
           <div className="space-y-1.5 font-sans">
             <div className="flex justify-between items-baseline text-xs">

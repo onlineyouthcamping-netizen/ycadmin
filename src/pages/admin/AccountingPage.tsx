@@ -142,6 +142,9 @@ export default function AccountingPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const userRole = (user?.role || "").toLowerCase();
+  const isSuperuserFounder =
+    ["superadmin", "founder", "admin"].includes(userRole) ||
+    (user as any)?.isSuperuser;
   const isSalesRole =
     userRole === "sales" ||
     userRole === "salesperson" ||
@@ -4331,13 +4334,24 @@ export default function AccountingPage() {
                                 </Button>
                                 {entry.status === "PENDING" && canApprove && !isSalesRole && (
                                   <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleApprove(entry.id)}
-                                      className="h-7 text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px]"
-                                    >
-                                      Approve
-                                    </Button>
+                                    {entry.paymentMode === "CASH" && !isSuperuserFounder ? (
+                                      <Button
+                                        size="sm"
+                                        disabled
+                                        title="Cash payment approvals are restricted to Superuser / Founder accounts"
+                                        className="h-7 text-[10px] font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed rounded-[4px]"
+                                      >
+                                        Superuser Only
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleApprove(entry.id)}
+                                        className="h-7 text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px]"
+                                      >
+                                        Approve
+                                      </Button>
+                                    )}
                                     <Button
                                       size="sm"
                                       variant="destructive"
