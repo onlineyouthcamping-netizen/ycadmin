@@ -799,6 +799,9 @@ export default function AccountingPage() {
       .sort((a, b) => b.grossProfit - a.grossProfit);
   }, [trips, bookings, vendorPayments, riyaData.tickets]);
 
+  const filterSelectClass =
+    "h-8 min-w-0 cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40";
+
   const financeTabs: {
     id: TabId;
     label: string;
