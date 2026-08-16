@@ -3032,22 +3032,22 @@ export default function AccountingPage() {
             </button>
           </div>
 
-          <div className="bg-slate-950 flex items-center justify-center p-4 min-h-[380px] max-h-[75vh] overflow-auto">
+          <div className="flex min-h-[240px] min-w-0 flex-1 items-center justify-center overflow-auto bg-[#0B1528] p-3 sm:min-h-[380px] sm:p-4">
             {proofPreviewModal?.imageUrl ? (
               <img
                 src={proofPreviewModal.imageUrl}
-                alt="Payment Proof Screenshot"
-                className="max-h-[68vh] w-auto max-w-full object-contain rounded-lg shadow-lg border border-slate-800"
+                alt="Payment proof screenshot"
+                className="max-h-full w-auto max-w-full rounded-md border border-[#152238] object-contain"
               />
             ) : (
-              <div className="text-center py-12 text-slate-400">
-                <p className="text-xs font-semibold">No image preview available</p>
+              <div className="py-12 text-center text-slate-400">
+                <p className="text-[12px] font-medium">No image preview available</p>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between px-5 py-3 bg-white border-t border-slate-100">
-            <p className="text-[11px] text-slate-500">
+          <div className="flex shrink-0 flex-col items-stretch gap-2 border-t border-[#E8EEF4] bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <p className="min-w-0 break-words text-[11px] text-slate-500">
               Amount: <strong>{formatINR(proofPreviewModal?.amount || 0)}</strong> · Date:{" "}
               {proofPreviewModal?.date}
             </p>
