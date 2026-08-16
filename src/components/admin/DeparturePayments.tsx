@@ -803,30 +803,48 @@ export default function DeparturePayments({
     }).format(val || 0);
   };
 
-  const getPassengerNames = (booking: any) => {
+  const getPassengerList = (booking: any): any[] => {
+    if (!booking) return [];
     try {
       const parsed =
         typeof booking.passengers === "string"
           ? JSON.parse(booking.passengers)
           : booking.passengers;
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map((p: any) => p.name || p.fullName).join(", ");
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (parsed && Array.isArray(parsed.persons) && parsed.persons.length > 0) return parsed.persons;
+      if (parsed && typeof parsed.details?.personsRoomDetails === "object") {
+        return Object.keys(parsed.details.personsRoomDetails).map((name) => ({ name }));
       }
     } catch {}
+    const fallbackName = booking.fullName || booking.name;
+    return fallbackName ? [{ name: fallbackName }] : [];
+  };
+
+  const getPassengerNames = (booking: any) => {
+    const list = getPassengerList(booking);
+    const active = list.filter((p: any) => !p.isCancelled && p.status !== "CANCELLED");
+    if (active.length > 0) {
+      const leadName = (booking.fullName || booking.name || "").trim().toLowerCase();
+      const otherNames = active
+        .map((p: any) => (p.name || p.fullName || "").trim())
+        .filter((n: string) => n && n.toLowerCase() !== leadName);
+      if (otherNames.length > 0) {
+        return `+ ${otherNames.join(", ")}`;
+      }
+      return `${active.length} Pax`;
+    }
     return "Lead Passenger";
   };
 
   const getPassengerCount = (booking: any) => {
+    const list = getPassengerList(booking);
+    const active = list.filter((p: any) => !p.isCancelled && p.status !== "CANCELLED");
+    if (active.length > 0) {
+      return active.length;
+    }
     if (booking.numberOfTravelers && Number(booking.numberOfTravelers) > 0) {
       return Number(booking.numberOfTravelers);
     }
-    try {
-      const parsed =
-        typeof booking.passengers === "string"
-          ? JSON.parse(booking.passengers)
-          : booking.passengers;
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed.length;
-    } catch {}
     return 1;
   };
 
@@ -2083,14 +2101,17 @@ export default function DeparturePayments({
                             </td>
                             <td className="p-3 border-r border-slate-100">
                               <span className="font-bold text-slate-800">
-                                {b.name}
+                                {b.fullName || b.name}
                               </span>
                               <p className="text-[10px] text-slate-500 font-medium">
                                 {getPassengerNames(b)}
                               </p>
                             </td>
-                            <td className="p-3 border-r border-slate-100 font-medium text-slate-600">
-                              {b.phone || "—"}
+                            <td className="p-3 border-r border-slate-100 font-medium text-slate-600 font-mono text-[11px]">
+                              {b.phone ||
+                                b.mobile ||
+                                (getPassengerList(b)[0]?.phone) ||
+                                "—"}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right">
                               <span className="font-black text-slate-900 block font-mono">
