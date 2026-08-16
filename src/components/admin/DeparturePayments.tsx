@@ -127,6 +127,8 @@ export default function DeparturePayments({
     paymentDate: new Date().toISOString().substring(0, 10),
     paymentMode: "BANK_TRANSFER",
     collectionAccountId: "",
+    customPayerName: "",
+    needsReimbursement: false,
     transactionId: "",
     invoiceProof: "",
     status: "Advance Paid",
@@ -942,14 +944,43 @@ export default function DeparturePayments({
     const inputAmount = Number(vendorPaymentForm.advancePaid) || 0;
     const staffName = admin?.name || admin?.email || "Operations Staff";
 
-    const selectedAcc = collectionAccounts.find(
-      (acc) => acc.id === vendorPaymentForm.collectionAccountId,
-    );
-    const accountNameTag = selectedAcc
-      ? `${selectedAcc.accountName}${selectedAcc.bankName ? ` (${selectedAcc.bankName})` : selectedAcc.accountType === "CASH" ? " (Cash Desk)" : ""}`
-      : vendorPaymentForm.paymentMode === "CASH"
-        ? "Cash Desk"
-        : "YouthCamping Company Account";
+    const isCustomPayer =
+      vendorPaymentForm.collectionAccountId === "__someone_else__" ||
+      vendorPaymentForm.collectionAccountId === "__trek_leader__" ||
+      vendorPaymentForm.collectionAccountId === "__driver__" ||
+      vendorPaymentForm.collectionAccountId === "__founder_personal__";
+
+    const selectedAcc = isCustomPayer
+      ? null
+      : collectionAccounts.find(
+          (acc) => acc.id === vendorPaymentForm.collectionAccountId,
+        );
+
+    let accountNameTag = "";
+    if (isCustomPayer) {
+      const customPayer =
+        vendorPaymentForm.customPayerName.trim() ||
+        (vendorPaymentForm.collectionAccountId === "__trek_leader__"
+          ? "Trek Leader (Personal Pocket)"
+          : vendorPaymentForm.collectionAccountId === "__driver__"
+            ? "Driver / Transporter Direct"
+            : vendorPaymentForm.collectionAccountId === "__founder_personal__"
+              ? "Founder (Personal Account)"
+              : "Someone Else (Personal Pocket)");
+
+      accountNameTag = `${customPayer}${vendorPaymentForm.needsReimbursement ? " [Reimbursement Due]" : ""}`;
+    } else if (selectedAcc) {
+      accountNameTag = `${selectedAcc.accountName}${selectedAcc.bankName ? ` (${selectedAcc.bankName})` : selectedAcc.accountType === "CASH" ? " (Cash Desk)" : ""}`;
+    } else {
+      accountNameTag =
+        vendorPaymentForm.paymentMode === "CASH"
+          ? "Cash Desk"
+          : "YouthCamping Company Account";
+    }
+
+    const effectiveCollectionAccountId = isCustomPayer
+      ? null
+      : vendorPaymentForm.collectionAccountId || null;
 
     if (editingVendorPayment) {
       const prevPaid = Number(editingVendorPayment.advancePaid) || 0;
@@ -971,8 +1002,13 @@ export default function DeparturePayments({
           new Date().toISOString().substring(0, 10),
         amount: inputAmount,
         method: vendorPaymentForm.paymentMode || "Bank Transfer",
-        collectionAccountId: vendorPaymentForm.collectionAccountId || null,
+        collectionAccountId: effectiveCollectionAccountId,
         accountName: accountNameTag,
+        isCustomPayer,
+        customPayerName: isCustomPayer ? vendorPaymentForm.customPayerName : "",
+        needsReimbursement: isCustomPayer
+          ? Boolean(vendorPaymentForm.needsReimbursement)
+          : false,
         txnId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
         type: newTotalPaid >= agreedNum ? "SETTLEMENT" : "INSTALLMENT",
         status: "Pending Verification",
@@ -996,7 +1032,8 @@ export default function DeparturePayments({
           advancePaid: newTotalPaid,
           remainingPayable: remaining,
           status,
-          collectionAccountId: vendorPaymentForm.collectionAccountId || null,
+          collectionAccountId: effectiveCollectionAccountId,
+          paidBy: isCustomPayer ? accountNameTag : staffName,
           history: updatedHistory,
         });
       } catch {}
@@ -1013,8 +1050,9 @@ export default function DeparturePayments({
                 advancePaid: newTotalPaid,
                 remainingPayable: remaining,
                 status,
-                collectionAccountId: vendorPaymentForm.collectionAccountId || v.collectionAccountId,
+                collectionAccountId: effectiveCollectionAccountId,
                 collectionAccount: selectedAcc || v.collectionAccount,
+                paidBy: isCustomPayer ? accountNameTag : staffName,
                 invoiceProof: vendorPaymentForm.invoiceProof || v.invoiceProof,
                 proofUrl: vendorPaymentForm.invoiceProof || v.proofUrl,
                 history: updatedHistory,
@@ -1042,8 +1080,13 @@ export default function DeparturePayments({
                 date: vendorPaymentForm.paymentDate,
                 amount: inputAmount,
                 method: vendorPaymentForm.paymentMode,
-                collectionAccountId: vendorPaymentForm.collectionAccountId || null,
+                collectionAccountId: effectiveCollectionAccountId,
                 accountName: accountNameTag,
+                isCustomPayer,
+                customPayerName: isCustomPayer ? vendorPaymentForm.customPayerName : "",
+                needsReimbursement: isCustomPayer
+                  ? Boolean(vendorPaymentForm.needsReimbursement)
+                  : false,
                 txnId:
                   vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
                 type: inputAmount >= agreedNum ? "SETTLEMENT" : "ADVANCE",
@@ -1073,8 +1116,9 @@ export default function DeparturePayments({
         status,
         paymentDate: vendorPaymentForm.paymentDate,
         paymentMode: vendorPaymentForm.paymentMode,
-        collectionAccountId: vendorPaymentForm.collectionAccountId || null,
+        collectionAccountId: effectiveCollectionAccountId,
         collectionAccount: selectedAcc,
+        paidBy: isCustomPayer ? accountNameTag : staffName,
         transactionId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
         invoiceProof: vendorPaymentForm.invoiceProof || "",
         proofUrl: vendorPaymentForm.invoiceProof || "",
@@ -2811,7 +2855,19 @@ export default function DeparturePayments({
                                                     {h.method}
                                                   </span>
                                                   {h.accountName && (
-                                                    <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 font-bold px-2 py-0.5 rounded">
+                                                    <span
+                                                      className={cn(
+                                                        "text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1",
+                                                        h.isCustomPayer ||
+                                                          h.accountName?.includes("Trek Leader") ||
+                                                          h.accountName?.includes("Someone Else") ||
+                                                          h.accountName?.includes("Personal") ||
+                                                          h.accountName?.includes("Driver") ||
+                                                          h.accountName?.includes("Reimbursement")
+                                                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                                                          : "bg-blue-50 text-blue-700 border-blue-100",
+                                                      )}
+                                                    >
                                                       Paid from: {h.accountName}
                                                     </span>
                                                   )}
@@ -3930,15 +3986,20 @@ export default function DeparturePayments({
               </div>
             </div>
 
-            {/* Paid From Account (Finance Bank / Cash Accounts Sync) */}
+            {/* Paid From Account (Finance Bank / Cash Accounts / Someone Else) */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Paid From Account (Finance Module Sync) <span className="text-red-500">*</span>
+                Paid From Account / Payer Type <span className="text-red-500">*</span>
               </label>
               <select
                 value={vendorPaymentForm.collectionAccountId}
                 onChange={(e) => {
                   const accId = e.target.value;
+                  const isCustom =
+                    accId === "__someone_else__" ||
+                    accId === "__trek_leader__" ||
+                    accId === "__driver__" ||
+                    accId === "__founder_personal__";
                   const acc = collectionAccounts.find((a) => a.id === accId);
                   const isCash =
                     acc?.accountType === "CASH" ||
@@ -3949,16 +4010,24 @@ export default function DeparturePayments({
                     paymentMode: isCash
                       ? "CASH"
                       : prev.paymentMode === "CASH"
-                        ? "BANK_TRANSFER"
+                        ? "UPI"
                         : prev.paymentMode,
+                    customPayerName:
+                      accId === "__trek_leader__"
+                        ? "Trek Leader (Personal Pocket)"
+                        : accId === "__driver__"
+                          ? "Driver / Transporter Direct"
+                          : accId === "__founder_personal__"
+                            ? "Founder Personal Account"
+                            : isCustom
+                              ? prev.customPayerName || ""
+                              : "",
                   }));
                 }}
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
               >
-                {collectionAccounts.length === 0 ? (
-                  <option value="">YouthCamping Central Account</option>
-                ) : (
-                  collectionAccounts.map((acc) => (
+                <optgroup label="Company Finance Accounts (Bank & Cash)">
+                  {collectionAccounts.map((acc) => (
                     <option key={acc.id} value={acc.id}>
                       {acc.accountName}{" "}
                       {acc.bankName
@@ -3969,10 +4038,66 @@ export default function DeparturePayments({
                             ? "(Cash Desk)"
                             : `(${acc.accountType})`}
                     </option>
-                  ))
-                )}
+                  ))}
+                </optgroup>
+
+                <optgroup label="Someone Else / Personal / External Account">
+                  <option value="__someone_else__">
+                    👤 Paid by Someone Else / Staff / Other Personal Account
+                  </option>
+                  <option value="__trek_leader__">
+                    🏔️ Paid by Trek Leader / Tour Guide (Personal Pocket)
+                  </option>
+                  <option value="__driver__">
+                    🚐 Paid by Driver / Local Transporter Directly
+                  </option>
+                  <option value="__founder_personal__">
+                    👑 Paid by Founder / Director (Personal Account)
+                  </option>
+                </optgroup>
               </select>
             </div>
+
+            {/* If Someone Else / Custom Payer is Selected */}
+            {(vendorPaymentForm.collectionAccountId === "__someone_else__" ||
+              vendorPaymentForm.collectionAccountId === "__trek_leader__" ||
+              vendorPaymentForm.collectionAccountId === "__driver__" ||
+              vendorPaymentForm.collectionAccountId === "__founder_personal__") && (
+              <div className="bg-purple-50/80 border border-purple-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
+                <div>
+                  <label className="text-[11px] font-bold text-purple-950 block mb-1">
+                    Payer Name / Personal Account Details <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dikshu Sharma (Trek Leader Personal UPI / GPay)"
+                    value={vendorPaymentForm.customPayerName}
+                    onChange={(e) =>
+                      setVendorPaymentForm((prev) => ({
+                        ...prev,
+                        customPayerName: e.target.value,
+                      }))
+                    }
+                    className="w-full h-8 text-xs font-bold border border-purple-300 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-purple-600"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-[11px] font-bold text-purple-900 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={vendorPaymentForm.needsReimbursement}
+                    onChange={(e) =>
+                      setVendorPaymentForm((prev) => ({
+                        ...prev,
+                        needsReimbursement: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-purple-300"
+                  />
+                  <span>Mark as "Pending Reimbursement from Company"</span>
+                </label>
+              </div>
+            )}
 
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
