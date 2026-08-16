@@ -600,31 +600,34 @@ export default function HotelAssignmentWizardModal({
       }
     }
 
-    // Initialize Room Counts
+    // Priority 1: Use existing booking's saved room counts if present
+    const hasSavedRoomConfig =
+      existingB &&
+      (Number(existingB.doubleRoomsCount) > 0 ||
+        Number(existingB.tripleRoomsCount) > 0 ||
+        Number(existingB.quadRoomsCount) > 0 ||
+        Number(existingB.extraPersonsCount) > 0 ||
+        Number(existingB.doubleRooms) > 0 ||
+        Number(existingB.tripleRooms) > 0 ||
+        Number(existingB.quadRooms) > 0 ||
+        Number(existingB.extraBeds) > 0);
+
     const derivedFromAllocations = passengerAllocations
       ? deriveRoomCountsFromAllocations(passengerAllocations, allPassengers)
       : null;
 
-    if (derivedFromAllocations && derivedFromAllocations.totalRooms > 0) {
+    if (hasSavedRoomConfig) {
+      setDoubleRoomsCount(existingB.doubleRoomsCount ?? existingB.doubleRooms ?? 0);
+      setTripleRoomsCount(existingB.tripleRoomsCount ?? existingB.tripleRooms ?? 0);
+      setQuadRoomsCount(existingB.quadRoomsCount ?? existingB.quadRooms ?? 0);
+      setExtraPersonsCount(existingB.extraPersonsCount ?? existingB.extraBeds ?? 0);
+      setRemarks(existingB.remarks || existingB.notes || "");
+    } else if (derivedFromAllocations && derivedFromAllocations.totalRooms > 0) {
       setDoubleRoomsCount(derivedFromAllocations.doubleRooms);
       setTripleRoomsCount(derivedFromAllocations.tripleRooms);
       setQuadRoomsCount(derivedFromAllocations.quadRooms);
       setExtraPersonsCount(derivedFromAllocations.extraPersons);
       setRemarks(existingB?.remarks || "");
-    } else if (
-      existingB &&
-      (existingB.doubleRoomsCount > 0 ||
-        existingB.tripleRoomsCount > 0 ||
-        existingB.quadRoomsCount > 0 ||
-        existingB.doubleRooms > 0 ||
-        existingB.tripleRooms > 0 ||
-        existingB.quadRooms > 0)
-    ) {
-      setDoubleRoomsCount(existingB.doubleRoomsCount ?? existingB.doubleRooms ?? 0);
-      setTripleRoomsCount(existingB.tripleRoomsCount ?? existingB.tripleRooms ?? 0);
-      setQuadRoomsCount(existingB.quadRoomsCount ?? existingB.quadRooms ?? 0);
-      setExtraPersonsCount(existingB.extraPersonsCount ?? existingB.extraBeds ?? 0);
-      setRemarks(existingB.remarks || "");
     } else {
       if (totalPax > 0) {
         if (totalPax % 4 === 0) {
@@ -748,8 +751,12 @@ export default function HotelAssignmentWizardModal({
       const existingB = initialDayInfo?.existingBooking;
       const finalDest = isCustomCity && customCityName.trim() ? customCityName.trim() : (selectedDestination || selectedHotel?.city || "Manali");
 
+      const isSameDateBooking =
+        existingB?.id &&
+        normaliseDate(existingB.checkIn || existingB.checkInDate) === normaliseDate(checkInDate);
+
       const payload: any = {
-        ...(existingB?.id && !String(existingB.id).startsWith("stay") ? { id: existingB.id } : {}),
+        ...(isSameDateBooking && !String(existingB.id).startsWith("stay") ? { id: existingB.id } : {}),
         hotelName: finalHotelName,
         location: finalDest,
         roomType: selectedHotel?.category || "Standard Room",

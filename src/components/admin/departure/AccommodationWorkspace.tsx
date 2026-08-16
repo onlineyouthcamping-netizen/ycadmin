@@ -321,10 +321,10 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
           ? (booking.extraPersonsCount ?? 0)
           : (derivedRooms.totalRooms > 0 ? derivedRooms.extraPersons : 0);
 
-        const dRate = booking.doubleRate || 1200;
-        const tRate = booking.tripleRate || 1200;
-        const qRate = booking.quadRate || 1200;
-        const exRate = booking.extraBedRate || 800;
+        const dRate = booking.doubleRate ?? 1200;
+        const tRate = booking.tripleRate ?? 1200;
+        const qRate = booking.quadRate ?? 1200;
+        const exRate = booking.extraBedRate ?? 800;
 
         const isPerPerson = (booking.pricingMethod || "per-person").toLowerCase() === "per-person";
         const dMult = isPerPerson ? 2 : 1;
@@ -338,7 +338,10 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
             exPax * exRate) *
           1;
 
-        const bookingTotal = booking.totalAmount > 0 ? booking.totalAmount : dailyCalcTotal * (booking.nightsCount || 1);
+        const bookingTotal =
+          booking.totalAmount !== undefined && booking.totalAmount !== null && Number(booking.totalAmount) > 0
+            ? Number(booking.totalAmount)
+            : dailyCalcTotal * (booking.nightsCount || 1);
         totalAmount = bookingTotal / (booking.nightsCount || 1);
         status = "configured";
 
