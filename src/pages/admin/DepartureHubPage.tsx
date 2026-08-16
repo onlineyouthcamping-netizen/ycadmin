@@ -1438,6 +1438,11 @@ export default function DepartureHubPage() {
       });
     return arr;
   }, [bookings, departureDateStr, passengerAllocations]);
+
+  const activeDeparturePassengers = useMemo(
+    () => allPassengers.filter((p: any) => !p.isCancelled),
+    [allPassengers],
+  );
   const [itineraryList, setItineraryList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [engineStats, setEngineStats] = useState<any>(null);
@@ -8441,9 +8446,9 @@ useEffect(() => {
             dbVendors={dbVendors}
             tripId={tripId}
             departureDateStr={departureDateStr}
-            totalPax={allPassengers.length}
+            totalPax={activeDeparturePassengers.length}
             passengerAllocations={passengerAllocations}
-            allPassengers={allPassengers}
+            allPassengers={activeDeparturePassengers}
             initialDayInfo={selectedWizardDayInfo}
             onSaveSuccess={fetchPageData}
           />
@@ -8657,7 +8662,7 @@ useEffect(() => {
                       .map((v: any) => v.rawAssignment)
                       .filter(Boolean)
               }
-              allPassengers={allPassengers}
+              allPassengers={activeDeparturePassengers}
               passengerAllocations={passengerAllocations}
               departureDateStr={departureDateStr}
               tripId={tripId}
