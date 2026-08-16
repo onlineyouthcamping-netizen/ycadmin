@@ -9544,7 +9544,7 @@ useEffect(() => {
                   className="bg-orange-50 border border-orange-200 rounded-[6px] p-4 space-y-3"
                 >
                   <p className="text-[11px] font-black text-orange-700 uppercase tracking-wider">
-                    Assign Guide to Departure
+                    {guideForm.assignmentType === "EXPENSE" ? "Add Trip Expense / Allowance" : "Assign Guide to Departure"}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
@@ -9651,27 +9651,30 @@ useEffect(() => {
                         <option value="EXPENSE">Trip Expense / Allowance</option>
                       </select>
                     </div>
+
+                    {guideForm.assignmentType !== "EXPENSE" && (
+                      <div>
+                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                          Days Working
+                        </label>
+                        <input
+                          type="number"
+                          value={guideForm.daysWorked}
+                          min="1"
+                          max="30"
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              daysWorked: e.target.value,
+                            }))
+                          }
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                    )}
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Days Working
-                      </label>
-                      <input
-                        type="number"
-                        value={guideForm.daysWorked}
-                        min="1"
-                        max="30"
-                        onChange={(e) =>
-                          setGuideForm((f) => ({
-                            ...f,
-                            daysWorked: e.target.value,
-                          }))
-                        }
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Agreed Amount (₹)
+                        {guideForm.assignmentType === "EXPENSE" ? "Expense Amount (₹)" : "Agreed Amount (₹)"}
                       </label>
                       <input
                         type="number"
@@ -9704,22 +9707,26 @@ useEffect(() => {
                         className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
                       />
                     </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Reporting Time
-                      </label>
-                      <input
-                        type="time"
-                        value={guideForm.reportingTime}
-                        onChange={(e) =>
-                          setGuideForm((f) => ({
-                            ...f,
-                            reportingTime: e.target.value,
-                          }))
-                        }
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      />
-                    </div>
+                    
+                    {guideForm.assignmentType !== "EXPENSE" && (
+                      <div>
+                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                          Reporting Time
+                        </label>
+                        <input
+                          type="time"
+                          value={guideForm.reportingTime}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              reportingTime: e.target.value,
+                            }))
+                          }
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                    )}
+                    
                     <div className="sm:col-span-2">
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                         Notes
@@ -9729,26 +9736,29 @@ useEffect(() => {
                         onChange={(e) =>
                           setGuideForm((f) => ({ ...f, notes: e.target.value }))
                         }
-                        placeholder="e.g. Lead guide, experienced in Spiti"
+                        placeholder={guideForm.assignmentType === "EXPENSE" ? "e.g. For fuel and tolls" : "e.g. Lead guide, experienced in Spiti"}
                         className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
                       />
                     </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Emergency Contact
-                      </label>
-                      <input
-                        value={guideForm.emergencyContact}
-                        onChange={(e) =>
-                          setGuideForm((f) => ({
-                            ...f,
-                            emergencyContact: e.target.value,
-                          }))
-                        }
-                        placeholder="+91 XXXXXXXXXX"
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      />
-                    </div>
+                    
+                    {guideForm.assignmentType !== "EXPENSE" && (
+                      <div>
+                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                          Emergency Contact
+                        </label>
+                        <input
+                          value={guideForm.emergencyContact}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              emergencyContact: e.target.value,
+                            }))
+                          }
+                          placeholder="+91 XXXXXXXXXX"
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button
@@ -9757,7 +9767,7 @@ useEffect(() => {
                       disabled={isSavingGuide}
                       className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px]"
                     >
-                      {isSavingGuide ? "Saving..." : "Save Guide"}
+                      {isSavingGuide ? "Saving..." : (guideForm.assignmentType === "EXPENSE" ? "Save Expense" : "Save Guide")}
                     </Button>
                     <Button
                       type="button"
