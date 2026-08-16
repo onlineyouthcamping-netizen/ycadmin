@@ -77,6 +77,23 @@ export const collectionAccountsService = {
     return res.data?.data;
   },
 
+  async recordAccountSubmission(
+    id: string,
+    data: {
+      amount: number;
+      submissionMode?: string;
+      paymentMode?: string;
+      referenceNumber?: string;
+      notes?: string;
+    },
+  ): Promise<any> {
+    const res = await api.post(`/payments/accounts/${id}/submit`, {
+      ...data,
+      paymentMode: data.paymentMode || data.submissionMode || "BANK_TRANSFER",
+    });
+    return res.data;
+  },
+
   async recordSubmission(
     id: string,
     data: {
@@ -88,6 +105,40 @@ export const collectionAccountsService = {
   ): Promise<any> {
     const res = await api.post(`/payments/accounts/${id}/submit`, data);
     return res.data;
+  },
+
+  async recordTransfer(data: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    paymentMode?: string;
+    referenceNumber?: string;
+    notes?: string;
+  }): Promise<any> {
+    await api.post(`/payments/accounts/${data.fromAccountId}/submit`, {
+      amount: data.amount,
+      paymentMode: data.paymentMode || "BANK_TRANSFER",
+      referenceNumber: data.referenceNumber,
+      notes: `Transfer Out to account ID: ${data.toAccountId}. ${data.notes || ""}`,
+    });
+
+    const res = await api.post(`/payments/accounts/${data.toAccountId}/submit`, {
+      amount: data.amount,
+      paymentMode: data.paymentMode || "BANK_TRANSFER",
+      referenceNumber: data.referenceNumber,
+      notes: `Recharge / Inward Transfer from account ID: ${data.fromAccountId}. ${data.notes || ""}`,
+    });
+    return res.data;
+  },
+
+  async getVerificationQueue(): Promise<any> {
+    const res = await api.get("/payments/verification-queue");
+    return res.data?.data;
+  },
+
+  async getRiyaSummary(): Promise<any> {
+    const res = await api.get("/payments/riya-summary");
+    return res.data?.data;
   },
 };
 
