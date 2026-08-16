@@ -126,6 +126,7 @@ export default function DeparturePayments({
     advancePaid: "",
     paymentDate: new Date().toISOString().substring(0, 10),
     paymentMode: "BANK_TRANSFER",
+    collectionAccountId: "",
     transactionId: "",
     invoiceProof: "",
     status: "Advance Paid",
@@ -941,6 +942,15 @@ export default function DeparturePayments({
     const inputAmount = Number(vendorPaymentForm.advancePaid) || 0;
     const staffName = admin?.name || admin?.email || "Operations Staff";
 
+    const selectedAcc = collectionAccounts.find(
+      (acc) => acc.id === vendorPaymentForm.collectionAccountId,
+    );
+    const accountNameTag = selectedAcc
+      ? `${selectedAcc.accountName}${selectedAcc.bankName ? ` (${selectedAcc.bankName})` : selectedAcc.accountType === "CASH" ? " (Cash Desk)" : ""}`
+      : vendorPaymentForm.paymentMode === "CASH"
+        ? "Cash Desk"
+        : "YouthCamping Company Account";
+
     if (editingVendorPayment) {
       const prevPaid = Number(editingVendorPayment.advancePaid) || 0;
       // If user entered a new payment amount, add it to existing advancePaid; else keep as is
@@ -961,6 +971,8 @@ export default function DeparturePayments({
           new Date().toISOString().substring(0, 10),
         amount: inputAmount,
         method: vendorPaymentForm.paymentMode || "Bank Transfer",
+        collectionAccountId: vendorPaymentForm.collectionAccountId || null,
+        accountName: accountNameTag,
         txnId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
         type: newTotalPaid >= agreedNum ? "SETTLEMENT" : "INSTALLMENT",
         status: "Pending Verification",
@@ -984,6 +996,7 @@ export default function DeparturePayments({
           advancePaid: newTotalPaid,
           remainingPayable: remaining,
           status,
+          collectionAccountId: vendorPaymentForm.collectionAccountId || null,
           history: updatedHistory,
         });
       } catch {}
@@ -1000,6 +1013,8 @@ export default function DeparturePayments({
                 advancePaid: newTotalPaid,
                 remainingPayable: remaining,
                 status,
+                collectionAccountId: vendorPaymentForm.collectionAccountId || v.collectionAccountId,
+                collectionAccount: selectedAcc || v.collectionAccount,
                 invoiceProof: vendorPaymentForm.invoiceProof || v.invoiceProof,
                 proofUrl: vendorPaymentForm.invoiceProof || v.proofUrl,
                 history: updatedHistory,
@@ -1008,7 +1023,7 @@ export default function DeparturePayments({
         ),
       );
       toast.success(
-        `Recorded ₹${inputAmount.toLocaleString("en-IN")} payment for ${vendorPaymentForm.vendorName}!`,
+        `Recorded ₹${inputAmount.toLocaleString("en-IN")} payment for ${vendorPaymentForm.vendorName} (Paid from ${accountNameTag})!`,
       );
     } else {
       const remaining = Math.max(0, agreedNum - inputAmount);
@@ -1027,6 +1042,8 @@ export default function DeparturePayments({
                 date: vendorPaymentForm.paymentDate,
                 amount: inputAmount,
                 method: vendorPaymentForm.paymentMode,
+                collectionAccountId: vendorPaymentForm.collectionAccountId || null,
+                accountName: accountNameTag,
                 txnId:
                   vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
                 type: inputAmount >= agreedNum ? "SETTLEMENT" : "ADVANCE",
@@ -1056,6 +1073,8 @@ export default function DeparturePayments({
         status,
         paymentDate: vendorPaymentForm.paymentDate,
         paymentMode: vendorPaymentForm.paymentMode,
+        collectionAccountId: vendorPaymentForm.collectionAccountId || null,
+        collectionAccount: selectedAcc,
         transactionId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
         invoiceProof: vendorPaymentForm.invoiceProof || "",
         proofUrl: vendorPaymentForm.invoiceProof || "",
@@ -1069,7 +1088,7 @@ export default function DeparturePayments({
       } catch {}
       setVendorPayments((prev) => [newVnd, ...prev]);
       toast.success(
-        `Logged vendor payable for ${vendorPaymentForm.vendorName}!`,
+        `Logged vendor payable for ${vendorPaymentForm.vendorName} (Paid from ${accountNameTag})!`,
       );
     }
     setAddVendorPaymentOpen(false);
@@ -2710,6 +2729,10 @@ export default function DeparturePayments({
                                       advancePaid: String(balance > 0 ? balance : 0),
                                       paymentDate: new Date().toISOString().substring(0, 10),
                                       paymentMode: "BANK_TRANSFER",
+                                      collectionAccountId:
+                                        v.collectionAccountId ||
+                                        collectionAccounts[0]?.id ||
+                                        "",
                                       transactionId: "",
                                       invoiceProof: v.invoiceProof || "",
                                       status: v.status,
@@ -2787,6 +2810,11 @@ export default function DeparturePayments({
                                                   <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
                                                     {h.method}
                                                   </span>
+                                                  {h.accountName && (
+                                                    <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 font-bold px-2 py-0.5 rounded">
+                                                      Paid from: {h.accountName}
+                                                    </span>
+                                                  )}
                                                   <span className="text-xs font-mono text-slate-500">
                                                     TXN: {h.txnId}
                                                   </span>
@@ -3860,7 +3888,7 @@ export default function DeparturePayments({
                       advancePaid: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
                 />
               </div>
               <div>
@@ -3869,21 +3897,81 @@ export default function DeparturePayments({
                 </label>
                 <select
                   value={vendorPaymentForm.paymentMode}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const mode = e.target.value;
+                    let targetAccId = vendorPaymentForm.collectionAccountId;
+                    if (mode === "CASH") {
+                      const cashAcc = collectionAccounts.find(
+                        (a) =>
+                          a.accountType === "CASH" ||
+                          a.accountName?.toLowerCase().includes("cash"),
+                      );
+                      if (cashAcc) targetAccId = cashAcc.id;
+                    } else if (mode === "BANK_TRANSFER" || mode === "UPI") {
+                      const bankAcc = collectionAccounts.find(
+                        (a) =>
+                          a.accountType !== "CASH" &&
+                          !a.accountName?.toLowerCase().includes("cash"),
+                      );
+                      if (bankAcc) targetAccId = bankAcc.id;
+                    }
                     setVendorPaymentForm((prev) => ({
                       ...prev,
-                      paymentMode: e.target.value,
-                    }))
-                  }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
+                      paymentMode: mode,
+                      collectionAccountId: targetAccId,
+                    }));
+                  }}
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-orange-500"
                 >
-                  <option value="BANK_TRANSFER">
-                    Bank Transfer (NEFT/RTGS)
-                  </option>
+                  <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
                   <option value="UPI">UPI / GPay</option>
-                  <option value="CASH">Cash</option>
+                  <option value="CASH">Cash Payment</option>
                 </select>
               </div>
+            </div>
+
+            {/* Paid From Account (Finance Bank / Cash Accounts Sync) */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Paid From Account (Finance Module Sync) <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={vendorPaymentForm.collectionAccountId}
+                onChange={(e) => {
+                  const accId = e.target.value;
+                  const acc = collectionAccounts.find((a) => a.id === accId);
+                  const isCash =
+                    acc?.accountType === "CASH" ||
+                    acc?.accountName?.toLowerCase().includes("cash");
+                  setVendorPaymentForm((prev) => ({
+                    ...prev,
+                    collectionAccountId: accId,
+                    paymentMode: isCash
+                      ? "CASH"
+                      : prev.paymentMode === "CASH"
+                        ? "BANK_TRANSFER"
+                        : prev.paymentMode,
+                  }));
+                }}
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+              >
+                {collectionAccounts.length === 0 ? (
+                  <option value="">YouthCamping Central Account</option>
+                ) : (
+                  collectionAccounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.accountName}{" "}
+                      {acc.bankName
+                        ? `(${acc.bankName}${acc.maskedAccountNumber || (acc.accountNumber ? ` ••••${acc.accountNumber.slice(-4)}` : "")})`
+                        : acc.upiId
+                          ? `(${acc.upiId})`
+                          : acc.accountType === "CASH"
+                            ? "(Cash Desk)"
+                            : `(${acc.accountType})`}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
 
             <div>
