@@ -766,6 +766,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, isAuthenticated, navigate, location.pathname]);
 
+  const mainScrollRef = useRef<HTMLElement | null>(null);
+
+  // Always reset scroll to top on page navigation or query param change
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location.pathname, location.search]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F7FB]">
@@ -994,7 +1004,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
             {/* Main Content Area — single page scroller */}
-            <main className="admin-main-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-[#F4F7FB] p-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:p-5 md:pb-5">
+            <main ref={mainScrollRef} className="admin-main-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-[#F4F7FB] p-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:p-5 md:pb-5">
               <div className="w-full min-h-0 min-w-0">{children}</div>
             </main>
 

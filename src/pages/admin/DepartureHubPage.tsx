@@ -1979,6 +1979,15 @@ export default function DepartureHubPage() {
     }
   }, [origTabParam]);
 
+  // Ensure departure workspace opens cleanly at the top of the page
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const scroller = document.querySelector(".admin-main-scroll");
+    if (scroller) {
+      scroller.scrollTop = 0;
+    }
+  }, [tripId, departureDateStr, origTabParam]);
+
   // Multi-Vendor Hotel & Stay Assignment Architecture State
   const [hotelViewMode, setHotelViewMode] = useState<"card" | "table">("card");
   const [isAddHotelWizardOpen, setIsAddHotelWizardOpen] = useState(false);
