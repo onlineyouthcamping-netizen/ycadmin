@@ -620,12 +620,20 @@ function AccommodationTableRow({
       <td className="px-4 py-3.5 whitespace-nowrap">
         {row.hasStay && (row.totalAmount > 0 || row.costPerPaxPerNight > 0) ? (
           <div>
-            <div className="font-extrabold text-emerald-600">
-              {formatINR(row.totalAmount > 0 ? row.totalAmount : row.costPerPaxStay)}
+            <div className="font-extrabold text-emerald-600 flex items-center gap-1">
+              <span>{formatINR(row.totalAmount > 0 ? row.totalAmount : row.costPerPaxStay)}</span>
+              {row.booking && (row.booking.nightsCount || 1) > 1 && (
+                <span className="text-[10px] font-semibold text-slate-500">/ night</span>
+              )}
             </div>
             {row.costPerPaxStay > 0 && (
               <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                {formatINR(row.costPerPaxStay)} / pax
+                <span>{formatINR(row.costPerPaxStay)} / pax</span>
+                {row.booking && (row.booking.nightsCount || 1) > 1 && (
+                  <span className="text-orange-600 font-bold ml-1.5">
+                    (Stay Total: {formatINR(row.booking.totalAmount || (row.totalAmount * (row.booking.nightsCount || 1)))})
+                  </span>
+                )}
               </div>
             )}
           </div>
