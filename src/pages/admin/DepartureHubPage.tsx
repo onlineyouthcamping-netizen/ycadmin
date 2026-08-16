@@ -1154,19 +1154,21 @@ const generateMockBookings = (tripId: string, departureDateStr: string) => {
 export default function DepartureHubPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-
-  // Guarantee immediate synchronization with browser URL location
-  const currentParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search],
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Extract from departureId if present (format: tripId_YYYY-MM-DD)
-  const departureIdParam = currentParams.get("departureId");
-  let resolvedTripId = currentParams.get("tripId") || "";
+  const departureIdParam =
+    searchParams.get("departureId") ||
+    new URLSearchParams(location.search).get("departureId");
+  let resolvedTripId =
+    searchParams.get("tripId") ||
+    new URLSearchParams(location.search).get("tripId") ||
+    "";
   let resolvedDepartureDateStr =
-    currentParams.get("departureDate") || currentParams.get("date") || "";
+    searchParams.get("departureDate") ||
+    searchParams.get("date") ||
+    new URLSearchParams(location.search).get("departureDate") ||
+    "";
 
   if (departureIdParam && departureIdParam.includes("_")) {
     const idx = departureIdParam.indexOf("_");
@@ -1182,6 +1184,7 @@ export default function DepartureHubPage() {
 
   const normalizeTab = (raw: string) => {
     const t = (raw || "overview").toLowerCase().trim();
+    if (["overview"].includes(t)) return "overview";
     if (["hotel", "hotels", "accommodations", "accommodation", "itinerary"].includes(t)) return "hotels";
     if (["transport", "allocation", "tempo", "fleet", "vehicles"].includes(t)) return "transport";
     if (["passengers", "manifest", "pax"].includes(t)) return "passengers";
@@ -1195,31 +1198,25 @@ export default function DepartureHubPage() {
     return t || "overview";
   };
 
-  const activeTab = useMemo(() => {
-    const rawTab =
-      currentParams.get("tab") ||
-      new URLSearchParams(location.search).get("tab") ||
-      "overview";
-    return normalizeTab(rawTab);
-  }, [currentParams, location.search]);
+  const rawTab =
+    searchParams.get("tab") ||
+    new URLSearchParams(location.search).get("tab") ||
+    "overview";
+  const activeTab = normalizeTab(rawTab);
 
   const setActiveTab = (tab: string) => {
     const normalized = normalizeTab(tab);
-    const nextParams = new URLSearchParams(location.search);
-    nextParams.set("tab", normalized);
-    if (departureIdParam) {
-      nextParams.set("departureId", departureIdParam);
-    } else {
-      if (tripId) nextParams.set("tripId", tripId);
-      if (departureDateStr) nextParams.set("departureDate", departureDateStr);
-    }
-    navigate(
-      {
-        pathname: location.pathname,
-        search: `?${nextParams.toString()}`,
-      },
-      { replace: false },
-    );
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", normalized);
+      if (departureIdParam) {
+        next.set("departureId", departureIdParam);
+      } else {
+        if (tripId) next.set("tripId", tripId);
+        if (departureDateStr) next.set("departureDate", departureDateStr);
+      }
+      return next;
+    });
   };
 
   const initializationKeyRef = useRef<string | null>(null);
