@@ -5515,8 +5515,7 @@ useEffect(() => {
   const [fallbackToQuad, setFallbackToQuad] = useState(true);
 
   const handleTriggerAutoAllocate = () => {
-    const newAllocs: Record<string, any> = {};
-    let roomNum = 1;
+    const newAllocs: Record<string, any> = { ...passengerAllocations };
     const activeTravelers = allPassengers.filter(
       (p) => !isPassengerCancelled(p),
     );
@@ -5532,8 +5531,10 @@ useEffect(() => {
     }> = [];
 
     const assignToRoom = (p: any, rName: string, maxCap = 2, isCouple = false) => {
-      newAllocs[p.id] = { room: rName };
+      newAllocs[p.id] = { ...(newAllocs[p.id] || newAllocs[p.name] || {}), room: rName };
+      if (p.name) newAllocs[p.name] = { ...newAllocs[p.id] };
       allocated.add(p.id);
+      if (p.name) allocated.add(p.name);
       let r = roomsTracked.find((x) => x.roomName === rName);
       if (!r) {
         r = {
@@ -5546,11 +5547,26 @@ useEffect(() => {
         };
         roomsTracked.push(r);
       }
-      r.members.push(p);
+      if (!r.members.some((m: any) => m.id === p.id)) {
+        r.members.push(p);
+      }
       if (p.gender === "Female" && r.members.some((m: any) => m.gender === "Male")) {
         r.isCouple = true;
       }
     };
+
+    // ── STEP 0: PRESERVE ALREADY SAVED / ASSIGNED ROOMS ──
+    activeTravelers.forEach((p) => {
+      const existing = passengerAllocations[p.id] || passengerAllocations[p.name];
+      if (existing?.room && existing.room !== "—" && existing.room !== "Unassigned") {
+        assignToRoom(p, existing.room, 2, false);
+      }
+    });
+
+    const existingRoomNums = roomsTracked
+      .map((r) => parseInt(r.roomName.replace(/\D/g, ""), 10))
+      .filter((n) => !isNaN(n));
+    let roomNum = existingRoomNums.length > 0 ? Math.max(...existingRoomNums) + 1 : 1;
 
     // Step 1: Identify couples/groups — travelers sharing the same bookingId
     const bookingGroups = groupPassengersByBooking(activeTravelers);
@@ -5558,7 +5574,7 @@ useEffect(() => {
     // Step 1: Allocate Same-Booking Groups (Same booking co-travelers stay together!)
     if (prioritizeCouples) {
       Object.values(bookingGroups).forEach((group) => {
-        const unallocated = group.filter((p) => !allocated.has(p.id));
+        const unallocated = group.filter((p) => !allocated.has(p.id) && !allocated.has(p.name));
         if (unallocated.length >= 2) {
           let list = [...unallocated];
           while (list.length >= 2) {
@@ -5593,7 +5609,7 @@ useEffect(() => {
     // Helper: Allocate unassigned travelers into available open beds of matching gender rooms before creating new rooms!
     const fillOrAllocatePool = (travelersList: any[]) => {
       travelersList.forEach((p) => {
-        if (allocated.has(p.id)) return;
+        if (allocated.has(p.id) || (p.name && allocated.has(p.name))) return;
         const pGender = (p.gender || "").toLowerCase();
         
         // 1. Try finding an existing non-couple room of the same gender with available beds
@@ -5610,7 +5626,7 @@ useEffect(() => {
       });
 
       // 2. Any remaining unassigned travelers get grouped into new rooms by gender
-      const remaining = travelersList.filter((p) => !allocated.has(p.id));
+      const remaining = travelersList.filter((p) => !allocated.has(p.id) && (!p.name || !allocated.has(p.name)));
       let pool = [...remaining];
       while (pool.length > 0) {
         let chunkSize = Math.min(capacitySize, pool.length);
@@ -5628,21 +5644,21 @@ useEffect(() => {
 
     if (sameGenderEnforced) {
       const leftoverFemales = activeTravelers.filter(
-        (p) => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.id),
+        (p) => (p.gender || "").toLowerCase() === "female" && !allocated.has(p.id) && (!p.name || !allocated.has(p.name)),
       );
       fillOrAllocatePool(leftoverFemales);
 
       const leftoverMales = activeTravelers.filter(
-        (p) => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.id),
+        (p) => (p.gender || "").toLowerCase() === "male" && !allocated.has(p.id) && (!p.name || !allocated.has(p.name)),
       );
       fillOrAllocatePool(leftoverMales);
 
       const leftoverOthers = activeTravelers.filter(
-        (p) => !allocated.has(p.id),
+        (p) => !allocated.has(p.id) && (!p.name || !allocated.has(p.name)),
       );
       fillOrAllocatePool(leftoverOthers);
     } else {
-      const remainingAll = activeTravelers.filter((p) => !allocated.has(p.id));
+      const remainingAll = activeTravelers.filter((p) => !allocated.has(p.id) && (!p.name || !allocated.has(p.name)));
       fillOrAllocatePool(remainingAll);
     }
 
@@ -5676,6 +5692,19 @@ useEffect(() => {
       ]);
     }
 
+    // ── PRESERVE ALREADY ASSIGNED VEHICLES & SEATS ──
+    activeTravelers.forEach((p) => {
+      const existing = passengerAllocations[p.id] || passengerAllocations[p.name];
+      if (existing?.vehicle && existing.vehicle !== "—" && existing.vehicle !== "Unassigned") {
+        const v = fleetStatus.find(
+          (f) => f.name === existing.vehicle || f.id === existing.vehicle || f.vehicleType === existing.vehicle,
+        );
+        if (v && v.remainingSeats > 0) {
+          v.remainingSeats -= 1;
+        }
+      }
+    });
+
     // Sort booking groups: groups containing female participants first to ensure they travel together
     const sortedGroups = Object.entries(bookingGroups).sort(
       ([, aList], [, bList]) => {
@@ -5686,8 +5715,15 @@ useEffect(() => {
     );
 
     sortedGroups.forEach(([bId, groupMembers]) => {
-      const gSize = groupMembers.length;
-      // Try to find a vehicle that can fit the entire group
+      const unassignedInGroup = groupMembers.filter((p) => {
+        const existing = passengerAllocations[p.id] || passengerAllocations[p.name];
+        return !existing?.vehicle || existing.vehicle === "—" || existing.vehicle === "Unassigned";
+      });
+
+      if (unassignedInGroup.length === 0) return;
+
+      const gSize = unassignedInGroup.length;
+      // Try to find a vehicle that can fit the unassigned group members
       let vehicle = fleetStatus.find((f) => f.remainingSeats >= gSize);
       if (!vehicle) {
         // Fallback: assign to the vehicle with the most remaining space
@@ -5698,7 +5734,7 @@ useEffect(() => {
       }
 
       if (vehicle) {
-        groupMembers.forEach((p) => {
+        unassignedInGroup.forEach((p) => {
           const seatIndex = vehicle.capacity - vehicle.remainingSeats + 1;
           const entry = {
             ...(newAllocs[p.id] || newAllocs[p.name] || {}),
@@ -5713,13 +5749,8 @@ useEffect(() => {
     });
 
     setPassengerAllocations(newAllocs);
+    toast.success("Auto-allocation completed (preserved saved assignments)");
   };
-
-  useEffect(() => {
-    if (allPassengers.length > 0) {
-      handleTriggerAutoAllocate();
-    }
-  }, [sharingPref, sameGenderEnforced, prioritizeCouples, fallbackToQuad]);
 
   const computedParticipants = useMemo(() => {
     return allPassengers.map((p: any) => ({
