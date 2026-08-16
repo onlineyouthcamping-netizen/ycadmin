@@ -82,19 +82,19 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
   > = {
     "trip-overview": {
       icon: BookOpen,
-      colorClass: "text-[#F97316]",
-      bgClass: "bg-[#FFF7ED] border border-[#FED7AA]",
+      colorClass: "text-[#FF4D00]",
+      bgClass: "bg-[#FFF3EC] border border-[#FFE1D1]",
       desc: "Highlights, route, best time, difficulty, key details",
     },
     "sales-guide": {
       icon: Briefcase,
-      colorClass: "text-[#F97316]",
-      bgClass: "bg-[#FFF7ED] border border-[#FED7AA]",
+      colorClass: "text-[#FF4D00]",
+      bgClass: "bg-[#FFF3EC] border border-[#FFE1D1]",
       desc: "How to sell, USPs, objections & answers",
     },
     "customer-faqs": {
       icon: HelpCircle,
-      colorClass: "text-[#10B981]",
+      colorClass: "text-emerald-600",
       bgClass: "bg-emerald-50 border border-emerald-100",
       desc: "All customer questions & answers",
     },
@@ -106,8 +106,8 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     },
     "ticketing-info": {
       icon: Ticket,
-      colorClass: "text-[#F97316]",
-      bgClass: "bg-[#FFF7ED] border border-[#FED7AA]",
+      colorClass: "text-[#FF4D00]",
+      bgClass: "bg-[#FFF3EC] border border-[#FFE1D1]",
       desc: "Train, flight, bus, cab details & rules",
     },
     "visa-&-entry": {
@@ -124,8 +124,8 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     },
     "packing-guide": {
       icon: Luggage,
-      colorClass: "text-[#F97316]",
-      bgClass: "bg-[#FFF7ED] border border-[#FED7AA]",
+      colorClass: "text-[#FF4D00]",
+      bgClass: "bg-[#FFF3EC] border border-[#FFE1D1]",
       desc: "What to carry, checklist & tips",
     },
   };

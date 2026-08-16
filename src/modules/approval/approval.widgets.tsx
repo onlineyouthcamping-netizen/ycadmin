@@ -4,66 +4,75 @@ import type {
   DashboardWidget,
   DashboardWidgetContextProps,
 } from "@/config/dashboardWidgetRegistry";
+import {
+  DashBody,
+  DashCard,
+  DashHead,
+  DashList,
+  DashRow,
+  dashLink,
+  dashRowLabel,
+} from "@/modules/dashboard.chrome";
+
+const APPROVAL_QUEUE = [
+  {
+    label: "Payment approvals",
+    count: 5,
+    color: "text-[#D97706] bg-[#FFF7E6] border-[#FFD580]",
+    path: "/admin/approvals-hub",
+  },
+  {
+    label: "Vendor bills",
+    count: 2,
+    color: "text-[#E23D4D] bg-[#FFF1F3] border-[#FFCCD3]",
+    path: "/admin/approvals-hub",
+  },
+  {
+    label: "Refund requests",
+    count: 1,
+    color: "text-[#2563EB] bg-[#EFF6FF] border-[#B8D4FF]",
+    path: "/admin/approvals-hub",
+  },
+  {
+    label: "Expense claims",
+    count: 3,
+    color: "text-teal-600 bg-teal-50 border-teal-200",
+    path: "/admin/approvals-hub",
+  },
+];
 
 // My Approval Queue Widget
 export const ApprovalQueueWidget: React.FC<DashboardWidgetContextProps> = ({
-  ticketPendingCount,
   navigate,
 }) => (
-  <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
-    <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
-        My approval queue
-      </span>
-      <span
-        onClick={() => navigate("/admin/approvals-hub")}
-        className="text-[11px] font-semibold text-[#F97316] hover:text-[#EA580C] hover:underline cursor-pointer"
-      >
-        Go to Center
-      </span>
-    </div>
-    <div className="p-3.5 flex-1 space-y-3">
-      {[
-        {
-          label: "Payment Approvals",
-          count: 5,
-          color: "text-[#D97706] bg-[#FFF7E6] border-[#FFD580]",
-          path: "/admin/approvals-hub",
-        },
-        {
-          label: "Vendor Bills",
-          count: 2,
-          color: "text-[#E23D4D] bg-[#FFF1F3] border-[#FFCCD3]",
-          path: "/admin/approvals-hub",
-        },
-        {
-          label: "Refund Requests",
-          count: 1,
-          color: "text-[#2563EB] bg-[#EFF6FF] border-[#B8D4FF]",
-          path: "/admin/approvals-hub",
-        },
-        {
-          label: "Expense Claims",
-          count: 3,
-          color: "text-teal-600 bg-teal-50 border-teal-200",
-          path: "/admin/approvals-hub",
-        },
-      ].map((appr: any, idx: number) => (
-        <div
-          key={idx}
-          onClick={() => navigate(appr.path)}
-          className="flex items-center justify-between min-h-[30px] text-[12px] cursor-pointer hover:bg-slate-50/50 p-0.5 rounded transition-colors"
+  <DashCard>
+    <DashHead
+      title="My approval queue"
+      action={
+        <button
+          type="button"
+          onClick={() => navigate("/admin/approvals-hub")}
+          className={dashLink}
         >
-          <span className="font-semibold text-[#162B45]">{appr.label}</span>
-          <span
-            className={`font-bold text-[10px] px-2 py-0.5 rounded border ${appr.color}`}
-          >
-            {appr.count} Pending
-          </span>
-        </div>
-      ))}
-    </div>
-  </div>
+          View all
+        </button>
+      }
+    />
+    <DashBody>
+      <DashList className="gap-1">
+        {APPROVAL_QUEUE.map((appr, idx) => (
+          <DashRow key={idx} onClick={() => navigate(appr.path)}>
+            <span className={dashRowLabel}>{appr.label}</span>
+            <span
+              className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${appr.color}`}
+            >
+              {appr.count} pending
+            </span>
+          </DashRow>
+        ))}
+      </DashList>
+    </DashBody>
+  </DashCard>
 );
 
 export const approvalWidgets: DashboardWidget[] = [

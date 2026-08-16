@@ -1769,15 +1769,16 @@ export default function AccountingPage() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
 
         {/* ──────────────────────── TAB 5: RIYA TRAIN PORTAL & WALLET ──────────────────────── */}
         {activeTab === "riya" && (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Top Riya Wallet KPI Card */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
               <Card className="col-span-1 rounded-xl border border-[#152238] bg-[#0B1528] p-4 text-white md:col-span-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-medium text-slate-300">
@@ -1805,9 +1806,9 @@ export default function AccountingPage() {
                 </div>
               </Card>
 
-              <Card className="p-4 bg-white border border-[#E8EEF4] rounded-xl">
+              <Card className="rounded-xl border border-[#E8EEF4] bg-white p-4">
                 <span className="text-[11px] font-medium text-slate-500">
-                  Total Recharges
+                  Total recharges
                 </span>
                 <div className="mt-2 text-xl font-semibold tracking-tight tabular-nums text-[#0B1528]">
                   {formatINR(riyaData.totalRechargeAmount)}
@@ -1817,9 +1818,9 @@ export default function AccountingPage() {
                 </p>
               </Card>
 
-              <Card className="p-4 bg-white border border-[#E8EEF4] rounded-xl">
+              <Card className="rounded-xl border border-[#E8EEF4] bg-white p-4">
                 <span className="text-[11px] font-medium text-slate-500">
-                  Tickets Consumed
+                  Tickets consumed
                 </span>
                 <div className="mt-2 text-xl font-semibold tracking-tight tabular-nums text-[#0B1528]">
                   {formatINR(riyaData.totalTicketCostConsumed)}
