@@ -366,54 +366,46 @@ export default function BookingLinksPage() {
   }, [trips, tripSearch]);
 
   return (
-    <div className="space-y-4 pb-12 select-none px-4 py-3 bg-[#F4F7FB] min-h-screen text-[#162B45] font-sans antialiased">
+    <div className="space-y-4 pb-12 min-w-0 text-[#0B1528]">
       {/* ─── WORKFLOW PAGE 1: TRIP DIRECTORY ─── */}
       {workflowPage === "directory" && (
         <>
-          <div className="flex items-center justify-between pb-1.5 border-b border-[#E3EAF2]">
-            <div>
-              <h1 className="text-[19px] font-[600] text-[#162B45] tracking-tight leading-none">
-                Booking Forms
-              </h1>
-              <p className="text-[#74839A] text-[11px] font-[500] mt-1 leading-none">
-                Select a trip and departure date to create or manage booking
-                links.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
-                <input
-                  type="text"
-                  placeholder="Search trip or code..."
-                  value={tripSearch}
-                  onChange={(e) => setTripSearch(e.target.value)}
-                  className="w-48 h-8 pl-8 pr-2.5 bg-white border border-[#E3EAF2] rounded-md text-[11px] outline-none text-[#162B45] focus:ring-1 focus:ring-[#F97316] placeholder:text-[#74839A]/60"
-                />
-              </div>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between min-w-0">
+            <p className="text-[12px] text-slate-500 leading-snug min-w-0">
+              Select a trip and departure date to create or manage booking
+              links.
+            </p>
+            <div className="relative w-full md:w-56 shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search trip or code..."
+                value={tripSearch}
+                onChange={(e) => setTripSearch(e.target.value)}
+                className="w-full h-8 pl-8 pr-2.5 bg-white border border-[#E8EEF4] rounded-md text-[12px] outline-none text-[#0B1528] focus:ring-1 focus:ring-[#FF4D00]/30 placeholder:text-slate-400"
+              />
             </div>
           </div>
 
           {/* Directory Grid */}
           {loading ? (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-28 bg-white border border-[#E3EAF2] rounded-[10px] animate-pulse"
+                  className="h-24 bg-white border border-[#E8EEF4] rounded-xl animate-pulse"
                 />
               ))}
             </div>
           ) : filteredTrips.length === 0 ? (
-            <div className="text-center py-20 bg-white border border-[#E3EAF2] rounded-[10px] space-y-2">
-              <MapPin className="h-8 w-8 mx-auto text-[#74839A]/40" />
-              <p className="text-xs font-bold text-[#74839A] uppercase tracking-wider">
-                No Trips Found
+            <div className="text-center py-16 bg-white border border-[#E8EEF4] rounded-xl space-y-2">
+              <MapPin className="h-7 w-7 mx-auto text-slate-300" />
+              <p className="text-[12px] font-medium text-slate-500">
+                No trips found
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 min-w-0">
               {filteredTrips.map((trip) => {
                 const upcomingCount = trip.availableDates?.length || 6;
                 const activeLinksCount = links.filter(
@@ -424,53 +416,58 @@ export default function BookingLinksPage() {
                   typeof rawNext === "string"
                     ? rawNext
                     : getUpcomingDefaultDates()[0];
-                const img =
-                  trip.heroImage ||
-                  trip.images?.[0] ||
-                  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400";
+                const img = trip.heroImage || trip.images?.[0];
 
                 return (
                   <div
                     key={trip.id}
-                    className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs hover:border-[#D4541A]/50 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
+                    className="bg-white border border-[#E8EEF4] rounded-xl p-3 flex flex-col justify-between gap-3 min-w-0"
                   >
-                    <div className="flex items-start gap-3">
-                      <img
-                        src={img}
-                        alt={trip.title}
-                        className="h-12 w-16 rounded-xl object-cover border border-slate-200/80 shrink-0 group-hover:scale-105 transition-transform"
-                      />
-                      <div className="min-w-0 flex-1 space-y-0.5">
-                        <div className="flex items-start justify-between gap-1">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="h-12 w-16 rounded-lg bg-[#F4F7FB] border border-[#E8EEF4] shrink-0 overflow-hidden">
+                        {img ? (
+                          <img
+                            src={img}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2 min-w-0">
                           <h3
-                            className="font-extrabold text-xs text-[#0B1528] leading-tight truncate"
+                            className="text-[13px] font-semibold text-[#0B1528] leading-snug truncate min-w-0"
                             title={trip.title}
                           >
                             {trip.title}
                           </h3>
-                          <span className="font-mono text-[9.5px] font-black text-[#D4541A] bg-orange-50 border border-orange-200/60 px-1.5 py-0.5 rounded-md shrink-0">
-                            {trip.shortName || trip.id.substring(0, 4).toUpperCase()}
+                          <span className="font-mono text-[10px] font-medium text-slate-500 shrink-0">
+                            {trip.shortName ||
+                              trip.id.substring(0, 4).toUpperCase()}
                           </span>
                         </div>
-
-                        <p className="text-[11px] text-slate-500 font-semibold truncate">
+                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">
                           {upcomingCount} departures · Next:{" "}
                           {formatDate(nextDeparture)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10.5px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    <div className="pt-2 border-t border-[#E8EEF4] flex items-center justify-between gap-2 min-w-0">
+                      <span className="text-[11px] text-slate-500 truncate">
                         {activeLinksCount} active links
                       </span>
                       <Button
                         size="sm"
+                        variant="outline"
                         onClick={() => {
                           setSelectedTrip(trip);
                           setWorkflowPage("departures");
                         }}
-                        className="h-8 px-3 bg-slate-100 hover:bg-[#D4541A] hover:text-white text-[#0B1528] text-xs font-bold rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                        className="h-7 px-2.5 bg-white border border-[#E8EEF4] hover:bg-[#F4F7FB] text-[#0B1528] text-[11px] font-semibold rounded-md shadow-none flex items-center gap-1"
                       >
                         View Dates <ChevronRight className="w-3.5 h-3.5" />
                       </Button>

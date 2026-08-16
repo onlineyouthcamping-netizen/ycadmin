@@ -128,46 +128,50 @@ export function DataTable<T extends Record<string, any>>({
     return String(value);
   };
 
+  const showToolbar = Boolean(searchKey) || Boolean(filters?.length);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4">
-        {searchKey && (
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={localSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-11 h-10 rounded-xl bg-white border-slate-200 focus-visible:ring-primary font-normal text-sm"
-            />
-          </div>
-        )}
-        {filters?.map((f) => (
-          <Select
-            key={f.key}
-            defaultValue="all"
-            onValueChange={(v) => onFilterChange?.(f.key, v)}
-          >
-            <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl bg-white border-slate-200 font-medium text-xs text-slate-600">
-              <SelectValue placeholder={f.label} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-200">
-              <SelectItem value="all" className="font-medium text-xs">
-                All {f.label}
-              </SelectItem>
-              {f.options.map((o) => (
-                <SelectItem
-                  key={o.value}
-                  value={o.value}
-                  className="font-medium text-xs"
-                >
-                  {o.label}
+    <div className={cn(showToolbar ? "space-y-6" : "space-y-3")}>
+      {showToolbar && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          {searchKey && (
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={localSearch}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-11 h-10 rounded-xl bg-white border-slate-200 focus-visible:ring-primary font-normal text-sm"
+              />
+            </div>
+          )}
+          {filters?.map((f) => (
+            <Select
+              key={f.key}
+              defaultValue="all"
+              onValueChange={(v) => onFilterChange?.(f.key, v)}
+            >
+              <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl bg-white border-slate-200 font-medium text-xs text-slate-600">
+                <SelectValue placeholder={f.label} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-200">
+                <SelectItem value="all" className="font-medium text-xs">
+                  All {f.label}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ))}
-      </div>
+                {f.options.map((o) => (
+                  <SelectItem
+                    key={o.value}
+                    value={o.value}
+                    className="font-medium text-xs"
+                  >
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ))}
+        </div>
+      )}
 
       <div className="admin-card !p-0 overflow-hidden">
         <div className="responsive-table">

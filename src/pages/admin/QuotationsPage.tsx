@@ -1,30 +1,19 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { quotationsService } from "@/services/quotations.service";
 import { DataTable } from "@/components/admin/DataTable";
+import { DashCard } from "@/modules/dashboard.chrome";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Plus,
   Pencil,
   Trash2,
   FileText,
   Calendar,
-  User,
-  MapPin,
-  Share2,
-  Clock,
   Copy,
-  Sparkles,
-  CheckCircle2,
-  AlertCircle,
-  TrendingUp,
-  Search,
-  Filter,
+  Clock,
   RefreshCw,
-  ExternalLink,
-  ArrowUpRight,
-  Check,
   Eye,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +25,7 @@ export default function QuotationsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -74,15 +64,28 @@ export default function QuotationsPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchInput !== search) {
+        setSearch(searchInput);
+        setPage(1);
+      }
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchInput, search]);
+
   const metrics = useMemo(() => {
     const total = totalCount || quotations.length;
     const published = quotations.filter((q) => q.status === "Published").length;
+    const expired = quotations.filter(
+      (q) => q.expiresAt && new Date() > new Date(q.expiresAt),
+    ).length;
     const totalVal = quotations.reduce(
       (acc, q) => acc + (Number(q.finalPrice) || 0),
       0,
     );
     const avgValue = total > 0 ? Math.round(totalVal / total) : 0;
-    return { total, published, totalVal, avgValue };
+    return { total, published, expired, totalVal, avgValue };
   }, [quotations, totalCount]);
 
   const filteredQuotations = useMemo(() => {
@@ -99,11 +102,6 @@ export default function QuotationsPage() {
     }
     return quotations;
   }, [quotations, statusFilter]);
-
-  const handleSearchChange = (newSearch: string) => {
-    setSearch(newSearch);
-    setPage(1);
-  };
 
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
@@ -139,35 +137,46 @@ export default function QuotationsPage() {
     toast.success("Public quote link copied to clipboard!");
   };
 
+  const statusTabs = [
+    { id: "all", label: "All", count: metrics.total },
+    { id: "published", label: "Published", count: metrics.published },
+    {
+      id: "draft",
+      label: "Drafts",
+      count: Math.max(metrics.total - metrics.published, 0),
+    },
+    { id: "expired", label: "Expired", count: metrics.expired },
+  ];
+
   const columns = [
     {
       key: "customerName",
-      header: "Client Details",
+      header: "Client",
       render: (q: any) => {
-        const nameStr = q.customerName || "Untitled Client";
+        const nameStr = q.customerName || "Untitled client";
         const firstLetter = nameStr.charAt(0).toUpperCase();
         return (
-          <div className="flex items-center gap-3 min-w-[210px]">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200/80 text-[#D4541A] font-black text-sm flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-[180px]">
+            <div className="h-7 w-7 rounded-md bg-[#F4F7FB] border border-[#E8EEF4] text-[#0B1528] text-[11px] font-semibold flex items-center justify-center shrink-0">
               {firstLetter}
             </div>
-            <div>
+            <div className="min-w-0">
               <p
-                className="font-extrabold text-[#0B1528] text-xs leading-tight hover:text-[#D4541A] transition-colors cursor-pointer"
+                className="font-semibold text-[#0B1528] text-[12px] leading-tight truncate hover:text-[#FF4D00] transition-colors cursor-pointer"
                 onClick={() => navigate(`/admin/quotations/${q.id}`)}
               >
                 {nameStr}
               </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                  <Calendar className="h-3 w-3 text-slate-400" />
+              <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 truncate">
+                  <Calendar className="h-3 w-3 shrink-0 text-slate-400" />
                   {q.createdAt
                     ? new Date(q.createdAt).toLocaleDateString()
                     : "Recent"}
                 </span>
                 {q.phone && (
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    • {q.phone}
+                  <span className="text-[11px] text-slate-400 font-mono truncate">
+                    {q.phone}
                   </span>
                 )}
               </div>
@@ -180,27 +189,22 @@ export default function QuotationsPage() {
       key: "destination",
       header: "Destination",
       render: (q: any) => (
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-slate-100/90 border border-slate-200 px-3 py-1 rounded-xl w-fit whitespace-nowrap shadow-2xs">
-          <MapPin className="h-3.5 w-3.5 text-[#D4541A]" />
+        <span className="text-[12px] text-slate-600 whitespace-nowrap">
           {q.destination || "TBD"}
-        </div>
+        </span>
       ),
     },
     {
       key: "price",
-      header: "Total Proposal Value",
+      header: "Value",
       render: (q: any) => (
         <div className="whitespace-nowrap">
-          <span className="font-black text-sm text-[#0B1528]">
-            ₹{Number(q.finalPrice || 0).toLocaleString()}
+          <span className="font-semibold text-[13px] text-[#0B1528] tabular-nums">
+            ₹{Number(q.finalPrice || 0).toLocaleString("en-IN")}
           </span>
-          {q.discount > 0 ? (
-            <span className="text-[10px] text-emerald-600 font-bold block">
-              Saved ₹{Number(q.discount).toLocaleString()}
-            </span>
-          ) : (
-            <span className="text-[10px] text-slate-400 font-semibold block">
-              Standard Quote
+          {q.discount > 0 && (
+            <span className="text-[11px] text-slate-400 font-medium block">
+              Saved ₹{Number(q.discount).toLocaleString("en-IN")}
             </span>
           )}
         </div>
@@ -208,13 +212,12 @@ export default function QuotationsPage() {
     },
     {
       key: "validity",
-      header: "Validity Status",
+      header: "Validity",
       render: (q: any) => {
         if (!q.expiresAt) {
           return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">
-              <Clock className="w-3 h-3 text-slate-400" />
-              No Expiry
+            <span className="text-[12px] font-medium text-slate-500">
+              No expiry
             </span>
           );
         }
@@ -226,63 +229,56 @@ export default function QuotationsPage() {
 
         if (isExpired) {
           return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold bg-red-50 text-red-600 border border-red-200">
-              <AlertCircle className="w-3 h-3 text-red-500" />
+            <span className="text-[12px] font-medium text-red-600">
               Expired
             </span>
           );
         }
         if (isUrgent) {
           return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
-              <Clock className="w-3 h-3 text-amber-600" />
+            <span className="text-[12px] font-medium text-amber-700">
               Urgent (24h)
             </span>
           );
         }
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            Active
-          </span>
+          <span className="text-[12px] font-medium text-slate-600">Active</span>
         );
       },
     },
     {
       key: "status",
       header: "Status",
-      render: (q: any) => (
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-extrabold border uppercase tracking-wider",
-            q.status === "Published"
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-slate-100 text-slate-600 border-slate-200",
-          )}
-        >
+      render: (q: any) => {
+        const published = q.status === "Published";
+        return (
           <span
             className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              q.status === "Published" ? "bg-emerald-500" : "bg-slate-400",
+              "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border",
+              published
+                ? "bg-emerald-50/70 text-emerald-700 border-emerald-100"
+                : "bg-[#F4F7FB] text-slate-600 border-[#E8EEF4]",
             )}
-          />
-          {q.status || "Draft"}
-        </span>
-      ),
+          >
+            {published ? "Published" : "Draft"}
+          </span>
+        );
+      },
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
+      className: "w-px",
       render: (q: any) => (
-        <div className="flex items-center gap-1 justify-end">
+        <div className="flex items-center gap-0.5 justify-end">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => handleCopy(q)}
-            title="Copy Public Link"
-            className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 rounded-lg cursor-pointer transition-colors"
+            title="Copy public link"
+            className="h-7 w-7 text-slate-400 hover:text-[#0B1528] hover:bg-slate-50 rounded-md cursor-pointer"
           >
-            <Copy className="h-4 w-4" />
+            <Copy className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -295,204 +291,146 @@ export default function QuotationsPage() {
                 "_blank",
               );
             }}
-            title="Preview Proposal"
-            className="h-8 w-8 text-[#D4541A] hover:bg-orange-50 rounded-lg cursor-pointer transition-colors"
+            title="Preview proposal"
+            className="h-7 w-7 text-slate-400 hover:text-[#0B1528] hover:bg-slate-50 rounded-md cursor-pointer"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => handleExtend(q.id)}
-            title="Extend Validity (+48h)"
-            className="h-8 w-8 text-amber-600 hover:bg-amber-50 rounded-lg cursor-pointer transition-colors"
+            title="Extend validity (+48h)"
+            className="h-7 w-7 text-slate-400 hover:text-[#0B1528] hover:bg-slate-50 rounded-md cursor-pointer"
           >
-            <Clock className="h-4 w-4" />
+            <Clock className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(`/admin/quotations/${q.id}`)}
-            title="Edit Proposal"
-            className="h-8 w-8 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+            title="Edit proposal"
+            className="h-7 w-7 text-slate-400 hover:text-[#0B1528] hover:bg-slate-50 rounded-md cursor-pointer"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => handleDelete(q.id)}
-            className="h-8 w-8 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-            title="Delete Quote"
+            className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md cursor-pointer"
+            title="Delete quote"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       ),
     },
   ];
 
-  return (
-    <div className="min-h-screen bg-[#f8fafc] p-6 space-y-6 font-sans">
-      {/* Top Header Card */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D4541A]/10 to-orange-100 border border-[#D4541A]/20 text-[#D4541A] flex items-center justify-center font-bold shrink-0 shadow-2xs">
-            <FileText className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold text-[#0B1528] tracking-tight">
-                Quotations & Dynamic Proposals
-              </h1>
-              <span className="text-[10px] font-extrabold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full uppercase">
-                V4.0 Engine
-              </span>
-            </div>
-            <p className="text-xs font-medium text-slate-500 mt-0.5">
-              Create, customize, and track client-facing travel itineraries &
-              price quotes
-            </p>
-          </div>
-        </div>
+  const kpiStats = [
+    {
+      label: "Total proposals",
+      value: String(metrics.total),
+      tone: "text-[#0B1528]",
+    },
+    {
+      label: "Published",
+      value: String(metrics.published),
+      tone: "text-[#0B1528]",
+    },
+    {
+      label: "Pipeline value",
+      value: `₹${metrics.totalVal.toLocaleString("en-IN")}`,
+      tone: "text-[#FF4D00]",
+    },
+    {
+      label: "Avg quote",
+      value: `₹${metrics.avgValue.toLocaleString("en-IN")}`,
+      tone: "text-[#0B1528]",
+    },
+  ];
 
-        <div className="flex items-center gap-2.5 shrink-0">
+  return (
+    <div className="space-y-4 pb-12 min-w-0 text-[#0B1528]">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between min-w-0">
+        <p className="text-[12px] text-slate-500 leading-snug min-w-0">
+          Create and track client quotes
+        </p>
+        <div className="flex items-center gap-2 shrink-0">
           <Button
             variant="outline"
+            size="sm"
             onClick={load}
             disabled={loading}
-            className="h-10 px-3.5 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold gap-1.5 cursor-pointer"
+            title="Refresh"
+            aria-label="Refresh"
+            className="h-8 w-8 px-0 rounded-md border-[#E8EEF4] bg-white text-slate-500 hover:text-[#0B1528] hover:bg-white shadow-none"
           >
             <RefreshCw
               className={cn("w-3.5 h-3.5", loading && "animate-spin")}
             />
-            Refresh
           </Button>
-
           <Button
             onClick={() => navigate("/admin/quotations/new")}
-            className="h-10 px-5 rounded-xl font-extrabold text-xs bg-[#D4541A] hover:bg-[#c24813] text-white flex items-center gap-2 cursor-pointer shadow-md shadow-orange-500/20 active:scale-95 transition-all"
+            className="h-8 px-3.5 rounded-md text-[12px] font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white gap-1.5 shadow-none"
           >
-            <Plus className="h-4 w-4" /> Create Proposal
+            <Plus className="h-3.5 w-3.5" />
+            Create proposal
           </Button>
         </div>
       </div>
 
-      {/* Metric Summary Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1 */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Total Proposals
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <FileText className="w-4 h-4" />
+      <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+        <div className="grid grid-cols-2 lg:grid-cols-4">
+          {kpiStats.map((stat, i) => (
+            <div
+              key={stat.label}
+              className={cn(
+                "px-3 py-2.5 md:px-4 md:py-3 min-w-0",
+                i % 2 === 0 && "border-r border-[#E8EEF4]",
+                i < 2 && "border-b border-[#E8EEF4] lg:border-b-0",
+                (i === 1 || i === 2) && "lg:border-r lg:border-[#E8EEF4]",
+              )}
+            >
+              <p className="text-[11px] text-slate-500 font-medium truncate">
+                {stat.label}
+              </p>
+              <p
+                className={cn(
+                  "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
+                  stat.tone,
+                )}
+              >
+                {stat.value}
+              </p>
             </div>
-          </div>
-          <p className="text-2xl font-black text-[#0B1528] mt-2">
-            {metrics.total}
-          </p>
-          <p className="text-[11px] text-slate-400 font-semibold mt-1 flex items-center gap-1">
-            <span className="text-emerald-600 font-bold">100%</span> active
-            track
-          </p>
-        </div>
-
-        {/* Metric 2 */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Published Active
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-emerald-600 mt-2">
-            {metrics.published}
-          </p>
-          <p className="text-[11px] text-slate-400 font-semibold mt-1 flex items-center gap-1">
-            Ready for client review
-          </p>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Active Pipeline Value
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-[#D4541A] mt-2">
-            ₹{metrics.totalVal.toLocaleString()}
-          </p>
-          <p className="text-[11px] text-slate-400 font-semibold mt-1">
-            Cumulative quote total
-          </p>
-        </div>
-
-        {/* Metric 4 */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Avg Quote Value
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-purple-700 mt-2">
-            ₹{metrics.avgValue.toLocaleString()}
-          </p>
-          <p className="text-[11px] text-slate-400 font-semibold mt-1">
-            Average per proposal
-          </p>
+          ))}
         </div>
       </div>
 
-      {/* Main Table Card with Filter Tabs */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
-        {/* Status Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl">
-            {[
-              { id: "all", label: "All Proposals", count: metrics.total },
-              { id: "published", label: "Published", count: metrics.published },
-              {
-                id: "draft",
-                label: "Drafts",
-                count: metrics.total - metrics.published,
-              },
-              {
-                id: "expired",
-                label: "Expired",
-                count: quotations.filter(
-                  (q) => q.expiresAt && new Date() > new Date(q.expiresAt),
-                ).length,
-              },
-            ].map((tab) => (
+      <DashCard className="h-auto">
+        <div className="px-3 py-2 border-b border-[#E8EEF4] bg-[#F8FAFC] flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
+          <div className="overflow-x-auto flex-nowrap flex items-center gap-0.5 min-w-0">
+            {statusTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setStatusFilter(tab.id)}
                 className={cn(
-                  "px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5",
+                  "px-2.5 py-1 rounded-md text-[12px] font-medium whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1.5 shrink-0",
                   statusFilter === tab.id
-                    ? "bg-white text-[#0B1528] shadow-2xs border border-slate-200/80"
-                    : "text-slate-500 hover:text-slate-800",
+                    ? "bg-white text-[#0B1528] border border-[#E8EEF4]"
+                    : "text-slate-500 hover:text-[#0B1528] border border-transparent",
                 )}
               >
                 {tab.label}
                 <span
                   className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-full font-black",
+                    "text-[10px] tabular-nums",
                     statusFilter === tab.id
-                      ? "bg-[#D4541A]/10 text-[#D4541A]"
-                      : "bg-slate-200 text-slate-600",
+                      ? "text-[#FF4D00]"
+                      : "text-slate-400",
                   )}
                 >
                   {tab.count}
@@ -500,31 +438,35 @@ export default function QuotationsPage() {
               </button>
             ))}
           </div>
-
-          <span className="text-xs font-semibold text-slate-400">
-            Showing {filteredQuotations.length} of {metrics.total} proposals
-          </span>
+          <div className="relative w-full sm:w-56 shrink-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search client or destination..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full h-8 pl-8 pr-2.5 bg-white border border-[#E8EEF4] rounded-md text-[12px] outline-none text-[#0B1528] focus:ring-1 focus:ring-[#FF4D00]/30 placeholder:text-slate-400"
+            />
+          </div>
         </div>
 
-        {/* DataTable Container */}
-        <DataTable
-          columns={columns}
-          data={filteredQuotations}
-          loading={loading}
-          searchKey="customerName"
-          searchPlaceholder="Search proposal by client name or destination..."
-          emptyMessage="No quotations generated yet"
-          emptyIcon={<FileText className="h-10 w-10 text-slate-300" />}
-          serverSide={true}
-          totalCount={totalCount}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={handlePageSizeChange}
-          onSearchChange={handleSearchChange}
-        />
-      </div>
+        <div className="overflow-x-auto min-w-0 [&_.admin-card]:border-0 [&_.admin-card]:rounded-none [&_.admin-card]:shadow-none">
+          <DataTable
+            columns={columns}
+            data={filteredQuotations}
+            loading={loading}
+            emptyMessage="No quotations generated yet"
+            emptyIcon={<FileText className="h-10 w-10 text-slate-300" />}
+            serverSide={true}
+            totalCount={totalCount}
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </div>
+      </DashCard>
     </div>
   );
 }

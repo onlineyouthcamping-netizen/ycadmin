@@ -1076,72 +1076,66 @@ export default function DeparturePayments({
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* 6 ENTERPRISE TABS HEADER */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 pt-3 rounded-t-xl">
-        <div className="flex flex-wrap items-center gap-1">
-          {[
-            {
-              key: "clients",
-              label: "Client Receivables",
-              badge: `₹${(calculatedStats.clientAmountReceived / 1000).toFixed(1)}k`,
-            },
-            {
-              key: "vendors",
-              label: "Vendor Payables",
-              badge: `₹${(calculatedStats.vendorOutstandingBalance / 1000).toFixed(1)}k`,
-            },
-            {
-              key: "activities",
-              label: "Activity Payments",
-              badge: `${activityPayments.length}`,
-            },
-            {
-              key: "misc",
-              label: "Miscellaneous",
-              badge: `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`,
-            },
-            {
-              key: "reconciliation",
-              label: "Reconciliation",
-              badge: `${adjustments.length}`,
-            },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setSubTab(tab.key as any)}
-              className={cn(
-                "px-3.5 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 -mb-[2px]",
-                subTab === tab.key
-                  ? "border-orange-600 text-orange-600 bg-orange-50/50 rounded-t-lg"
-                  : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-lg",
-              )}
-            >
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span
-                  className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-full font-extrabold",
-                    subTab === tab.key
-                      ? "bg-orange-600 text-white"
-                      : "bg-slate-100 text-slate-600",
-                  )}
-                >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
+    <div className="space-y-6 pb-12 min-w-0">
+      <div className="min-w-0 w-full border-b border-[#E8EEF4] bg-white px-3 sm:px-4 pt-2 rounded-t-xl flex flex-col lg:flex-row lg:items-end lg:justify-between gap-2">
+        <div className="min-w-0 overflow-x-auto no-scrollbar">
+          <div className="flex flex-nowrap items-center gap-0 w-max min-w-full">
+            {[
+              {
+                key: "clients",
+                label: "Client Receivables",
+                badge: `₹${(calculatedStats.clientAmountReceived / 1000).toFixed(1)}k`,
+              },
+              {
+                key: "vendors",
+                label: "Vendor Payables",
+                badge: `₹${(calculatedStats.vendorOutstandingBalance / 1000).toFixed(1)}k`,
+              },
+              {
+                key: "activities",
+                label: "Activity Payments",
+                badge: `${activityPayments.length}`,
+              },
+              {
+                key: "misc",
+                label: "Miscellaneous",
+                badge: `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`,
+              },
+              {
+                key: "reconciliation",
+                label: "Reconciliation",
+                badge: `${adjustments.length}`,
+              },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setSubTab(tab.key as any)}
+                className={cn(
+                  "px-3 py-2.5 text-[12px] font-semibold border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
+                  subTab === tab.key
+                    ? "border-[#FF4D00] text-[#FF4D00]"
+                    : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200",
+                )}
+              >
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span className="text-[10px] font-medium text-slate-400 tabular-nums">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Quick Action Toolbar on top right */}
-        <div className="flex items-center gap-2 pb-2">
+        <div className="grid grid-cols-2 gap-2 pb-2.5 lg:flex lg:flex-nowrap lg:items-center lg:pb-2 lg:shrink-0">
           <Button
             size="sm"
             onClick={() => setAddClientPaymentOpen(true)}
-            className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-3"
+            className="h-8 w-full lg:w-auto min-h-8 bg-[#0B1528] hover:bg-[#16253d] text-white font-semibold text-[11px] px-3"
           >
-            <Plus className="w-3.5 h-3.5 mr-1" /> Client Receipt
+            <Plus className="w-3.5 h-3.5 mr-1 shrink-0" /> Client Receipt
           </Button>
           <Button
             size="sm"
@@ -1149,17 +1143,17 @@ export default function DeparturePayments({
               setEditingVendorPayment(null);
               setAddVendorPaymentOpen(true);
             }}
-            className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-3"
+            className="h-8 w-full lg:w-auto min-h-8 bg-[#FF4D00] hover:bg-[#E04500] text-white font-semibold text-[11px] px-3"
           >
-            <Plus className="w-3.5 h-3.5 mr-1" /> Vendor Payable
+            <Plus className="w-3.5 h-3.5 mr-1 shrink-0" /> Vendor Payable
           </Button>
           <Button
             size="sm"
             variant="outline"
             onClick={handleRunReconciliation}
-            className="h-8 text-xs font-bold text-slate-700 hover:bg-slate-50 border-slate-300"
+            className="h-8 w-full lg:w-auto min-h-8 col-span-2 lg:col-span-1 text-[11px] font-semibold text-[#0B1528] hover:bg-[#F4F7FB] border-[#E8EEF4]"
           >
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-orange-600" />{" "}
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500 shrink-0" />
             Reconcile
           </Button>
         </div>
@@ -1953,38 +1947,37 @@ export default function DeparturePayments({
       {/* ──────────────────────── TAB 2: CLIENT RECEIVABLES (Detailed Ledger) ──────────────────────── */}
       {subTab === "clients" && (
         <div className="space-y-4">
-          {/* Filters & Actions Bar */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-wrap gap-3 items-center justify-between">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col lg:flex-row lg:items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full lg:flex-1">
               <select
                 value={clientStatusFilter}
                 onChange={(e) => setClientStatusFilter(e.target.value)}
-                className="h-8 text-xs font-bold border border-slate-200 rounded-lg px-3 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
+                className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
               >
                 <option value="All Status">All Payment Statuses</option>
                 <option value="Unpaid">Unpaid</option>
                 <option value="Partially Paid">Partially Paid</option>
                 <option value="Paid">Fully Paid</option>
               </select>
-              <div className="relative min-w-[220px]">
+              <div className="relative min-w-0 w-full">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search passenger name, phone, or booking..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full pl-8 text-xs rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500"
+                  className="h-8 w-full min-w-0 pl-8 text-xs rounded-lg border border-[#E8EEF4] bg-white text-[#0B1528] placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 w-full lg:w-auto lg:flex lg:shrink-0">
               <Button
                 size="sm"
                 onClick={() => setAddClientPaymentOpen(true)}
-                className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+                className="h-auto min-h-8 w-full lg:w-auto whitespace-normal leading-tight py-1.5 bg-[#0B1528] hover:bg-[#16253d] text-white font-semibold text-[11px]"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" /> Record Client Payment
+                <Plus className="w-3.5 h-3.5 mr-1 shrink-0" /> Record Client Payment
               </Button>
               <Button
                 size="sm"
@@ -1992,9 +1985,9 @@ export default function DeparturePayments({
                 onClick={() =>
                   handleDownloadCSV(bookings, "client_receivables_ledger.csv")
                 }
-                className="h-8 text-xs font-bold border-slate-200 text-slate-700"
+                className="h-auto min-h-8 w-full lg:w-auto whitespace-normal leading-tight py-1.5 text-[11px] font-semibold border-[#E8EEF4] text-[#0B1528] hover:bg-[#F4F7FB]"
               >
-                <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
+                <Download className="w-3.5 h-3.5 mr-1 shrink-0" /> Export CSV
               </Button>
             </div>
           </div>
@@ -2320,13 +2313,12 @@ export default function DeparturePayments({
       {/* ──────────────────────── TAB 3: VENDOR PAYABLES (Detailed Ledger) ──────────────────────── */}
       {subTab === "vendors" && (
         <div className="space-y-4">
-          {/* Filters & Actions Bar */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-wrap gap-3 items-center justify-between">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col lg:flex-row lg:items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0 w-full lg:flex-1">
               <select
                 value={vendorCategoryFilter}
                 onChange={(e) => setVendorCategoryFilter(e.target.value)}
-                className="h-8 text-xs font-bold border border-slate-200 rounded-lg px-3 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
+                className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
               >
                 <option value="All Categories">All Vendor Categories</option>
                 {[
@@ -2346,7 +2338,7 @@ export default function DeparturePayments({
               <select
                 value={vendorStatusFilter}
                 onChange={(e) => setVendorStatusFilter(e.target.value)}
-                className="h-8 text-xs font-bold border border-slate-200 rounded-lg px-3 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
+                className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
               >
                 <option value="All Status">All Payment Statuses</option>
                 {["Not Paid", "Advance Paid", "Partially Paid", "Paid"].map(
@@ -2358,28 +2350,28 @@ export default function DeparturePayments({
                 )}
               </select>
 
-              <div className="relative min-w-[220px]">
+              <div className="relative min-w-0 w-full sm:flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search vendor name or invoice #..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full pl-8 text-xs rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500"
+                  className="h-8 w-full min-w-0 pl-8 text-xs rounded-lg border border-[#E8EEF4] bg-white text-[#0B1528] placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 w-full lg:w-auto lg:flex lg:shrink-0">
               <Button
                 size="sm"
                 onClick={() => {
                   setEditingVendorPayment(null);
                   setAddVendorPaymentOpen(true);
                 }}
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="h-auto min-h-8 w-full lg:w-auto whitespace-normal leading-tight py-1.5 bg-[#FF4D00] hover:bg-[#E04500] text-white font-semibold text-[11px]"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" /> Record Vendor Payment
+                <Plus className="w-3.5 h-3.5 mr-1 shrink-0" /> Record Vendor Payment
               </Button>
               <Button
                 size="sm"
@@ -2390,9 +2382,9 @@ export default function DeparturePayments({
                     "vendor_payables_ledger.csv",
                   )
                 }
-                className="h-8 text-xs font-bold border-slate-200 text-slate-700"
+                className="h-auto min-h-8 w-full lg:w-auto whitespace-normal leading-tight py-1.5 text-[11px] font-semibold border-[#E8EEF4] text-[#0B1528] hover:bg-[#F4F7FB]"
               >
-                <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
+                <Download className="w-3.5 h-3.5 mr-1 shrink-0" /> Export CSV
               </Button>
             </div>
           </div>
@@ -2694,14 +2686,14 @@ export default function DeparturePayments({
       {/* ──────────────────────── TAB 4: ACTIVITY PAYMENTS ──────────────────────── */}
       {subTab === "activities" && (
         <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-wrap gap-3 items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Activity Costs & Vendor Settlement Ledger
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span className="text-xs font-semibold text-[#0B1528] min-w-0">
+              Activity costs & vendor settlement
             </span>
             <Button
               size="sm"
               onClick={() => setAddActivityPaymentOpen(true)}
-              className="h-8 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs"
+              className="h-8 w-full sm:w-auto shrink-0 bg-[#0B1528] hover:bg-[#16253d] text-white font-semibold text-[11px]"
             >
               <Plus className="w-3.5 h-3.5 mr-1" /> Record Activity Payment
             </Button>
@@ -2839,16 +2831,16 @@ export default function DeparturePayments({
       {/* ──────────────────────── TAB 5: MISCELLANEOUS PAYMENTS (Ad-Hoc Expenses) ──────────────────────── */}
       {subTab === "misc" && (
         <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-wrap gap-3 items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Miscellaneous & Ad-Hoc Contingency Ledger
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span className="text-xs font-semibold text-[#0B1528] min-w-0">
+              Miscellaneous & ad-hoc expenses
             </span>
             <Button
               size="sm"
               onClick={() => setAddMiscPaymentOpen(true)}
-              className="h-8 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs"
+              className="h-8 w-full sm:w-auto shrink-0 bg-[#0B1528] hover:bg-[#16253d] text-white font-semibold text-[11px]"
             >
-              <Plus className="w-3.5 h-3.5 mr-1" /> + Add Miscellaneous Expense
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add miscellaneous expense
             </Button>
           </div>
 
@@ -2974,25 +2966,24 @@ export default function DeparturePayments({
       {/* ──────────────────────── TAB 6: RECONCILIATION & ADJUSTMENTS ──────────────────────── */}
       {subTab === "reconciliation" && (
         <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs flex flex-wrap gap-3 items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Reconciliation & Adjustments (Refunds, Discounts, Reversals)
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col gap-2">
+            <span className="text-xs font-semibold text-[#0B1528] min-w-0">
+              Reconciliation & adjustments
             </span>
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 w-full lg:flex lg:justify-end">
               <Button
                 size="sm"
                 onClick={handleRunReconciliation}
-                className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+                className="h-auto min-h-8 w-full lg:w-auto whitespace-normal leading-tight py-1.5 bg-[#0B1528] hover:bg-[#16253d] text-white font-semibold text-[11px]"
               >
-                <RefreshCw className="w-3.5 h-3.5 mr-1" /> Run
-                Auto-Reconciliation
+                <RefreshCw className="w-3.5 h-3.5 mr-1 shrink-0" /> Run auto-reconciliation
               </Button>
               <Button
                 size="sm"
                 onClick={() => setAddAdjustmentOpen(true)}
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="h-auto min-h-8 w-full lg:w-auto whitespace-normal leading-tight py-1.5 bg-[#FF4D00] hover:bg-[#E04500] text-white font-semibold text-[11px]"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" /> + Add Adjustment
+                <Plus className="w-3.5 h-3.5 mr-1 shrink-0" /> Add adjustment
               </Button>
             </div>
           </div>

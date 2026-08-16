@@ -1857,158 +1857,159 @@ export default function AccountingPage() {
   return (
     <div className="space-y-3 md:space-y-5 pb-28 md:pb-16 p-3 md:p-6 bg-[#F4F7FB] min-h-screen">
       {/* Header and Filter controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 sm:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
-        <div className="min-w-0">
-          <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">
-            <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#FF4D00] shrink-0" />
-            {isSalesPaymentsOnly ? (
-              "My Payments"
-            ) : (
-              <>
-                Finance{" "}
-                {activeTab === "overview" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Overview
-                  </span>
-                )}
-                {activeTab === "payments" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Incoming Payments
-                  </span>
-                )}
-                {activeTab === "control_center" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Control Center
-                  </span>
-                )}
-                {activeTab === "cash_book" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Cash Book
-                  </span>
-                )}
-                {activeTab === "bank_accounts" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Accounts
-                  </span>
-                )}
-                {activeTab === "transactions" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Ledger
-                  </span>
-                )}
-                {activeTab === "vendor_payments" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Vendors
-                  </span>
-                )}
-                {activeTab === "office_expenses" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Expenses
-                  </span>
-                )}
-                {activeTab === "profit_loss" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / P&L
-                  </span>
-                )}
-                {activeTab === "trip_profitability" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Trip P&L
-                  </span>
-                )}
-                {activeTab === "reports" && (
-                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                    / Reports
-                  </span>
-                )}
-              </>
+      <div className="flex flex-col gap-3 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">
+              <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#FF4D00] shrink-0" />
+              {isSalesPaymentsOnly ? (
+                "My Payments"
+              ) : (
+                <>
+                  Finance{" "}
+                  {activeTab === "overview" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Overview
+                    </span>
+                  )}
+                  {activeTab === "payments" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Incoming Payments
+                    </span>
+                  )}
+                  {activeTab === "control_center" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Control Center
+                    </span>
+                  )}
+                  {activeTab === "cash_book" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Cash Book
+                    </span>
+                  )}
+                  {activeTab === "bank_accounts" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Accounts
+                    </span>
+                  )}
+                  {activeTab === "transactions" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Ledger
+                    </span>
+                  )}
+                  {activeTab === "vendor_payments" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Vendors
+                    </span>
+                  )}
+                  {activeTab === "office_expenses" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Expenses
+                    </span>
+                  )}
+                  {activeTab === "profit_loss" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / P&L
+                    </span>
+                  )}
+                  {activeTab === "trip_profitability" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Trip P&L
+                    </span>
+                  )}
+                  {activeTab === "reports" && (
+                    <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                      / Reports
+                    </span>
+                  )}
+                </>
+              )}
+            </h1>
+            <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">
+              {isSalesPaymentsOnly
+                ? "Your incoming customer collections, cash submissions, and pending verifications."
+                : activeTab === "payments"
+                  ? "Customer collections, booking payment receipts, and collection entries."
+                  : activeTab === "cash_book"
+                  ? "Record cash inflows and outflows across accounts."
+                  : activeTab === "bank_accounts"
+                    ? "Company and personal collection accounts, cash registers, and submissions."
+                    : activeTab === "control_center"
+                      ? "Verification queues, approvals, and audit trail."
+                      : "Collections, payouts, cash book, and trip profitability in one place."}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            {activeTab === "cash_book" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 md:h-8.5 text-xs font-semibold rounded-lg md:rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center gap-1.5 shadow-xs shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" /> Import
+              </Button>
             )}
-          </h1>
-          <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
-            {isSalesPaymentsOnly
-              ? "Your incoming customer collections, cash submissions, and pending verifications."
-              : activeTab === "payments"
-                ? "Customer collections, booking payment receipts, and collection entries."
-                : activeTab === "cash_book"
-                ? "Record cash inflows and outflows across accounts."
-                : activeTab === "bank_accounts"
-                  ? "Company and personal collection accounts, cash registers, and submissions."
-                  : activeTab === "control_center"
-                    ? "Verification queues, approvals, and audit trail."
-                    : "Collections, payouts, cash book, and trip profitability in one place."}
-          </p>
-          {/* Mobile: compact active-period line replaces the long uppercase blurb */}
-          <p className="md:hidden text-[11px] text-slate-500 font-semibold mt-0.5 truncate">
-            {selectedPreset} · {dateRange}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
-          {activeTab === "cash_book" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 md:h-8.5 text-xs font-semibold rounded-lg md:rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center gap-1.5 shadow-xs shrink-0"
-            >
-              <Download className="w-3.5 h-3.5" /> Import
-            </Button>
-          )}
 
-          {activeTab !== "control_center" && (
-            <>
-              {/* Date Range Picker (desktop only — mobile uses the preset bar below) */}
-              <div className="relative hidden sm:block">
-                <Input
-                  type="text"
-                  value={dateRange}
-                  onChange={(e) => setDateRange(e.target.value)}
-                  className="h-8.5 text-xs font-semibold rounded-[4px] border-[#E2E8F0] bg-white text-slate-700 pl-3.5 pr-8 w-56 shadow-xs"
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
-                  Date
-                </span>
-              </div>
+            {activeTab !== "control_center" && (
+              <>
+                {!(isSalesPaymentsOnly || activeTab === "payments") && (
+                  <div className="relative hidden sm:block">
+                    <Input
+                      type="text"
+                      value={dateRange}
+                      onChange={(e) => setDateRange(e.target.value)}
+                      className="h-8.5 text-xs font-medium rounded-[4px] border-[#E2E8F0] bg-white text-slate-700 pl-3.5 pr-8 w-48 shadow-xs"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+                      Date
+                    </span>
+                  </div>
+                )}
 
-              {isSalesPaymentsOnly || activeTab === "payments" ? (
-                <div className="flex items-center gap-2">
+                {isSalesPaymentsOnly || activeTab === "payments" ? (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenRecordSubmission()}
+                      variant="outline"
+                      title="Apply for cash or online submission"
+                      className="h-9 md:h-8.5 px-3 rounded-lg md:rounded-[4px] font-semibold text-xs border border-slate-200 text-[#0B1528] bg-white hover:bg-slate-50 flex items-center justify-center gap-1.5 shadow-xs shrink-0"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+                      Submit cash
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowCreate(true)}
+                      title="Record payment and send for approval"
+                      className="h-9 md:h-8.5 px-3 rounded-lg md:rounded-[4px] font-semibold text-xs bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center justify-center gap-1.5 shadow-sm shrink-0"
+                    >
+                      <Plus className="w-4 h-4 shrink-0" />
+                      Record payment
+                    </Button>
+                  </>
+                ) : activeTab === "bank_accounts" ? (
                   <Button
                     size="sm"
-                    onClick={() => handleOpenRecordSubmission()}
-                    variant="outline"
-                    className="h-9 md:h-8.5 px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center gap-1.5 shadow-xs"
+                    onClick={() => setShowAddCollectionAccountModal(true)}
+                    className="h-9 md:h-8.5 px-3 rounded-lg md:rounded-[4px] font-semibold text-xs bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center justify-center gap-1.5 shadow-sm shrink-0"
                   >
-                    <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">Apply for Submission (Cash / Online)</span>
+                    <Plus className="w-4 h-4 shrink-0" />
+                    Add Collection Account
                   </Button>
+                ) : (
                   <Button
                     size="sm"
                     onClick={() => setShowCreate(true)}
-                    className="h-9 md:h-8.5 px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                    className="h-9 md:h-8.5 px-3 rounded-lg md:rounded-[4px] font-semibold text-xs bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center justify-center gap-1.5 shadow-sm shrink-0"
                   >
                     <Plus className="w-4 h-4 shrink-0" />
-                    <span className="truncate">Record Payment (Send for Approval)</span>
+                    {activeTab === "cash_book" ? "New Entry" : "Add Payment"}
                   </Button>
-                </div>
-              ) : activeTab === "bank_accounts" ? (
-                <Button
-                  size="sm"
-                  onClick={() => setShowAddCollectionAccountModal(true)}
-                  className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <Plus className="w-4 h-4 shrink-0" />
-                  <span className="truncate">Add Collection Account</span>
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() => setShowCreate(true)}
-                  className="h-9 md:h-8.5 flex-1 sm:flex-none px-3 md:px-4 rounded-lg md:rounded-[4px] font-semibold text-xs bg-primary-orange hover:bg-primary-orange/90 text-white flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <Plus className="w-4 h-4 shrink-0" />
-                  {activeTab === "cash_book" ? "New Entry" : "Add Payment"}
-                </Button>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2044,8 +2045,8 @@ export default function AccountingPage() {
 
       {/* Interactive Date Preset Bar for other tabs */}
       {activeTab !== "control_center" && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white p-2 md:p-2.5 rounded-xl md:rounded-[4px] border border-slate-200 shadow-xs mb-3 md:mb-6">
-          <div className="flex w-full sm:w-auto gap-1 sm:flex-wrap overflow-x-auto no-scrollbar snap-x text-[11px] md:text-xs font-semibold text-slate-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white px-2.5 py-2 rounded-xl md:rounded-[4px] border border-[#E8EEF4] mb-3 md:mb-5">
+          <div className="flex w-full sm:w-auto gap-1 sm:flex-wrap overflow-x-auto no-scrollbar snap-x text-[11px] font-medium text-slate-500">
             {[
               "Today",
               "Yesterday",
@@ -2060,10 +2061,10 @@ export default function AccountingPage() {
                 key={preset}
                 onClick={() => applyDatePreset(preset)}
                 className={cn(
-                  "shrink-0 snap-start whitespace-nowrap px-2.5 md:px-3 py-1.5 rounded-full md:rounded-[3px] transition-all cursor-pointer",
+                  "shrink-0 snap-start whitespace-nowrap px-2.5 py-1.5 rounded-md transition-colors cursor-pointer",
                     selectedPreset === preset
-                    ? "bg-orange-50 border border-[#FF4D00]/50 text-[#FF4D00] font-extrabold shadow-2xs"
-                    : "border border-slate-200 md:border-transparent hover:bg-slate-50 hover:text-slate-800",
+                    ? "bg-slate-100 text-[#0B1528] font-semibold"
+                    : "hover:bg-slate-50 hover:text-slate-700",
                 )}
               >
                 {preset}
@@ -2078,8 +2079,8 @@ export default function AccountingPage() {
               selectedPreset === "Custom Range" ? "flex" : "hidden sm:flex",
             )}
           >
-            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider shrink-0">
-              Range:
+            <span className="text-slate-400 text-[10px] font-medium shrink-0">
+              Range
             </span>
             <Input
               value={dateRange}
@@ -2088,7 +2089,7 @@ export default function AccountingPage() {
                 setDateRange(e.target.value);
               }}
               placeholder="01 Aug 2026 - 31 Aug 2026"
-              className="h-8 sm:h-7 text-xs flex-1 sm:flex-none sm:w-52 rounded-lg sm:rounded-[4px] border-[#E2E8F0] bg-white font-semibold text-slate-700 shadow-none"
+              className="h-8 sm:h-7 text-xs flex-1 sm:flex-none sm:w-52 rounded-lg sm:rounded-[4px] border-[#E2E8F0] bg-white font-medium text-slate-700 shadow-none"
             />
           </div>
         </div>
@@ -4098,61 +4099,67 @@ export default function AccountingPage() {
 
         return (
           <div className="space-y-4">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Total Collected
-                </p>
-                <h3 className="text-2xl font-black text-slate-800 mt-1">
-                  ₹ {totalCollected.toLocaleString("en-IN")}
-                </h3>
-                <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                  {verifiedCount} verified payment{verifiedCount !== 1 ? "s" : ""}
-                </p>
-              </Card>
-
-              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Pending Verification
-                </p>
-                <h3 className="text-2xl font-black text-amber-600 mt-1">
-                  ₹ {pendingAmount.toLocaleString("en-IN")}
-                </h3>
-                <p className="text-[11px] text-amber-700 font-semibold mt-1">
-                  {pendingCount} payment{pendingCount !== 1 ? "s" : ""} in queue
-                </p>
-              </Card>
-
-              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Cash Submitted
-                </p>
-                <h3 className="text-2xl font-black text-blue-600 mt-1">
-                  ₹ {cashSubmittedSum.toLocaleString("en-IN")}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-semibold mt-1">
-                  Cash register collections
-                </p>
-              </Card>
-
-              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Remaining Collection
-                </p>
-                <h3 className="text-2xl font-black text-[#FF4D00] mt-1">
-                  ₹ {remainingCollectionSum.toLocaleString("en-IN")}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-semibold mt-1">
-                  {outstandingBookingsCount} booking{outstandingBookingsCount !== 1 ? "s" : ""} balance due
-                </p>
-              </Card>
+            {/* Compact KPI strip */}
+            <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+              <div className="grid grid-cols-2 lg:grid-cols-4">
+                {[
+                  {
+                    label: "Total collected",
+                    value: totalCollected,
+                    hint: `${verifiedCount} verified`,
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Pending verification",
+                    value: pendingAmount,
+                    hint: `${pendingCount} in queue`,
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Cash submitted",
+                    value: cashSubmittedSum,
+                    hint: "Cash register",
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Remaining collection",
+                    value: remainingCollectionSum,
+                    hint: `${outstandingBookingsCount} booking${outstandingBookingsCount !== 1 ? "s" : ""} due`,
+                    tone: "text-[#FF4D00]",
+                  },
+                ].map((stat, i) => (
+                  <div
+                    key={stat.label}
+                    className={cn(
+                      "px-3 py-2.5 md:px-4 md:py-3 min-w-0",
+                      i % 2 === 0 && "border-r border-[#E8EEF4]",
+                      i < 2 && "border-b border-[#E8EEF4] lg:border-b-0",
+                      (i === 1 || i === 2) && "lg:border-r lg:border-[#E8EEF4]",
+                    )}
+                  >
+                    <p className="text-[11px] text-slate-500 font-medium truncate">
+                      {stat.label}
+                    </p>
+                    <p
+                      className={cn(
+                        "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
+                        stat.tone,
+                      )}
+                    >
+                      ₹ {stat.value.toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                      {stat.hint}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Filter Toolbar & Table */}
             <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
-              <div className="flex flex-wrap gap-3 items-center justify-between shadow-none p-0 bg-transparent">
-                <div className="relative flex-1 min-w-[220px] max-w-md">
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="relative flex-1 min-w-[200px] max-w-md">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <Input
                     value={search}
@@ -4161,50 +4168,29 @@ export default function AccountingPage() {
                     className="h-8.5 pl-8 text-xs rounded-[4px] border-[#E2E8F0]"
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select value={fStatus} onValueChange={setFStatus}>
-                    <SelectTrigger className="h-8.5 text-xs w-40 rounded-[4px] border-[#E2E8F0]">
-                      <SelectValue placeholder="Payment Status" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-[4px]">
-                      <SelectItem value="ALL">All Status</SelectItem>
-                      <SelectItem value="PENDING">Pending Verification</SelectItem>
-                      <SelectItem value="APPROVED">Verified</SelectItem>
-                      <SelectItem value="REJECTED">Rejected</SelectItem>
-                      <SelectItem value="DISCREPANCY">Discrepancy</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={fMode} onValueChange={setFMode}>
-                    <SelectTrigger className="h-8.5 text-xs w-36 rounded-[4px] border-[#E2E8F0]">
-                      <SelectValue placeholder="Payment Method" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-[4px]">
-                      <SelectItem value="ALL">All Methods</SelectItem>
-                      <SelectItem value="UPI">UPI</SelectItem>
-                      <SelectItem value="CASH">Cash</SelectItem>
-                      <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Button
-                      size="sm"
-                      onClick={() => handleOpenRecordSubmission()}
-                      variant="outline"
-                      className="h-8.5 text-xs font-semibold rounded-[4px] border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-1.5 shadow-xs"
-                    >
-                      <ArrowRightLeft className="w-3.5 h-3.5" />
-                      Apply for Submission (Cash / Online)
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setShowCreate(true)}
-                      className="h-8.5 text-xs font-semibold rounded-[4px] bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center gap-1.5 shadow-xs"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Record Payment (Send for Approval)
-                    </Button>
-                  </div>
-                </div>
+                <Select value={fStatus} onValueChange={setFStatus}>
+                  <SelectTrigger className="h-8.5 text-xs w-40 rounded-[4px] border-[#E2E8F0]">
+                    <SelectValue placeholder="Payment Status" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[4px]">
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="PENDING">Pending Verification</SelectItem>
+                    <SelectItem value="APPROVED">Verified</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
+                    <SelectItem value="DISCREPANCY">Discrepancy</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={fMode} onValueChange={setFMode}>
+                  <SelectTrigger className="h-8.5 text-xs w-36 rounded-[4px] border-[#E2E8F0]">
+                    <SelectValue placeholder="Payment Method" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[4px]">
+                    <SelectItem value="ALL">All Methods</SelectItem>
+                    <SelectItem value="UPI">UPI</SelectItem>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                    <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="overflow-x-auto">
