@@ -624,42 +624,68 @@ export function findHotelForDay(
   if (!hotelBookings || hotelBookings.length === 0) return null;
 
   const normDay = normaliseDate(dayDate);
-  const normLoc = (dayLocation || "").toLowerCase().trim();
+  if (!normDay) return null;
 
-  // 1. EXACT Check-In Date match FIRST (Primary key for each itinerary day)
-  if (normDay) {
-    const matches = hotelBookings.filter((b) => normaliseDate(b.checkIn) === normDay);
-    if (matches.length > 0) {
-      const sorted = [...matches].sort((a: any, b: any) => {
-        const tA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-        const tB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-        return tA - tB;
-      });
-      return sorted[sorted.length - 1];
-    }
-  }
+  // Ignore explicit NO_STAY rows when resolving a real hotel for display
+  const realBookings = hotelBookings.filter((b) => {
+    const name = (b.hotelName || "").trim().toUpperCase();
+    return name && name !== "NO_STAY" && name !== "NO STAY";
+  });
+  if (realBookings.length === 0) return null;
 
-  // 2. Date range match (checkIn <= dayDate < checkOut) for multi-night stays
-  if (normDay) {
-    const dayMs = new Date(normDay).getTime();
-    for (const b of hotelBookings) {
+  const pickLatest = (matches: typeof realBookings) => {
+    const sorted = [...matches].sort((a: any, b: any) => {
+      const tA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const tB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return tA - tB;
+    });
+    return sorted[sorted.length - 1];
+  };
+
+  // 1. EXACT Check-In Date match (primary key for each itinerary day)
+  const exactMatches = realBookings.filter(
+    (b) => normaliseDate(b.checkIn) === normDay,
+  );
+  if (exactMatches.length > 0) return pickLatest(exactMatches);
+
+  // 2. Multi-night range only — never reuse a 1-night booking on other days
+  //    just because the destination city matches (that caused Gulshan Hotel
+  //    Jalandhar to reappear on every Jalandhar day after refresh).
+  const dayMs = new Date(normDay + "T12:00:00").getTime();
+  if (!Number.isNaN(dayMs)) {
+    const rangeMatches = realBookings.filter((b) => {
+      const nights = Number(b.nightsCount || 0);
       const cinStr = normaliseDate(b.checkIn);
       const coutStr = normaliseDate(b.checkOut);
-      if (!cinStr) continue;
-      const cinMs = new Date(cinStr).getTime();
-      const coutMs = coutStr ? new Date(coutStr).getTime() : cinMs + 86400000;
-      if (dayMs >= cinMs && dayMs < coutMs) return b;
-    }
+      if (!cinStr) return false;
+
+      const cinMs = new Date(cinStr + "T12:00:00").getTime();
+      if (Number.isNaN(cinMs)) return false;
+
+      // Prefer explicit multi-night stay window
+      if (coutStr) {
+        const coutMs = new Date(coutStr + "T12:00:00").getTime();
+        if (Number.isNaN(coutMs) || coutMs <= cinMs + 86400000) {
+          // checkOut is same day or next morning → single night only
+          return false;
+        }
+        return dayMs >= cinMs && dayMs < coutMs;
+      }
+
+      // nightsCount > 1 without checkOut: cover checkIn .. checkIn+(nights-1)
+      if (nights > 1) {
+        const endMs = cinMs + nights * 86400000;
+        return dayMs >= cinMs && dayMs < endMs;
+      }
+
+      return false;
+    });
+    if (rangeMatches.length > 0) return pickLatest(rangeMatches);
   }
 
-  // 3. Location matching LAST (Fallback only if no date match)
-  if (normLoc && normLoc !== "—" && !normLoc.includes("no stay")) {
-    for (const b of hotelBookings) {
-      const bLoc = (b.location || "").toLowerCase().trim();
-      if (bLoc && (normLoc.includes(bLoc) || bLoc.includes(normLoc))) return b;
-    }
-  }
-
+  // Do NOT fall back to location-only matching. A booking saved for one
+  // check-in date must not paint onto every other day in the same city.
+  void dayLocation;
   return null;
 }
 

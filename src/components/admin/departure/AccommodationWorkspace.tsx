@@ -42,6 +42,7 @@ import {
   findHotelForDay,
   formatINR,
   getPrimaryRateFromBooking,
+  normaliseDate,
   normalisePricingMode,
   resolveCityForItineraryDay,
   normalizeDestinationName,
@@ -119,6 +120,13 @@ export default function AccommodationWorkspace({
     try {
       if (next === false) {
         // Explicitly saving NO STAY
+        const cinDate = new Date(row.date);
+        let coutStr = row.date;
+        if (!isNaN(cinDate.getTime())) {
+          const coutDate = new Date(cinDate);
+          coutDate.setDate(coutDate.getDate() + 1);
+          coutStr = coutDate.toISOString().substring(0, 10);
+        }
         const payload = {
           hotelName: "NO_STAY",
           location: row.destination || "Enroute",
@@ -132,8 +140,9 @@ export default function AccommodationWorkspace({
           tripleRoomsCount: 0,
           quadRoomsCount: 0,
           extraPersonsCount: 0,
-          nightsCount: 0,
+          nightsCount: 1,
           checkIn: row.date,
+          checkOut: coutStr,
           vendorId: null,
           notes: "Explicit No Stay",
         };
@@ -191,8 +200,17 @@ export default function AccommodationWorkspace({
 
       const cityLocation = resolveCityForItineraryDay(day);
 
-      // 1. Try finding a saved hotel booking for this day date or location
-      const booking = findHotelForDay(dayDate, cityLocation, opsHotelBookings);
+      // Explicit NO_STAY saved for this check-in date
+      const noStayBooking = (opsHotelBookings || []).find((b: any) => {
+        const name = String(b?.hotelName || "").trim().toUpperCase();
+        if (name !== "NO_STAY" && name !== "NO STAY") return false;
+        return normaliseDate(b.checkIn) === normaliseDate(dayDate);
+      });
+
+      // 1. Try finding a saved hotel booking for this day date (check-in / multi-night)
+      const booking = noStayBooking
+        ? null
+        : findHotelForDay(dayDate, cityLocation, opsHotelBookings);
 
       // 2. Check default stay day status
       const isEnrouteDay =
@@ -200,10 +218,11 @@ export default function AccommodationWorkspace({
         (day.sub || "").toLowerCase().includes("arrival in your city") ||
         (day.plan || "").toLowerCase().includes("your city");
 
-      const defaultHasStay =
-        !!booking ||
-        (!isEnrouteDay && idx > 0 && idx < computedItinerary.length - 1) ||
-        (!!parsedStay && !parsedStay.toLowerCase().includes("no stay"));
+      const defaultHasStay = noStayBooking
+        ? false
+        : !!booking ||
+          (!isEnrouteDay && idx > 0 && idx < computedItinerary.length - 1) ||
+          (!!parsedStay && !parsedStay.toLowerCase().includes("no stay"));
 
       const hasStay = stayOverrides[rowKey] !== undefined ? stayOverrides[rowKey] : defaultHasStay;
 

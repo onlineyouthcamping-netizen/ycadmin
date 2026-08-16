@@ -782,7 +782,7 @@ export default function BookingsPage() {
   }
 
   if (currentTab === "payments") {
-    return (
+  return (
       <div className="flex flex-col min-h-0 md:h-[calc(100vh-56px)] md:overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 md:-mx-5 md:-my-5 p-3 md:p-5">
         <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl md:overflow-hidden">
           {/* Top Tab Bar */}

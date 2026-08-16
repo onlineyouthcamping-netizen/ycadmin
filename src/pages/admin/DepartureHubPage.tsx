@@ -107,6 +107,24 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+
+const GUIDE_EXPENSE_CATEGORIES = [
+  { value: "EXPENSE", label: "Trip Expense / Allowance" },
+  { value: "EXPENSE_FOOD", label: "Food & Meals" },
+  { value: "EXPENSE_TRANSPORTATION", label: "Transportation" },
+  { value: "EXPENSE_ACCOMMODATION", label: "Accommodation" },
+  { value: "EXPENSE_FUEL", label: "Fuel" },
+  { value: "EXPENSE_ENTRY_TICKETS", label: "Entry Tickets / Activities" },
+  { value: "EXPENSE_MISCELLANEOUS", label: "Miscellaneous" },
+] as const;
+
+const isGuideExpenseType = (assignmentType?: string | null) =>
+  assignmentType === "EXPENSE" || assignmentType?.startsWith("EXPENSE_") === true;
+
+const getGuideExpenseCategoryLabel = (assignmentType?: string | null) =>
+  GUIDE_EXPENSE_CATEGORIES.find((category) => category.value === assignmentType)
+    ?.label || "Trip Expense / Allowance";
+
 // ─── Spiti Valley Mock Itineraries ───
 const MOCK_SPITI_ITINERARY = [
   {
@@ -1748,13 +1766,13 @@ export default function DepartureHubPage() {
     guideName: "",
     agreedAmount: "",
     advancePaid: "0",
-    daysWorked: assignmentType === "EXPENSE" ? "1" : "5",
+    daysWorked: isGuideExpenseType(assignmentType) ? "1" : "5",
     notes: "",
     assignmentType,
     reportingLocation: "",
     reportingTime: "",
     emergencyContact: "",
-    expenseDate: assignmentType === "EXPENSE" ? departureDateStr || "" : "",
+    expenseDate: isGuideExpenseType(assignmentType) ? departureDateStr || "" : "",
   });
 
   const guideExpenseTripDays = useMemo(() => {
@@ -1818,13 +1836,13 @@ export default function DepartureHubPage() {
     e.preventDefault();
     if (!guideForm.guideName.trim() || guideForm.guideName === "__manual__") {
       toast.error(
-        guideForm.assignmentType === "EXPENSE"
+        isGuideExpenseType(guideForm.assignmentType)
           ? "Expense title is required"
           : "Guide name is required",
       );
       return;
     }
-    if (guideForm.assignmentType === "EXPENSE" && !guideForm.expenseDate) {
+    if (isGuideExpenseType(guideForm.assignmentType) && !guideForm.expenseDate) {
       toast.error("Expense date is required");
       return;
     }
@@ -1841,11 +1859,11 @@ export default function DepartureHubPage() {
         reportingTime: guideForm.reportingTime || undefined,
         emergencyContact: guideForm.emergencyContact || undefined,
         startDate:
-          guideForm.assignmentType === "EXPENSE" && guideForm.expenseDate
+          isGuideExpenseType(guideForm.assignmentType) && guideForm.expenseDate
             ? guideForm.expenseDate
             : undefined,
         endDate:
-          guideForm.assignmentType === "EXPENSE" && guideForm.expenseDate
+          isGuideExpenseType(guideForm.assignmentType) && guideForm.expenseDate
             ? guideForm.expenseDate
             : undefined,
       };
@@ -1855,11 +1873,11 @@ export default function DepartureHubPage() {
         saved = await opsService.updateGuidePayment(editingGuideId, {
           ...dataPayload,
           startDate:
-            guideForm.assignmentType === "EXPENSE"
+            isGuideExpenseType(guideForm.assignmentType)
               ? guideForm.expenseDate || null
               : dataPayload.startDate,
           endDate:
-            guideForm.assignmentType === "EXPENSE"
+            isGuideExpenseType(guideForm.assignmentType)
               ? guideForm.expenseDate || null
               : dataPayload.endDate,
         });
@@ -4766,24 +4784,25 @@ useEffect(() => {
   }, [opsHotels, allPassengers, passengerAllocations]);
 
   useEffect(() => {
-    if (allPassengers && allPassengers.length > 0) {
-      setPassengerAllocations((prev) => {
-        const next = { ...prev };
-        allPassengers.forEach((p) => {
-          if (isPassengerCancelled(p)) return;
-          const key = p.id;
-          if (!next[key]) {
-            next[key] = {
-              room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
-              vehicle: "—",
-              seat: "—",
-            };
-          }
-        });
-        return next;
+    if (!bookings || bookings.length === 0) return;
+    setPassengerAllocations((prev) => {
+      let hasChanges = false;
+      const next = { ...prev };
+      allPassengers.forEach((p) => {
+        if (isPassengerCancelled(p)) return;
+        const key = p.id;
+        if (key && !next[key]) {
+          next[key] = {
+            room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
+            vehicle: "—",
+            seat: "—",
+          };
+          hasChanges = true;
+        }
       });
-    }
-  }, [allPassengers]);
+      return hasChanges ? next : prev;
+    });
+  }, [bookings]);
 
   const computedRoomAllocations = useMemo(() => {
     const list: any[] = [];
@@ -8626,8 +8645,12 @@ useEffect(() => {
           {/* ──────────────────────── GUIDES ──────────────────────── */}
           {/* ─── PLAN: GUIDES ─── */}
           {activeTab === "guides" && (() => {
-            const actualGuides = dbGuides.filter((g: any) => g.assignmentType !== "EXPENSE");
-            const tripExpenses = dbGuides.filter((g: any) => g.assignmentType === "EXPENSE");
+            const actualGuides = dbGuides.filter(
+              (g: any) => !isGuideExpenseType(g.assignmentType),
+            );
+            const tripExpenses = dbGuides.filter((g: any) =>
+              isGuideExpenseType(g.assignmentType),
+            );
 
             return (
             <div className="space-y-4 min-w-0">
@@ -8700,14 +8723,14 @@ useEffect(() => {
                   className="bg-orange-50 border border-orange-200 rounded-[6px] p-4 space-y-3"
                 >
                   <p className="text-[11px] font-black text-orange-700 uppercase tracking-wider">
-                    {guideForm.assignmentType === "EXPENSE" ? "Add Trip Expense / Allowance" : "Assign Guide to Departure"}
+                    {isGuideExpenseType(guideForm.assignmentType) ? "Add Trip Expense / Allowance" : "Assign Guide to Departure"}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        {guideForm.assignmentType === "EXPENSE" ? "Expense Title *" : "Guide Name *"}
+                        {isGuideExpenseType(guideForm.assignmentType) ? "Expense Title *" : "Guide Name *"}
                       </label>
-                      {guideForm.assignmentType === "EXPENSE" ? (
+                      {isGuideExpenseType(guideForm.assignmentType) ? (
                         <input
                           required
                           value={guideForm.guideName}
@@ -8797,11 +8820,11 @@ useEffect(() => {
                             ...f,
                             assignmentType: nextType,
                             expenseDate:
-                              nextType === "EXPENSE"
+                              isGuideExpenseType(nextType)
                                 ? f.expenseDate || departureDateStr || ""
                                 : "",
                             daysWorked:
-                              nextType === "EXPENSE" ? "1" : f.daysWorked || "5",
+                              isGuideExpenseType(nextType) ? "1" : f.daysWorked || "5",
                           }));
                         }}
                         className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
@@ -8811,11 +8834,15 @@ useEffect(() => {
                         <option value="TRIP_LEADER">Trip Leader</option>
                         <option value="DRIVER_GUIDE">Driver Guide</option>
                         <option value="FREELANCER">Freelancer</option>
-                        <option value="EXPENSE">Trip Expense / Allowance</option>
+                        {GUIDE_EXPENSE_CATEGORIES.map((category) => (
+                          <option key={category.value} value={category.value}>
+                            {category.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
-                    {guideForm.assignmentType === "EXPENSE" ? (
+                    {isGuideExpenseType(guideForm.assignmentType) ? (
                       <>
                         <div>
                           <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
@@ -8885,7 +8912,7 @@ useEffect(() => {
                     )}
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        {guideForm.assignmentType === "EXPENSE" ? "Total amount (₹)" : "Agreed Amount (₹)"}
+                        {isGuideExpenseType(guideForm.assignmentType) ? "Total amount (₹)" : "Agreed Amount (₹)"}
                       </label>
                       <input
                         type="number"
@@ -8919,7 +8946,7 @@ useEffect(() => {
                       />
                     </div>
                     
-                    {guideForm.assignmentType !== "EXPENSE" && (
+                    {!isGuideExpenseType(guideForm.assignmentType) && (
                       <div>
                         <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                           Reporting Time
@@ -8947,12 +8974,12 @@ useEffect(() => {
                         onChange={(e) =>
                           setGuideForm((f) => ({ ...f, notes: e.target.value }))
                         }
-                        placeholder={guideForm.assignmentType === "EXPENSE" ? "e.g. For fuel and tolls" : "e.g. Lead guide, experienced in Spiti"}
+                        placeholder={isGuideExpenseType(guideForm.assignmentType) ? "e.g. For fuel and tolls" : "e.g. Lead guide, experienced in Spiti"}
                         className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
                       />
                     </div>
                     
-                    {guideForm.assignmentType !== "EXPENSE" && (
+                    {!isGuideExpenseType(guideForm.assignmentType) && (
                       <div>
                         <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                           Emergency Contact
@@ -8978,7 +9005,7 @@ useEffect(() => {
                       disabled={isSavingGuide}
                       className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px]"
                     >
-                      {isSavingGuide ? "Saving..." : (guideForm.assignmentType === "EXPENSE" ? "Save Expense" : "Save Guide")}
+                      {isSavingGuide ? "Saving..." : (isGuideExpenseType(guideForm.assignmentType) ? "Save Expense" : "Save Guide")}
                     </Button>
                     <Button
                       type="button"
@@ -9224,7 +9251,10 @@ useEffect(() => {
                           return (
                           <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
-                              {exp.guideName}
+                              <div>{exp.guideName}</div>
+                              <span className="mt-1 inline-flex rounded-[3px] border border-[#E8EEF4] bg-[#F4F7FB] px-1.5 py-0.5 text-[9px] font-semibold text-slate-500">
+                                {getGuideExpenseCategoryLabel(exp.assignmentType)}
+                              </span>
                             </td>
                             <td className="p-3 border-r border-slate-100 text-slate-700 font-medium whitespace-nowrap">
                               <div>{formatExpenseDate(exp.startDate)}</div>

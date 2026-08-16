@@ -113,6 +113,10 @@ export default function StationPaymentCollection({
   const [customAccountName, setCustomAccountName] = useState("");
 
   const load = useCallback(async () => {
+    if (!tripId || !departureDateStr) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [dashRes, acctRes] = await Promise.all([

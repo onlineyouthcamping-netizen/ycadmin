@@ -120,7 +120,18 @@ export default function DepartureTripControl({
   // Lead guide info
   const leadGuide = useMemo(() => {
     // Departure-specific assignments take precedence
-    const validGuides = dbGuides?.filter((g) => g.assignmentType !== "EXPENSE") || [];
+    const guideRoles = new Set([
+      "PRIMARY_GUIDE",
+      "ASSISTANT_GUIDE",
+      "CO_GUIDE",
+      "LOCAL_GUIDE",
+      "TRIP_LEADER",
+      "DRIVER_GUIDE",
+      "FREELANCER",
+      "SUPPORT_STAFF",
+    ]);
+    const validGuides =
+      dbGuides?.filter((g) => guideRoles.has(g.assignmentType)) || [];
     if (validGuides.length > 0) {
       return { name: validGuides[0].guideName || "Lead Guide", phone: validGuides[0].emergencyContact || "" };
     }
