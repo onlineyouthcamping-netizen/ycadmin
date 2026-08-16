@@ -8,8 +8,6 @@ import { isPassengerCancelled, filterActivePassengers } from "@/utils/departure/
 import { getBookingGroupKey, groupPassengersByBooking } from "@/utils/departure/passengerAllocation";
 import { calculateBookingFinancialStatus, safeNumber } from "@/utils/departure/paymentCalculator";
 import { calculateRoomOccupancy } from "@/utils/departure/accommodationCalculator";
-import { saveActivityToBackend } from "@/utils/departure/activityMapper";
-import { cn } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
@@ -8476,7 +8474,7 @@ useEffect(() => {
             open={!!selectedStayForDrawer}
             onOpenChange={() => setSelectedStayForDrawer(null)}
           >
-            <DialogContent className="max-w-lg bg-white p-6 rounded-[12px] shadow-2xl border border-slate-200 overflow-hidden fixed right-4 top-4 bottom-4 h-[calc(100vh-2rem)] flex flex-col justify-between">
+            <DialogContent className="flex min-h-0 max-h-[calc(100dvh-1rem)] max-w-lg flex-col justify-between overflow-hidden rounded-[12px] border border-slate-200 bg-white p-3 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6">
               <DialogHeader className="sr-only">
                 <DialogTitle>Hotel Stay Details</DialogTitle>
                 <DialogDescription>
@@ -8789,7 +8787,7 @@ useEffect(() => {
                     setAddGuideOpen(true);
                     revealGuideEditor(false);
                   }}
-                  className="hidden md:inline-flex h-8.5 w-full md:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm items-center justify-center gap-1.5"
+                  className="inline-flex h-8.5 w-full items-center justify-center gap-1.5 rounded-[4px] bg-[#FF4D00] text-xs font-bold text-white shadow-sm hover:bg-[#E04500] md:w-auto"
                 >
                   <Plus className="w-3.5 h-3.5" /> Assign guide
                 </Button>
