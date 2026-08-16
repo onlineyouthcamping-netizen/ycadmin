@@ -549,6 +549,18 @@ export default function AccountingPage() {
     }
   };
 
+  const handleVerifyStationPayment = async (paymentId: string) => {
+    try {
+      await api.post(`/station-payments/${paymentId}/verify-upi`, {
+        action: "VERIFY",
+      });
+      toast.success("Station UPI payment verified & reconciled!");
+      loadData();
+    } catch {
+      toast.error("Failed to verify station payment");
+    }
+  };
+
   const handleConfirmReject = async () => {
     if (!rejectModalState) return;
     if (!rejectModalState.reason.trim()) {
@@ -566,6 +578,11 @@ export default function AccountingPage() {
         await api.patch(`/payments/vendor/verify/${rejectModalState.id}`, {
           status: "Rejected",
           remarks: rejectModalState.reason,
+        });
+      } else if (rejectModalState.type === "station") {
+        await api.post(`/station-payments/${rejectModalState.id}/verify-upi`, {
+          action: "REJECT",
+          rejectionReason: rejectModalState.reason,
         });
       }
       toast.success("Payment marked as rejected and sent for correction");
@@ -1340,6 +1357,118 @@ export default function AccountingPage() {
                                   id: p.id,
                                   reason: "",
                                   title: `Reject Client Payment - ${p.booking?.fullName} (${formatINR(p.amount)})`,
+                                })
+                              }
+                              className="h-7 px-2.5 text-rose-600 hover:bg-rose-50 border-rose-200 text-[11px] font-bold cursor-pointer"
+                            >
+                              <XCircle className="w-3 h-3 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Sub-Queue: Pending Station Online Collections (UPI) */}
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <QrCode className="w-4 h-4 text-blue-600" />
+                  Pending Station Online Collections (UPI) (
+                  {verificationQueue.pendingStationPayments?.length || 0})
+                </span>
+              </div>
+
+              {verificationQueue.pendingStationPayments?.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400 font-medium">
+                  No pending station online collections in verification queue. All caught up!
+                </div>
+              ) : (
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                    <tr>
+                      <th className="py-2.5 px-4">Booking / Passenger</th>
+                      <th className="py-2.5 px-4">Station & Collector</th>
+                      <th className="py-2.5 px-4 text-right">Amount</th>
+                      <th className="py-2.5 px-4">UPI UTR & Account</th>
+                      <th className="py-2.5 px-4">Proof Screenshot</th>
+                      <th className="py-2.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {verificationQueue.pendingStationPayments.map((p: any) => (
+                      <tr key={p.id} className="hover:bg-slate-50/60 font-medium">
+                        <td className="py-2.5 px-4 font-bold text-slate-900">
+                          {p.booking?.fullName || p.collectedFrom || "Passenger"}
+                          <div className="text-[10px] text-slate-400 font-normal">
+                            Ref: {p.booking?.bookingId || p.bookingId} · Receipt: {p.receiptNumber}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4 text-slate-700">
+                          <span className="font-bold text-slate-900">{p.station}</span>
+                          <div className="text-[10px] text-slate-500">
+                            By: {p.collectedBy?.name || "Station Staff"}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-black text-blue-600">
+                          {formatINR(p.amount)}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <Badge variant="outline" className="text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">
+                            UTR: {p.utrNumber || "N/A"}
+                          </Badge>
+                          <div className="text-[10px] text-slate-500 mt-0.5">
+                            {p.receivingAccount?.accountName || "Company Bank Account"}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          {p.proofImageUrl ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setProofPreviewModal({
+                                  open: true,
+                                  title: `Station Payment Proof - ${p.booking?.fullName || p.collectedFrom}`,
+                                  subtitle: `Station: ${p.station} · UTR: ${p.utrNumber}`,
+                                  imageUrl: p.proofImageUrl,
+                                  amount: p.amount,
+                                  date: safeFormatDate(p.createdAt),
+                                })
+                              }
+                              className="h-7 text-[11px] font-bold text-blue-600 hover:bg-blue-50 px-2 cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 mr-1" />
+                              View Proof
+                            </Button>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">No Proof</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              onClick={() => handleVerifyStationPayment(p.id)}
+                              className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Verify
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setRejectModalState({
+                                  open: true,
+                                  type: "station",
+                                  id: p.id,
+                                  reason: "",
+                                  title: `Reject Station Payment - ${p.booking?.fullName || p.collectedFrom} (${formatINR(p.amount)})`,
                                 })
                               }
                               className="h-7 px-2.5 text-rose-600 hover:bg-rose-50 border-rose-200 text-[11px] font-bold cursor-pointer"
