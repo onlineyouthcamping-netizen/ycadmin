@@ -157,3 +157,5 @@ const RecentUpdatesFeed = () => {
     </>
   );
 };
+
+export const TravelDeskUpdatesRail = TravelDeskQuickActions;

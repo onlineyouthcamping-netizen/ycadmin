@@ -1628,7 +1628,6 @@ export default function AccountingPage() {
                   )}
                 </tbody>
               </table>
-              </div>
             </div>
           </div>
         )}
@@ -1832,25 +1831,27 @@ export default function AccountingPage() {
             </div>
 
             {/* Ticket Consumption Ledger */}
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-                  <Ticket className="w-4 h-4 text-[#0B1528]" />
-                  Authoritative Train Ticket Cost Ledger (Direct from Ticketing)
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 flex-col gap-2 border-b border-[#E8EEF4] px-3 py-2.5 lg:flex-row lg:items-center md:px-4">
+                <h3 className="min-w-0 text-[12px] font-semibold text-[#0B1528]">
+                  Train ticket cost ledger
                 </h3>
-                <div className="relative w-full sm:w-72">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="relative w-full min-w-0 lg:ml-auto lg:w-72">
+                  <Search
+                    className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                    strokeWidth={1.75}
+                  />
                   <Input
-                    placeholder="Search traveler, PNR, train #, trip..."
+                    placeholder="Search traveller, PNR or train"
                     value={riyaSearch}
                     onChange={(e) => setRiyaSearch(e.target.value)}
-                    className="pl-8.5 h-8 text-xs bg-white"
+                    className="h-8 rounded-md border-[#E8EEF4] bg-white pl-8 text-[12px] font-medium text-[#0B1528] shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                   />
                 </div>
               </div>
 
-              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
-                <table className="w-full text-left text-xs">
+              <div className="min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[960px] text-left text-[12px]">
                   <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
                       <th className="py-2.5 px-4">Journey Date</th>
@@ -1925,91 +1926,80 @@ export default function AccountingPage() {
 
         {/* ──────────────────────── TAB 6: TREASURY & BANK LEDGERS ──────────────────────── */}
         {activeTab === "accounts" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-[#FF4D00]" />
-                  Treasury Accounts & Cash Desks
+          <div className="space-y-3">
+            <div className="flex min-w-0 flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h2 className="text-[15px] font-semibold tracking-tight text-[#0B1528]">
+                  Treasury accounts and cash desks
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Full double-entry money ledgers. Trace exact source and destination of every
-                  rupee.
+                <p className="mt-0.5 text-[12px] text-slate-500">
+                  Every account with its reconciled balance and full money ledger.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowSubmitFundsModal(true)}
-                  className="h-8 gap-1.5 rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB] cursor-pointer"
+                  className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB]"
                 >
-                  <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
-                  Transfer Funds
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                  Transfer funds
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => setShowAddAccountModal(true)}
-                  className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
+                  className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400]"
                 >
-                  <Plus className="w-3.5 h-3.5 mr-1" />
-                  + Add Account
+                  <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  Add account
                 </Button>
               </div>
             </div>
 
             {/* Account Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
               {collectionAccounts.map((acc) => (
-                <Card
+                <div
                   key={acc.id}
-                  className="p-5 bg-white border border-[#E8EEF4] rounded-xl flex flex-col justify-between"
+                  className="flex min-w-0 flex-col justify-between rounded-xl border border-[#E8EEF4] bg-white p-4"
                 >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[10px] font-semibold uppercase px-2",
-                          acc.accountType === "CASH"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : acc.accountName.toLowerCase().includes("riya")
-                              ? "bg-[#F4F7FB] text-slate-600 border-[#E8EEF4]"
-                              : "bg-blue-50 text-blue-700 border-blue-200",
-                        )}
-                      >
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
+                      <span className="shrink-0 rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                         {acc.accountType}
-                      </Badge>
-                      <span className="text-[11px] text-slate-400">
+                      </span>
+                      <span className="truncate text-[11px] text-slate-400">
                         {acc.isActive ? "Active" : "Archived"}
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-semibold text-[#0B1528] mt-2.5">
+                    <h4 className="mt-2 truncate text-[13px] font-semibold text-[#0B1528]">
                       {acc.accountName}
                     </h4>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    <p className="mt-0.5 truncate text-[12px] text-slate-500">
                       {acc.accountHolderName}
                     </p>
 
                     {acc.bankName && (
-                      <p className="text-[11px] text-slate-400 mt-1">
+                      <p className="mt-1 truncate text-[11px] text-slate-400">
                         {acc.bankName} {acc.accountNumber && `· ${acc.accountNumber}`}
                       </p>
                     )}
                     {acc.upiId && (
-                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      <p className="mt-0.5 truncate font-mono text-[11px] text-slate-400">
                         UPI: {acc.upiId}
                       </p>
                     )}
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-slate-100">
-                    <div className="flex items-baseline justify-between mb-3">
-                      <span className="text-xs text-slate-500 font-semibold">
-                        Reconciled Balance:
+                  <div className="mt-4 border-t border-[#E8EEF4] pt-3">
+                    <div className="mb-2.5 flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-500">
+                        Reconciled balance
                       </span>
-                      <span className="text-lg font-semibold text-[#0B1528]">
+                      <span className="text-base font-semibold tracking-tight tabular-nums text-[#0B1528]">
                         {formatINR(acc.pending || 0)}
                       </span>
                     </div>
@@ -2018,13 +2008,13 @@ export default function AccountingPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenAccountLedger(acc)}
-                      className="w-full h-8 rounded-md border-[#E8EEF4] bg-white text-[12px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                      className="h-8 w-full gap-1.5 rounded-md border-[#E8EEF4] bg-white text-[12px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-[#0B1528]"
                     >
-                      <FileText className="w-3.5 h-3.5 mr-1" />
-                      View Full Ledger
+                      <FileText className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      View ledger
                     </Button>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           </div>
@@ -2032,95 +2022,158 @@ export default function AccountingPage() {
 
         {/* ──────────────────────── TAB 7: TRIP & DEPARTURE P&L ──────────────────────── */}
         {activeTab === "profitability" && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
-                <PieIcon className="w-5 h-5 text-[#FF4D00]" />
-                Trip & Departure Profitability (P&L)
+          <div className="space-y-3">
+            <div className="min-w-0">
+              <h2 className="text-[15px] font-semibold tracking-tight text-[#0B1528]">
+                Trip profitability
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Exact net margin calculation: Total Verified Inflow − (Authoritative Ticket Cost +
-                Verified Vendor Payouts + Guides).
+              <p className="mt-0.5 text-[12px] text-slate-500">
+                Verified revenue minus train tickets, vendor payouts and guide costs,
+                per trip.
               </p>
             </div>
 
-            <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
-                  <tr>
-                    <th className="py-3 px-4">Trip Code / Title</th>
-                    <th className="py-3 px-4 text-center">Booked Pax</th>
-                    <th className="py-3 px-4 text-right">Gross Selling Price</th>
-                    <th className="py-3 px-4 text-right">Verified Revenue</th>
-                    <th className="py-3 px-4 text-right">Train Tickets (Riya)</th>
-                    <th className="py-3 px-4 text-right">Vendor Direct Costs</th>
-                    <th className="py-3 px-4 text-right">Total Operational Costs</th>
-                    <th className="py-3 px-4 text-right">Gross Profit</th>
-                    <th className="py-3 px-4 text-right">Margin %</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E8EEF4]">
-                  {tripProfitabilityList.length === 0 ? (
+            {/* Roll-up strip */}
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="grid grid-cols-2 divide-x divide-y divide-[#E8EEF4] lg:grid-cols-4 lg:divide-y-0">
+                {(() => {
+                  const totals = tripProfitabilityList.reduce(
+                    (acc, t) => ({
+                      revenue: acc.revenue + (Number(t.collectedRevenue) || 0),
+                      cost: acc.cost + (Number(t.totalCost) || 0),
+                      profit: acc.profit + (Number(t.grossProfit) || 0),
+                      pax: acc.pax + (Number(t.totalPax) || 0),
+                    }),
+                    { revenue: 0, cost: 0, profit: 0, pax: 0 },
+                  );
+                  const blendedMargin =
+                    totals.revenue > 0
+                      ? Math.round((totals.profit / totals.revenue) * 1000) / 10
+                      : 0;
+
+                  return [
+                    { label: "Verified revenue", value: formatINR(totals.revenue) },
+                    { label: "Operational cost", value: formatINR(totals.cost) },
+                    {
+                      label: "Gross profit",
+                      value: formatINR(totals.profit),
+                      tone: totals.profit >= 0 ? "text-[#0B1528]" : "text-rose-600",
+                    },
+                    { label: "Blended margin", value: `${blendedMargin}%` },
+                  ].map((kpi) => (
+                    <div key={kpi.label} className="min-w-0 px-3 py-2.5 md:px-4 md:py-3">
+                      <p className="truncate text-[11px] font-medium text-slate-500">
+                        {kpi.label}
+                      </p>
+                      <p
+                        className={cn(
+                          "mt-0.5 text-lg font-semibold leading-tight tracking-tight tabular-nums md:text-xl",
+                          kpi.tone || "text-[#0B1528]",
+                        )}
+                      >
+                        {kpi.value}
+                      </p>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
+                <h3 className="truncate text-[12px] font-semibold text-[#0B1528]">
+                  Per-trip breakdown
+                </h3>
+                <span className="shrink-0 text-[11px] font-medium text-slate-400">
+                  {tripProfitabilityList.length} trips
+                </span>
+              </div>
+
+              <div className="min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[1080px] text-left text-[12px]">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400">
-                        No active trips with financial data recorded yet.
-                      </td>
+                      <th className="px-3 py-2 md:px-4">Trip</th>
+                      <th className="px-3 py-2 text-center md:px-4">Pax</th>
+                      <th className="px-3 py-2 text-right md:px-4">Gross price</th>
+                      <th className="px-3 py-2 text-right md:px-4">Verified revenue</th>
+                      <th className="px-3 py-2 text-right md:px-4">Train tickets</th>
+                      <th className="px-3 py-2 text-right md:px-4">Vendor cost</th>
+                      <th className="px-3 py-2 text-right md:px-4">Total cost</th>
+                      <th className="px-3 py-2 text-right md:px-4">Gross profit</th>
+                      <th className="px-3 py-2 text-right md:px-4">Margin</th>
                     </tr>
-                  ) : (
-                    tripProfitabilityList.map((t) => (
-                      <tr key={t.tripId} className="hover:bg-[#F8FAFC]/60 font-medium">
-                        <td className="py-3 px-4 font-medium text-[#0B1528]">
-                          {t.tripTitle}
-                          <div className="text-[10px] text-slate-400 font-normal">
-                            Code: {t.tripCode} · {t.destination}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-center font-medium text-slate-600">
-                          {t.totalPax}
-                        </td>
-                        <td className="py-3 px-4 text-right text-slate-500 font-semibold">
-                          {formatINR(t.grossRevenue)}
-                        </td>
-                        <td className="py-3 px-4 text-right font-semibold text-[#0B1528]">
-                          {formatINR(t.collectedRevenue)}
-                        </td>
-                        <td className="py-3 px-4 text-right text-[#0B1528] font-semibold">
-                          {formatINR(t.ticketCost)}
-                        </td>
-                        <td className="py-3 px-4 text-right text-rose-600 font-semibold">
-                          {formatINR(t.vendorCost)}
-                        </td>
-                        <td className="py-3 px-4 text-right font-medium text-[#0B1528]">
-                          {formatINR(t.totalCost)}
-                        </td>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8EEF4]">
+                    {tripProfitabilityList.length === 0 ? (
+                      <tr>
                         <td
-                          className={cn(
-                            "py-3 px-4 text-right font-semibold",
-                            t.grossProfit >= 0 ? "text-emerald-600" : "text-rose-600",
-                          )}
+                          colSpan={9}
+                          className="px-4 py-10 text-center text-[12px] text-slate-400"
                         >
-                          {formatINR(t.grossProfit)}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "font-semibold text-[11px] px-2",
-                              t.marginPercent >= 20
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : t.marginPercent >= 0
-                                  ? "bg-blue-50 text-blue-700 border-blue-200"
-                                  : "bg-rose-50 text-rose-700 border-rose-200",
-                            )}
-                          >
-                            {t.marginPercent}%
-                          </Badge>
+                          No trips have financial activity yet.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      tripProfitabilityList.map((t) => (
+                        <tr
+                          key={t.tripId}
+                          className="transition-colors hover:bg-[#F8FAFC]"
+                        >
+                          <td className="min-w-0 px-3 py-2.5 md:px-4">
+                            <p className="truncate font-medium text-[#0B1528]">
+                              {t.tripTitle}
+                            </p>
+                            <p className="truncate text-[11px] text-slate-400">
+                              {t.tripCode} · {t.destination}
+                            </p>
+                          </td>
+                          <td className="px-3 py-2.5 text-center tabular-nums text-slate-600 md:px-4">
+                            {t.totalPax}
+                          </td>
+                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-400 md:px-4">
+                            {formatINR(t.grossRevenue)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-medium tabular-nums text-[#0B1528] md:px-4">
+                            {formatINR(t.collectedRevenue)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 md:px-4">
+                            {formatINR(t.ticketCost)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 md:px-4">
+                            {formatINR(t.vendorCost)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 md:px-4">
+                            {formatINR(t.totalCost)}
+                          </td>
+                          <td
+                            className={cn(
+                              "px-3 py-2.5 text-right font-medium tabular-nums md:px-4",
+                              t.grossProfit >= 0 ? "text-[#0B1528]" : "text-rose-600",
+                            )}
+                          >
+                            {formatINR(t.grossProfit)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right md:px-4">
+                            <span
+                              className={cn(
+                                "inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+                                t.marginPercent >= 20
+                                  ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                                  : t.marginPercent >= 0
+                                    ? "border-[#E8EEF4] bg-[#F8FAFC] text-slate-600"
+                                    : "border-rose-100 bg-rose-50 text-rose-600",
+                              )}
+                            >
+                              {t.marginPercent}%
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -2128,7 +2181,7 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: RECORD CLIENT INCOME ──────────────────────── */}
       <Dialog open={showRecordIncomeModal} onOpenChange={setShowRecordIncomeModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-600" />
@@ -2147,7 +2200,7 @@ export default function AccountingPage() {
                 onChange={(e) =>
                   setNewIncomeForm((prev) => ({ ...prev, bookingId: e.target.value }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
+                className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
               >
                 <option value="">-- Choose a Booking --</option>
                 {bookings.map((b) => (
@@ -2181,7 +2234,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewIncomeForm((prev) => ({ ...prev, paymentMode: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                  className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
                 >
                   <option value="UPI">UPI</option>
                   <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
@@ -2204,7 +2257,7 @@ export default function AccountingPage() {
                     collectionAccountId: e.target.value,
                   }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
               >
                 <option value="">-- Choose Receiving Account --</option>
                 {collectionAccounts.map((acc) => (
@@ -2268,7 +2321,7 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: RECORD VENDOR EXPENSE ──────────────────────── */}
       <Dialog open={showRecordExpenseModal} onOpenChange={setShowRecordExpenseModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <TrendingDown className="w-5 h-5 text-rose-600" />
@@ -2285,7 +2338,7 @@ export default function AccountingPage() {
                 onChange={(e) =>
                   setNewExpenseForm((prev) => ({ ...prev, tripId: e.target.value }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
+                className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
               >
                 <option value="">-- Choose a Trip --</option>
                 {trips.map((t) => (
@@ -2304,7 +2357,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewExpenseForm((prev) => ({ ...prev, category: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                  className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
                 >
                   <option value="Hotels">Hotels / Camps</option>
                   <option value="Transport">Transport / Fleet</option>
@@ -2351,7 +2404,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewExpenseForm((prev) => ({ ...prev, paymentMode: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                  className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
                   <option value="UPI">UPI</option>
@@ -2373,7 +2426,7 @@ export default function AccountingPage() {
                     collectionAccountId: e.target.value,
                   }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
               >
                 <option value="">-- Choose Account --</option>
                 {collectionAccounts.map((acc) => (
@@ -2426,7 +2479,7 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: RECHARGE RIYA WALLET ──────────────────────── */}
       <Dialog open={showRechargeRiyaModal} onOpenChange={setShowRechargeRiyaModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <Ticket className="w-5 h-5 text-[#0B1528]" />
@@ -2456,7 +2509,7 @@ export default function AccountingPage() {
                     sourceAccountId: e.target.value,
                   }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
               >
                 <option value="">-- Select Source Bank Account --</option>
                 {collectionAccounts
@@ -2532,7 +2585,7 @@ export default function AccountingPage() {
           if (!open) setRejectModalState(null);
         }}
       >
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-rose-950 flex items-center gap-2">
               <XCircle className="w-5 h-5 text-rose-600" />
@@ -2587,7 +2640,7 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: ADD ACCOUNT ──────────────────────── */}
       <Dialog open={showAddAccountModal} onOpenChange={setShowAddAccountModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <Building2 className="w-5 h-5 text-[#FF4D00]" />
@@ -2617,7 +2670,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewAccForm((prev) => ({ ...prev, accountType: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                  className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
                 >
                   <option value="COMPANY">Company Bank Account</option>
                   <option value="CASH">Office Cash Desk</option>
@@ -2704,7 +2757,7 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: TRANSFER / SUBMIT FUNDS ──────────────────────── */}
       <Dialog open={showSubmitFundsModal} onOpenChange={setShowSubmitFundsModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <ArrowRightLeft className="w-5 h-5 text-blue-600" />
@@ -2721,7 +2774,7 @@ export default function AccountingPage() {
                 onChange={(e) =>
                   setSubmitFundsForm((prev) => ({ ...prev, accountId: e.target.value }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
               >
                 <option value="">-- Choose Account --</option>
                 {collectionAccounts.map((acc) => (
@@ -2757,7 +2810,7 @@ export default function AccountingPage() {
                       submissionMode: e.target.value,
                     }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
+                  className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer / Deposit</option>
                   <option value="UPI">UPI</option>
@@ -2815,7 +2868,7 @@ export default function AccountingPage() {
           if (!open) setSelectedAccountForLedger(null);
         }}
       >
-        <DialogContent className="max-w-4xl bg-white p-6 rounded-2xl border border-[#E8EEF4] shadow-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-4xl flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[88vh] sm:p-6">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
@@ -2953,11 +3006,11 @@ export default function AccountingPage() {
           if (!open) setProofPreviewModal(null);
         }}
       >
-        <DialogContent className="max-w-2xl bg-white p-0 rounded-2xl border border-[#E8EEF4] overflow-hidden shadow-2xl">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0B1528] text-white">
+        <DialogContent className="flex max-h-[calc(100dvh-1rem)] min-h-0 max-w-2xl flex-col overflow-hidden rounded-xl border border-[#E8EEF4] bg-white p-0 shadow-xl sm:max-h-[90vh]">
+          <div className="flex shrink-0 items-center justify-between gap-2 bg-[#0B1528] px-4 py-3 text-white sm:px-5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="p-2 bg-slate-800 rounded-lg shrink-0">
-                <Eye className="w-4 h-4 text-orange-400" />
+              <div className="p-2 bg-[#152238] rounded-md shrink-0">
+                <Eye className="w-4 h-4 text-slate-300" strokeWidth={1.75} />
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-white truncate">

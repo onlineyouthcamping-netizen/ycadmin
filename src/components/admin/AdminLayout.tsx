@@ -197,6 +197,32 @@ const sidebarModules: SidebarModule[] = [
   },
 ];
 
+// Brand mark: one triangle read two ways — a pitched tent (via the door
+// notch) and a summit. Drawn inline so it stays crisp at any rail width.
+function BrandMark({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#FF4D00]",
+        className,
+      )}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="h-[18px] w-[18px]"
+        fill="#FFFFFF"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          fillRule="evenodd"
+          d="M12 3.4 L21.6 20.4 L2.4 20.4 Z M12 12.4 L14.6 20.4 L9.4 20.4 Z"
+        />
+      </svg>
+    </span>
+  );
+}
+
 function AdminSidebar() {
   const { state, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed";
@@ -272,21 +298,18 @@ function AdminSidebar() {
           )}
         >
           {!collapsed ? (
-            <div className="flex items-center gap-2 py-0.5 w-full overflow-hidden">
-              <img
-                src="/footer-logo.png"
-                className="h-9 w-auto object-contain origin-left"
-                alt="YouthCamping"
-              />
+            <div className="flex w-full min-w-0 items-center gap-2.5">
+              <BrandMark />
+              <span className="truncate text-[13px] leading-none tracking-[-0.01em] text-white">
+                <span className="font-semibold">Youth</span>
+                <span className="font-normal">Camping</span>
+              </span>
             </div>
           ) : (
-            <div className="h-8 w-8 rounded-lg bg-[#0B1528] border border-[#1E293B] flex items-center justify-center overflow-hidden">
-              <img
-                src="/footer-logo.png"
-                className="w-full h-full object-contain"
-                alt="YouthCamping"
-              />
-            </div>
+            <>
+              <BrandMark />
+              <span className="sr-only">YouthCamping</span>
+            </>
           )}
         </div>
 

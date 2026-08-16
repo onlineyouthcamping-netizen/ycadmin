@@ -5,7 +5,13 @@ import type {
   DashboardWidget,
   DashboardWidgetContextProps,
 } from "@/config/dashboardWidgetRegistry";
-import { DashCard, DashHead, dashLink } from "@/modules/dashboard.chrome";
+import {
+  DashBody,
+  DashCard,
+  DashHead,
+  dashEmpty,
+  dashLink,
+} from "@/modules/dashboard.chrome";
 
 export const AnnouncementsWidget: React.FC<DashboardWidgetContextProps> = ({
   announcements,
@@ -41,27 +47,27 @@ export const AnnouncementsWidget: React.FC<DashboardWidgetContextProps> = ({
         </>
       }
     />
-    <div className="px-4 py-3.5 flex-1 space-y-3 text-[12px] overflow-y-auto max-h-[180px] no-scrollbar">
+    <DashBody className="no-scrollbar max-h-[180px] space-y-2.5 overflow-y-auto text-[12px]">
       {loadingAnnouncements ? (
-        <p className="text-[12px] text-slate-400">Loading…</p>
+        <p className={dashEmpty}>Loading…</p>
       ) : announcements.length === 0 ? (
-        <p className="text-[12px] text-slate-400 text-center py-4">No announcements yet.</p>
+        <p className={dashEmpty}>No announcements yet.</p>
       ) : (
         announcements.slice(0, 5).map((ann: any) => (
-          <div key={ann.id} className="space-y-1 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
-            <p className="font-semibold text-[#0B1528] leading-snug">{ann.title}</p>
-            <p className="text-[10px] text-slate-400 font-medium">
+          <div key={ann.id} className="border-b border-[#E8EEF4] pb-2.5 last:border-0 last:pb-0">
+            <p className="font-medium leading-snug text-[#0B1528]">{ann.title}</p>
+            <p className="mt-1 text-[10px] font-medium text-slate-400">
               {ann.author} · {relativeTime(ann.createdAt)}
             </p>
           </div>
         ))
       )}
-    </div>
+    </DashBody>
   </DashCard>
 );
 
 function cnDashAction() {
-  return "inline-flex items-center gap-1 text-[11px] font-semibold text-[#FF4D00] hover:text-[#E04400] whitespace-nowrap";
+  return `inline-flex items-center gap-1 ${dashLink}`;
 }
 
 function relativeTime(createdAt: string) {
@@ -98,7 +104,7 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
           </button>
         }
       />
-      <div className="px-4 py-3.5 flex-1 flex items-center gap-4">
+      <DashBody className="flex items-center gap-4">
         <div className="relative w-[60px] h-[60px] flex items-center justify-center shrink-0">
           <svg className="w-full h-full transform -rotate-90">
             <circle
@@ -121,29 +127,35 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
             />
           </svg>
           <div className="absolute flex flex-col items-center">
-            <span className="text-[12px] font-extrabold text-[#162B45]">
+            <span className="text-[13px] font-semibold tabular-nums text-[#0B1528]">
               {total}
             </span>
-            <span className="text-[8px] text-[#74839A] font-bold uppercase mt-0.5">
-              Tasks
+            <span className="mt-0.5 text-[9px] font-medium text-slate-400">
+              tasks
             </span>
           </div>
         </div>
-        <div className="space-y-1 text-[11px] flex-1">
+        <div className="min-w-0 flex-1 space-y-1.5 text-[11px]">
           <div className="flex items-center justify-between">
-            <span className="text-[#74839A] font-medium">Completed</span>
-            <span className="font-bold text-[#16A34A]">{completed}</span>
+            <span className="font-medium text-slate-400">Completed</span>
+            <span className="font-semibold tabular-nums text-[#16A34A]">
+              {completed}
+            </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[#74839A] font-medium">Pending</span>
-            <span className="font-bold text-[#D97706]">{pending}</span>
+            <span className="font-medium text-slate-400">Pending</span>
+            <span className="font-semibold tabular-nums text-[#D97706]">
+              {pending}
+            </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[#74839A] font-medium">Overdue</span>
-            <span className="font-bold text-[#E23D4D]">{overdue}</span>
+            <span className="font-medium text-slate-400">Overdue</span>
+            <span className="font-semibold tabular-nums text-[#E23D4D]">
+              {overdue}
+            </span>
           </div>
         </div>
-      </div>
+      </DashBody>
     </DashCard>
   );
 };
@@ -163,38 +175,32 @@ export const RecentBookingsWidget: React.FC<DashboardWidgetContextProps> = ({
         </button>
       }
     />
-    <div className="px-4 py-3.5 flex-1 space-y-3 overflow-y-auto max-h-[180px] no-scrollbar text-[12px]">
+    <DashBody className="no-scrollbar max-h-[180px] space-y-2 overflow-y-auto text-[12px]">
       {loading ? (
-        <p className="text-[11px] text-[#74839A] italic">
-          Loading transactions...
-        </p>
+        <p className={dashEmpty}>Loading…</p>
       ) : !stats?.recentBookings || stats.recentBookings.length === 0 ? (
-        <p className="text-[11px] text-[#74839A] italic">
-          No recent transactions found.
-        </p>
+        <p className={dashEmpty}>No recent bookings yet.</p>
       ) : (
         stats.recentBookings.map((b: any) => (
           <div
             key={b.id}
             onClick={() => navigate("/admin/bookings")}
-            className="flex gap-2 items-start leading-tight cursor-pointer hover:bg-slate-50/50 p-1 rounded transition-colors"
+            className="-mx-1.5 flex cursor-pointer items-start gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-[#F4F7FB]"
           >
-            <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-blue-500" />
-            <div className="space-y-0.5">
-              <p className="font-semibold text-[#162B45] leading-none">
+            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+            <div className="min-w-0">
+              <p className="truncate font-medium leading-tight text-[#0B1528]">
                 {b.userName} – {b.tripTitle}
               </p>
-              <p className="text-[9px] text-[#74839A] font-semibold leading-none mt-0.5">
+              <p className="mt-1 text-[10px] font-medium leading-none text-slate-400">
                 ₹{Number(b.amount || 0).toLocaleString("en-IN")} ·{" "}
-                <span className="uppercase text-[8px] font-extrabold text-slate-500">
-                  {b.status}
-                </span>
+                <span className="capitalize">{String(b.status || "").toLowerCase()}</span>
               </p>
             </div>
           </div>
         ))
       )}
-    </div>
+    </DashBody>
   </DashCard>
 );
 

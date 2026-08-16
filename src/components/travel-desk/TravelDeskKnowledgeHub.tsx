@@ -29,6 +29,7 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
   const [activeCategory, setActiveCategory] = useState<any | null>(null);
   const [currentWorkspace, setCurrentWorkspace] =
     useState<TravelDeskWorkspace>(workspace);
+  const [salesPdfCount, setSalesPdfCount] = useState(0);
 
   // Sync workspace if it changes on parent selection
   useEffect(() => {
@@ -56,8 +57,6 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     }
   };
 
-  const [salesPdfCount, setSalesPdfCount] = useState(0);
-
   useEffect(() => {
     const fetchSalesPdfs = async () => {
       try {
@@ -75,7 +74,6 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     fetchSalesPdfs();
   }, [trip.id]);
 
-  // Category Configuration
   const categoryConfig: Record<
     string,
     { icon: any; colorClass: string; bgClass: string; desc: string }
@@ -100,8 +98,8 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     },
     "inclusions-&-exclusions": {
       icon: ClipboardCheck,
-      colorClass: "text-[#0A192F]",
-      bgClass: "bg-slate-100 border border-slate-200",
+      colorClass: "text-[#0B1528]",
+      bgClass: "bg-[#F8FAFC] border border-[#E8EEF4]",
       desc: "What's included / not included",
     },
     "ticketing-info": {
@@ -112,14 +110,14 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     },
     "visa-&-entry": {
       icon: Globe,
-      colorClass: "text-[#0A192F]",
-      bgClass: "bg-slate-100 border border-slate-200",
+      colorClass: "text-[#0B1528]",
+      bgClass: "bg-[#F8FAFC] border border-[#E8EEF4]",
       desc: "Permit, documents, requirements",
     },
     "destination-guide": {
       icon: MapPin,
-      colorClass: "text-[#0A192F]",
-      bgClass: "bg-slate-100 border border-slate-200",
+      colorClass: "text-[#0B1528]",
+      bgClass: "bg-[#F8FAFC] border border-[#E8EEF4]",
       desc: "Weather, food, culture, places, local tips",
     },
     "packing-guide": {
@@ -134,8 +132,8 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     return (
       categoryConfig[slug] || {
         icon: BookOpen,
-        colorClass: "text-[#0A192F]",
-        bgClass: "bg-[#F8FAFC] border border-[#E2E8F0]",
+        colorClass: "text-[#0B1528]",
+        bgClass: "bg-[#F8FAFC] border border-[#E8EEF4]",
         desc: "Trip documentation",
       }
     );
@@ -154,162 +152,71 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     );
   }
 
-  return (
-    <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 bg-[#F8FAFC] font-sans">
-      {/* 1. LIGHT ORANGE INFO BANNER (Bg: Light orange #FFF7ED, Text: Navy #0A192F) */}
-      <div className="bg-[#FFF7ED] border border-[#FED7AA] rounded-xl px-4 py-3 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-2 text-xs font-medium text-[#0A192F]">
-          <Info className="w-4 h-4 text-[#F97316] shrink-0" />
-          <span>
-            This is your single source of truth for everything about this trip.
-            Keep content updated for the entire team.
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A192F] text-white border border-[#233554] rounded-lg text-xs font-semibold hover:bg-[#112240] transition-all">
-            <Settings className="w-3.5 h-3.5 text-white" />
-            <span>Trip Settings</span>
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A192F] text-white border border-[#233554] rounded-lg text-xs font-semibold hover:bg-[#112240] transition-all">
-            <Share2 className="w-3.5 h-3.5 text-white" />
-            <span>Share</span>
-          </button>
-        </div>
-      </div>
+  const getCount = (cat: any) =>
+    (cat._count?.articles || 0) +
+    (cat.slug === "sales-guide" ? salesPdfCount : 0);
 
-      {/* 2. HEADING & PROGRESS ROW (Content Completeness bar: Orange #F97316) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-0.5">
-        <div>
-          <h2 className="text-base font-bold text-[#0A192F] tracking-tight">
-            Knowledge Hub
+  const totalItems = displayCategories.reduce(
+    (sum: number, cat: any) => sum + getCount(cat),
+    0,
+  );
+
+  return (
+    <div className="min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto p-3 font-sans">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="min-w-0">
+          <h2 className="text-[14px] font-semibold text-[#0B1528]">
+            Knowledge hub
           </h2>
-          <p className="text-[11px] text-[#64748B] font-medium mt-0.5">
-            All important information, FAQs and guides at one place.
+          <p className="mt-0.5 text-[12px] font-medium text-slate-500">
+            The single source of truth for this trip — keep it updated for the
+            whole team.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="text-[11px] font-semibold text-[#64748B] tracking-wide uppercase">
-            Content Completeness
-          </span>
-          <div className="w-28 h-2 bg-[#E2E8F0] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#F97316] rounded-full"
-              style={{ width: "85%" }}
-            />
-          </div>
-          <span className="text-xs font-bold text-[#0A192F]">85%</span>
-        </div>
+        <span className="text-[12px] font-medium text-slate-500">
+          {displayCategories.length} categories · {totalItems}{" "}
+          {totalItems === 1 ? "item" : "items"}
+        </span>
       </div>
 
-      {/* 3. CATEGORIES GRID (12px padding, 12px gap, "1 Item" / "0 Items" in Navy #0A192F, Card arrow in Navy #0A192F) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {displayCategories.map((cat: any) => {
           const config = getCategoryConfig(cat.slug);
           const Icon = config.icon;
-          const isSales = cat.slug === "sales-guide";
-          const count =
-            (cat._count?.articles || 0) + (isSales ? salesPdfCount : 0);
+          const count = getCount(cat);
 
           return (
-            <div
+            <button
               key={cat.id}
+              type="button"
               onClick={() => setActiveCategory(cat)}
-              className="bg-white border border-[#E2E8F0] rounded-xl p-3 hover:border-[#0A192F] hover:shadow-xs transition-all cursor-pointer group flex flex-col h-full"
+              className="group flex min-w-0 flex-col rounded-xl border border-[#E8EEF4] bg-white p-3.5 text-left transition-colors hover:border-[#0B1528]/20"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <div
-                  className={`p-2 rounded-lg ${config.bgClass} flex items-center justify-center shrink-0`}
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${config.bgClass}`}
                 >
-                  <Icon className={`w-4 h-4 ${config.colorClass}`} />
-                </div>
+                  <Icon className={`h-4 w-4 ${config.colorClass}`} />
+                </span>
                 <h3
-                  className="text-xs font-bold text-[#0A192F] group-hover:text-[#F97316] transition-colors leading-snug truncate"
+                  className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#0B1528]"
                   title={cat.name}
                 >
                   {cat.name}
                 </h3>
               </div>
-              <p className="text-[11px] font-normal text-[#64748B] flex-1 leading-relaxed mb-3">
+              <p className="mt-2.5 flex-1 text-[12px] font-medium leading-relaxed text-slate-500">
                 {config.desc}
               </p>
-              <div className="flex items-center justify-between mt-auto pt-2.5 border-t border-[#E2E8F0]">
-                {/* "1 Item" / "0 Items" text: Navy #0A192F */}
-                <span className="text-[11px] font-semibold text-[#0A192F] bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-0.5 rounded-md group-hover:bg-[#FFF7ED] group-hover:text-[#F97316] transition-colors">
-                  {count} {count === 1 ? "Item" : "Items"}
+              <div className="mt-3 flex items-center justify-between border-t border-[#E8EEF4] pt-2.5">
+                <span className="text-[12px] font-medium text-slate-500">
+                  {count} {count === 1 ? "item" : "items"}
                 </span>
-                {/* Card Arrow -> Navy #0A192F */}
-                <ChevronRight className="w-4 h-4 text-[#0A192F] group-hover:text-[#F97316] transition-colors" />
+                <ChevronRight className="h-4 w-4 text-slate-400 transition-colors group-hover:text-[#FF4D00]" />
               </div>
-            </div>
+            </button>
           );
         })}
-      </div>
-
-      {/* 4. TRIP AT A GLANCE CARDS (White bg, 1px #E2E8F0 border, equal height min-h-[80px]) */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-xs space-y-3">
-        <h3 className="text-xs font-bold text-[#0A192F] uppercase tracking-wider">
-          Trip At a Glance
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 min-h-[80px] h-full flex flex-col justify-between">
-            <div className="flex items-center gap-1.5 text-[#64748B] font-semibold text-[10px] uppercase tracking-wider">
-              <Calendar className="w-3.5 h-3.5 text-[#F97316]" />
-              <span>Duration</span>
-            </div>
-            <span className="text-xs font-bold text-[#0A192F]">
-              {trip.duration || "9D / 8N"}
-            </span>
-          </div>
-
-          <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 min-h-[80px] h-full flex flex-col justify-between">
-            <div className="flex items-center gap-1.5 text-[#64748B] font-semibold text-[10px] uppercase tracking-wider">
-              <Users className="w-3.5 h-3.5 text-[#F97316]" />
-              <span>Group Size</span>
-            </div>
-            <span className="text-xs font-bold text-[#0A192F]">
-              {trip.maxGroupSize ? `${trip.maxGroupSize} Pax` : "15 - 45 Pax"}
-            </span>
-          </div>
-
-          <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 min-h-[80px] h-full flex flex-col justify-between">
-            <div className="flex items-center gap-1.5 text-[#64748B] font-semibold text-[10px] uppercase tracking-wider">
-              <Activity className="w-3.5 h-3.5 text-[#F97316]" />
-              <span>Difficulty</span>
-            </div>
-            <span className="text-xs font-bold text-[#0A192F] capitalize">
-              {trip.difficulty || "Easy to Moderate"}
-            </span>
-          </div>
-
-          <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 min-h-[80px] h-full flex flex-col justify-between">
-            <div className="flex items-center gap-1.5 text-[#64748B] font-semibold text-[10px] uppercase tracking-wider">
-              <Sun className="w-3.5 h-3.5 text-[#F97316]" />
-              <span>Best Season</span>
-            </div>
-            <span className="text-xs font-bold text-[#0A192F]">
-              {trip.startEnd || "Mar - Jun"}
-            </span>
-          </div>
-
-          <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 min-h-[80px] h-full flex flex-col justify-between">
-            <div className="flex items-center gap-1.5 text-[#64748B] font-semibold text-[10px] uppercase tracking-wider">
-              <MapPin className="w-3.5 h-3.5 text-[#F97316]" />
-              <span>Region</span>
-            </div>
-            <span className="text-xs font-bold text-[#0A192F] truncate">
-              {trip.location || "Himachal Pradesh & Punjab"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. WARNING / ADVISORY BANNER AT BOTTOM (Navy #0A192F bg, White text) */}
-      <div className="bg-[#0A192F] border border-[#233554] rounded-xl px-4 py-3 flex items-center gap-2.5 shadow-xs">
-        <Info className="w-4 h-4 text-[#F97316] shrink-0" />
-        <span className="text-xs font-medium text-white">
-          Keep this information updated to ensure smooth operations and better
-          customer experience.
-        </span>
       </div>
     </div>
   );
