@@ -1154,7 +1154,61 @@ const generateMockBookings = (tripId: string, departureDateStr: string) => {
 export default function DepartureHubPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+
+  // ─── TAB NORMALIZER ───
+  const normalizeTab = (raw: string | null | undefined): string => {
+    const t = (raw || "overview").toLowerCase().trim();
+    if (t === "overview") return "overview";
+    if (["hotel", "hotels", "accommodations", "accommodation", "itinerary"].includes(t)) return "hotels";
+    if (["transport", "allocation", "tempo", "fleet", "vehicles"].includes(t)) return "transport";
+    if (["passengers", "manifest", "pax"].includes(t)) return "passengers";
+    if (["operations", "ops", "ticketing", "tasks", "checklist"].includes(t)) return "operations";
+    if (["finance", "money", "payments", "accounting"].includes(t)) return "finance";
+    if (["station", "stationpayments", "station_payments"].includes(t)) return "stationpayments";
+    if (["documents", "docs"].includes(t)) return "documents";
+    if (["reports", "report"].includes(t)) return "reports";
+    if (["guides", "guide"].includes(t)) return "guides";
+    if (["activities", "activity"].includes(t)) return "activities";
+    return t || "overview";
+  };
+
+  // ─── READ TAB FROM WINDOW URL (bypasses React Router caching) ───
+  const readTabFromUrl = (): string => {
+    const params = new URLSearchParams(window.location.search);
+    return normalizeTab(params.get("tab"));
+  };
+
+  const [activeTab, setActiveTabState] = useState<string>(readTabFromUrl);
+
+  // Sync activeTab when location.search changes (React Router navigation)
+  useEffect(() => {
+    const newTab = readTabFromUrl();
+    setActiveTabState((prev) => (prev !== newTab ? newTab : prev));
+  }, [location.search]);
+
+  // Also listen to browser popstate (back/forward buttons)
+  useEffect(() => {
+    const onPopState = () => {
+      setActiveTabState(readTabFromUrl());
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // ─── SET TAB: update URL + state simultaneously ───
+  const setActiveTab = (tab: string) => {
+    const normalized = normalizeTab(tab);
+    // Immediately update React state (no waiting for URL roundtrip)
+    setActiveTabState(normalized);
+    // Then update URL
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", normalized);
+    navigate(
+      { pathname: location.pathname, search: `?${params.toString()}` },
+      { replace: false },
+    );
+  };
 
   // Extract from departureId if present (format: tripId_YYYY-MM-DD)
   const departureIdParam =
@@ -1181,43 +1235,6 @@ export default function DepartureHubPage() {
 
   const tripId = resolvedTripId;
   const departureDateStr = resolvedDepartureDateStr;
-
-  const normalizeTab = (raw: string) => {
-    const t = (raw || "overview").toLowerCase().trim();
-    if (["overview"].includes(t)) return "overview";
-    if (["hotel", "hotels", "accommodations", "accommodation", "itinerary"].includes(t)) return "hotels";
-    if (["transport", "allocation", "tempo", "fleet", "vehicles"].includes(t)) return "transport";
-    if (["passengers", "manifest", "pax"].includes(t)) return "passengers";
-    if (["operations", "ops", "ticketing", "tasks", "checklist"].includes(t)) return "operations";
-    if (["finance", "money", "payments", "accounting"].includes(t)) return "finance";
-    if (["station", "stationpayments", "station_payments"].includes(t)) return "stationpayments";
-    if (["documents", "docs"].includes(t)) return "documents";
-    if (["reports", "report"].includes(t)) return "reports";
-    if (["guides", "guide"].includes(t)) return "guides";
-    if (["activities", "activity"].includes(t)) return "activities";
-    return t || "overview";
-  };
-
-  const rawTab =
-    searchParams.get("tab") ||
-    new URLSearchParams(location.search).get("tab") ||
-    "overview";
-  const activeTab = normalizeTab(rawTab);
-
-  const setActiveTab = (tab: string) => {
-    const normalized = normalizeTab(tab);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("tab", normalized);
-      if (departureIdParam) {
-        next.set("departureId", departureIdParam);
-      } else {
-        if (tripId) next.set("tripId", tripId);
-        if (departureDateStr) next.set("departureDate", departureDateStr);
-      }
-      return next;
-    });
-  };
 
   const initializationKeyRef = useRef<string | null>(null);
 
