@@ -1,18 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { useAuthStore } from "@/store/auth.store";
+import { useSearchParams } from "react-router-dom";
 import {
   travelDeskService,
   TravelDeskWorkspace,
   DepartureSummary,
 } from "@/services/travelDesk.service";
 import { Trip } from "@/types";
-import { Compass, Search } from "lucide-react";
 import { toast } from "sonner";
 import { TravelDeskHeader } from "@/components/travel-desk/TravelDeskHeader";
 import { TravelDeskTabs } from "@/components/travel-desk/TravelDeskTabs";
 import { TravelDeskTripSidebar } from "@/components/travel-desk/TravelDeskTripSidebar";
-import { TravelDeskQuickActions } from "@/components/travel-desk/TravelDeskQuickActions";
+import { TravelDeskUpdatesRail } from "@/components/travel-desk/TravelDeskUpdatesRail";
 import { FeedTripsDrawer } from "@/components/travel-desk/FeedTripsDrawer";
 import { TravelDeskCreateTripModal } from "@/components/travel-desk/TravelDeskCreateTripModal";
 import {
@@ -32,9 +30,7 @@ import { TravelDeskActivityLog } from "@/components/travel-desk/TravelDeskActivi
 import { TravelDeskVendors } from "@/components/travel-desk/TravelDeskVendors";
 
 export default function TravelDeskPage() {
-  const { admin } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   const tripId = searchParams.get("tripId");
   const tab = searchParams.get("tab") || "knowledge";
@@ -173,44 +169,9 @@ export default function TravelDeskPage() {
   }, [tripId]);
 
   return (
-    <div className="flex flex-col h-screen bg-[#F7F8FA]">
-      {/* GLOBAL HEADER */}
-      <div className="bg-[#0B1220] text-white px-6 py-4 flex items-center justify-between shadow-md shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="bg-[#FF6B00] p-2 rounded-lg text-white">
-            <Compass className="w-6 h-6 animate-spin-slow" />
-          </div>
-          <div>
-            <h1 className="text-lg font-black tracking-tight flex items-center gap-2">
-              YouthCamping OS{" "}
-              <span className="text-[10px] bg-slate-800 text-[#FF6B00] px-2 py-0.5 rounded-[4px] font-bold border border-slate-700 tracking-wider">
-                TRAVEL DESK
-              </span>
-            </h1>
-            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              Centralizing Departures, Itineraries, SOPs and Trip Documents
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-2.5 text-slate-450 w-3.5 h-3.5" />
-            <input
-              type="text"
-              placeholder="Global Search..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 font-bold focus:outline-none focus:ring-1 focus:ring-[#FF6B00] transition-all"
-            />
-          </div>
-          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 text-xs font-bold text-[#FF6B00]">
-            {admin?.name?.substring(0, 2).toUpperCase() || "AD"}
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* SIDEBAR */}
+    <div className="flex min-h-0 min-w-0 flex-col bg-[#F4F7FB] font-sans text-[#0B1528] antialiased lg:-mx-5 lg:-my-5 lg:h-[calc(100dvh-56px)] lg:overflow-hidden lg:p-5">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#E8EEF4] bg-white lg:flex-row">
+        {/* TRIP LIST */}
         <TravelDeskTripSidebar
           trips={trips}
           activeTripId={tripId || undefined}
@@ -219,16 +180,16 @@ export default function TravelDeskPage() {
           onAddTripClick={() => setIsCreateModalOpen(true)}
         />
 
-        {/* CENTER CONTENT */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-[#F7F8FA]">
+        {/* WORKSPACE */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#F4F7FB] lg:overflow-hidden">
           {isMainLoading ? (
-            <TravelDeskLoadingState message="Loading Workspace..." />
+            <TravelDeskLoadingState message="Loading workspace" />
           ) : mainError ? (
             <TravelDeskErrorState message={mainError} />
           ) : !activeTrip ? (
             <TravelDeskEmptyState
-              title="No Workspace Selected"
-              description="Please select an active trip from the sidebar to view its workspace."
+              title="No workspace selected"
+              description="Pick a trip from the list to open its workspace."
             />
           ) : !workspace ? (
             <TravelDeskActivationState
@@ -273,18 +234,17 @@ export default function TravelDeskPage() {
               ) : tab === "activity" ? (
                 <TravelDeskActivityLog trip={activeTrip} />
               ) : (
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm">
-                    <h2 className="text-xl font-bold text-slate-800 mb-2 capitalize">
-                      {tab} Module
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4">
+                  <div className="rounded-xl border border-[#E8EEF4] bg-white p-8 text-center">
+                    <h2 className="mb-1.5 text-sm font-semibold capitalize text-[#0B1528]">
+                      {tab} module
                     </h2>
-                    <p className="text-slate-500 font-semibold text-sm">
+                    <p className="text-[12px] font-medium text-slate-500">
                       This module is connected to{" "}
-                      <span className="text-[#FF6B00] font-bold">
+                      <span className="font-semibold text-[#0B1528]">
                         {activeTrip.title}
                       </span>
-                      . Content loading for the {tab} tab will be implemented in
-                      subsequent stages.
+                      . Content for the {tab} tab is coming in a later stage.
                     </p>
                   </div>
                 </div>
@@ -293,8 +253,8 @@ export default function TravelDeskPage() {
           )}
         </div>
 
-        {/* RIGHT QUICK ACTIONS */}
-        <TravelDeskQuickActions />
+        {/* RECENT UPDATES RAIL */}
+        <TravelDeskUpdatesRail />
       </div>
 
       {/* FEED TRIPS DRAWER */}

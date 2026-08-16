@@ -799,440 +799,329 @@ export default function AccountingPage() {
       .sort((a, b) => b.grossProfit - a.grossProfit);
   }, [trips, bookings, vendorPayments, riyaData.tickets]);
 
+  const financeTabs: {
+    id: TabId;
+    label: string;
+    meta?: string;
+    alert?: boolean;
+  }[] = [
+    { id: "overview", label: "Overview" },
+    {
+      id: "verification",
+      label: "Verification",
+      meta:
+        verificationQueue.totalPendingCount > 0
+          ? String(verificationQueue.totalPendingCount)
+          : undefined,
+      alert: verificationQueue.totalPendingCount > 0,
+    },
+    { id: "payments", label: "Collections in", meta: String(allClientReceipts.length) },
+    { id: "expenses", label: "Payouts out", meta: String(vendorPayments.length) },
+    {
+      id: "riya",
+      label: "Riya wallet",
+      meta: formatINR(riyaData.availableRiyaBalance),
+    },
+    { id: "accounts", label: "Treasury", meta: String(collectionAccounts.length) },
+    { id: "profitability", label: "Trip P&L" },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Top Breadcrumb & Executive Title Header */}
-      <div className="border-b border-slate-200 bg-white sticky top-0 z-30 px-6 py-3.5 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-orange-600 rounded-xl text-white shadow-sm shrink-0">
-              <ShieldCheck className="w-5 h-5" />
+    <div className="min-h-0 min-w-0 space-y-3 text-[#0B1528] antialiased">
+      {/* ─── Header + tab bar ─── */}
+      <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+        <div className="flex min-w-0 flex-col gap-3 px-3 py-3 md:flex-row md:items-center md:justify-between md:px-4">
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h1 className="text-[17px] font-semibold tracking-tight text-[#0B1528] md:text-[18px]">
+                Finance controller
+              </h1>
+              <span className="shrink-0 rounded-md border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                Live ledger
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black text-slate-900 tracking-tight">
-                  Finance Controller & Treasury
-                </h1>
-                <Badge
-                  variant="outline"
-                  className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] font-black uppercase px-2"
-                >
-                  Live Ledger
-                </Badge>
-              </div>
-              <p className="text-xs text-slate-500 font-medium">
-                Authoritative money ledger, Riya wallet portal, verification queue & P&L
-              </p>
-            </div>
+            <p className="mt-0.5 text-[12px] text-slate-500">
+              Money ledger, verification queue, Riya wallet and trip margins.
+            </p>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Quick actions */}
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={loadData}
               disabled={loading}
-              className="h-8.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border-slate-200 cursor-pointer"
+              className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-[#0B1528]"
             >
-              <RefreshCw className={cn("w-3.5 h-3.5 mr-1.5", loading && "animate-spin")} />
+              <RefreshCw
+                className={cn("w-3.5 h-3.5", loading && "animate-spin text-[#FF4D00]")}
+                strokeWidth={1.75}
+              />
               Refresh
             </Button>
             <Button
+              variant="outline"
               size="sm"
               onClick={() => setShowRechargeRiyaModal(true)}
-              className="h-8.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer"
+              className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB]"
             >
-              <Ticket className="w-3.5 h-3.5 mr-1.5" />
+              <Ticket className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
               Recharge Riya
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRecordExpenseModal(true)}
+              className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB]"
+            >
+              <TrendingDown className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+              Record expense
             </Button>
             <Button
               size="sm"
               onClick={() => setShowRecordIncomeModal(true)}
-              className="h-8.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+              className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none transition-colors hover:bg-[#E04400]"
             >
-              <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-              + Income
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setShowRecordExpenseModal(true)}
-              className="h-8.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
-            >
-              <TrendingDown className="w-3.5 h-3.5 mr-1.5" />
-              + Expense
+              <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+              Record income
             </Button>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 mt-3 overflow-x-auto border-t border-slate-100 pt-2.5">
-          <button
-            type="button"
-            onClick={() => handleTabChange("overview")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer",
-              activeTab === "overview"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <PieIcon className="w-3.5 h-3.5" />
-            Overview
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange("verification")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer relative",
-              activeTab === "verification"
-                ? "bg-orange-600 text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Verification Queue
-            {verificationQueue.totalPendingCount > 0 && (
-              <span
-                className={cn(
-                  "px-1.5 py-0.2 rounded-full text-[10px] font-black",
-                  activeTab === "verification"
-                    ? "bg-white text-orange-600"
-                    : "bg-orange-600 text-white",
-                )}
-              >
-                {verificationQueue.totalPendingCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange("payments")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer",
-              activeTab === "payments"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-            Incoming Collections
-            <span className="text-[10px] text-slate-400 font-normal">
-              ({allClientReceipts.length})
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange("expenses")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer",
-              activeTab === "expenses"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
-            Outgoing Disbursements
-            <span className="text-[10px] text-slate-400 font-normal">
-              ({vendorPayments.length})
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange("riya")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer",
-              activeTab === "riya"
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <Ticket className="w-3.5 h-3.5 text-indigo-400" />
-            Riya Train Wallet
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[10px] font-black px-1.5",
-                activeTab === "riya"
-                  ? "bg-indigo-700 text-white border-indigo-500"
-                  : "bg-indigo-50 text-indigo-700 border-indigo-200",
-              )}
-            >
-              {formatINR(riyaData.availableRiyaBalance)}
-            </Badge>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange("accounts")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer",
-              activeTab === "accounts"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            Treasury & Bank Ledgers
-            <span className="text-[10px] text-slate-400 font-normal">
-              ({collectionAccounts.length})
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange("profitability")}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer",
-              activeTab === "profitability"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <PieIcon className="w-3.5 h-3.5 text-orange-500" />
-            Trip & Departure P&L
-          </button>
+        {/* Navigation tabs */}
+        <div className="min-w-0 overflow-x-auto no-scrollbar border-t border-[#E8EEF4]">
+          <div className="flex flex-nowrap px-1.5 text-[12px] font-medium md:px-2.5">
+            {financeTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-2.5 transition-colors cursor-pointer sm:px-3",
+                    isActive
+                      ? "border-[#FF4D00] font-semibold text-[#FF4D00]"
+                      : "border-transparent text-slate-500 hover:border-[#E8EEF4] hover:text-[#0B1528]",
+                  )}
+                >
+                  {tab.label}
+                  {tab.meta && (
+                    <span
+                      className={cn(
+                        "rounded px-1.5 py-0.5 text-[10px] font-medium tabular-nums",
+                        tab.alert
+                          ? "bg-[#FF4D00] text-white"
+                          : isActive
+                            ? "bg-[#FFF2ED] text-[#FF4D00]"
+                            : "bg-[#F4F7FB] text-slate-500",
+                      )}
+                    >
+                      {tab.meta}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+      {/* Main content area */}
+      <div className="min-w-0 space-y-3">
         {/* ──────────────────────── TAB 1: OVERVIEW ──────────────────────── */}
         {activeTab === "overview" && (
-          <div className="space-y-6">
-            {/* Top KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Total Verified Inflow
-                  </span>
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                    <TrendingUp className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-slate-900">
-                    {formatINR(treasurySummary.totalInflow)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  From booking advances & station collections
-                </p>
-              </Card>
-
-              <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Total Verified Outflow
-                  </span>
-                  <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-                    <TrendingDown className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-slate-900">
-                    {formatINR(treasurySummary.totalOutflow)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Vendors, train tickets & ops expenses
-                </p>
-              </Card>
-
-              <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Net Treasury Balance
-                  </span>
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                    <Wallet className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span
-                    className={cn(
-                      "text-2xl font-black",
+          <div className="space-y-3">
+            {/* Money position strip */}
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="grid grid-cols-2 divide-x divide-y divide-[#E8EEF4] lg:grid-cols-4 lg:divide-y-0">
+                {[
+                  {
+                    label: "Verified inflow",
+                    value: formatINR(treasurySummary.totalInflow),
+                    hint: "Booking advances and station collections",
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Verified outflow",
+                    value: formatINR(treasurySummary.totalOutflow),
+                    hint: "Vendors, train tickets and ops expenses",
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Net treasury balance",
+                    value: formatINR(treasurySummary.netLiquidity),
+                    hint: "Across bank accounts, cash desk and wallets",
+                    tone:
                       treasurySummary.netLiquidity >= 0
-                        ? "text-emerald-600"
+                        ? "text-[#0B1528]"
                         : "text-rose-600",
-                    )}
-                  >
-                    {formatINR(treasurySummary.netLiquidity)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Across bank accounts, cash desk & wallets
-                </p>
-              </Card>
-
-              <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Riya Wallet Balance
-                  </span>
-                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                    <Ticket className="w-4 h-4" />
+                  },
+                  {
+                    label: "Riya wallet balance",
+                    value: formatINR(riyaData.availableRiyaBalance),
+                    hint: `${riyaData.totalTicketsIssuedCount} tickets issued from portal`,
+                    tone: "text-[#0B1528]",
+                  },
+                ].map((kpi) => (
+                  <div key={kpi.label} className="min-w-0 px-3 py-2.5 md:px-4 md:py-3">
+                    <p className="truncate text-[11px] font-medium text-slate-500">
+                      {kpi.label}
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-0.5 text-lg font-semibold leading-tight tracking-tight tabular-nums md:text-xl",
+                        kpi.tone,
+                      )}
+                    >
+                      {kpi.value}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                      {kpi.hint}
+                    </p>
                   </div>
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-indigo-600">
-                    {formatINR(riyaData.availableRiyaBalance)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  {riyaData.totalTicketsIssuedCount} tickets issued · Live IRCTC balance
-                </p>
-              </Card>
+                ))}
+              </div>
             </div>
 
             {/* Quick Verification Alert if pending */}
             {verificationQueue.totalPendingCount > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-600 text-white rounded-lg">
-                    <AlertTriangle className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black text-orange-950">
-                      {verificationQueue.totalPendingCount} Financial Transactions Awaiting
-                      Verification
-                    </h4>
-                    <p className="text-[11px] text-orange-700">
-                      Incoming client payments, station collections, and vendor disbursements need
-                      Controller sign-off before reconciliation.
+              <div className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-[#FFD9C7] bg-[#FFF7F3] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between md:px-4">
+                <div className="flex min-w-0 items-start gap-2.5">
+                  <AlertTriangle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[#FF4D00]"
+                    strokeWidth={1.75}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold text-[#0B1528]">
+                      {verificationQueue.totalPendingCount} transactions awaiting your
+                      sign-off
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Client payments, station collections and vendor payouts stay
+                      unreconciled until verified.
                     </p>
                   </div>
                 </div>
                 <Button
                   size="sm"
                   onClick={() => handleTabChange("verification")}
-                  className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold cursor-pointer"
+                  className="h-8 shrink-0 gap-1.5 self-start rounded-md bg-[#FF4D00] px-3 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] sm:self-auto"
                 >
-                  Open Verification Queue
-                  <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                  Open queue
+                  <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.75} />
                 </Button>
               </div>
             )}
 
             {/* Account Quick Cards */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-orange-600" />
-                  Finance Accounts & Money Positions
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
+                <h3 className="truncate text-[12px] font-semibold text-[#0B1528]">
+                  Accounts and money positions
                 </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={() => handleTabChange("accounts")}
-                  className="text-xs font-bold text-orange-600 hover:bg-orange-50 cursor-pointer"
+                  className="shrink-0 text-[11px] font-medium text-[#FF4D00] transition-colors hover:text-[#E04400]"
                 >
-                  View All Ledgers →
-                </Button>
+                  View all ledgers
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 divide-y divide-[#E8EEF4] sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 sm:divide-x">
                 {collectionAccounts.map((acc) => (
-                  <Card
+                  <button
                     key={acc.id}
+                    type="button"
                     onClick={() => handleOpenAccountLedger(acc)}
-                    className="p-4 bg-white hover:bg-slate-50/80 border border-slate-200 rounded-xl shadow-xs cursor-pointer transition-all hover:border-orange-300"
+                    className="min-w-0 px-3 py-2.5 text-left transition-colors hover:bg-[#F8FAFC] md:px-4 md:py-3 sm:border-b sm:border-[#E8EEF4] lg:border-b-0"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800 truncate">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
+                      <span className="truncate text-[12px] font-medium text-[#0B1528]">
                         {acc.accountName}
                       </span>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[9px] font-black uppercase px-1.5",
-                          acc.accountType === "CASH"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : acc.accountName.toLowerCase().includes("riya")
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200",
-                        )}
-                      >
+                      <span className="shrink-0 rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                         {acc.accountType}
-                      </Badge>
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-1 truncate">
-                      {acc.bankName || acc.accountHolderName}
-                    </p>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <span className="text-xs text-slate-500 font-medium">Balance:</span>
-                      <span className="text-base font-black text-slate-900">
-                        {formatINR(acc.pending || 0)}
                       </span>
                     </div>
-                  </Card>
+                    <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                      {acc.bankName || acc.accountHolderName}
+                    </p>
+                    <p className="mt-1.5 text-base font-semibold tracking-tight tabular-nums text-[#0B1528]">
+                      {formatINR(acc.pending || 0)}
+                    </p>
+                  </button>
                 ))}
               </div>
             </div>
 
             {/* Top Trips P&L Snippet */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <PieIcon className="w-4 h-4 text-emerald-600" />
-                  Top Trip Profitability & Margins
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
+                <h3 className="truncate text-[12px] font-semibold text-[#0B1528]">
+                  Top trips by margin
                 </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={() => handleTabChange("profitability")}
-                  className="text-xs font-bold text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                  className="shrink-0 text-[11px] font-medium text-[#FF4D00] transition-colors hover:text-[#E04400]"
                 >
-                  Full P&L Report →
-                </Button>
+                  Full P&L report
+                </button>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold">
+              <div className="min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-[12px]">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
-                      <th className="py-2.5 px-4">Trip Name</th>
-                      <th className="py-2.5 px-4 text-center">Pax</th>
-                      <th className="py-2.5 px-4 text-right">Revenue</th>
-                      <th className="py-2.5 px-4 text-right">Ticket Cost (Riya)</th>
-                      <th className="py-2.5 px-4 text-right">Vendor Cost</th>
-                      <th className="py-2.5 px-4 text-right">Gross Profit</th>
-                      <th className="py-2.5 px-4 text-right">Margin %</th>
+                      <th className="py-2 px-3 md:px-4">Trip</th>
+                      <th className="py-2 px-3 text-center md:px-4">Pax</th>
+                      <th className="py-2 px-3 text-right md:px-4">Revenue</th>
+                      <th className="py-2 px-3 text-right md:px-4">Ticket cost</th>
+                      <th className="py-2 px-3 text-right md:px-4">Vendor cost</th>
+                      <th className="py-2 px-3 text-right md:px-4">Gross profit</th>
+                      <th className="py-2 px-3 text-right md:px-4">Margin</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E8EEF4]">
                     {tripProfitabilityList.slice(0, 5).map((t) => (
-                      <tr key={t.tripId} className="hover:bg-slate-50/60 font-medium">
-                        <td className="py-2.5 px-4 font-bold text-slate-900">
+                      <tr key={t.tripId} className="transition-colors hover:bg-[#F8FAFC]">
+                        <td className="py-2.5 px-3 font-medium text-[#0B1528] md:px-4">
                           {t.tripTitle}
                         </td>
-                        <td className="py-2.5 px-4 text-center font-bold text-slate-700">
+                        <td className="py-2.5 px-3 text-center tabular-nums text-slate-600 md:px-4">
                           {t.totalPax}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-bold text-slate-900">
+                        <td className="py-2.5 px-3 text-right font-medium tabular-nums text-[#0B1528] md:px-4">
                           {formatINR(t.collectedRevenue)}
                         </td>
-                        <td className="py-2.5 px-4 text-right text-indigo-600 font-semibold">
+                        <td className="py-2.5 px-3 text-right tabular-nums text-slate-600 md:px-4">
                           {formatINR(t.ticketCost)}
                         </td>
-                        <td className="py-2.5 px-4 text-right text-rose-600 font-semibold">
+                        <td className="py-2.5 px-3 text-right tabular-nums text-slate-600 md:px-4">
                           {formatINR(t.vendorCost)}
                         </td>
                         <td
                           className={cn(
-                            "py-2.5 px-4 text-right font-black",
-                            t.grossProfit >= 0 ? "text-emerald-600" : "text-rose-600",
+                            "py-2.5 px-3 text-right font-medium tabular-nums md:px-4",
+                            t.grossProfit >= 0 ? "text-[#0B1528]" : "text-rose-600",
                           )}
                         >
                           {formatINR(t.grossProfit)}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-black text-slate-800">
-                          {t.marginPercent}%
+                        <td className="py-2.5 px-3 text-right md:px-4">
+                          <span
+                            className={cn(
+                              "inline-flex rounded border px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+                              t.marginPercent >= 0
+                                ? "border-[#E8EEF4] bg-[#F8FAFC] text-slate-600"
+                                : "border-rose-100 bg-rose-50 text-rose-600",
+                            )}
+                          >
+                            {t.marginPercent}%
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -1245,43 +1134,41 @@ export default function AccountingPage() {
 
         {/* ──────────────────────── TAB 2: VERIFICATION QUEUE ──────────────────────── */}
         {activeTab === "verification" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-orange-600" />
-                  Finance Controller Verification Queue
+          <div className="space-y-3">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h2 className="text-[15px] font-semibold tracking-tight text-[#0B1528]">
+                  Verification queue
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Final gatekeeper layer. Verify proof screenshots, reconcile accounts, or reject
-                  with mandatory reason.
+                <p className="mt-0.5 text-[12px] text-slate-500">
+                  Check the proof, then verify or reject with a reason. Nothing
+                  reconciles until you sign off.
                 </p>
               </div>
-              <Badge
-                variant="outline"
-                className="bg-orange-50 text-orange-700 border-orange-200 text-xs font-black px-3 py-1"
-              >
-                {verificationQueue.totalPendingCount} Pending Action
-              </Badge>
+              <span className="shrink-0 self-start rounded-md border border-[#FFD9C7] bg-[#FFF7F3] px-2 py-1 text-[11px] font-medium text-[#FF4D00]">
+                {verificationQueue.totalPendingCount} pending
+              </span>
             </div>
 
             {/* Sub-Queue: Pending Client Receipts */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  Pending Client & Booking Receipts (
-                  {verificationQueue.pendingClientPayments?.length || 0})
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
+                <span className="truncate text-[12px] font-semibold text-[#0B1528]">
+                  Client and booking receipts
+                </span>
+                <span className="shrink-0 rounded bg-[#F4F7FB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500">
+                  {verificationQueue.pendingClientPayments?.length || 0}
                 </span>
               </div>
 
               {verificationQueue.pendingClientPayments?.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-400 font-medium">
-                  No pending client receipts in verification queue. All caught up!
+                <div className="px-4 py-10 text-center text-[12px] text-slate-400">
+                  Nothing waiting here. All client receipts are verified.
                 </div>
               ) : (
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                <div className="min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[880px] text-left text-[12px]">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
                       <th className="py-2.5 px-4">Booking / Customer</th>
                       <th className="py-2.5 px-4">Trip</th>
@@ -1291,10 +1178,10 @@ export default function AccountingPage() {
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E8EEF4]">
                     {verificationQueue.pendingClientPayments.map((p: any) => (
-                      <tr key={p.id} className="hover:bg-slate-50/60 font-medium">
-                        <td className="py-2.5 px-4 font-bold text-slate-900">
+                      <tr key={p.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {p.booking?.fullName || "Customer"}
                           <div className="text-[10px] text-slate-400 font-normal">
                             Ref: {p.booking?.bookingId || p.bookingId} · {p.booking?.phone}
@@ -1303,11 +1190,11 @@ export default function AccountingPage() {
                         <td className="py-2.5 px-4 text-slate-700">
                           {p.booking?.tripName || "—"}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-black text-emerald-600">
+                        <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
                           {formatINR(p.amount)}
                         </td>
                         <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-bold">
+                          <Badge variant="outline" className="text-[10px] font-medium">
                             {p.paymentMode}
                           </Badge>
                           <div className="text-[10px] text-slate-500 mt-0.5">
@@ -1329,7 +1216,7 @@ export default function AccountingPage() {
                                   date: safeFormatDate(p.createdAt),
                                 })
                               }
-                              className="h-7 text-[11px] font-bold text-blue-600 hover:bg-blue-50 px-2 cursor-pointer"
+                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 mr-1" />
                               View Proof
@@ -1343,7 +1230,7 @@ export default function AccountingPage() {
                             <Button
                               size="sm"
                               onClick={() => handleVerifyClientPayment(p.id)}
-                              className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold cursor-pointer"
+                              className="h-7 gap-1 rounded-md bg-[#0B1528] px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-[#152238] cursor-pointer"
                             >
                               <CheckCircle2 className="w-3 h-3 mr-1" />
                               Verify
@@ -1360,7 +1247,7 @@ export default function AccountingPage() {
                                   title: `Reject Client Payment - ${p.booking?.fullName} (${formatINR(p.amount)})`,
                                 })
                               }
-                              className="h-7 px-2.5 text-rose-600 hover:bg-rose-50 border-rose-200 text-[11px] font-bold cursor-pointer"
+                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
                             >
                               <XCircle className="w-3 h-3 mr-1" />
                               Reject
@@ -1371,6 +1258,7 @@ export default function AccountingPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
 
@@ -1487,22 +1375,24 @@ export default function AccountingPage() {
             </div>
 
             {/* Sub-Queue: Pending Vendor Outgoing Payouts */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
-                  <TrendingDown className="w-4 h-4 text-rose-600" />
-                  Pending Vendor & Operational Payouts (
-                  {verificationQueue.pendingVendorPayments?.length || 0})
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
+                <span className="truncate text-[12px] font-semibold text-[#0B1528]">
+                  Vendor and operational payouts
+                </span>
+                <span className="shrink-0 rounded bg-[#F4F7FB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500">
+                  {verificationQueue.pendingVendorPayments?.length || 0}
                 </span>
               </div>
 
               {verificationQueue.pendingVendorPayments?.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-400 font-medium">
-                  No pending vendor disbursements in verification queue. All caught up!
+                <div className="px-4 py-10 text-center text-[12px] text-slate-400">
+                  Nothing waiting here. All vendor payouts are approved.
                 </div>
               ) : (
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                <div className="min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[980px] text-left text-[12px]">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
                       <th className="py-2.5 px-4">Vendor / Payee</th>
                       <th className="py-2.5 px-4">Trip</th>
@@ -1513,10 +1403,10 @@ export default function AccountingPage() {
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E8EEF4]">
                     {verificationQueue.pendingVendorPayments.map((v: any) => (
-                      <tr key={v.id} className="hover:bg-slate-50/60 font-medium">
-                        <td className="py-2.5 px-4 font-bold text-slate-900">
+                      <tr key={v.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {v.vendorName}
                           <div className="text-[10px] text-slate-400 font-normal">
                             {v.serviceDescription || "Service Payment"}
@@ -1526,11 +1416,11 @@ export default function AccountingPage() {
                           {v.trip?.title || "—"}
                         </td>
                         <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-bold">
+                          <Badge variant="outline" className="text-[10px] font-medium">
                             {v.category}
                           </Badge>
                         </td>
-                        <td className="py-2.5 px-4 text-right font-black text-rose-600">
+                        <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
                           {formatINR(v.advancePaid || v.agreedAmount)}
                         </td>
                         <td className="py-2.5 px-4 text-slate-600 font-semibold">
@@ -1551,13 +1441,13 @@ export default function AccountingPage() {
                                   date: safeFormatDate(v.createdAt),
                                 })
                               }
-                              className="h-7 text-[11px] font-bold text-blue-600 hover:bg-blue-50 px-2 cursor-pointer"
+                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 mr-1" />
                               View Invoice
                             </Button>
                           ) : (
-                            <span className="text-[10px] text-amber-600 font-bold">
+                            <span className="text-[10px] font-medium text-amber-600">
                               Missing Proof
                             </span>
                           )}
@@ -1567,7 +1457,7 @@ export default function AccountingPage() {
                             <Button
                               size="sm"
                               onClick={() => handleVerifyVendorPayment(v.id)}
-                              className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold cursor-pointer"
+                              className="h-7 gap-1 rounded-md bg-[#0B1528] px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-[#152238] cursor-pointer"
                             >
                               <CheckCircle2 className="w-3 h-3 mr-1" />
                               Approve
@@ -1584,7 +1474,7 @@ export default function AccountingPage() {
                                   title: `Reject Vendor Payment - ${v.vendorName} (${formatINR(v.advancePaid || v.agreedAmount)})`,
                                 })
                               }
-                              className="h-7 px-2.5 text-rose-600 hover:bg-rose-50 border-rose-200 text-[11px] font-bold cursor-pointer"
+                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
                             >
                               <XCircle className="w-3 h-3 mr-1" />
                               Reject
@@ -1595,6 +1485,7 @@ export default function AccountingPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>
@@ -1620,7 +1511,7 @@ export default function AccountingPage() {
                 <select
                   value={paymentModeFilter}
                   onChange={(e) => setPaymentModeFilter(e.target.value)}
-                  className="h-8.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700"
+                  className="h-8.5 px-3 rounded-lg border border-[#E8EEF4] bg-white text-xs font-medium text-slate-600"
                 >
                   <option value="ALL">All Payment Modes</option>
                   <option value="UPI">UPI</option>
@@ -1631,7 +1522,7 @@ export default function AccountingPage() {
                 <select
                   value={paymentStatusFilter}
                   onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                  className="h-8.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700"
+                  className="h-8.5 px-3 rounded-lg border border-[#E8EEF4] bg-white text-xs font-medium text-slate-600"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="verified">Verified</option>
@@ -1642,9 +1533,9 @@ export default function AccountingPage() {
             </div>
 
             {/* Receipts Table */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
                     <th className="py-2.5 px-4">Customer / Booking</th>
@@ -1656,7 +1547,7 @@ export default function AccountingPage() {
                     <th className="py-2.5 px-4 text-right">Proof</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E8EEF4]">
                   {filteredReceipts.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-8 text-center text-slate-400">
@@ -1665,11 +1556,11 @@ export default function AccountingPage() {
                     </tr>
                   ) : (
                     filteredReceipts.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/60 font-medium">
+                      <tr key={r.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                           {safeFormatDate(r.date)}
                         </td>
-                        <td className="py-2.5 px-4 font-bold text-slate-900">
+                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {r.customerName}
                           <div className="text-[10px] text-slate-400 font-normal">
                             Ref: {r.bookingId} · {r.phone}
@@ -1678,14 +1569,14 @@ export default function AccountingPage() {
                         <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
                           {r.tripName}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-black text-emerald-600">
+                        <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
                           {formatINR(r.amount)}
                         </td>
                         <td className="py-2.5 px-4 text-slate-800 font-semibold">
                           {r.accountName}
                         </td>
                         <td className="py-2.5 px-4">
-                          <span className="font-bold text-slate-700">{r.paymentMode}</span>
+                          <span className="font-medium text-slate-600">{r.paymentMode}</span>
                           <div className="text-[10px] text-slate-400 font-mono">
                             {r.transactionId}
                           </div>
@@ -1694,7 +1585,7 @@ export default function AccountingPage() {
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[10px] font-bold",
+                              "text-[10px] font-medium",
                               r.status?.toLowerCase() === "verified"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : r.status?.toLowerCase() === "rejected"
@@ -1720,7 +1611,7 @@ export default function AccountingPage() {
                                   date: safeFormatDate(r.date),
                                 })
                               }
-                              className="h-7 text-[11px] font-bold text-blue-600 hover:bg-blue-50 px-2 cursor-pointer"
+                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 mr-1" />
                               Proof
@@ -1758,7 +1649,7 @@ export default function AccountingPage() {
                 <select
                   value={expenseCategoryFilter}
                   onChange={(e) => setExpenseCategoryFilter(e.target.value)}
-                  className="h-8.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700"
+                  className="h-8.5 px-3 rounded-lg border border-[#E8EEF4] bg-white text-xs font-medium text-slate-600"
                 >
                   <option value="ALL">All Categories</option>
                   <option value="Hotels">Hotels / Camps</option>
@@ -1771,9 +1662,9 @@ export default function AccountingPage() {
             </div>
 
             {/* Expenses Table */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
                     <th className="py-2.5 px-4">Vendor / Payee</th>
@@ -1786,7 +1677,7 @@ export default function AccountingPage() {
                     <th className="py-2.5 px-4 text-right">Invoice Proof</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E8EEF4]">
                   {filteredExpenses.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="p-8 text-center text-slate-400">
@@ -1795,11 +1686,11 @@ export default function AccountingPage() {
                     </tr>
                   ) : (
                     filteredExpenses.map((v) => (
-                      <tr key={v.id} className="hover:bg-slate-50/60 font-medium">
+                      <tr key={v.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                           {safeFormatDate(v.paymentDate || v.createdAt)}
                         </td>
-                        <td className="py-2.5 px-4 font-bold text-slate-900">
+                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {v.vendorName}
                           <div className="text-[10px] text-slate-400 font-normal">
                             {v.serviceDescription || "Vendor Service"}
@@ -1809,14 +1700,14 @@ export default function AccountingPage() {
                           {v.trip?.title || "—"}
                         </td>
                         <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-bold">
+                          <Badge variant="outline" className="text-[10px] font-medium">
                             {v.category}
                           </Badge>
                         </td>
                         <td className="py-2.5 px-4 text-right text-slate-500 font-semibold">
                           {formatINR(v.agreedAmount)}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-black text-rose-600">
+                        <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
                           {formatINR(v.advancePaid)}
                         </td>
                         <td className="py-2.5 px-4 text-slate-800 font-semibold">
@@ -1826,7 +1717,7 @@ export default function AccountingPage() {
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[10px] font-bold",
+                              "text-[10px] font-medium",
                               v.status?.toLowerCase() === "paid" ||
                                 v.status?.toLowerCase() === "verified"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -1853,7 +1744,7 @@ export default function AccountingPage() {
                                   date: safeFormatDate(v.paymentDate || v.createdAt),
                                 })
                               }
-                              className="h-7 text-[11px] font-bold text-blue-600 hover:bg-blue-50 px-2 cursor-pointer"
+                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 mr-1" />
                               View
@@ -1876,38 +1767,38 @@ export default function AccountingPage() {
           <div className="space-y-6">
             {/* Top Riya Wallet KPI Card */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="p-4 bg-indigo-900 text-white rounded-xl border border-indigo-800 shadow-sm col-span-1 md:col-span-2">
+              <Card className="col-span-1 rounded-xl border border-[#152238] bg-[#0B1528] p-4 text-white md:col-span-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                    Riya Portal Available Balance
+                  <span className="text-[11px] font-medium text-slate-300">
+                    Riya portal available balance
                   </span>
-                  <Ticket className="w-5 h-5 text-indigo-300" />
+                  <Ticket className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
                 </div>
-                <div className="mt-3 flex items-baseline gap-3">
-                  <span className="text-3xl font-black text-white">
+                <div className="mt-2 flex flex-wrap items-baseline gap-2.5">
+                  <span className="text-2xl font-semibold tracking-tight tabular-nums text-white">
                     {formatINR(riyaData.availableRiyaBalance)}
                   </span>
-                  <Badge className="bg-indigo-700 text-indigo-100 text-[10px] font-black border-0">
-                    LIVE IRCTC WALLET
-                  </Badge>
+                  <span className="rounded border border-[#24314A] bg-[#152238] px-1.5 py-0.5 text-[10px] font-medium text-slate-300">
+                    Live IRCTC wallet
+                  </span>
                 </div>
-                <div className="mt-4 flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2">
                   <Button
                     size="sm"
                     onClick={() => setShowRechargeRiyaModal(true)}
-                    className="bg-white hover:bg-indigo-50 text-indigo-950 text-xs font-bold h-8 cursor-pointer"
+                    className="h-8 gap-1.5 rounded-md bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB]"
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    + Recharge Riya Wallet
+                    <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    Recharge wallet
                   </Button>
                 </div>
               </Card>
 
-              <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <Card className="p-4 bg-white border border-[#E8EEF4] rounded-xl">
+                <span className="text-[11px] font-medium text-slate-500">
                   Total Recharges
                 </span>
-                <div className="mt-2 text-2xl font-black text-slate-900">
+                <div className="mt-2 text-xl font-semibold tracking-tight tabular-nums text-[#0B1528]">
                   {formatINR(riyaData.totalRechargeAmount)}
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -1915,11 +1806,11 @@ export default function AccountingPage() {
                 </p>
               </Card>
 
-              <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <Card className="p-4 bg-white border border-[#E8EEF4] rounded-xl">
+                <span className="text-[11px] font-medium text-slate-500">
                   Tickets Consumed
                 </span>
-                <div className="mt-2 text-2xl font-black text-indigo-600">
+                <div className="mt-2 text-xl font-semibold tracking-tight tabular-nums text-[#0B1528]">
                   {formatINR(riyaData.totalTicketCostConsumed)}
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -1931,8 +1822,8 @@ export default function AccountingPage() {
             {/* Ticket Consumption Ledger */}
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <Ticket className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
+                  <Ticket className="w-4 h-4 text-[#0B1528]" />
                   Authoritative Train Ticket Cost Ledger (Direct from Ticketing)
                 </h3>
                 <div className="relative w-full sm:w-72">
@@ -1946,9 +1837,9 @@ export default function AccountingPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
                       <th className="py-2.5 px-4">Journey Date</th>
                       <th className="py-2.5 px-4">Traveler / Passenger</th>
@@ -1959,7 +1850,7 @@ export default function AccountingPage() {
                       <th className="py-2.5 px-4 text-right">Riya Deduction</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E8EEF4]">
                     {filteredRiyaTickets.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-slate-400">
@@ -1968,11 +1859,11 @@ export default function AccountingPage() {
                       </tr>
                     ) : (
                       filteredRiyaTickets.map((t: any) => (
-                        <tr key={t.id} className="hover:bg-slate-50/60 font-medium">
+                        <tr key={t.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                           <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                             {safeFormatDate(t.journeyDate || t.createdAt)}
                           </td>
-                          <td className="py-2.5 px-4 font-bold text-slate-900">
+                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                             {t.travelerName}
                             <div className="text-[10px] text-slate-400 font-normal">
                               Booking: {t.booking?.fullName} (Ref: {t.bookingId})
@@ -1982,21 +1873,21 @@ export default function AccountingPage() {
                             {t.booking?.tripName || "—"}
                           </td>
                           <td className="py-2.5 px-4">
-                            <span className="font-mono font-bold text-slate-900">
+                            <span className="font-mono font-medium text-[#0B1528]">
                               {t.pnr || "PENDING"}
                             </span>
                             <div className="text-[10px] text-slate-500">
                               {t.trainNumber} {t.trainName}
                             </div>
                           </td>
-                          <td className="py-2.5 px-4 text-right font-black text-indigo-600">
+                          <td className="py-2.5 px-4 text-right font-semibold text-[#0B1528]">
                             {formatINR(Number(t.ticketAmount) || 0)}
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             <Badge
                               variant="outline"
                               className={cn(
-                                "text-[10px] font-bold",
+                                "text-[10px] font-medium",
                                 t.ticketStatus === "CONFIRMED"
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : t.ticketStatus === "CANCELLED"
@@ -2007,7 +1898,7 @@ export default function AccountingPage() {
                               {t.ticketStatus}
                             </Badge>
                           </td>
-                          <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-600">
+                          <td className="py-2.5 px-4 text-right font-mono font-medium tabular-nums text-slate-600">
                             - {formatINR(Number(t.ticketAmount) || 0)}
                           </td>
                         </tr>
@@ -2025,8 +1916,8 @@ export default function AccountingPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-orange-600" />
+                <h2 className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-[#FF4D00]" />
                   Treasury Accounts & Cash Desks
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -2039,7 +1930,7 @@ export default function AccountingPage() {
                 <Button
                   size="sm"
                   onClick={() => setShowSubmitFundsModal(true)}
-                  className="h-8 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                  className="h-8 gap-1.5 rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB] cursor-pointer"
                 >
                   <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
                   Transfer Funds
@@ -2047,7 +1938,7 @@ export default function AccountingPage() {
                 <Button
                   size="sm"
                   onClick={() => setShowAddAccountModal(true)}
-                  className="h-8 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white cursor-pointer"
+                  className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
                   + Add Account
@@ -2060,18 +1951,18 @@ export default function AccountingPage() {
               {collectionAccounts.map((acc) => (
                 <Card
                   key={acc.id}
-                  className="p-5 bg-white border border-slate-200 rounded-xl shadow-xs flex flex-col justify-between"
+                  className="p-5 bg-white border border-[#E8EEF4] rounded-xl flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between">
                       <Badge
                         variant="outline"
                         className={cn(
-                          "text-[10px] font-black uppercase px-2",
+                          "text-[10px] font-semibold uppercase px-2",
                           acc.accountType === "CASH"
                             ? "bg-amber-50 text-amber-700 border-amber-200"
                             : acc.accountName.toLowerCase().includes("riya")
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              ? "bg-[#F4F7FB] text-slate-600 border-[#E8EEF4]"
                               : "bg-blue-50 text-blue-700 border-blue-200",
                         )}
                       >
@@ -2082,7 +1973,7 @@ export default function AccountingPage() {
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-black text-slate-900 mt-2.5">
+                    <h4 className="text-sm font-semibold text-[#0B1528] mt-2.5">
                       {acc.accountName}
                     </h4>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -2106,7 +1997,7 @@ export default function AccountingPage() {
                       <span className="text-xs text-slate-500 font-semibold">
                         Reconciled Balance:
                       </span>
-                      <span className="text-lg font-black text-slate-900">
+                      <span className="text-lg font-semibold text-[#0B1528]">
                         {formatINR(acc.pending || 0)}
                       </span>
                     </div>
@@ -2115,7 +2006,7 @@ export default function AccountingPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenAccountLedger(acc)}
-                      className="w-full h-8 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border-slate-200 cursor-pointer"
+                      className="w-full h-8 rounded-md border-[#E8EEF4] bg-white text-[12px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5 mr-1" />
                       View Full Ledger
@@ -2131,8 +2022,8 @@ export default function AccountingPage() {
         {activeTab === "profitability" && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <PieIcon className="w-5 h-5 text-orange-600" />
+              <h2 className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+                <PieIcon className="w-5 h-5 text-[#FF4D00]" />
                 Trip & Departure Profitability (P&L)
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -2141,9 +2032,9 @@ export default function AccountingPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-3 px-4">Trip Code / Title</th>
                     <th className="py-3 px-4 text-center">Booked Pax</th>
@@ -2156,7 +2047,7 @@ export default function AccountingPage() {
                     <th className="py-3 px-4 text-right">Margin %</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E8EEF4]">
                   {tripProfitabilityList.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="p-8 text-center text-slate-400">
@@ -2165,34 +2056,34 @@ export default function AccountingPage() {
                     </tr>
                   ) : (
                     tripProfitabilityList.map((t) => (
-                      <tr key={t.tripId} className="hover:bg-slate-50/60 font-medium">
-                        <td className="py-3 px-4 font-bold text-slate-900">
+                      <tr key={t.tripId} className="hover:bg-[#F8FAFC]/60 font-medium">
+                        <td className="py-3 px-4 font-medium text-[#0B1528]">
                           {t.tripTitle}
                           <div className="text-[10px] text-slate-400 font-normal">
                             Code: {t.tripCode} · {t.destination}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-center font-bold text-slate-700">
+                        <td className="py-3 px-4 text-center font-medium text-slate-600">
                           {t.totalPax}
                         </td>
                         <td className="py-3 px-4 text-right text-slate-500 font-semibold">
                           {formatINR(t.grossRevenue)}
                         </td>
-                        <td className="py-3 px-4 text-right font-black text-slate-900">
+                        <td className="py-3 px-4 text-right font-semibold text-[#0B1528]">
                           {formatINR(t.collectedRevenue)}
                         </td>
-                        <td className="py-3 px-4 text-right text-indigo-600 font-semibold">
+                        <td className="py-3 px-4 text-right text-[#0B1528] font-semibold">
                           {formatINR(t.ticketCost)}
                         </td>
                         <td className="py-3 px-4 text-right text-rose-600 font-semibold">
                           {formatINR(t.vendorCost)}
                         </td>
-                        <td className="py-3 px-4 text-right font-bold text-slate-800">
+                        <td className="py-3 px-4 text-right font-medium text-[#0B1528]">
                           {formatINR(t.totalCost)}
                         </td>
                         <td
                           className={cn(
-                            "py-3 px-4 text-right font-black",
+                            "py-3 px-4 text-right font-semibold",
                             t.grossProfit >= 0 ? "text-emerald-600" : "text-rose-600",
                           )}
                         >
@@ -2202,7 +2093,7 @@ export default function AccountingPage() {
                           <Badge
                             variant="outline"
                             className={cn(
-                              "font-black text-[11px] px-2",
+                              "font-semibold text-[11px] px-2",
                               t.marginPercent >= 20
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : t.marginPercent >= 0
@@ -2225,9 +2116,9 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: RECORD CLIENT INCOME ──────────────────────── */}
       <Dialog open={showRecordIncomeModal} onOpenChange={setShowRecordIncomeModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-600" />
               Record Client Booking Payment
             </DialogTitle>
@@ -2235,7 +2126,7 @@ export default function AccountingPage() {
 
           <form onSubmit={handleRecordIncome} className="space-y-3.5 mt-2 text-xs">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Select Booking / Customer *
               </label>
               <select
@@ -2244,7 +2135,7 @@ export default function AccountingPage() {
                 onChange={(e) =>
                   setNewIncomeForm((prev) => ({ ...prev, bookingId: e.target.value }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
+                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
               >
                 <option value="">-- Choose a Booking --</option>
                 {bookings.map((b) => (
@@ -2258,7 +2149,7 @@ export default function AccountingPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Amount (₹) *</label>
+                <label className="font-medium text-slate-600 block mb-1">Amount (₹) *</label>
                 <Input
                   type="number"
                   required
@@ -2267,18 +2158,18 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewIncomeForm((prev) => ({ ...prev, amount: e.target.value }))
                   }
-                  className="h-9 text-xs font-bold"
+                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Payment Mode *</label>
+                <label className="font-medium text-slate-600 block mb-1">Payment Mode *</label>
                 <select
                   value={newIncomeForm.paymentMode}
                   onChange={(e) =>
                     setNewIncomeForm((prev) => ({ ...prev, paymentMode: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
                 >
                   <option value="UPI">UPI</option>
                   <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
@@ -2289,7 +2180,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Receiving Account (Where money was credited) *
               </label>
               <select
@@ -2301,7 +2192,7 @@ export default function AccountingPage() {
                     collectionAccountId: e.target.value,
                   }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
               >
                 <option value="">-- Choose Receiving Account --</option>
                 {collectionAccounts.map((acc) => (
@@ -2313,7 +2204,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Transaction Ref / UTR</label>
+              <label className="font-medium text-slate-600 block mb-1">Transaction Ref / UTR</label>
               <Input
                 placeholder="UPI Ref ID or Bank UTR"
                 value={newIncomeForm.transactionId}
@@ -2325,7 +2216,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Proof / Screenshot URL
               </label>
               <Input
@@ -2343,14 +2234,14 @@ export default function AccountingPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRecordIncomeModal(false)}
-                className="h-8.5 text-xs font-bold cursor-pointer"
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={submittingAction}
-                className="h-8.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
               >
                 {submittingAction ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2365,9 +2256,9 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: RECORD VENDOR EXPENSE ──────────────────────── */}
       <Dialog open={showRecordExpenseModal} onOpenChange={setShowRecordExpenseModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <TrendingDown className="w-5 h-5 text-rose-600" />
               Record Vendor / Operational Outflow
             </DialogTitle>
@@ -2375,14 +2266,14 @@ export default function AccountingPage() {
 
           <form onSubmit={handleRecordExpense} className="space-y-3.5 mt-2 text-xs">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Select Trip *</label>
+              <label className="font-medium text-slate-600 block mb-1">Select Trip *</label>
               <select
                 required
                 value={newExpenseForm.tripId}
                 onChange={(e) =>
                   setNewExpenseForm((prev) => ({ ...prev, tripId: e.target.value }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
+                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
               >
                 <option value="">-- Choose a Trip --</option>
                 {trips.map((t) => (
@@ -2395,13 +2286,13 @@ export default function AccountingPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Category *</label>
+                <label className="font-medium text-slate-600 block mb-1">Category *</label>
                 <select
                   value={newExpenseForm.category}
                   onChange={(e) =>
                     setNewExpenseForm((prev) => ({ ...prev, category: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
                 >
                   <option value="Hotels">Hotels / Camps</option>
                   <option value="Transport">Transport / Fleet</option>
@@ -2413,7 +2304,7 @@ export default function AccountingPage() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Vendor / Payee *</label>
+                <label className="font-medium text-slate-600 block mb-1">Vendor / Payee *</label>
                 <Input
                   required
                   placeholder="e.g. Manali Volvo Travels"
@@ -2428,7 +2319,7 @@ export default function AccountingPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Amount Paid (₹) *</label>
+                <label className="font-medium text-slate-600 block mb-1">Amount Paid (₹) *</label>
                 <Input
                   type="number"
                   required
@@ -2437,18 +2328,18 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewExpenseForm((prev) => ({ ...prev, amount: e.target.value }))
                   }
-                  className="h-9 text-xs font-bold"
+                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Payment Mode *</label>
+                <label className="font-medium text-slate-600 block mb-1">Payment Mode *</label>
                 <select
                   value={newExpenseForm.paymentMode}
                   onChange={(e) =>
                     setNewExpenseForm((prev) => ({ ...prev, paymentMode: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
                   <option value="UPI">UPI</option>
@@ -2458,7 +2349,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Paid From Account (Source of Funds) *
               </label>
               <select
@@ -2470,7 +2361,7 @@ export default function AccountingPage() {
                     collectionAccountId: e.target.value,
                   }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
               >
                 <option value="">-- Choose Account --</option>
                 {collectionAccounts.map((acc) => (
@@ -2482,7 +2373,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Invoice / Proof Screenshot URL {newExpenseForm.paymentMode !== "CASH" && "*"}
               </label>
               <Input
@@ -2501,19 +2392,19 @@ export default function AccountingPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRecordExpenseModal(false)}
-                className="h-8.5 text-xs font-bold cursor-pointer"
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={submittingAction}
-                className="h-8.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
+                className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
               >
                 {submittingAction ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  "Submit to Verification"
+                  "Submit to verification"
                 )}
               </Button>
             </div>
@@ -2523,17 +2414,17 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: RECHARGE RIYA WALLET ──────────────────────── */}
       <Dialog open={showRechargeRiyaModal} onOpenChange={setShowRechargeRiyaModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-indigo-950 flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-indigo-600" />
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-[#0B1528]" />
               Recharge Riya Train Portal Wallet
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleRechargeRiyaWallet} className="space-y-3.5 mt-2 text-xs">
-            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
-              <p className="text-[11px] text-indigo-800 font-medium">
+            <div className="p-3 bg-[#F8FAFC] border border-[#E8EEF4] rounded-xl">
+              <p className="text-[11px] text-slate-600 font-medium">
                 Money movements from your bank to the Riya portal are treated as inter-account
                 transfers, not immediate trip expenses. Real costs are deducted automatically as
                 individual passenger tickets are issued.
@@ -2541,7 +2432,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Source Bank / Treasury Account *
               </label>
               <select
@@ -2553,7 +2444,7 @@ export default function AccountingPage() {
                     sourceAccountId: e.target.value,
                   }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
               >
                 <option value="">-- Select Source Bank Account --</option>
                 {collectionAccounts
@@ -2567,7 +2458,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Recharge Amount (₹) *</label>
+              <label className="font-medium text-slate-600 block mb-1">Recharge Amount (₹) *</label>
               <Input
                 type="number"
                 required
@@ -2576,12 +2467,12 @@ export default function AccountingPage() {
                 onChange={(e) =>
                   setRechargeRiyaForm((prev) => ({ ...prev, amount: e.target.value }))
                 }
-                className="h-9 text-xs font-bold"
+                className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
               />
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Bank Reference / Deposit UTR
               </label>
               <Input
@@ -2602,14 +2493,14 @@ export default function AccountingPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRechargeRiyaModal(false)}
-                className="h-8.5 text-xs font-bold cursor-pointer"
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={submittingAction}
-                className="h-8.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
+                className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
               >
                 {submittingAction ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2629,9 +2520,9 @@ export default function AccountingPage() {
           if (!open) setRejectModalState(null);
         }}
       >
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-rose-950 flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-rose-950 flex items-center gap-2">
               <XCircle className="w-5 h-5 text-rose-600" />
               {rejectModalState?.title || "Reject Payment"}
             </DialogTitle>
@@ -2644,7 +2535,7 @@ export default function AccountingPage() {
             </p>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Rejection Reason *</label>
+              <label className="font-medium text-slate-600 block mb-1">Rejection Reason *</label>
               <Input
                 required
                 placeholder="e.g. Screenshot blurry, UTR mismatch with bank statement..."
@@ -2661,7 +2552,7 @@ export default function AccountingPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setRejectModalState(null)}
-                className="h-8.5 text-xs font-bold cursor-pointer"
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
               >
                 Cancel
               </Button>
@@ -2669,12 +2560,12 @@ export default function AccountingPage() {
                 type="button"
                 disabled={submittingAction}
                 onClick={handleConfirmReject}
-                className="h-8.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
+                className="h-8 gap-1.5 rounded-md bg-rose-600 px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-rose-700 cursor-pointer"
               >
                 {submittingAction ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  "Confirm Rejection"
+                  "Confirm rejection"
                 )}
               </Button>
             </div>
@@ -2684,17 +2575,17 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: ADD ACCOUNT ──────────────────────── */}
       <Dialog open={showAddAccountModal} onOpenChange={setShowAddAccountModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-orange-600" />
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-[#FF4D00]" />
               Add Bank / Treasury Account
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleAddAccount} className="space-y-3.5 mt-2 text-xs">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Account Display Name *</label>
+              <label className="font-medium text-slate-600 block mb-1">Account Display Name *</label>
               <Input
                 required
                 placeholder="e.g. HDFC Main Operating, Cash Desk"
@@ -2708,13 +2599,13 @@ export default function AccountingPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Account Type *</label>
+                <label className="font-medium text-slate-600 block mb-1">Account Type *</label>
                 <select
                   value={newAccForm.accountType}
                   onChange={(e) =>
                     setNewAccForm((prev) => ({ ...prev, accountType: e.target.value }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
                 >
                   <option value="COMPANY">Company Bank Account</option>
                   <option value="CASH">Office Cash Desk</option>
@@ -2724,7 +2615,7 @@ export default function AccountingPage() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Bank Name</label>
+                <label className="font-medium text-slate-600 block mb-1">Bank Name</label>
                 <Input
                   placeholder="e.g. HDFC Bank, SBI"
                   value={newAccForm.bankName}
@@ -2738,7 +2629,7 @@ export default function AccountingPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Account Number</label>
+                <label className="font-medium text-slate-600 block mb-1">Account Number</label>
                 <Input
                   placeholder="Account Number"
                   value={newAccForm.accountNumber}
@@ -2750,7 +2641,7 @@ export default function AccountingPage() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">IFSC Code</label>
+                <label className="font-medium text-slate-600 block mb-1">IFSC Code</label>
                 <Input
                   placeholder="e.g. HDFC0001234"
                   value={newAccForm.ifsc}
@@ -2763,7 +2654,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">UPI ID</label>
+              <label className="font-medium text-slate-600 block mb-1">UPI ID</label>
               <Input
                 placeholder="e.g. youthcamping@hdfcbank"
                 value={newAccForm.upiId}
@@ -2779,14 +2670,14 @@ export default function AccountingPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowAddAccountModal(false)}
-                className="h-8.5 text-xs font-bold cursor-pointer"
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={submittingAction}
-                className="h-8.5 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white cursor-pointer"
+                className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
               >
                 {submittingAction ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2801,9 +2692,9 @@ export default function AccountingPage() {
 
       {/* ──────────────────────── DIALOG: TRANSFER / SUBMIT FUNDS ──────────────────────── */}
       <Dialog open={showSubmitFundsModal} onOpenChange={setShowSubmitFundsModal}>
-        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-[#E8EEF4] shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
               <ArrowRightLeft className="w-5 h-5 text-blue-600" />
               Transfer / Submit Treasury Funds
             </DialogTitle>
@@ -2811,14 +2702,14 @@ export default function AccountingPage() {
 
           <form onSubmit={handleSubmitFunds} className="space-y-3.5 mt-2 text-xs">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">From Account *</label>
+              <label className="font-medium text-slate-600 block mb-1">From Account *</label>
               <select
                 required
                 value={submitFundsForm.accountId}
                 onChange={(e) =>
                   setSubmitFundsForm((prev) => ({ ...prev, accountId: e.target.value }))
                 }
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
               >
                 <option value="">-- Choose Account --</option>
                 {collectionAccounts.map((acc) => (
@@ -2831,7 +2722,7 @@ export default function AccountingPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Transfer Amount (₹) *</label>
+                <label className="font-medium text-slate-600 block mb-1">Transfer Amount (₹) *</label>
                 <Input
                   type="number"
                   required
@@ -2840,12 +2731,12 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setSubmitFundsForm((prev) => ({ ...prev, amount: e.target.value }))
                   }
-                  className="h-9 text-xs font-bold"
+                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Mode *</label>
+                <label className="font-medium text-slate-600 block mb-1">Mode *</label>
                 <select
                   value={submitFundsForm.submissionMode}
                   onChange={(e) =>
@@ -2854,7 +2745,7 @@ export default function AccountingPage() {
                       submissionMode: e.target.value,
                     }))
                   }
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                  className="w-full h-9 px-3 rounded-lg border border-[#E8EEF4] bg-white font-medium text-slate-800 text-xs"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer / Deposit</option>
                   <option value="UPI">UPI</option>
@@ -2864,7 +2755,7 @@ export default function AccountingPage() {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-medium text-slate-600 block mb-1">
                 Reference / Deposit Slip Number
               </label>
               <Input
@@ -2885,14 +2776,14 @@ export default function AccountingPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowSubmitFundsModal(false)}
-                className="h-8.5 text-xs font-bold cursor-pointer"
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={submittingAction}
-                className="h-8.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
               >
                 {submittingAction ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2912,14 +2803,14 @@ export default function AccountingPage() {
           if (!open) setSelectedAccountForLedger(null);
         }}
       >
-        <DialogContent className="max-w-4xl bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl bg-white p-6 rounded-2xl border border-[#E8EEF4] shadow-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-orange-600" />
+              <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-[#FF4D00]" />
                 Account Ledger: {selectedAccountForLedger?.accountName}
               </DialogTitle>
-              <Badge variant="outline" className="text-xs font-black">
+              <Badge variant="outline" className="text-xs font-semibold">
                 {selectedAccountForLedger?.accountType}
               </Badge>
             </div>
@@ -2927,20 +2818,20 @@ export default function AccountingPage() {
 
           {loadingAccountLedger ? (
             <div className="py-12 flex justify-center items-center">
-              <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-[#FF4D00]" />
             </div>
           ) : (
             <div className="space-y-4 mt-2 text-xs">
-              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-3 gap-3 p-3 bg-[#F8FAFC] rounded-xl border border-[#E8EEF4]">
                 <div>
-                  <span className="text-[11px] text-slate-500 font-bold">Total Inflows</span>
-                  <div className="text-base font-black text-emerald-600">
+                  <span className="text-[11px] text-slate-500 font-medium">Total Inflows</span>
+                  <div className="text-base font-semibold text-emerald-600">
                     {formatINR(accountLedgerData?.metrics?.totalCollected || 0)}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 font-bold">Total Outflows</span>
-                  <div className="text-base font-black text-rose-600">
+                  <span className="text-[11px] text-slate-500 font-medium">Total Outflows</span>
+                  <div className="text-base font-semibold text-rose-600">
                     {formatINR(
                       (accountLedgerData?.metrics?.totalSubmitted || 0) +
                         (accountLedgerData?.metrics?.totalVendorPaid || 0),
@@ -2948,17 +2839,17 @@ export default function AccountingPage() {
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 font-bold">Live Balance</span>
-                  <div className="text-base font-black text-slate-900">
+                  <span className="text-[11px] text-slate-500 font-medium">Live Balance</span>
+                  <div className="text-base font-semibold text-[#0B1528]">
                     {formatINR(accountLedgerData?.metrics?.totalPending || 0)}
                   </div>
                 </div>
               </div>
 
               {/* Transactions List */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <div className="border border-[#E8EEF4] rounded-xl overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
                       <th className="py-2.5 px-3">Date</th>
                       <th className="py-2.5 px-3">Type</th>
@@ -2967,18 +2858,18 @@ export default function AccountingPage() {
                       <th className="py-2.5 px-3 text-right">Outflow (−)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E8EEF4]">
                     {/* Client Payments */}
                     {(accountLedgerData?.clientPayments || []).map((cp: any) => (
-                      <tr key={cp.id} className="hover:bg-slate-50/60 font-medium">
+                      <tr key={cp.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(cp.paymentDate || cp.createdAt)}
                         </td>
-                        <td className="py-2 px-3 font-bold text-emerald-700">Client Payment</td>
+                        <td className="py-2 px-3 font-medium text-emerald-700">Client payment</td>
                         <td className="py-2 px-3">
                           {cp.booking?.fullName} (Ref: {cp.bookingId}) · {cp.paymentMode}
                         </td>
-                        <td className="py-2 px-3 text-right font-black text-emerald-600">
+                        <td className="py-2 px-3 text-right font-semibold text-emerald-600">
                           + {formatINR(cp.amount)}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">—</td>
@@ -2987,16 +2878,16 @@ export default function AccountingPage() {
 
                     {/* Vendor Payments */}
                     {(accountLedgerData?.vendorPayments || []).map((vp: any) => (
-                      <tr key={vp.id} className="hover:bg-slate-50/60 font-medium">
+                      <tr key={vp.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(vp.paymentDate || vp.createdAt)}
                         </td>
-                        <td className="py-2 px-3 font-bold text-rose-700">Vendor Outflow</td>
+                        <td className="py-2 px-3 font-medium text-rose-600">Vendor outflow</td>
                         <td className="py-2 px-3">
                           {vp.vendorName} ({vp.category}) · Trip: {vp.trip?.title}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">—</td>
-                        <td className="py-2 px-3 text-right font-black text-rose-600">
+                        <td className="py-2 px-3 text-right font-semibold text-rose-600">
                           − {formatINR(vp.advancePaid)}
                         </td>
                       </tr>
@@ -3004,15 +2895,15 @@ export default function AccountingPage() {
 
                     {/* Submissions / Transfers */}
                     {(accountLedgerData?.submissions || []).map((sub: any) => (
-                      <tr key={sub.id} className="hover:bg-slate-50/60 font-medium">
+                      <tr key={sub.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(sub.createdAt)}
                         </td>
-                        <td className="py-2 px-3 font-bold text-blue-700">Fund Transfer</td>
+                        <td className="py-2 px-3 font-medium text-slate-600">Fund transfer</td>
                         <td className="py-2 px-3">
                           {sub.notes || "Inter-account transfer / Submission"}
                         </td>
-                        <td className="py-2 px-3 text-right font-black text-emerald-600">
+                        <td className="py-2 px-3 text-right font-semibold text-emerald-600">
                           + {formatINR(sub.amount)}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">—</td>
@@ -3021,16 +2912,16 @@ export default function AccountingPage() {
 
                     {/* Train Tickets (For Riya Wallet) */}
                     {(accountLedgerData?.trainTickets || []).map((tt: any) => (
-                      <tr key={tt.id} className="hover:bg-slate-50/60 font-medium">
+                      <tr key={tt.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(tt.journeyDate || tt.createdAt)}
                         </td>
-                        <td className="py-2 px-3 font-bold text-indigo-700">Train Ticket Issued</td>
+                        <td className="py-2 px-3 font-medium text-[#0B1528]">Train ticket issued</td>
                         <td className="py-2 px-3">
                           {tt.travelerName} (PNR: {tt.pnr || "—"}) · Booking Ref: {tt.bookingId}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">—</td>
-                        <td className="py-2 px-3 text-right font-black text-indigo-600">
+                        <td className="py-2 px-3 text-right font-semibold text-[#0B1528]">
                           − {formatINR(Number(tt.ticketAmount) || 0)}
                         </td>
                       </tr>
@@ -3050,14 +2941,14 @@ export default function AccountingPage() {
           if (!open) setProofPreviewModal(null);
         }}
       >
-        <DialogContent className="max-w-2xl bg-white p-0 rounded-2xl border border-slate-200 overflow-hidden shadow-2xl">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-slate-900 text-white">
+        <DialogContent className="max-w-2xl bg-white p-0 rounded-2xl border border-[#E8EEF4] overflow-hidden shadow-2xl">
+          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0B1528] text-white">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="p-2 bg-slate-800 rounded-lg shrink-0">
                 <Eye className="w-4 h-4 text-orange-400" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-black text-white truncate">
+                <h3 className="text-sm font-semibold text-white truncate">
                   {proofPreviewModal?.title || "Payment Proof / Screenshot"}
                 </h3>
                 {proofPreviewModal?.subtitle && (
@@ -3099,7 +2990,7 @@ export default function AccountingPage() {
               type="button"
               variant="outline"
               onClick={() => setProofPreviewModal(null)}
-              className="h-8 text-xs font-bold px-4 cursor-pointer"
+              className="h-8 gap-1.5 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
             >
               Close
             </Button>
