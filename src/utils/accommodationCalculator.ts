@@ -170,17 +170,54 @@ export function derivePassengerSharingFromBookings(
 /**
  * Build physical room allocation from passengerAllocations.
  * Each unique room label = one physical room.
+ * Deduplicates dual-key ID/name entries so each person is counted strictly once.
  */
 export function buildPhysicalRoomAllocation(
-  passengerAllocations: Record<string, { room: string; vehicle: string; seat: string }>
+  passengerAllocations: Record<string, { room: string; vehicle: string; seat: string }>,
+  allPassengers?: Array<{ id: string; name: string }>
 ): PhysicalRoomAllocation {
   const roomGroups: Record<string, string[]> = {};
 
-  Object.entries(passengerAllocations).forEach(([name, alloc]) => {
-    if (!alloc.room || alloc.room === "—" || alloc.room === "Unassigned") return;
-    if (!roomGroups[alloc.room]) roomGroups[alloc.room] = [];
-    roomGroups[alloc.room].push(name);
-  });
+  if (allPassengers && Array.isArray(allPassengers) && allPassengers.length > 0) {
+    allPassengers.forEach((p) => {
+      const alloc = passengerAllocations[p.id] || passengerAllocations[p.name];
+      if (!alloc || !alloc.room || alloc.room === "—" || alloc.room === "Unassigned") return;
+      if (!roomGroups[alloc.room]) roomGroups[alloc.room] = [];
+      const displayName = p.name || p.id;
+      if (!roomGroups[alloc.room].includes(displayName)) {
+        roomGroups[alloc.room].push(displayName);
+      }
+    });
+  } else {
+    // If no explicit passenger list is supplied, filter out opaque CUID/UUID keys
+    // when a friendly name entry is already present, and deduplicate occupants per room.
+    const seenOccupants = new Set<string>();
+
+    Object.entries(passengerAllocations).forEach(([key, alloc]) => {
+      if (!alloc.room || alloc.room === "—" || alloc.room === "Unassigned") return;
+      
+      // If the key looks like an internal CUID/UUID (starts with 'c' or 'cm' and has no spaces, or 20+ chars)
+      const isOpaqueId = /^[a-z0-9_-]{20,}$/i.test(key) || /^c[a-z0-9]{20,}$/i.test(key);
+      if (isOpaqueId) return;
+
+      if (!roomGroups[alloc.room]) roomGroups[alloc.room] = [];
+      if (!seenOccupants.has(key) && !roomGroups[alloc.room].includes(key)) {
+        roomGroups[alloc.room].push(key);
+        seenOccupants.add(key);
+      }
+    });
+
+    // Fallback: If only opaque keys exist
+    if (Object.keys(roomGroups).length === 0) {
+      Object.entries(passengerAllocations).forEach(([key, alloc]) => {
+        if (!alloc.room || alloc.room === "—" || alloc.room === "Unassigned") return;
+        if (!roomGroups[alloc.room]) roomGroups[alloc.room] = [];
+        if (!roomGroups[alloc.room].includes(key)) {
+          roomGroups[alloc.room].push(key);
+        }
+      });
+    }
+  }
 
   const rooms: PhysicalRoom[] = Object.entries(roomGroups)
     .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
@@ -201,9 +238,10 @@ export function buildPhysicalRoomAllocation(
  * Derive room count breakdown (Double, Triple, Quad, Extra) directly from room allocations.
  */
 export function deriveRoomCountsFromAllocations(
-  passengerAllocations: Record<string, { room: string; vehicle: string; seat: string }>
+  passengerAllocations: Record<string, { room: string; vehicle: string; seat: string }>,
+  allPassengers?: Array<{ id: string; name: string }>
 ) {
-  const allocation = buildPhysicalRoomAllocation(passengerAllocations);
+  const allocation = buildPhysicalRoomAllocation(passengerAllocations, allPassengers);
   let doubleRooms = 0;
   let tripleRooms = 0;
   let quadRooms = 0;

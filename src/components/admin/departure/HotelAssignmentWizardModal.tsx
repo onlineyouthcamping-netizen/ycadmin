@@ -45,6 +45,7 @@ interface HotelAssignmentWizardModalProps {
   departureDateStr: string;
   totalPax: number;
   passengerAllocations?: Record<string, { room: string; vehicle: string; seat: string }>;
+  allPassengers?: any[];
   initialDayInfo?: InitialDayInfo | null;
   onSaveSuccess: () => void;
 }
@@ -140,78 +141,40 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
       } else if (type.includes("EXTRA") || type.includes("BED") || type.includes("MATTRESS")) {
         if (amt > 0 && (!ex || amt < ex)) ex = amt;
       }
-
-      const doubleVal = Number(extra.doubleRate ?? r.doubleRate ?? r.baseRate ?? r.base ?? 0);
-      const tripleVal = Number(extra.tripleRate ?? r.tripleRate ?? r.extraMattressRate ?? 0);
-      const quadVal = Number(extra.quadRate ?? r.quadRate ?? 0);
-      const extraBedVal = Number(extra.extraBedRate ?? r.extraMattressRate ?? 0);
-
-      if (doubleVal > 0 && (!d || doubleVal < d)) d = doubleVal;
-      if (tripleVal > 0 && (!t || tripleVal < t)) t = tripleVal;
-      if (quadVal > 0 && (!q || quadVal < q)) q = quadVal;
-      if (extraBedVal > 0 && (!ex || extraBedVal < ex)) ex = extraBedVal;
     }
 
-    if (d > 0 || t > 0 || q > 0) {
+    if (d > 0) {
       return {
-        doubleRate: d > 0 ? d : 1100,
-        tripleRate: t > 0 ? t : (q > 0 ? q : Math.round((d || 1100) * 0.8)),
-        quadRate: q > 0 ? q : (t > 0 ? t : Math.round((d || 1100) * 0.7)),
-        extraBedRate: ex > 0 ? ex : Math.round((d || 1100) * 0.5),
+        doubleRate: d,
+        tripleRate: t > 0 ? t : Math.round(d * 0.75),
+        quadRate: q > 0 ? q : Math.round(d * 0.65),
+        extraBedRate: ex > 0 ? ex : Math.round(d * 0.4),
       };
     }
   }
 
-  // 0.5 Extract from seasonalRates array if present
-  const seasonalList = Array.isArray(v.seasonalRates)
-    ? v.seasonalRates
-    : Array.isArray(v.seasons)
-      ? v.seasons
-      : [];
-  if (seasonalList.length > 0) {
-    const s = seasonalList[0];
-    const twinVal = Number(s.twinRate ?? s.twin ?? 0);
-    const tripleVal = Number(s.tripleRate ?? s.triple ?? 0);
-    const quadVal = Number(s.quadRate ?? s.quad ?? 0);
-
-    if (twinVal > 0) {
-      return {
-        doubleRate: twinVal,
-        tripleRate: tripleVal > 0 ? tripleVal : Math.round(twinVal * 0.8),
-        quadRate: quadVal > 0 ? quadVal : Math.round(twinVal * 0.7),
-        extraBedRate: Math.round(twinVal * 0.4),
-      };
-    }
-  }
-
-  // 1. Direct object rate extraction if present
+  // 1. Exact rates defined on vendor object
   const dRate = Number(
     v.doubleSharingRate ||
       v.doubleRate ||
-      v.double ||
-      v.baseRate ||
-      v.rate ||
       v.rates?.double ||
       v.pricing?.doubleRate,
   );
   const tRate = Number(
     v.tripleSharingRate ||
       v.tripleRate ||
-      v.triple ||
       v.rates?.triple ||
       v.pricing?.tripleRate,
   );
   const qRate = Number(
     v.quadSharingRate ||
       v.quadRate ||
-      v.quad ||
       v.rates?.quad ||
       v.pricing?.quadRate,
   );
   const exRate = Number(
     v.extraBedRate ||
       v.extraBed ||
-      v.extraPax ||
       v.rates?.extraBed ||
       v.pricing?.extraBedRate,
   );
@@ -234,48 +197,82 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
   if (
     category.includes("5") ||
     category.includes("luxury") ||
-    name.includes("resort") ||
-    name.includes("palace") ||
-    name.includes("grand")
+    category.includes("resort")
   ) {
     return {
-      doubleRate: 2200,
-      tripleRate: 1600,
+      doubleRate: 2500,
+      tripleRate: 1800,
       quadRate: 1400,
-      extraBedRate: 800,
+      extraBedRate: 900,
     };
   }
   if (
     category.includes("4") ||
-    category.includes("deluxe") ||
-    name.includes("vista") ||
-    name.includes("heights") ||
-    name.includes("view")
+    category.includes("premium") ||
+    category.includes("boutique")
   ) {
     return {
-      doubleRate: 1500,
-      tripleRate: 1100,
-      quadRate: 950,
-      extraBedRate: 600,
+      doubleRate: 1800,
+      tripleRate: 1300,
+      quadRate: 1050,
+      extraBedRate: 700,
     };
   }
   if (
-    category.includes("camp") ||
-    category.includes("tent") ||
-    name.includes("camp") ||
-    name.includes("homestay")
+    category.includes("3") ||
+    category.includes("standard") ||
+    category.includes("hotel")
   ) {
     return {
-      doubleRate: 900,
-      tripleRate: 700,
+      doubleRate: 1200,
+      tripleRate: 900,
+      quadRate: 750,
+      extraBedRate: 500,
+    };
+  }
+  if (
+    category.includes("homestay") ||
+    category.includes("camp") ||
+    category.includes("tent") ||
+    category.includes("budget")
+  ) {
+    return {
+      doubleRate: 1000,
+      tripleRate: 750,
       quadRate: 650,
       extraBedRate: 400,
     };
   }
 
-  // 3. City / Destination dynamic rate presets
-  if (city.includes("shimla")) {
-    if (name.includes("mountain") || name.includes("vista"))
+  // 3. City/Destination specific realistic regional tariffs
+  if (
+    city.includes("spiti") ||
+    city.includes("kaza") ||
+    city.includes("tabo") ||
+    city.includes("nako") ||
+    city.includes("chitkul") ||
+    city.includes("sangla") ||
+    city.includes("kalpa") ||
+    city.includes("mud") ||
+    city.includes("pin valley")
+  ) {
+    return {
+      doubleRate: 1200,
+      tripleRate: 900,
+      quadRate: 750,
+      extraBedRate: 500,
+    };
+  }
+  if (city.includes("chandratal") || city.includes("sissu") || city.includes("jispa")) {
+    return {
+      doubleRate: 1400,
+      tripleRate: 1050,
+      quadRate: 850,
+      extraBedRate: 550,
+    };
+  }
+  if (city.includes("manali") || city.includes("shimla")) {
+    if (name.includes("hotel") || name.includes("resort") || name.includes("cottage"))
       return {
         doubleRate: 1400,
         tripleRate: 1000,
@@ -287,54 +284,6 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
       tripleRate: 1100,
       quadRate: 950,
       extraBedRate: 600,
-    };
-  }
-  if (city.includes("amritsar")) {
-    return {
-      doubleRate: 1300,
-      tripleRate: 950,
-      quadRate: 850,
-      extraBedRate: 500,
-    };
-  }
-  if (city.includes("kasol") || city.includes("jibhi")) {
-    return {
-      doubleRate: 1200,
-      tripleRate: 900,
-      quadRate: 800,
-      extraBedRate: 500,
-    };
-  }
-  if (city.includes("kullu")) {
-    return {
-      doubleRate: 950,
-      tripleRate: 750,
-      quadRate: 700,
-      extraBedRate: 400,
-    };
-  }
-  if (city.includes("dharamshala") || city.includes("mcleodganj")) {
-    return {
-      doubleRate: 1350,
-      tripleRate: 1000,
-      quadRate: 850,
-      extraBedRate: 500,
-    };
-  }
-  if (city.includes("chandigarh") || city.includes("delhi")) {
-    return {
-      doubleRate: 1600,
-      tripleRate: 1200,
-      quadRate: 1000,
-      extraBedRate: 650,
-    };
-  }
-  if (name.includes("barpa")) {
-    return {
-      doubleRate: 1100,
-      tripleRate: 800,
-      quadRate: 800,
-      extraBedRate: 500,
     };
   }
 
@@ -356,6 +305,7 @@ export default function HotelAssignmentWizardModal({
   departureDateStr,
   totalPax,
   passengerAllocations,
+  allPassengers,
   initialDayInfo,
   onSaveSuccess,
 }: HotelAssignmentWizardModalProps) {
@@ -408,16 +358,6 @@ export default function HotelAssignmentWizardModal({
     if (!isOpen) return [];
     return getHotelEligibleDestinations(computedItinerary, currentDayNum, dbVendors);
   }, [isOpen, computedItinerary, currentDayNum, dbVendors]);
-
-  const currentDayDestination = useMemo<HotelEligibleDestination | null>(() => {
-    const match = hotelEligibleDestinations.find((d) => d.isCurrentDay);
-    if (match) return match;
-    if (initialDayInfo?.destination) {
-      const normInit = normalizeDestinationName(initialDayInfo.destination);
-      return hotelEligibleDestinations.find((d) => d.normalizedName === normInit) || null;
-    }
-    return null;
-  }, [hotelEligibleDestinations, initialDayInfo]);
 
   const currentDayItineraryDate = useMemo(() => {
     const match = computedItinerary.find((day: any) => {
@@ -611,7 +551,7 @@ export default function HotelAssignmentWizardModal({
 
     // Initialize Room Counts for 100% Sync with Room Allocation Engine & Database
     const derivedFromAllocations = passengerAllocations
-      ? deriveRoomCountsFromAllocations(passengerAllocations)
+      ? deriveRoomCountsFromAllocations(passengerAllocations, allPassengers)
       : null;
 
     if (

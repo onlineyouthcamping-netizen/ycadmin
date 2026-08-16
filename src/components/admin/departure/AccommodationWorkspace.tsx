@@ -127,8 +127,8 @@ export default function AccommodationWorkspace({
 
   // ── Physical room allocation (from saved room assignments) ──
   const physicalRoomAllocation = useMemo(
-    () => buildPhysicalRoomAllocation(passengerAllocations),
-    [passengerAllocations]
+    () => buildPhysicalRoomAllocation(passengerAllocations, allPassengers),
+    [passengerAllocations, allPassengers]
   );
 
   // ── Build accommodation rows (one per itinerary day) ──
@@ -189,7 +189,7 @@ export default function AccommodationWorkspace({
 
       if (hasStay && booking) {
         nights = booking.nightsCount || 1;
-        const derivedRooms = deriveRoomCountsFromAllocations(passengerAllocations);
+        const derivedRooms = deriveRoomCountsFromAllocations(passengerAllocations, allPassengers);
         const hasExplicitBookingRooms =
           (booking.doubleRoomsCount || 0) > 0 ||
           (booking.tripleRoomsCount || 0) > 0 ||

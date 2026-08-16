@@ -8438,6 +8438,7 @@ useEffect(() => {
             departureDateStr={departureDateStr}
             totalPax={allPassengers.length}
             passengerAllocations={passengerAllocations}
+            allPassengers={allPassengers}
             initialDayInfo={selectedWizardDayInfo}
             onSaveSuccess={fetchPageData}
           />
