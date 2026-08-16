@@ -359,6 +359,16 @@ export default function HotelAssignmentWizardModal({
     return getHotelEligibleDestinations(computedItinerary, currentDayNum, dbVendors);
   }, [isOpen, computedItinerary, currentDayNum, dbVendors]);
 
+  const currentDayDestination = useMemo<HotelEligibleDestination | null>(() => {
+    const match = hotelEligibleDestinations.find((d) => d.isCurrentDay);
+    if (match) return match;
+    if (initialDayInfo?.destination) {
+      const normInit = normalizeDestinationName(initialDayInfo.destination);
+      return hotelEligibleDestinations.find((d) => d.normalizedName === normInit) || null;
+    }
+    return null;
+  }, [hotelEligibleDestinations, initialDayInfo]);
+
   const currentDayItineraryDate = useMemo(() => {
     const match = computedItinerary.find((day: any) => {
       const d = typeof day?.day === "number" ? day.day : parseInt(String(day?.day ?? "").replace(/\D/g, ""), 10) || 0;
