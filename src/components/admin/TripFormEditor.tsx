@@ -2,6 +2,7 @@ import AboutTripCmsEditor from "@/components/admin/trips/AboutTripCmsEditor";
 import VariantsManager from "@/components/admin/trips/VariantsManager";
 import ModernTripCalendar from "@/components/admin/trips/ModernTripCalendar";
 import TripSopEditorTab from "@/components/admin/trips/TripSopEditorTab";
+import TripTrainTicketTemplateTab from "@/components/admin/trips/TripTrainTicketTemplateTab";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -792,6 +793,12 @@ export default function TripFormEditor({
                 OPERATIONS SOP & CHECKLIST
               </TabsTrigger>
               <TabsTrigger
+                value="train-template"
+                className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200"
+              >
+                TRAIN TICKET TEMPLATE
+              </TabsTrigger>
+              <TabsTrigger
                 value="pricing"
                 className="w-full justify-start py-2 px-3 text-left text-xs font-semibold text-slate-500 rounded-md hover:bg-slate-100 hover:text-slate-900 transition-all data-[state=active]:bg-white data-[state=active]:text-[#FF5400] data-[state=active]:shadow-2xs border border-transparent data-[state=active]:border-slate-200"
               >
@@ -890,6 +897,21 @@ export default function TripFormEditor({
               taskTemplates={form.sopTasks || []}
               onUpdateTasks={(tasks) =>
                 setForm({ ...form, sopTasks: tasks })
+              }
+            />
+          </TabsContent>
+
+          {/* TRAIN TICKET TEMPLATE TAB CONTENT */}
+          <TabsContent
+            value="train-template"
+            className="mt-0 space-y-6 animate-fade-in"
+          >
+            <TripTrainTicketTemplateTab
+              tripId={form.id || editing?.id}
+              tripTitle={form.title}
+              initialTemplate={form.trainTicketTemplate || editing?.trainTicketTemplate}
+              onTemplateSaved={(tpl) =>
+                setForm({ ...form, trainTicketTemplate: tpl })
               }
             />
           </TabsContent>
