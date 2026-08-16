@@ -27,14 +27,14 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
         className="bg-emerald-50/70 p-2.5 rounded-lg flex items-center justify-between cursor-pointer hover:bg-emerald-50"
       >
         <div>
-          <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">
-            Collection Today
+          <p className="text-[10px] font-medium tracking-wide text-slate-500">
+            Collection today
           </p>
           <p className="text-[13px] font-bold text-[#16A34A]">
             ₹ {(stats?.cashFlow?.collectionToday || 0).toLocaleString("en-IN")}
           </p>
         </div>
-        <TrendingUp className="w-3.5 h-3.5 text-[#16A34A]" />
+        <TrendingUp className="h-3.5 w-3.5 text-[#16A34A]" strokeWidth={1.75} />
       </div>
 
       <div
@@ -42,14 +42,14 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
         className="bg-rose-50/70 p-2.5 rounded-lg flex items-center justify-between cursor-pointer hover:bg-rose-50"
       >
         <div>
-          <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider">
-            Payments Today
+          <p className="text-[10px] font-medium tracking-wide text-slate-500">
+            Payments today
           </p>
           <p className="text-[13px] font-bold text-[#E23D4D]">
             ₹ {(stats?.cashFlow?.paymentsToday || 0).toLocaleString("en-IN")}
           </p>
         </div>
-        <TrendingDown className="w-3.5 h-3.5 text-[#E23D4D]" />
+        <TrendingDown className="h-3.5 w-3.5 text-[#E23D4D]" strokeWidth={1.75} />
       </div>
 
       <div className="pt-2 mt-1 flex items-center justify-between text-[11px] font-semibold">

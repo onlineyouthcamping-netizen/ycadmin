@@ -12,8 +12,8 @@ export const EmployeeStatusWidget: React.FC<DashboardWidgetContextProps> = ({
 }) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Employee Status
+      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
+        Employee status
       </span>
       <span
         onClick={() => navigate("/admin/hr")}
@@ -24,8 +24,8 @@ export const EmployeeStatusWidget: React.FC<DashboardWidgetContextProps> = ({
     </div>
     <div className="p-3.5 flex-1 grid grid-cols-2 gap-3 text-[11px]">
       <div className="space-y-1.5">
-        <p className="text-[8px] font-bold text-[#16A34A] uppercase tracking-wider">
-          Online Now ({stats?.employeeStatus?.online?.length ?? 6})
+        <p className="text-[10px] font-medium tracking-wide text-emerald-700">
+          Online now ({stats?.employeeStatus?.online?.length ?? 6})
         </p>
         <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto no-scrollbar">
           {(
@@ -50,8 +50,8 @@ export const EmployeeStatusWidget: React.FC<DashboardWidgetContextProps> = ({
       </div>
 
       <div className="space-y-1.5">
-        <p className="text-[8px] font-bold text-[#D97706] uppercase tracking-wider">
-          On Leave ({stats?.employeeStatus?.offline?.length ?? 2})
+        <p className="text-[10px] font-medium tracking-wide text-amber-700">
+          On leave ({stats?.employeeStatus?.offline?.length ?? 2})
         </p>
         <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto no-scrollbar">
           {(stats?.employeeStatus?.offline || ["Sachin", "Jatin"]).map(
@@ -78,8 +78,8 @@ export const EmployeeWorkloadWidget: React.FC<DashboardWidgetContextProps> = ({
 }) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Employee Workload
+      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
+        Employee workload
       </span>
       <span
         onClick={() => navigate("/admin/hr")}

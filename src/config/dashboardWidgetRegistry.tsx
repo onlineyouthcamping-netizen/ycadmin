@@ -38,19 +38,19 @@ export const CATEGORY_LABELS: Record<
   { title: string; subtitle: string }
 > = {
   kpi: {
-    title: "KPI Summary",
+    title: "KPI summary",
     subtitle: "Key performance indicators and business metrics",
   },
   operations: {
-    title: "Operational Workspace",
+    title: "Operational workspace",
     subtitle: "Active departures, itinerary schedules, and urgent alerts",
   },
   management: {
-    title: "Management & Cash Flow",
+    title: "Management & cash flow",
     subtitle: "Schedule, approvals, daily cash flow, and announcements",
   },
   team: {
-    title: "Team & Workforce Activity",
+    title: "Team & workforce activity",
     subtitle: "Employee status, task workload meters, and recent bookings",
   },
 };

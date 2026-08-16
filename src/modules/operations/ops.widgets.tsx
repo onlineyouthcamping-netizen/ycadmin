@@ -13,8 +13,8 @@ export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
 }) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Needs Your Attention
+      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
+        Needs your attention
       </span>
       <span
         onClick={() => navigate("/admin/approvals-hub")}
@@ -114,8 +114,8 @@ export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({
 }) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Trips Running Now
+      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
+        Trips running now
       </span>
       <span
         onClick={() => navigate("/admin/departure-workspace")}
@@ -166,8 +166,8 @@ export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({
 }) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Trips Departing Next 7 Days
+      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
+        Trips departing next 7 days
       </span>
       <span
         onClick={() => navigate("/admin/operations")}
@@ -216,8 +216,8 @@ export const TodaysScheduleWidget: React.FC<DashboardWidgetContextProps> = ({
 }) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        Today's Schedule
+      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
+        Today's schedule
       </span>
       <span
         onClick={() => navigate("/admin/departure-workspace")}

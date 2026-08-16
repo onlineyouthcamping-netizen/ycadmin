@@ -12,8 +12,8 @@ export const ApprovalQueueWidget: React.FC<DashboardWidgetContextProps> = ({
 }) => (
   <div className="bg-white border border-[#E3EAF2] rounded-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col overflow-hidden h-full">
     <div className="h-9 px-3.5 flex items-center justify-between border-b border-[#E3EAF2] shrink-0">
-      <span className="text-[10px] font-bold text-[#162B45] uppercase tracking-[0.4px]">
-        My Approval Queue
+      <span className="text-[11px] font-semibold tracking-wide text-[#0B1528]">
+        My approval queue
       </span>
       <span
         onClick={() => navigate("/admin/approvals-hub")}

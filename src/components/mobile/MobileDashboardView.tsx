@@ -39,11 +39,11 @@ const PERIOD_OPTIONS: { value: string; label: string }[] = [
 
 /** Prefix used on period-scoped metric labels so the number always matches the filter. */
 const PERIOD_PREFIX: Record<string, string> = {
-  today: "TODAY'S",
-  week: "THIS WEEK'S",
-  month: "THIS MONTH'S",
-  year: "THIS YEAR'S",
-  all: "TOTAL",
+  today: "Today's",
+  week: "This week's",
+  month: "This month's",
+  year: "This year's",
+  all: "Total",
 };
 
 const formatInr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
@@ -95,10 +95,12 @@ const MetricCard: React.FC<{
     className="bg-white border border-slate-200/80 p-3 rounded-2xl shadow-sm text-left min-w-0 active:bg-slate-50 active:scale-[0.98] transition-all"
   >
     <div className="flex items-start justify-between gap-1.5">
-      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 leading-tight min-w-0">
+      <span className="min-w-0 text-[10px] font-semibold leading-tight tracking-wide text-slate-500">
         {label}
       </span>
-      <span className="shrink-0">{icon}</span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#E8EEF4] bg-[#F4F7FB] text-[#0B1528]">
+        {icon}
+      </span>
     </div>
     <MetricValue loading={loading} value={value} format={format} />
     <span className="text-[10px] font-bold text-slate-500 mt-0.5 block truncate">
@@ -246,8 +248,8 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
       <div className="grid grid-cols-2 gap-2.5">
         {canViewAccounting && (
           <MetricCard
-            label={`${periodPrefix} PAYMENTS`}
-            icon={<TrendingUp className="w-4 h-4 text-emerald-600" />}
+            label={`${periodPrefix} payments`}
+            icon={<TrendingUp className="h-3.5 w-3.5" strokeWidth={1.75} />}
             onClick={() => navigate("/admin/accounting")}
             loading={loading}
             value={stats?.totalRevenue}
@@ -262,8 +264,8 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
         {canViewBookings && (
           <MetricCard
-            label={`${periodPrefix} BOOKINGS`}
-            icon={<Users className="w-4 h-4 text-orange-600" />}
+            label={`${periodPrefix} bookings`}
+            icon={<Users className="h-3.5 w-3.5" strokeWidth={1.75} />}
             onClick={() => navigate("/admin/bookings")}
             loading={loading}
             value={stats?.totalBookings}
@@ -277,8 +279,8 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
         {canViewTicketing && (
           <MetricCard
-            label="TICKETING QUEUE"
-            icon={<Train className="w-4 h-4 text-amber-600" />}
+            label="Ticketing queue"
+            icon={<Train className="h-3.5 w-3.5" strokeWidth={1.75} />}
             onClick={() => navigate("/admin/travel-desk")}
             loading={loading}
             value={stats?.pendingTickets}
@@ -290,8 +292,8 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
         {canViewTrips && (
           <MetricCard
-            label="DEPARTURES • NEXT 7D"
-            icon={<Calendar className="w-4 h-4 text-blue-600" />}
+            label="Departures · next 7 days"
+            icon={<Calendar className="h-3.5 w-3.5" strokeWidth={1.75} />}
             onClick={() => navigate("/admin/departures")}
             loading={loading}
             value={stats?.tripsDepartingNext7Days?.length}
@@ -307,8 +309,8 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
       {/* Live Operations Priority */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-sm space-y-3">
         <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
-          <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide truncate">
-            Live Operations Priority
+          <h3 className="truncate text-[11px] font-semibold tracking-wide text-[#0B1528]">
+            Live operations
           </h3>
           <span className="text-[9px] font-black bg-orange-50 text-[#FF5400] px-2 py-0.5 rounded border border-orange-100 uppercase shrink-0">
             {loading ? "Syncing" : "Live"}

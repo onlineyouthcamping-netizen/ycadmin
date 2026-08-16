@@ -777,13 +777,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     location.pathname.includes("/pages");
 
   return (
-    <SidebarProvider>
-      <div
-        className="min-h-screen flex w-full bg-[#F4F7FB]"
-      >
+    <SidebarProvider className="h-svh max-h-svh overflow-hidden">
+      <div className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-[#F4F7FB]">
         <AdminSidebar />
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {/* Top command strip — 56px */}
           <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-[#E8EEF4] bg-white px-3 sm:px-6">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -964,15 +962,15 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <div className="flex-1 flex overflow-hidden">
-            {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 pb-20 md:pb-5 bg-[#F4F7FB]">
-              <div className="w-full min-h-full">{children}</div>
+          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+            {/* Main Content Area — single page scroller */}
+            <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#F4F7FB] p-3 pb-20 sm:p-5 md:pb-5">
+              <div className="w-full min-w-0">{children}</div>
             </main>
 
             {/* Help Sidebar */}
             {showHelpPanel && (
-              <aside className="w-[280px] border-l bg-white hidden 2xl:flex flex-col overflow-y-auto p-5 no-scrollbar">
+              <aside className="hidden min-h-0 w-[280px] flex-col overflow-y-auto border-l bg-white p-5 no-scrollbar 2xl:flex">
                 <div className="space-y-6">
                   <section className="space-y-3">
                     <h3 className="font-semibold text-[11px] uppercase tracking-wider text-slate-400">

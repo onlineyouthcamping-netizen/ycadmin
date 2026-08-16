@@ -149,7 +149,7 @@ export default function DashboardPage() {
   }, [dateFilter]);
 
   return (
-    <div className="space-y-5 select-none min-h-full text-[#0B1528]">
+    <div className="min-w-0 space-y-5 select-none text-[#0B1528]">
       <div className="block md:hidden">
         <MobileDashboardView
           stats={stats}
@@ -176,7 +176,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-md px-2.5 py-1 text-[11px] font-semibold text-[#0B1528]">
-              <span className="uppercase text-[10px] text-[#FF4D00]">
+              <span className="text-[10px] font-semibold capitalize text-[#FF4D00]">
                 {userRole ? `${userRole} view` : "Operator"}
               </span>
             </div>
@@ -211,8 +211,8 @@ export default function DashboardPage() {
               {/* Render Section Header for Non-KPI Categories */}
               {cat !== "kpi" && (
                 <div className="pt-2 pb-1 border-b border-slate-200/80 flex items-center justify-between">
-                  <h2 className="text-[11px] font-bold text-[#0B1528] uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D00]" />
+                  <h2 className="flex items-center gap-2 text-[11px] font-semibold tracking-wide text-[#0B1528]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#FF4D00]" />
                     {info.title}
                   </h2>
                   <span className="text-[10px] text-slate-400 font-semibold">
@@ -222,13 +222,13 @@ export default function DashboardPage() {
               )}
 
               {/* Grid of Widgets inside Category */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-12">
                 {catWidgets.map((widget) => {
                   const WidgetComponent = widget.component;
                   return (
                     <div
                       key={widget.id}
-                      className={cn("flex flex-col", widget.colSpanDesktop)}
+                      className={cn("flex min-w-0 flex-col", widget.colSpanDesktop)}
                     >
                       <WidgetComponent
                         stats={stats}
