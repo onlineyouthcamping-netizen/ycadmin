@@ -71,8 +71,6 @@ import {
 } from "lucide-react";
 import { allocateWholeRupees, cn } from "@/lib/utils";
 import { dashLink } from "@/modules/dashboard.chrome";
-=======
->>>>>>> d1f742a (fix(ops): fix JSX syntax errors in DepartureHubPage)
 import api from "@/services/api";
 import { opsService } from "@/services/ops.service";
 import { toast } from "sonner";
@@ -1742,6 +1740,23 @@ export default function DepartureHubPage() {
     emergencyContact: "",
   });
   const [isSavingGuide, setIsSavingGuide] = useState(false);
+
+  const handleEditGuide = (g: any) => {
+    setEditingGuideId(g.id);
+    setGuideForm({
+      guideName: g.guideName || "",
+      agreedAmount: String(g.agreedAmount || ""),
+      advancePaid: String(g.advancePaid || "0"),
+      daysWorked: String(g.daysWorked || "1"),
+      notes: g.notes || "",
+      assignmentType: g.assignmentType || "PRIMARY_GUIDE",
+      reportingLocation: g.reportingLocation || "",
+      reportingTime: g.reportingTime || "",
+      emergencyContact: g.emergencyContact || "",
+    });
+    setAddGuideOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleAddGuide = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -5602,6 +5617,7 @@ useEffect(() => {
     const missingDocument = allPassengers.filter(
       (p) => p.documentStatus === "Missing",
     ).length;
+    const cancelled = allPassengers.filter((p) => p.isCancelled).length;
     return {
       total,
       paidInFull,
@@ -5612,6 +5628,9 @@ useEffect(() => {
       outstandingPending,
       withDue,
       totalDue,
+      cancelled,
+      cancelledPercent:
+        total > 0 ? ((cancelled / total) * 100).toFixed(1) : "0",
       ticketed,
       ticketVerified,
       roomAllocated,
@@ -6131,10 +6150,10 @@ useEffect(() => {
 
   // CTA label by tab
   const ctaLabel: Record<string, string> = {
-    overview:    "Edit Departure",
+    overview:    "Edit departure",
     passengers:  "Add Passenger",
     hotels:      "Add Hotel",
-    transport:   "Add Vehicle",
+    transport:   "Add vehicle",
     guides:      "Assign Guide",
     activities:  "Add Activity",
     operations:  opsSubTab === "tasks" ? "Add Task" : "Add Template",
@@ -6161,41 +6180,58 @@ useEffect(() => {
   const isOverviewTab = activeTab === "overview";
   const currentDepartureStatus = departureRecord?.status || "Planning";
 
+  const formatDepartureStatusLabel = (status: string) =>
+    status
+      ? status.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+      : "Planning";
+
+  const statusChipClass = (status: string) => {
+    const s = (status || "").toLowerCase();
+    if (s.includes("cancel")) return "border-[#E8EEF4] bg-white text-slate-500";
+    if (s.includes("planning")) return "border-[#FF4D00] text-[#FF4D00] bg-white";
+    return "border-[#0B1528] text-[#0B1528] bg-white";
+  };
+
+  const headerOutlineBtn =
+    "h-8 w-full md:w-auto min-w-0 text-[12px] font-medium rounded-md border border-[#E8EEF4] bg-white text-[#0B1528] hover:bg-[#F4F7FB] px-3 inline-flex items-center justify-center gap-1.5 shadow-none transition-colors disabled:opacity-50";
+  const headerPrimaryBtn =
+    "h-8 w-full md:w-auto min-w-0 text-[12px] font-medium rounded-md bg-[#FF4D00] hover:bg-[#E04400] text-white px-3.5 inline-flex items-center justify-center gap-1.5 shadow-none transition-colors";
+
   const openEditDeparture = () => {
     setEditGuideName(leadGuideName);
     setEditDepartureOpen(true);
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden md:overflow-hidden bg-[#F4F7FB] text-[#162B45] font-sans antialiased">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden md:overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased">
       {/* ─── RESPONSIVE DEPARTURE HUB ─── */}
-      <div className="flex flex-col flex-1 min-w-0 md:overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:overflow-hidden">
         {/* ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ */}
-        <div className="bg-white border-b border-[#E2E8F0] shadow-xs">
+        <div className="bg-white border-b border-[#E8EEF4]">
           {/* Breadcrumb (desktop) — mobile uses a single Back control in the title row */}
           <div className="hidden md:flex px-4 sm:px-6 pt-3 items-center justify-between gap-3 min-w-0">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 min-w-0">
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 min-w-0">
               <span
                 onClick={() => navigate("/admin/operations")}
-                className="hover:text-slate-600 cursor-pointer shrink-0"
+                className="hover:text-[#0B1528] cursor-pointer shrink-0"
               >
                 Departures Hub
               </span>
-              <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-              <span className="hover:text-slate-600 cursor-pointer truncate">
+              <ChevronRight className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+              <span className="hover:text-[#0B1528] cursor-pointer truncate">
                 {shortDepartureCode}
               </span>
-              <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-              <span className="text-slate-700 font-bold capitalize shrink-0">
+              <ChevronRight className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
+              <span className="text-[#0B1528] font-medium capitalize shrink-0">
                 {activeTab}
               </span>
             </div>
 
             <button
               onClick={() => navigate("/admin/operations")}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-[4px] transition-colors cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 h-8 text-[12px] font-medium text-slate-600 hover:text-[#0B1528] bg-white hover:bg-[#F4F7FB] border border-[#E8EEF4] px-3 rounded-md transition-colors cursor-pointer shrink-0 shadow-none"
             >
-              <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+              <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
               Back to Departures Hub
             </button>
           </div>
@@ -6205,57 +6241,42 @@ useEffect(() => {
             <div className="flex items-start gap-2.5 min-w-0">
               <button
                 onClick={() => navigate("/admin/operations")}
-                className="md:hidden flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1.5 rounded-[4px] transition-colors cursor-pointer shrink-0"
+                className="md:hidden inline-flex items-center gap-1 h-8 text-[12px] font-medium text-slate-600 hover:text-[#0B1528] bg-white hover:bg-[#F4F7FB] border border-[#E8EEF4] px-2.5 rounded-md transition-colors cursor-pointer shrink-0 shadow-none"
                 title="Back to Departures Hub"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+                <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
                 <span>Back</span>
               </button>
-              <div className="hidden sm:flex w-8 h-8 rounded-[4px] bg-[#FFF0E6] items-center justify-center text-[#FF4D00] shrink-0">
-                <Compass className="w-5 h-5" />
-              </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[9.5px] font-black text-[#FF4D00] uppercase tracking-wider block mb-0.5">
-                  <span className="md:hidden">Workspace</span>
-                  <span className="hidden md:inline">Departure Operations Workspace</span>
-                </span>
                 <div className="flex items-center gap-2 flex-wrap min-w-0">
-                  <h1 className="text-lg sm:text-xl font-black text-[#0B1528] tracking-tight leading-none font-mono">
+                  <Compass className="w-4 h-4 text-[#FF4D00] shrink-0 hidden sm:block" strokeWidth={1.75} />
+                  <h1 className="text-[17px] md:text-[18px] font-semibold text-[#0B1528] tracking-tight leading-none">
                     {shortDepartureCode}
                   </h1>
-                  {(() => {
-                    const status = currentDepartureStatus;
-                    const statusColors: Record<string, string> = {
-                      Planning: "bg-amber-100 text-amber-800 border-amber-200",
-                      Ready: "bg-blue-100 text-blue-800 border-blue-200",
-                      Confirmed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-                      "In Progress": "bg-indigo-100 text-indigo-800 border-indigo-200",
-                      Completed: "bg-slate-100 text-slate-800 border-slate-200",
-                      Cancelled: "bg-rose-100 text-rose-800 border-rose-200",
-                    };
-                    return (
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border shrink-0 ${statusColors[status] || "bg-slate-100 text-slate-800 border-slate-200"}`}>
-                        {status}
-                      </span>
-                    );
-                  })()}
+                  <span
+                    className={cn(
+                      "inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium border shrink-0",
+                      statusChipClass(currentDepartureStatus),
+                    )}
+                  >
+                    {formatDepartureStatusLabel(currentDepartureStatus)}
+                  </span>
                 </div>
-                <p className="text-sm text-slate-600 font-semibold mt-1 break-words">
-                  {tripDetails?.title || "Trip Departure"}
+                <p className="text-[13px] text-[#0B1528] font-medium mt-1 break-words">
+                  {tripDetails?.title || "Trip departure"}
                 </p>
-                <p className="text-[10px] font-mono text-slate-400 mt-0.5 break-all leading-snug">
+                <p className="text-[11px] text-slate-400 mt-0.5 break-all leading-snug">
                   {fullDepartureId}
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:flex md:flex-wrap md:items-center gap-2 min-w-0 relative w-full md:w-auto">
-              {/* Dynamic Status Transition Buttons */}
+            <div className="flex flex-col sm:flex-row sm:flex-wrap md:items-center gap-2 min-w-0 relative w-full md:w-auto">
               {currentDepartureStatus === "Planning" && (
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("Ready")}
-                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors"
+                  className={headerOutlineBtn}
                 >
                   Mark Ready
                 </button>
@@ -6264,67 +6285,62 @@ useEffect(() => {
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("Confirmed")}
-                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                  className={headerOutlineBtn}
                 >
                   <span className="md:hidden">Confirm</span>
-                  <span className="hidden md:inline">Confirm Departure</span>
+                  <span className="hidden md:inline">Confirm departure</span>
                 </button>
               )}
               {currentDepartureStatus === "Confirmed" && (
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("In Progress")}
-                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-indigo-300 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                  className={headerOutlineBtn}
                 >
-                  <span className="md:hidden">Start Trip</span>
-                  <span className="hidden md:inline">Start Trip (In Progress)</span>
+                  <span className="md:hidden">Start trip</span>
+                  <span className="hidden md:inline">Start trip</span>
                 </button>
               )}
               {currentDepartureStatus === "In Progress" && (
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("Completed")}
-                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-slate-300 bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                  className={headerOutlineBtn}
                 >
                   <span className="md:hidden">Complete</span>
-                  <span className="hidden md:inline">Complete Departure</span>
+                  <span className="hidden md:inline">Complete departure</span>
                 </button>
               )}
 
-              <button
-                onClick={openEditDeparture}
-                className="hidden md:inline-flex min-w-0 text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 transition-colors"
-              >
-                Edit Departure
-              </button>
               <div className="relative min-w-0 w-full md:w-auto">
                 <button
                   onClick={() => setMoreActionsOpen(!moreActionsOpen)}
-                  className="w-full justify-center text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-2.5 py-2 md:px-3 md:py-1.5 flex items-center gap-1 transition-colors"
+                  className={cn(headerOutlineBtn, "w-full md:w-auto")}
                 >
-                  <span className="md:hidden">More</span>
-                  <span className="hidden md:inline">More Actions</span>
-                  <ChevronDown className="w-3 h-3 shrink-0" />
+                  More
+                  <ChevronDown className="w-3.5 h-3.5 shrink-0 text-slate-400" strokeWidth={1.75} />
                 </button>
                 {moreActionsOpen && (
-                  <div className="absolute right-0 mt-1 w-44 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-[4px] shadow-lg py-1 z-50 text-left">
-                    <button
-                      onClick={() => {
-                        openEditDeparture();
-                        setMoreActionsOpen(false);
-                      }}
-                      className="md:hidden w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 font-bold"
-                    >
-                      Edit Departure
-                    </button>
+                  <div className="absolute right-0 mt-1 w-44 max-w-[calc(100vw-2rem)] bg-white border border-[#E8EEF4] rounded-md shadow-lg py-1 z-50 text-left">
+                    {!isOverviewTab && (
+                      <button
+                        onClick={() => {
+                          openEditDeparture();
+                          setMoreActionsOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-[12px] text-[#0B1528] hover:bg-[#F4F7FB] font-medium"
+                      >
+                        Edit departure
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         handlePrintManifest();
                         setMoreActionsOpen(false);
                       }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                      className="w-full text-left px-3 py-1.5 text-[12px] text-slate-600 hover:bg-[#F4F7FB]"
                     >
-                      Print Manifest
+                      Print manifest
                     </button>
                     {currentDepartureStatus !== "Cancelled" && (
                       <button
@@ -6332,9 +6348,9 @@ useEffect(() => {
                           handleStatusChange("Cancelled");
                           setMoreActionsOpen(false);
                         }}
-                        className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 font-bold"
+                        className="w-full text-left px-3 py-1.5 text-[12px] text-slate-600 hover:bg-[#F4F7FB]"
                       >
-                        Cancel Departure
+                        Cancel departure
                       </button>
                     )}
                   </div>
@@ -6343,9 +6359,9 @@ useEffect(() => {
               {isOverviewTab ? (
                 <button
                   onClick={openEditDeparture}
-                  className="md:hidden col-span-2 min-w-0 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] px-4 py-2 flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                  className={headerPrimaryBtn}
                 >
-                  Edit Departure
+                  Edit departure
                 </button>
               ) : (
                 <button
@@ -6379,47 +6395,38 @@ useEffect(() => {
                       );
                     }
                   }}
-                  className="col-span-2 md:col-span-1 min-w-0 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] px-4 py-2 md:py-1.5 flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                  className={headerPrimaryBtn}
                 >
-                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  <Plus className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
                   <span className="truncate">{ctaLabel[activeTab] || "Action"}</span>
-                </button>
-              )}
-              {isOverviewTab && (
-                <button
-                  onClick={openEditDeparture}
-                  className="hidden md:inline-flex text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px] px-4 py-1.5 items-center justify-center gap-1.5 transition-colors shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Edit Departure
                 </button>
               )}
             </div>
           </div>
 
           {/* Meta row */}
-          <div className="px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] font-semibold text-slate-500 border-t border-slate-100 mt-2 min-w-0">
+          <div className="px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] font-medium text-slate-500 border-t border-[#E8EEF4] mt-2 min-w-0">
             <span className="flex items-center gap-1.5 min-w-0">
-              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
+              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />{" "}
               <span className="break-words">{dateAndDurationLabel}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
-              {passengerStats.total} Participants
+              <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />{" "}
+              {passengerStats.total} participants
             </span>
             <span className="flex items-center gap-1.5 min-w-0">
-              <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
-              <span className="truncate">Lead Guide: {leadGuideName}</span>
+              <User className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />{" "}
+              <span className="truncate">Lead guide: {leadGuideName}</span>
             </span>
             <span className="flex items-center gap-1.5 min-w-0">
-              <Bus className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
+              <Bus className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />{" "}
               <span className="truncate">{transportVehiclesLabel}</span>
             </span>
           </div>
 
           {/* Tab bar — horizontal scroll, no wrap, extra end pad so last tab isn’t clipped */}
-          <div className="min-w-0 border-t border-slate-100 overflow-x-auto no-scrollbar">
-            <div className="flex flex-nowrap gap-0 text-[11.5px] font-semibold px-3 sm:px-6 pr-12 sm:pr-6">
+          <div className="min-w-0 border-t border-[#E8EEF4] overflow-x-auto no-scrollbar">
+            <div className="flex flex-nowrap gap-0 text-[11.5px] font-medium px-3 sm:px-6 pr-12 sm:pr-6">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -6429,18 +6436,18 @@ useEffect(() => {
                     className={cn(
                       "pb-3 pt-3 px-2.5 sm:px-3 transition-all border-b-2 whitespace-nowrap flex items-center gap-1.5 shrink-0",
                       isActive
-                        ? "text-[#FF4D00] border-[#FF4D00] font-bold"
-                        : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200",
+                        ? "text-[#FF4D00] border-[#FF4D00] font-semibold"
+                        : "border-transparent text-slate-500 hover:text-[#0B1528] hover:border-slate-200",
                     )}
                   >
                     {tab.label}
                     {tab.badge ? (
                       <span
                         className={cn(
-                          "text-[8px] font-extrabold px-1.5 rounded-full h-4 min-w-[16px] flex items-center justify-center",
+                          "text-[10px] font-semibold px-1.5 rounded-md h-4 min-w-[16px] flex items-center justify-center tabular-nums",
                           isActive
-                            ? "bg-[#FF4D00] text-white"
-                            : "bg-red-500 text-white",
+                            ? "bg-[#FF4D00]/10 text-[#FF4D00]"
+                            : "bg-[#F4F7FB] text-[#0B1528] border border-[#E8EEF4]",
                         )}
                       >
                         {tab.badge}
@@ -6458,598 +6465,447 @@ useEffect(() => {
         <div className="flex-1 md:overflow-y-auto p-3 sm:p-6 space-y-4 min-w-0 pb-32 md:pb-6">
           {/* ──────────────────────── OVERVIEW ──────────────────────── */}
           {activeTab === "overview" && (
-            <div className="space-y-4">
-              {/* ERP Modular Dashboard matching User Specification */}
+            <div className="space-y-3 min-w-0">
               {(() => {
                 const overviewHotels = tripVendors.filter((v: any) => v.vendorType === "hotel");
                 const isHotelsConfirmed = overviewHotels.length > 0;
-                
+
                 const overviewTransport = tripVendors.filter((v: any) => v.vendorType === "transport");
                 const isTransportConfirmed = overviewTransport.length > 0 || allocFleet.length > 0;
-                
+
                 const overviewGuide = tripVendors.filter((v: any) => v.vendorType === "guide");
                 const isGuideAssigned = overviewGuide.length > 0;
-                
-                const formatCompact = (num: number) => {
-                  if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)}Cr`;
-                  if (num >= 100000) return `₹${(num / 100000).toFixed(1)}L`;
-                  if (num >= 1000) return `₹${(num / 1000).toFixed(1)}K`;
-                  return `₹${(num || 0).toLocaleString("en-IN")}`;
-                };
 
                 const rScore = readinessData?.totalScore ?? 0;
-                const rStatus = readinessData?.status === "READY" ? "READY" : "ACTION REQUIRED";
+                const isReady = readinessData?.status === "READY";
                 const missingList = readinessData?.missingItems || [];
+                const hotelsTarget = computedHotels.length || 7;
+                const tasksDone = computedTasks.filter((t) => t.status === "COMPLETED").length;
+                const tasksTotal = computedTasks.length || 15;
+
+                const readinessKpis = [
+                  {
+                    label: "Readiness",
+                    value: `${rScore}%`,
+                    hint: isReady ? "Ready" : "Needs attention",
+                    tone: isReady ? "text-[#0B1528]" : "text-[#FF4D00]",
+                  },
+                  {
+                    label: "Hotels",
+                    value: `${overviewHotels.length} / ${hotelsTarget}`,
+                    hint: isHotelsConfirmed ? "Confirmed" : "Pending",
+                    tone: isHotelsConfirmed ? "text-[#0B1528]" : "text-[#FF4D00]",
+                  },
+                  {
+                    label: "Transport",
+                    value: `${overviewTransport.length || allocFleet.length || 1} / 1`,
+                    hint: isTransportConfirmed ? "Assigned" : "Pending",
+                    tone: isTransportConfirmed ? "text-[#0B1528]" : "text-[#FF4D00]",
+                  },
+                  {
+                    label: "Guides",
+                    value: String(overviewGuide.length || dbGuides.length || 1),
+                    hint: isGuideAssigned ? "Assigned" : "Pending",
+                    tone: isGuideAssigned ? "text-[#0B1528]" : "text-[#FF4D00]",
+                  },
+                  {
+                    label: "Payments",
+                    value: `${stats.customerPaidPercent}%`,
+                    hint: "Collected",
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Tasks",
+                    value: `${tasksDone} / ${tasksTotal}`,
+                    hint: "Done",
+                    tone: "text-[#0B1528]",
+                  },
+                ];
 
                 return (
-                  <div className="bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs overflow-hidden min-w-0">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-[#0B1528] text-white px-3 py-2.5 sm:p-4 min-w-0">
-                      <div className="flex gap-2 sm:gap-3 items-center min-w-0">
-                        <h3 className="font-black text-base sm:text-lg font-mono shrink-0">
-                          {shortDepartureCode}
-                        </h3>
-                        <span className={`border px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider shrink-0 ${rStatus === "READY" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" : "bg-amber-500/20 text-amber-400 border-amber-500/50"}`}>
-                          {rStatus}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase">Readiness</span>
-                        <span className={`font-black text-lg ${rStatus === "READY" ? "text-emerald-400" : "text-amber-400"}`}>{rScore}%</span>
-                      </div>
-                    </div>
-
+                  <div className="space-y-3 min-w-0">
                     {missingList.length > 0 && (
-                      <div className="p-3 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 space-y-1">
-                        <span className="font-bold flex items-center gap-1 text-amber-800">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Operational Missing Items ({missingList.length}):
-                        </span>
-                        <ul className="list-disc list-inside space-y-0.5 text-[11px] font-medium text-amber-800">
+                      <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+                        <div className="min-h-10 px-4 py-2 flex items-center justify-between gap-3 border-b border-[#E8EEF4] bg-[#F8FAFC]">
+                          <span className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                            Action required
+                          </span>
+                          <span className="text-[11px] text-slate-500 tabular-nums shrink-0">
+                            {missingList.length} {missingList.length === 1 ? "item" : "items"}
+                          </span>
+                        </div>
+                        <ul className="px-4 py-3 space-y-2">
                           {missingList.map((item: string, idx: number) => (
-                            <li key={idx}>{item}</li>
+                            <li key={idx} className="flex items-start gap-2 text-[12px] text-[#0B1528]">
+                              <Check className="w-3.5 h-3.5 text-[#FF4D00] mt-0.5 shrink-0" strokeWidth={1.75} />
+                              <span>{item}</span>
+                            </li>
                           ))}
                         </ul>
                       </div>
                     )}
 
-                    {/* Departure Readiness Summary Cockpit */}
-                    <div className="px-3 py-2.5 sm:p-4 bg-[#0B1528] text-white border-b border-slate-800 min-w-0">
-                      <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2 min-w-0">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-[#FF4D00] truncate">Readiness Summary</span>
-                        <span className="hidden sm:inline text-xs font-mono font-bold text-slate-300 shrink-0">Live DB Operational Status</span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-6 gap-1.5 sm:gap-2 text-center text-xs">
-                        <div className="bg-slate-800/80 p-2 sm:p-2.5 rounded-lg border border-slate-700 min-w-0">
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">Hotels</p>
-                          <p className={`font-black text-sm mt-0.5 ${isHotelsConfirmed ? "text-emerald-400" : "text-amber-400"}`}>
-                            {overviewHotels.length} / {computedHotels.length || 7} Confirmed
-                          </p>
-                        </div>
-                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">Transport</p>
-                          <p className={`font-black text-sm mt-0.5 ${isTransportConfirmed ? "text-emerald-400" : "text-amber-400"}`}>
-                            {overviewTransport.length || allocFleet.length || 1} / 1 Assigned
-                          </p>
-                        </div>
-                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">Guides</p>
-                          <p className={`font-black text-sm mt-0.5 ${isGuideAssigned ? "text-emerald-400" : "text-amber-400"}`}>
-                            {overviewGuide.length || dbGuides.length || 1} Assigned
-                          </p>
-                        </div>
-                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">Check-ins</p>
-                          <p className="font-black text-emerald-400 text-sm mt-0.5">
-                            {computedHotels.length > 0 ? `${computedHotels.length} / ${computedHotels.length}` : "Updated"}
-                          </p>
-                        </div>
-                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">Payments</p>
-                          <p className="font-black text-emerald-400 text-sm mt-0.5">
-                            {stats.customerPaidPercent}% Collected
-                          </p>
-                        </div>
-                        <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">Tasks</p>
-                          <p className="font-black text-emerald-400 text-sm mt-0.5">
-                            {computedTasks.filter((t) => t.status === "COMPLETED").length} / {computedTasks.length || 15} Done
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 divide-x divide-y lg:divide-y-0 divide-[#E8EEF4] bg-[#F8FAFC]">
-                      <div className="p-3 sm:p-4 text-center min-w-0">
-                        <p className="text-[9px] font-medium text-slate-400 mb-1">Passengers</p>
-                        <p className="font-semibold text-[#0B1528] text-base tabular-nums">{stats.totalParticipants}</p>
-                      </div>
-                      <div className="p-3 sm:p-4 text-center min-w-0">
-                        <p className="text-[9px] font-medium text-slate-400 mb-1">Hotels</p>
-                        <p className={`font-semibold text-base ${isHotelsConfirmed ? "text-[#0B1528]" : "text-slate-500"}`}>
-                          {isHotelsConfirmed ? "Confirmed" : "Pending"}
-                        </p>
-                      </div>
-                      <div className="p-3 sm:p-4 text-center min-w-0">
-                        <p className="text-[9px] font-medium text-slate-400 mb-1">Transport</p>
-                        <p className={`font-semibold text-base ${isTransportConfirmed ? "text-[#0B1528]" : "text-slate-500"}`}>
-                          {isTransportConfirmed ? "Confirmed" : "Pending"}
-                        </p>
-                      </div>
-                      <div className="p-3 sm:p-4 text-center min-w-0">
-                        <p className="text-[9px] font-medium text-slate-400 mb-1">Guide</p>
-                        <p className={`font-semibold text-base ${isGuideAssigned ? "text-[#0B1528]" : "text-slate-500"}`}>
-                          {isGuideAssigned ? "Assigned" : "Pending"}
-                        </p>
-                      </div>
-                      <div className="p-3 sm:p-4 text-center min-w-0">
-                        <p className="text-[9px] font-medium text-slate-400 mb-1">Collections</p>
-                        <div className="flex items-end justify-center gap-1.5">
-                          <p className="font-semibold text-[#0B1528] text-base tabular-nums">{formatCompact(stats.totalCollected || stats.totalAdvance || 0)}</p>
-                          <p className="text-[10px] font-medium text-slate-400 mb-0.5 tabular-nums">{stats.customerPaidPercent}%</p>
-                        </div>
-                      </div>
-                      <div className="p-3 sm:p-4 text-center min-w-0">
-                        <p className="text-[9px] font-medium text-slate-400 mb-1">Expenses</p>
-                        <p className="font-semibold text-[#0B1528] text-base tabular-nums">{formatCompact(stats.totalExpenses || 0)}</p>
-                      </div>
-                      <div className="p-3 sm:p-4 text-center min-w-0">
-                        <p className="text-[9px] font-medium text-slate-400 mb-1">Net profit</p>
-                        <p className={`font-semibold text-base tabular-nums ${(stats.estProfit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatCompact(stats.estProfit || 0)}</p>
+                    <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-y lg:divide-y-0 divide-[#E8EEF4]">
+                        {readinessKpis.map((stat) => (
+                          <div key={stat.label} className="px-3 py-2.5 md:px-4 md:py-3 min-w-0">
+                            <p className="text-[11px] text-slate-500 font-medium truncate">
+                              {stat.label}
+                            </p>
+                            <p
+                              className={cn(
+                                "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
+                                stat.tone,
+                              )}
+                            >
+                              {stat.value}
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                              {stat.hint}
+                            </p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 );
               })()}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-4">
-                {/* Outstanding Balance card */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
-                        Outstanding Balance
-                      </span>
-                      <h3 className="text-lg font-black text-[#EA580C] mt-1 font-mono">
-                        ₹ {Number(stats?.customerOutstanding || 0).toLocaleString("en-IN")}
-                      </h3>
-                      <p className="text-[9px] text-slate-400 mt-1">
-                        From {stats?.outstandingParticipantsCount || 0} participants
-                      </p>
-                    </div>
-                    <div className="w-7 h-7 rounded bg-amber-50 flex items-center justify-center text-[#EA580C] text-sm">
-                      ₹
-                    </div>
-                  </div>
-                  <button className="text-[10px] font-bold text-blue-600 hover:underline mt-3.5 block">
-                    View details
-                  </button>
-                </div>
-
-                {/* Vendor Payables card */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
-                        Vendor Payables
-                      </span>
-                      <h3 className="text-lg font-black text-slate-900 mt-1">
-                        ₹ {Number(stats?.totalVendorPayables || 0).toLocaleString("en-IN")}
-                      </h3>
-                      <p className="text-[9px] text-slate-400 mt-1">
-                        Total pending
-                      </p>
-                    </div>
-                    <div className="w-7 h-7 rounded bg-slate-50 flex items-center justify-center text-slate-600">
-                      <Users className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <button className="text-[10px] font-bold text-blue-600 hover:underline mt-3.5 block">
-                    View details
-                  </button>
-                </div>
-
-                {/* Profit Est card */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
-                        Profit (Est.)
-                      </span>
-                      <h3 className="text-lg font-black text-emerald-600 mt-1">
-                        ₹ {Number(stats?.estProfit || 0).toLocaleString("en-IN")}
-                      </h3>
-                      <p className="text-[9px] text-slate-400 mt-1">
-                        {stats?.profitPercent || 0}% of revenue
-                      </p>
-                    </div>
-                    <div className="w-7 h-7 rounded bg-emerald-50 flex items-center justify-center text-emerald-600">
-                      <TrendingUp className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <button className="text-[10px] font-bold text-blue-600 hover:underline mt-3.5 block">
-                    View details
-                  </button>
-                </div>
-              </div>
-
-              {/* Dashboard grid mapping Screenshot 5 */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Column 1: Departure Timeline */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
-                      <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider">
-                        Departure Timeline
-                      </h3>
-                    </div>
-                    <div className="relative pl-5 border-l-2 border-slate-100 ml-1.5 space-y-4 py-1">
-                      {timelineSteps.map((step, idx) => (
-                        <div key={idx} className="relative">
-                          {/* Bullet points */}
-                          <div
-                            className={cn(
-                              "absolute -left-[27px] top-0.5 w-3 h-3 rounded-full border-2 bg-white",
-                              step.active
-                                ? "border-emerald-500 bg-emerald-500"
-                                : step.current
-                                  ? "border-blue-600 bg-blue-50"
-                                  : "border-slate-200",
-                            )}
-                          />
-                          <div className="flex justify-between items-start gap-2">
-                            <div>
-                              <p
-                                className={cn(
-                                  "text-[11px] font-bold",
-                                  step.pending
-                                    ? "text-slate-400"
-                                    : "text-slate-700",
-                                )}
-                              >
-                                {step.title}
-                              </p>
-                              <p className="text-[9.5px] text-slate-400 mt-0.5">
-                                {step.date}
-                              </p>
-                            </div>
-                            {step.user && (
-                              <span className="text-[9.5px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-[4px]">
-                                {step.user}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+                <div className="min-h-10 px-4 py-2 flex items-center justify-between gap-3 border-b border-[#E8EEF4] bg-[#F8FAFC]">
+                  <span className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                    Finance
+                  </span>
                   <button
-                    onClick={() => toast.info("Full timeline")}
-                    className="text-[10px] font-black text-blue-600 hover:underline mt-4 text-left"
+                    type="button"
+                    onClick={() => setActiveTab("finance")}
+                    className={dashLink}
                   >
-                    View full timeline
+                    View finance
                   </button>
                 </div>
-
-                {/* Column 2: Itinerary Summary */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
-                      <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider">
-                        Itinerary Summary
-                      </h3>
-                      <button
-                        onClick={() => setActiveTab("itinerary")}
-                        className="text-[10px] font-bold text-blue-600 hover:underline"
-                      >
-                        View full itinerary
-                      </button>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                      {computedItinerary.map((row: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="py-2 flex items-center justify-between gap-3 text-[11px] font-semibold text-slate-700"
-                        >
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-500 px-1.5 py-0.5 rounded-[4px]">
-                              {row.day}
-                            </span>
-                            <span className="text-[10px] font-bold text-slate-400">
-                              {row.date
-                                ? row.date.split(" ").slice(0, 2).join(" ")
-                                : "TBD"}
-                            </span>
-                          </div>
-                          <p className="truncate flex-1 font-medium text-slate-600 text-left">
-                            {row.plan || row.sub || "Day Plan"}
-                          </p>
-                          <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 px-1 py-0.5 rounded-[3px] shrink-0 uppercase tracking-wider">
-                            {row.status || "ON TIME"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E8EEF4]">
+                  <div className="px-4 py-3 min-w-0">
+                    <p className="text-[11px] text-slate-500 font-medium truncate">
+                      Outstanding
+                    </p>
+                    <p className="text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight text-[#FF4D00]">
+                      ₹ {Number(stats?.customerOutstanding || 0).toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                      From {stats?.outstandingParticipantsCount || 0} participants
+                    </p>
                   </div>
-                  <button
-                    onClick={() => setActiveTab("itinerary")}
-                    className="text-[10px] font-black text-blue-600 hover:underline mt-4 text-left"
-                  >
-                    View full itinerary & day plans
-                  </button>
-                </div>
-
-                {/* Column 3: Quick Actions + Team Contacts */}
-                <div className="space-y-4">
-                  {/* Quick Actions Grid */}
-                  <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs">
-                    <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2.5 mb-3">
-                      Quick Actions
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        {
-                          label: "Add Expense",
-                          icon: <Sliders className="w-4 h-4 text-slate-500" />,
-                          action: () => setActiveTab("payments"),
-                        },
-                        {
-                          label: "Add Payment",
-                          icon: (
-                            <CreditCard className="w-4 h-4 text-[#F97316]" />
-                          ),
-                          action: () => setActiveTab("payments"),
-                        },
-                        {
-                          label: "Add Task",
-                          icon: (
-                            <CheckSquare className="w-4 h-4 text-blue-600" />
-                          ),
-                          action: () => setActiveTab("tasks"),
-                        },
-                        {
-                          label: "Upload Document",
-                          icon: <Folder className="w-4 h-4 text-purple-600" />,
-                          action: () => setActiveTab("documents"),
-                        },
-                        {
-                          label: "Download Report",
-                          icon: <Download className="w-4 h-4 text-slate-500" />,
-                          action: () => setActiveTab("reports"),
-                        },
-                      ].map((act, idx) => (
-                        <button
-                          key={idx}
-                          onClick={act.action}
-                          className="flex flex-col items-center justify-center p-2.5 border border-slate-100 hover:bg-slate-50 rounded-[6px] transition-colors gap-2 text-center h-[72px] bg-white"
-                        >
-                          {act.icon}
-                          <span className="text-[9.5px] font-bold text-slate-600 leading-tight">
-                            {act.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                  <div className="px-4 py-3 min-w-0">
+                    <p className="text-[11px] text-slate-500 font-medium truncate">
+                      Payables
+                    </p>
+                    <p className="text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight text-[#0B1528]">
+                      ₹ {Number(stats?.totalVendorPayables || 0).toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                      Total pending
+                    </p>
                   </div>
-
-                  {/* Team & Contacts */}
-                  <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
-                      <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider">
-                        Team & Contacts
-                      </h3>
-                      <button
-                        onClick={() => setActiveTab("guides")}
-                        className="text-[10px] font-bold text-blue-600 hover:underline"
-                      >
-                        View all contacts
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {computedTeamContacts.length > 0 ? (
-                        computedTeamContacts.map((c, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between gap-2 text-[11px]"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Avatar
-                                initials={c.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                                className="bg-slate-700 w-6 h-6 text-[8px]"
-                              />
-                              <div>
-                                <p className="font-bold text-slate-800">
-                                  {c.name}
-                                </p>
-                                <p className="text-[9px] text-slate-400 font-semibold">
-                                  {c.role}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-slate-500 text-[10px]">
-                                {c.phone}
-                              </span>
-                              <PhoneCall className="w-3.5 h-3.5 text-blue-500 hover:opacity-85 cursor-pointer shrink-0" />
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-[11px] text-slate-400 italic py-1">
-                          No team members assigned yet.
-                        </p>
+                  <div className="px-4 py-3 min-w-0">
+                    <p className="text-[11px] text-slate-500 font-medium truncate">
+                      Profit
+                    </p>
+                    <p
+                      className={cn(
+                        "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
+                        (stats?.estProfit || 0) >= 0 ? "text-[#0B1528]" : "text-[#FF4D00]",
                       )}
-                    </div>
+                    >
+                      ₹ {Number(stats?.estProfit || 0).toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                      {stats?.profitPercent || 0}% of revenue
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Row Grid matching Screenshot 5 */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Box 1: Top Pending Tasks */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
-                      <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider">
-                        Top Pending Tasks
-                      </h3>
-                      <button
-                        onClick={() => setActiveTab("tasks")}
-                        className="text-[10px] font-bold text-blue-600 hover:underline"
-                      >
-                        View all tasks
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {computedTopTasks.map((task: any, idx: number) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0">
+                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0 flex flex-col">
+                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3">
+                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                      Departure timeline
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => toast.info("Full timeline")}
+                      className={dashLink}
+                    >
+                      Full timeline
+                    </button>
+                  </div>
+                  <div className="relative pl-5 border-l-2 border-[#E8EEF4] ml-1.5 space-y-3.5 py-1 flex-1">
+                    {timelineSteps.map((step, idx) => (
+                      <div key={idx} className="relative min-w-0">
                         <div
-                          key={idx}
-                          className="flex items-center justify-between gap-3 text-[11px] font-semibold"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Circle className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                            <p className="truncate font-medium text-slate-700 min-w-0 text-left">
-                              {task.title}
+                          className={cn(
+                            "absolute -left-[27px] top-0.5 w-2.5 h-2.5 rounded-full border-2 bg-white",
+                            step.active
+                              ? "border-[#0B1528] bg-[#0B1528]"
+                              : step.current
+                                ? "border-[#FF4D00] bg-white"
+                                : "border-[#E8EEF4]",
+                          )}
+                        />
+                        <div className="flex justify-between items-start gap-2 min-w-0">
+                          <div className="min-w-0">
+                            <p
+                              className={cn(
+                                "text-[12px] font-medium",
+                                step.pending ? "text-slate-400" : "text-[#0B1528]",
+                              )}
+                            >
+                              {step.title}
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {step.date}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span
-                              className={cn(
-                                "text-[8px] font-black px-1.5 py-0.5 rounded-[3px] border uppercase",
-                                task.priority === "High"
-                                  ? "bg-red-50 text-red-600 border-red-100"
-                                  : task.priority === "Medium"
-                                    ? "bg-amber-50 text-amber-600 border-amber-100"
-                                    : "bg-slate-50 text-slate-500 border-slate-150",
-                              )}
-                            >
-                              {task.priority}
+                          {step.user && (
+                            <span className="text-[10px] font-medium text-slate-500 bg-[#F4F7FB] border border-[#E8EEF4] px-1.5 py-0.5 rounded-md shrink-0">
+                              {step.user}
                             </span>
-                            <span className="text-[9.5px] text-slate-400 font-bold">
-                              {task.date}
-                            </span>
-                          </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Box 2: Payments Overview */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
-                      <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider">
-                        Payments Overview
-                      </h3>
-                      <button
-                        onClick={() => setActiveTab("payments")}
-                        className="text-[10px] font-bold text-blue-600 hover:underline"
+                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0 flex flex-col">
+                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2 min-w-0">
+                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                      Itinerary
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("itinerary")}
+                      className={dashLink}
+                    >
+                      View itinerary
+                    </button>
+                  </div>
+                  <div className="divide-y divide-[#E8EEF4] flex-1 min-w-0">
+                    {computedItinerary.map((row: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="py-2 flex items-center justify-between gap-3 text-[12px] min-w-0"
                       >
-                        View all payments
-                      </button>
-                    </div>
-                    <div className="space-y-3.5">
-                      {[
-                        {
-                          label: "Customer Payments Received",
-                          value: `₹ ${Number(stats?.customerPaid || 0).toLocaleString("en-IN")}`,
-                          percent: `${stats?.customerPaidPercent || 0}%`,
-                          color: "text-emerald-600",
-                        },
-                        {
-                          label: "Customer Outstanding",
-                          value: `₹ ${Number(stats?.customerOutstanding || 0).toLocaleString("en-IN")}`,
-                          percent: `${stats?.customerOutstandingPercent || 0}%`,
-                          color: "text-[#EA580C]",
-                        },
-                        {
-                          label: "Vendor Payments Made",
-                          value: `₹ ${Number(stats?.totalVendorPaid || 0).toLocaleString("en-IN")}`,
-                          percent: `${stats?.vendorPaidPercent || 0}%`,
-                          color: "text-slate-700",
-                        },
-                        {
-                          label: "Vendor Payables",
-                          value: `₹ ${Number(stats?.totalVendorPayables || 0).toLocaleString("en-IN")}`,
-                          percent: `${stats?.vendorPayablePercent || 0}%`,
-                          color: "text-slate-700",
-                        },
-                      ].map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="flex justify-between items-center gap-3 text-[11px] font-bold text-slate-800"
-                        >
-                          <span className="font-semibold text-slate-500 text-left">
-                            {item.label}
+                        <div className="flex items-center gap-2 shrink-0 min-w-0">
+                          <span className="bg-[#F4F7FB] border border-[#E8EEF4] text-[10px] font-medium text-slate-500 px-1.5 py-0.5 rounded-md">
+                            {row.day}
                           </span>
-                          <div className="flex items-center gap-2.5">
-                            <span className="font-mono">{item.value}</span>
-                            <span
-                              className={cn(
-                                "text-[10px] font-black shrink-0",
-                                item.color,
-                              )}
-                            >
-                              {item.percent}
+                          <span className="text-[11px] font-medium text-slate-400 hidden sm:inline">
+                            {row.date
+                              ? row.date.split(" ").slice(0, 2).join(" ")
+                              : "TBD"}
+                          </span>
+                        </div>
+                        <p className="truncate flex-1 font-medium text-[#0B1528] text-left min-w-0">
+                          {row.plan || row.sub || "Day plan"}
+                        </p>
+                        <span className="text-[10px] font-medium bg-white text-[#0B1528] border border-[#E8EEF4] px-1.5 py-0.5 rounded-md shrink-0">
+                          {formatDepartureStatusLabel(row.status || "On time")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#E8EEF4] rounded-xl px-3 py-2 flex flex-wrap items-center gap-1 min-w-0">
+                <span className="text-[11px] font-medium text-slate-500 px-1.5 py-1">
+                  Quick actions
+                </span>
+                {[
+                  {
+                    label: "Add expense",
+                    icon: Sliders,
+                    action: () => setActiveTab("finance"),
+                  },
+                  {
+                    label: "Add payment",
+                    icon: CreditCard,
+                    action: () => setActiveTab("finance"),
+                  },
+                  {
+                    label: "Add task",
+                    icon: CheckSquare,
+                    action: () => {
+                      setOpsSubTab("tasks");
+                      setActiveTab("operations");
+                    },
+                  },
+                  {
+                    label: "Upload document",
+                    icon: Folder,
+                    action: () => setActiveTab("documents"),
+                  },
+                  {
+                    label: "Download report",
+                    icon: Download,
+                    action: () => setActiveTab("reports"),
+                  },
+                ].map((act) => (
+                  <button
+                    key={act.label}
+                    type="button"
+                    onClick={act.action}
+                    className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[11px] font-medium text-[#0B1528] hover:bg-[#F4F7FB] transition-colors min-w-0"
+                  >
+                    <act.icon className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />
+                    <span className="truncate">{act.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-w-0">
+                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0">
+                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2">
+                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                      Team
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("guides")}
+                      className={dashLink}
+                    >
+                      Contacts
+                    </button>
+                  </div>
+                  <div className="space-y-2.5">
+                    {computedTeamContacts.length > 0 ? (
+                      computedTeamContacts.map((c, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between gap-2 text-[12px] min-w-0"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Avatar
+                              initials={c.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                              className="bg-[#0B1528] w-6 h-6 text-[8px]"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium text-[#0B1528] truncate">
+                                {c.name}
+                              </p>
+                              <p className="text-[11px] text-slate-400">
+                                {c.role}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-mono text-slate-500 text-[11px] hidden sm:inline">
+                              {c.phone}
                             </span>
+                            <PhoneCall className="w-3.5 h-3.5 text-slate-400 hover:text-[#0B1528] cursor-pointer" strokeWidth={1.75} />
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    ) : (
+                      <p className="text-[12px] text-slate-400 py-1">
+                        No team members assigned yet.
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Box 3: Important Notes */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
-                      <h3 className="text-[11.5px] font-black text-slate-800 uppercase tracking-wider">
-                        Important Notes
-                      </h3>
-                      <button
-                        onClick={() => toast.success("Add Note")}
-                        className="text-[10px] font-bold text-blue-600 hover:underline"
+                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0">
+                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2">
+                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                      Pending tasks
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpsSubTab("tasks");
+                        setActiveTab("operations");
+                      }}
+                      className={dashLink}
+                    >
+                      All tasks
+                    </button>
+                  </div>
+                  <div className="space-y-2.5">
+                    {computedTopTasks.map((task: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-3 text-[12px] min-w-0"
                       >
-                        + Add Note
-                      </button>
-                    </div>
-                    <div className="space-y-3 text-[11px]">
-                      {[
-                        {
-                          text: "Some participants are arriving late in Manali. Monitor arrival timings.",
-                          user: "Neeki",
-                          date: "29 Jun 2027",
-                          bg: "bg-amber-50/50 border-amber-100",
-                        },
-                        {
-                          text: "Hotel Mountain View – 6 rooms upgraded to super deluxe category.",
-                          user: "Suresh Bhai",
-                          date: "28 Jun 2027",
-                          bg: "bg-blue-50/30 border-blue-100",
-                        },
-                      ].map((note, idx) => (
-                        <div
-                          key={idx}
-                          className={cn("p-2.5 rounded-[4px] border", note.bg)}
-                        >
-                          <p className="font-medium text-slate-700 text-left leading-relaxed">
-                            {note.text}
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-bold mt-1.5 text-left">
-                            Added by {note.user} on {note.date}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Circle className="w-3.5 h-3.5 text-slate-300 shrink-0" strokeWidth={1.75} />
+                          <p className="truncate font-medium text-[#0B1528] min-w-0 text-left">
+                            {task.title}
                           </p>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={cn(
+                              "text-[10px] font-medium px-1.5 py-0.5 rounded-md border",
+                              task.priority === "High"
+                                ? "border-[#FF4D00] text-[#FF4D00] bg-white"
+                                : "border-[#E8EEF4] text-slate-500 bg-white",
+                            )}
+                          >
+                            {task.priority}
+                          </span>
+                          <span className="text-[11px] text-slate-400 hidden sm:inline">
+                            {task.date}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <button
-                    onClick={() => toast.info("View notes")}
-                    className="text-[10px] font-black text-blue-600 hover:underline mt-4 text-left"
-                  >
-                    View all notes
-                  </button>
+                </div>
+
+                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0 flex flex-col">
+                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2">
+                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                      Notes
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => toast.success("Add Note")}
+                      className={dashLink}
+                    >
+                      Add note
+                    </button>
+                  </div>
+                  <div className="space-y-2 text-[12px] flex-1">
+                    {[
+                      {
+                        text: "Some participants are arriving late in Manali. Monitor arrival timings.",
+                        user: "Neeki",
+                        date: "29 Jun 2027",
+                      },
+                      {
+                        text: "Hotel Mountain View – 6 rooms upgraded to super deluxe category.",
+                        user: "Suresh Bhai",
+                        date: "28 Jun 2027",
+                      },
+                    ].map((note, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-md border border-[#E8EEF4] bg-[#F8FAFC]"
+                      >
+                        <p className="font-medium text-[#0B1528] text-left leading-relaxed">
+                          {note.text}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-1.5 text-left">
+                          {note.user} · {note.date}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -7057,268 +6913,219 @@ useEffect(() => {
 
           {/* ──────────────────────── PASSENGERS ──────────────────────── */}
           {activeTab === "passengers" && (
-            <div className="space-y-4 min-w-0">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
-                <div className="min-w-0">
-                  <h2 className="text-base font-black text-[#0B1528]">
-                    Passengers
-                  </h2>
-                  <p className="text-[11px] text-slate-600 mt-0.5">
-                    {filteredPassengers.length} Passengers •{" "}
-                    {filteredBookingGroups.length} Bookings
-                  </p>
-                </div>
-                <button 
-                  onClick={() => handlePrintManifest()}
-                  className="w-full sm:w-auto justify-center text-[11px] font-bold border border-slate-200 rounded-[4px] px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 inline-flex items-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-500" /> Download
-                </button>
-              </div>
-
-              {/* PASSENGER ENGINE OUTPUT / DEMOGRAPHICS PANEL */}
-              <div className="bg-slate-800 text-white p-5 rounded-[8px] shadow-sm mb-4">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 min-w-0">
-                  <div>
-                    <h3 className="text-sm font-black tracking-wide flex items-center gap-2">
-                      <Settings className="w-4 h-4 text-orange-400" />
-                      Passenger Engine Output
+            <div className="space-y-3 min-w-0">
+              {/* PASSENGER ENGINE OUTPUT + PAYMENT STRIP */}
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+                <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5 border-b border-[#E8EEF4]">
+                  <div className="min-w-0">
+                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide flex items-center gap-1.5">
+                      <Settings className="w-3.5 h-3.5 text-[#FF4D00]" strokeWidth={1.75} />
+                      Passenger engine output
                     </h3>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Structured payload for downstream Assignment Engines
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Pax mix for hotel and transport assignment
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
                       className={cn(
-                        "text-[10px] font-bold px-2.5 py-1 rounded flex items-center gap-1.5",
+                        "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium border bg-white",
                         paxDemographics.total > 0
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          : "bg-red-500/20 text-red-400 border border-red-500/30",
+                          ? "border-[#0B1528] text-[#0B1528]"
+                          : "border-[#FF4D00] text-[#FF4D00]",
                       )}
                     >
                       {paxDemographics.total > 0 ? (
-                        <Check className="w-3 h-3" />
+                        <Check className="w-3 h-3" strokeWidth={1.75} />
                       ) : (
-                        <AlertTriangle className="w-3 h-3" />
+                        <AlertTriangle className="w-3 h-3" strokeWidth={1.75} />
                       )}
                       {paxDemographics.total > 0
-                        ? "Ready - Manifest Verified"
-                        : "Action Required - No Passengers"}
-                    </div>
-                    <span className="text-[10px] font-bold bg-slate-700 px-2 py-1 rounded text-slate-300">
-                      LIVE
+                        ? "Ready"
+                        : "Action required"}
+                    </span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium border border-[#E8EEF4] text-slate-500 bg-white">
+                      Live
                     </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      Total Pax
-                    </p>
-                    <p className="text-2xl font-black text-white mt-1">
-                      {paxDemographics.total}
-                    </p>
-                  </div>
-                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      Men (Male)
-                    </p>
-                    <p className="text-2xl font-black text-blue-400 mt-1">
-                      {paxDemographics.men}
-                    </p>
-                  </div>
-                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      Female
-                    </p>
-                    <p className="text-2xl font-black text-pink-400 mt-1">
-                      {paxDemographics.women}
-                    </p>
-                  </div>
-                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      Twin Pairs
-                    </p>
-                    <p className="text-2xl font-black text-orange-400 mt-1">
-                      {paxDemographics.twinPairs}
-                    </p>
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-[#E8EEF4]">
+                  {[
+                    { label: "Total pax", value: paxDemographics.total },
+                    { label: "Men", value: paxDemographics.men },
+                    { label: "Female", value: paxDemographics.women },
+                    { label: "Twin pairs", value: paxDemographics.twinPairs },
+                  ].map((stat) => (
+                    <div key={stat.label} className="px-3 py-2.5 md:px-4 md:py-3 min-w-0">
+                      <p className="text-[11px] text-slate-500 font-medium truncate">
+                        {stat.label}
+                      </p>
+                      <p className="text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight text-[#0B1528]">
+                        {stat.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-[#E8EEF4] border-t border-[#E8EEF4]">
+                  {[
+                    {
+                      id: "Paid in Full",
+                      label: "Paid",
+                      value: passengerStats.paidInFull,
+                      hint: `${passengerStats.paidPercent}% of total`,
+                      tone: "text-[#0B1528]",
+                      clickable: true,
+                    },
+                    {
+                      id: "Partial Payment",
+                      label: "Partial",
+                      value: passengerStats.partial,
+                      hint: `₹${Number(passengerStats?.outstandingPartial || 0).toLocaleString("en-IN")} due`,
+                      tone: "text-[#0B1528]",
+                      clickable: true,
+                    },
+                    {
+                      id: "Payment Pending",
+                      label: "Due",
+                      value: passengerStats.withDue || 0,
+                      hint: `₹${Number(passengerStats?.totalDue || 0).toLocaleString("en-IN")}`,
+                      tone:
+                        (passengerStats.withDue || 0) > 0
+                          ? "text-[#FF4D00]"
+                          : "text-[#0B1528]",
+                      clickable: true,
+                    },
+                    {
+                      id: "Cancelled",
+                      label: "Cancelled",
+                      value: passengerStats.cancelled || 0,
+                      hint: `${passengerStats.cancelledPercent || 0}% of total`,
+                      tone: "text-slate-500",
+                      clickable: false,
+                    },
+                  ].map((stat) => (
+                    <button
+                      key={stat.label}
+                      type="button"
+                      disabled={!stat.clickable}
+                      onClick={() => {
+                        if (!stat.clickable) return;
+                        setPaymentFilter(stat.id);
+                        setPage(1);
+                      }}
+                      className={cn(
+                        "px-3 py-2.5 md:px-4 md:py-3 min-w-0 text-left bg-white disabled:cursor-default",
+                        stat.clickable && "hover:bg-[#F8FAFC] cursor-pointer",
+                        paymentFilter === stat.id && "bg-[#F8FAFC]",
+                      )}
+                    >
+                      <p className="text-[11px] text-slate-500 font-medium truncate">
+                        {stat.label}
+                      </p>
+                      <p
+                        className={cn(
+                          "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
+                          stat.tone,
+                        )}
+                      >
+                        {stat.value}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        {stat.hint}
+                      </p>
+                    </button>
+                  ))}
                 </div>
 
                 {engineStats?.warnings && engineStats.warnings.length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-slate-700">
-                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <AlertTriangle className="w-3 h-3" /> Validation Warnings (
-                      {engineStats.warnings.length})
-                    </p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="border-t border-[#E8EEF4]">
+                    <div className="min-h-10 px-4 py-2 flex items-center justify-between gap-3 border-b border-[#FF4D00] bg-[#F8FAFC]">
+                      <span className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+                        Validation warnings
+                      </span>
+                      <span className="text-[11px] text-slate-500 tabular-nums shrink-0">
+                        {engineStats.warnings.length}
+                      </span>
+                    </div>
+                    <ul className="px-4 py-3 space-y-1.5">
                       {engineStats.warnings
                         .slice(0, 5)
                         .map((w: string, i: number) => (
-                          <span
+                          <li
                             key={i}
-                            className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-1 rounded"
+                            className="flex items-start gap-2 text-[12px] text-slate-600"
                           >
-                            {w}
-                          </span>
+                            <span className="mt-1.5 h-1 w-1 rounded-full bg-[#FF4D00] shrink-0" />
+                            <span>{w}</span>
+                          </li>
                         ))}
                       {engineStats.warnings.length > 5 && (
-                        <span className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-1 rounded">
-                          +{engineStats.warnings.length - 5} more
-                        </span>
+                        <li className="flex items-start gap-2 text-[12px] text-slate-500">
+                          <span className="mt-1.5 h-1 w-1 rounded-full bg-slate-300 shrink-0" />
+                          <span>+{engineStats.warnings.length - 5} more</span>
+                        </li>
                       )}
-                    </div>
+                    </ul>
                   </div>
                 )}
               </div>
 
-              {/* KPI cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {/* Total Passengers */}
-                <div
-                  onClick={() => {
-                    setPaymentFilter("All");
-                    setPage(1);
-                  }}
-                  className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-orange-300 hover:shadow-md transition-all"
-                >
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Total Passengers
-                  </p>
-                  <p className="text-2xl font-black text-slate-800">
-                    {passengerStats.total}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    Total confirmed
-                  </p>
-                </div>
-                {/* Paid in Full */}
-                <div
-                  onClick={() => {
-                    setPaymentFilter("Paid in Full");
-                    setPage(1);
-                  }}
-                  className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-orange-300 hover:shadow-md transition-all"
-                >
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Paid in Full
-                  </p>
-                  <p className="text-2xl font-black text-emerald-600">
-                    {passengerStats.paidInFull}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    {passengerStats.paidPercent}% of total
-                  </p>
-                </div>
-                {/* Partial Payment */}
-                <div
-                  onClick={() => {
-                    setPaymentFilter("Partial Payment");
-                    setPage(1);
-                  }}
-                  className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-orange-300 hover:shadow-md transition-all"
-                >
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Partial Payment
-                  </p>
-                  <p className="text-2xl font-black text-amber-600">
-                    {passengerStats.partial}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    ₹{Number(passengerStats?.outstandingPartial || 0).toLocaleString("en-IN")}{" "}
-                    due
-                  </p>
-                </div>
-                {/* Pending Due — shows ₹ amount prominently */}
-                <div
-                  onClick={() => {
-                    setPaymentFilter("Payment Pending");
-                    setPage(1);
-                  }}
-                  className="bg-red-50/50 border border-red-200 rounded-[4px] p-4 shadow-sm cursor-pointer hover:border-red-400 hover:shadow-md transition-all"
-                >
-                  <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1">
-                    Pending Due
-                  </p>
-                  <p className="text-xl font-black text-red-600 leading-tight">
-                    ₹{Number(passengerStats?.totalDue || 0).toLocaleString("en-IN")}
-                  </p>
-                  <p className="text-[10px] text-red-400 font-bold mt-0.5">
-                    {passengerStats?.withDue || 0} passengers with due
-                  </p>
-                </div>
-                {/* Cancelled */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[4px] p-4 shadow-sm">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Cancelled
-                  </p>
-                  <p className="text-2xl font-black text-slate-400">0</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    0% of total
-                  </p>
-                </div>
-              </div>
-
-              {/* Reconciliation Checklist Stats */}
-              <div className="bg-slate-50 border border-[#E2E8F0] rounded-[4px] p-3 flex flex-wrap items-center gap-6 text-xs text-slate-600 shadow-sm">
-                <span className="font-bold text-slate-800 uppercase tracking-wider text-[9.5px]">
-                  Reconciliation Checklist:
+              {/* Reconciliation — compact chips */}
+              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                <span className="text-[11px] font-medium text-slate-500 mr-0.5">
+                  Reconciliation
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-slate-800">
-                    {passengerStats.total}
-                  </span>{" "}
-                  <span className="text-slate-400 font-medium">Confirmed</span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-slate-800">
-                    {passengerStats.ticketed || 0}
-                  </span>{" "}
-                  <span className="text-slate-400 font-medium">Ticketed</span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-[#F97316]">
-                    {passengerStats.ticketVerified || 0}
-                  </span>{" "}
-                  <span className="text-slate-400 font-medium">Verified</span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-slate-800">
-                    {passengerStats.roomAllocated || 0}
-                  </span>{" "}
-                  <span className="text-slate-400 font-medium">
-                    Room Allocated
+                {[
+                  { label: "Confirmed", value: passengerStats.total },
+                  { label: "Ticketed", value: passengerStats.ticketed || 0 },
+                  { label: "Verified", value: passengerStats.ticketVerified || 0 },
+                  { label: "Room allocated", value: passengerStats.roomAllocated || 0 },
+                  { label: "Transport allocated", value: passengerStats.transportAllocated || 0 },
+                  { label: "Missing docs", value: passengerStats.missingDocument || 0, warn: true },
+                ].map((item) => (
+                  <span
+                    key={item.label}
+                    className={cn(
+                      "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium border bg-white tabular-nums",
+                      item.warn && item.value > 0
+                        ? "border-[#FF4D00] text-[#FF4D00]"
+                        : "border-[#E8EEF4] text-[#0B1528]",
+                    )}
+                  >
+                    <span className="font-semibold">{item.value}</span>
+                    <span className={item.warn && item.value > 0 ? "text-[#FF4D00]" : "text-slate-500"}>
+                      {item.label}
+                    </span>
                   </span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-slate-800">
-                    {passengerStats.transportAllocated || 0}
-                  </span>{" "}
-                  <span className="text-slate-400 font-medium">
-                    Transport Allocated
-                  </span>
-                </div>
-                <span className="text-slate-300">|</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-red-650">
-                    {passengerStats.missingDocument || 0}
-                  </span>{" "}
-                  <span className="text-slate-400 font-medium">
-                    Missing Docs
-                  </span>
-                </div>
+                ))}
               </div>
 
-              {/* Filters */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[4px] shadow-sm p-3 flex flex-wrap gap-2 items-center">
-                <div className="relative flex-grow min-w-[180px] max-w-xs">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              {/* List card: toolbar + table */}
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+              <div className="px-3 sm:px-4 py-3 flex flex-col gap-3 border-b border-[#E8EEF4] min-w-0">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
+                  <p className="text-[11px] text-slate-500 min-w-0">
+                    <span className="font-medium text-[#0B1528] tabular-nums">
+                      {filteredPassengers.length}
+                    </span>{" "}
+                    passengers ·{" "}
+                    <span className="tabular-nums">{filteredBookingGroups.length}</span>{" "}
+                    bookings
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handlePrintManifest()}
+                    className={cn(headerOutlineBtn, "w-full sm:w-auto")}
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                    Download
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center min-w-0">
+                <div className="relative flex-grow min-w-0 sm:min-w-[180px] max-w-xs">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
                   <input
                     type="text"
                     placeholder="Search by name, phone..."
@@ -7327,7 +7134,7 @@ useEffect(() => {
                       setPaxSearch(e.target.value);
                       setPage(1);
                     }}
-                    className="h-8 w-full pl-8 text-[11px] rounded-[4px] border border-slate-200 bg-white placeholder:text-slate-400 outline-none focus:ring-1 focus:ring-[#F97316]/30"
+                    className="h-8 w-full pl-8 text-[11px] rounded-md border border-[#E8EEF4] bg-white text-[#0B1528] placeholder:text-slate-400 outline-none focus:ring-1 focus:ring-[#FF4D00]/30"
                   />
                 </div>
 
@@ -7337,9 +7144,9 @@ useEffect(() => {
                     setBookingGroupFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50 max-w-[180px]"
+                  className="h-8 min-w-0 text-[11px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none hover:bg-[#F4F7FB] max-w-[180px]"
                 >
-                  <option value="All">All Booking Groups</option>
+                  <option value="All">All booking groups</option>
                   {bookingGroups.map((bg: any) => (
                     <option key={bg.bookingId} value={bg.bookingId}>
                       {bg.bookingRef} ({bg.leadName})
@@ -7353,11 +7160,11 @@ useEffect(() => {
                     setRoomAllocFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50"
+                  className="h-8 min-w-0 text-[11px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none hover:bg-[#F4F7FB]"
                 >
-                  <option value="All">All Room Allocation</option>
+                  <option value="All">All room allocation</option>
                   <option value="Allocated">Allocated</option>
-                  <option value="Not Allocated">Not Allocated</option>
+                  <option value="Not Allocated">Not allocated</option>
                 </select>
 
                 <select
@@ -7366,13 +7173,13 @@ useEffect(() => {
                     setPaymentFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50"
+                  className="h-8 min-w-0 text-[11px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none hover:bg-[#F4F7FB]"
                 >
-                  <option value="All">All Payments</option>
-                  <option value="Paid in Full">Paid in Full</option>
-                  <option value="Partial Payment">Partial Payment</option>
-                  <option value="Payment Pending">Payment Pending</option>
-                  <option value="Has Due Balance">Has Due Balance</option>
+                  <option value="All">All payments</option>
+                  <option value="Paid in Full">Paid in full</option>
+                  <option value="Partial Payment">Partial payment</option>
+                  <option value="Payment Pending">Payment pending</option>
+                  <option value="Has Due Balance">Has due balance</option>
                 </select>
 
                 <select
@@ -7381,9 +7188,9 @@ useEffect(() => {
                     setPickupFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50"
+                  className="h-8 min-w-0 text-[11px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none hover:bg-[#F4F7FB]"
                 >
-                  <option value="All">All Pickup Points</option>
+                  <option value="All">All pickup points</option>
                   {pickupOptions.map((p) => (
                     <option key={p} value={p}>
                       {p}
@@ -7397,9 +7204,9 @@ useEffect(() => {
                     setJoiningCityFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50"
+                  className="h-8 min-w-0 text-[11px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none hover:bg-[#F4F7FB]"
                 >
-                  <option value="All">All Joining Cities</option>
+                  <option value="All">All joining cities</option>
                   {joiningCities.map((city) => (
                     <option key={city} value={city}>
                       {city}
@@ -7413,12 +7220,12 @@ useEffect(() => {
                     setDocStatusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50"
+                  className="h-8 min-w-0 text-[11px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none hover:bg-[#F4F7FB]"
                 >
-                  <option value="All">All Doc Status</option>
+                  <option value="All">All doc status</option>
                   <option value="Verified">Verified</option>
                   <option value="Missing">Missing</option>
-                  <option value="Under Review">Under Review</option>
+                  <option value="Under Review">Under review</option>
                 </select>
 
                 <select
@@ -7427,13 +7234,14 @@ useEffect(() => {
                     setTrainTicketFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-8 text-[11px] font-semibold border border-slate-200 rounded-[4px] px-2.5 bg-white text-slate-700 outline-none hover:bg-slate-50"
+                  className="h-8 min-w-0 text-[11px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none hover:bg-[#F4F7FB]"
                 >
-                  <option value="All">All Train Tickets</option>
-                  <option value="CONFIRMED">CONFIRMED</option>
-                  <option value="PENDING">PENDING</option>
+                  <option value="All">All train tickets</option>
+                  <option value="CONFIRMED">Confirmed</option>
+                  <option value="PENDING">Pending</option>
                   <option value="RAC">RAC</option>
                 </select>
+              </div>
               </div>
 
               {/* Bulk Actions Bar */}
@@ -7962,7 +7770,7 @@ useEffect(() => {
                 </div>
               </div>
             </div>
-        )}
+          )}
 
           {/* ══════════════════════════ PLAN TAB ══════════════════════════ */}
           {/* Plan tab flattened — Hotels/Transport/Guides/Activities are now top-level tabs */}
@@ -8683,6 +8491,7 @@ useEffect(() => {
                 );
                 setIsAddHotelWizardOpen(true);
               }}
+              onRefresh={fetchPageData}
             />
           )}
 
@@ -9454,7 +9263,21 @@ useEffect(() => {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => setAddGuideOpen((v) => !v)}
+                  onClick={() => {
+                    setEditingGuideId(null);
+                    setGuideForm({
+                      guideName: "",
+                      agreedAmount: "",
+                      advancePaid: "0",
+                      daysWorked: "5",
+                      notes: "",
+                      assignmentType: "PRIMARY_GUIDE",
+                      reportingLocation: "",
+                      reportingTime: "",
+                      emergencyContact: "",
+                    });
+                    setAddGuideOpen(true);
+                  }}
                   className="hidden md:inline-flex h-8.5 w-full md:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm items-center justify-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" /> Assign Guide
@@ -9507,7 +9330,7 @@ useEffect(() => {
                   className="bg-orange-50 border border-orange-200 rounded-[6px] p-4 space-y-3"
                 >
                   <p className="text-[11px] font-black text-orange-700 uppercase tracking-wider">
-                    Assign Guide to Departure
+                    {guideForm.assignmentType === "EXPENSE" ? "Add Trip Expense / Allowance" : "Assign Guide to Departure"}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
@@ -9614,27 +9437,30 @@ useEffect(() => {
                         <option value="EXPENSE">Trip Expense / Allowance</option>
                       </select>
                     </div>
+
+                    {guideForm.assignmentType !== "EXPENSE" && (
+                      <div>
+                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                          Days Working
+                        </label>
+                        <input
+                          type="number"
+                          value={guideForm.daysWorked}
+                          min="1"
+                          max="30"
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              daysWorked: e.target.value,
+                            }))
+                          }
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                    )}
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Days Working
-                      </label>
-                      <input
-                        type="number"
-                        value={guideForm.daysWorked}
-                        min="1"
-                        max="30"
-                        onChange={(e) =>
-                          setGuideForm((f) => ({
-                            ...f,
-                            daysWorked: e.target.value,
-                          }))
-                        }
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Agreed Amount (₹)
+                        {guideForm.assignmentType === "EXPENSE" ? "Expense Amount (₹)" : "Agreed Amount (₹)"}
                       </label>
                       <input
                         type="number"
@@ -9667,22 +9493,26 @@ useEffect(() => {
                         className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
                       />
                     </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Reporting Time
-                      </label>
-                      <input
-                        type="time"
-                        value={guideForm.reportingTime}
-                        onChange={(e) =>
-                          setGuideForm((f) => ({
-                            ...f,
-                            reportingTime: e.target.value,
-                          }))
-                        }
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      />
-                    </div>
+                    
+                    {guideForm.assignmentType !== "EXPENSE" && (
+                      <div>
+                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                          Reporting Time
+                        </label>
+                        <input
+                          type="time"
+                          value={guideForm.reportingTime}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              reportingTime: e.target.value,
+                            }))
+                          }
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                    )}
+                    
                     <div className="sm:col-span-2">
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                         Notes
@@ -9692,26 +9522,29 @@ useEffect(() => {
                         onChange={(e) =>
                           setGuideForm((f) => ({ ...f, notes: e.target.value }))
                         }
-                        placeholder="e.g. Lead guide, experienced in Spiti"
+                        placeholder={guideForm.assignmentType === "EXPENSE" ? "e.g. For fuel and tolls" : "e.g. Lead guide, experienced in Spiti"}
                         className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
                       />
                     </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Emergency Contact
-                      </label>
-                      <input
-                        value={guideForm.emergencyContact}
-                        onChange={(e) =>
-                          setGuideForm((f) => ({
-                            ...f,
-                            emergencyContact: e.target.value,
-                          }))
-                        }
-                        placeholder="+91 XXXXXXXXXX"
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      />
-                    </div>
+                    
+                    {guideForm.assignmentType !== "EXPENSE" && (
+                      <div>
+                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                          Emergency Contact
+                        </label>
+                        <input
+                          value={guideForm.emergencyContact}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              emergencyContact: e.target.value,
+                            }))
+                          }
+                          placeholder="+91 XXXXXXXXXX"
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button
@@ -9720,7 +9553,7 @@ useEffect(() => {
                       disabled={isSavingGuide}
                       className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px]"
                     >
-                      {isSavingGuide ? "Saving..." : "Save Guide"}
+                      {isSavingGuide ? "Saving..." : (guideForm.assignmentType === "EXPENSE" ? "Save Expense" : "Save Guide")}
                     </Button>
                     <Button
                       type="button"
@@ -9940,6 +9773,7 @@ useEffect(() => {
                   <Button
                     size="sm"
                     onClick={() => {
+                      setEditingGuideId(null);
                       setGuideForm({
                         guideName: "Trip Expense",
                         agreedAmount: "",
@@ -10159,7 +9993,8 @@ useEffect(() => {
               open={bookingModalOpen}
               onOpenChange={setBookingModalOpen}
               booking={selectedBooking}
-              onRefresh={() => {}}
+              onRefresh={fetchPageData}
+              defaultTab={activeTab === "passengers" ? "passengers" : "overview"}
             />
           )}
 
