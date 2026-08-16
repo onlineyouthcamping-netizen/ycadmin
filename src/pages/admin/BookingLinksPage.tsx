@@ -4,6 +4,7 @@ import {
   type BookingLinkRecord,
 } from "@/services/bookingLinks.service";
 import { tripsService } from "@/services/trips.service";
+import { bookingsService } from "@/services/bookings.service";
 import type { Trip } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,11 +83,15 @@ interface MockDepartureDate {
     | "Completed / Past Departure";
   capacity: string;
   cutoff: string;
+  isPast: boolean;
+  bookedPax: number;
+  capacityNum: number;
 }
 
 export default function BookingLinksPage() {
   const [links, setLinks] = useState<BookingLinkRecord[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -96,6 +101,11 @@ export default function BookingLinksPage() {
   >("directory");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // Departure Filter: "upcoming" | "with_bookings" | "all"
+  const [departureFilterTab, setDepartureFilterTab] = useState<
+    "upcoming" | "with_bookings" | "all"
+  >("upcoming");
 
   // Dialogs
   const [createOpen, setCreateOpen] = useState(false);
@@ -137,12 +147,19 @@ export default function BookingLinksPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [linksData, tripsData] = await Promise.all([
-        bookingLinksService.getAll(1, 200),
+      const [linksData, tripsData, bookingsData] = await Promise.all([
+        bookingLinksService.getAll(1, 500),
         tripsService.getAll(),
+        bookingsService.getAll(1, 1000).catch(() => ({ data: [] })),
       ]);
       setLinks(Array.isArray(linksData.data) ? linksData.data : []);
       setTrips(Array.isArray(tripsData) ? tripsData : []);
+      const bList = Array.isArray((bookingsData as any)?.data)
+        ? (bookingsData as any).data
+        : Array.isArray(bookingsData)
+          ? bookingsData
+          : [];
+      setBookings(bList);
     } catch {
       toast.error("Failed to load booking links");
     } finally {
@@ -275,7 +292,7 @@ export default function BookingLinksPage() {
     setShareOpen(true);
   };
 
-  // Generate Mock Departures List for selected Trip
+  // Generate Departures List for selected Trip with Real Booked Pax & Filters
   const departuresList = useMemo<MockDepartureDate[]>(() => {
     if (!selectedTrip) return [];
     const rawDates =
@@ -286,34 +303,70 @@ export default function BookingLinksPage() {
       typeof d === "string" ? d : d?.date || "",
     );
 
-    return dates.map((dateStr) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const allDeps = dates.map((dateStr) => {
       const dateObj = new Date(dateStr);
       const isPast =
         !isNaN(dateObj.getTime()) &&
-        dateObj.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
-      const linksForDate = links.filter(
-        (l) =>
-          l.tripName?.toLowerCase() === selectedTrip.title.toLowerCase() &&
-          getYYYYMMDD(l.departureDate) === getYYYYMMDD(dateStr),
-      );
-      const opened = linksForDate.reduce(
-        (sum, l) => sum + (l.openedCount || 0),
+        dateObj.setHours(0, 0, 0, 0) < now.getTime();
+
+      // 1. Calculate actual Pax booked from bookings table
+      const bookingsForDate = bookings.filter((b: any) => {
+        const tripMatches =
+          b.tripId === selectedTrip.id ||
+          (b.tripName &&
+            b.tripName.toLowerCase() === selectedTrip.title?.toLowerCase());
+        const dateMatches =
+          getYYYYMMDD(b.departureDate) === getYYYYMMDD(dateStr);
+        const notCancelled =
+          b.status?.toLowerCase() !== "cancelled" &&
+          b.bookingStatus?.toLowerCase() !== "cancelled";
+        return tripMatches && dateMatches && notCancelled;
+      });
+
+      const bookedFromBookings = bookingsForDate.reduce(
+        (sum: number, b: any) => {
+          const pax =
+            Array.isArray(b.passengers) && b.passengers.length > 0
+              ? b.passengers.length
+              : Number(b.numberOfPassengers || b.travelerCount || b.seats || 1);
+          return sum + pax;
+        },
         0,
       );
-      const completed = linksForDate.reduce(
+
+      // 2. Completed count from booking links
+      const linksForDate = links.filter(
+        (l) =>
+          (l.tripId === selectedTrip.id ||
+            l.tripName?.toLowerCase() === selectedTrip.title?.toLowerCase()) &&
+          getYYYYMMDD(l.departureDate) === getYYYYMMDD(dateStr),
+      );
+      const completedFromLinks = linksForDate.reduce(
         (sum, l) => sum + (l.completedCount || 0),
         0,
       );
-      // Default capacity is taken from the trip if available; otherwise show unknown.
-      const totalCapacity = selectedTrip.maxGroupSize || 0;
+
+      const bookedPax = Math.max(bookedFromBookings, completedFromLinks);
+      const capacityNum = Number(
+        selectedTrip.maxGroupSize ||
+          selectedTrip.groupSize ||
+          selectedTrip.capacity ||
+          20,
+      );
+
       let status: MockDepartureDate["status"] = isPast
         ? "Completed / Past Departure"
         : "Open for Booking";
-      if (!isPast && completed >= totalCapacity) status = "Full";
-      else if (!isPast && completed >= totalCapacity * 0.85)
+      if (!isPast && capacityNum > 0 && bookedPax >= capacityNum) {
+        status = "Full";
+      } else if (!isPast && capacityNum > 0 && bookedPax >= capacityNum * 0.85) {
         status = "Closing Soon";
-      else if (!isPast && completed === 0 && linksForDate.length === 0)
+      } else if (!isPast) {
         status = "Open for Booking";
+      }
 
       const d = new Date(dateStr);
       let cutoff = "N/A";
@@ -325,11 +378,26 @@ export default function BookingLinksPage() {
       return {
         date: dateStr,
         status,
-        capacity: `${completed} / ${totalCapacity}`,
+        capacity: `${bookedPax} / ${capacityNum}`,
         cutoff,
+        isPast,
+        bookedPax,
+        capacityNum,
       };
     });
-  }, [selectedTrip, links]);
+
+    // Filter based on departureFilterTab:
+    // - "upcoming" (default): only future dates (hide past gone dates)
+    // - "with_bookings": only dates with booked pax > 0 (and future)
+    // - "all": show everything including past
+    if (departureFilterTab === "with_bookings") {
+      return allDeps.filter((d) => d.bookedPax > 0 && !d.isPast);
+    }
+    if (departureFilterTab === "upcoming") {
+      return allDeps.filter((d) => !d.isPast);
+    }
+    return allDeps;
+  }, [selectedTrip, links, bookings, departureFilterTab]);
 
   // Selected Date Workspace Links
   const workspaceLinks = useMemo(() => {
@@ -508,6 +576,52 @@ export default function BookingLinksPage() {
             </div>
           </div>
 
+          {/* Departures Filter Tabs */}
+          <div className="flex items-center justify-between gap-3 pt-2 pb-1">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setDepartureFilterTab("upcoming")}
+                className={cn(
+                  "px-3 py-1.5 text-[11px] font-bold rounded-md transition-all border flex items-center gap-1.5 cursor-pointer",
+                  departureFilterTab === "upcoming"
+                    ? "bg-[#162B45] text-white border-[#162B45] shadow-xs"
+                    : "bg-white text-slate-600 border-[#E3EAF2] hover:bg-slate-50",
+                )}
+              >
+                <span>Upcoming Dates Only</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDepartureFilterTab("with_bookings")}
+                className={cn(
+                  "px-3 py-1.5 text-[11px] font-bold rounded-md transition-all border flex items-center gap-1.5 cursor-pointer",
+                  departureFilterTab === "with_bookings"
+                    ? "bg-[#162B45] text-white border-[#162B45] shadow-xs"
+                    : "bg-white text-slate-600 border-[#E3EAF2] hover:bg-slate-50",
+                )}
+              >
+                <span>Dates with Booked Pax Only</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDepartureFilterTab("all")}
+                className={cn(
+                  "px-3 py-1.5 text-[11px] font-bold rounded-md transition-all border flex items-center gap-1.5 cursor-pointer",
+                  departureFilterTab === "all"
+                    ? "bg-[#162B45] text-white border-[#162B45] shadow-xs"
+                    : "bg-white text-slate-600 border-[#E3EAF2] hover:bg-slate-50",
+                )}
+              >
+                <span>All Dates (Inc. Past Departures)</span>
+              </button>
+            </div>
+
+            <div className="text-[11px] font-bold text-slate-500">
+              Showing {departuresList.length} departures
+            </div>
+          </div>
+
           {/* Departures Table */}
           <div className="bg-white border border-[#E3EAF2] rounded-[10px] overflow-x-auto scrollbar-none shadow-sm">
             <table className="w-full min-w-[600px] text-left border-collapse text-xs">
@@ -537,77 +651,99 @@ export default function BookingLinksPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {departuresList.map((dep) => {
-                  const linksCount = links.filter(
-                    (f) =>
-                      f.tripName.toLowerCase() ===
-                        selectedTrip.title.toLowerCase() &&
-                      getYYYYMMDD(f.departureDate) === getYYYYMMDD(dep.date),
-                  ).length;
-                  const isEligible =
-                    dep.status === "Open for Booking" ||
-                    dep.status === "Closing Soon";
-
-                  return (
-                    <tr
-                      key={dep.date}
-                      onClick={() => {
-                        setSelectedDate(dep.date);
-                        setWorkflowPage("workspace");
-                      }}
-                      className="hover:bg-[#F8FAFD] transition-colors cursor-pointer"
+                {departuresList.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="text-center py-12 text-slate-500 text-xs font-semibold"
                     >
-                      <td className="px-4 py-3 font-bold text-[#162B45]">
-                        {formatDate(dep.date)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "text-[8.5px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
-                            dep.status === "Open for Booking"
-                              ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200"
-                              : dep.status === "Closing Soon"
-                                ? "bg-[#FFF7E6] text-[#D97706] border-amber-200"
-                                : dep.status === "Full"
-                                  ? "bg-slate-100 text-slate-700 border-slate-300"
-                                  : dep.status === "Cancelled"
-                                    ? "bg-[#FFF1F3] text-[#E23D4D] border-rose-200"
-                                    : "bg-slate-50 text-[#74839A] border-slate-200",
-                          )}
-                        >
-                          {dep.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center font-bold text-slate-700">
-                        {dep.capacity}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-[#74839A]">
-                        {formatDate(dep.cutoff)}
-                      </td>
-                      <td className="px-4 py-3 text-center font-bold text-slate-700">
-                        {linksCount}
-                      </td>
-                      <td className="px-4 py-3 text-center font-bold text-slate-700">
-                        {linksCount * 12}
-                      </td>
-                      <td
-                        className="px-4 py-2 text-center"
-                        onClick={(e) => e.stopPropagation()}
+                      No departure dates found matching this filter.
+                    </td>
+                  </tr>
+                ) : (
+                  departuresList.map((dep) => {
+                    const linksCount = links.filter(
+                      (f) =>
+                        f.tripName.toLowerCase() ===
+                          selectedTrip.title.toLowerCase() &&
+                        getYYYYMMDD(f.departureDate) === getYYYYMMDD(dep.date),
+                    ).length;
+
+                    return (
+                      <tr
+                        key={dep.date}
+                        onClick={() => {
+                          setSelectedDate(dep.date);
+                          setWorkflowPage("workspace");
+                        }}
+                        className="hover:bg-[#F8FAFD] transition-colors cursor-pointer"
                       >
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setSelectedDate(dep.date);
-                            setWorkflowPage("workspace");
-                          }}
-                          className="h-7 text-[10px] font-bold bg-[#F97316] hover:bg-[#EA580C] text-white px-2.5 rounded"
+                        <td className="px-4 py-3 font-bold text-[#162B45]">
+                          {formatDate(dep.date)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={cn(
+                              "text-[8.5px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-sm border",
+                              dep.status === "Open for Booking"
+                                ? "bg-[#ECFDF3] text-[#16A34A] border-emerald-200"
+                                : dep.status === "Closing Soon"
+                                  ? "bg-[#FFF7E6] text-[#D97706] border-amber-200"
+                                  : dep.status === "Full"
+                                    ? "bg-slate-100 text-slate-700 border-slate-300"
+                                    : dep.status === "Cancelled"
+                                      ? "bg-[#FFF1F3] text-[#E23D4D] border-rose-200"
+                                      : "bg-slate-50 text-[#74839A] border-slate-200",
+                            )}
+                          >
+                            {dep.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span
+                            className={cn(
+                              "font-bold text-xs",
+                              dep.bookedPax > 0
+                                ? "text-blue-600 font-extrabold"
+                                : "text-slate-700",
+                            )}
+                          >
+                            {dep.capacity}
+                          </span>
+                          {dep.bookedPax > 0 && (
+                            <span className="ml-1.5 text-[9px] bg-blue-50 text-blue-700 border border-blue-100 font-extrabold px-1.5 py-0.5 rounded">
+                              {dep.bookedPax} Pax
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-[#74839A]">
+                          {formatDate(dep.cutoff)}
+                        </td>
+                        <td className="px-4 py-3 text-center font-bold text-slate-700">
+                          {linksCount}
+                        </td>
+                        <td className="px-4 py-3 text-center font-bold text-slate-700">
+                          {linksCount * 12}
+                        </td>
+                        <td
+                          className="px-4 py-2 text-center"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          Manage Links
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedDate(dep.date);
+                              setWorkflowPage("workspace");
+                            }}
+                            className="h-7 text-[10px] font-bold bg-[#F97316] hover:bg-[#EA580C] text-white px-2.5 rounded"
+                          >
+                            Manage Links
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
