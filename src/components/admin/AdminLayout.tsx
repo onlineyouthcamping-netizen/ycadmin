@@ -114,7 +114,7 @@ const sidebarModules: SidebarModule[] = [
     icon: ShoppingBag,
     hasSubItems: true,
     subItems: [
-      { title: "Payments", url: "/admin/accounting" },
+      { title: "Payments", url: "/admin/accounting?tab=payments" },
       { title: "Quotations", url: "/admin/quotations" },
       { title: "Booking Links", url: "/admin/booking-forms" },
       { title: "Bookings", url: "/admin/bookings" },
@@ -556,36 +556,58 @@ function AdminSidebar() {
           })}
         </div>
 
-        <div className="p-3 border-t border-[#152238] space-y-2">
-          {!collapsed && admin && (
-            <div className="flex items-center gap-2.5 px-1 py-1">
-              <div className="w-7 h-7 rounded-md bg-[#FF4D00] text-white flex items-center justify-center font-semibold text-[11px] shrink-0">
-                {admin.name ? admin.name.charAt(0).toUpperCase() : "A"}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[12px] font-semibold text-white truncate leading-tight">
-                  {admin.name || "Admin"}
-                </p>
-                <p className="text-[10px] font-medium text-slate-500 capitalize truncate mt-0.5">
-                  {admin.role || "Operator"}
-                </p>
-              </div>
+        <div className="p-2.5 border-t border-[#152238]">
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2">
+              {admin && (
+                <div className="h-8 w-8 rounded-full bg-[#FF4D00]/15 text-[#FF4D00] flex items-center justify-center text-[11px] font-semibold">
+                  {admin.name ? admin.name.charAt(0).toUpperCase() : "A"}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Log out"
+                className="h-8 w-8 rounded-md text-slate-500 hover:text-rose-300 hover:bg-rose-500/10 flex items-center justify-center"
+              >
+                <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 px-1">
+              {admin && (
+                <>
+                  {admin.avatarUrl ? (
+                    <img
+                      src={admin.avatarUrl}
+                      alt=""
+                      className="h-8 w-8 rounded-full object-cover ring-1 ring-white/10 shrink-0"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-[#FF4D00]/15 text-[#FF4D00] flex items-center justify-center text-[11px] font-semibold shrink-0">
+                      {admin.name ? admin.name.charAt(0).toUpperCase() : "A"}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12px] font-semibold text-white truncate leading-tight">
+                      {admin.name || "Admin"}
+                    </p>
+                    <p className="text-[10px] text-slate-500 truncate mt-0.5 capitalize">
+                      {(admin.role || "operator").replace(/_/g, " ")}
+                    </p>
+                  </div>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Log out"
+                className="h-8 w-8 rounded-md text-slate-500 hover:text-rose-300 hover:bg-rose-500/10 flex items-center justify-center shrink-0"
+              >
+                <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
+              </button>
             </div>
           )}
-
-          <Button
-            variant="ghost"
-            size={collapsed ? "icon" : "default"}
-            onClick={handleLogout}
-            className="w-full text-slate-500 hover:text-rose-300 hover:bg-rose-500/10 justify-start h-8 rounded-md px-2 cursor-pointer"
-          >
-            <LogOut className="h-3.5 w-3.5 mr-2" strokeWidth={1.75} />
-            {!collapsed && (
-              <span className="text-[12px] font-medium tracking-tight">
-                Log out
-              </span>
-            )}
-          </Button>
         </div>
       </SidebarContent>
     </Sidebar>
@@ -608,6 +630,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     "profile" | "password"
   >("profile");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const isMac =
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<
@@ -752,22 +777,22 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-4 shrink-0">
-              {/* Search Input (320px width, 36px height, Darker #64748B Placeholder & Navy #0A192F ⌘K Badge) */}
-              <div
-                className="relative hidden md:block cursor-pointer"
+              <button
+                type="button"
                 onClick={() => setIsSearchOpen(true)}
+                className="hidden md:flex items-center gap-2 h-9 w-[220px] lg:w-[260px] px-2.5 rounded-md bg-[#F8FAFC] border border-[#E8EEF4] text-left hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:border-[#FF4D00] transition-colors"
               >
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none z-10" />
-                <input
-                  readOnly
-                  placeholder="Search anything... (Press Ctrl+K)"
-                  style={{ paddingLeft: "38px" }}
-                  className="h-9 w-[280px] bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[13px] font-normal text-[#0B1528] placeholder:text-[#64748B] focus:outline-none focus:border-[#FF4D00] !pl-[38px] pr-14 shadow-none cursor-pointer"
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white bg-[#0A192F] px-1.5 py-0.5 rounded-[4px] tracking-normal font-sans pointer-events-none z-10">
-                  ⌘K
-                </span>
-              </div>
+                <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />
+                <span className="flex-1 text-[13px] text-slate-400 truncate">Search</span>
+                <kbd className="inline-flex items-center gap-0.5 shrink-0">
+                  <span className="h-5 min-w-5 px-1 rounded border border-slate-200 bg-white text-[10px] font-medium text-slate-500 flex items-center justify-center">
+                    {isMac ? "⌘" : "Ctrl"}
+                  </span>
+                  <span className="h-5 min-w-5 px-1 rounded border border-slate-200 bg-white text-[10px] font-medium text-slate-500 flex items-center justify-center">
+                    K
+                  </span>
+                </kbd>
+              </button>
 
               {/* Notifications & Help */}
               <div className="flex items-center gap-3">

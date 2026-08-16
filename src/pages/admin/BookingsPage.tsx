@@ -1,5 +1,3 @@
-import { getPaymentReceivedColorClass } from "@/utils/paymentUtils";
-import { normalizePassenger } from "@/utils/passengerUtils";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -66,6 +64,7 @@ import EmailComposerDrawer from "@/components/admin/EmailComposerDrawer";
 import { TripManager } from "@/components/bookings/TripManagerModal";
 import { ConfirmModal } from "@/components/bookings/ConfirmModal";
 import { BookingsToolbar } from "@/components/bookings/BookingsToolbar";
+import { BookingsTable } from "@/components/bookings/BookingsTable";
 import { MobileBookingsView } from "@/components/mobile/MobileBookingsView";
 
 // Booking source helper with Sales Executive name resolution
@@ -528,15 +527,10 @@ export default function BookingsPage() {
     if (!b.departureDate) return false;
     const d = new Date(b.departureDate);
     const n = new Date();
-    return (
-      d.getFullYear() === n.getFullYear() &&
-      d.getMonth() === n.getMonth() &&
-      d.getDate() === n.getDate()
-    );
+    return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
   };
 
-  const isOpsPending = (b: Booking) =>
-    b.status === "confirmed" && getProgress(b) < 85;
+  const isOpsPending = (b: Booking) => b.status === "confirmed" && getProgress(b) < 85;
 
   const isRefundQueue = (b: Booking) =>
     b.status === "cancelled" ||
@@ -813,439 +807,29 @@ export default function BookingsPage() {
             />
           </div>
 
-          {/* DESKTOP CONTENT & TABLE (>=768px) */}
-          <div className="hidden md:flex flex-col flex-1 overflow-hidden">
-            <div className="zoho-table-area flex-1 overflow-y-auto overflow-x-hidden min-h-0 bg-white">
-              {loading ? (
-                <div className="flex-1 flex items-center justify-center text-slate-400 py-10 font-bold">
-                  <RotateCw className="w-5 h-5 animate-spin mr-2" /> Loading
-                  Bookings...
-                </div>
-              ) : filteredBookings.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12 text-center">
-                  <Users className="w-12 h-12 text-slate-300 mb-3" />
-                  <h3 className="font-bold text-slate-700 text-sm mb-1">
-                    No Reservations Found
-                  </h3>
-                  <p className="text-slate-400 text-xs max-w-sm">
-                    No reservations fit the selected criteria.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex-1 overflow-auto">
-                  <table className="w-full text-left text-[12px] border-collapse bg-white font-sans">
-                    <thead className="sticky top-0 bg-white z-10">
-                      <tr className="border-b border-[#E8EEF4] text-slate-400">
-                        <th className="pl-4 pr-2 py-2.5 w-10 text-center">
-                          <input
-                            type="checkbox"
-                            className="rounded border-slate-300 text-[#0B1528] focus:ring-[#FF4D00] cursor-pointer"
-                            checked={
-                              selectedIds.length === filteredBookings.length &&
-                              filteredBookings.length > 0
-                            }
-                            onChange={selectAll}
-                          />
-                        </th>
-                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
-                          Guest
-                        </th>
-                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
-                          Trip
-                        </th>
-                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
-                          Executive
-                        </th>
-                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-right">
-                          Payment
-                        </th>
-                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider pr-4">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredBookings.map((b) => {
-                        const isSelected = selectedIds.includes(b.id);
-                        const priority = getPriority(b);
-                        const days = getDays(b);
-                        const progress = getProgress(b);
-                        const nextAction = getNextAction(b);
-                        const flowStatus = getFlowStatus(b);
-                        const activityTime = getActivityTime(b);
-                        const meta = getBookingMetaData(b);
-
-                        const role = (
-                          currentAdmin?.role || "admin"
-                        ).toLowerCase();
-                        const isFounder =
-                          role === "superadmin" ||
-                          role === "founder" ||
-                          role === "owner" ||
-                          (currentAdmin?.designation || "").toLowerCase().includes("founder") ||
-                          (currentAdmin?.name || "").toLowerCase().includes("founder") ||
-                          (currentAdmin?.email || "").toLowerCase().includes("founder");
-                        const showPayment = true;
-                        const showPassengers = true;
-                        const showDocuments = true;
-                        const showTicketing = true;
-                        const showOperations = true;
-                        const showChecklist = true;
-                        const showNotes = true;
-
-                        let paymentDot: "red" | "amber" | undefined = undefined;
-                        if (
-                          b.remainingAmount > 0 &&
-                          b.paymentStatus !== "Paid"
-                        ) {
-                          const isOverdue =
-                            b.departureDate &&
-                            (new Date(b.departureDate).getTime() -
-                              new Date().getTime()) /
-                              (1000 * 60 * 60 * 24) <=
-                              3;
-                          paymentDot = isOverdue ? "red" : "amber";
-                        }
-
-                        let passengersDot: "amber" | undefined = undefined;
-                        if (!b.numberOfTravelers || b.numberOfTravelers === 0) {
-                          passengersDot = "amber";
-                        }
-
-                        const passengerCount = Array.isArray(b.passengers)
-                          ? b.passengers.length
-                          : Array.isArray(b.passengers?.details)
-                            ? b.passengers.details.length
-                            : 0;
-                        let documentsDot: "red" | undefined = undefined;
-                        if (passengerCount < (b.numberOfTravelers || 0)) {
-                          documentsDot = "red";
-                        }
-
-                        let ticketingDot: "amber" | undefined = undefined;
-                        if (
-                          b.trainTicketStatus === "Pending" ||
-                          b.trainTicketStatus === "Waitlisted"
-                        ) {
-                          ticketingDot = "amber";
-                        }
-
-                        let operationsDot: "red" | undefined = undefined;
-                        if (b.status === "confirmed" && progress < 85) {
-                          operationsDot = "red";
-                        }
-
-                        let checklistDot: "green" | undefined = undefined;
-                        if (progress === 100) {
-                          checklistDot = "green";
-                        }
-
-                        let notesDot: "blue" | undefined = undefined;
-                        if (b.notes?.includes("[Task Assigned")) {
-                          notesDot = "blue";
-                        }
-
-                        return (
-                          <tr
-                            key={b.id}
-                            className={cn(
-                              "hover:bg-[#F8FAFC] border-b border-[#F1F5F9] transition-colors cursor-pointer text-[12px] select-none",
-                              isSelected && "bg-orange-50/40",
-                            )}
-                            onClick={() => setPreviewTarget(b)}
-                          >
-                            <td
-                              className="pl-4 pr-2 py-3 text-center"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <input
-                                type="checkbox"
-                                className="rounded border-slate-300 text-[#0B1528] focus:ring-[#FF4D00] cursor-pointer"
-                                checked={isSelected}
-                                onChange={() => toggleSelect(b.id)}
-                              />
-                            </td>
-                            <td className="px-3 py-3 min-w-[180px]">
-                              <div className="flex items-start gap-2.5">
-                                <span
-                                  className={cn(
-                                    "mt-1 w-[3px] h-8 rounded-full shrink-0",
-                                    (b.status === "confirmed" && progress < 85) ||
-                                      (b.remainingAmount > 0 &&
-                                        b.departureDate &&
-                                        (new Date(b.departureDate).getTime() -
-                                          new Date().getTime()) /
-                                          (1000 * 60 * 60 * 24) <=
-                                          3)
-                                      ? "bg-[#dc2626]"
-                                      : b.status === "pending"
-                                        ? "bg-[#d97706]"
-                                        : b.status === "confirmed" && progress < 100
-                                          ? "bg-[#2563eb]"
-                                          : progress === 100
-                                            ? "bg-[#16a34a]"
-                                            : "bg-[#94a3b8]",
-                                  )}
-                                />
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-[#0B1528] truncate leading-tight">
-                                    {b.fullName}
-                                  </p>
-                                  <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                                    {b.mobile}
-                                    {normalizePassenger(b).formattedAgeGender
-                                      ? ` · ${normalizePassenger(b).formattedAgeGender}`
-                                      : ""}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-3 py-3 min-w-[160px]">
-                              <p className="font-semibold text-[#0B1528] truncate leading-tight">
-                                {b.tripId || b.tripName}
-                              </p>
-                              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                                {safeFormatDate(
-                                  b.departureDate,
-                                  { day: "2-digit", month: "short" },
-                                  "No date",
-                                )}
-                                {" · "}
-                                {days}d · {b.numberOfTravelers || 1} pax
-                                {b.trainClass ? ` · ${b.trainClass}` : ""}
-                              </p>
-                            </td>
-                            <td className="px-3 py-3 text-slate-600 truncate max-w-[140px]" title={meta.bookedBy}>
-                              {meta.bookedBy}
-                            </td>
-                            <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap">
-                              <p
-                                className={cn(
-                                  "font-semibold leading-tight",
-                                  Number(b.remainingAmount || 0) > 0
-                                    ? "text-[#E04400]"
-                                    : "text-emerald-600",
-                                )}
-                              >
-                                ₹{Number(b.remainingAmount || 0).toLocaleString("en-IN")}
-                                <span className="ml-1 text-[10px] font-medium text-slate-400">
-                                  due
-                                </span>
-                              </p>
-                              <p className="text-[11px] text-slate-400 mt-0.5">
-                                ₹{Number(b.advancePaid || 0).toLocaleString("en-IN")} in
-                              </p>
-                            </td>
-                            <td className="px-3 py-3 min-w-[140px]">
-                              <span
-                                className={cn(
-                                  "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold",
-                                  flowStatus === "Confirmed"
-                                    ? "bg-emerald-50 text-emerald-700"
-                                    : flowStatus === "Completed"
-                                      ? "bg-teal-50 text-teal-700"
-                                      : flowStatus === "Cancelled"
-                                        ? "bg-rose-50 text-rose-700"
-                                        : "bg-amber-50 text-amber-700",
-                                )}
-                              >
-                                {flowStatus}
-                              </span>
-                              <p className="text-[11px] text-slate-400 mt-1 truncate" title={nextAction}>
-                                {nextAction}
-                                {activityTime ? ` · ${activityTime}` : ""}
-                              </p>
-                            </td>
-                            <td
-                              className="px-3 py-3 pr-4"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="flex items-center gap-1 justify-start pl-1">
-                                {showPayment && (
-                                  <button
-                                    className={cn(
-                                      "relative w-[26px] h-[26px] rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-all",
-                                      paymentDot
-                                        ? "text-amber-600 hover:text-amber-700"
-                                        : "text-slate-500 hover:text-slate-800",
-                                    )}
-                                    title={
-                                      paymentDot === "red"
-                                        ? "Payment Overdue (Red Indicator)"
-                                        : "Payment Details"
-                                    }
-                                    onClick={() =>
-                                      openBookingDetails(b, "payments")
-                                    }
-                                  >
-                                    <CreditCard className="w-3 h-3" />
-                                    {paymentDot && (
-                                      <span
-                                        className={cn(
-                                          "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white",
-                                          paymentDot === "red"
-                                            ? "bg-[#dc2626]"
-                                            : "bg-[#d97706]",
-                                        )}
-                                      />
-                                    )}
-                                  </button>
-                                )}
-                                {showPassengers && (
-                                  <button
-                                    className="relative w-[26px] h-[26px] rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-all text-slate-500 hover:text-slate-800"
-                                    title="Passenger Manifest"
-                                    onClick={() =>
-                                      openBookingDetails(b, "passengers")
-                                    }
-                                  >
-                                    <Users className="w-3 h-3" />
-                                    {passengersDot && (
-                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white bg-[#d97706]" />
-                                    )}
-                                  </button>
-                                )}
-                                {showDocuments && (
-                                  <button
-                                    className="relative w-[26px] h-[26px] rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-all text-slate-500 hover:text-slate-800"
-                                    title="Files & Documents"
-                                    onClick={() =>
-                                      openBookingDetails(b, "files")
-                                    }
-                                  >
-                                    <FileText className="w-3 h-3" />
-                                    {documentsDot && (
-                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white bg-[#dc2626]" />
-                                    )}
-                                  </button>
-                                )}
-                                {showTicketing && (
-                                  <button
-                                    className="relative w-[26px] h-[26px] rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-all text-slate-500 hover:text-slate-800"
-                                    title="Train Tickets"
-                                    onClick={() =>
-                                      openBookingDetails(b, "ticketing")
-                                    }
-                                  >
-                                    <Train className="w-3 h-3" />
-                                    {ticketingDot && (
-                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white bg-[#d97706]" />
-                                    )}
-                                  </button>
-                                )}
-                                {showOperations && (
-                                  <button
-                                    className="relative w-[26px] h-[26px] rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-all text-slate-500 hover:text-slate-800"
-                                    title="Operations & Tasks"
-                                    onClick={() =>
-                                      openBookingDetails(b, "operations")
-                                    }
-                                  >
-                                    <CheckSquare className="w-3 h-3" />
-                                    {operationsDot && (
-                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white bg-[#dc2626]" />
-                                    )}
-                                  </button>
-                                )}
-                                {showChecklist && (
-                                  <button
-                                    className="relative w-[26px] h-[26px] rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-all text-slate-500 hover:text-slate-800"
-                                    title="Checklist / Departure Readiness"
-                                    onClick={() =>
-                                      openBookingDetails(b, "verification")
-                                    }
-                                  >
-                                    <ClipboardList className="w-3 h-3" />
-                                    {checklistDot && (
-                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white bg-[#16a34a]" />
-                                    )}
-                                  </button>
-                                )}
-                                {showNotes && (
-                                  <button
-                                    className="relative w-[26px] h-[26px] rounded border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-all text-slate-500 hover:text-slate-800"
-                                    title="Notes & Activities"
-                                    onClick={() =>
-                                      openBookingDetails(b, "notes")
-                                    }
-                                  >
-                                    <MessageSquare className="w-3 h-3" />
-                                    {notesDot && (
-                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white bg-[#2563eb]" />
-                                    )}
-                                  </button>
-                                )}
-                                {isFounder && (
-                                  <button
-                                    className="relative w-[26px] h-[26px] rounded border border-rose-200 bg-rose-50 hover:bg-rose-100 flex items-center justify-center transition-all text-rose-600 hover:text-rose-700 cursor-pointer"
-                                    title="Delete Booking (Founder Privilege)"
-                                    onClick={() => handleDelete(b.id)}
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Pagination Footer */}
-            {totalCount > 0 && (
-              <div className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 bg-slate-50 text-xs shrink-0 font-semibold">
-                <p className="text-slate-555">
-                  Showing {totalCount === 0 ? 0 : (page - 1) * pageSize + 1}–
-                  {Math.min(page * pageSize, totalCount)} of {totalCount}{" "}
-                  reservations
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">Rows per page:</span>
-                    <select
-                      value={pageSize}
-                      onChange={(e) =>
-                        handlePageSizeChange(Number(e.target.value))
-                      }
-                      className="bg-white border border-slate-200 rounded px-2 py-1 text-slate-800 focus:outline-none"
-                    >
-                      <option value="25">25</option>
-                      <option value="50">50</option>
-                      <option value="100">100</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page <= 1}
-                      className="h-8 w-8 rounded border-slate-200 hover:bg-slate-50 bg-white"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() =>
-                        setPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={page >= totalPages}
-                      className="h-8 w-8 rounded border-slate-200 hover:bg-slate-50 bg-white"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+          <BookingsTable
+            bookings={filteredBookings}
+            loading={loading}
+            selectedIds={selectedIds}
+            selectAll={selectAll}
+            toggleSelect={toggleSelect}
+            onPreview={setPreviewTarget}
+            onOpenDetails={openBookingDetails}
+            onDelete={handleDelete}
+            currentAdmin={currentAdmin}
+            page={page}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            totalPages={totalPages}
+            setPage={setPage}
+            onPageSizeChange={handlePageSizeChange}
+            getDays={getDays}
+            getProgress={getProgress}
+            getNextAction={getNextAction}
+            getFlowStatus={getFlowStatus}
+            getActivityTime={getActivityTime}
+            getBookedBy={(b) => getBookingMetaData(b).bookedBy}
+          />
 
             {/* BULK ACTIONS DRAWER */}
             <div
