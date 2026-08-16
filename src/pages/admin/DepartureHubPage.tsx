@@ -1742,6 +1742,23 @@ export default function DepartureHubPage() {
   });
   const [isSavingGuide, setIsSavingGuide] = useState(false);
 
+  const handleEditGuide = (g: any) => {
+    setEditingGuideId(g.id);
+    setGuideForm({
+      guideName: g.guideName || "",
+      agreedAmount: String(g.agreedAmount || ""),
+      advancePaid: String(g.advancePaid || "0"),
+      daysWorked: String(g.daysWorked || "1"),
+      notes: g.notes || "",
+      assignmentType: g.assignmentType || "PRIMARY_GUIDE",
+      reportingLocation: g.reportingLocation || "",
+      reportingTime: g.reportingTime || "",
+      emergencyContact: g.emergencyContact || "",
+    });
+    setAddGuideOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleAddGuide = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guideForm.guideName.trim()) {
@@ -8688,6 +8705,7 @@ useEffect(() => {
                 );
                 setIsAddHotelWizardOpen(true);
               }}
+              onRefresh={fetchPageData}
             />
           )}
 
@@ -9459,7 +9477,21 @@ useEffect(() => {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => setAddGuideOpen((v) => !v)}
+                  onClick={() => {
+                    setEditingGuideId(null);
+                    setGuideForm({
+                      guideName: "",
+                      agreedAmount: "",
+                      advancePaid: "0",
+                      daysWorked: "5",
+                      notes: "",
+                      assignmentType: "PRIMARY_GUIDE",
+                      reportingLocation: "",
+                      reportingTime: "",
+                      emergencyContact: "",
+                    });
+                    setAddGuideOpen(true);
+                  }}
                   className="hidden md:inline-flex h-8.5 w-full md:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm items-center justify-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" /> Assign Guide
@@ -9945,6 +9977,7 @@ useEffect(() => {
                   <Button
                     size="sm"
                     onClick={() => {
+                      setEditingGuideId(null);
                       setGuideForm({
                         guideName: "Trip Expense",
                         agreedAmount: "",
@@ -10164,7 +10197,8 @@ useEffect(() => {
               open={bookingModalOpen}
               onOpenChange={setBookingModalOpen}
               booking={selectedBooking}
-              onRefresh={() => {}}
+              onRefresh={fetchPageData}
+              defaultTab={activeTab === "passengers" ? "passengers" : "overview"}
             />
           )}
 

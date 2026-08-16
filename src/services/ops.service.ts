@@ -890,6 +890,10 @@ export const opsService = {
     return res.data;
   },
 
+  async deleteHotelBooking(id: string): Promise<void> {
+    await api.delete(`/ops/hotels/${id}`);
+  },
+
   async saveHotelOverride(tripId: string, data: any): Promise<any> {
     const res = await api.post(`/ops/hotels/${tripId}/override`, data);
     return res.data;

@@ -207,16 +207,16 @@ export default function DepartureTripControl({
         : "PENDING";
 
       // Match Transport
-      let transportName = isNoStay ? "—" : leadTransport.name;
+      let transportName = dbRow?.vehicleType || (isNoStay ? "—" : leadTransport.name);
       let transportStatus: "BOOKED" | "PENDING" | "NOT ASSIGNED" = isNoStay
         ? "BOOKED"
-        : leadTransport.name
+        : transportName !== "—"
         ? "BOOKED"
         : "PENDING";
 
       // Match Guide
-      let guideName = isNoStay ? "—" : leadGuide.name;
-      let guidePhone = leadGuide.phone;
+      let guideName = dbRow?.guideDriverDetails || (isNoStay ? "—" : leadGuide.name);
+      let guidePhone = dbRow?.guideDriverDetails ? "" : leadGuide.phone;
 
       // Check-in status (from DB row if updated, or default)
       let defaultCheckIn: "CHECKED-IN" | "PENDING" | "NOT REQUIRED" = isNoStay
@@ -750,6 +750,32 @@ export default function DepartureTripControl({
     }
   };
 
+  const handleSaveDayDetail = async (row: TripControlRowData, field: "vehicleType" | "guideDriverDetails", value: string) => {
+    try {
+      await opsService.upsertDayItinerary(
+        tripId,
+        {
+          dayTitle: row.dayLabel,
+          [field]: value,
+          paxCount: row.paxCount,
+          hotelName: row.hotelName,
+        },
+        departureDateStr
+      );
+      toast.success(`Saved ${field === "vehicleType" ? "transport" : "guide"} details for ${row.dayLabel}`);
+      loadDbItinerary();
+    } catch (err: any) {
+      toast.error("Failed to save details to database");
+    }
+
+    if (selectedRow && selectedRow.dayNum === row.dayNum) {
+      setSelectedRow({ 
+        ...selectedRow, 
+        [field === "vehicleType" ? "transportName" : "guideName"]: value || (field === "vehicleType" ? leadTransport.name : leadGuide.name)
+      });
+    }
+  };
+
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "HOTEL_PENDING" | "CHECKIN_PENDING" | "CHECKED_IN">("ALL");
@@ -1201,6 +1227,7 @@ export default function DepartureTripControl({
         onAssignGuide={() => onOpenGuideModal()}
         onToggleCheckIn={handleToggleCheckIn}
         onSaveRemark={handleSaveRemark}
+        onSaveDayDetail={handleSaveDayDetail}
       />
     </div>
   );

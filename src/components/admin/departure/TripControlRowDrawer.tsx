@@ -48,6 +48,7 @@ interface TripControlRowDrawerProps {
   onAssignGuide: (row: TripControlRowData) => void;
   onToggleCheckIn: (row: TripControlRowData, newStatus: "CHECKED-IN" | "PENDING" | "NOT REQUIRED") => void;
   onSaveRemark: (row: TripControlRowData, remark: string) => void;
+  onSaveDayDetail: (row: TripControlRowData, field: "vehicleType" | "guideDriverDetails", value: string) => void;
 }
 
 export default function TripControlRowDrawer({
@@ -59,12 +60,17 @@ export default function TripControlRowDrawer({
   onAssignGuide,
   onToggleCheckIn,
   onSaveRemark,
+  onSaveDayDetail,
 }: TripControlRowDrawerProps) {
   const [remarkInput, setRemarkInput] = useState(rowData?.remark || "");
+  const [transportInput, setTransportInput] = useState(rowData?.transportName || "");
+  const [guideInput, setGuideInput] = useState(rowData?.guideName || "");
 
   React.useEffect(() => {
     if (rowData) {
       setRemarkInput(rowData.remark || "");
+      setTransportInput(rowData.transportName !== "—" ? rowData.transportName : "");
+      setGuideInput(rowData.guideName !== "—" ? rowData.guideName : "");
     }
   }, [rowData]);
 
@@ -158,17 +164,25 @@ export default function TripControlRowDrawer({
             <div>
               <p className="font-bold text-slate-800 text-sm">{rowData.transportName || "Standard Vehicle"}</p>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                onClose();
-                onChangeTransport(rowData);
-              }}
-              className="w-full h-8 text-xs font-bold border-slate-300 text-slate-700 hover:bg-white hover:border-[#F97316] hover:text-[#F97316] transition-colors"
-            >
-              <Bus className="w-3.5 h-3.5 mr-1.5" /> Change Transport / Fleet
-            </Button>
+            <div className="pt-2 border-t border-slate-200">
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Override for {rowData.dayLabel}</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={transportInput}
+                  onChange={(e) => setTransportInput(e.target.value)}
+                  placeholder="Tempo details..."
+                  className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#F97316]"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => onSaveDayDetail(rowData, "vehicleType", transportInput)}
+                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs"
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* SECTION 3: GUIDE / DRIVER */}
@@ -186,17 +200,25 @@ export default function TripControlRowDrawer({
                 </p>
               )}
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                onClose();
-                onAssignGuide(rowData);
-              }}
-              className="w-full h-8 text-xs font-bold border-slate-300 text-slate-700 hover:bg-white hover:border-[#F97316] hover:text-[#F97316] transition-colors"
-            >
-              <UserCheck className="w-3.5 h-3.5 mr-1.5" /> Assign / Re-assign Guide
-            </Button>
+            <div className="pt-2 border-t border-slate-200">
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Override for {rowData.dayLabel}</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={guideInput}
+                  onChange={(e) => setGuideInput(e.target.value)}
+                  placeholder="Guide / Driver details..."
+                  className="w-full text-xs p-2 border border-slate-200 rounded bg-white focus:outline-none focus:border-[#F97316]"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => onSaveDayDetail(rowData, "guideDriverDetails", guideInput)}
+                  className="h-[34px] px-3 bg-[#F97316] hover:bg-[#E05E00] text-white text-xs"
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* SECTION 4: HOTEL CHECK-IN UPDATE */}

@@ -14,14 +14,18 @@ interface BookingDetailsModalProps {
   booking: Booking | null;
   onRefresh?: () => void;
   trips?: any[];
+  defaultTab?: string;
 }
+
+const EMPTY_TRIPS: any[] = [];
 
 export default function BookingDetailsModal({
   open,
   onOpenChange,
   booking,
   onRefresh,
-  trips = [],
+  trips = EMPTY_TRIPS,
+  defaultTab,
 }: BookingDetailsModalProps) {
   if (!booking) return null;
 
@@ -40,6 +44,7 @@ export default function BookingDetailsModal({
             onBack={() => onOpenChange(false)}
             onRefresh={onRefresh || (() => {})}
             trips={trips}
+            defaultTab={defaultTab}
           />
         </div>
       </DialogContent>

@@ -47,6 +47,8 @@ import {
   normalizeDestinationName,
   suggestRoomAllocation,
 } from "@/utils/accommodationCalculator";
+import { toast } from "react-hot-toast";
+import { opsService } from "@/services/ops.service";
 
 // ─────────────────────────────────────────────
 // Props
@@ -65,6 +67,8 @@ interface AccommodationWorkspaceProps {
   tripId: string;
   /** Opens the hotel assignment wizard or edit drawer */
   onEditHotel: (hotelRow: any, dayInfo?: any) => void;
+  /** Triggers parent to refetch data after operations */
+  onRefresh?: () => void;
 }
 
 // ─────────────────────────────────────────────
@@ -98,17 +102,57 @@ export default function AccommodationWorkspace({
   allPassengers,
   passengerAllocations,
   departureDateStr,
+  tripId,
   onEditHotel,
+  onRefresh,
 }: AccommodationWorkspaceProps) {
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null);
   const [stayOverrides, setStayOverrides] = useState<Record<string, boolean>>({});
 
-  const handleToggleStay = (key: string, explicitValue?: boolean) => {
-    setStayOverrides((prev) => {
-      const current = prev[key];
-      const next = explicitValue !== undefined ? explicitValue : !current;
-      return { ...prev, [key]: next };
-    });
+  const handleToggleStay = async (row: AccommodationRow, explicitValue?: boolean) => {
+    const current = stayOverrides[row.key] !== undefined ? stayOverrides[row.key] : row.hasStay;
+    const next = explicitValue !== undefined ? explicitValue : !current;
+
+    // Optimistically update UI state
+    setStayOverrides((prev) => ({ ...prev, [row.key]: next }));
+
+    try {
+      if (next === false) {
+        // Explicitly saving NO STAY
+        const payload = {
+          hotelName: "NO_STAY",
+          location: row.destination || "Enroute",
+          roomType: "None",
+          numberOfRooms: 1,
+          totalAmount: 0,
+          advancePaid: 0,
+          confirmed: "CONFIRMED",
+          pricingMethod: "per-person",
+          doubleRoomsCount: 0,
+          tripleRoomsCount: 0,
+          quadRoomsCount: 0,
+          extraPersonsCount: 0,
+          nightsCount: 0,
+          checkIn: row.date,
+          vendorId: null,
+          notes: "Explicit No Stay",
+        };
+        await opsService.saveHotelBookings(tripId, departureDateStr, [payload]);
+        toast.success("Saved No Stay for " + row.date);
+      } else {
+        // Removing explicit NO STAY (if it existed) so it defaults back
+        if (row.booking?.id && row.booking.hotelName === "NO_STAY") {
+          await opsService.deleteHotelBooking(row.booking.id);
+          toast.success("Removed No Stay override for " + row.date);
+        }
+      }
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error("Failed to toggle stay status:", err);
+      toast.error("Failed to update stay status");
+      // Revert state
+      setStayOverrides((prev) => ({ ...prev, [row.key]: current }));
+    }
   };
 
   const totalPax = allPassengers.length;
@@ -355,7 +399,7 @@ export default function AccommodationWorkspace({
                 onClick={() => setSelectedDayIdx(idx)}
                 onToggleStay={(e) => {
                   e.stopPropagation();
-                  handleToggleStay(row.key);
+                  handleToggleStay(row);
                 }}
                 onAssignClick={(e) => {
                   e.stopPropagation();
@@ -692,7 +736,7 @@ interface DayDetailDrawerProps {
   totalPax: number;
   onClose: () => void;
   onEditHotel: () => void;
-  onToggleStay: (key: string, explicitValue?: boolean) => void;
+  onToggleStay: (row: AccommodationRow, explicitValue?: boolean) => void;
 }
 
 function DayDetailDrawer({
@@ -916,7 +960,7 @@ function DayDetailDrawer({
           <div className="flex bg-slate-200/70 p-1 rounded-lg border border-slate-200/60 shrink-0">
             <button
               type="button"
-              onClick={() => onToggleStay(row.key, true)}
+              onClick={() => onToggleStay(row, true)}
               className={cn(
                 "px-2.5 py-1 text-[11px] font-extrabold rounded-md transition-all flex items-center gap-1 cursor-pointer",
                 row.hasStay
@@ -929,7 +973,7 @@ function DayDetailDrawer({
             </button>
             <button
               type="button"
-              onClick={() => onToggleStay(row.key, false)}
+              onClick={() => onToggleStay(row, false)}
               className={cn(
                 "px-2.5 py-1 text-[11px] font-extrabold rounded-md transition-all flex items-center gap-1 cursor-pointer",
                 !row.hasStay
