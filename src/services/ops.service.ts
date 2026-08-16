@@ -33,6 +33,7 @@ export interface OpsAccountingSummary {
   hotelCost: number;
   transportCost: number;
   guideCost: number;
+  guideExpenseCost: number;
   miscCost: number;
   detailedExpensesCost: number;
   totalOpsCost: number;
