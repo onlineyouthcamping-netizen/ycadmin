@@ -287,12 +287,13 @@ export default function AccommodationWorkspace({
         status = "no-stay";
       }
 
+      const bookingNights = booking?.nightsCount || 1;
       const nightsText =
         !hasStay
           ? "No Stay"
-          : nights === 1
-            ? "1 Night"
-            : `${nights} Nights`;
+          : bookingNights > 1
+            ? `${bookingNights} Nights`
+            : "1 Night";
 
       return {
         key: rowKey,
