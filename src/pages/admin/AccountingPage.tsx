@@ -81,8 +81,7 @@ import { bookingsService } from "@/services/bookings.service";
 import api from "@/services/api";
 import { opsService } from "@/services/ops.service";
 import { vendorsService } from "@/services/vendors.service";
-import type { Vendor } from "@/types";
-import { cn, formatINR } from "@/lib/utils";
+import { cn, formatINR, safeFormatDate, safeFormatDateTime } from "@/lib/utils";
 import FinanceControlCenterPage from "./FinanceControlCenterPage";
 import {
   LineChart,
@@ -1836,73 +1835,81 @@ export default function AccountingPage() {
         <div className="min-w-0">
           <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">
             <Banknote className="w-4 h-4 md:w-5 md:h-5 text-[#FF4D00] shrink-0" />
-            {isSalesPaymentsOnly ? "Payments" : "Finance"}{" "}
-            {activeTab === "overview" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Overview
-              </span>
-            )}
-            {activeTab === "payments" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Incoming Payments
-              </span>
-            )}
-            {activeTab === "control_center" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Control Center
-              </span>
-            )}
-            {activeTab === "cash_book" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Cash Book
-              </span>
-            )}
-            {activeTab === "bank_accounts" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Accounts
-              </span>
-            )}
-            {activeTab === "transactions" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                {isSalesPaymentsOnly ? "/ Incoming" : "/ Ledger"}
-              </span>
-            )}
-            {activeTab === "vendor_payments" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Vendors
-              </span>
-            )}
-            {activeTab === "office_expenses" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Expenses
-              </span>
-            )}
-            {activeTab === "profit_loss" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / P&L
-              </span>
-            )}
-            {activeTab === "trip_profitability" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Trip P&L
-              </span>
-            )}
-            {activeTab === "reports" && (
-              <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
-                / Reports
-              </span>
+            {isSalesPaymentsOnly ? (
+              "My Payments"
+            ) : (
+              <>
+                Finance{" "}
+                {activeTab === "overview" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Overview
+                  </span>
+                )}
+                {activeTab === "payments" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Incoming Payments
+                  </span>
+                )}
+                {activeTab === "control_center" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Control Center
+                  </span>
+                )}
+                {activeTab === "cash_book" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Cash Book
+                  </span>
+                )}
+                {activeTab === "bank_accounts" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Accounts
+                  </span>
+                )}
+                {activeTab === "transactions" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Ledger
+                  </span>
+                )}
+                {activeTab === "vendor_payments" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Vendors
+                  </span>
+                )}
+                {activeTab === "office_expenses" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Expenses
+                  </span>
+                )}
+                {activeTab === "profit_loss" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / P&L
+                  </span>
+                )}
+                {activeTab === "trip_profitability" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Trip P&L
+                  </span>
+                )}
+                {activeTab === "reports" && (
+                  <span className="text-slate-400 font-medium text-xs md:text-sm truncate">
+                    / Reports
+                  </span>
+                )}
+              </>
             )}
           </h1>
           <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
-            {isSalesPaymentsOnly || activeTab === "payments"
-              ? "Customer collections, booking payment receipts, and collection entries."
-              : activeTab === "cash_book"
-              ? "Record cash inflows and outflows across accounts."
-              : activeTab === "bank_accounts"
-                ? "Company and personal collection accounts, cash registers, and submissions."
-                : activeTab === "control_center"
-                  ? "Verification queues, approvals, and audit trail."
-                  : "Collections, payouts, cash book, and trip profitability in one place."}
+            {isSalesPaymentsOnly
+              ? "Your incoming customer collections, cash submissions, and pending verifications."
+              : activeTab === "payments"
+                ? "Customer collections, booking payment receipts, and collection entries."
+                : activeTab === "cash_book"
+                ? "Record cash inflows and outflows across accounts."
+                : activeTab === "bank_accounts"
+                  ? "Company and personal collection accounts, cash registers, and submissions."
+                  : activeTab === "control_center"
+                    ? "Verification queues, approvals, and audit trail."
+                    : "Collections, payouts, cash book, and trip profitability in one place."}
           </p>
           {/* Mobile: compact active-period line replaces the long uppercase blurb */}
           <p className="md:hidden text-[11px] text-slate-500 font-semibold mt-0.5 truncate">
@@ -3981,7 +3988,7 @@ export default function AccountingPage() {
         </Card>
       )}
 
-      {/* PAYMENTS TAB (CUSTOMER INCOMING COLLECTIONS LIST) */}
+      {/* PAYMENTS TAB (CUSTOMER INCOMING COLLECTIONS LIST / MY PAYMENTS) */}
       {activeTab === "payments" && (() => {
         const paymentsList = mergedEntries.filter((entry) => {
           const matchesSearch =
@@ -4000,7 +4007,17 @@ export default function AccountingPage() {
               .includes(search.toLowerCase());
 
           const matchesStatus =
-            fStatus === "ALL" || entry.status === fStatus;
+            fStatus === "ALL"
+              ? true
+              : fStatus === "PENDING"
+                ? entry.status === "PENDING"
+                : fStatus === "APPROVED" || fStatus === "VERIFIED"
+                  ? entry.status === "APPROVED"
+                  : fStatus === "REJECTED"
+                    ? entry.status === "REJECTED"
+                    : fStatus === "DISCREPANCY"
+                      ? entry.status === "DISCREPANCY" || entry.status === "REJECTED"
+                      : entry.status === fStatus;
 
           const matchesMode =
             fMode === "ALL" ||
@@ -4011,114 +4028,149 @@ export default function AccountingPage() {
           return matchesSearch && matchesStatus && matchesMode && matchesDate;
         });
 
-        const totalPaidSum = paymentsList
+        // 1. Total Collected: Sum of all verified/approved payments
+        const totalCollected = paymentsList
           .filter((e) => e.status === "APPROVED")
           .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-        const approvedCount = paymentsList.filter((e) => e.status === "APPROVED").length;
-        const pendingCount = paymentsList.filter((e) => e.status === "PENDING").length;
+        const verifiedCount = paymentsList.filter((e) => e.status === "APPROVED").length;
+
+        // 2. Pending Verification: Count and sum of pending payments
+        const pendingList = paymentsList.filter((e) => e.status === "PENDING");
+        const pendingAmount = pendingList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+        const pendingCount = pendingList.length;
+
+        // 3. Cash Submitted: Cash collections submitted/recorded
+        const cashSubmittedSum = paymentsList
+          .filter((e) => {
+            const m = String(e.paymentMode || "").toUpperCase();
+            return m === "CASH" || m.includes("CASH");
+          })
+          .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+        // 4. Remaining Collection: Outstanding due for relevant bookings
+        const remainingCollectionSum = outstandingCustomers;
 
         return (
           <div className="space-y-4">
-            {/* Top 4 KPI Summary Cards for Sales / Incoming Payments */}
+            {/* Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Card className="p-3.5 bg-white border border-[#E2E8F0] rounded-[4px] shadow-xs">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Collections
+              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Total Collected
                 </p>
-                <h3 className="text-xl font-extrabold text-slate-800 mt-1">
-                  ₹ {totalPaidSum.toLocaleString("en-IN")}
+                <h3 className="text-2xl font-black text-slate-800 mt-1">
+                  ₹ {totalCollected.toLocaleString("en-IN")}
                 </h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                  {approvedCount} verified collection{approvedCount !== 1 ? "s" : ""}
+                <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                  {verifiedCount} verified payment{verifiedCount !== 1 ? "s" : ""}
                 </p>
               </Card>
 
-              <Card className="p-3.5 bg-white border border-[#E2E8F0] rounded-[4px] shadow-xs">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   Pending Verification
                 </p>
-                <h3 className="text-xl font-extrabold text-amber-600 mt-1">
-                  {pendingCount}
+                <h3 className="text-2xl font-black text-amber-600 mt-1">
+                  ₹ {pendingAmount.toLocaleString("en-IN")}
                 </h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                  Awaiting verification & receipt
+                <p className="text-[11px] text-amber-700 font-semibold mt-1">
+                  {pendingCount} payment{pendingCount !== 1 ? "s" : ""} in queue
                 </p>
               </Card>
 
-              <Card className="p-3.5 bg-white border border-[#E2E8F0] rounded-[4px] shadow-xs">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Outstanding from Guests
+              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Cash Submitted
                 </p>
-                <h3 className="text-xl font-extrabold text-[#FF4D00] mt-1">
-                  ₹ {outstandingCustomers.toLocaleString("en-IN")}
+                <h3 className="text-2xl font-black text-blue-600 mt-1">
+                  ₹ {cashSubmittedSum.toLocaleString("en-IN")}
                 </h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1">
+                <p className="text-[11px] text-slate-500 font-semibold mt-1">
+                  Cash register collections
+                </p>
+              </Card>
+
+              <Card className="p-4 bg-white border border-[#E2E8F0] rounded-[6px] shadow-xs">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Remaining Collection
+                </p>
+                <h3 className="text-2xl font-black text-[#FF4D00] mt-1">
+                  ₹ {remainingCollectionSum.toLocaleString("en-IN")}
+                </h3>
+                <p className="text-[11px] text-slate-500 font-semibold mt-1">
                   {outstandingBookingsCount} booking{outstandingBookingsCount !== 1 ? "s" : ""} balance due
-                </p>
-              </Card>
-
-              <Card className="p-3.5 bg-white border border-[#E2E8F0] rounded-[4px] shadow-xs">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Average Collection
-                </p>
-                <h3 className="text-xl font-extrabold text-emerald-600 mt-1">
-                  ₹ {approvedCount > 0 ? Math.round(totalPaidSum / approvedCount).toLocaleString("en-IN") : "0"}
-                </h3>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                  Per verified payment
                 </p>
               </Card>
             </div>
 
-            {/* Filter Toolbar & Table Card */}
+            {/* Filter Toolbar & Table */}
             <Card className="rounded-xl md:rounded-[4px] border border-[#E2E8F0] p-3 md:p-5 bg-white shadow-sm space-y-4">
-              <div className="flex flex-wrap gap-4 items-center justify-between shadow-none p-0 bg-transparent">
-                <div className="relative flex-1 min-w-[200px] max-w-md">
+              <div className="flex flex-wrap gap-3 items-center justify-between shadow-none p-0 bg-transparent">
+                <div className="relative flex-1 min-w-[220px] max-w-md">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search booking / customer / trip / reference…"
-                    className="h-8 pl-8 text-xs rounded-[4px] border-[#E2E8F0]"
+                    className="h-8.5 pl-8 text-xs rounded-[4px] border-[#E2E8F0]"
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Select value={fStatus} onValueChange={setFStatus}>
-                    <SelectTrigger className="h-8 text-xs w-36 rounded-[4px] border-[#E2E8F0]">
-                      <SelectValue placeholder="Status" />
+                    <SelectTrigger className="h-8.5 text-xs w-40 rounded-[4px] border-[#E2E8F0]">
+                      <SelectValue placeholder="Payment Status" />
                     </SelectTrigger>
                     <SelectContent className="rounded-[4px]">
                       <SelectItem value="ALL">All Status</SelectItem>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="APPROVED">Approved</SelectItem>
+                      <SelectItem value="PENDING">Pending Verification</SelectItem>
+                      <SelectItem value="APPROVED">Verified</SelectItem>
                       <SelectItem value="REJECTED">Rejected</SelectItem>
+                      <SelectItem value="DISCREPANCY">Discrepancy</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={fMode} onValueChange={setFMode}>
-                    <SelectTrigger className="h-8 text-xs w-36 rounded-[4px] border-[#E2E8F0]">
-                      <SelectValue placeholder="Payment Mode" />
+                    <SelectTrigger className="h-8.5 text-xs w-36 rounded-[4px] border-[#E2E8F0]">
+                      <SelectValue placeholder="Payment Method" />
                     </SelectTrigger>
                     <SelectContent className="rounded-[4px]">
-                      <SelectItem value="ALL">All Modes</SelectItem>
-                      <SelectItem value="CASH">Cash</SelectItem>
+                      <SelectItem value="ALL">All Methods</SelectItem>
                       <SelectItem value="UPI">UPI</SelectItem>
+                      <SelectItem value="CASH">Cash</SelectItem>
                       <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                     </SelectContent>
                   </Select>
+                  {isSalesPaymentsOnly && (
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <Button
+                        size="sm"
+                        onClick={() => setShowRecordSubmissionModal(true)}
+                        variant="outline"
+                        className="h-8.5 text-xs font-semibold rounded-[4px] border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+                      >
+                        Submit Cash
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowCreate(true)}
+                        className="h-8.5 text-xs font-semibold rounded-[4px] bg-[#FF4D00] hover:bg-[#e04400] text-white flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Record Payment
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-[#E2E8F0] bg-slate-50 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      <th className="px-4 py-3">Booking ID</th>
-                      <th className="px-4 py-3">Guest / Customer</th>
-                      <th className="px-4 py-3">Trip & Details</th>
-                      <th className="px-4 py-3">Amount Received</th>
+                    <tr className="border-b border-[#E2E8F0] bg-slate-50 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                      <th className="px-4 py-3">Booking</th>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3 text-right">Amount</th>
                       <th className="px-4 py-3">Method</th>
-                      <th className="px-4 py-3">Handled By</th>
-                      <th className="px-4 py-3">Date & Time</th>
+                      <th className="px-4 py-3">Date</th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
@@ -4126,120 +4178,144 @@ export default function AccountingPage() {
                   <tbody className="divide-y divide-slate-100">
                     {paymentsList.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="text-center py-10 text-slate-400 text-xs font-semibold">
-                          No incoming payments found for the selected filters.
+                        <td colSpan={7} className="text-center py-12 text-slate-400 text-xs font-medium">
+                          No payments found for the selected filters.
                         </td>
                       </tr>
                     ) : (
-                      paymentsList.map((entry) => (
-                        <tr
-                          key={entry.id}
-                          className="hover:bg-slate-50/60 transition-colors"
-                        >
-                          <td className="px-4 py-3 font-semibold">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate(
-                                  `/admin/bookings?id=${entry.booking?.id || entry.booking?.bookingId || entry.bookingId}`,
-                                )
-                              }
-                              className="font-mono text-orange-600 hover:text-orange-700 font-bold hover:underline cursor-pointer flex items-center gap-1"
-                              title="Open Booking Workspace"
-                            >
-                              #{entry.booking?.bookingId || entry.bookingId}
-                              <ArrowUpRight className="w-3 h-3 text-slate-400" />
-                            </button>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col text-slate-800 font-bold">
-                              <span>{entry.booking?.fullName || entry.booking?.name || "Customer"}</span>
-                              <span className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                {entry.booking?.phone || entry.booking?.mobile || "—"}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-slate-700">
-                            <div className="flex flex-col">
-                              <span>{entry.booking?.tripName || "Trip"}</span>
-                              <span className="text-[10px] text-slate-400 font-normal">
-                                Total: ₹{Number(entry.booking?.totalAmount || entry.booking?.totalPrice || 0).toLocaleString("en-IN")}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-extrabold text-emerald-650 text-sm">
-                            ₹{Number(entry.amount || 0).toLocaleString("en-IN")}
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-slate-600">
-                            <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
-                              {MODE_LABELS[entry.paymentMode] || entry.paymentMode || "UPI"}
-                            </span>
-                            {entry.referenceNumber && (
-                              <span className="block text-[9.5px] text-slate-400 font-mono mt-0.5 truncate max-w-[120px]">
-                                Ref: {entry.referenceNumber}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600 font-medium">
-                            {entry.salesperson?.name || (user?.name && isSalesPaymentsOnly ? user.name : "Sales Team")}
-                          </td>
-                          <td className="px-4 py-3 text-slate-500 font-medium">
-                            <div>{safeFormatDate(entry.createdAt, { day: "2-digit", month: "short", year: "numeric" })}</div>
-                            <div className="text-[9.5px] text-slate-400">{new Date(entry.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={cn(
-                                "inline-flex items-center px-2 py-0.5 rounded-[4px] text-[9px] font-bold uppercase border",
-                                entry.status === "APPROVED"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-250"
-                                  : entry.status === "PENDING"
-                                    ? "bg-amber-50 text-amber-700 border-amber-250"
-                                    : "bg-red-50 text-red-750 border-red-250",
-                              )}
-                            >
-                              {entry.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openHistory(entry)}
-                                className="h-7 px-2 border border-slate-100 hover:bg-slate-50 rounded-[4px]"
-                                title="View audit history"
+                      paymentsList.map((entry) => {
+                        const statusLabel =
+                          entry.status === "APPROVED"
+                            ? "Verified"
+                            : entry.status === "PENDING"
+                              ? "Pending Verification"
+                              : entry.status === "REJECTED"
+                                ? "Rejected"
+                                : entry.status === "DISCREPANCY"
+                                  ? "Discrepancy"
+                                  : entry.status;
+
+                        const statusStyle =
+                          entry.status === "APPROVED"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : entry.status === "PENDING"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : entry.status === "DISCREPANCY"
+                                ? "bg-purple-50 text-purple-700 border-purple-200"
+                                : "bg-red-50 text-red-700 border-red-200";
+
+                        return (
+                          <tr
+                            key={entry.id}
+                            className="hover:bg-slate-50/70 transition-colors"
+                          >
+                            <td className="px-4 py-3.5 font-semibold">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(
+                                    `/admin/bookings?id=${entry.booking?.id || entry.booking?.bookingId || entry.bookingId}`,
+                                  )
+                                }
+                                className="font-mono text-orange-600 hover:text-orange-700 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                                title="Open Booking"
                               >
-                                <History className="w-3.5 h-3.5" />
-                              </Button>
-                              {entry.status === "PENDING" && canApprove && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleApprove(entry.id)}
-                                    className="h-7 text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px]"
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() =>
-                                      setRejectDialog({
-                                        open: true,
-                                        entryId: entry.id,
-                                      })
-                                    }
-                                    className="h-7 text-[10px] font-bold uppercase tracking-wider rounded-[4px]"
-                                  >
-                                    Reject
-                                  </Button>
-                                </>
+                                #{entry.booking?.bookingId || entry.bookingId}
+                                <ArrowUpRight className="w-3 h-3 text-slate-400" />
+                              </button>
+                              <span className="text-[10px] text-slate-400 font-medium block truncate max-w-[140px] mt-0.5">
+                                {entry.booking?.tripName || "Trip"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-800">
+                                  {entry.booking?.fullName || entry.booking?.name || "Customer"}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                  {entry.booking?.phone || entry.booking?.mobile || "—"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-right font-black text-sm text-emerald-600">
+                              ₹ {Number(entry.amount || 0).toLocaleString("en-IN")}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
+                                {MODE_LABELS[entry.paymentMode] || entry.paymentMode || "UPI"}
+                              </span>
+                              {entry.referenceNumber && (
+                                <span className="block text-[9.5px] text-slate-400 font-mono mt-0.5 truncate max-w-[130px]">
+                                  Ref: {entry.referenceNumber}
+                                </span>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="px-4 py-3.5 text-slate-600 font-medium">
+                              <div>
+                                {safeFormatDate(entry.createdAt, {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </div>
+                              <div className="text-[9.5px] text-slate-400">
+                                {new Date(entry.createdAt).toLocaleTimeString("en-IN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center px-2.5 py-0.5 rounded-[4px] text-[10px] font-bold border",
+                                  statusStyle,
+                                )}
+                              >
+                                {statusLabel}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openHistory(entry)}
+                                  className="h-7 px-2 border border-slate-100 hover:bg-slate-50 rounded-[4px]"
+                                  title="View audit history"
+                                >
+                                  <History className="w-3.5 h-3.5" />
+                                </Button>
+                                {entry.status === "PENDING" && canApprove && !isSalesRole && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleApprove(entry.id)}
+                                      className="h-7 text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px]"
+                                    >
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() =>
+                                        setRejectDialog({
+                                          open: true,
+                                          entryId: entry.id,
+                                        })
+                                      }
+                                      className="h-7 text-[10px] font-bold uppercase tracking-wider rounded-[4px]"
+                                    >
+                                      Reject
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

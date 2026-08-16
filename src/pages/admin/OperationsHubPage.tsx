@@ -8,7 +8,6 @@ import {
   Compass,
   Calculator,
   Calendar,
-  CalendarCheck,
   CheckSquare,
   Sparkles,
   Plus,
@@ -38,7 +37,6 @@ import {
   MessageSquare,
   Stethoscope,
   TicketCheck,
-  Filter,
   MoreVertical,
   LayoutGrid,
   Rows3,
@@ -78,6 +76,9 @@ import {
 import { cn, safeFormatDate, safeFormatDateTime } from "@/lib/utils";
 
 const getTodayString = () => new Date().toISOString().split("T")[0];
+
+const formatOpsStatus = (status: string) =>
+  status ? status.charAt(0) + status.slice(1).toLowerCase() : "";
 
 export default function OperationsHubPage() {
   const navigate = useNavigate();
@@ -355,7 +356,7 @@ export default function OperationsHubPage() {
   ) => {
     if (departuresList.length === 0) {
       return (
-        <div className="bg-white border border-[#E2E8F0] rounded-xl md:rounded-[4px] p-6 md:p-8 text-center text-slate-400 font-medium text-xs">
+        <div className="bg-white border border-[#E8EEF4] rounded-xl px-4 py-10 text-center text-slate-400 text-[12px]">
           {emptyMessage}
         </div>
       );
@@ -367,177 +368,160 @@ export default function OperationsHubPage() {
     const mobileRemaining = departuresList.length - mobileRows.length;
 
     return (
-      <div className="bg-white border border-[#E2E8F0] rounded-xl md:rounded-[4px] shadow-sm overflow-hidden">
-        <table className="w-full text-left text-xs border-collapse hidden md:table">
+      <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+        <table className="w-full text-left text-[12px] border-collapse hidden md:table">
           <thead>
-            <tr className="border-b border-[#E2E8F0] bg-slate-50/70 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              <th className="px-4 py-3 w-[15%]">Departure</th>
-              <th className="px-4 py-3 w-[25%]">Trip</th>
-              <th className="px-4 py-3 w-[20%] whitespace-nowrap">Date</th>
-              <th className="px-4 py-3 w-[15%] whitespace-nowrap">Days Left</th>
-              <th className="px-4 py-3 w-[10%]">Pax</th>
+            <tr className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
+              <th className="px-3.5 py-2 w-[14%]">Departure</th>
+              <th className="px-3.5 py-2 w-[22%]">Trip</th>
+              <th className="px-3.5 py-2 w-[16%] whitespace-nowrap">Date</th>
+              <th className="px-3.5 py-2 w-[12%] whitespace-nowrap">Days left</th>
+              <th className="px-3.5 py-2 w-[8%]">Pax</th>
               {!isSide && (
-                <th className="px-5 py-3 w-[15%]">Outstanding Balance</th>
+                <th className="px-3.5 py-2 w-[14%]">Outstanding</th>
               )}
-              <th className="px-4 py-3 w-[10%] text-center">Readiness</th>
-              {!isSide && (
-                <th className="px-5 py-3 w-[18%]">Readiness Reason</th>
-              )}
-              {!isSide && <th className="px-5 py-3 w-[12%]">Status</th>}
-              <th className="px-4 py-3 w-[5%] text-right">Action</th>
+              <th className="px-3.5 py-2 w-[10%] text-right">Readiness</th>
+              {!isSide && <th className="px-3.5 py-2 w-[16%]">Reason</th>}
+              {!isSide && <th className="px-3.5 py-2 w-[10%]">Status</th>}
+              <th className="px-3.5 py-2 w-[5%] text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {departuresList.map((row, idx) => {
-              const radius = 12;
-              const strokeWidth = 2.5;
-              const circumference = 2 * Math.PI * radius;
-              const strokeDashoffset =
-                circumference - (row.readiness / 100) * circumference;
-
-              return (
-                <tr
-                  key={idx}
-                  className="hover:bg-slate-50/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    navigate(
-                      `/admin/departure-workspace?departureId=${row.tripId}_${row.departureDateStr}&tab=overview`,
-                    );
-                  }}
-                >
-                  <td className="px-4 py-3">
-                    <span className="font-bold text-[#F97316] text-[11px] block whitespace-nowrap">
-                      {row.code}
-                    </span>
-                    <span className="inline-block px-1 py-0.5 rounded-[2px] bg-slate-100 text-slate-500 font-bold text-[8px] mt-0.5 whitespace-nowrap">
-                      CONFIRMED
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="font-bold text-slate-800 text-[11px] block max-w-[130px] sm:max-w-[200px] truncate"
-                      title={row.trip}
-                    >
-                      {row.trip}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-1 font-semibold text-slate-700">
-                      <span className="text-[11px]">{row.date}</span>
-                      <span className="text-[10px] text-slate-400 font-normal">
-                        ({row.day})
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span
-                      className={cn("font-bold text-[11px]", row.daysColor)}
-                    >
-                      {row.daysLeft}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="font-semibold text-slate-700">
-                      {row.participantCount ?? row.pax ?? 0}
-                    </span>
-                  </td>
-                  {!isSide && (
-                    <td className="px-5 py-3.5">
-                      <span
-                        className={cn(
-                          "font-bold text-[11px] block",
-                          row.balanceColor,
-                        )}
-                      >
-                        {row.balance}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-semibold">
-                        {row.balanceSub}
-                      </span>
-                    </td>
-                  )}
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex justify-center items-center">
-                      {row.readiness === 100 ? (
-                        <div className="w-[28px] h-[28px] rounded-full border-2 border-emerald-500 flex items-center justify-center bg-emerald-50/50 text-emerald-600 font-bold text-[9px]">
-                          ✓
-                        </div>
-                      ) : (
-                        <div className="relative flex items-center justify-center w-8 h-8">
-                          <svg className="w-full h-full transform -rotate-90">
-                            <circle
-                              cx="16"
-                              cy="16"
-                              r={radius}
-                              stroke="#E2E8F0"
-                              strokeWidth={strokeWidth}
-                              fill="transparent"
-                            />
-                            <circle
-                              cx="16"
-                              cy="16"
-                              r={radius}
-                              stroke={row.readinessColor}
-                              strokeWidth={strokeWidth}
-                              fill="transparent"
-                              strokeDasharray={circumference}
-                              strokeDashoffset={strokeDashoffset}
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                          <span className="absolute text-[8px] font-bold text-slate-700">
-                            {row.readiness}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  {!isSide && (
-                    <td className="px-5 py-3.5">
-                      <span className="text-slate-600 font-medium text-[11px]">
-                        {row.reason}
-                      </span>
-                    </td>
-                  )}
-                  {!isSide && (
-                    <td className="px-5 py-3.5">
-                      <span
-                        className={cn(
-                          "px-2 py-0.5 rounded-[2px] border text-[9px] font-black uppercase tracking-wider",
-                          row.statusColor,
-                        )}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
-                  )}
-                  <td
-                    className="px-4 py-3 text-right"
-                    onClick={(e) => e.stopPropagation()}
+          <tbody className="divide-y divide-[#E8EEF4]">
+            {departuresList.map((row, idx) => (
+              <tr
+                key={idx}
+                className="hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+                onClick={() => {
+                  navigate(
+                    `/admin/departure-workspace?departureId=${row.tripId}_${row.departureDateStr}&tab=overview`,
+                  );
+                }}
+              >
+                <td className="px-3.5 py-2.5">
+                  <span className="font-semibold text-[#FF4D00] text-[12px] block whitespace-nowrap tabular-nums">
+                    {row.code}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Confirmed
+                  </span>
+                </td>
+                <td className="px-3.5 py-2.5">
+                  <span
+                    className="font-medium text-[#0B1528] text-[12px] block max-w-[130px] sm:max-w-[220px] truncate"
+                    title={row.trip}
                   >
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-slate-400 hover:text-slate-750"
-                      >
-                        <MoreVertical className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+                    {row.trip}
+                  </span>
+                </td>
+                <td className="px-3.5 py-2.5 whitespace-nowrap">
+                  <span className="text-[12px] font-medium text-[#0B1528]">
+                    {row.date}
+                  </span>
+                  <span className="ml-1 text-[11px] text-slate-400">
+                    {row.day}
+                  </span>
+                </td>
+                <td className="px-3.5 py-2.5 whitespace-nowrap">
+                  <span
+                    className={cn(
+                      "text-[12px] font-medium tabular-nums",
+                      row.daysColor,
+                    )}
+                  >
+                    {row.daysLeft}
+                  </span>
+                </td>
+                <td className="px-3.5 py-2.5 whitespace-nowrap">
+                  <span className="font-medium text-[#0B1528] tabular-nums">
+                    {row.participantCount ?? row.pax ?? 0}
+                  </span>
+                </td>
+                {!isSide && (
+                  <td className="px-3.5 py-2.5">
+                    <span
+                      className={cn(
+                        "font-semibold text-[12px] block tabular-nums",
+                        row.balanceColor,
+                      )}
+                    >
+                      {row.balance}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {row.balanceSub}
+                    </span>
                   </td>
-                </tr>
-              );
-            })}
+                )}
+                <td className="px-3.5 py-2.5">
+                  <div className="flex flex-col items-end gap-1 min-w-[56px] ml-auto">
+                    <span
+                      className={cn(
+                        "text-[12px] font-semibold tabular-nums",
+                        row.readiness === 100
+                          ? "text-emerald-600"
+                          : "text-[#0B1528]",
+                      )}
+                    >
+                      {row.readiness}%
+                    </span>
+                    <div className="h-0.5 w-12 rounded-full bg-[#E8EEF4] overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, row.readiness))}%`,
+                          backgroundColor:
+                            row.readiness === 100
+                              ? "#10B981"
+                              : row.readinessColor,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </td>
+                {!isSide && (
+                  <td className="px-3.5 py-2.5">
+                    <span className="text-slate-500 text-[12px]">
+                      {row.reason}
+                    </span>
+                  </td>
+                )}
+                {!isSide && (
+                  <td className="px-3.5 py-2.5">
+                    <span
+                      className={cn(
+                        "inline-flex px-1.5 py-0.5 rounded-md text-[11px] font-medium",
+                        row.statusColor,
+                      )}
+                    >
+                      {formatOpsStatus(row.status)}
+                    </span>
+                  </td>
+                )}
+                <td
+                  className="px-3.5 py-2.5 text-right"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-slate-400 hover:text-[#0B1528]"
+                    >
+                      <MoreVertical className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
         {/* Mobile Card View */}
-        <div className="md:hidden flex flex-col divide-y divide-slate-100 bg-white">
+        <div className="md:hidden flex flex-col divide-y divide-[#E8EEF4] bg-white">
           {mobileRows.map((row, idx) => (
             <button
               key={idx}
               type="button"
-              className="w-full text-left p-3 flex items-start gap-2.5 active:bg-slate-50 transition-colors"
+              className="w-full text-left px-3.5 py-3 flex items-start gap-2.5 active:bg-[#F8FAFC] transition-colors"
               onClick={() => {
                 navigate(
                   `/admin/departure-workspace?departureId=${row.tripId}_${row.departureDateStr}&tab=overview`,
@@ -546,67 +530,74 @@ export default function OperationsHubPage() {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-bold text-[#F97316] text-[11px] tracking-tight shrink-0">
+                  <span className="font-semibold text-[#FF4D00] text-[12px] tracking-tight shrink-0 tabular-nums">
                     {row.code}
                   </span>
                   <span
                     className={cn(
-                      "px-1.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-wider shrink-0",
+                      "px-1.5 py-0.5 rounded-md text-[10px] font-medium shrink-0",
                       row.statusColor,
                     )}
                   >
-                    {row.status}
+                    {formatOpsStatus(row.status)}
                   </span>
                 </div>
 
-                <div className="font-bold text-slate-800 text-[13px] leading-snug mt-1 truncate">
+                <div className="font-medium text-[#0B1528] text-[13px] leading-snug mt-1 truncate">
                   {row.trip}
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold mt-1 min-w-0">
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1 min-w-0">
                   <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
                   <span className="truncate">
-                    {row.date} ({row.day})
+                    {row.date} · {row.day}
                   </span>
                   <span className="text-slate-300">·</span>
-                  <span className={cn("shrink-0", row.daysColor)}>
+                  <span className={cn("shrink-0 tabular-nums", row.daysColor)}>
                     {row.daysLeft}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-600">
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap text-[11px]">
+                  <span className="inline-flex items-center gap-1 text-slate-500 tabular-nums">
                     <Users className="w-3 h-3 text-slate-400" />
                     {row.participantCount ?? row.pax ?? 0} pax
                   </span>
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-bold tabular-nums",
+                      "tabular-nums font-medium",
                       row.balanceColor,
                     )}
                   >
                     {row.balance}
                   </span>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    {row.balanceSub}
-                  </span>
+                  <span className="text-slate-400">{row.balanceSub}</span>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
-                <div
+              <div className="flex flex-col items-end gap-1 shrink-0 pt-0.5 min-w-[44px]">
+                <span
                   className={cn(
-                    "w-10 h-10 rounded-full flex flex-col items-center justify-center text-[10px] font-black tabular-nums border-2",
+                    "text-[12px] font-semibold tabular-nums",
                     row.readiness >= 90
-                      ? "border-emerald-500 bg-emerald-50/60 text-emerald-600"
+                      ? "text-emerald-600"
                       : row.readiness >= 50
-                        ? "border-amber-400 bg-amber-50/60 text-amber-600"
-                        : "border-rose-300 bg-rose-50/60 text-rose-600",
+                        ? "text-amber-600"
+                        : "text-rose-600",
                   )}
                 >
                   {row.readiness}%
+                </span>
+                <div className="h-0.5 w-10 rounded-full bg-[#E8EEF4] overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, row.readiness))}%`,
+                      backgroundColor: row.readinessColor,
+                    }}
+                  />
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 mt-0.5" />
               </div>
             </button>
           ))}
@@ -620,7 +611,7 @@ export default function OperationsHubPage() {
                   [groupKey]: mobileVisible + MOBILE_PAGE_SIZE,
                 }))
               }
-              className="py-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider bg-slate-50/70 active:bg-slate-100"
+              className="py-2.5 text-[12px] font-medium text-slate-500 bg-[#F8FAFC] active:bg-slate-100"
             >
               Load {Math.min(mobileRemaining, MOBILE_PAGE_SIZE)} more ·{" "}
               {mobileRemaining} left
@@ -1572,211 +1563,162 @@ export default function OperationsHubPage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 pb-28 md:pb-20 p-3 md:p-6 bg-[#F4F7FB] min-h-screen -mx-3 md:-mx-6 -mt-3 md:-mt-6">
+    <div className="flex flex-col min-h-[calc(100vh-56px)] bg-[#F4F7FB] text-[#0B1528] antialiased -mx-3 -my-3 md:-mx-5 md:-my-5 p-3 md:p-5 pb-28 md:pb-5">
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* UPCOMING TRIPS LIST VIEW                                       */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       {opsView === "trips_list" && (
-        <div className="space-y-4 md:space-y-6 animate-fade-in">
+        <div className="space-y-3 animate-fade-in">
           {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-            <h1 className="text-base md:text-xl font-bold text-[#0B1528] tracking-tight flex items-center gap-2">
+              <h1 className="text-[17px] md:text-[18px] font-semibold text-[#0B1528] tracking-tight">
                 Departures Hub
               </h1>
-              <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
-                Track upcoming departures, readiness status and key operations
-                at a glance.
+              <p className="hidden md:block text-[12px] text-slate-500 mt-0.5">
+                Track upcoming departures, readiness, and key operations.
               </p>
-              <p className="md:hidden text-[11px] text-slate-500 font-medium mt-0.5">
+              <p className="md:hidden text-[12px] text-slate-500 mt-0.5">
                 {computedDepartures.length} departures tracked
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toast.info("Refreshing...")}
-                title="Refresh"
-                aria-label="Refresh"
-                className="h-9 w-9 md:h-8.5 md:w-auto px-0 md:px-3 text-xs font-semibold rounded-lg md:rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center justify-center gap-1.5 shadow-xs shrink-0"
-              >
-                <RefreshCw className="w-4 h-4 md:w-3.5 md:h-3.5 animate-spin-once" />
-                <span className="hidden md:inline">Refresh</span>
-              </Button>
-              <Button
-                onClick={() => navigate("/admin/bookings")}
-                className="h-9 md:h-8.5 flex-1 md:flex-none text-xs font-semibold rounded-lg md:rounded-md bg-[#FF4D00] text-white hover:bg-[#E04400] px-3 md:px-4 shadow-xs flex items-center justify-center gap-1.5"
-              >
-                <Plus className="w-4 h-4 shrink-0" /> New Booking
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toast.info("Refreshing...")}
+              title="Refresh"
+              aria-label="Refresh"
+              className="h-8 w-8 md:w-auto px-0 md:px-2.5 text-[12px] font-medium rounded-md border-[#E8EEF4] bg-white text-slate-600 hover:text-[#0B1528] hover:bg-white flex items-center justify-center gap-1.5 shadow-none shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Refresh</span>
+            </Button>
           </div>
 
-          {/* KPI Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-            {[
-              {
-                label: "Upcoming Departures",
-                value: computedDepartures.length,
-                caption: "Next 30 days",
-                valueClass: "text-slate-800",
-                iconClass: "bg-blue-50 text-blue-600",
-                Icon: CalendarCheck,
-              },
-              {
-                label: "Ready",
-                value: computedDepartures.filter((d) => d.status === "READY")
-                  .length,
-                caption: "Ready to depart (95-100%)",
-                valueClass: "text-emerald-650",
-                iconClass: "bg-emerald-50 text-emerald-600",
-                Icon: CheckCircle2,
-              },
-              {
-                label: "Needs Attention",
-                value: computedDepartures.filter(
-                  (d) => d.readiness >= 50 && d.readiness < 90,
-                ).length,
-                caption: "Departures (70-94%)",
-                valueClass: "text-amber-650",
-                iconClass: "bg-amber-50 text-amber-600",
-                Icon: AlertTriangle,
-              },
-              {
-                label: "Critical",
-                value: computedDepartures.filter((d) => d.readiness < 50)
-                  .length,
-                caption: "Departures (<70%)",
-                valueClass: "text-rose-650",
-                iconClass: "bg-rose-50 text-rose-600",
-                Icon: ShieldAlert,
-              },
-            ].map(({ label, value, caption, valueClass, iconClass, Icon }) => (
-              <div
-                key={label}
-                className="bg-white border border-[#E2E8F0] rounded-xl md:rounded-[4px] p-2.5 md:p-4 shadow-sm flex items-center gap-2.5 md:gap-4 min-w-0"
-              >
-                <div
-                  className={cn(
-                    "p-1.5 md:p-3 rounded-lg md:rounded-[4px] shrink-0",
-                    iconClass,
-                  )}
-                >
-                  <Icon className="w-4 h-4 md:w-5 md:h-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] md:text-[10px] font-bold text-slate-450 uppercase tracking-wider truncate">
+          {/* KPI + filters in one card */}
+          <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+            <div className="grid grid-cols-4 divide-x divide-[#E8EEF4]">
+              {[
+                {
+                  label: "Upcoming",
+                  value: computedDepartures.length,
+                  tone: "text-[#0B1528]",
+                },
+                {
+                  label: "Ready",
+                  value: computedDepartures.filter((d) => d.status === "READY")
+                    .length,
+                  tone: "text-[#0B1528]",
+                },
+                {
+                  label: "Needs attention",
+                  value: computedDepartures.filter(
+                    (d) => d.readiness >= 50 && d.readiness < 90,
+                  ).length,
+                  tone: "text-[#0B1528]",
+                },
+                {
+                  label: "Critical",
+                  value: computedDepartures.filter((d) => d.readiness < 50)
+                    .length,
+                  tone: "text-[#FF4D00]",
+                },
+              ].map(({ label, value, tone }) => (
+                <div key={label} className="px-3 py-2.5 md:px-4 md:py-3 min-w-0">
+                  <p className="text-[11px] text-slate-500 font-medium truncate">
                     {label}
                   </p>
                   <p
                     className={cn(
-                      "text-lg md:text-2xl font-black leading-tight md:mt-0.5 tabular-nums",
-                      valueClass,
+                      "text-lg md:text-xl font-semibold leading-tight mt-0.5 tabular-nums tracking-tight",
+                      tone,
                     )}
                   >
                     {value}
                   </p>
-                  <p className="hidden md:block text-[10px] text-slate-500">
-                    {caption}
-                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Mobile status chips — the desktop filter bar is too wide for 430px */}
-          <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar snap-x scroll-px-3 -mx-3 px-3">
-            {[
-              { id: "all", label: "All" },
-              { id: "live", label: "Live" },
-              { id: "upcoming", label: "Upcoming" },
-              { id: "ready", label: "Ready" },
-              { id: "planning", label: "In Planning" },
-            ].map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => setFilterStatus(chip.id)}
-                className={cn(
-                  "shrink-0 snap-start px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border transition-colors",
-                  filterStatus === chip.id
-                    ? "bg-[#0B1329] border-[#0B1329] text-white"
-                    : "bg-white border-slate-200 text-slate-600",
-                )}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
+            <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 py-2 border-t border-[#E8EEF4]">
+              {[
+                { id: "all", label: "All" },
+                { id: "live", label: "Live" },
+                { id: "upcoming", label: "Upcoming" },
+                { id: "ready", label: "Ready" },
+                { id: "planning", label: "In planning" },
+              ].map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => setFilterStatus(chip.id)}
+                  className={cn(
+                    "shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap border transition-colors",
+                    filterStatus === chip.id
+                      ? "bg-[#0B1528] border-[#0B1528] text-white"
+                      : "bg-white border-[#E8EEF4] text-slate-600",
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
 
-          {/* Filters Row */}
-          <div className="hidden md:flex flex-wrap items-center gap-4 bg-white border border-[#E2E8F0] p-4 rounded-[4px] shadow-sm mt-6">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">
-                Date Range
-              </span>
-              <Select defaultValue="july2027">
-                <SelectTrigger className="w-[180px] h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700">
-                  <SelectValue placeholder="Date Range" />
+            <div className="hidden md:flex flex-wrap items-center gap-2 px-3 py-2 border-t border-[#E8EEF4]">
+              <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+                <SelectTrigger className="w-[140px] h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium text-slate-700 shadow-none">
+                  <SelectValue placeholder="Date" />
                 </SelectTrigger>
                 <SelectContent className="rounded-md">
-                  <SelectItem value="july2027">
-                    01 Jul 2027 - 31 Jul 2027
-                  </SelectItem>
+                  <SelectItem value="all">All dates</SelectItem>
+                  <SelectItem value="aug2026">August 2026</SelectItem>
+                  <SelectItem value="sep2026">September 2026</SelectItem>
+                  <SelectItem value="oct2026">October 2026</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">
-                Status
-              </span>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[130px] h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[130px] h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium text-slate-700 shadow-none">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent className="rounded-md">
-                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="all">All status</SelectItem>
+                  <SelectItem value="live">Live</SelectItem>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                  <SelectItem value="ready">Ready</SelectItem>
+                  <SelectItem value="planning">In planning</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">
-                Trip
-              </span>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[130px] h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700">
+              <Select value={filterTripId} onValueChange={setFilterTripId}>
+                <SelectTrigger className="w-[160px] h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium text-slate-700 shadow-none">
                   <SelectValue placeholder="Trip" />
                 </SelectTrigger>
                 <SelectContent className="rounded-md">
-                  <SelectItem value="all">All Trips</SelectItem>
+                  <SelectItem value="all">All trips</SelectItem>
+                  {trips.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.title || t.name || t.slug || t.id}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">
-                Guide
-              </span>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[130px] h-8.5 rounded-[4px] border-slate-200 text-xs font-semibold text-slate-700">
+              <Select value={filterGuide} onValueChange={setFilterGuide}>
+                <SelectTrigger className="w-[140px] h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium text-slate-700 shadow-none">
                   <SelectValue placeholder="Guide" />
                 </SelectTrigger>
                 <SelectContent className="rounded-md">
-                  <SelectItem value="all">All Guides</SelectItem>
+                  <SelectItem value="all">All guides</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="ml-auto mt-auto flex items-center gap-2">
-              <div className="flex items-center border border-[#E2E8F0] rounded-[4px] p-0.5 bg-white shadow-xs h-8.5">
+              <div className="ml-auto flex items-center border border-[#E8EEF4] rounded-md p-0.5 bg-[#F8FAFC] h-8">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setLayoutMode("stacked")}
                   className={cn(
-                    "h-7.5 rounded-[3px] text-[10px] font-bold px-2.5 flex items-center gap-1",
+                    "h-7 rounded-[5px] text-[11px] font-medium px-2.5 flex items-center gap-1",
                     layoutMode === "stacked"
-                      ? "bg-slate-100 text-slate-850"
-                      : "text-slate-450 hover:text-slate-700",
+                      ? "bg-white text-[#0B1528] shadow-sm"
+                      : "text-slate-500 hover:text-[#0B1528]",
                   )}
                 >
                   <Rows3 className="w-3 h-3" /> Stacked
@@ -1786,21 +1728,15 @@ export default function OperationsHubPage() {
                   size="sm"
                   onClick={() => setLayoutMode("side_by_side")}
                   className={cn(
-                    "h-7.5 rounded-[3px] text-[10px] font-bold px-2.5 flex items-center gap-1",
+                    "h-7 rounded-[5px] text-[11px] font-medium px-2.5 flex items-center gap-1",
                     layoutMode === "side_by_side"
-                      ? "bg-slate-100 text-slate-850"
-                      : "text-slate-450 hover:text-slate-700",
+                      ? "bg-white text-[#0B1528] shadow-sm"
+                      : "text-slate-500 hover:text-[#0B1528]",
                   )}
                 >
-                  <LayoutGrid className="w-3 h-3" /> Side-by-Side
+                  <LayoutGrid className="w-3 h-3" /> Side-by-side
                 </Button>
               </div>
-              <Button
-                variant="outline"
-                className="h-8.5 rounded-[4px] border-slate-200 font-bold text-xs flex items-center gap-1.5 text-slate-700 bg-white shadow-xs"
-              >
-                <Filter className="w-3.5 h-3.5 text-slate-450" /> Filters
-              </Button>
             </div>
           </div>
 
@@ -1808,17 +1744,16 @@ export default function OperationsHubPage() {
           <div
             className={cn(
               layoutMode === "side_by_side"
-                ? "grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6"
-                : "space-y-4 md:space-y-6 mt-4 md:mt-6",
+                ? "grid grid-cols-1 lg:grid-cols-2 gap-3"
+                : "space-y-3",
             )}
           >
-            {/* Live Departures Section */}
-            <div className="space-y-2 md:space-y-3">
-              <h3 className="text-[13px] md:text-sm font-bold text-[#E65100] tracking-tight flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#FF5400] animate-pulse" />
-                Live Trips{" "}
-                <span className="text-slate-400 font-semibold text-xs">
-                  ({liveDepartures.length})
+            <div className="space-y-2">
+              <h3 className="text-[13px] font-semibold text-[#0B1528] tracking-tight flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D00]" />
+                Live trips
+                <span className="text-slate-400 font-medium text-[12px] tabular-nums">
+                  {liveDepartures.length}
                 </span>
               </h3>
               {renderDeparturesTable(
@@ -1828,12 +1763,11 @@ export default function OperationsHubPage() {
               )}
             </div>
 
-            {/* Upcoming Departures Section */}
-            <div className="space-y-2 md:space-y-3">
-              <h3 className="text-[13px] md:text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1">
-                Upcoming Trips{" "}
-                <span className="text-slate-400 font-semibold text-xs">
-                  ({upcomingDepartures.length})
+            <div className="space-y-2">
+              <h3 className="text-[13px] font-semibold text-[#0B1528] tracking-tight flex items-center gap-2">
+                Upcoming trips
+                <span className="text-slate-400 font-medium text-[12px] tabular-nums">
+                  {upcomingDepartures.length}
                 </span>
               </h3>
               {renderDeparturesTable(
@@ -1844,18 +1778,15 @@ export default function OperationsHubPage() {
             </div>
           </div>
 
-          <div className="flex items-start md:items-center gap-2 text-[#E65100] text-[11px] md:text-xs font-semibold bg-[#FFF8E6] border border-[#FFE0B2] p-3 md:p-4 rounded-lg md:rounded-md shadow-xs mt-4 md:mt-6">
-            <CalendarCheck className="w-4 h-4 text-[#FF5400] flex-shrink-0 mt-0.5 md:mt-0" />
-            <span>
-              <span className="md:hidden">
-                Tap a departure to open its checklist, payments and documents.
-              </span>
-              <span className="hidden md:inline">
-                Click on Readiness % or View to see detailed checklist, payments,
-                documents and more for each departure.
-              </span>
+          <p className="text-[11px] text-slate-400">
+            <span className="md:hidden">
+              Tap a departure to open its checklist, payments and documents.
             </span>
-          </div>
+            <span className="hidden md:inline">
+              Click a row to open the checklist, payments, documents and more
+              for that departure.
+            </span>
+          </p>
         </div>
       )}
 
@@ -1865,16 +1796,16 @@ export default function OperationsHubPage() {
       {opsView === "departure_detail" && selectedDeparture && (
         <div className="space-y-4 md:space-y-6 animate-fade-in">
           {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 border-b border-[#E2E8F0] pb-3 md:pb-4 bg-white -mx-3 md:-mx-6 -mt-3 md:-mt-6 p-3 md:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
             <div className="min-w-0">
-              <h1 className="text-base md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2 min-w-0">
-                <Compass className="w-4 h-4 md:w-5 md:h-5 text-[#F97316] shrink-0" />{" "}
-                Trip Operations{" "}
-                <span className="text-slate-400 font-medium text-[11px] md:text-sm truncate">
+              <h1 className="text-[17px] md:text-[18px] font-semibold text-[#0B1528] tracking-tight flex items-center gap-2 min-w-0">
+                <Compass className="w-4 h-4 text-[#FF4D00] shrink-0" />{" "}
+                Trip operations{" "}
+                <span className="text-slate-400 font-medium text-[12px] md:text-sm truncate">
                   / {selectedDeparture.tripName} ({selectedDeparture.code})
                 </span>
               </h1>
-              <p className="hidden md:block text-[11px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">
+              <p className="hidden md:block text-[12px] text-slate-500 mt-0.5">
                 Manage upcoming departures, track readiness, and coordinate
                 operations.
               </p>
@@ -1887,9 +1818,9 @@ export default function OperationsHubPage() {
                   setOpsView("trips_list");
                   setSelectedDeparture(null);
                 }}
-                className="h-8.5 text-xs font-semibold rounded-[4px] border-slate-200 bg-white text-slate-650 flex items-center gap-1.5 shadow-xs"
+                className="h-8 text-[12px] font-medium rounded-md border-[#E8EEF4] bg-white text-slate-600 hover:text-[#0B1528] flex items-center gap-1.5 shadow-none"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Back to Departures
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to departures
               </Button>
             </div>
           </div>
@@ -2020,7 +1951,7 @@ export default function OperationsHubPage() {
           </div>
 
           {/* ── Sub-tabs ── */}
-          <div className="flex border-b border-[#E2E8F0] overflow-x-auto gap-2 no-scrollbar snap-x bg-white -mx-3 md:-mx-6 px-3 md:px-6 -mt-2 md:-mt-4 mb-4 md:mb-6 shadow-2xs">
+          <div className="flex border-b border-[#E8EEF4] overflow-x-auto gap-1 no-scrollbar snap-x bg-white rounded-t-xl px-2">
             {[
               { id: "overview", label: "Overview" },
               {
