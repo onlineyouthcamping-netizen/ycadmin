@@ -333,6 +333,11 @@ export default function HotelAssignmentWizardModal({
   const [remarks, setRemarks] = useState<string>("");
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
+  const [isCustomHotel, setIsCustomHotel] = useState<boolean>(false);
+  const [customHotelName, setCustomHotelName] = useState<string>("");
+  const [isCustomCity, setIsCustomCity] = useState<boolean>(false);
+  const [customCityName, setCustomCityName] = useState<string>("");
+
   const currentDayNum = useMemo(() => {
     if (initialDayInfo?.dayNum) return initialDayInfo.dayNum;
     if (initialDayInfo?.dayLabel) {
@@ -399,22 +404,20 @@ export default function HotelAssignmentWizardModal({
       }
     });
 
-    if (list.length === 0) {
-      adminHotels.forEach((h: any) => {
-        if (h.name && !seenNames.has(h.name.toLowerCase())) {
-          seenNames.add(h.name.toLowerCase());
-          list.push({
-            id: h.id || `HTL-${list.length + 1}`,
-            name: h.name,
-            city: h.city || "Manali",
-            category: h.category || "Deluxe Hotel",
-            rating: typeof h.rating === "number" ? "★".repeat(h.rating) : h.rating || "4.5 ★",
-            phone: h.phone || "",
-            vendorObj: h,
-          });
-        }
-      });
-    }
+    adminHotels.forEach((h: any) => {
+      if (h.name && !seenNames.has(h.name.toLowerCase())) {
+        seenNames.add(h.name.toLowerCase());
+        list.push({
+          id: h.id || `HTL-${list.length + 1}`,
+          name: h.name,
+          city: h.city || "Manali",
+          category: h.category || "Deluxe Hotel",
+          rating: typeof h.rating === "number" ? "★".repeat(h.rating) : h.rating || "4.5 ★",
+          phone: h.phone || "",
+          vendorObj: h,
+        });
+      }
+    });
 
     return list;
   }, [dbVendors, adminHotels]);
@@ -469,17 +472,7 @@ export default function HotelAssignmentWizardModal({
     ];
   }, [selectedDestination, combinedHotelProperties]);
 
-  // Auto-sync selectedHotel state whenever matchingHotels or selectedDestination changes
-  useEffect(() => {
-    if (!isOpen || matchingHotels.length === 0) return;
-    const isSelectedInMatching = matchingHotels.some(
-      (h) => h.name === selectedHotel?.name || h.id === selectedHotel?.id
-    );
-    if (!isSelectedInMatching && matchingHotels[0]) {
-      handleSelectHotel(matchingHotels[0], selectedDestination);
-    }
-  }, [matchingHotels, selectedDestination, isOpen]);
-
+  // Initialize modal state ONLY ONCE when modal is opened
   useEffect(() => {
     if (!isOpen) {
       hasInitializedRef.current = false;
@@ -502,6 +495,8 @@ export default function HotelAssignmentWizardModal({
       destName = "Manali";
     }
     setSelectedDestination(destName);
+    setCustomCityName(destName);
+    setIsCustomCity(false);
 
     const initCheckIn = formatDateForInput(
       existingB?.checkInDate || existingB?.checkIn || initialDayInfo?.dateStr || currentDayItineraryDate,
@@ -518,24 +513,32 @@ export default function HotelAssignmentWizardModal({
 
     if (existingB && (existingB.hotelName || existingB.vendorName || existingB.hotel)) {
       const hName = existingB.hotelName || existingB.hotel || existingB.vendorName || "";
+      setCustomHotelName(hName);
       const matchedInCity = matchingHotels.find((h) => h.name.toLowerCase() === hName.toLowerCase());
       const matchedAny = combinedHotelProperties.find((h) => h.name.toLowerCase() === hName.toLowerCase());
       const matched = matchedInCity || (matchedAny && normalizeDestinationName(matchedAny.city) === normDest ? matchedAny : null);
 
       if (matched) {
         setSelectedHotel(matched);
+        setIsCustomHotel(false);
         const rates = extractHotelRates(matched, destName);
-        setDoubleRate(existingB.doubleRate || rates.doubleRate);
-        setTripleRate(existingB.tripleRate || rates.tripleRate);
-        setQuadRate(existingB.quadRate || rates.quadRate);
-        setExtraBedRate(existingB.extraBedRate || rates.extraBedRate);
-      } else if (matchingHotels[0]) {
-        setSelectedHotel(matchingHotels[0]);
-        const rates = extractHotelRates(matchingHotels[0], destName);
-        setDoubleRate(existingB.doubleRate || rates.doubleRate);
-        setTripleRate(existingB.tripleRate || rates.tripleRate);
-        setQuadRate(existingB.quadRate || rates.quadRate);
-        setExtraBedRate(existingB.extraBedRate || rates.extraBedRate);
+        setDoubleRate(existingB.doubleRate ?? rates.doubleRate);
+        setTripleRate(existingB.tripleRate ?? rates.tripleRate);
+        setQuadRate(existingB.quadRate ?? rates.quadRate);
+        setExtraBedRate(existingB.extraBedRate ?? rates.extraBedRate);
+      } else {
+        const customObj = {
+          id: `custom-${Date.now()}`,
+          name: hName,
+          city: destName,
+          category: "Custom Property",
+        };
+        setSelectedHotel(customObj);
+        setIsCustomHotel(true);
+        setDoubleRate(existingB.doubleRate ?? 1200);
+        setTripleRate(existingB.tripleRate ?? 900);
+        setQuadRate(existingB.quadRate ?? 750);
+        setExtraBedRate(existingB.extraBedRate ?? 500);
       }
     } else {
       const matched = combinedHotelProperties.find((h) => {
@@ -545,11 +548,13 @@ export default function HotelAssignmentWizardModal({
 
       if (matched) {
         setSelectedHotel(matched);
+        setIsCustomHotel(false);
+        setCustomHotelName(matched.name);
         const rates = extractHotelRates(matched, destName);
-        setDoubleRate(rates.doubleRate);
-        setTripleRate(rates.tripleRate);
-        setQuadRate(rates.quadRate);
-        setExtraBedRate(rates.extraBedRate);
+        setDoubleRate(rates.doubleRate || 1200);
+        setTripleRate(rates.tripleRate || 900);
+        setQuadRate(rates.quadRate || 750);
+        setExtraBedRate(rates.extraBedRate || 500);
       } else {
         const placeholderHotel = {
           id: `custom-${normDest}`,
@@ -558,6 +563,8 @@ export default function HotelAssignmentWizardModal({
           category: "Standard Property",
         };
         setSelectedHotel(placeholderHotel);
+        setIsCustomHotel(false);
+        setCustomHotelName(placeholderHotel.name);
         setDoubleRate(1200);
         setTripleRate(900);
         setQuadRate(750);
@@ -565,14 +572,12 @@ export default function HotelAssignmentWizardModal({
       }
     }
 
-    // Initialize Room Counts for 100% Sync with Room Allocation Engine & Database
+    // Initialize Room Counts
     const derivedFromAllocations = passengerAllocations
       ? deriveRoomCountsFromAllocations(passengerAllocations, allPassengers)
       : null;
 
-    // Priority: derived from physical allocations (ground truth) > saved booking > auto-suggest
     if (derivedFromAllocations && derivedFromAllocations.totalRooms > 0) {
-      // Physical room allocations exist — use those (they are deduplicated and correct)
       setDoubleRoomsCount(derivedFromAllocations.doubleRooms);
       setTripleRoomsCount(derivedFromAllocations.tripleRooms);
       setQuadRoomsCount(derivedFromAllocations.quadRooms);
@@ -587,56 +592,54 @@ export default function HotelAssignmentWizardModal({
         existingB.tripleRooms > 0 ||
         existingB.quadRooms > 0)
     ) {
-      // No physical allocation — use saved booking room counts
       setDoubleRoomsCount(existingB.doubleRoomsCount ?? existingB.doubleRooms ?? 0);
       setTripleRoomsCount(existingB.tripleRoomsCount ?? existingB.tripleRooms ?? 0);
       setQuadRoomsCount(existingB.quadRoomsCount ?? existingB.quadRooms ?? 0);
       setExtraPersonsCount(existingB.extraPersonsCount ?? existingB.extraBeds ?? 0);
       setRemarks(existingB.remarks || "");
     } else {
-      // Auto-suggest room allocation for total pax (e.g. 7 pax -> 3 Double Rooms or Quad + Triple)
       if (totalPax > 0) {
         if (totalPax % 4 === 0) {
           setQuadRoomsCount(totalPax / 4);
           setDoubleRoomsCount(0);
+          setTripleRoomsCount(0);
+          setExtraPersonsCount(0);
         } else if (totalPax % 3 === 0) {
           setTripleRoomsCount(totalPax / 3);
           setDoubleRoomsCount(0);
+          setQuadRoomsCount(0);
+          setExtraPersonsCount(0);
         } else if (totalPax === 7) {
           setTripleRoomsCount(1);
           setQuadRoomsCount(1);
           setDoubleRoomsCount(0);
+          setExtraPersonsCount(0);
         } else {
           setDoubleRoomsCount(Math.floor(totalPax / 2));
-          if (totalPax % 2 !== 0) {
-            setExtraPersonsCount(1);
-          }
+          setTripleRoomsCount(0);
+          setQuadRoomsCount(0);
+          setExtraPersonsCount(totalPax % 2 !== 0 ? 1 : 0);
         }
       } else {
         setDoubleRoomsCount(1);
+        setTripleRoomsCount(0);
+        setQuadRoomsCount(0);
+        setExtraPersonsCount(0);
       }
       setRemarks("");
     }
-  }, [
-    isOpen,
-    currentDayNum,
-    currentDayDestination,
-    hotelEligibleDestinations,
-    initialDayInfo,
-    departureDateStr,
-    totalPax,
-    passengerAllocations,
-    combinedHotelProperties,
-  ]);
+  }, [isOpen, initialDayInfo]);
 
   const handleSelectHotel = (hotel: any, overrideDest?: string) => {
     setSelectedHotel(hotel);
+    setIsCustomHotel(false);
+    setCustomHotelName(hotel?.name || "");
     const destToUse = overrideDest || selectedDestination || hotel?.city;
     const rates = extractHotelRates(hotel, destToUse);
-    setDoubleRate(rates.doubleRate);
-    setTripleRate(rates.tripleRate);
-    setQuadRate(rates.quadRate);
-    setExtraBedRate(rates.extraBedRate);
+    if (rates.doubleRate > 0) setDoubleRate(rates.doubleRate);
+    if (rates.tripleRate > 0) setTripleRate(rates.tripleRate);
+    if (rates.quadRate > 0) setQuadRate(rates.quadRate);
+    if (rates.extraBedRate > 0) setExtraBedRate(rates.extraBedRate);
   };
 
   const handleNightsChange = (nights: number) => {
@@ -690,8 +693,12 @@ export default function HotelAssignmentWizardModal({
   ]);
 
   const handleSaveStayAssignment = async () => {
-    if (!selectedHotel) {
-      toast.error("Please select a hotel property");
+    const finalHotelName = isCustomHotel && customHotelName.trim()
+      ? customHotelName.trim()
+      : selectedHotel?.name || customHotelName.trim() || "Hotel Stay";
+
+    if (!finalHotelName) {
+      toast.error("Please enter or select a hotel property");
       return;
     }
     if (!checkInDate) {
@@ -706,17 +713,18 @@ export default function HotelAssignmentWizardModal({
     setIsSaving(true);
     try {
       const realVendorId =
-        selectedHotel?.vendorObj?.id && !String(selectedHotel.vendorObj.id).startsWith("HTL-")
+        !isCustomHotel && selectedHotel?.vendorObj?.id && !String(selectedHotel.vendorObj.id).startsWith("HTL-")
           ? selectedHotel.vendorObj.id
           : null;
 
       const existingB = initialDayInfo?.existingBooking;
+      const finalDest = isCustomCity && customCityName.trim() ? customCityName.trim() : (selectedDestination || selectedHotel?.city || "Manali");
 
       const payload: any = {
         ...(existingB?.id && !String(existingB.id).startsWith("stay") ? { id: existingB.id } : {}),
-        hotelName: selectedHotel.name,
-        location: selectedDestination || selectedHotel.city || "Manali",
-        roomType: selectedHotel.category || "Standard Room",
+        hotelName: finalHotelName,
+        location: finalDest,
+        roomType: selectedHotel?.category || "Standard Room",
         numberOfRooms: totalPhysicalRooms > 0 ? totalPhysicalRooms : 1,
         totalAmount: calculatedCosts.grandTotal,
         advancePaid: 0,
@@ -738,7 +746,7 @@ export default function HotelAssignmentWizardModal({
       };
 
       await opsService.saveHotelBookings(tripId, departureDateStr, [payload]);
-      toast.success(`Assigned ${selectedHotel.name} for ${selectedDestination}!`);
+      toast.success(`Assigned ${finalHotelName} for ${finalDest}!`);
       onSaveSuccess();
       onClose();
     } catch (err: any) {
@@ -770,82 +778,139 @@ export default function HotelAssignmentWizardModal({
           {/* SECTION 1: DESTINATION & HOTEL SELECTOR */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
-                Destination City
-              </label>
-              <select
-                value={selectedDestination}
-                onChange={(e) => {
-                  const newDest = e.target.value;
-                  setSelectedDestination(newDest);
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                  Destination City
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomCity(!isCustomCity)}
+                  className="text-[10px] font-bold text-[#FF4D00] hover:underline"
+                >
+                  {isCustomCity ? "Select List" : "+ Custom City"}
+                </button>
+              </div>
+              {isCustomCity ? (
+                <input
+                  type="text"
+                  placeholder="Type city/location..."
+                  value={customCityName}
+                  onChange={(e) => {
+                    setCustomCityName(e.target.value);
+                    setSelectedDestination(e.target.value);
+                  }}
+                  className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
+                />
+              ) : (
+                <select
+                  value={selectedDestination}
+                  onChange={(e) => {
+                    const newDest = e.target.value;
+                    setSelectedDestination(newDest);
+                    setCustomCityName(newDest);
 
-                  // Auto-snap Check-In Date to destination city itinerary date
-                  const matchedDay = computedItinerary.find((day) => {
-                    const city = resolveCityForItineraryDay(day);
-                    return normalizeDestinationName(city) === normalizeDestinationName(newDest);
-                  });
-                  if (matchedDay) {
-                    const dNum = matchedDay.day
-                      ? typeof matchedDay.day === "number"
-                        ? matchedDay.day
-                        : parseInt(String(matchedDay.day).replace(/\D/g, ""), 10) || 1
-                      : 1;
-                    const newCheckIn = formatDateForInput(
-                      matchedDay.dateStr || matchedDay.date,
-                      departureDateStr,
-                      dNum - 1
-                    );
-                    if (newCheckIn) {
-                      setCheckInDate(newCheckIn);
-                      setCheckOutDate(addNightsToDate(newCheckIn, nightsCount));
+                    // Auto-snap Check-In Date to destination city itinerary date
+                    const matchedDay = computedItinerary.find((day) => {
+                      const city = resolveCityForItineraryDay(day);
+                      return normalizeDestinationName(city) === normalizeDestinationName(newDest);
+                    });
+                    if (matchedDay) {
+                      const dNum = matchedDay.day
+                        ? typeof matchedDay.day === "number"
+                          ? matchedDay.day
+                          : parseInt(String(matchedDay.day).replace(/\D/g, ""), 10) || 1
+                        : 1;
+                      const newCheckIn = formatDateForInput(
+                        matchedDay.dateStr || matchedDay.date,
+                        departureDateStr,
+                        dNum - 1
+                      );
+                      if (newCheckIn) {
+                        setCheckInDate(newCheckIn);
+                        setCheckOutDate(addNightsToDate(newCheckIn, nightsCount));
+                      }
                     }
-                  }
 
-                  const norm = normalizeDestinationName(newDest);
-                  const matched = combinedHotelProperties.find((h) => {
-                    const normCity = normalizeDestinationName(h.city || "");
-                    return normCity.includes(norm) || norm.includes(normCity);
-                  });
-                  if (matched) {
-                    handleSelectHotel(matched, newDest);
-                  } else {
-                    const placeholderHotel = {
-                      id: `custom-${norm}`,
-                      name: `Hotel / Stay in ${newDest}`,
-                      city: newDest,
-                      category: "Standard Property",
-                    };
-                    handleSelectHotel(placeholderHotel, newDest);
-                  }
-                }}
-                className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
-              >
-                {destinationCitiesList.map((city) => (
-                  <option key={city} value={city}>
-                    📍 {city}
-                  </option>
-                ))}
-              </select>
+                    const norm = normalizeDestinationName(newDest);
+                    const matched = combinedHotelProperties.find((h) => {
+                      const normCity = normalizeDestinationName(h.city || "");
+                      return normCity.includes(norm) || norm.includes(normCity);
+                    });
+                    if (matched) {
+                      handleSelectHotel(matched, newDest);
+                    } else {
+                      const placeholderHotel = {
+                        id: `custom-${norm}`,
+                        name: `Hotel / Stay in ${newDest}`,
+                        city: newDest,
+                        category: "Standard Property",
+                      };
+                      handleSelectHotel(placeholderHotel, newDest);
+                    }
+                  }}
+                  className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
+                >
+                  {destinationCitiesList.map((city) => (
+                    <option key={city} value={city}>
+                      📍 {city}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
-                Hotel Property
-              </label>
-              <select
-                value={selectedHotel?.name || ""}
-                onChange={(e) => {
-                  const matched = matchingHotels.find((h) => h.name === e.target.value);
-                  if (matched) handleSelectHotel(matched);
-                }}
-                className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
-              >
-                {matchingHotels.map((h) => (
-                  <option key={h.id} value={h.name}>
-                    {h.name} ({h.city || selectedDestination}) — {h.category || "Hotel"}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                  Hotel Property
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomHotel(!isCustomHotel)}
+                  className="text-[10px] font-bold text-[#FF4D00] hover:underline"
+                >
+                  {isCustomHotel ? "Select List" : "+ Custom Hotel"}
+                </button>
+              </div>
+              {isCustomHotel ? (
+                <input
+                  type="text"
+                  placeholder="Enter hotel / resort / campsite name..."
+                  value={customHotelName}
+                  onChange={(e) => {
+                    setCustomHotelName(e.target.value);
+                    setSelectedHotel({
+                      id: `custom-${Date.now()}`,
+                      name: e.target.value,
+                      city: selectedDestination,
+                      category: "Custom Property",
+                    });
+                  }}
+                  className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
+                />
+              ) : (
+                <select
+                  value={selectedHotel?.name || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "__CUSTOM__") {
+                      setIsCustomHotel(true);
+                      setCustomHotelName("");
+                      return;
+                    }
+                    const matched = matchingHotels.find((h) => h.name === val);
+                    if (matched) handleSelectHotel(matched);
+                  }}
+                  className="w-full h-9 text-xs font-bold border border-slate-200 rounded-lg px-2.5 bg-white text-slate-900 focus:border-[#FF4D00] focus:outline-none"
+                >
+                  {matchingHotels.map((h) => (
+                    <option key={h.id} value={h.name}>
+                      {h.name} ({h.city || selectedDestination}) — {h.category || "Hotel"}
+                    </option>
+                  ))}
+                  <option value="__CUSTOM__">➕ Enter Custom Hotel Name...</option>
+                </select>
+              )}
             </div>
           </div>
 
@@ -871,7 +936,7 @@ export default function HotelAssignmentWizardModal({
                 onChange={(e) => handleNightsChange(Number(e.target.value))}
                 className="w-full h-8 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-900 focus:outline-none focus:border-[#FF4D00]"
               >
-                {[1, 2, 3, 4, 5].map((n) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                   <option key={n} value={n}>
                     {n} {n === 1 ? "Night" : "Nights"}
                   </option>
@@ -924,15 +989,21 @@ export default function HotelAssignmentWizardModal({
                       <button
                         type="button"
                         onClick={() => setDoubleRoomsCount(Math.max(0, doubleRoomsCount - 1))}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-6 text-center font-black font-mono">{doubleRoomsCount}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={doubleRoomsCount}
+                        onChange={(e) => setDoubleRoomsCount(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="w-8 h-6 text-center font-black font-mono border border-slate-200 rounded text-xs focus:border-[#FF4D00] focus:outline-none"
+                      />
                       <button
                         type="button"
                         onClick={() => setDoubleRoomsCount(doubleRoomsCount + 1)}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -944,9 +1015,10 @@ export default function HotelAssignmentWizardModal({
                   <td className="py-2 px-3 text-right">
                     <input
                       type="number"
+                      min={0}
                       value={doubleRate || ""}
                       onChange={(e) => setDoubleRate(e.target.value === "" ? 0 : Number(e.target.value))}
-                      className="w-16 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1 text-xs focus:border-[#FF4D00] focus:outline-none"
+                      className="w-20 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1.5 text-xs focus:border-[#FF4D00] focus:outline-none"
                     />
                   </td>
                   <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
@@ -967,15 +1039,21 @@ export default function HotelAssignmentWizardModal({
                       <button
                         type="button"
                         onClick={() => setTripleRoomsCount(Math.max(0, tripleRoomsCount - 1))}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-6 text-center font-black font-mono">{tripleRoomsCount}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={tripleRoomsCount}
+                        onChange={(e) => setTripleRoomsCount(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="w-8 h-6 text-center font-black font-mono border border-slate-200 rounded text-xs focus:border-[#FF4D00] focus:outline-none"
+                      />
                       <button
                         type="button"
                         onClick={() => setTripleRoomsCount(tripleRoomsCount + 1)}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -987,9 +1065,10 @@ export default function HotelAssignmentWizardModal({
                   <td className="py-2 px-3 text-right">
                     <input
                       type="number"
+                      min={0}
                       value={tripleRate || ""}
                       onChange={(e) => setTripleRate(e.target.value === "" ? 0 : Number(e.target.value))}
-                      className="w-16 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1 text-xs focus:border-[#FF4D00] focus:outline-none"
+                      className="w-20 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1.5 text-xs focus:border-[#FF4D00] focus:outline-none"
                     />
                   </td>
                   <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
@@ -1010,15 +1089,21 @@ export default function HotelAssignmentWizardModal({
                       <button
                         type="button"
                         onClick={() => setQuadRoomsCount(Math.max(0, quadRoomsCount - 1))}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-6 text-center font-black font-mono">{quadRoomsCount}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={quadRoomsCount}
+                        onChange={(e) => setQuadRoomsCount(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="w-8 h-6 text-center font-black font-mono border border-slate-200 rounded text-xs focus:border-[#FF4D00] focus:outline-none"
+                      />
                       <button
                         type="button"
                         onClick={() => setQuadRoomsCount(quadRoomsCount + 1)}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -1030,9 +1115,10 @@ export default function HotelAssignmentWizardModal({
                   <td className="py-2 px-3 text-right">
                     <input
                       type="number"
+                      min={0}
                       value={quadRate || ""}
                       onChange={(e) => setQuadRate(e.target.value === "" ? 0 : Number(e.target.value))}
-                      className="w-16 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1 text-xs focus:border-[#FF4D00] focus:outline-none"
+                      className="w-20 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1.5 text-xs focus:border-[#FF4D00] focus:outline-none"
                     />
                   </td>
                   <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
@@ -1054,15 +1140,21 @@ export default function HotelAssignmentWizardModal({
                       <button
                         type="button"
                         onClick={() => setExtraPersonsCount(Math.max(0, extraPersonsCount - 1))}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-6 text-center font-black font-mono">{extraPersonsCount}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={extraPersonsCount}
+                        onChange={(e) => setExtraPersonsCount(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="w-8 h-6 text-center font-black font-mono border border-slate-200 rounded text-xs focus:border-[#FF4D00] focus:outline-none"
+                      />
                       <button
                         type="button"
                         onClick={() => setExtraPersonsCount(extraPersonsCount + 1)}
-                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200"
+                        className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -1071,9 +1163,10 @@ export default function HotelAssignmentWizardModal({
                   <td className="py-2 px-3 text-right">
                     <input
                       type="number"
+                      min={0}
                       value={extraBedRate || ""}
                       onChange={(e) => setExtraBedRate(e.target.value === "" ? 0 : Number(e.target.value))}
-                      className="w-16 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1 text-xs focus:border-[#FF4D00] focus:outline-none"
+                      className="w-20 h-6 text-right font-mono font-bold border border-slate-200 rounded px-1.5 text-xs focus:border-[#FF4D00] focus:outline-none"
                     />
                   </td>
                   <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
