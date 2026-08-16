@@ -108,9 +108,7 @@ export default function OperationsHubPage() {
   >((tabParam as any) || "overview");
 
   useEffect(() => {
-    if (tabParam) {
-      setActiveTab(tabParam as any);
-    }
+    setActiveTab((tabParam as any) || "overview");
   }, [tabParam]);
 
   // ─── Upcoming Trips / Departure Detail View ───
@@ -1553,7 +1551,7 @@ export default function OperationsHubPage() {
 
   if (tabParam === "stationpayments" || tabParam === "station_payments" || tabParam === "station") {
     return (
-      <div className="p-3 md:p-6 pb-28 md:pb-6 bg-slate-50 min-h-screen">
+      <div className="p-3 md:p-6 pb-28 md:pb-6 bg-slate-50 min-h-0">
         <StationPaymentCollection
           tripId={selectedTripId || ""}
           departureDateStr={selectedDepartureDate || ""}
@@ -1563,7 +1561,7 @@ export default function OperationsHubPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-56px)] bg-[#F4F7FB] text-[#0B1528] antialiased -mx-3 -my-3 md:-mx-5 md:-my-5 p-3 md:p-5 pb-28 md:pb-5">
+    <div className="flex flex-col min-h-0 bg-[#F4F7FB] text-[#0B1528] antialiased -mx-3 md:-mx-5 md:-my-5 p-3 md:p-5 pb-28 md:pb-5">
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* UPCOMING TRIPS LIST VIEW                                       */}
       {/* ═══════════════════════════════════════════════════════════════ */}

@@ -761,7 +761,9 @@ export default function BookingsPage() {
     }
   };
 
-  const currentTab = searchParams.get("tab") || searchParams.get("view") || "bookings";
+  // Use "view" param for the top-level bookings/payments switcher to avoid
+  // colliding with AccountingPage's internal "tab" param when embedded.
+  const currentTab = searchParams.get("view") || "bookings";
 
   if (detailsTarget) {
     return (
@@ -781,15 +783,14 @@ export default function BookingsPage() {
 
   if (currentTab === "payments") {
     return (
-      <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 -my-3 md:-mx-5 md:-my-5 p-3 md:p-5">
-        <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+      <div className="flex flex-col min-h-0 md:h-[calc(100vh-56px)] md:overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 md:-mx-5 md:-my-5 p-3 md:p-5">
+        <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl md:overflow-hidden">
           {/* Top Tab Bar */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-[#E8EEF4] bg-[#F8FAFC] shrink-0">
             <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-lg">
               <button
                 onClick={() => {
                   const nextParams = new URLSearchParams(searchParams);
-                  nextParams.delete("tab");
                   nextParams.delete("view");
                   setSearchParams(nextParams);
                 }}
@@ -801,7 +802,7 @@ export default function BookingsPage() {
               <button
                 onClick={() => {
                   const nextParams = new URLSearchParams(searchParams);
-                  nextParams.set("tab", "payments");
+                  nextParams.set("view", "payments");
                   setSearchParams(nextParams);
                 }}
                 className="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-[#FF4D00] shadow-xs"
@@ -811,7 +812,7 @@ export default function BookingsPage() {
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F8FAFC]">
+          <div className="flex-1 md:overflow-y-auto p-4 md:p-6 bg-[#F8FAFC]">
             <AccountingPage />
           </div>
         </div>
@@ -820,15 +821,14 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 -my-3 md:-mx-5 md:-my-5 p-3 md:p-5">
-      <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+    <div className="flex flex-col min-h-0 md:h-[calc(100vh-56px)] md:overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 md:-mx-5 md:-my-5 p-3 md:p-5">
+      <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl md:overflow-hidden">
         {/* Top Tab Bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-[#E8EEF4] bg-[#F8FAFC] shrink-0">
           <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-lg">
             <button
               onClick={() => {
                 const nextParams = new URLSearchParams(searchParams);
-                nextParams.delete("tab");
                 nextParams.delete("view");
                 setSearchParams(nextParams);
               }}
@@ -840,7 +840,7 @@ export default function BookingsPage() {
             <button
               onClick={() => {
                 const nextParams = new URLSearchParams(searchParams);
-                nextParams.set("tab", "payments");
+                nextParams.set("view", "payments");
                 setSearchParams(nextParams);
               }}
               className="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900"
@@ -866,9 +866,9 @@ export default function BookingsPage() {
       />
 
       {/* MAIN CONTAINER */}
-      <div className="zoho-main flex flex-1 overflow-y-auto md:overflow-hidden">
+      <div className="zoho-main flex flex-1 md:overflow-hidden">
         {/* CONTENT & TABLE AREA */}
-        <div className="zoho-content-left flex-1 flex flex-col overflow-y-auto md:overflow-hidden bg-white">
+        <div className="zoho-content-left flex-1 flex flex-col md:overflow-hidden bg-white">
           {/* MOBILE BOOKINGS VIEW (<768px) */}
           <div className="block md:hidden p-3 pb-28">
             <MobileBookingsView
