@@ -1,4 +1,8 @@
-import { normalizePassenger } from "@/utils/passengerUtils";
+import {
+  normalizePassenger,
+  normalizeGenderFull,
+  normalizeGenderCode,
+} from "@/utils/passengerUtils";
 import { calculateReadinessScore } from "@/utils/readinessUtils";
 import { isPassengerCancelled, filterActivePassengers } from "@/utils/departure/passengerStatus";
 import { getBookingGroupKey, groupPassengersByBooking } from "@/utils/departure/passengerAllocation";
@@ -1366,7 +1370,7 @@ export default function DepartureHubPage() {
           bookingDate: b.createdAt?.substring(0, 10) || "2027-06-15",
           departureDate: b.departureDate?.substring(0, 10) || departureDateStr,
           batchGroup: "Batch 1",
-          gender: b.gender || "Male",
+          gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender || "Male"),
           age: b.age || 24,
           phone: b.phone || b.mobile || "—",
           email: b.email || "—",
@@ -1444,7 +1448,7 @@ export default function DepartureHubPage() {
               balance: allocatedBalances[coPaxIdx] || 0,
               notes: p.notes || (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
               isLead: false,
-              gender: p.gender || "Male",
+              gender: normalizeGenderFull(p.gender || p.genderFull || "Male"),
               age: p.age || 24,
               status: p.status || (p.isCancelled ? "CANCELLED" : "CONFIRMED"),
               isCancelled: p.isCancelled === true || p.status === "CANCELLED" || p.status === "cancelled" || b.status === "cancelled",
@@ -4865,13 +4869,14 @@ useEffect(() => {
       if (isPassengerCancelled(pObj)) return;
 
       const travelerName = pObj.name;
-      const gender = pObj.gender === "Female" ? "GIRLS" : "BOYS";
+      const isFemale = normalizeGenderCode(pObj.gender) === "F";
+      const gender = isFemale ? "GIRLS" : "BOYS";
       list.push({
         roomNumber: alloc.room,
         travelerName,
         passengerId: pObj.id,
         genderGroup: gender,
-        rawGender: pObj.gender || "Unknown",
+        rawGender: isFemale ? "Female" : "Male",
         roomType: pObj.roomType || "Double",
       });
     });
@@ -4908,12 +4913,13 @@ useEffect(() => {
         const fleetItem = allocFleet.find(
           (f) => f.name === alloc.vehicle || f.id === alloc.vehicle || f.vehicleType === alloc.vehicle,
         );
+        const isFemale = normalizeGenderCode(pObj.gender) === "F";
         list.push({
           fleetId: fleetItem?.id || alloc.vehicle || "tempo-1",
           vehicleType: fleetItem?.vehicleType || alloc.vehicle || "Tempo Traveller",
           seatNumber: alloc.seat,
           travelerName: pObj.name,
-          rawGender: pObj.gender || "Unknown",
+          rawGender: isFemale ? "Female" : "Male",
         });
       }
     });

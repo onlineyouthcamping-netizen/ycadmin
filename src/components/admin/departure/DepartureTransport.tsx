@@ -566,10 +566,13 @@ export default function DepartureTransport({
                       const passId = rData.passengerIds
                         ? rData.passengerIds[i]
                         : null;
-                      const rawG = (rData.rawGenders[i] || "").toLowerCase();
-                      let dotColor = "bg-emerald-500";
-                      if (rawG === "male") dotColor = "bg-blue-500";
-                      else if (rawG === "female") dotColor = "bg-pink-500";
+                      const rawG = (rData.rawGenders[i] || "").toLowerCase().trim();
+                      const isFemale =
+                        rawG.startsWith("f") ||
+                        rawG === "female" ||
+                        rawG === "girls" ||
+                        rawG === "girl";
+                      const dotColor = isFemale ? "bg-pink-500" : "bg-blue-500";
                       return (
                         <li
                           key={i}
@@ -703,13 +706,15 @@ export default function DepartureTransport({
                           );
                         })
                         .map((t: any, i: number) => {
-                          const rawG = (t.rawGender || "").toLowerCase();
-                          let theme =
-                            "text-emerald-600 bg-emerald-50 border-emerald-100";
-                          if (rawG === "male")
-                            theme = "text-blue-600 bg-blue-50 border-blue-100";
-                          else if (rawG === "female")
-                            theme = "text-pink-600 bg-pink-50 border-pink-100";
+                          const rawG = (t.rawGender || "").toLowerCase().trim();
+                          const isFemale =
+                            rawG.startsWith("f") ||
+                            rawG === "female" ||
+                            rawG === "girls" ||
+                            rawG === "girl";
+                          const theme = isFemale
+                            ? "text-pink-600 bg-pink-50 border-pink-100"
+                            : "text-blue-600 bg-blue-50 border-blue-100";
                           const seatDisplay =
                             t.seatNumber && t.seatNumber !== "—"
                               ? t.seatNumber
