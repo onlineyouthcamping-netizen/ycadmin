@@ -145,6 +145,21 @@ export default function DeparturePayments({
     proofUrl: string;
   } | null>(null);
 
+  // In-App Payment Proof / Receipt Screenshot Preview Popup Modal
+  const [proofPreviewModal, setProofPreviewModal] = useState<{
+    open: boolean;
+    title: string;
+    subtitle?: string;
+    imageUrl: string;
+    amount?: number;
+    method?: string;
+    date?: string;
+    txnId?: string;
+    accountName?: string;
+    uploadedBy?: string;
+    status?: string;
+  } | null>(null);
+
   const [addActivityPaymentOpen, setAddActivityPaymentOpen] = useState(false);
   const [activityPaymentForm, setActivityPaymentForm] = useState({
     activityName: "",
@@ -2483,15 +2498,32 @@ export default function DeparturePayments({
                                               VERIFIED ✓
                                             </span>
                                             {h.proofUrl && (
-                                              <a
-                                                href={h.proofUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="h-7 px-2.5 text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors"
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  setProofPreviewModal({
+                                                    open: true,
+                                                    title: `Client Payment Screenshot — ${b.fullName || b.customerName || "Customer"}`,
+                                                    subtitle: `Booking ID: ${b.bookingId} · Amount: ₹${Number(h.amount || 0).toLocaleString("en-IN")}`,
+                                                    imageUrl: h.proofUrl,
+                                                    amount: h.amount,
+                                                    method: h.paymentMode,
+                                                    date: h.paymentDate,
+                                                    txnId: h.transactionId,
+                                                    accountName:
+                                                      h.collectionAccount?.accountName ||
+                                                      "Company Bank Account",
+                                                    uploadedBy:
+                                                      h.recordedBy ||
+                                                      "Sales / Accounts",
+                                                    status: "VERIFIED",
+                                                  })
+                                                }
+                                                className="h-7 px-2.5 text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
                                               >
                                                 <Eye className="w-3.5 h-3.5" />
                                                 Screenshot
-                                              </a>
+                                              </button>
                                             )}
                                             <Button
                                               size="sm"
@@ -2891,15 +2923,34 @@ export default function DeparturePayments({
                                             <div className="flex flex-wrap items-center gap-2">
                                               {/* Payment Proof View or Upload Action */}
                                               {h.invoiceProof || h.proofUrl ? (
-                                                <a
-                                                  href={h.invoiceProof || h.proofUrl}
-                                                  target="_blank"
-                                                  rel="noreferrer"
-                                                  className="h-7 px-2.5 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors"
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setProofPreviewModal({
+                                                      open: true,
+                                                      title: `Payment Proof — ${v.vendorName}`,
+                                                      subtitle: `Trip Expense · ${v.category || "Vendor"} · ${departureDateStr}`,
+                                                      imageUrl:
+                                                        h.invoiceProof ||
+                                                        h.proofUrl,
+                                                      amount: h.amount,
+                                                      method: h.method,
+                                                      date: h.date,
+                                                      txnId: h.txnId,
+                                                      accountName: h.accountName,
+                                                      uploadedBy: h.uploadedBy,
+                                                      status: isApproved
+                                                        ? "APPROVED"
+                                                        : isRejected
+                                                          ? "REJECTED"
+                                                          : "PENDING_APPROVAL",
+                                                    })
+                                                  }
+                                                  className="h-7 px-2.5 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors cursor-pointer"
                                                 >
                                                   <Eye className="w-3.5 h-3.5" />
                                                   View Payment Proof
-                                                </a>
+                                                </button>
                                               ) : (
                                                 <button
                                                   type="button"
@@ -4533,6 +4584,139 @@ export default function DeparturePayments({
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── IN-APP PAYMENT PROOF PREVIEW POPUP MODAL ──────────────────────── */}
+      <Dialog
+        open={Boolean(proofPreviewModal?.open)}
+        onOpenChange={(open) => {
+          if (!open) setProofPreviewModal(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl bg-white p-0 rounded-2xl border border-slate-200 overflow-hidden shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3.5 bg-slate-900 text-white">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 bg-slate-800 rounded-lg shrink-0">
+                <Eye className="w-4 h-4 text-orange-400" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-black text-white truncate">
+                  {proofPreviewModal?.title || "Payment Proof / Receipt"}
+                </h3>
+                {proofPreviewModal?.subtitle && (
+                  <p className="text-[11px] text-slate-400 font-medium truncate">
+                    {proofPreviewModal.subtitle}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {proofPreviewModal?.imageUrl && (
+                <a
+                  href={proofPreviewModal.imageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  download
+                  className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="Open full size in new tab / Download"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="text-[11px] hidden sm:inline">Download</span>
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={() => setProofPreviewModal(null)}
+                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick info bar */}
+          {(proofPreviewModal?.amount !== undefined ||
+            proofPreviewModal?.method ||
+            proofPreviewModal?.txnId) && (
+            <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex flex-wrap items-center gap-3">
+                {proofPreviewModal.amount !== undefined && (
+                  <span className="font-black text-slate-900 text-sm">
+                    ₹{Number(proofPreviewModal.amount).toLocaleString("en-IN")}
+                  </span>
+                )}
+                {proofPreviewModal.method && (
+                  <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">
+                    {proofPreviewModal.method}
+                  </span>
+                )}
+                {proofPreviewModal.accountName && (
+                  <span className="bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold px-2 py-0.5 rounded">
+                    {proofPreviewModal.accountName}
+                  </span>
+                )}
+                {proofPreviewModal.txnId && (
+                  <span className="font-mono text-slate-500 text-[11px]">
+                    TXN: {proofPreviewModal.txnId}
+                  </span>
+                )}
+              </div>
+              {proofPreviewModal.status && (
+                <span
+                  className={cn(
+                    "text-[10px] font-bold px-2 py-0.5 rounded border",
+                    proofPreviewModal.status === "APPROVED" ||
+                      proofPreviewModal.status === "VERIFIED"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : proofPreviewModal.status === "REJECTED"
+                        ? "bg-red-50 text-red-700 border-red-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200",
+                  )}
+                >
+                  {proofPreviewModal.status}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Image Canvas / Preview Container */}
+          <div className="bg-slate-950 flex items-center justify-center p-4 min-h-[380px] max-h-[75vh] overflow-auto">
+            {proofPreviewModal?.imageUrl ? (
+              <img
+                src={proofPreviewModal.imageUrl}
+                alt="Payment Proof Screenshot"
+                className="max-h-[68vh] w-auto max-w-full object-contain rounded-lg shadow-lg border border-slate-800"
+              />
+            ) : (
+              <div className="text-center py-12 text-slate-400">
+                <p className="text-xs font-semibold">
+                  No image preview available
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Controls */}
+          <div className="flex items-center justify-between px-5 py-3 bg-white border-t border-slate-100">
+            <p className="text-[11px] text-slate-500">
+              {proofPreviewModal?.uploadedBy
+                ? `Uploaded / Recorded by: ${proofPreviewModal.uploadedBy}`
+                : ""}
+              {proofPreviewModal?.date
+                ? ` · Date: ${proofPreviewModal.date}`
+                : ""}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setProofPreviewModal(null)}
+              className="h-8 text-xs font-bold px-4"
+            >
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
