@@ -150,7 +150,9 @@ export default function BookingLinksPage() {
       const [linksData, tripsData, bookingsData] = await Promise.all([
         bookingLinksService.getAll(1, 500),
         tripsService.getAll(),
-        bookingsService.getAll(1, 1000).catch(() => ({ data: [] })),
+        bookingsService
+          .getAll({ page: 1, limit: 1000 })
+          .catch(() => ({ data: [] })),
       ]);
       setLinks(Array.isArray(linksData.data) ? linksData.data : []);
       setTrips(Array.isArray(tripsData) ? tripsData : []);

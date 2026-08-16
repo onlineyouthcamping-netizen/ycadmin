@@ -222,16 +222,196 @@ export default function AccountingPage() {
     transactionId: "",
     remarks: "",
   });
+  const [newIncomeForm, setNewIncomeForm] = useState({
+    bookingId: "",
+    amount: "",
+    paymentMode: "UPI",
+    collectionAccountId: "",
+    transactionId: "",
+    notes: "",
+  });
+  const [submittingAction, setSubmittingAction] = useState(false);
+
+  // Handlers for Modals
+  const handleRecordIncome = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newIncomeForm.bookingId) {
+      toast.error("Please select a booking");
+      return;
+    }
+    if (!newIncomeForm.amount || Number(newIncomeForm.amount) <= 0) {
+      toast.error("Please enter a valid payment amount");
+      return;
+    }
+    setSubmittingAction(true);
+    try {
+      await api.post(`/payments/client/add/${newIncomeForm.bookingId}`, {
+        amount: Number(newIncomeForm.amount),
+        paymentMode: newIncomeForm.paymentMode,
+        collectionAccountId: newIncomeForm.collectionAccountId || undefined,
+        transactionId: newIncomeForm.transactionId || undefined,
+        notes: newIncomeForm.notes || undefined,
+      });
+      toast.success("Client payment recorded successfully!");
+      setShowRecordIncomeModal(false);
+      setNewIncomeForm({
+        bookingId: "",
+        amount: "",
+        paymentMode: "UPI",
+        collectionAccountId: "",
+        transactionId: "",
+        notes: "",
+      });
+      loadData();
+    } catch {
+      toast.error("Failed to record client payment");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleRecordExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newExpenseForm.tripId) {
+      toast.error("Please select a trip");
+      return;
+    }
+    if (!newExpenseForm.vendorName.trim()) {
+      toast.error("Please enter a vendor / payee name");
+      return;
+    }
+    if (!newExpenseForm.amount || Number(newExpenseForm.amount) <= 0) {
+      toast.error("Please enter a valid expense amount");
+      return;
+    }
+    setSubmittingAction(true);
+    try {
+      await api.post(`/payments/vendor/${newExpenseForm.tripId}`, {
+        vendorName: newExpenseForm.vendorName.trim(),
+        category: newExpenseForm.category,
+        agreedAmount: Number(newExpenseForm.amount),
+        advancePaid: Number(newExpenseForm.amount),
+        paymentMode: newExpenseForm.paymentMode,
+        collectionAccountId: newExpenseForm.collectionAccountId || undefined,
+        transactionId: newExpenseForm.transactionId || undefined,
+        remarks: newExpenseForm.remarks || undefined,
+        status: "PAID",
+      });
+      toast.success("Expense recorded successfully!");
+      setShowRecordExpenseModal(false);
+      setNewExpenseForm({
+        category: "Transport",
+        vendorName: "",
+        tripId: "",
+        amount: "",
+        paymentMode: "BANK_TRANSFER",
+        collectionAccountId: "",
+        customPayerName: "",
+        transactionId: "",
+        remarks: "",
+      });
+      loadData();
+    } catch {
+      toast.error("Failed to record expense");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleAddAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAccForm.accountName.trim()) {
+      toast.error("Please enter account name");
+      return;
+    }
+    setSubmittingAction(true);
+    try {
+      await collectionAccountsService.createAccount({
+        accountName: newAccForm.accountName.trim(),
+        accountHolderName:
+          newAccForm.accountHolderName.trim() || newAccForm.accountName.trim(),
+        accountType: newAccForm.accountType as any,
+        bankName: newAccForm.bankName.trim() || undefined,
+        accountNumber: newAccForm.accountNumber.trim() || undefined,
+        ifsc: newAccForm.ifsc.trim() || undefined,
+        upiId: newAccForm.upiId.trim() || undefined,
+        isActive: true,
+      });
+      toast.success(
+        `Account "${newAccForm.accountName}" created successfully!`,
+      );
+      setShowAddAccountModal(false);
+      setNewAccForm({
+        accountName: "",
+        accountHolderName: "",
+        accountType: "COMPANY",
+        bankName: "",
+        accountNumber: "",
+        ifsc: "",
+        upiId: "",
+      });
+      loadData();
+    } catch {
+      toast.error("Failed to add account");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleSubmitFunds = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!submitFundsForm.accountId) {
+      toast.error("Please select an account");
+      return;
+    }
+    if (!submitFundsForm.amount || Number(submitFundsForm.amount) <= 0) {
+      toast.error("Please enter submission amount");
+      return;
+    }
+    setSubmittingAction(true);
+    try {
+      await collectionAccountsService.recordAccountSubmission(
+        submitFundsForm.accountId,
+        {
+          amount: Number(submitFundsForm.amount),
+          submissionMode: submitFundsForm.submissionMode,
+          referenceNumber: submitFundsForm.referenceNumber || undefined,
+          notes: submitFundsForm.notes || undefined,
+        },
+      );
+      toast.success("Funds submission recorded successfully!");
+      setShowSubmitFundsModal(false);
+      setSubmitFundsForm({
+        accountId: "",
+        amount: "",
+        submissionMode: "BANK_TRANSFER",
+        referenceNumber: "",
+        notes: "",
+      });
+      loadData();
+    } catch {
+      toast.error("Failed to record fund submission");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
 
   // Load All Finance Data
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [bRes, tRes, aRes, vRes] = await Promise.all([
-        bookingsService.getAll(1, 1000).catch(() => ({ data: [] })),
+      const [bRes, tRes, aRes, vRes, qRes] = await Promise.all([
+        bookingsService
+          .getAll({ page: 1, limit: 1000 })
+          .catch(() => ({ data: [] })),
         tripsService.getAll().catch(() => []),
         collectionAccountsService.getAccounts().catch(() => ({ data: [] })),
-        api.get("/api/payments/vendor-payments").catch(() => ({ data: { data: [] } })),
+        api
+          .get("/payments/vendor-payments")
+          .catch(() => ({ data: { data: [] } })),
+        api
+          .get("/payments/vendor-payables-queue")
+          .catch(() => ({ data: { data: [] } })),
       ]);
 
       const bList = Array.isArray((bRes as any)?.data)
@@ -241,14 +421,45 @@ export default function AccountingPage() {
           : [];
       setBookings(bList);
       setTrips(Array.isArray(tRes) ? tRes : []);
-      setCollectionAccounts(Array.isArray((aRes as any)?.data) ? (aRes as any).data : []);
+      setCollectionAccounts(
+        Array.isArray((aRes as any)?.data) ? (aRes as any).data : [],
+      );
 
       const vList = Array.isArray((vRes as any)?.data?.data)
         ? (vRes as any).data.data
         : Array.isArray(vRes?.data)
           ? vRes.data
           : [];
-      setVendorPayments(vList);
+      const qList = Array.isArray((qRes as any)?.data?.data)
+        ? (qRes as any).data.data
+        : Array.isArray(qRes?.data)
+          ? qRes.data
+          : [];
+
+      // Combine both recorded payments and payables queue
+      const combinedVendors = [...vList];
+      qList.forEach((q: any) => {
+        if (!combinedVendors.some((v: any) => v.id === q.id)) {
+          combinedVendors.push({
+            id: q.id,
+            vendorName: q.vendorName || q.vendorId?.name || "Vendor Partner",
+            category: q.category || q.vendorType || "Transport",
+            tripName: q.tripName || q.tripTitle,
+            tripId: q.tripId,
+            agreedAmount: q.totalAmount || q.agreedCost || 0,
+            advancePaid: q.paidAmount || 0,
+            remainingPayable: q.balanceAmount || q.outstandingAmount || 0,
+            paymentMode: q.outgoingPaymentMode || "BANK_TRANSFER",
+            status:
+              q.paymentStatus ||
+              (q.paidAmount >= q.totalAmount && q.totalAmount > 0
+                ? "PAID"
+                : "PENDING"),
+            createdAt: q.createdAt || new Date().toISOString(),
+          });
+        }
+      });
+      setVendorPayments(combinedVendors);
     } catch {
       toast.error("Failed to load financial records");
     } finally {
@@ -1412,6 +1623,452 @@ export default function AccountingPage() {
               Close
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── DIALOG: RECORD CLIENT INCOME ──────────────────────── */}
+      <Dialog open={showRecordIncomeModal} onOpenChange={setShowRecordIncomeModal}>
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              Record Client Payment / Income
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleRecordIncome} className="space-y-3.5 mt-2 text-xs">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Select Booking / Customer *</label>
+              <select
+                required
+                value={newIncomeForm.bookingId}
+                onChange={(e) => setNewIncomeForm((prev) => ({ ...prev, bookingId: e.target.value }))}
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
+              >
+                <option value="">-- Choose a Booking --</option>
+                {bookings.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.fullName || b.customerName || "Customer"} · Ref: {b.bookingId || b.id} (
+                    {b.tripName || "Trip"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Amount (₹) *</label>
+                <Input
+                  type="number"
+                  required
+                  placeholder="e.g. 5000"
+                  value={newIncomeForm.amount}
+                  onChange={(e) => setNewIncomeForm((prev) => ({ ...prev, amount: e.target.value }))}
+                  className="h-9 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Payment Mode *</label>
+                <select
+                  value={newIncomeForm.paymentMode}
+                  onChange={(e) => setNewIncomeForm((prev) => ({ ...prev, paymentMode: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                >
+                  <option value="UPI">UPI</option>
+                  <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
+                  <option value="CASH">Cash Desk</option>
+                  <option value="CREDIT_CARD">Credit / Debit Card</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Receiving Account</label>
+              <select
+                value={newIncomeForm.collectionAccountId}
+                onChange={(e) =>
+                  setNewIncomeForm((prev) => ({ ...prev, collectionAccountId: e.target.value }))
+                }
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+              >
+                <option value="">Default Company Account</option>
+                {collectionAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.accountName} ({acc.bankName || acc.accountType})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Transaction Ref / UTR</label>
+              <Input
+                placeholder="UPI Ref ID or Bank UTR"
+                value={newIncomeForm.transactionId}
+                onChange={(e) => setNewIncomeForm((prev) => ({ ...prev, transactionId: e.target.value }))}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Notes</label>
+              <Input
+                placeholder="Optional payment notes"
+                value={newIncomeForm.notes}
+                onChange={(e) => setNewIncomeForm((prev) => ({ ...prev, notes: e.target.value }))}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRecordIncomeModal(false)}
+                className="h-8.5 text-xs font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingAction}
+                className="h-8.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {submittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Payment"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── DIALOG: RECORD VENDOR / OPERATING EXPENSE ──────────────────────── */}
+      <Dialog open={showRecordExpenseModal} onOpenChange={setShowRecordExpenseModal}>
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+              <TrendingDown className="w-5 h-5 text-rose-600" />
+              Record Vendor / Operating Expense
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleRecordExpense} className="space-y-3.5 mt-2 text-xs">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Select Trip *</label>
+              <select
+                required
+                value={newExpenseForm.tripId}
+                onChange={(e) => setNewExpenseForm((prev) => ({ ...prev, tripId: e.target.value }))}
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-orange-500"
+              >
+                <option value="">-- Choose a Trip --</option>
+                {trips.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title} ({t.destination || "Trip"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Expense Category *</label>
+                <select
+                  value={newExpenseForm.category}
+                  onChange={(e) => setNewExpenseForm((prev) => ({ ...prev, category: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                >
+                  <option value="Hotels">Hotels / Camps</option>
+                  <option value="Transport">Transport / Fleet</option>
+                  <option value="Guides">Guides / Leaders</option>
+                  <option value="Activities">Activities / Permits</option>
+                  <option value="Office">Office Ops / Rent</option>
+                  <option value="Marketing">Marketing / Ads</option>
+                  <option value="Other">Other Miscellaneous</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Vendor / Payee Name *</label>
+                <Input
+                  required
+                  placeholder="e.g. Manali Volvo Travels"
+                  value={newExpenseForm.vendorName}
+                  onChange={(e) => setNewExpenseForm((prev) => ({ ...prev, vendorName: e.target.value }))}
+                  className="h-9 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Amount Paid (₹) *</label>
+                <Input
+                  type="number"
+                  required
+                  placeholder="e.g. 15000"
+                  value={newExpenseForm.amount}
+                  onChange={(e) => setNewExpenseForm((prev) => ({ ...prev, amount: e.target.value }))}
+                  className="h-9 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Payment Mode *</label>
+                <select
+                  value={newExpenseForm.paymentMode}
+                  onChange={(e) => setNewExpenseForm((prev) => ({ ...prev, paymentMode: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                >
+                  <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
+                  <option value="UPI">UPI</option>
+                  <option value="CASH">Cash</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Paid From Account</label>
+              <select
+                value={newExpenseForm.collectionAccountId}
+                onChange={(e) =>
+                  setNewExpenseForm((prev) => ({ ...prev, collectionAccountId: e.target.value }))
+                }
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+              >
+                <option value="">Primary Company Bank Account</option>
+                {collectionAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.accountName} (Balance: {formatINR(acc.pending || 0)})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Transaction Ref / UTR</label>
+              <Input
+                placeholder="Bank UTR or TXN reference"
+                value={newExpenseForm.transactionId}
+                onChange={(e) => setNewExpenseForm((prev) => ({ ...prev, transactionId: e.target.value }))}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRecordExpenseModal(false)}
+                className="h-8.5 text-xs font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingAction}
+                className="h-8.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                {submittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Expense"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── DIALOG: ADD BANK / CASH ACCOUNT ──────────────────────── */}
+      <Dialog open={showAddAccountModal} onOpenChange={setShowAddAccountModal}>
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-orange-600" />
+              Add Bank / Cash Collection Account
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleAddAccount} className="space-y-3.5 mt-2 text-xs">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Account Display Name *</label>
+              <Input
+                required
+                placeholder="e.g. HDFC Company Main, Cash Collection Desk"
+                value={newAccForm.accountName}
+                onChange={(e) => setNewAccForm((prev) => ({ ...prev, accountName: e.target.value }))}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Account Type *</label>
+                <select
+                  value={newAccForm.accountType}
+                  onChange={(e) => setNewAccForm((prev) => ({ ...prev, accountType: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                >
+                  <option value="COMPANY">Company Bank Account</option>
+                  <option value="CASH">Cash Collection Desk</option>
+                  <option value="PERSONAL">Staff / Director Account</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Bank Name</label>
+                <Input
+                  placeholder="e.g. HDFC Bank, SBI"
+                  value={newAccForm.bankName}
+                  onChange={(e) => setNewAccForm((prev) => ({ ...prev, bankName: e.target.value }))}
+                  className="h-9 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Account Number</label>
+                <Input
+                  placeholder="Account Number"
+                  value={newAccForm.accountNumber}
+                  onChange={(e) => setNewAccForm((prev) => ({ ...prev, accountNumber: e.target.value }))}
+                  className="h-9 text-xs font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">IFSC Code</label>
+                <Input
+                  placeholder="e.g. HDFC0001234"
+                  value={newAccForm.ifsc}
+                  onChange={(e) => setNewAccForm((prev) => ({ ...prev, ifsc: e.target.value }))}
+                  className="h-9 text-xs font-medium uppercase"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">UPI ID</label>
+              <Input
+                placeholder="e.g. youthcamping@hdfcbank"
+                value={newAccForm.upiId}
+                onChange={(e) => setNewAccForm((prev) => ({ ...prev, upiId: e.target.value }))}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddAccountModal(false)}
+                className="h-8.5 text-xs font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingAction}
+                className="h-8.5 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {submittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Account"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── DIALOG: SUBMIT / TRANSFER FUNDS ──────────────────────── */}
+      <Dialog open={showSubmitFundsModal} onOpenChange={setShowSubmitFundsModal}>
+        <DialogContent className="max-w-md bg-white p-5 rounded-2xl border border-slate-200 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+              <ArrowRightLeft className="w-5 h-5 text-blue-600" />
+              Submit / Transfer Cash & Funds
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmitFunds} className="space-y-3.5 mt-2 text-xs">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">From Account / Cash Desk *</label>
+              <select
+                required
+                value={submitFundsForm.accountId}
+                onChange={(e) => setSubmitFundsForm((prev) => ({ ...prev, accountId: e.target.value }))}
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">-- Choose Account --</option>
+                {collectionAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.accountName} (Balance: {formatINR(acc.pending || 0)})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Transfer Amount (₹) *</label>
+                <Input
+                  type="number"
+                  required
+                  placeholder="e.g. 25000"
+                  value={submitFundsForm.amount}
+                  onChange={(e) => setSubmitFundsForm((prev) => ({ ...prev, amount: e.target.value }))}
+                  className="h-9 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Transfer Mode *</label>
+                <select
+                  value={submitFundsForm.submissionMode}
+                  onChange={(e) => setSubmitFundsForm((prev) => ({ ...prev, submissionMode: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white font-medium text-slate-800 text-xs"
+                >
+                  <option value="BANK_TRANSFER">Bank Deposit / Transfer</option>
+                  <option value="UPI">UPI</option>
+                  <option value="CASH">Handover Cash</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Reference / Deposit Slip Number</label>
+              <Input
+                placeholder="Bank Slip Number or UTR"
+                value={submitFundsForm.referenceNumber}
+                onChange={(e) => setSubmitFundsForm((prev) => ({ ...prev, referenceNumber: e.target.value }))}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Notes</label>
+              <Input
+                placeholder="e.g. Cash collected from trip deposited to HDFC"
+                value={submitFundsForm.notes}
+                onChange={(e) => setSubmitFundsForm((prev) => ({ ...prev, notes: e.target.value }))}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowSubmitFundsModal(false)}
+                className="h-8.5 text-xs font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingAction}
+                className="h-8.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {submittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Record Transfer"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

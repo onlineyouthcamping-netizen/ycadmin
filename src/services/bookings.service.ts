@@ -57,27 +57,44 @@ export const bookingsService = {
   // ── BOOKINGS ──
 
   async getAll(
-    filters?: {
-      status?: string;
-      tripId?: string;
-      paymentStatus?: string;
-      payment_status?: string;
-      search?: string;
-      salesAdminId?: string;
-      balanceOnly?: boolean | string;
-      bookingStart?: string;
-      bookingEnd?: string;
-      depStart?: string;
-      depEnd?: string;
-      page?: number;
-      limit?: number;
-    },
-    signal?: AbortSignal,
+    filters?:
+      | {
+          status?: string;
+          tripId?: string;
+          paymentStatus?: string;
+          payment_status?: string;
+          search?: string;
+          salesAdminId?: string;
+          balanceOnly?: boolean | string;
+          bookingStart?: string;
+          bookingEnd?: string;
+          depStart?: string;
+          depEnd?: string;
+          page?: number;
+          limit?: number;
+        }
+      | number,
+    signalOrLimit?: AbortSignal | number,
   ): Promise<any> {
     try {
+      let filterObj: Record<string, any> = {};
+      let actualSignal: AbortSignal | undefined = undefined;
+
+      if (typeof filters === "number") {
+        filterObj = {
+          page: filters,
+          limit: typeof signalOrLimit === "number" ? signalOrLimit : 1000,
+        };
+      } else if (filters && typeof filters === "object") {
+        filterObj = filters;
+        if (signalOrLimit instanceof AbortSignal) {
+          actualSignal = signalOrLimit;
+        }
+      }
+
       const params = new URLSearchParams();
-      if (filters) {
-        Object.entries(filters).forEach(([key, val]) => {
+      if (filterObj) {
+        Object.entries(filterObj).forEach(([key, val]) => {
           if (val !== undefined && val !== null && val !== "") {
             const isAllSentinel =
               String(val).toLowerCase() === "all" && key !== "search";
@@ -88,7 +105,9 @@ export const bookingsService = {
         });
       }
 
-      const res = await api.get(`/bookings?${params.toString()}`, { signal });
+      const res = await api.get(`/bookings?${params.toString()}`, {
+        signal: actualSignal,
+      });
       if (
         res.data &&
         typeof res.data === "object" &&
