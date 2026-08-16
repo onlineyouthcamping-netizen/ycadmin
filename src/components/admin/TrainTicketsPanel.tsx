@@ -234,6 +234,111 @@ export default function TrainTicketsPanel({
   // Email Drawer
   const [isComposerOpen, setIsComposerOpen] = useState(false);
 
+  // Trip Train Ticket Template state
+  const [tripTemplate, setTripTemplate] = useState<any>(null);
+
+  useEffect(() => {
+    const tripId = booking?.tripId || booking?.tripRef?.id;
+    if (tripId) {
+      api
+        .get(`/trips/${tripId}/train-template`)
+        .then((res) => {
+          if (res.data?.success && res.data?.data) {
+            setTripTemplate(res.data.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [booking?.tripId, booking?.tripRef?.id]);
+
+  const getMatchingLegTemplate = (
+    journeyType: "DEPARTURE" | "RETURN",
+    targetClass?: string,
+  ) => {
+    if (!tripTemplate) return null;
+    let selectedTier = tripTemplate;
+    const cls = (
+      targetClass ||
+      booking?.packageType ||
+      booking?.travelClass ||
+      ""
+    ).toUpperCase();
+
+    if (Array.isArray(tripTemplate.tiers) && tripTemplate.tiers.length > 0) {
+      if (cls) {
+        selectedTier =
+          tripTemplate.tiers.find(
+            (t: any) =>
+              t.classCode?.toUpperCase() === cls ||
+              (cls.includes("SLEEP") && t.classCode === "SL") ||
+              (cls.includes("3A") && t.classCode === "3A") ||
+              (cls.includes("2A") && t.classCode === "2A") ||
+              (cls.includes("3E") && t.classCode === "3E") ||
+              t.name?.toUpperCase().includes(cls),
+          ) || tripTemplate.tiers[0];
+      } else {
+        selectedTier = tripTemplate.tiers[0];
+      }
+    }
+
+    return journeyType === "RETURN"
+      ? selectedTier?.returnJourney
+      : selectedTier?.departureJourney;
+  };
+
+  const handleFillFromTemplate = (
+    journeyType?: "DEPARTURE" | "RETURN",
+    targetClass?: string,
+  ) => {
+    const legType =
+      journeyType ||
+      (form.passengerReference as "DEPARTURE" | "RETURN") ||
+      "DEPARTURE";
+    const tmpl = getMatchingLegTemplate(legType, targetClass || form.coach);
+    if (!tmpl) {
+      toast.error("No template found for this trip");
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      sourceStation: tmpl.boardingStation || prev.sourceStation,
+      destinationStation: tmpl.destination || prev.destinationStation,
+      trainName: tmpl.trainName || prev.trainName,
+      trainNumber: tmpl.trainNumber || prev.trainNumber,
+      coach: tmpl.class || prev.coach,
+      berthType: tmpl.quota || prev.berthType,
+      ticketAmount: tmpl.expectedCost
+        ? String(tmpl.expectedCost)
+        : prev.ticketAmount,
+      journeyDate:
+        prev.journeyDate ||
+        (legType === "RETURN"
+          ? booking?.returnDate
+            ? new Date(booking.returnDate).toISOString().split("T")[0]
+            : ""
+          : booking?.departureDate
+            ? new Date(booking.departureDate).toISOString().split("T")[0]
+            : ""),
+    }));
+    toast.success(`Filled details from Trip ${legType} Template!`);
+  };
+
+  const handleSyncTemplate = async () => {
+    setActionBusy(true);
+    try {
+      const res = await trainTicketService.syncTicketsWithTemplate(bookingId);
+      toast.success(res.message || "Tickets synced with Trip Template!");
+      loadTickets();
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Failed to sync tickets with template",
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
   const loadTickets = async () => {
     setLoading(true);
     try {
@@ -413,6 +518,62 @@ export default function TrainTicketsPanel({
     } finally {
       setActionBusy(false);
     }
+  };
+
+  const handleOpenAddDeparture = () => {
+    setEditingId(null);
+    const tmpl = getMatchingLegTemplate("DEPARTURE");
+    const init = emptyForm("DEPARTURE");
+    if (tmpl) {
+      init.sourceStation = tmpl.boardingStation || "";
+      init.destinationStation = tmpl.destination || "";
+      init.trainName = tmpl.trainName || "";
+      init.trainNumber = tmpl.trainNumber || "";
+      init.coach = tmpl.class || "";
+      init.berthType = tmpl.quota || "";
+      init.ticketAmount = tmpl.expectedCost ? String(tmpl.expectedCost) : "";
+    }
+    if (booking?.departureDate) {
+      init.journeyDate = new Date(booking.departureDate)
+        .toISOString()
+        .split("T")[0];
+    }
+    if (passengers && passengers.length > 0) {
+      const p = normalizePassenger(booking, passengers[0], 0);
+      init.travelerName = p.name || booking?.fullName || "";
+    } else {
+      init.travelerName = booking?.fullName || booking?.name || "";
+    }
+    setForm(init);
+    setShowForm(true);
+  };
+
+  const handleOpenAddReturn = () => {
+    setEditingId(null);
+    const tmpl = getMatchingLegTemplate("RETURN");
+    const init = emptyForm("RETURN");
+    if (tmpl) {
+      init.sourceStation = tmpl.boardingStation || "";
+      init.destinationStation = tmpl.destination || "";
+      init.trainName = tmpl.trainName || "";
+      init.trainNumber = tmpl.trainNumber || "";
+      init.coach = tmpl.class || "";
+      init.berthType = tmpl.quota || "";
+      init.ticketAmount = tmpl.expectedCost ? String(tmpl.expectedCost) : "";
+    }
+    if (booking?.returnDate) {
+      init.journeyDate = new Date(booking.returnDate)
+        .toISOString()
+        .split("T")[0];
+    }
+    if (passengers && passengers.length > 0) {
+      const p = normalizePassenger(booking, passengers[0], 0);
+      init.travelerName = p.name || booking?.fullName || "";
+    } else {
+      init.travelerName = booking?.fullName || booking?.name || "";
+    }
+    setForm(init);
+    setShowForm(true);
   };
 
   const handleEdit = (ticket: TrainTicket) => {
@@ -633,6 +794,19 @@ export default function TrainTicketsPanel({
               <>
                 <Button
                   size="sm"
+                  onClick={handleSyncTemplate}
+                  disabled={actionBusy}
+                  className="h-7 text-[10px] font-bold bg-orange-600 hover:bg-orange-500 text-white gap-1 shadow-xs cursor-pointer"
+                >
+                  {actionBusy ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  )}
+                  Sync Trip Template
+                </Button>
+                <Button
+                  size="sm"
                   onClick={handleAutoGenerate}
                   disabled={actionBusy}
                   className="h-7 text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white gap-1"
@@ -812,19 +986,31 @@ export default function TrainTicketsPanel({
           onSubmit={handleSaveTicket}
           className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3"
         >
-          <div className="flex justify-between items-center border-b pb-2">
+          <div className="flex justify-between items-center border-b pb-2 flex-wrap gap-2">
             <h4 className="font-bold text-slate-800 text-xs">
               {editingId ? "Edit Train Ticket" : "Create New Train Ticket"}
             </h4>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowForm(false)}
-              className="h-6 text-[10px]"
-            >
-              Cancel
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleFillFromTemplate()}
+                className="h-6 text-[10px] font-bold text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100 gap-1 cursor-pointer"
+              >
+                <RefreshCw className="w-2.5 h-2.5" />
+                Fill from Trip Template
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowForm(false)}
+                className="h-6 text-[10px]"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -1052,11 +1238,7 @@ export default function TrainTicketsPanel({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                setEditingId(null);
-                setForm(emptyForm("DEPARTURE"));
-                setShowForm(true);
-              }}
+              onClick={handleOpenAddDeparture}
               className="h-7 text-[10px] font-bold border-emerald-200 text-emerald-800 bg-white hover:bg-emerald-100 gap-1"
             >
               + Add Departure Ticket
@@ -1286,11 +1468,7 @@ export default function TrainTicketsPanel({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                setEditingId(null);
-                setForm(emptyForm("RETURN"));
-                setShowForm(true);
-              }}
+              onClick={handleOpenAddReturn}
               className="h-7 text-[10px] font-bold border-blue-200 text-blue-800 bg-white hover:bg-blue-100 gap-1"
             >
               + Add Return Ticket

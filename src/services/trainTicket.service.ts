@@ -158,13 +158,25 @@ export const trainTicketService = {
     return res.data?.data;
   },
 
-  async autoGenerateTickets(
-    bookingId: string,
-  ): Promise<{ tickets: TrainTicket[]; message: string }> {
+  async autoGenerateTickets(bookingId: string): Promise<{
+    message: string;
+    data: { created: number; skipped: number; tickets: TrainTicket[] };
+  }> {
     const res = await api.post(
       `/train-tickets/booking/${bookingId}/auto-generate`,
     );
-    return res.data?.data || { tickets: [], message: "No tickets generated" };
+    return res.data;
+  },
+
+  async syncTicketsWithTemplate(bookingId: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+  }> {
+    const res = await api.post(
+      `/train-tickets/booking/${bookingId}/sync-template`,
+    );
+    return res.data;
   },
 
   // Ticket-level operations
