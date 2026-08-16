@@ -1608,17 +1608,15 @@ export default function DepartureHubPage() {
               f.id === alloc.vehicle ||
               f.vehicleType === alloc.vehicle,
           );
-          if (fleet) {
-            vehicleAllocations.push({
-              fleetId: fleet.id,
-              bookingId: bookingId,
-              travelerName: p.name,
-              seatNumber:
-                alloc.seat && alloc.seat !== "—"
-                  ? parseInt(alloc.seat)
-                  : undefined,
-            });
-          }
+          vehicleAllocations.push({
+            fleetId: fleet?.id || (alloc.vehicle.toLowerCase().includes("tempo") ? "tempo-1" : alloc.vehicle),
+            bookingId: bookingId,
+            travelerName: p.name,
+            seatNumber:
+              alloc.seat && alloc.seat !== "—"
+                ? parseInt(alloc.seat)
+                : undefined,
+          });
         }
       });
 
@@ -2234,13 +2232,30 @@ export default function DepartureHubPage() {
             fleetNameMap[f.id] = f.name;
           });
 
+          // If no initial fleet is saved in transport records, auto-restore fleet from saved vehicles
+          const distinctFleetIds = [...new Set((vehicles as any[]).map((v: any) => v.fleetId).filter(Boolean))] as string[];
+          if (distinctFleetIds.length > 0 && initialFleet.length === 0) {
+            const restoredFleet = distinctFleetIds.map((fId, idx) => ({
+              id: fId,
+              name: fId === "tempo-1" ? "Tempo 1" : (fId.startsWith("tempo") ? `Tempo ${idx + 1}` : fId),
+              vehicleType: "Tempo Traveller",
+              capacity: 17,
+              cost: 0,
+              vendor: "Lead Transport",
+            }));
+            setAllocFleet(restoredFleet);
+            restoredFleet.forEach((f) => {
+              fleetNameMap[f.id] = f.name;
+            });
+          }
+
           setPassengerAllocations((_prev: any) => {
             const next: Record<string, any> = {};
 
             // Write room allocations by BOTH travelerName and passenger.id
             rooms.forEach((r: any) => {
               const nameKey = r.travelerName;
-              const pObj = nameToPassenger[nameKey];
+              const pObj = nameToPassenger[nameKey] || (allPassengers as any[]).find((p: any) => p.name === nameKey);
               const entry = {
                 ...(next[nameKey] || { vehicle: "—", seat: "—" }),
                 room: r.roomNumber,
@@ -2254,8 +2269,8 @@ export default function DepartureHubPage() {
 
             vehicles.forEach((v: any) => {
               const nameKey = v.travelerName;
-              const pObj = nameToPassenger[nameKey];
-              const vName = fleetNameMap[v.fleetId] || v.fleetId;
+              const pObj = nameToPassenger[nameKey] || (allPassengers as any[]).find((p: any) => p.name === nameKey);
+              const vName = fleetNameMap[v.fleetId] || v.fleetId || "Tempo 1";
               const entry = {
                 ...(next[nameKey] || { room: "—" }),
                 vehicle: vName,
@@ -4866,11 +4881,11 @@ useEffect(() => {
         alloc.vehicle !== "—"
       ) {
         const fleetItem = allocFleet.find(
-          (f) => f.name === alloc.vehicle || f.id === alloc.vehicle,
+          (f) => f.name === alloc.vehicle || f.id === alloc.vehicle || f.vehicleType === alloc.vehicle,
         );
         list.push({
-          fleetId: fleetItem?.id || "tempo-1",
-          vehicleType: alloc.vehicle,
+          fleetId: fleetItem?.id || alloc.vehicle || "tempo-1",
+          vehicleType: fleetItem?.vehicleType || alloc.vehicle || "Tempo Traveller",
           seatNumber: alloc.seat,
           travelerName: pObj.name,
           rawGender: pObj.gender || "Unknown",
@@ -5619,9 +5634,22 @@ useEffect(() => {
               name: fallbackName,
               capacity: fallbackCapacity,
               remainingSeats: fallbackCapacity,
-              vehicleType: newVehicleType,
+              vehicleType: newVehicleType || "Tempo Traveller",
             },
           ];
+
+    if (allocFleet.length === 0) {
+      setAllocFleet([
+        {
+          id: "tempo-1",
+          name: fallbackName,
+          capacity: fallbackCapacity,
+          vehicleType: newVehicleType || "Tempo Traveller",
+          cost: Number(newVehicleCost) || 0,
+          vendor: "Lead Transport",
+        },
+      ]);
+    }
 
     // Sort booking groups: groups containing female participants first to ensure they travel together
     const sortedGroups = Object.entries(bookingGroups).sort(
@@ -5647,12 +5675,13 @@ useEffect(() => {
       if (vehicle) {
         groupMembers.forEach((p) => {
           const seatIndex = vehicle.capacity - vehicle.remainingSeats + 1;
-          // Key by p.id (same as room allocation) so computedVehicleAllocations can find it
-          newAllocs[p.id] = {
-            ...newAllocs[p.id],      // preserve room assignment written above
+          const entry = {
+            ...(newAllocs[p.id] || newAllocs[p.name] || {}),
             vehicle: vehicle.name,
             seat: String(seatIndex),
           };
+          newAllocs[p.id] = entry;
+          if (p.name) newAllocs[p.name] = entry;
           vehicle.remainingSeats -= 1;
         });
       }
