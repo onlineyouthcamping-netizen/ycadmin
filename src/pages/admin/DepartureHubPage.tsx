@@ -9431,7 +9431,11 @@ useEffect(() => {
 
           {/* ──────────────────────── GUIDES ──────────────────────── */}
           {/* ─── PLAN: GUIDES ─── */}
-          {activeTab === "guides" && (
+          {activeTab === "guides" && (() => {
+            const actualGuides = dbGuides.filter((g: any) => g.assignmentType !== "EXPENSE");
+            const tripExpenses = dbGuides.filter((g: any) => g.assignmentType === "EXPENSE");
+
+            return (
             <div className="space-y-4 min-w-0">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between min-w-0">
                 <div className="min-w-0">
@@ -9452,26 +9456,26 @@ useEffect(() => {
                 </Button>
               </div>
 
-              {/* KPI Cards — live from dbGuides */}
+              {/* KPI Cards — live from actualGuides */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3.5">
                 {[
                   {
-                    v: String(dbGuides.length),
+                    v: String(actualGuides.length),
                     l: "Total Guides",
                     sub: "Assigned to departure",
                   },
                   {
-                    v: `₹${dbGuides.reduce((s, g) => s + (g.agreedAmount || 0), 0).toLocaleString("en-IN")}`,
+                    v: `₹${actualGuides.reduce((s, g) => s + (g.agreedAmount || 0), 0).toLocaleString("en-IN")}`,
                     l: "Total Agreed",
                     sub: "All guides combined",
                   },
                   {
-                    v: `₹${dbGuides.reduce((s, g) => s + (g.advancePaid || 0), 0).toLocaleString("en-IN")}`,
+                    v: `₹${actualGuides.reduce((s, g) => s + (g.advancePaid || 0), 0).toLocaleString("en-IN")}`,
                     l: "Total Advance",
                     sub: "Paid so far",
                   },
                   {
-                    v: `₹${dbGuides.reduce((s, g) => s + (g.balanceAmount || 0), 0).toLocaleString("en-IN")}`,
+                    v: `₹${actualGuides.reduce((s, g) => s + (g.balanceAmount || 0), 0).toLocaleString("en-IN")}`,
                     l: "Balance Due",
                     sub: "Remaining payment",
                   },
@@ -9589,6 +9593,7 @@ useEffect(() => {
                         <option value="TRIP_LEADER">Trip Leader</option>
                         <option value="DRIVER_GUIDE">Driver Guide</option>
                         <option value="FREELANCER">Freelancer</option>
+                        <option value="EXPENSE">Trip Expense / Allowance</option>
                       </select>
                     </div>
                     <div>
@@ -9751,7 +9756,7 @@ useEffect(() => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {dbGuides
+                    {actualGuides
                         .filter((g: any) => g.assignmentStatus !== "CANCELLED")
                         .map((g: any) => {
                           const guideDisplayName =
@@ -9870,16 +9875,107 @@ useEffect(() => {
               {/* Bottom summary bar */}
               <div className="bg-slate-50 border border-[#E8EEF4] rounded-[6px] p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs font-semibold min-w-0">
                 <span className="text-slate-600">
-                  {dbGuides.length === 0
+                  {actualGuides.length === 0
                     ? "No guides assigned"
-                    : `${dbGuides.length} guide${dbGuides.length !== 1 ? "s" : ""} assigned to this departure`}
+                    : `${actualGuides.length} guide${actualGuides.length !== 1 ? "s" : ""} assigned to this departure`}
                 </span>
                 <span className="text-slate-500 text-[10px]">
                   All changes saved to database automatically
                 </span>
               </div>
+
+              {/* ──────────────────────── TRIP EXPENSES & ALLOWANCES ──────────────────────── */}
+              <div className="mt-8 pt-6 border-t border-slate-200">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between min-w-0 mb-4">
+                  <div className="min-w-0">
+                    <h3 className="text-[14px] font-black text-[#0B1528]">
+                      Trip Expenses & Allowances
+                    </h3>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Track operational expenses provided to guides (e.g. Meals, Buses, Medical Kits, Fuel)
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setGuideForm({
+                        guideName: "Trip Expense",
+                        agreedAmount: "",
+                        advancePaid: "",
+                        daysWorked: "1",
+                        notes: "",
+                        assignmentType: "EXPENSE",
+                        reportingLocation: "",
+                        reportingTime: "",
+                        emergencyContact: "",
+                      });
+                      setAddGuideOpen(true);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="hidden md:inline-flex h-8 w-full md:w-auto text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-[4px] shadow-sm items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Expense
+                  </Button>
+                </div>
+
+                <div className="bg-white border border-[#E8EEF4] rounded-[6px] overflow-hidden shadow-xs min-w-0">
+                  {tripExpenses.length === 0 ? (
+                    <div className="p-6 text-center text-[12px] text-slate-500 font-medium leading-relaxed bg-slate-50/30">
+                      No trip expenses tracked yet. Add expenses to monitor guide allowances.
+                    </div>
+                  ) : (
+                  <div className="overflow-x-auto no-scrollbar">
+                    <table className="w-full min-w-[720px] text-left text-xs border-collapse">
+                      <thead className="bg-slate-50 border-b border-[#E8EEF4]">
+                        <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="p-3 border-r border-slate-100">EXPENSE TITLE</th>
+                          <th className="p-3 border-r border-slate-100 text-right">TOTAL AMOUNT</th>
+                          <th className="p-3 border-r border-slate-100 text-right">ADVANCE PAID</th>
+                          <th className="p-3 border-r border-slate-100 text-right">BALANCE</th>
+                          <th className="p-3 border-r border-slate-100">NOTES / DETAILS</th>
+                          <th className="p-3 text-center">ACTION</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E8EEF4]">
+                        {tripExpenses.map((exp: any) => (
+                          <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
+                              {exp.guideName}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-800">
+                              ₹{Number(exp.agreedAmount || 0).toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right font-semibold text-emerald-700">
+                              ₹{Number(exp.advancePaid || 0).toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-right">
+                              <span className={cn("font-bold", Number(exp.balanceAmount || 0) > 0 ? "text-red-600" : "text-emerald-600")}>
+                                ₹{Number(exp.balanceAmount || 0).toLocaleString("en-IN")}
+                              </span>
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-slate-500 font-medium text-[11px]">
+                              {exp.notes || "—"}
+                            </td>
+                            <td className="p-3 text-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteGuide(exp.id, exp.guideName)}
+                                className="h-7 w-7 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
+          ); })()}
 
           {/* ──────────────────────── ACTIVITIES ──────────────────────── */}
           {/* ─── PLAN: ACTIVITIES ─── */}
