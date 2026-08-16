@@ -56,6 +56,7 @@ import {
   type TrainTicket,
   type TrainTemplate,
 } from "@/services/trainTicket.service";
+import api from "@/services/api";
 import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner";
 import {
