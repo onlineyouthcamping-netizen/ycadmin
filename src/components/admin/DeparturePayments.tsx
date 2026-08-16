@@ -29,6 +29,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { opsService } from "@/services/ops.service";
 import { trainTicketService } from "@/services/trainTicket.service";
+import {
+  collectionAccountsService,
+  CollectionAccount,
+} from "@/services/collectionAccounts.service";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import api from "@/services/api";
 
 interface DeparturePaymentsProps {
@@ -78,6 +83,7 @@ export default function DeparturePayments({
   const [vendorCategoryFilter, setVendorCategoryFilter] =
     useState("All Categories");
   const [vendorStatusFilter, setVendorStatusFilter] = useState("All Status");
+  const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
 
   // Modals
   const [addClientPaymentOpen, setAddClientPaymentOpen] = useState(false);
@@ -85,6 +91,7 @@ export default function DeparturePayments({
   const [clientPaymentForm, setClientPaymentForm] = useState({
     amount: "",
     paymentMode: "UPI",
+    collectionAccountId: "",
     transactionId: "",
     paymentDate: new Date().toISOString().substring(0, 10),
     proofUrl: "",
@@ -422,7 +429,7 @@ export default function DeparturePayments({
   // Fetch API data and merge cleanly with defaults if API is empty
   const fetchData = async () => {
     try {
-      const [clientRes, vendorRes, vendorsDirRes, expensesRes, trainSummaryRes] = await Promise.all([
+      const [clientRes, vendorRes, vendorsDirRes, expensesRes, trainSummaryRes, accountsRes] = await Promise.all([
         opsService
           .getClientPayments(tripId, departureDateStr)
           .catch(() => ({ bookings: [], receipts: [] })),
@@ -432,7 +439,18 @@ export default function DeparturePayments({
         trainTicketService
           .getFinanceSummary({ tripId, departureDate: departureDateStr })
           .catch(() => ({ summary: {}, tickets: [] })),
+        collectionAccountsService
+          .getAccounts({ activeOnly: true })
+          .catch(() => ({ data: [], summary: { totalCollected: 0, totalSubmitted: 0, totalPending: 0 } })),
       ]);
+
+      if (accountsRes.data && accountsRes.data.length > 0) {
+        setCollectionAccounts(accountsRes.data);
+        setClientPaymentForm((prev) => ({
+          ...prev,
+          collectionAccountId: prev.collectionAccountId || accountsRes.data[0].id,
+        }));
+      }
 
       const mergedBookings =
         clientRes.bookings && clientRes.bookings.length > 0
@@ -451,6 +469,9 @@ export default function DeparturePayments({
                   status: r.status,
                   verifiedBy: r.collectedBy || "System",
                   remarks: r.remarks || "",
+                  proofUrl: r.proofUrl || "",
+                  collectionAccount: r.collectionAccount,
+                  accountName: r.collectionAccount?.accountName || "",
                 })),
               };
             })
@@ -1141,35 +1162,6 @@ export default function DeparturePayments({
               </button>
             ))}
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 pb-2.5 lg:flex lg:flex-nowrap lg:items-center lg:pb-2 lg:shrink-0">
-          <Button
-            size="sm"
-            onClick={() => setAddClientPaymentOpen(true)}
-            className="h-8 w-full lg:w-auto min-h-8 bg-[#0B1528] hover:bg-[#16253d] text-white font-semibold text-[11px] px-3"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1 shrink-0" /> Client Receipt
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingVendorPayment(null);
-              setAddVendorPaymentOpen(true);
-            }}
-            className="h-8 w-full lg:w-auto min-h-8 bg-[#FF4D00] hover:bg-[#E04500] text-white font-semibold text-[11px] px-3"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1 shrink-0" /> Vendor Payable
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleRunReconciliation}
-            className="h-8 w-full lg:w-auto min-h-8 col-span-2 lg:col-span-1 text-[11px] font-semibold text-[#0B1528] hover:bg-[#F4F7FB] border-[#E8EEF4]"
-          >
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-slate-500 shrink-0" />
-            Reconcile
-          </Button>
         </div>
       </div>
 
@@ -2230,13 +2222,18 @@ export default function DeparturePayments({
                                               <Check className="w-4 h-4 text-emerald-600" />
                                             </div>
                                             <div>
-                                              <div className="flex items-center gap-2">
+                                              <div className="flex flex-wrap items-center gap-2">
                                                 <span className="font-extrabold text-slate-900 text-sm">
                                                   {formatCurrency(h.amount)}
                                                 </span>
                                                 <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
                                                   {h.method}
                                                 </span>
+                                                {h.accountName && (
+                                                  <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 font-bold px-2 py-0.5 rounded">
+                                                    {h.accountName}
+                                                  </span>
+                                                )}
                                                 <span className="text-xs font-mono text-slate-500">
                                                   TXN: {h.txnId}
                                                 </span>
@@ -2256,6 +2253,17 @@ export default function DeparturePayments({
                                             <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
                                               VERIFIED ✓
                                             </span>
+                                            {h.proofUrl && (
+                                              <a
+                                                href={h.proofUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="h-7 px-2.5 text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors"
+                                              >
+                                                <Eye className="w-3.5 h-3.5" />
+                                                Screenshot
+                                              </a>
+                                            )}
                                             <Button
                                               size="sm"
                                               variant="outline"
@@ -3119,25 +3127,127 @@ export default function DeparturePayments({
       {/* ──────────────────────── MODAL 1: RECORD CLIENT PAYMENT ──────────────────────── */}
       <Dialog
         open={addClientPaymentOpen}
-        onOpenChange={setAddClientPaymentOpen}
+        onOpenChange={(open) => {
+          setAddClientPaymentOpen(open);
+          if (!open) {
+            setSelectedBooking(null);
+          }
+        }}
       >
-        <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200">
-          <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
-            Record Client Payment Receipt
-          </h3>
-          {selectedBooking && (
-            <p className="text-xs text-slate-600 font-semibold mt-1">
-              Booking: {selectedBooking.bookingId} ({selectedBooking.name})
-            </p>
-          )}
-          <form onSubmit={handleClientPaymentSubmit} className="space-y-3 mt-3">
+        <DialogContent className="max-w-lg bg-white p-5 rounded-xl border border-slate-200 overflow-y-auto max-h-[90vh]">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Amount (₹)
-              </label>
+              <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
+                Record Client Payment Receipt
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                Directly syncs collection with the Finance Module & ledger
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleClientPaymentSubmit} className="space-y-3.5 mt-3">
+            {/* Booking Selector or Selected Booking Card */}
+            {!selectedBooking ? (
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Select Booking / Passenger <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value=""
+                  onChange={(e) => {
+                    const b = bookings.find((bk) => bk.bookingId === e.target.value);
+                    if (b) {
+                      setSelectedBooking(b);
+                      const bal = Math.max(0, b.totalAmount - (b.advancePaid || 0));
+                      setClientPaymentForm((prev) => ({
+                        ...prev,
+                        amount: bal > 0 ? String(bal) : "",
+                      }));
+                    }
+                  }}
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-blue-500"
+                >
+                  <option value="">-- Choose Booking to Record Payment --</option>
+                  {bookings.map((b) => {
+                    const bal = Math.max(0, b.totalAmount - (b.advancePaid || 0));
+                    return (
+                      <option key={b.bookingId} value={b.bookingId}>
+                        {b.bookingId} — {b.name} (Due: ₹{bal.toLocaleString("en-IN")})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            ) : (
+              <div className="bg-blue-50/70 border border-blue-200 rounded-lg p-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-blue-950">
+                    {selectedBooking.name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                      {selectedBooking.bookingId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBooking(null)}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Change
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-blue-100 text-[11px]">
+                  <div>
+                    <span className="text-slate-500 block">Package:</span>
+                    <span className="font-bold text-slate-800 font-mono">
+                      ₹{selectedBooking.totalAmount.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Already Paid:</span>
+                    <span className="font-bold text-emerald-700 font-mono">
+                      ₹{(selectedBooking.advancePaid || 0).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Balance Due:</span>
+                    <span className="font-black text-amber-700 font-mono">
+                      ₹{Math.max(0, selectedBooking.totalAmount - (selectedBooking.advancePaid || 0)).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Amount and Auto-Fill Full Due */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-slate-700">
+                  Amount Received (₹) <span className="text-red-500">*</span>
+                </label>
+                {selectedBooking && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const bal = Math.max(0, selectedBooking.totalAmount - (selectedBooking.advancePaid || 0));
+                      setClientPaymentForm((prev) => ({
+                        ...prev,
+                        amount: String(bal),
+                      }));
+                    }}
+                    className="text-[10px] font-bold text-blue-600 hover:underline"
+                  >
+                    Set Full Due (₹{Math.max(0, selectedBooking.totalAmount - (selectedBooking.advancePaid || 0)).toLocaleString("en-IN")})
+                  </button>
+                )}
+              </div>
               <input
                 type="number"
                 required
+                placeholder="Enter amount in ₹"
                 value={clientPaymentForm.amount}
                 onChange={(e) =>
                   setClientPaymentForm((prev) => ({
@@ -3149,6 +3259,39 @@ export default function DeparturePayments({
               />
             </div>
 
+            {/* Credited Account (Finance Module Sync) */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Credited Account (Finance Module Sync) <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={clientPaymentForm.collectionAccountId}
+                onChange={(e) =>
+                  setClientPaymentForm((prev) => ({
+                    ...prev,
+                    collectionAccountId: e.target.value,
+                  }))
+                }
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-blue-500"
+              >
+                {collectionAccounts.length === 0 ? (
+                  <option value="">YouthCamping Central Account</option>
+                ) : (
+                  collectionAccounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.accountName}{" "}
+                      {acc.bankName
+                        ? `(${acc.bankName}${acc.maskedAccountNumber || (acc.accountNumber ? ` ••••${acc.accountNumber.slice(-4)}` : "")})`
+                        : acc.upiId
+                          ? `(${acc.upiId})`
+                          : `(${acc.accountType})`}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Payment Method & Date */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-bold text-slate-700 block mb-1">
@@ -3162,13 +3305,11 @@ export default function DeparturePayments({
                       paymentMode: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-blue-500"
                 >
                   <option value="UPI">UPI / PhonePe / GPay</option>
-                  <option value="BANK_TRANSFER">
-                    Bank Transfer (NEFT/RTGS)
-                  </option>
-                  <option value="CASH">Cash</option>
+                  <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
+                  <option value="CASH">Cash Desk</option>
                   <option value="CARD">Debit / Credit Card</option>
                 </select>
               </div>
@@ -3186,18 +3327,19 @@ export default function DeparturePayments({
                       paymentDate: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-blue-500"
                 />
               </div>
             </div>
 
+            {/* Transaction ID / Reference */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Transaction ID / UTR Reference
+                Transaction ID / UTR / Reference No.
               </label>
               <input
                 type="text"
-                placeholder="e.g. UTR123456789"
+                placeholder="e.g. UTR123456789 or UPI-Ref"
                 value={clientPaymentForm.transactionId}
                 onChange={(e) =>
                   setClientPaymentForm((prev) => ({
@@ -3205,17 +3347,33 @@ export default function DeparturePayments({
                     transactionId: e.target.value,
                   }))
                 }
-                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-blue-500"
               />
             </div>
 
+            {/* Payment Screenshot Upload */}
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Remarks / Notes
+                Payment Screenshot / Receipt Proof
+              </label>
+              <ImageUpload
+                label="Upload Payment Screenshot"
+                value={clientPaymentForm.proofUrl}
+                onUpload={(url) =>
+                  setClientPaymentForm((prev) => ({ ...prev, proofUrl: url }))
+                }
+                compact
+              />
+            </div>
+
+            {/* Remarks / Notes */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Remarks / Internal Notes
               </label>
               <textarea
                 rows={2}
-                placeholder="Advance deposit notes..."
+                placeholder="Receipt details, payer name if different..."
                 value={clientPaymentForm.remarks}
                 onChange={(e) =>
                   setClientPaymentForm((prev) => ({
@@ -3223,23 +3381,26 @@ export default function DeparturePayments({
                     remarks: e.target.value,
                   }))
                 }
-                className="w-full text-xs font-bold border border-slate-300 rounded-lg p-2 bg-white text-slate-800 outline-none"
+                className="w-full text-xs font-medium border border-slate-300 rounded-lg p-2 bg-white text-slate-800 outline-none focus:border-blue-500"
               />
             </div>
 
-            <div className="flex gap-2 justify-end pt-2">
+            <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setAddClientPaymentOpen(false)}
+                onClick={() => {
+                  setAddClientPaymentOpen(false);
+                  setSelectedBooking(null);
+                }}
                 className="h-8 text-xs font-bold text-slate-500"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmittingClientPayment}
-                className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+                disabled={isSubmittingClientPayment || !selectedBooking}
+                className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4"
               >
                 {isSubmittingClientPayment ? "Recording Receipt..." : "Save & Record Receipt"}
               </Button>
