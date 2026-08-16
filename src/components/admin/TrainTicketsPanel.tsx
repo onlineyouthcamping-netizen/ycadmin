@@ -4,6 +4,7 @@
  * Includes Group Ticket Summary, Independent Journey Sections, and Passenger Matrix.
  */
 import React, { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import {
   Train,
   Plus,

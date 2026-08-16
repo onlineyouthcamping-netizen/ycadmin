@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { opsService } from "@/services/ops.service";
 import { resolveCityForItineraryDay } from "@/utils/accommodationCalculator";
 import api from "@/services/api";

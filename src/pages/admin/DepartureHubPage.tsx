@@ -5,6 +5,7 @@ import { getBookingGroupKey, groupPassengersByBooking } from "@/utils/departure/
 import { calculateBookingFinancialStatus, safeNumber } from "@/utils/departure/paymentCalculator";
 import { calculateRoomOccupancy } from "@/utils/departure/accommodationCalculator";
 import { saveActivityToBackend } from "@/utils/departure/activityMapper";
+import { cn } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";

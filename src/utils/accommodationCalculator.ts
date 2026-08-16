@@ -646,11 +646,19 @@ export function findHotelForDay(
   const exactMatches = realBookings.filter(
     (b) => normaliseDate(b.checkIn) === normDay,
   );
-  if (exactMatches.length > 0) return pickLatest(exactMatches);
+  if (exactMatches.length > 0) {
+    const normLoc = normalizeDestinationName(dayLocation);
+    if (normLoc) {
+      const locMatches = exactMatches.filter((b) => {
+        const bLoc = normalizeDestinationName(b.location || "");
+        return bLoc && (bLoc === normLoc || bLoc.includes(normLoc) || normLoc.includes(bLoc));
+      });
+      if (locMatches.length > 0) return pickLatest(locMatches);
+    }
+    return pickLatest(exactMatches);
+  }
 
   // 2. Multi-night range only — never reuse a 1-night booking on other days
-  //    just because the destination city matches (that caused Gulshan Hotel
-  //    Jalandhar to reappear on every Jalandhar day after refresh).
   const dayMs = new Date(normDay + "T12:00:00").getTime();
   if (!Number.isNaN(dayMs)) {
     const rangeMatches = realBookings.filter((b) => {
@@ -680,12 +688,19 @@ export function findHotelForDay(
 
       return false;
     });
-    if (rangeMatches.length > 0) return pickLatest(rangeMatches);
+    if (rangeMatches.length > 0) {
+      const normLoc = normalizeDestinationName(dayLocation);
+      if (normLoc) {
+        const locMatches = rangeMatches.filter((b) => {
+          const bLoc = normalizeDestinationName(b.location || "");
+          return bLoc && (bLoc === normLoc || bLoc.includes(normLoc) || normLoc.includes(bLoc));
+        });
+        if (locMatches.length > 0) return pickLatest(locMatches);
+      }
+      return pickLatest(rangeMatches);
+    }
   }
 
-  // Do NOT fall back to location-only matching. A booking saved for one
-  // check-in date must not paint onto every other day in the same city.
-  void dayLocation;
   return null;
 }
 
