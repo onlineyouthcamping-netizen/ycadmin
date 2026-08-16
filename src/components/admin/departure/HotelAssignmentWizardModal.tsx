@@ -15,8 +15,13 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { opsService } from "@/services/ops.service";
 import { resolveCityForItineraryDay } from "@/utils/accommodationCalculator";
 import api from "@/services/api";
@@ -782,6 +787,12 @@ export default function HotelAssignmentWizardModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[640px] bg-white p-3 sm:p-5 rounded-xl shadow-2xl border border-slate-200 overflow-hidden max-h-[min(90vh,100dvh)] flex flex-col min-h-0 font-sans">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Hotel Assignment</DialogTitle>
+          <DialogDescription>
+            Hotel and room assignment for Day {currentDayNum} ({selectedDestination})
+          </DialogDescription>
+        </DialogHeader>
         {/* STICKY HEADER */}
         <div className="flex items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3 pr-8 shrink-0 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0">

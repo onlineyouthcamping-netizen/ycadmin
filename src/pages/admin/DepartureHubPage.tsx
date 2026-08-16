@@ -8150,9 +8150,14 @@ useEffect(() => {
           {/* Add Activity Dialog */}
           <Dialog open={activityModalOpen} onOpenChange={setActivityModalOpen}>
             <DialogContent className="max-w-md bg-white p-5 rounded-lg shadow-lg border border-slate-200">
-              <h3 className="text-sm font-black uppercase text-slate-800 tracking-wider">
-                Add Departure Activity
-              </h3>
+              <DialogHeader>
+                <DialogTitle className="text-sm font-black uppercase text-slate-800 tracking-wider">
+                  Add Departure Activity
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500">
+                  Configure an activity or sightseeing item for this departure.
+                </DialogDescription>
+              </DialogHeader>
               <form
                 onSubmit={handleAddActivitySubmit}
                 className="space-y-4 mt-3"
@@ -8434,6 +8439,12 @@ useEffect(() => {
             onOpenChange={() => setSelectedStayForDrawer(null)}
           >
             <DialogContent className="max-w-lg bg-white p-6 rounded-[12px] shadow-2xl border border-slate-200 overflow-hidden fixed right-4 top-4 bottom-4 h-[calc(100vh-2rem)] flex flex-col justify-between">
+              <DialogHeader className="sr-only">
+                <DialogTitle>Hotel Stay Details</DialogTitle>
+                <DialogDescription>
+                  Detailed view and room allocations for {selectedStayForDrawer?.hotel || "stay"}
+                </DialogDescription>
+              </DialogHeader>
               <div className="overflow-y-auto pr-1 flex-1 space-y-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>

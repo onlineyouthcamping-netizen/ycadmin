@@ -32,6 +32,9 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   buildPhysicalRoomAllocation,
@@ -107,26 +110,61 @@ export default function AccommodationWorkspace({
   onEditHotel,
   onRefresh,
 }: AccommodationWorkspaceProps) {
+function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0): string {
+  if (dateVal) {
+    if (typeof dateVal === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) {
+      return dateVal.trim();
+    }
+    const parsed = new Date(dateVal);
+    if (!isNaN(parsed.getTime())) {
+      const y = parsed.getFullYear();
+      const m = String(parsed.getMonth() + 1).padStart(2, "0");
+      const d = String(parsed.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+  }
+  if (fallbackDeparture) {
+    const parsed = new Date(fallbackDeparture);
+    if (!isNaN(parsed.getTime())) {
+      if (dayOffset > 0) parsed.setDate(parsed.getDate() + dayOffset);
+      const y = parsed.getFullYear();
+      const m = String(parsed.getMonth() + 1).padStart(2, "0");
+      const d = String(parsed.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+  }
+  return "";
+}
+
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null);
   const [stayOverrides, setStayOverrides] = useState<Record<string, boolean>>({});
+  const [isTogglingStay, setIsTogglingStay] = useState(false);
 
   const handleToggleStay = async (row: AccommodationRow, explicitValue?: boolean) => {
+    if (isTogglingStay) return;
+    setIsTogglingStay(true);
+
     const current = stayOverrides[row.key] !== undefined ? stayOverrides[row.key] : row.hasStay;
     const next = explicitValue !== undefined ? explicitValue : !current;
 
-    // Optimistically update UI state
-    setStayOverrides((prev) => ({ ...prev, [row.key]: next }));
+    // Normalise check-in date to strict YYYY-MM-DD
+    const cinStr = formatDateToYMD(row.date, departureDateStr, 0);
+    const cinDate = new Date(cinStr);
+    let coutStr = "";
+    if (!isNaN(cinDate.getTime())) {
+      const coutDate = new Date(cinDate);
+      coutDate.setDate(coutDate.getDate() + 1);
+      const y = coutDate.getFullYear();
+      const m = String(coutDate.getMonth() + 1).padStart(2, "0");
+      const d = String(coutDate.getDate()).padStart(2, "0");
+      coutStr = `${y}-${m}-${d}`;
+    } else {
+      coutStr = formatDateToYMD(row.date, departureDateStr, 1);
+    }
 
     try {
       if (next === false) {
         // Explicitly saving NO STAY
-        const cinDate = new Date(row.date);
-        let coutStr = row.date;
-        if (!isNaN(cinDate.getTime())) {
-          const coutDate = new Date(cinDate);
-          coutDate.setDate(coutDate.getDate() + 1);
-          coutStr = coutDate.toISOString().substring(0, 10);
-        }
         const payload = {
           hotelName: "NO_STAY",
           location: row.destination || "Enroute",
@@ -141,26 +179,34 @@ export default function AccommodationWorkspace({
           quadRoomsCount: 0,
           extraPersonsCount: 0,
           nightsCount: 1,
-          checkIn: row.date,
+          checkIn: cinStr,
           checkOut: coutStr,
           vendorId: null,
           notes: "Explicit No Stay",
         };
         await opsService.saveHotelBookings(tripId, departureDateStr, [payload]);
+        setStayOverrides((prev) => ({ ...prev, [row.key]: false }));
         toast.success("Saved No Stay for " + row.date);
       } else {
         // Removing explicit NO STAY (if it existed) so it defaults back
-        if (row.booking?.id && row.booking.hotelName === "NO_STAY") {
+        if (row.booking?.id && (row.booking.hotelName === "NO_STAY" || row.booking.hotelName === "NO STAY")) {
           await opsService.deleteHotelBooking(row.booking.id);
           toast.success("Removed No Stay override for " + row.date);
         }
+        setStayOverrides((prev) => {
+          const updated = { ...prev };
+          delete updated[row.key];
+          return updated;
+        });
       }
-      if (onRefresh) onRefresh();
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (err) {
       console.error("Failed to toggle stay status:", err);
       toast.error("Failed to update stay status");
-      // Revert state
-      setStayOverrides((prev) => ({ ...prev, [row.key]: current }));
+    } finally {
+      setIsTogglingStay(false);
     }
   };
 
@@ -465,6 +511,12 @@ export default function AccommodationWorkspace({
       {/* ── Day Detail Drawer ── */}
       <Dialog open={selectedDayIdx !== null} onOpenChange={() => setSelectedDayIdx(null)}>
         <DialogContent hideClose className="max-w-lg bg-white p-0 rounded-[12px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Day Stay Details</DialogTitle>
+            <DialogDescription>
+              Details and room allocations for {selectedRow?.dayLabel || "itinerary day"}
+            </DialogDescription>
+          </DialogHeader>
           {selectedRow && (
             <DayDetailDrawer
               row={selectedRow}
