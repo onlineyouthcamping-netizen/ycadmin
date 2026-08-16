@@ -69,6 +69,7 @@ import {
   Sparkles,
   MessageCircle,
   Save,
+  Edit2,
 } from "lucide-react";
 import { allocateWholeRupees, cn } from "@/lib/utils";
 import api from "@/services/api";
@@ -1727,6 +1728,7 @@ export default function DepartureHubPage() {
   // Guide state
   const [dbGuides, setDbGuides] = useState<any[]>([]);
   const [addGuideOpen, setAddGuideOpen] = useState(false);
+  const [editingGuideId, setEditingGuideId] = useState<string | null>(null);
   const [guideForm, setGuideForm] = useState({
     guideName: "",
     agreedAmount: "",
@@ -1743,27 +1745,34 @@ export default function DepartureHubPage() {
   const handleAddGuide = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guideForm.guideName.trim()) {
-      toast.error("Guide name is required");
+      toast.error("Guide / Expense name is required");
       return;
     }
     setIsSavingGuide(true);
     try {
-      const saved = await opsService.createGuidePayment(
-        tripId,
-        {
-          guideName: guideForm.guideName,
-          agreedAmount: parseFloat(guideForm.agreedAmount) || 0,
-          advancePaid: parseFloat(guideForm.advancePaid) || 0,
-          daysWorked: parseInt(guideForm.daysWorked) || 5,
-          notes: guideForm.notes,
-          assignmentType: guideForm.assignmentType || "PRIMARY_GUIDE",
-          reportingLocation: guideForm.reportingLocation || undefined,
-          reportingTime: guideForm.reportingTime || undefined,
-          emergencyContact: guideForm.emergencyContact || undefined,
-        },
-        departureDateStr,
-      );
-      setDbGuides((prev) => [...prev, saved]);
+      const dataPayload = {
+        guideName: guideForm.guideName,
+        agreedAmount: parseFloat(guideForm.agreedAmount) || 0,
+        advancePaid: parseFloat(guideForm.advancePaid) || 0,
+        daysWorked: parseInt(guideForm.daysWorked) || 1,
+        notes: guideForm.notes,
+        assignmentType: guideForm.assignmentType || "PRIMARY_GUIDE",
+        reportingLocation: guideForm.reportingLocation || undefined,
+        reportingTime: guideForm.reportingTime || undefined,
+        emergencyContact: guideForm.emergencyContact || undefined,
+      };
+
+      let saved;
+      if (editingGuideId) {
+        saved = await opsService.updateGuidePayment(editingGuideId, dataPayload);
+        setDbGuides((prev) => prev.map((g) => (g.id === editingGuideId ? saved : g)));
+        toast.success(`Updated "${saved.guideName}" successfully!`);
+      } else {
+        saved = await opsService.createGuidePayment(tripId, dataPayload, departureDateStr);
+        setDbGuides((prev) => [...prev, saved]);
+        toast.success(`"${saved.guideName}" added successfully!`);
+      }
+
       setGuideForm({
         guideName: "",
         agreedAmount: "",
@@ -1775,11 +1784,12 @@ export default function DepartureHubPage() {
         reportingTime: "",
         emergencyContact: "",
       });
+      setEditingGuideId(null);
       setAddGuideOpen(false);
-      toast.success(`Guide "${saved.guideName}" added and saved to database!`);
       fetchPageData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to save guide");
+      console.error("Error saving guide/expense:", err);
+      toast.error(err.response?.data?.message || "Failed to save record");
     } finally {
       setIsSavingGuide(false);
     }
@@ -9507,9 +9517,22 @@ useEffect(() => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Guide Name *
+                        {guideForm.assignmentType === "EXPENSE" ? "Expense Title *" : "Guide Name *"}
                       </label>
-                      {dbGuideVendors.length > 0 ? (
+                      {guideForm.assignmentType === "EXPENSE" ? (
+                        <input
+                          required
+                          value={guideForm.guideName}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              guideName: e.target.value,
+                            }))
+                          }
+                          placeholder="e.g. Medical Kit, Meals, etc."
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      ) : dbGuideVendors.length > 0 ? (
                         <>
                           <select
                             required
@@ -9708,7 +9731,21 @@ useEffect(() => {
                       type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => setAddGuideOpen(false)}
+                      onClick={() => {
+                        setAddGuideOpen(false);
+                        setEditingGuideId(null);
+                        setGuideForm({
+                          guideName: "",
+                          agreedAmount: "",
+                          advancePaid: "0",
+                          daysWorked: "5",
+                          notes: "",
+                          assignmentType: "PRIMARY_GUIDE",
+                          reportingLocation: "",
+                          reportingTime: "",
+                          emergencyContact: "",
+                        });
+                      }}
                       className="h-8 text-[11px] font-bold text-slate-600 rounded-[4px]"
                     >
                       Cancel
@@ -9852,16 +9889,26 @@ useEffect(() => {
                               )}
                             </td>
                             <td className="p-3 text-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleDeleteGuide(g.id, g.guideName)
-                                }
-                                className="h-7 w-7 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
-                              >
-                                <Trash className="w-3.5 h-3.5" />
-                              </Button>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditGuide(g)}
+                                  className="h-7 w-7 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleDeleteGuide(g.id, g.guideName)
+                                  }
+                                  className="h-7 w-7 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -9957,14 +10004,24 @@ useEffect(() => {
                               {exp.notes || "—"}
                             </td>
                             <td className="p-3 text-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteGuide(exp.id, exp.guideName)}
-                                className="h-7 w-7 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
-                              >
-                                <Trash className="w-3.5 h-3.5" />
-                              </Button>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditGuide(exp)}
+                                  className="h-7 w-7 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteGuide(exp.id, exp.guideName)}
+                                  className="h-7 w-7 text-red-400 hover:bg-red-50 hover:text-red-600 rounded"
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
