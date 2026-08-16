@@ -89,6 +89,7 @@ import StationPaymentCollection from "@/components/admin/StationPaymentCollectio
 import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import HotelCalculator from "@/components/admin/hotels/HotelCalculator";
 import AccommodationWorkspace from "@/components/admin/departure/AccommodationWorkspace";
+import DepartureTransport from "@/components/admin/departure/DepartureTransport";
 import HotelAssignmentWizardModal from "@/components/admin/departure/HotelAssignmentWizardModal";
 import DepartureTripControl from "@/components/admin/departure/DepartureTripControl";
 import DepartureMoneySummary from "@/components/admin/departure/DepartureMoneySummary";
@@ -1238,6 +1239,7 @@ export default function DepartureHubPage() {
   const departureDateStr = resolvedDepartureDateStr;
 
   const initializationKeyRef = useRef<string | null>(null);
+  const vehicleFleetNameRef = useRef<HTMLInputElement | null>(null);
 
   // Data states
   const [bookings, setBookings] = useState<any[]>([]);
@@ -1738,11 +1740,64 @@ export default function DepartureHubPage() {
     reportingLocation: "",
     reportingTime: "",
     emergencyContact: "",
+    expenseDate: "",
   });
   const [isSavingGuide, setIsSavingGuide] = useState(false);
 
+  const emptyGuideForm = (assignmentType = "PRIMARY_GUIDE") => ({
+    guideName: "",
+    agreedAmount: "",
+    advancePaid: "0",
+    daysWorked: assignmentType === "EXPENSE" ? "1" : "5",
+    notes: "",
+    assignmentType,
+    reportingLocation: "",
+    reportingTime: "",
+    emergencyContact: "",
+    expenseDate: assignmentType === "EXPENSE" ? departureDateStr || "" : "",
+  });
+
+  const guideExpenseTripDays = useMemo(() => {
+    const fromDuration = tripDetails?.duration?.match(/(\d+)\s*Day/i);
+    if (fromDuration) return Math.max(1, parseInt(fromDuration[1], 10));
+    if (tripDetails?.durationDays) return Math.max(1, Number(tripDetails.durationDays));
+    if (itineraryList?.length) return itineraryList.length;
+    return 11;
+  }, [tripDetails, itineraryList]);
+
+  const dateForTripDay = (day: number) => {
+    if (!departureDateStr) return "";
+    const d = new Date(`${departureDateStr.slice(0, 10)}T12:00:00`);
+    d.setDate(d.getDate() + Math.max(0, day - 1));
+    return d.toISOString().slice(0, 10);
+  };
+
+  const tripDayFromDate = (iso?: string | null) => {
+    if (!iso || !departureDateStr) return "";
+    const start = new Date(`${departureDateStr.slice(0, 10)}T12:00:00`);
+    const exp = new Date(`${String(iso).slice(0, 10)}T12:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(exp.getTime())) return "";
+    const day = Math.round((exp.getTime() - start.getTime()) / 86400000) + 1;
+    return day >= 1 && day <= guideExpenseTripDays ? String(day) : "";
+  };
+
+  const formatExpenseDate = (iso?: string | null) => {
+    if (!iso) return "—";
+    try {
+      return new Date(`${String(iso).slice(0, 10)}T12:00:00`).toLocaleDateString(
+        "en-IN",
+        { day: "2-digit", month: "short", year: "numeric" },
+      );
+    } catch {
+      return String(iso).slice(0, 10);
+    }
+  };
+
   const handleEditGuide = (g: any) => {
     setEditingGuideId(g.id);
+    const startIso = g.startDate
+      ? String(g.startDate).slice(0, 10)
+      : "";
     setGuideForm({
       guideName: g.guideName || "",
       agreedAmount: String(g.agreedAmount || ""),
@@ -1753,6 +1808,7 @@ export default function DepartureHubPage() {
       reportingLocation: g.reportingLocation || "",
       reportingTime: g.reportingTime || "",
       emergencyContact: g.emergencyContact || "",
+      expenseDate: startIso,
     });
     setAddGuideOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1760,8 +1816,16 @@ export default function DepartureHubPage() {
 
   const handleAddGuide = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guideForm.guideName.trim()) {
-      toast.error("Guide / Expense name is required");
+    if (!guideForm.guideName.trim() || guideForm.guideName === "__manual__") {
+      toast.error(
+        guideForm.assignmentType === "EXPENSE"
+          ? "Expense title is required"
+          : "Guide name is required",
+      );
+      return;
+    }
+    if (guideForm.assignmentType === "EXPENSE" && !guideForm.expenseDate) {
+      toast.error("Expense date is required");
       return;
     }
     setIsSavingGuide(true);
@@ -1776,11 +1840,29 @@ export default function DepartureHubPage() {
         reportingLocation: guideForm.reportingLocation || undefined,
         reportingTime: guideForm.reportingTime || undefined,
         emergencyContact: guideForm.emergencyContact || undefined,
+        startDate:
+          guideForm.assignmentType === "EXPENSE" && guideForm.expenseDate
+            ? guideForm.expenseDate
+            : undefined,
+        endDate:
+          guideForm.assignmentType === "EXPENSE" && guideForm.expenseDate
+            ? guideForm.expenseDate
+            : undefined,
       };
 
       let saved;
       if (editingGuideId) {
-        saved = await opsService.updateGuidePayment(editingGuideId, dataPayload);
+        saved = await opsService.updateGuidePayment(editingGuideId, {
+          ...dataPayload,
+          startDate:
+            guideForm.assignmentType === "EXPENSE"
+              ? guideForm.expenseDate || null
+              : dataPayload.startDate,
+          endDate:
+            guideForm.assignmentType === "EXPENSE"
+              ? guideForm.expenseDate || null
+              : dataPayload.endDate,
+        });
         setDbGuides((prev) => prev.map((g) => (g.id === editingGuideId ? saved : g)));
         toast.success(`Updated "${saved.guideName}" successfully!`);
       } else {
@@ -1789,17 +1871,7 @@ export default function DepartureHubPage() {
         toast.success(`"${saved.guideName}" added successfully!`);
       }
 
-      setGuideForm({
-        guideName: "",
-        agreedAmount: "",
-        advancePaid: "0",
-        daysWorked: "5",
-        notes: "",
-        assignmentType: "PRIMARY_GUIDE",
-        reportingLocation: "",
-        reportingTime: "",
-        emergencyContact: "",
-      });
+      setGuideForm(emptyGuideForm());
       setEditingGuideId(null);
       setAddGuideOpen(false);
       fetchPageData();
@@ -6388,7 +6460,15 @@ useEffect(() => {
                       setHotelWizardStep(1);
                       setIsAddHotelWizardOpen(true);
                     } else if (activeTab === "guides") {
+                      setEditingGuideId(null);
+                      setGuideForm(emptyGuideForm("PRIMARY_GUIDE"));
                       setAddGuideOpen(true);
+                    } else if (activeTab === "transport") {
+                      vehicleFleetNameRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                      vehicleFleetNameRef.current?.focus();
                     } else {
                       toast.success(
                         `${ctaLabel[activeTab] || "Action"} triggered!`,
@@ -8498,749 +8578,49 @@ useEffect(() => {
 
           {/* ─── PLAN: ALLOCATION ─── */}
           {activeTab === "transport" && (
-            <div className="space-y-4">
-              {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 min-w-0">
-                <div className="min-w-0">
-                  <h2 className="text-base font-black text-slate-800">
-                    Room & Vehicle Allocation
-                  </h2>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Manage room sharing groups and vehicle seat allotments with
-                    manual shuffling
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto min-w-0">
-                  <Button
-                    size="sm"
-                    onClick={() => handleSaveAllocationsToDb(false)}
-                    disabled={isSavingAllocations}
-                    className="h-8.5 w-full sm:w-auto text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-[4px] shadow-sm flex items-center justify-center gap-1.5"
-                  >
-                    {isSavingAllocations ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5 shrink-0" />
-                    )}
-                    {isSavingAllocations ? "Saving..." : "Save to Database"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleTriggerAutoAllocate}
-                    className="h-8.5 w-full sm:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm flex items-center justify-center gap-1.5"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 shrink-0" /> Run Auto-Allocation
-                  </Button>
-                </div>
-              </div>
-
-              {/* Step 2: Vehicle Fleet Input */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b border-slate-100 pb-2 min-w-0">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Bus className="w-4 h-4 text-[#FF4D00] shrink-0" />
-                    <h3 className="text-xs font-black text-[#0B1528] uppercase tracking-wider">
-                      Step 2: Vehicle Fleet Input
-                    </h3>
-                  </div>
-                  <span className="text-[10px] font-medium text-slate-500">
-                    Add available tempos/cars for this departure
-                  </span>
-                </div>
-
-                <form
-                  onSubmit={handleAddVehicle}
-                  className="grid grid-cols-1 sm:grid-cols-6 gap-3 items-end"
-                >
-                  <div>
-                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                      Vehicle Type
-                    </label>
-                    <select
-                      value={selectedVehicleId}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSelectedVehicleId(val);
-                        if (val === 'custom') {
-                          setNewVehicleType('17 Seater Tempo');
-                          setNewVehicleCapacity('17');
-                          setNewVehicleCost('');
-                          setNewVehicleVendor('');
-                          setSelectedVendorId('');
-                        } else {
-                          // Check Vendor Directory fleet options first
-                          const dirVeh = vendorDirectoryFleet.find((v) => v.id === val);
-                          if (dirVeh) {
-                            setNewVehicleType(dirVeh.vehicleType);
-                            setNewVehicleCapacity(String(dirVeh.capacity));
-                            setNewVehicleCost(dirVeh.cost ? String(dirVeh.cost) : '');
-                            setNewVehicleVendor(dirVeh.vendorName);
-                            setNewVehicleName(`${dirVeh.vendorName} ${dirVeh.vehicleType}`);
-                            setSelectedVendorId(dirVeh.vendorId || '');
-                            return;
-                          }
-                          // Check assigned departure fleet
-                          const veh = fleetVehicles.find((v) => v.id === val);
-                          if (veh) {
-                            setNewVehicleType(veh.vehicleType);
-                            setNewVehicleCapacity(String(veh.capacity));
-                            setNewVehicleCost(String(veh.tariff?.amount ?? veh.totalAmount ?? ''));
-                            setNewVehicleVendor(veh.vendor?.name ?? veh.notes ?? '');
-                            setNewVehicleName(veh.driverName || veh.name || veh.vehicleType);
-                            setSelectedVendorId(veh.vendorId || veh.vendor?.id || '');
-                          }
-                        }
-                      }}
-                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400 font-medium text-slate-800 bg-white"
-                    >
-                      <option value="">Select Vendor Vehicle / Fleet...</option>
-
-                      {vendorDirectoryFleet.length > 0 && (
-                        <optgroup label="Trip Vendors (Mapped Fleet)">
-                          {vendorDirectoryFleet.map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.label || `${v.vehicleType} – ${v.vendorName}`}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-
-                      {fleetVehicles.length > 0 && (
-                        <optgroup label="Assigned Departure Fleet">
-                          {fleetVehicles.map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.vehicleType} – {v.vendor?.name || v.notes || 'Vendor'} ({v.capacity} Seats) – ₹{Number(v.tariff?.amount ?? v.totalAmount ?? 0).toLocaleString('en-IN')}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-
-                      <option value="custom">+ Custom Vehicle</option>
-                    </select>
-                    {vendorDirectoryFleet.length === 0 && (
-                      <p className="mt-1 text-[10px] font-medium text-amber-700">
-                        No priced transport vendor is mapped to this trip. Assign a trip vendor or use a custom vehicle with an explicit cost.
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                      Capacity (Seats)
-                    </label>
-                    {selectedVehicleId && selectedVehicleId !== 'custom' ? (
-                      <input
-                        type="text"
-                        readOnly
-                        value={`${newVehicleCapacity} Seats`}
-                        className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs font-bold text-slate-700 bg-slate-50 cursor-not-allowed"
-                      />
-                    ) : (
-                      <select
-                        value={newVehicleCapacity}
-                        onChange={(e) => setNewVehicleCapacity(e.target.value)}
-                        className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
-                      >
-                        {[...Array(60)].map((_, i) => (
-                          <option key={i + 1} value={String(i + 1)}>
-                            {i + 1} Seats
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                      Name (e.g. Tempo 1)
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Tempo 1"
-                      value={newVehicleName}
-                      onChange={(e) => setNewVehicleName(e.target.value)}
-                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                      Cost (Rs)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      readOnly={selectedVehicleId !== '' && selectedVehicleId !== 'custom' && newVehicleCost !== ''}
-                      placeholder="45000"
-                      value={newVehicleCost}
-                      onChange={(e) => setNewVehicleCost(e.target.value)}
-                      className={cn(
-                        "h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400",
-                        selectedVehicleId !== '' && selectedVehicleId !== 'custom' && newVehicleCost !== '' && "bg-slate-50 font-bold text-slate-700 cursor-not-allowed"
-                      )}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                      Vendor
-                    </label>
-                    <input
-                      type="text"
-                      readOnly={selectedVehicleId !== '' && selectedVehicleId !== 'custom'}
-                      placeholder="ABC Travels"
-                      value={newVehicleVendor}
-                      onChange={(e) => setNewVehicleVendor(e.target.value)}
-                      className={cn(
-                        "h-8 w-full border border-slate-200 rounded-[4px] px-2 text-xs outline-none focus:border-slate-400",
-                        selectedVehicleId !== '' && selectedVehicleId !== 'custom' && "bg-slate-50 font-bold text-slate-700 cursor-not-allowed"
-                      )}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="h-8 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded"
-                  >
-                    + Add Vehicle
-                  </Button>
-                </form>
-
-                {/* Active Fleet List */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                  {allocFleet.map((v) => (
-                    <div
-                      key={v.id}
-                      className="border border-slate-100 rounded-lg p-2.5 bg-slate-50 flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="text-xs font-black text-slate-800">
-                          {v.name}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                          {v.vehicleType} ({v.capacity} Seats)
-                        </p>
-                        <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                          Rs.{Number(v?.cost || 0).toLocaleString("en-IN")} - {v.vendor}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteVehicle(v.id)}
-                        className="h-7 w-7 text-rose-500 hover:bg-rose-50 rounded"
-                      >
-                        <Trash className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Step 3: Auto-Allocation Rules Config */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                  <Sliders className="w-4 h-4 text-[#F97316]" />
-                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                    Step 3: Auto-Allocation Engine Rules
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center">
-                  {/* Rule 1: Room Sharing Choice */}
-                  <div>
-                    <label className="text-[10px] font-extrabold text-slate-400 uppercase block mb-1">
-                      Room Sharing Basis
-                    </label>
-                    <select
-                      value={sharingPref}
-                      onChange={(e) => setSharingPref(e.target.value)}
-                      className="h-8 w-full border border-slate-200 rounded-[4px] px-2.5 text-xs font-bold text-slate-700 bg-white cursor-pointer outline-none hover:bg-slate-50"
-                    >
-                      <option value="2">2-Sharing (Double)</option>
-                      <option value="3">3-Sharing (Triple)</option>
-                      <option value="4">4-Sharing (Quad)</option>
-                    </select>
-                  </div>
-
-                  {/* Rule 2: Gender Segregation */}
-                  <div className="flex items-center gap-2 pt-4 sm:pt-0">
-                    <input
-                      type="checkbox"
-                      id="rule-same-gender"
-                      checked={sameGenderEnforced}
-                      onChange={(e) => setSameGenderEnforced(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-200 text-[#F97316] focus:ring-[#F97316] cursor-pointer"
-                    />
-                    <label
-                      htmlFor="rule-same-gender"
-                      className="text-[11px] font-bold text-slate-650 cursor-pointer select-none"
-                    >
-                      Enforce same-gender rooms (Male/Male, Female/Female)
-                    </label>
-                  </div>
-
-                  {/* Rule 3: Prioritize couples */}
-                  <div className="flex items-center gap-2 pt-2 sm:pt-0">
-                    <input
-                      type="checkbox"
-                      id="rule-prioritize-couples"
-                      checked={prioritizeCouples}
-                      onChange={(e) => setPrioritizeCouples(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-200 text-[#F97316] focus:ring-[#F97316] cursor-pointer"
-                    />
-                    <label
-                      htmlFor="rule-prioritize-couples"
-                      className="text-[11px] font-bold text-slate-650 cursor-pointer select-none"
-                    >
-                      Prioritize same-booking groups for 2-sharing rooms
-                    </label>
-                  </div>
-
-                  {/* Rule 4: Fallback to Quad */}
-                  <div className="flex items-center gap-2 pt-2 sm:pt-0">
-                    <input
-                      type="checkbox"
-                      id="rule-fallback-quad"
-                      checked={fallbackToQuad}
-                      onChange={(e) => setFallbackToQuad(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-200 text-[#F97316] focus:ring-[#F97316] cursor-pointer"
-                    />
-                    <label
-                      htmlFor="rule-fallback-quad"
-                      className="text-[11px] font-bold text-slate-650 cursor-pointer select-none"
-                    >
-                      Fallback leftover travelers into 4-sharing
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* WhatsApp Generated Lists Bar */}
-              <div className="bg-white border border-[#E8EEF4] rounded-[6px] p-3 sm:p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 min-w-0 shadow-xs">
-                <div className="min-w-0">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-[#0B1528]">
-                    Step 5: Output — Auto-Generated WhatsApp Lists
-                  </h3>
-                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                    Ready to copy and paste directly into WhatsApp departure
-                    groups.
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto min-w-0">
-                  <Button
-                    size="sm"
-                    onClick={handleCopyTempoList}
-                    className="h-9 w-full sm:w-auto bg-[#F4F7FB] hover:bg-[#EEF2F7] text-[#0B1528] font-bold text-xs uppercase flex items-center justify-center gap-1.5 rounded border border-[#E8EEF4]"
-                  >
-                    <Copy className="w-3.5 h-3.5 shrink-0" /> Copy Tempo List
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleCopyRoomList}
-                    className="h-9 w-full sm:w-auto bg-[#FF4D00] hover:bg-[#E04500] text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 rounded"
-                  >
-                    <Copy className="w-3.5 h-3.5 shrink-0" /> Copy Room List
-                  </Button>
-                </div>
-              </div>
-
-              {/* Assignments Previews */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Hotel Group Assignments */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-2 min-w-0">
-                    <h3 className="text-xs font-black text-[#0B1528] uppercase tracking-wider">
-                      Hotel Group Assignments
-                    </h3>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setAddRoomModalOpen(true)}
-                      className="h-7 w-full sm:w-auto text-[10px] font-bold text-[#FF4D00] border-[#FF4D00]/20 hover:bg-[#FFF0E6] rounded px-2"
-                    >
-                      + Add Room
-                    </Button>
-                  </div>
-                  {computedRoomAllocations.length === 0 ? (
-                    <p className="text-xs text-slate-400 font-medium py-4 text-center">
-                      No group assignments. Use the shuffler below or
-                      Auto-Allocate.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {Object.entries(
-                        computedRoomAllocations.reduce(
-                          (acc: Record<string, any>, r) => {
-                            if (!acc[r.roomNumber])
-                              acc[r.roomNumber] = {
-                                type: r.roomType,
-                                members: [],
-                                passengerIds: [],
-                                genders: [],
-                                rawGenders: [],
-                              };
-                            acc[r.roomNumber].members.push(r.travelerName);
-                            acc[r.roomNumber].passengerIds.push(r.passengerId);
-                            acc[r.roomNumber].genders.push(r.genderGroup);
-                            acc[r.roomNumber].rawGenders.push(r.rawGender);
-                            return acc;
-                          },
-                          {},
-                        ),
-                      ).map(([roomNum, rData]: any) => {
-                        const hasBoys = rData.genders.includes("BOYS");
-                        const hasGirls = rData.genders.includes("GIRLS");
-                        const roomTag =
-                          hasBoys && hasGirls
-                            ? "COUPLE"
-                            : hasGirls
-                              ? "GIRLS"
-                              : "BOYS";
-                        return (
-                          <div
-                            key={roomNum}
-                            className="border border-slate-100 rounded-lg p-3 bg-slate-50 hover:border-emerald-250 transition-colors"
-                          >
-                            <p className="text-[10px] font-extrabold text-slate-800 flex items-center justify-between border-b border-slate-100/60 pb-1">
-                              <span>{roomNum}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setManualRooms((prev) =>
-                                    prev.filter((r) => r !== roomNum),
-                                  );
-                                  setPassengerAllocations((prev) => {
-                                    const updated = { ...prev };
-                                    rData.members.forEach((mName: string, mIdx: number) => {
-                                      const passId = rData.passengerIds ? rData.passengerIds[mIdx] : null;
-                                      if (updated[mName]) {
-                                        updated[mName] = {
-                                          ...updated[mName],
-                                          room: "—",
-                                        };
-                                      }
-                                      if (passId && updated[passId]) {
-                                        updated[passId] = {
-                                          ...updated[passId],
-                                          room: "—",
-                                        };
-                                      }
-                                      const pObj = allPassengers.find((p: any) => p.name === mName || (passId && p.id === passId));
-                                      if (pObj) {
-                                        if (pObj.id && updated[pObj.id]) updated[pObj.id] = { ...updated[pObj.id], room: "—" };
-                                        if (pObj.name && updated[pObj.name]) updated[pObj.name] = { ...updated[pObj.name], room: "—" };
-                                      }
-                                    });
-                                    return updated;
-                                  });
-                                  toast.success(`Deleted room: ${roomNum}`);
-                                }}
-                                className="text-red-500 hover:text-red-700 transition-colors p-0.5 rounded hover:bg-red-50"
-                              >
-                                <Trash className="w-3.5 h-3.5" />
-                              </button>
-                            </p>
-                            <ul
-                              className="mt-2 space-y-1.5 min-h-[40px] rounded p-1"
-                              onDragOver={(e) => e.preventDefault()}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                const travelerName =
-                                  e.dataTransfer.getData("travelerName");
-                                const passengerId =
-                                  e.dataTransfer.getData("passengerId");
-                                if (!travelerName && !passengerId) return;
-
-                                setPassengerAllocations((prev) => {
-                                  const pObj = allPassengers.find(
-                                    (p: any) =>
-                                      (passengerId && p.id === passengerId) ||
-                                      (travelerName && p.name === travelerName) ||
-                                      (travelerName && p.name?.toLowerCase() === travelerName.toLowerCase()),
-                                  );
-
-                                  const current =
-                                    (pObj?.id && prev[pObj.id]) ||
-                                    (pObj?.name && prev[pObj.name]) ||
-                                    prev[travelerName] || {
-                                      room: "—",
-                                      vehicle: "—",
-                                      seat: "—",
-                                    };
-
-                                  const entry = {
-                                    ...current,
-                                    room: roomNum,
-                                  };
-
-                                  const updated = {
-                                    ...prev,
-                                    [travelerName]: entry,
-                                  };
-
-                                  if (pObj) {
-                                    if (pObj.id) updated[pObj.id] = { ...entry };
-                                    if (pObj.name) updated[pObj.name] = { ...entry };
-                                  }
-
-                                  return updated;
-                                });
-                                toast.success(
-                                  `Moved ${travelerName} to ${roomNum}`,
-                                );
-                              }}
-                            >
-                              {rData.members
-                                .filter(Boolean)
-                                .map((m: string, i: number) => {
-                                  const passId = rData.passengerIds ? rData.passengerIds[i] : null;
-                                  const rawG = (rData.rawGenders[i] || "").toLowerCase();
-                                  let dotColor = "bg-emerald-500"; // default
-                                  if (rawG === "male") dotColor = "bg-blue-500";
-                                  else if (rawG === "female") dotColor = "bg-pink-500";
-
-                                  return (
-                                    <li
-                                      key={i}
-                                      draggable
-                                      onDragStart={(e) => {
-                                        e.dataTransfer.setData("travelerName", m);
-                                        if (passId) {
-                                          e.dataTransfer.setData("passengerId", passId);
-                                        } else {
-                                          const pObj = allPassengers.find((p: any) => p.name === m);
-                                          if (pObj?.id) e.dataTransfer.setData("passengerId", pObj.id);
-                                        }
-                                      }}
-                                      className="text-[11px] font-bold text-slate-655 flex items-center gap-1.5 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2 py-1 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none"
-                                      onClick={() => handleOpenShuffle({ name: m, id: passId })}
-                                    >
-                                      <span className={`h-1.5 w-1.5 ${dotColor} rounded-full shrink-0`} />
-                                      {m}
-                                    </li>
-                                  );
-                                })}
-                              {rData.members.filter(Boolean).length === 0 && (
-                                <li className="text-[10px] italic text-slate-400 font-medium py-1 text-center">
-                                  Empty Room
-                                </li>
-                              )}
-                            </ul>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Transport Vehicle Assignments */}
-                <div className="bg-white border border-[#E2E8F0] rounded-[6px] p-4 shadow-xs space-y-3">
-                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    Transport Assignments
-                  </h3>
-                  {computedVehicleAllocations.length === 0 ? (
-                    <p className="text-xs text-slate-400 font-medium py-4 text-center">
-                      No transport assignments. Use the shuffler below or
-                      Auto-Allocate.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {Object.entries(
-                        computedVehicleAllocations.reduce(
-                           (acc: Record<string, any>, v) => {
-                            if (!acc[v.fleetId]) acc[v.fleetId] = [];
-                            acc[v.fleetId].push(v);
-                            return acc;
-                          },
-                          {},
-                        ),
-                      ).map(([fleetId, travelers]: any) => {
-                        const fleetItem = allocFleet.find(
-                          (f) => f.id === fleetId,
-                        );
-                        return (
-                          <div
-                            key={fleetId}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              const travelerName =
-                                e.dataTransfer.getData("travelerName");
-                              const passengerId =
-                                e.dataTransfer.getData("passengerId");
-                              if (!travelerName && !passengerId) return;
-
-                              const fleetName =
-                                fleetItem?.name || "Tempo Traveller";
-                              setPassengerAllocations((prev) => {
-                                const pObj = allPassengers.find(
-                                  (p: any) =>
-                                    (passengerId && p.id === passengerId) ||
-                                    (travelerName && p.name === travelerName) ||
-                                    (travelerName && p.name?.toLowerCase() === travelerName.toLowerCase()),
-                                );
-
-                                const current =
-                                  (pObj?.id && prev[pObj.id]) ||
-                                  (pObj?.name && prev[pObj.name]) ||
-                                  prev[travelerName] || {
-                                    room: "—",
-                                    vehicle: "—",
-                                    seat: "—",
-                                  };
-
-                                const entry = { ...current, vehicle: fleetName };
-                                const updated = { ...prev, [travelerName]: entry };
-
-                                if (pObj) {
-                                  if (pObj.id) updated[pObj.id] = { ...entry };
-                                  if (pObj.name) updated[pObj.name] = { ...entry };
-                                }
-
-                                return updated;
-                              });
-                              toast.success(
-                                `Moved ${travelerName} to ${fleetName}`,
-                              );
-                            }}
-                            className="border border-slate-100 rounded-lg p-3 bg-slate-50 hover:border-blue-250 transition-colors"
-                          >
-                            <p className="text-[10px] font-extrabold text-slate-800 flex items-center justify-between">
-                              <span>
-                                {fleetItem?.name ||
-                                  travelers[0]?.vehicleType ||
-                                  "Tempo Traveller"}{" "}
-                                (
-                                {fleetItem?.vehicleType ||
-                                  travelers[0]?.vehicleType ||
-                                  "Tempo"}
-                                )
-                              </span>
-                              <span className="text-[9px] font-black text-slate-450 uppercase font-mono">
-                                {travelers.length} /{" "}
-                                {fleetItem?.capacity ||
-                                  parseInt(
-                                    travelers[0]?.vehicleType?.match(
-                                      /\d+/,
-                                    )?.[0],
-                                  ) ||
-                                  17}{" "}
-                                Seats Filled
-                              </span>
-                            </p>
-                            <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 min-h-[40px]">
-                              {travelers
-                                .slice()
-                                .sort((a: any, b: any) => {
-                                  const sA = parseInt(String(a.seatNumber || "").replace(/\D/g, "")) || 0;
-                                  const sB = parseInt(String(b.seatNumber || "").replace(/\D/g, "")) || 0;
-                                  if (sA !== sB) return sA - sB;
-                                  return (a.travelerName || "").localeCompare(b.travelerName || "");
-                                })
-                                .map((t: any, i: number) => {
-                                  const rawG = (t.rawGender || "").toLowerCase();
-                                  let theme = "text-emerald-600 bg-emerald-50 border-emerald-100";
-                                  if (rawG === "male") theme = "text-blue-600 bg-blue-50 border-blue-100";
-                                  else if (rawG === "female") theme = "text-pink-600 bg-pink-50 border-pink-100";
-
-                                  const seatDisplay = t.seatNumber && t.seatNumber !== "—" ? t.seatNumber : i + 1;
-
-                                  return (
-                                    <div
-                                      key={i}
-                                      draggable
-                                      onDragStart={(e) => {
-                                        e.dataTransfer.setData("travelerName", t.travelerName);
-                                        if (t.passengerId) {
-                                          e.dataTransfer.setData("passengerId", t.passengerId);
-                                        } else {
-                                          const pObj = allPassengers.find((p: any) => p.name === t.travelerName);
-                                          if (pObj?.id) e.dataTransfer.setData("passengerId", pObj.id);
-                                        }
-                                      }}
-                                      className="text-[11px] font-bold text-slate-700 flex items-center gap-2 cursor-pointer hover:text-[#F97316] transition-colors bg-white px-2.5 py-1.5 rounded border border-slate-100 shadow-2xs hover:shadow-xs active:scale-[0.98] select-none min-w-0"
-                                      onClick={() => handleOpenShuffle({ name: t.travelerName, id: t.passengerId })}
-                                    >
-                                      <span className={`text-[9px] font-black font-mono ${theme} border min-w-[28px] h-5 px-1 inline-flex items-center justify-center rounded shrink-0 tabular-nums text-center`}>
-                                        #{seatDisplay}
-                                      </span>
-                                      <span className="truncate min-w-0 flex-1">{t.travelerName}</span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Save Allocations to DB + Clear */}
-              <div className="bg-slate-50 border border-slate-200 rounded-[6px] p-3 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 min-w-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowClearAllocationsDialog(true)}
-                  className="h-8 w-full sm:w-auto text-[11px] font-bold text-red-500 border-red-200 hover:bg-red-50 rounded-[4px]"
-                >
-                  Clear DB Allocations
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={isSavingAllocations}
-                  onClick={() => handleSaveAllocationsToDb(false)}
-                  className="h-8 w-full sm:w-auto text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] flex items-center justify-center gap-1.5"
-                >
-                  {isSavingAllocations ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
-                  ) : (
-                    <Save className="w-3.5 h-3.5 shrink-0" />
-                  )}
-                  {isSavingAllocations ? "Saving..." : "Save to Database"}
-                </Button>
-              </div>
-
-              {/* Clear Allocations Confirmation Dialog */}
-              {showClearAllocationsDialog && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                  <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-xl w-96 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center">
-                        <AlertTriangle className="w-5 h-5 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-800">
-                          Clear All Allocations?
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          This will soft-cancel all ACTIVE room and vehicle
-                          allocations for this departure in the database. This
-                          action cannot be undone.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-1 justify-end">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setShowClearAllocationsDialog(false)}
-                        className="h-8 text-[11px] font-bold text-slate-600"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        disabled={isSavingAllocations}
-                        onClick={() => handleSaveAllocationsToDb(true)}
-                        className="h-8 text-[11px] font-bold bg-red-600 hover:bg-red-700 text-white rounded-[4px]"
-                      >
-                        {isSavingAllocations ? "Clearing..." : "Yes, Clear All"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <DepartureTransport
+              nameInputRef={vehicleFleetNameRef}
+              isSavingAllocations={isSavingAllocations}
+              onSave={() => handleSaveAllocationsToDb(false)}
+              onAutoAllocate={handleTriggerAutoAllocate}
+              onAddVehicle={handleAddVehicle}
+              onDeleteVehicle={handleDeleteVehicle}
+              onCopyTempoList={handleCopyTempoList}
+              onCopyRoomList={handleCopyRoomList}
+              onOpenShuffle={handleOpenShuffle}
+              allocFleet={allocFleet}
+              vendorDirectoryFleet={vendorDirectoryFleet}
+              fleetVehicles={fleetVehicles}
+              selectedVehicleId={selectedVehicleId}
+              setSelectedVehicleId={setSelectedVehicleId}
+              setNewVehicleType={setNewVehicleType}
+              newVehicleCapacity={newVehicleCapacity}
+              setNewVehicleCapacity={setNewVehicleCapacity}
+              newVehicleName={newVehicleName}
+              setNewVehicleName={setNewVehicleName}
+              newVehicleCost={newVehicleCost}
+              setNewVehicleCost={setNewVehicleCost}
+              newVehicleVendor={newVehicleVendor}
+              setNewVehicleVendor={setNewVehicleVendor}
+              setSelectedVendorId={setSelectedVendorId}
+              sharingPref={sharingPref}
+              setSharingPref={setSharingPref}
+              sameGenderEnforced={sameGenderEnforced}
+              setSameGenderEnforced={setSameGenderEnforced}
+              prioritizeCouples={prioritizeCouples}
+              setPrioritizeCouples={setPrioritizeCouples}
+              fallbackToQuad={fallbackToQuad}
+              setFallbackToQuad={setFallbackToQuad}
+              computedRoomAllocations={computedRoomAllocations}
+              computedVehicleAllocations={computedVehicleAllocations}
+              allPassengers={allPassengers}
+              setPassengerAllocations={setPassengerAllocations}
+              setManualRooms={setManualRooms}
+              setAddRoomModalOpen={setAddRoomModalOpen}
+              showClearAllocationsDialog={showClearAllocationsDialog}
+              setShowClearAllocationsDialog={setShowClearAllocationsDialog}
+              onClearAllocations={() => handleSaveAllocationsToDb(true)}
+            />
           )}
 
           {/* ──────────────────────── GUIDES ──────────────────────── */}
@@ -9265,17 +8645,7 @@ useEffect(() => {
                   size="sm"
                   onClick={() => {
                     setEditingGuideId(null);
-                    setGuideForm({
-                      guideName: "",
-                      agreedAmount: "",
-                      advancePaid: "0",
-                      daysWorked: "5",
-                      notes: "",
-                      assignmentType: "PRIMARY_GUIDE",
-                      reportingLocation: "",
-                      reportingTime: "",
-                      emergencyContact: "",
-                    });
+                    setGuideForm(emptyGuideForm("PRIMARY_GUIDE"));
                     setAddGuideOpen(true);
                   }}
                   className="hidden md:inline-flex h-8.5 w-full md:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm items-center justify-center gap-1.5"
@@ -9347,7 +8717,7 @@ useEffect(() => {
                               guideName: e.target.value,
                             }))
                           }
-                          placeholder="e.g. Medical Kit, Meals, etc."
+                          placeholder="e.g. Meals — Day 3"
                           className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
                         />
                       ) : dbGuideVendors.length > 0 ? (
@@ -9421,12 +8791,19 @@ useEffect(() => {
                       </label>
                       <select
                         value={guideForm.assignmentType}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const nextType = e.target.value;
                           setGuideForm((f) => ({
                             ...f,
-                            assignmentType: e.target.value,
-                          }))
-                        }
+                            assignmentType: nextType,
+                            expenseDate:
+                              nextType === "EXPENSE"
+                                ? f.expenseDate || departureDateStr || ""
+                                : "",
+                            daysWorked:
+                              nextType === "EXPENSE" ? "1" : f.daysWorked || "5",
+                          }));
+                        }}
                         className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
                       >
                         <option value="PRIMARY_GUIDE">Primary Guide</option>
@@ -9438,7 +8815,55 @@ useEffect(() => {
                       </select>
                     </div>
 
-                    {guideForm.assignmentType !== "EXPENSE" && (
+                    {guideForm.assignmentType === "EXPENSE" ? (
+                      <>
+                        <div>
+                          <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                            Trip day
+                          </label>
+                          <select
+                            value={tripDayFromDate(guideForm.expenseDate)}
+                            onChange={(e) => {
+                              const day = Number(e.target.value);
+                              setGuideForm((f) => ({
+                                ...f,
+                                expenseDate: day
+                                  ? dateForTripDay(day)
+                                  : f.expenseDate,
+                              }));
+                            }}
+                            className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                          >
+                            <option value="">Pick day (e.g. Day 3)…</option>
+                            {Array.from(
+                              { length: guideExpenseTripDays },
+                              (_, i) => i + 1,
+                            ).map((day) => (
+                              <option key={day} value={String(day)}>
+                                Day {day} · {formatExpenseDate(dateForTripDay(day))}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
+                            Expense date *
+                          </label>
+                          <input
+                            required
+                            type="date"
+                            value={guideForm.expenseDate}
+                            onChange={(e) =>
+                              setGuideForm((f) => ({
+                                ...f,
+                                expenseDate: e.target.value,
+                              }))
+                            }
+                            className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                          />
+                        </div>
+                      </>
+                    ) : (
                       <div>
                         <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                           Days Working
@@ -9460,7 +8885,7 @@ useEffect(() => {
                     )}
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        {guideForm.assignmentType === "EXPENSE" ? "Expense Amount (₹)" : "Agreed Amount (₹)"}
+                        {guideForm.assignmentType === "EXPENSE" ? "Total amount (₹)" : "Agreed Amount (₹)"}
                       </label>
                       <input
                         type="number"
@@ -9562,17 +8987,7 @@ useEffect(() => {
                       onClick={() => {
                         setAddGuideOpen(false);
                         setEditingGuideId(null);
-                        setGuideForm({
-                          guideName: "",
-                          agreedAmount: "",
-                          advancePaid: "0",
-                          daysWorked: "5",
-                          notes: "",
-                          assignmentType: "PRIMARY_GUIDE",
-                          reportingLocation: "",
-                          reportingTime: "",
-                          emergencyContact: "",
-                        });
+                        setGuideForm(emptyGuideForm());
                       }}
                       className="h-8 text-[11px] font-bold text-slate-600 rounded-[4px]"
                     >
@@ -9774,17 +9189,7 @@ useEffect(() => {
                     size="sm"
                     onClick={() => {
                       setEditingGuideId(null);
-                      setGuideForm({
-                        guideName: "Trip Expense",
-                        agreedAmount: "",
-                        advancePaid: "",
-                        daysWorked: "1",
-                        notes: "",
-                        assignmentType: "EXPENSE",
-                        reportingLocation: "",
-                        reportingTime: "",
-                        emergencyContact: "",
-                      });
+                      setGuideForm(emptyGuideForm("EXPENSE"));
                       setAddGuideOpen(true);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
@@ -9804,19 +9209,30 @@ useEffect(() => {
                     <table className="w-full min-w-[720px] text-left text-xs border-collapse">
                       <thead className="bg-slate-50 border-b border-[#E8EEF4]">
                         <tr className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
-                          <th className="p-3 border-r border-slate-100">EXPENSE TITLE</th>
-                          <th className="p-3 border-r border-slate-100 text-right">TOTAL AMOUNT</th>
-                          <th className="p-3 border-r border-slate-100 text-right">ADVANCE PAID</th>
-                          <th className="p-3 border-r border-slate-100 text-right">BALANCE</th>
-                          <th className="p-3 border-r border-slate-100">NOTES / DETAILS</th>
-                          <th className="p-3 text-center">ACTION</th>
+                          <th className="p-3 border-r border-slate-100">Expense title</th>
+                          <th className="p-3 border-r border-slate-100">Date</th>
+                          <th className="p-3 border-r border-slate-100 text-right">Total amount</th>
+                          <th className="p-3 border-r border-slate-100 text-right">Advance paid</th>
+                          <th className="p-3 border-r border-slate-100 text-right">Balance</th>
+                          <th className="p-3 border-r border-slate-100">Notes</th>
+                          <th className="p-3 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E8EEF4]">
-                        {tripExpenses.map((exp: any) => (
+                        {tripExpenses.map((exp: any) => {
+                          const dayLabel = tripDayFromDate(exp.startDate);
+                          return (
                           <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="p-3 border-r border-slate-100 font-bold text-slate-800">
                               {exp.guideName}
+                            </td>
+                            <td className="p-3 border-r border-slate-100 text-slate-700 font-medium whitespace-nowrap">
+                              <div>{formatExpenseDate(exp.startDate)}</div>
+                              {dayLabel ? (
+                                <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                  Day {dayLabel}
+                                </div>
+                              ) : null}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right font-bold text-slate-800">
                               ₹{Number(exp.agreedAmount || 0).toLocaleString("en-IN")}
@@ -9825,7 +9241,7 @@ useEffect(() => {
                               ₹{Number(exp.advancePaid || 0).toLocaleString("en-IN")}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-right">
-                              <span className={cn("font-bold", Number(exp.balanceAmount || 0) > 0 ? "text-red-600" : "text-emerald-600")}>
+                              <span className={cn("font-bold", Number(exp.balanceAmount || 0) > 0 ? "text-[#FF4D00]" : "text-slate-800")}>
                                 ₹{Number(exp.balanceAmount || 0).toLocaleString("en-IN")}
                               </span>
                             </td>
@@ -9853,7 +9269,8 @@ useEffect(() => {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
