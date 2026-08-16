@@ -119,21 +119,29 @@ export default function DepartureTripControl({
 
   // Lead guide info
   const leadGuide = useMemo(() => {
-    const lead = tripVendors.find((v) => v.vendorType === "guide" || v.assignmentType?.includes("GUIDE"));
-    if (lead) return { name: lead.name || lead.vendorName || "Lead Guide", phone: lead.phone || lead.emergencyContact || "" };
-    if (dbGuides && dbGuides.length > 0) {
-      return { name: dbGuides[0].guideName || "Lead Guide", phone: dbGuides[0].emergencyContact || "" };
+    // Departure-specific assignments take precedence
+    const validGuides = dbGuides?.filter((g) => g.assignmentType !== "EXPENSE") || [];
+    if (validGuides.length > 0) {
+      return { name: validGuides[0].guideName || "Lead Guide", phone: validGuides[0].emergencyContact || "" };
     }
+    // Fallback to trip-level vendors
+    const lead = tripVendors?.find((v) => v.vendorType === "guide" || v.assignmentType?.includes("GUIDE"));
+    if (lead) return { name: lead.name || lead.vendorName || "Lead Guide", phone: lead.phone || lead.emergencyContact || "" };
     return { name: "Assign Guide", phone: "" };
   }, [tripVendors, dbGuides]);
 
   // Lead transport info
   const leadTransport = useMemo(() => {
-    const tr = tripVendors.find((v) => v.vendorType === "transport");
-    if (tr) return { name: tr.name || tr.vendorName || "17 Seater Tempo", phone: tr.phone || "" };
+    // Departure-specific fleet allocations take precedence
     if (allocFleet && allocFleet.length > 0) {
-      return { name: allocFleet[0].vehicleType || "Tempo Traveller", phone: allocFleet[0].driverPhone || "" };
+      // Create a combined string if they provided vendorName and vehicleType
+      const fleet = allocFleet[0];
+      const name = fleet.vendorName ? `${fleet.vendorName} ${fleet.vehicleType}` : fleet.vehicleType || "Tempo Traveller";
+      return { name, phone: fleet.driverPhone || "" };
     }
+    // Fallback to trip-level vendors
+    const tr = tripVendors?.find((v) => v.vendorType === "transport");
+    if (tr) return { name: tr.name || tr.vendorName || "17 Seater Tempo", phone: tr.phone || "" };
     return { name: "17 Seater Tempo", phone: "" };
   }, [tripVendors, allocFleet]);
 
@@ -207,7 +215,7 @@ export default function DepartureTripControl({
         : "PENDING";
 
       // Match Transport
-      let transportName = dbRow?.vehicleType || (isNoStay ? "—" : leadTransport.name);
+      let transportName = dbRow?.vehicleType || leadTransport.name;
       let transportStatus: "BOOKED" | "PENDING" | "NOT ASSIGNED" = isNoStay
         ? "BOOKED"
         : transportName !== "—"
@@ -215,7 +223,7 @@ export default function DepartureTripControl({
         : "PENDING";
 
       // Match Guide
-      let guideName = dbRow?.guideDriverDetails || (isNoStay ? "—" : leadGuide.name);
+      let guideName = dbRow?.guideDriverDetails || leadGuide.name;
       let guidePhone = dbRow?.guideDriverDetails ? "" : leadGuide.phone;
 
       // Check-in status (from DB row if updated, or default)
