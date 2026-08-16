@@ -1809,6 +1809,30 @@ export default function DepartureHubPage() {
     }
   };
 
+  // Anchors so the inline editors can be scrolled into view where they render:
+  // guide assignments under Guides & Crew, expenses under Trip Expenses.
+  const guideFormRef = useRef<HTMLFormElement | null>(null);
+  const expenseSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const revealGuideEditor = (isExpense: boolean) => {
+    setTimeout(() => {
+      const target: HTMLElement | null = isExpense
+        ? expenseSectionRef.current
+        : guideFormRef.current;
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 60);
+  };
+
+  const closeGuideForm = () => {
+    setAddGuideOpen(false);
+    setEditingGuideId(null);
+    setGuideForm(emptyGuideForm());
+  };
+
   const handleEditGuide = (g: any) => {
     setEditingGuideId(g.id);
     const startIso = g.startDate
@@ -1827,7 +1851,7 @@ export default function DepartureHubPage() {
       expenseDate: startIso,
     });
     setAddGuideOpen(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    revealGuideEditor(isGuideExpenseType(g.assignmentType));
   };
 
   const handleAddGuide = async (e: React.FormEvent) => {
@@ -6520,6 +6544,7 @@ useEffect(() => {
                       setEditingGuideId(null);
                       setGuideForm(emptyGuideForm("PRIMARY_GUIDE"));
                       setAddGuideOpen(true);
+                      revealGuideEditor(false);
                     } else if (activeTab === "transport") {
                       vehicleFleetNameRef.current?.scrollIntoView({
                         behavior: "smooth",
@@ -8689,6 +8714,11 @@ useEffect(() => {
             const tripExpenses = dbGuides.filter((g: any) =>
               isGuideExpenseType(g.assignmentType),
             );
+            const isExpenseForm = isGuideExpenseType(guideForm.assignmentType);
+            const fieldClass =
+              "h-8 w-full min-w-0 px-2.5 text-[11px] rounded-[4px] border border-[#E8EEF4] bg-white text-[#0B1528] focus:outline-none focus:border-[#FF4D00] focus:ring-1 focus:ring-[#FF4D00]/20";
+            const labelClass =
+              "block mb-1 text-[10px] font-semibold text-slate-500";
 
             return (
             <div className="space-y-4 min-w-0">
@@ -8708,10 +8738,11 @@ useEffect(() => {
                     setEditingGuideId(null);
                     setGuideForm(emptyGuideForm("PRIMARY_GUIDE"));
                     setAddGuideOpen(true);
+                    revealGuideEditor(false);
                   }}
                   className="hidden md:inline-flex h-8.5 w-full md:w-auto text-xs font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px] shadow-sm items-center justify-center gap-1.5"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Assign Guide
+                  <Plus className="w-3.5 h-3.5" /> Assign guide
                 </Button>
               </div>
 
@@ -8754,34 +8785,27 @@ useEffect(() => {
                 ))}
               </div>
 
-              {/* Add Guide Inline Form */}
-              {addGuideOpen && (
+              {/* Assign guide inline form — guides only; expenses render under Trip expenses */}
+              {addGuideOpen && !isExpenseForm && (
                 <form
+                  ref={guideFormRef}
                   onSubmit={handleAddGuide}
-                  className="bg-orange-50 border border-orange-200 rounded-[6px] p-4 space-y-3"
+                  className="bg-white border border-[#E8EEF4] rounded-[6px] shadow-xs min-w-0 overflow-hidden"
                 >
-                  <p className="text-[11px] font-black text-orange-700 uppercase tracking-wider">
-                    {isGuideExpenseType(guideForm.assignmentType) ? "Add Trip Expense / Allowance" : "Assign Guide to Departure"}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        {isGuideExpenseType(guideForm.assignmentType) ? "Expense Title *" : "Guide Name *"}
+                  <div className="px-4 py-3 border-b border-[#E8EEF4]">
+                    <p className="text-[12px] font-bold text-[#0B1528]">
+                      {editingGuideId ? "Edit guide assignment" : "Assign guide to departure"}
+                    </p>
+                    <p className="text-[10.5px] text-slate-500 mt-0.5">
+                      Payment terms and reporting details for this departure
+                    </p>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="min-w-0">
+                      <label className={labelClass}>
+                        Guide name *
                       </label>
-                      {isGuideExpenseType(guideForm.assignmentType) ? (
-                        <input
-                          required
-                          value={guideForm.guideName}
-                          onChange={(e) =>
-                            setGuideForm((f) => ({
-                              ...f,
-                              guideName: e.target.value,
-                            }))
-                          }
-                          placeholder="e.g. Meals — Day 3"
-                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                        />
-                      ) : dbGuideVendors.length > 0 ? (
+                      {dbGuideVendors.length > 0 ? (
                         <>
                           <select
                             required
@@ -8806,15 +8830,15 @@ useEffect(() => {
                                 }));
                               }
                             }}
-                            className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                            className={fieldClass}
                           >
-                            <option value="">Select guide from vendor directory...</option>
+                            <option value="">Select guide from vendor directory…</option>
                             {dbGuideVendors.map((v: any) => (
                               <option key={v.id} value={v.contactPerson || v.name}>
                                 {v.name || v.contactPerson}{v.destination ? ` · ${v.destination}` : ""}
                               </option>
                             ))}
-                            <option value="__manual__">✏️ Enter manually...</option>
+                            <option value="__manual__">Enter manually…</option>
                           </select>
                           {guideForm.guideName === "__manual__" && (
                             <input
@@ -8826,8 +8850,8 @@ useEffect(() => {
                                   guideName: e.target.value,
                                 }))
                               }
-                              placeholder="Type guide name..."
-                              className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300 mt-1"
+                              placeholder="Type guide name…"
+                              className={cn(fieldClass, "mt-1")}
                             />
                           )}
                         </>
@@ -8842,116 +8866,52 @@ useEffect(() => {
                             }))
                           }
                           placeholder="e.g. Dikshu Sharma"
-                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                          className={fieldClass}
                         />
                       )}
                     </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Role / Type
+                    <div className="min-w-0">
+                      <label className={labelClass}>
+                        Role
                       </label>
                       <select
                         value={guideForm.assignmentType}
-                        onChange={(e) => {
-                          const nextType = e.target.value;
+                        onChange={(e) =>
                           setGuideForm((f) => ({
                             ...f,
-                            assignmentType: nextType,
-                            expenseDate:
-                              isGuideExpenseType(nextType)
-                                ? f.expenseDate || departureDateStr || ""
-                                : "",
-                            daysWorked:
-                              isGuideExpenseType(nextType) ? "1" : f.daysWorked || "5",
-                          }));
-                        }}
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                            assignmentType: e.target.value,
+                            expenseDate: "",
+                            daysWorked: f.daysWorked || "5",
+                          }))
+                        }
+                        className={fieldClass}
                       >
-                        <option value="PRIMARY_GUIDE">Primary Guide</option>
-                        <option value="ASSISTANT_GUIDE">Assistant Guide</option>
-                        <option value="TRIP_LEADER">Trip Leader</option>
-                        <option value="DRIVER_GUIDE">Driver Guide</option>
+                        <option value="PRIMARY_GUIDE">Primary guide</option>
+                        <option value="ASSISTANT_GUIDE">Assistant guide</option>
+                        <option value="TRIP_LEADER">Trip leader</option>
+                        <option value="DRIVER_GUIDE">Driver guide</option>
                         <option value="FREELANCER">Freelancer</option>
-                        {GUIDE_EXPENSE_CATEGORIES.map((category) => (
-                          <option key={category.value} value={category.value}>
-                            {category.label}
-                          </option>
-                        ))}
                       </select>
                     </div>
 
-                    {isGuideExpenseType(guideForm.assignmentType) ? (
-                      <>
-                        <div>
-                          <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                            Trip day
-                          </label>
-                          <select
-                            value={tripDayFromDate(guideForm.expenseDate)}
-                            onChange={(e) => {
-                              const day = Number(e.target.value);
-                              setGuideForm((f) => ({
-                                ...f,
-                                expenseDate: day
-                                  ? dateForTripDay(day)
-                                  : f.expenseDate,
-                              }));
-                            }}
-                            className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                          >
-                            <option value="">Pick day (e.g. Day 3)…</option>
-                            {Array.from(
-                              { length: guideExpenseTripDays },
-                              (_, i) => i + 1,
-                            ).map((day) => (
-                              <option key={day} value={String(day)}>
-                                Day {day} · {formatExpenseDate(dateForTripDay(day))}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                            Expense date *
-                          </label>
-                          <input
-                            required
-                            type="date"
-                            value={guideForm.expenseDate}
-                            onChange={(e) =>
-                              setGuideForm((f) => ({
-                                ...f,
-                                expenseDate: e.target.value,
-                              }))
-                            }
-                            className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <div>
-                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                          Days Working
-                        </label>
-                        <input
-                          type="number"
-                          value={guideForm.daysWorked}
-                          min="1"
-                          max="30"
-                          onChange={(e) =>
-                            setGuideForm((f) => ({
-                              ...f,
-                              daysWorked: e.target.value,
-                            }))
-                          }
-                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        {isGuideExpenseType(guideForm.assignmentType) ? "Total amount (₹)" : "Agreed Amount (₹)"}
-                      </label>
+                    <div className="min-w-0">
+                      <label className={labelClass}>Days working</label>
+                      <input
+                        type="number"
+                        value={guideForm.daysWorked}
+                        min="1"
+                        max="30"
+                        onChange={(e) =>
+                          setGuideForm((f) => ({
+                            ...f,
+                            daysWorked: e.target.value,
+                          }))
+                        }
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <label className={labelClass}>Agreed amount (₹)</label>
                       <input
                         type="number"
                         value={guideForm.agreedAmount}
@@ -8963,13 +8923,11 @@ useEffect(() => {
                           }))
                         }
                         placeholder="e.g. 8000"
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        className={fieldClass}
                       />
                     </div>
-                    <div>
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Advance Paid (₹)
-                      </label>
+                    <div className="min-w-0">
+                      <label className={labelClass}>Advance paid (₹)</label>
                       <input
                         type="number"
                         value={guideForm.advancePaid}
@@ -8980,81 +8938,64 @@ useEffect(() => {
                             advancePaid: e.target.value,
                           }))
                         }
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        className={fieldClass}
                       />
                     </div>
-                    
-                    {!isGuideExpenseType(guideForm.assignmentType) && (
-                      <div>
-                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                          Reporting Time
-                        </label>
-                        <input
-                          type="time"
-                          value={guideForm.reportingTime}
-                          onChange={(e) =>
-                            setGuideForm((f) => ({
-                              ...f,
-                              reportingTime: e.target.value,
-                            }))
-                          }
-                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="sm:col-span-2">
-                      <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                        Notes
-                      </label>
+                    <div className="min-w-0">
+                      <label className={labelClass}>Reporting time</label>
+                      <input
+                        type="time"
+                        value={guideForm.reportingTime}
+                        onChange={(e) =>
+                          setGuideForm((f) => ({
+                            ...f,
+                            reportingTime: e.target.value,
+                          }))
+                        }
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="min-w-0 sm:col-span-2">
+                      <label className={labelClass}>Notes</label>
                       <input
                         value={guideForm.notes}
                         onChange={(e) =>
                           setGuideForm((f) => ({ ...f, notes: e.target.value }))
                         }
-                        placeholder={isGuideExpenseType(guideForm.assignmentType) ? "e.g. For fuel and tolls" : "e.g. Lead guide, experienced in Spiti"}
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        placeholder="e.g. Lead guide, experienced in Spiti"
+                        className={fieldClass}
                       />
                     </div>
-                    
-                    {!isGuideExpenseType(guideForm.assignmentType) && (
-                      <div>
-                        <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
-                          Emergency Contact
-                        </label>
-                        <input
-                          value={guideForm.emergencyContact}
-                          onChange={(e) =>
-                            setGuideForm((f) => ({
-                              ...f,
-                              emergencyContact: e.target.value,
-                            }))
-                          }
-                          placeholder="+91 XXXXXXXXXX"
-                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                        />
-                      </div>
-                    )}
+                    <div className="min-w-0">
+                      <label className={labelClass}>Emergency contact</label>
+                      <input
+                        value={guideForm.emergencyContact}
+                        onChange={(e) =>
+                          setGuideForm((f) => ({
+                            ...f,
+                            emergencyContact: e.target.value,
+                          }))
+                        }
+                        placeholder="+91 XXXXXXXXXX"
+                        className={fieldClass}
+                      />
+                    </div>
                   </div>
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 px-4 py-3 border-t border-[#E8EEF4] bg-[#F4F7FB]">
                     <Button
                       type="submit"
                       size="sm"
                       disabled={isSavingGuide}
-                      className="h-8 text-[11px] font-bold bg-[#F97316] hover:bg-[#E05E00] text-white rounded-[4px]"
+                      className="h-8 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px]"
                     >
-                      {isSavingGuide ? "Saving..." : (isGuideExpenseType(guideForm.assignmentType) ? "Save Expense" : "Save Guide")}
+                      {isSavingGuide ? "Saving…" : editingGuideId ? "Update guide" : "Save guide"}
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        setAddGuideOpen(false);
-                        setEditingGuideId(null);
-                        setGuideForm(emptyGuideForm());
-                      }}
-                      className="h-8 text-[11px] font-bold text-slate-600 rounded-[4px]"
+                      onClick={closeGuideForm}
+                      className="h-8 text-[11px] font-semibold text-slate-600 hover:bg-white rounded-[4px]"
                     >
                       Cancel
                     </Button>
@@ -9064,9 +9005,9 @@ useEffect(() => {
 
               {/* Guides Table — live from dbGuides */}
               <div className="bg-white border border-[#E8EEF4] rounded-[6px] overflow-hidden shadow-xs min-w-0">
-                {dbGuides.length === 0 ? (
+                {actualGuides.length === 0 ? (
                   <div className="p-6 sm:p-8 text-center text-[12px] text-slate-600 font-medium leading-relaxed">
-                    No guides assigned yet. Use Assign Guide to add the first
+                    No guides assigned yet. Use Assign guide to add the first
                     guide.
                   </div>
                 ) : (
@@ -9240,7 +9181,7 @@ useEffect(() => {
               </div>
 
               {/* ──────────────────────── TRIP EXPENSES & ALLOWANCES ──────────────────────── */}
-              <div className="mt-8 pt-6 border-t border-slate-200">
+              <div ref={expenseSectionRef} className="mt-8 pt-6 border-t border-slate-200">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between min-w-0 mb-4">
                   <div className="min-w-0">
                     <h3 className="text-[14px] font-black text-[#0B1528]">
@@ -9256,13 +9197,156 @@ useEffect(() => {
                       setEditingGuideId(null);
                       setGuideForm(emptyGuideForm("EXPENSE"));
                       setAddGuideOpen(true);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      revealGuideEditor(true);
                     }}
-                    className="hidden md:inline-flex h-8 w-full md:w-auto text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-[4px] shadow-sm items-center justify-center gap-1.5"
+                    className="inline-flex h-8 w-full md:w-auto text-xs font-bold bg-white hover:bg-[#F4F7FB] border border-[#E8EEF4] text-[#0B1528] rounded-[4px] shadow-xs items-center justify-center gap-1.5"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Expense
+                    <Plus className="w-3.5 h-3.5" /> Add expense
                   </Button>
                 </div>
+
+                {/* Expense editor — lives inside Trip expenses, above the ledger */}
+                {addGuideOpen && isExpenseForm && (
+                  <form
+                    onSubmit={handleAddGuide}
+                    className="mb-3 bg-white border border-[#E8EEF4] rounded-[6px] shadow-xs min-w-0 overflow-hidden"
+                  >
+                    <div className="px-4 py-3 border-b border-[#E8EEF4]">
+                      <p className="text-[12px] font-bold text-[#0B1528]">
+                        {editingGuideId ? "Edit expense" : "Add expense or allowance"}
+                      </p>
+                      <p className="text-[10.5px] text-slate-500 mt-0.5">
+                        Saved to the departure expense ledger below
+                      </p>
+                    </div>
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="min-w-0">
+                        <label className={labelClass}>Expense title *</label>
+                        <input
+                          required
+                          value={guideForm.guideName}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({ ...f, guideName: e.target.value }))
+                          }
+                          placeholder="e.g. Meals — Day 3"
+                          className={fieldClass}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className={labelClass}>Category</label>
+                        <select
+                          value={guideForm.assignmentType}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              assignmentType: e.target.value,
+                              expenseDate: f.expenseDate || departureDateStr || "",
+                              daysWorked: "1",
+                            }))
+                          }
+                          className={fieldClass}
+                        >
+                          {GUIDE_EXPENSE_CATEGORIES.map((category) => (
+                            <option key={category.value} value={category.value}>
+                              {category.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="min-w-0">
+                        <label className={labelClass}>Trip day</label>
+                        <select
+                          value={tripDayFromDate(guideForm.expenseDate)}
+                          onChange={(e) => {
+                            const day = Number(e.target.value);
+                            setGuideForm((f) => ({
+                              ...f,
+                              expenseDate: day ? dateForTripDay(day) : f.expenseDate,
+                            }));
+                          }}
+                          className={fieldClass}
+                        >
+                          <option value="">Pick a day…</option>
+                          {Array.from(
+                            { length: guideExpenseTripDays },
+                            (_, i) => i + 1,
+                          ).map((day) => (
+                            <option key={day} value={String(day)}>
+                              Day {day} · {formatExpenseDate(dateForTripDay(day))}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="min-w-0">
+                        <label className={labelClass}>Expense date *</label>
+                        <input
+                          required
+                          type="date"
+                          value={guideForm.expenseDate}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({ ...f, expenseDate: e.target.value }))
+                          }
+                          className={fieldClass}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className={labelClass}>Total amount (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={guideForm.agreedAmount}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({ ...f, agreedAmount: e.target.value }))
+                          }
+                          placeholder="e.g. 8000"
+                          className={fieldClass}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className={labelClass}>Advance paid (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={guideForm.advancePaid}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({ ...f, advancePaid: e.target.value }))
+                          }
+                          className={fieldClass}
+                        />
+                      </div>
+                      <div className="min-w-0 sm:col-span-2 lg:col-span-3">
+                        <label className={labelClass}>Notes</label>
+                        <input
+                          value={guideForm.notes}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({ ...f, notes: e.target.value }))
+                          }
+                          placeholder="e.g. For fuel and tolls"
+                          className={fieldClass}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 px-4 py-3 border-t border-[#E8EEF4] bg-[#F4F7FB]">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={isSavingGuide}
+                        className="h-8 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#E04500] text-white rounded-[4px]"
+                      >
+                        {isSavingGuide ? "Saving…" : editingGuideId ? "Update expense" : "Save expense"}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={closeGuideForm}
+                        className="h-8 text-[11px] font-semibold text-slate-600 hover:bg-white rounded-[4px]"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
 
                 <div className="bg-white border border-[#E8EEF4] rounded-[6px] overflow-hidden shadow-xs min-w-0">
                   {tripExpenses.length === 0 ? (
@@ -9408,7 +9492,11 @@ useEffect(() => {
                 setActiveTab("transport");
               }}
               onOpenGuideModal={() => {
+                setEditingGuideId(null);
+                setGuideForm(emptyGuideForm("PRIMARY_GUIDE"));
+                setActiveTab("guides");
                 setAddGuideOpen(true);
+                revealGuideEditor(false);
               }}
             />
           )}

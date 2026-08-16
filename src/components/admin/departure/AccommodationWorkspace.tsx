@@ -323,7 +323,10 @@ export default function AccommodationWorkspace({
         nightsText,
         nights,
         hotelName: hasStay ? (booking?.hotelName || "— Pending Assignment —") : "—",
-        physicalRooms: hasStay ? physicalRooms : 0,
+        // Room allocation is only authoritative once a hotel booking is saved.
+        // Unassigned stay days must remain visibly pending, not look configured
+        // because a trip-level room plan happens to exist.
+        physicalRooms: hasStay && booking ? physicalRooms : 0,
         costPerPaxPerNight: hasStay ? costPerPaxPerNight : 0,
         costPerPaxStay: hasStay ? costPerPaxStay : 0,
         totalAmount: hasStay ? totalAmount : 0,
