@@ -477,12 +477,26 @@ export default function DeparturePayments({
       const mergedVendors = [...apiVendors];
       (tripVendors || []).forEach((tv) => {
         const vName = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId) || tv.vendor?.name;
-        if (!vName) return;
+        if (!vName || vName === "NO_STAY" || vName === "—" || vName.toLowerCase().includes("night journey")) return;
         
-        const exists = mergedVendors.find((v) => v.vendorName === vName);
-        if (!exists) {
-          const agreed = tv.agreedCost || 0;
-          const paid = tv.paidAmount || 0;
+        const existingIdx = mergedVendors.findIndex((v) => v.vendorName?.toLowerCase().trim() === vName.toLowerCase().trim());
+        const agreed = Number(tv.agreedCost || tv.totalAmount || 0);
+        const paid = Number(tv.paidAmount || tv.advancePaid || 0);
+
+        if (existingIdx >= 0) {
+          // If vendor is booked for multiple days/records, accumulate the agreed & paid amounts
+          mergedVendors[existingIdx].agreedAmount = (mergedVendors[existingIdx].agreedAmount || 0) + agreed;
+          mergedVendors[existingIdx].advancePaid = (mergedVendors[existingIdx].advancePaid || 0) + paid;
+          mergedVendors[existingIdx].balanceAmount = Math.max(0, mergedVendors[existingIdx].agreedAmount - mergedVendors[existingIdx].advancePaid);
+          const totalAgreed = mergedVendors[existingIdx].agreedAmount;
+          const totalPaid = mergedVendors[existingIdx].advancePaid;
+          mergedVendors[existingIdx].status =
+            totalPaid >= totalAgreed && totalAgreed > 0
+              ? "Paid"
+              : totalPaid > 0
+              ? "Advance Paid"
+              : "Pending";
+        } else {
           const statusLabel =
             paid >= agreed && agreed > 0
               ? "Paid"
@@ -497,7 +511,7 @@ export default function DeparturePayments({
             serviceDescription: tv.notes || `${tv.vendorType} services`,
             agreedAmount: agreed,
             advancePaid: paid,
-            balanceAmount: agreed - paid,
+            balanceAmount: Math.max(0, agreed - paid),
             status: statusLabel,
             history:
               paid > 0
