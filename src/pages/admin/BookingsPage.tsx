@@ -60,6 +60,7 @@ import { cn, safeFormatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { trainTicketService } from "@/services/trainTicket.service";
 import EmailComposerDrawer from "@/components/admin/EmailComposerDrawer";
+import AccountingPage from "@/pages/admin/AccountingPage";
 
 import { TripManager } from "@/components/bookings/TripManagerModal";
 import { ConfirmModal } from "@/components/bookings/ConfirmModal";
@@ -760,6 +761,8 @@ export default function BookingsPage() {
     }
   };
 
+  const currentTab = searchParams.get("tab") || searchParams.get("view") || "bookings";
+
   if (detailsTarget) {
     return (
       <BookingDetailsView
@@ -776,9 +779,77 @@ export default function BookingsPage() {
     );
   }
 
+  if (currentTab === "payments") {
+    return (
+      <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 -my-3 md:-mx-5 md:-my-5 p-3 md:p-5">
+        <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+          {/* Top Tab Bar */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-[#E8EEF4] bg-[#F8FAFC] shrink-0">
+            <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-lg">
+              <button
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.delete("tab");
+                  nextParams.delete("view");
+                  setSearchParams(nextParams);
+                }}
+                className="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Bookings
+              </button>
+              <button
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.set("tab", "payments");
+                  setSearchParams(nextParams);
+                }}
+                className="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-[#FF4D00] shadow-xs"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                Payments & Collections
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F8FAFC]">
+            <AccountingPage />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden bg-[#F4F7FB] text-[#0B1528] font-sans antialiased -mx-3 -my-3 md:-mx-5 md:-my-5 p-3 md:p-5">
       <div className="flex flex-col flex-1 min-h-0 bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+        {/* Top Tab Bar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#E8EEF4] bg-[#F8FAFC] shrink-0">
+          <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-lg">
+            <button
+              onClick={() => {
+                const nextParams = new URLSearchParams(searchParams);
+                nextParams.delete("tab");
+                nextParams.delete("view");
+                setSearchParams(nextParams);
+              }}
+              className="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-[#FF4D00] shadow-xs"
+            >
+              <Users className="w-3.5 h-3.5" />
+              Bookings ({totalCount || bookings.length})
+            </button>
+            <button
+              onClick={() => {
+                const nextParams = new URLSearchParams(searchParams);
+                nextParams.set("tab", "payments");
+                setSearchParams(nextParams);
+              }}
+              className="px-3.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              Payments & Collections
+            </button>
+          </div>
+        </div>
       <BookingsToolbar
         searchInput={searchInput}
         setSearchInput={setSearchInput}

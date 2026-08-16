@@ -77,7 +77,6 @@ export default function DepartureMoneySummary({
   const revenuePerPax = Math.round(revenue / totalPax);
   const hotelPerPax = Math.round(hotelsCost / totalPax);
   const transportPerPax = Math.round(transportsCost / totalPax);
-  const guidePerPax = Math.round(guidesCost / totalPax);
   const trainPerPax = Math.round(trainCost / totalPax);
   const costPerPax = Math.round(totalVendorCost / totalPax);
   const profitPerPax = Math.round(netProfit / totalPax);
@@ -94,13 +93,13 @@ export default function DepartureMoneySummary({
       ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-6"
       : "grid-cols-2 sm:grid-cols-3 md:grid-cols-5";
 
-  const amountBlock = (n: number, emphasize = false, tone?: "ok" | "warn" | "muted") => (
+  const amountBlock = (n: number, emphasize = false, tone?: "ok" | "warn" | "bad") => (
     <div className="text-right min-w-0">
       <span
         className={cn(
           "tabular-nums",
           emphasize ? "font-semibold text-sm" : "font-medium text-xs",
-          tone === "ok" ? "text-emerald-600" : tone === "warn" ? "text-[#FF4D00]" : "text-[#0B1528]",
+          tone === "ok" ? "text-emerald-600" : tone === "warn" ? "text-[#FF4D00]" : tone === "bad" ? "text-rose-600" : "text-[#0B1528]",
         )}
       >
         {viewMode === "perpax" ? fmtPax(n) : fmt(n)}
@@ -160,7 +159,12 @@ export default function DepartureMoneySummary({
               </p>
             </div>
           ))}
-          <div className="border border-[#E8EEF4] rounded-lg px-2.5 py-2 min-w-0 bg-white col-span-2 sm:col-span-1">
+          <div
+            className={cn(
+              "border border-[#E8EEF4] rounded-lg px-2.5 py-2 min-w-0 bg-white",
+              unitMetrics.length % 2 === 0 ? "col-span-2 sm:col-span-1" : "col-span-1",
+            )}
+          >
             <p className="text-[10px] font-medium text-slate-400">Profit / pax</p>
             <p
               className={cn(
@@ -187,42 +191,60 @@ export default function DepartureMoneySummary({
               {paidPct}% collected
             </span>
           </div>
-          <div className="space-y-1.5 font-sans">
-            <div className="flex justify-between items-baseline text-xs">
-              <span className="text-slate-500">Total Bookings</span>
-              <div className="text-right">
-                <span className="font-black text-slate-800">
-                  {viewMode === "perpax" ? fmtPax(revenue) : fmt(revenue)}
-                </span>
-                {viewMode === "both" && (
-                  <span className="text-[10px] text-slate-400 block font-mono">
-                    {fmtPax(revenue)}
-                  </span>
-                )}
-              </div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-[12px] text-slate-500">Total bookings</span>
+              {amountBlock(revenue)}
             </div>
-            <div className="flex justify-between items-baseline text-xs">
-              <span className="text-slate-500">Received</span>
-              <div className="text-right">
-                <span className="font-bold text-emerald-600">
-                  {viewMode === "perpax" ? fmtPax(received) : fmt(received)}
-                </span>
-                {viewMode === "both" && (
-                  <span className="text-[10px] text-emerald-600/70 block font-mono">
-                    {fmtPax(received)}
-                  </span>
-                )}
-              </div>
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-[12px] text-slate-500">Received</span>
+              {amountBlock(received)}
             </div>
-            <div className="flex justify-between items-baseline text-xs pt-2 border-t border-slate-100">
-              <span className="font-bold text-slate-700">Pending Due</span>
-              <div className="text-right">
-                <span className="font-black text-orange-600">
-                  {viewMode === "perpax" ? fmtPax(pending) : fmt(pending)}
+            <div className="flex justify-between items-baseline gap-2 pt-2 border-t border-[#E8EEF4]">
+              <span className="text-[12px] font-medium text-[#0B1528]">Pending due</span>
+              {amountBlock(pending, true, pending > 0 ? "warn" : undefined)}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Building className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <p className="text-[12px] font-semibold text-[#0B1528]">
+                Vendor payables
+              </p>
+            </div>
+            <span className="text-[10px] font-medium text-slate-400 tabular-nums shrink-0">
+              {viewMode === "perpax" ? fmtPax(totalVendorDue) : `${fmt(totalVendorDue)} due`}
+            </span>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-[12px] text-slate-500">Hotels ({hotels.length})</span>
+              {amountBlock(hotelsCost)}
+            </div>
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-[12px] text-slate-500">Transport ({transports.length})</span>
+              {amountBlock(transportsCost)}
+            </div>
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-[12px] text-slate-500">Guides ({guides.length})</span>
+              {amountBlock(guidesCost)}
+            </div>
+            <div className="flex justify-between items-baseline gap-2 pt-2 border-t border-[#E8EEF4]">
+              <span className="text-[12px] font-medium text-[#0B1528]">Paid / due</span>
+              <div className="text-right min-w-0">
+                <span className="text-xs font-medium text-[#0B1528] tabular-nums">
+                  {viewMode === "perpax" ? fmtPax(totalVendorPaid) : fmt(totalVendorPaid)}
+                  <span className="text-slate-300"> / </span>
+                  <span className={totalVendorDue > 0 ? "text-[#FF4D00]" : "text-slate-500"}>
+                    {viewMode === "perpax" ? fmtPax(totalVendorDue) : fmt(totalVendorDue)}
+                  </span>
                 </span>
                 {viewMode === "both" && (
-                  <span className="text-[10px] text-orange-500 block font-mono">
-                    {fmtPax(pending)}
+                  <span className="text-[10px] text-slate-400 block tabular-nums">
+                    {fmtPax(totalVendorPaid)} / {fmtPax(totalVendorDue)}
                   </span>
                 )}
               </div>
@@ -230,131 +252,30 @@ export default function DepartureMoneySummary({
           </div>
         </div>
 
-        {/* Panel 2: Vendor Payables */}
-        <div className="bg-white border border-red-200 rounded-[8px] p-4 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <Building className="w-3.5 h-3.5 text-red-600" />
-              <p className="text-[10px] font-black text-red-700 uppercase tracking-wider">
-                Vendor Payables
+        <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <TrendingUp className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <p className="text-[12px] font-semibold text-[#0B1528]">
+                Trip profitability
               </p>
             </div>
-            <Badge className="bg-red-50 text-red-700 border-red-200 text-[9px] font-bold">
-              {viewMode === "perpax" ? fmtPax(totalVendorDue) : `${fmt(totalVendorDue)} Due`}
-            </Badge>
-          </div>
-          <div className="space-y-1 text-xs">
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-500">Hotels ({hotels.length})</span>
-              <div className="text-right">
-                <span className="font-semibold text-slate-700">
-                  {viewMode === "perpax" ? fmtPax(hotelsCost) : fmt(hotelsCost)}
-                </span>
-                {viewMode === "both" && (
-                  <span className="text-[10px] text-slate-400 block font-mono">
-                    {fmtPax(hotelsCost)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-500">Transport ({transports.length})</span>
-              <div className="text-right">
-                <span className="font-semibold text-slate-700">
-                  {viewMode === "perpax" ? fmtPax(transportsCost) : fmt(transportsCost)}
-                </span>
-                {viewMode === "both" && (
-                  <span className="text-[10px] text-slate-400 block font-mono">
-                    {fmtPax(transportsCost)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-500">Guides ({guides.length})</span>
-              <div className="text-right">
-                <span className="font-semibold text-slate-700">
-                  {viewMode === "perpax" ? fmtPax(guidesCost) : fmt(guidesCost)}
-                </span>
-                {viewMode === "both" && (
-                  <span className="text-[10px] text-slate-400 block font-mono">
-                    {fmtPax(guidesCost)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-between items-baseline pt-1.5 border-t border-slate-100">
-              <span className="font-bold text-slate-700">Paid / Due</span>
-              <span className="font-black text-slate-900">
-                {viewMode === "perpax" ? fmtPax(totalVendorPaid) : fmt(totalVendorPaid)} /{" "}
-                <span className="text-red-600">
-                  {viewMode === "perpax" ? fmtPax(totalVendorDue) : fmt(totalVendorDue)}
-                </span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Panel 3: Trip Profit */}
-        <div className="bg-white border border-indigo-200 rounded-[8px] p-4 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
-              <p className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">
-                Trip Profitability
-              </p>
-            </div>
-            <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[9px] font-bold">
+            <span className="text-[10px] font-medium text-slate-400 tabular-nums shrink-0">
               Margin {margin}%
-            </Badge>
+            </span>
           </div>
-          <div className="space-y-1.5 text-xs">
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-500">Gross Revenue</span>
-              <div className="text-right">
-                <span className="font-semibold text-slate-700">
-                  {viewMode === "perpax" ? fmtPax(revenue) : fmt(revenue)}
-                </span>
-                {viewMode === "both" && (
-                  <span className="text-[10px] text-slate-400 block font-mono">
-                    {fmtPax(revenue)}
-                  </span>
-                )}
-              </div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-[12px] text-slate-500">Gross revenue</span>
+              {amountBlock(revenue)}
             </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-500">Total Vendor Cost</span>
-              <div className="text-right">
-                <span className="font-semibold text-slate-700">
-                  {viewMode === "perpax" ? fmtPax(totalVendorCost) : fmt(totalVendorCost)}
-                </span>
-                {viewMode === "both" && (
-                  <span className="text-[10px] text-slate-400 block font-mono">
-                    {fmtPax(totalVendorCost)}
-                  </span>
-                )}
-              </div>
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-[12px] text-slate-500">Total vendor cost</span>
+              {amountBlock(totalVendorCost)}
             </div>
-            <div className="flex justify-between items-baseline pt-2 border-t border-slate-100">
-              <span className="font-bold text-slate-700">Net Profit</span>
-              <div className="text-right">
-                <span
-                  className={`font-black text-sm ${
-                    netProfit >= 0 ? "text-emerald-600" : "text-red-600"
-                  }`}
-                >
-                  {viewMode === "perpax" ? fmtPax(netProfit) : fmt(netProfit)}
-                </span>
-                {viewMode === "both" && (
-                  <span
-                    className={`text-[10px] font-bold block font-mono ${
-                      netProfit >= 0 ? "text-emerald-600" : "text-red-600"
-                    }`}
-                  >
-                    {fmtPax(netProfit)}
-                  </span>
-                )}
-              </div>
+            <div className="flex justify-between items-baseline gap-2 pt-2 border-t border-[#E8EEF4]">
+              <span className="text-[12px] font-medium text-[#0B1528]">Net profit</span>
+              {amountBlock(netProfit, true, netProfit >= 0 ? "ok" : "bad")}
             </div>
           </div>
         </div>

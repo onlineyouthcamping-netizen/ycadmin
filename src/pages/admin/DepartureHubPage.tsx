@@ -6128,14 +6128,14 @@ useEffect(() => {
   // CTA label by tab
   const ctaLabel: Record<string, string> = {
     overview:    "Edit Departure",
-    passengers:  "+ Add Passenger",
-    hotels:      "+ Add Hotel",
-    transport:   "+ Add Vehicle",
-    guides:      "+ Assign Guide",
-    activities:  "+ Add Activity",
-    operations:  opsSubTab === "tasks" ? "+ Add Task" : "+ Add Template",
-    finance:     "+ Add Payment",
-    documents:   "+ Upload Document",
+    passengers:  "Add Passenger",
+    hotels:      "Add Hotel",
+    transport:   "Add Vehicle",
+    guides:      "Assign Guide",
+    activities:  "Add Activity",
+    operations:  opsSubTab === "tasks" ? "Add Task" : "Add Template",
+    finance:     "Add Payment",
+    documents:   "Upload Document",
   };
 
   const rawTripCode = (
@@ -6251,7 +6251,7 @@ useEffect(() => {
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("Ready")}
-                  className="min-w-0 text-[11px] font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors"
+                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors"
                 >
                   Mark Ready
                 </button>
@@ -6260,7 +6260,7 @@ useEffect(() => {
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("Confirmed")}
-                  className="min-w-0 text-[11px] font-bold border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
                 >
                   <span className="md:hidden">Confirm</span>
                   <span className="hidden md:inline">Confirm Departure</span>
@@ -6270,7 +6270,7 @@ useEffect(() => {
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("In Progress")}
-                  className="min-w-0 text-[11px] font-bold border border-indigo-300 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-indigo-300 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
                 >
                   <span className="md:hidden">Start Trip</span>
                   <span className="hidden md:inline">Start Trip (In Progress)</span>
@@ -6280,7 +6280,7 @@ useEffect(() => {
                 <button
                   disabled={updatingStatus}
                   onClick={() => handleStatusChange("Completed")}
-                  className="min-w-0 text-[11px] font-bold border border-slate-300 bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
+                  className="w-full md:w-auto min-w-0 text-[11px] font-bold border border-slate-300 bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-2 md:px-3 md:py-1.5 rounded-[4px] transition-colors shadow-xs"
                 >
                   <span className="md:hidden">Complete</span>
                   <span className="hidden md:inline">Complete Departure</span>
@@ -6293,7 +6293,7 @@ useEffect(() => {
               >
                 Edit Departure
               </button>
-              <div className="relative min-w-0">
+              <div className="relative min-w-0 w-full md:w-auto">
                 <button
                   onClick={() => setMoreActionsOpen(!moreActionsOpen)}
                   className="w-full justify-center text-[11px] font-bold border border-slate-200 rounded-[4px] bg-white hover:bg-slate-50 text-slate-700 px-2.5 py-2 md:px-3 md:py-1.5 flex items-center gap-1 transition-colors"
@@ -6451,7 +6451,7 @@ useEffect(() => {
         </div>
 
         {/* ═══════════════════════════════════════════ CONTENT ═══════════════════════════════════════════ */}
-        <div className="flex-1 md:overflow-y-auto p-3 sm:p-6 space-y-4 min-w-0 pb-24 md:pb-6">
+        <div className="flex-1 md:overflow-y-auto p-3 sm:p-6 space-y-4 min-w-0 pb-32 md:pb-6">
           {/* ──────────────────────── OVERVIEW ──────────────────────── */}
           {activeTab === "overview" && (
             <div className="space-y-4">
@@ -6553,43 +6553,43 @@ useEffect(() => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 divide-x divide-y md:divide-y-0 divide-[#E2E8F0] bg-slate-50">
-                      <div className="p-4 text-center">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Passengers</p>
-                        <p className="font-black text-slate-800 text-base">{stats.totalParticipants}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 divide-x divide-y lg:divide-y-0 divide-[#E8EEF4] bg-[#F8FAFC]">
+                      <div className="p-3 sm:p-4 text-center min-w-0">
+                        <p className="text-[9px] font-medium text-slate-400 mb-1">Passengers</p>
+                        <p className="font-semibold text-[#0B1528] text-base tabular-nums">{stats.totalParticipants}</p>
                       </div>
-                      <div className="p-4 text-center">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Hotels</p>
-                        <p className={`font-black text-base ${isHotelsConfirmed ? "text-emerald-600" : "text-amber-600"}`}>
+                      <div className="p-3 sm:p-4 text-center min-w-0">
+                        <p className="text-[9px] font-medium text-slate-400 mb-1">Hotels</p>
+                        <p className={`font-semibold text-base ${isHotelsConfirmed ? "text-[#0B1528]" : "text-slate-500"}`}>
                           {isHotelsConfirmed ? "Confirmed" : "Pending"}
                         </p>
                       </div>
-                      <div className="p-4 text-center">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Transport</p>
-                        <p className={`font-black text-base ${isTransportConfirmed ? "text-emerald-600" : "text-amber-600"}`}>
+                      <div className="p-3 sm:p-4 text-center min-w-0">
+                        <p className="text-[9px] font-medium text-slate-400 mb-1">Transport</p>
+                        <p className={`font-semibold text-base ${isTransportConfirmed ? "text-[#0B1528]" : "text-slate-500"}`}>
                           {isTransportConfirmed ? "Confirmed" : "Pending"}
                         </p>
                       </div>
-                      <div className="p-4 text-center">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Guide</p>
-                        <p className={`font-black text-base ${isGuideAssigned ? "text-emerald-600" : "text-amber-600"}`}>
+                      <div className="p-3 sm:p-4 text-center min-w-0">
+                        <p className="text-[9px] font-medium text-slate-400 mb-1">Guide</p>
+                        <p className={`font-semibold text-base ${isGuideAssigned ? "text-[#0B1528]" : "text-slate-500"}`}>
                           {isGuideAssigned ? "Assigned" : "Pending"}
                         </p>
                       </div>
-                      <div className="p-4 text-center col-span-2 md:col-span-1">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Collections</p>
-                        <div className="flex items-end justify-center gap-2">
-                          <p className="font-black text-slate-800 text-base">{formatCompact(stats.totalCollected || stats.totalAdvance || 0)}</p>
-                          <p className="text-[10px] font-bold text-emerald-600 mb-0.5">{stats.customerPaidPercent}%</p>
+                      <div className="p-3 sm:p-4 text-center min-w-0">
+                        <p className="text-[9px] font-medium text-slate-400 mb-1">Collections</p>
+                        <div className="flex items-end justify-center gap-1.5">
+                          <p className="font-semibold text-[#0B1528] text-base tabular-nums">{formatCompact(stats.totalCollected || stats.totalAdvance || 0)}</p>
+                          <p className="text-[10px] font-medium text-slate-400 mb-0.5 tabular-nums">{stats.customerPaidPercent}%</p>
                         </div>
                       </div>
-                      <div className="p-4 text-center col-span-2 md:col-span-1">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Expenses</p>
-                        <p className="font-black text-slate-800 text-base">{formatCompact(stats.totalExpenses || 0)}</p>
+                      <div className="p-3 sm:p-4 text-center min-w-0">
+                        <p className="text-[9px] font-medium text-slate-400 mb-1">Expenses</p>
+                        <p className="font-semibold text-[#0B1528] text-base tabular-nums">{formatCompact(stats.totalExpenses || 0)}</p>
                       </div>
-                      <div className="p-4 text-center col-span-2 md:col-span-1">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Net Profit</p>
-                        <p className="font-black text-emerald-600 text-base">{formatCompact(stats.estProfit || 0)}</p>
+                      <div className="p-3 sm:p-4 text-center min-w-0">
+                        <p className="text-[9px] font-medium text-slate-400 mb-1">Net profit</p>
+                        <p className={`font-semibold text-base tabular-nums ${(stats.estProfit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatCompact(stats.estProfit || 0)}</p>
                       </div>
                     </div>
                   </div>
@@ -9837,19 +9837,19 @@ useEffect(() => {
 
           {/* ══════════════════════════ OPERATIONS TAB ══════════════════════════ */}
           {activeTab === "operations" && (
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-2 mb-3">
+            <div className="flex items-center gap-0 border-b border-[#E8EEF4] mb-3 min-w-0 overflow-x-auto no-scrollbar">
               {([
-                { id: "control", label: "Trip Control Sheet" },
-                { id: "tasks",   label: "Checklist & Tasks" },
+                { id: "control", label: "Trip control sheet" },
+                { id: "tasks",   label: "Checklist & tasks" },
               ] as { id: "control" | "tasks"; label: string }[]).map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setOpsSubTab(s.id as any)}
                   className={cn(
-                    "px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap border",
+                    "pb-2.5 pt-0.5 px-3 text-[12px] font-semibold transition-all whitespace-nowrap border-b-2 shrink-0",
                     opsSubTab === s.id
-                      ? "bg-[#F97316] text-white border-[#F97316] shadow-sm"
-                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                      ? "text-[#FF4D00] border-[#FF4D00]"
+                      : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200",
                   )}
                 >
                   {s.label}

@@ -111,10 +111,9 @@ const sidebarModules: SidebarModule[] = [
     icon: ShoppingBag,
     hasSubItems: true,
     subItems: [
-      { title: "Payments", url: "/admin/accounting?tab=payments" },
-      { title: "Quotations", url: "/admin/quotations" },
-      { title: "Booking Links", url: "/admin/booking-forms" },
       { title: "Bookings", url: "/admin/bookings" },
+      { title: "Booking Links", url: "/admin/booking-forms" },
+      { title: "Quotations", url: "/admin/quotations" },
     ],
   },
   {
