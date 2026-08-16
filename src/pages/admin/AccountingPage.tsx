@@ -1628,45 +1628,53 @@ export default function AccountingPage() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
 
         {/* ──────────────────────── TAB 4: OUTGOING DISBURSEMENTS ──────────────────────── */}
         {activeTab === "expenses" && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-1 max-w-md">
-                <div className="relative w-full">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="space-y-3">
+            {/* Expenses panel */}
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 flex-col gap-2 border-b border-[#E8EEF4] px-3 py-2.5 lg:flex-row lg:items-center">
+                <div className="relative w-full min-w-0 lg:w-72">
+                  <Search
+                    className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                    strokeWidth={1.75}
+                  />
                   <Input
-                    placeholder="Search by vendor, trip, category..."
+                    placeholder="Search vendor, trip or category"
                     value={expenseSearch}
                     onChange={(e) => setExpenseSearch(e.target.value)}
-                    className="pl-8.5 h-8.5 text-xs bg-white"
+                    className="h-8 rounded-md border-[#E8EEF4] bg-white pl-8 text-[12px] font-medium text-[#0B1528] shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                   />
                 </div>
+
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <select
+                    value={expenseCategoryFilter}
+                    onChange={(e) => setExpenseCategoryFilter(e.target.value)}
+                    className={filterSelectClass}
+                    aria-label="Filter by category"
+                  >
+                    <option value="ALL">All categories</option>
+                    <option value="Hotels">Hotels and camps</option>
+                    <option value="Transport">Transport and fleets</option>
+                    <option value="Guides">Guides and leaders</option>
+                    <option value="Activities">Activities and permits</option>
+                    <option value="Office">Office ops</option>
+                  </select>
+                </div>
+
+                <span className="text-[11px] font-medium text-slate-400 lg:ml-auto">
+                  Showing {filteredExpenses.length} payouts
+                </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <select
-                  value={expenseCategoryFilter}
-                  onChange={(e) => setExpenseCategoryFilter(e.target.value)}
-                  className="h-8.5 px-3 rounded-lg border border-[#E8EEF4] bg-white text-xs font-medium text-slate-600"
-                >
-                  <option value="ALL">All Categories</option>
-                  <option value="Hotels">Hotels / Camps</option>
-                  <option value="Transport">Transport / Fleets</option>
-                  <option value="Guides">Guides / Leaders</option>
-                  <option value="Activities">Activities / Permits</option>
-                  <option value="Office">Office Ops</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Expenses Table */}
-            <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
-              <table className="w-full text-left text-xs">
+              <div className="min-w-0 overflow-x-auto">
+              <table className="w-full min-w-[1100px] text-left text-[12px]">
                 <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>

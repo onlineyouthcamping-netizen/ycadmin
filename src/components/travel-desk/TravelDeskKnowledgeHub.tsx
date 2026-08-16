@@ -14,15 +14,7 @@ import {
   MapPin,
   Luggage,
   ChevronRight,
-  Info,
-  Settings,
-  Share2,
-  Calendar,
-  Users,
-  Activity,
-  Sun,
 } from "lucide-react";
-import api from "@/services/api";
 import { CategoryArticlesView } from "./CategoryArticlesView";
 
 interface TravelDeskKnowledgeHubProps {
@@ -30,21 +22,10 @@ interface TravelDeskKnowledgeHubProps {
   workspace: TravelDeskWorkspace;
 }
 
-interface Notice {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  priority: string;
-  requiresAcknowledgement: boolean;
-  publishedAt: string;
-}
-
 export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
   trip,
   workspace,
 }) => {
-  const [notices, setNotices] = useState<Notice[]>([]);
   const [activeCategory, setActiveCategory] = useState<any | null>(null);
   const [currentWorkspace, setCurrentWorkspace] =
     useState<TravelDeskWorkspace>(workspace);
@@ -54,20 +35,6 @@ export const TravelDeskKnowledgeHub: React.FC<TravelDeskKnowledgeHubProps> = ({
     setCurrentWorkspace(workspace);
     setActiveCategory(null); // Reset detail view on trip change
   }, [workspace, trip.id]);
-
-  useEffect(() => {
-    const fetchNotices = async () => {
-      try {
-        const res = await api.get(`/travel-desk/${trip.id}/notices`);
-        if (res.data.success) {
-          setNotices(res.data.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch notices", err);
-      }
-    };
-    fetchNotices();
-  }, [trip.id]);
 
   const refreshWorkspace = async () => {
     try {
