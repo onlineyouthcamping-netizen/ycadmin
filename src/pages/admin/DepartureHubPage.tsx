@@ -1448,6 +1448,7 @@ export default function DepartureHubPage() {
   const [dbTasks, setDbTasks] = useState<any[]>([]);
   const [checklistTasks, setChecklistTasks] = useState<any[]>([]);
   const [dbVendors, setDbVendors] = useState<any[]>([]);
+  const [dbGuideVendors, setDbGuideVendors] = useState<any[]>([]);
 
   // Passengers filter states
   const [paxSearch, setPaxSearch] = useState("");
@@ -1974,6 +1975,10 @@ export default function DepartureHubPage() {
           ["hotel", "homestay", "camp"].includes(v.type?.toLowerCase()),
         );
         setDbVendors(tripHotelVendors);
+        const tripGuideVendors = allVendors.filter((v: any) =>
+          ["guide", "trek_leader", "trek leader"].includes(v.type?.toLowerCase()),
+        );
+        setDbGuideVendors(tripGuideVendors);
       }
 
       // 6. Trip details
@@ -9495,18 +9500,70 @@ useEffect(() => {
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
                         Guide Name *
                       </label>
-                      <input
-                        required
-                        value={guideForm.guideName}
-                        onChange={(e) =>
-                          setGuideForm((f) => ({
-                            ...f,
-                            guideName: e.target.value,
-                          }))
-                        }
-                        placeholder="e.g. Dikshu Sharma"
-                        className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      />
+                      {dbGuideVendors.length > 0 ? (
+                        <>
+                          <select
+                            required
+                            value={guideForm.guideName}
+                            onChange={(e) => {
+                              const selectedName = e.target.value;
+                              setGuideForm((f) => ({ ...f, guideName: selectedName }));
+                              // Auto-fill from vendor directory
+                              const matched = dbGuideVendors.find(
+                                (v: any) =>
+                                  (v.contactPerson || v.name || "").toLowerCase() === selectedName.toLowerCase() ||
+                                  (v.name || "").toLowerCase() === selectedName.toLowerCase()
+                              );
+                              if (matched) {
+                                const rateConfig = matched.rateConfigs?.[0] || matched.rates?.[0];
+                                const dailyRate = rateConfig?.perDayFee || rateConfig?.rate || 0;
+                                setGuideForm((f) => ({
+                                  ...f,
+                                  guideName: matched.contactPerson || matched.name || selectedName,
+                                  emergencyContact: matched.phone || matched.contactPhone || f.emergencyContact,
+                                  agreedAmount: dailyRate > 0 ? String(dailyRate * Number(f.daysWorked || 5)) : f.agreedAmount,
+                                }));
+                              }
+                            }}
+                            className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                          >
+                            <option value="">Select guide from vendor directory...</option>
+                            {dbGuideVendors.map((v: any) => (
+                              <option key={v.id} value={v.contactPerson || v.name}>
+                                {v.name || v.contactPerson}{v.destination ? ` · ${v.destination}` : ""}
+                              </option>
+                            ))}
+                            <option value="__manual__">✏️ Enter manually...</option>
+                          </select>
+                          {guideForm.guideName === "__manual__" && (
+                            <input
+                              required
+                              value=""
+                              onChange={(e) =>
+                                setGuideForm((f) => ({
+                                  ...f,
+                                  guideName: e.target.value,
+                                }))
+                              }
+                              placeholder="Type guide name..."
+                              className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300 mt-1"
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <input
+                          required
+                          value={guideForm.guideName}
+                          onChange={(e) =>
+                            setGuideForm((f) => ({
+                              ...f,
+                              guideName: e.target.value,
+                            }))
+                          }
+                          placeholder="e.g. Dikshu Sharma"
+                          className="h-8 w-full px-2.5 text-[11px] rounded-[4px] border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      )}
                     </div>
                     <div>
                       <label className="text-[9px] font-extrabold text-slate-400 uppercase block mb-1">
