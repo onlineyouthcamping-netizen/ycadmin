@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation, useSearchParams, useNavigation } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 import { ROLE_PERMISSIONS } from "@/lib/permissions";
 import {
@@ -663,8 +663,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const navigation = useNavigation();
-  const isNavigating = navigation.state === "loading";
+  const [isNavigating, setIsNavigating] = useState(false);
+  const prevLocationRef = useRef(location.key);
+
+  useEffect(() => {
+    if (prevLocationRef.current !== location.key) {
+      prevLocationRef.current = location.key;
+      setIsNavigating(true);
+      const t = setTimeout(() => setIsNavigating(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [location.key]);
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
