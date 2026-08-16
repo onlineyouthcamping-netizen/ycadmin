@@ -40,6 +40,7 @@ import {
   MoreVertical,
   LayoutGrid,
   Rows3,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,6 +134,8 @@ export default function OperationsHubPage() {
   ]);
 
   // Filter States
+  const [filterBookingStatus, setFilterBookingStatus] = useState<string>("booked"); // "booked" | "no_bookings" | "all"
+  const [isNoBookingsExpanded, setIsNoBookingsExpanded] = useState<boolean>(false);
   const [filterDateRange, setFilterDateRange] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTripId, setFilterTripId] = useState<string>("all");
@@ -320,8 +323,21 @@ export default function OperationsHubPage() {
     );
   }, [trips, bookings]);
 
+  const bookedComputedDepartures = useMemo(
+    () => computedDepartures.filter((d) => (d.participantCount || 0) > 0),
+    [computedDepartures],
+  );
+
+  const noBookingComputedDepartures = useMemo(
+    () => computedDepartures.filter((d) => (d.participantCount || 0) === 0),
+    [computedDepartures],
+  );
+
   const filteredDepartures = useMemo(() => {
     return computedDepartures.filter((d) => {
+      const hasBookings = (d.participantCount || 0) > 0;
+      if (filterBookingStatus === "booked" && !hasBookings) return false;
+      if (filterBookingStatus === "no_bookings" && hasBookings) return false;
       if (filterTripId !== "all" && d.tripId !== filterTripId) return false;
       if (filterStatus === "live" && !d.isLive) return false;
       if (filterStatus === "upcoming" && d.isLive) return false;
@@ -332,11 +348,11 @@ export default function OperationsHubPage() {
       if (filterDateRange === "oct2026" && !d.departureDateStr?.startsWith("2026-10")) return false;
       return true;
     });
-  }, [computedDepartures, filterTripId, filterStatus, filterDateRange]);
+  }, [computedDepartures, filterBookingStatus, filterTripId, filterStatus, filterDateRange]);
 
   useEffect(() => {
     setMobileVisibleCounts({});
-  }, [filterTripId, filterStatus, filterDateRange]);
+  }, [filterBookingStatus, filterTripId, filterStatus, filterDateRange]);
 
   const liveDepartures = useMemo(
     () => filteredDepartures.filter((d) => d.isLive),
@@ -346,6 +362,18 @@ export default function OperationsHubPage() {
     () => filteredDepartures.filter((d) => !d.isLive),
     [filteredDepartures],
   );
+
+  // Separate list for "No Bookings Yet" collapsible section when viewing "booked"
+  const noBookingFilteredDepartures = useMemo(() => {
+    return computedDepartures.filter((d) => {
+      if ((d.participantCount || 0) > 0) return false;
+      if (filterTripId !== "all" && d.tripId !== filterTripId) return false;
+      if (filterDateRange === "aug2026" && !d.departureDateStr?.startsWith("2026-08")) return false;
+      if (filterDateRange === "sep2026" && !d.departureDateStr?.startsWith("2026-09")) return false;
+      if (filterDateRange === "oct2026" && !d.departureDateStr?.startsWith("2026-10")) return false;
+      return true;
+    });
+  }, [computedDepartures, filterTripId, filterDateRange]);
 
   const renderDeparturesTable = (
     departuresList: any[],
@@ -1574,10 +1602,10 @@ export default function OperationsHubPage() {
                 Departures Hub
               </h1>
               <p className="hidden md:block text-[12px] text-slate-500 mt-0.5">
-                Track upcoming departures, readiness, and key operations.
+                {bookedComputedDepartures.length} active departures with bookings · {noBookingComputedDepartures.length} dates without bookings.
               </p>
               <p className="md:hidden text-[12px] text-slate-500 mt-0.5">
-                {computedDepartures.length} departures tracked
+                {bookedComputedDepartures.length} active departures tracked
               </p>
             </div>
             <Button
@@ -1596,32 +1624,38 @@ export default function OperationsHubPage() {
           {/* KPI + filters in one card */}
           <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
             <div className="grid grid-cols-4 divide-x divide-[#E8EEF4]">
-              {[
-                {
-                  label: "Upcoming",
-                  value: computedDepartures.length,
-                  tone: "text-[#0B1528]",
-                },
-                {
-                  label: "Ready",
-                  value: computedDepartures.filter((d) => d.status === "READY")
-                    .length,
-                  tone: "text-[#0B1528]",
-                },
-                {
-                  label: "Needs attention",
-                  value: computedDepartures.filter(
-                    (d) => d.readiness >= 50 && d.readiness < 90,
-                  ).length,
-                  tone: "text-[#0B1528]",
-                },
-                {
-                  label: "Critical",
-                  value: computedDepartures.filter((d) => d.readiness < 50)
-                    .length,
-                  tone: "text-[#FF4D00]",
-                },
-              ].map(({ label, value, tone }) => (
+              {(() => {
+                const kpiTargetList =
+                  filterBookingStatus === "all"
+                    ? computedDepartures
+                    : filterBookingStatus === "no_bookings"
+                      ? noBookingComputedDepartures
+                      : bookedComputedDepartures;
+                return [
+                  {
+                    label: filterBookingStatus === "all" ? "All Departures" : "Active Departures",
+                    value: kpiTargetList.length,
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Ready",
+                    value: kpiTargetList.filter((d) => d.status === "READY").length,
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Needs attention",
+                    value: kpiTargetList.filter(
+                      (d) => d.readiness >= 50 && d.readiness < 90,
+                    ).length,
+                    tone: "text-[#0B1528]",
+                  },
+                  {
+                    label: "Critical",
+                    value: kpiTargetList.filter((d) => d.readiness < 50).length,
+                    tone: "text-[#FF4D00]",
+                  },
+                ];
+              })().map(({ label, value, tone }) => (
                 <div key={label} className="px-3 py-2.5 md:px-4 md:py-3 min-w-0">
                   <p className="text-[11px] text-slate-500 font-medium truncate">
                     {label}
@@ -1640,29 +1674,52 @@ export default function OperationsHubPage() {
 
             <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 py-2 border-t border-[#E8EEF4]">
               {[
-                { id: "all", label: "All" },
-                { id: "live", label: "Live" },
-                { id: "upcoming", label: "Upcoming" },
-                { id: "ready", label: "Ready" },
-                { id: "planning", label: "In planning" },
-              ].map((chip) => (
-                <button
-                  key={chip.id}
-                  type="button"
-                  onClick={() => setFilterStatus(chip.id)}
-                  className={cn(
-                    "shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap border transition-colors",
-                    filterStatus === chip.id
-                      ? "bg-[#0B1528] border-[#0B1528] text-white"
-                      : "bg-white border-[#E8EEF4] text-slate-600",
-                  )}
-                >
-                  {chip.label}
-                </button>
-              ))}
+                { id: "booked", label: `Booked (${bookedComputedDepartures.length})`, isBookingFilter: true },
+                { id: "all", label: "All Status", isBookingFilter: false },
+                { id: "live", label: "Live", isBookingFilter: false },
+                { id: "upcoming", label: "Upcoming", isBookingFilter: false },
+                { id: "ready", label: "Ready", isBookingFilter: false },
+                { id: "no_bookings", label: `No Bookings (${noBookingComputedDepartures.length})`, isBookingFilter: true },
+                { id: "all_dates", label: `All Dates (${computedDepartures.length})`, isBookingFilter: true },
+              ].map((chip) => {
+                const isActive = chip.isBookingFilter
+                  ? (chip.id === "all_dates" ? filterBookingStatus === "all" : filterBookingStatus === chip.id)
+                  : filterStatus === chip.id;
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => {
+                      if (chip.isBookingFilter) {
+                        setFilterBookingStatus(chip.id === "all_dates" ? "all" : chip.id);
+                      } else {
+                        setFilterStatus(chip.id);
+                      }
+                    }}
+                    className={cn(
+                      "shrink-0 px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap border transition-colors",
+                      isActive
+                        ? "bg-[#0B1528] border-[#0B1528] text-white"
+                        : "bg-white border-[#E8EEF4] text-slate-600",
+                    )}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="hidden md:flex flex-wrap items-center gap-2 px-3 py-2 border-t border-[#E8EEF4]">
+              <Select value={filterBookingStatus} onValueChange={setFilterBookingStatus}>
+                <SelectTrigger className="w-[170px] h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium text-slate-700 shadow-none">
+                  <SelectValue placeholder="Bookings" />
+                </SelectTrigger>
+                <SelectContent className="rounded-md">
+                  <SelectItem value="booked">With Bookings ({bookedComputedDepartures.length})</SelectItem>
+                  <SelectItem value="no_bookings">No Bookings Yet ({noBookingComputedDepartures.length})</SelectItem>
+                  <SelectItem value="all">All Departures ({computedDepartures.length})</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={filterDateRange} onValueChange={setFilterDateRange}>
                 <SelectTrigger className="w-[140px] h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium text-slate-700 shadow-none">
                   <SelectValue placeholder="Date" />
@@ -1756,7 +1813,9 @@ export default function OperationsHubPage() {
               </h3>
               {renderDeparturesTable(
                 liveDepartures,
-                "No live trips currently running.",
+                filterBookingStatus === "booked"
+                  ? "No active live trips with bookings."
+                  : "No live trips currently running.",
                 "live",
               )}
             </div>
@@ -1770,11 +1829,57 @@ export default function OperationsHubPage() {
               </h3>
               {renderDeparturesTable(
                 upcomingDepartures,
-                "No upcoming trips scheduled.",
+                filterBookingStatus === "booked"
+                  ? "No upcoming trips with bookings."
+                  : "No upcoming trips scheduled.",
                 "upcoming",
               )}
             </div>
           </div>
+
+          {/* Collapsible No Bookings Yet Section */}
+          {filterBookingStatus === "booked" && noBookingFilteredDepartures.length > 0 && (
+            <div className="border border-[#E8EEF4] bg-white rounded-xl overflow-hidden mt-3">
+              <button
+                type="button"
+                onClick={() => setIsNoBookingsExpanded(!isNoBookingsExpanded)}
+                className="w-full px-4 py-3 bg-[#F8FAFC] hover:bg-slate-100 transition-colors flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-semibold text-[#0B1528]">
+                        No Bookings Yet
+                      </span>
+                      <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums">
+                        {noBookingFilteredDepartures.length} departures
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Calendar dates with 0 passenger bookings. Click to {isNoBookingsExpanded ? "collapse" : "view and manage early ops"}.
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2",
+                    isNoBookingsExpanded && "rotate-180",
+                  )}
+                />
+              </button>
+
+              {isNoBookingsExpanded && (
+                <div className="p-3 border-t border-[#E8EEF4] bg-[#FBFDFF]">
+                  {renderDeparturesTable(
+                    noBookingFilteredDepartures,
+                    "No empty departure dates found.",
+                    "no_bookings",
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <p className="text-[11px] text-slate-400">
             <span className="md:hidden">
