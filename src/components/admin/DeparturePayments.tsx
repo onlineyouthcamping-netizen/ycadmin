@@ -34,6 +34,7 @@ import {
   CollectionAccount,
 } from "@/services/collectionAccounts.service";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { useAuthStore } from "@/store/auth.store";
 import api from "@/services/api";
 
 interface DeparturePaymentsProps {
@@ -77,6 +78,20 @@ export default function DeparturePayments({
   const [miscPayments, setMiscPayments] = useState<any[]>([]);
   const [adjustments, setAdjustments] = useState<any[]>([]);
 
+  // Auth and Approver Authority
+  const { admin } = useAuthStore();
+  const isApprover = Boolean(
+    !admin?.role ||
+    admin?.role === "SUPERADMIN" ||
+    admin?.role === "FOUNDER" ||
+    admin?.role === "ADMIN" ||
+    admin?.role === "FINANCE" ||
+    admin?.role?.toUpperCase().includes("FINANCE") ||
+    admin?.role?.toUpperCase().includes("ADMIN") ||
+    admin?.role?.toUpperCase().includes("FOUNDER") ||
+    admin?.role?.toUpperCase().includes("SUPER")
+  );
+
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [clientStatusFilter, setClientStatusFilter] = useState("All Status");
@@ -116,6 +131,16 @@ export default function DeparturePayments({
     status: "Advance Paid",
     remarks: "",
   });
+
+  // Quick Payment Proof Attachment Modal
+  const [quickProofModalOpen, setQuickProofModalOpen] = useState(false);
+  const [quickProofTarget, setQuickProofTarget] = useState<{
+    vendorId: string;
+    historyIndex: number;
+    vendorName: string;
+    amount: number;
+    proofUrl: string;
+  } | null>(null);
 
   const [addActivityPaymentOpen, setAddActivityPaymentOpen] = useState(false);
   const [activityPaymentForm, setActivityPaymentForm] = useState({
@@ -914,6 +939,7 @@ export default function DeparturePayments({
     e.preventDefault();
     const agreedNum = Number(vendorPaymentForm.agreedAmount) || 0;
     const inputAmount = Number(vendorPaymentForm.advancePaid) || 0;
+    const staffName = admin?.name || admin?.email || "Operations Staff";
 
     if (editingVendorPayment) {
       const prevPaid = Number(editingVendorPayment.advancePaid) || 0;
@@ -929,6 +955,7 @@ export default function DeparturePayments({
           : "Pending";
 
       const newHistoryItem = {
+        id: `vtxn-${Date.now()}`,
         date:
           vendorPaymentForm.paymentDate ||
           new Date().toISOString().substring(0, 10),
@@ -936,7 +963,14 @@ export default function DeparturePayments({
         method: vendorPaymentForm.paymentMode || "Bank Transfer",
         txnId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
         type: newTotalPaid >= agreedNum ? "SETTLEMENT" : "INSTALLMENT",
-        status: "Paid",
+        status: "Pending Verification",
+        approvalStatus: "PENDING_APPROVAL",
+        invoiceProof: vendorPaymentForm.invoiceProof || "",
+        proofUrl: vendorPaymentForm.invoiceProof || "",
+        uploadedBy: staffName,
+        recordedAt: new Date().toISOString(),
+        approvedBy: null,
+        approvedAt: null,
       };
 
       const updatedHistory = [
@@ -950,6 +984,7 @@ export default function DeparturePayments({
           advancePaid: newTotalPaid,
           remainingPayable: remaining,
           status,
+          history: updatedHistory,
         });
       } catch {}
 
@@ -965,6 +1000,8 @@ export default function DeparturePayments({
                 advancePaid: newTotalPaid,
                 remainingPayable: remaining,
                 status,
+                invoiceProof: vendorPaymentForm.invoiceProof || v.invoiceProof,
+                proofUrl: vendorPaymentForm.invoiceProof || v.proofUrl,
                 history: updatedHistory,
               }
             : v,
@@ -982,6 +1019,29 @@ export default function DeparturePayments({
           ? "Advance Paid"
           : "Pending";
 
+      const newHistoryItem =
+        inputAmount > 0
+          ? [
+              {
+                id: `vtxn-${Date.now()}`,
+                date: vendorPaymentForm.paymentDate,
+                amount: inputAmount,
+                method: vendorPaymentForm.paymentMode,
+                txnId:
+                  vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
+                type: inputAmount >= agreedNum ? "SETTLEMENT" : "ADVANCE",
+                status: "Pending Verification",
+                approvalStatus: "PENDING_APPROVAL",
+                invoiceProof: vendorPaymentForm.invoiceProof || "",
+                proofUrl: vendorPaymentForm.invoiceProof || "",
+                uploadedBy: staffName,
+                recordedAt: new Date().toISOString(),
+                approvedBy: null,
+                approvedAt: null,
+              },
+            ]
+          : [];
+
       const newVnd = {
         id: `VND-${Date.now()}`,
         vendorName: vendorPaymentForm.vendorName,
@@ -997,20 +1057,9 @@ export default function DeparturePayments({
         paymentDate: vendorPaymentForm.paymentDate,
         paymentMode: vendorPaymentForm.paymentMode,
         transactionId: vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
-        history:
-          inputAmount > 0
-            ? [
-                {
-                  date: vendorPaymentForm.paymentDate,
-                  amount: inputAmount,
-                  method: vendorPaymentForm.paymentMode,
-                  txnId:
-                    vendorPaymentForm.transactionId || `NEFT-${Date.now()}`,
-                  type: inputAmount >= agreedNum ? "SETTLEMENT" : "ADVANCE",
-                  status: "Paid",
-                },
-              ]
-            : [],
+        invoiceProof: vendorPaymentForm.invoiceProof || "",
+        proofUrl: vendorPaymentForm.invoiceProof || "",
+        history: newHistoryItem,
       };
       try {
         await opsService.createVendorPayment(tripId, {
@@ -1025,6 +1074,102 @@ export default function DeparturePayments({
     }
     setAddVendorPaymentOpen(false);
     setEditingVendorPayment(null);
+  };
+
+  // Vendor Payment Proof Verification / Approval Handler
+  const handleApproveVendorPaymentProof = async (
+    vendorPaymentId: string,
+    historyIndex: number,
+    action: "APPROVE" | "REJECT",
+  ) => {
+    const approverName = admin?.name || admin?.email || "Finance Approver";
+    const approverRole = admin?.role || "Finance";
+    const approverTag = `${approverName} (${approverRole})`;
+
+    setVendorPayments((prev) =>
+      prev.map((v) => {
+        if (v.id !== vendorPaymentId) return v;
+        const updatedHist = (v.history || []).map((h: any, idx: number) => {
+          if (idx !== historyIndex) return h;
+          return {
+            ...h,
+            approvalStatus: action === "APPROVE" ? "APPROVED" : "REJECTED",
+            status: action === "APPROVE" ? "Verified" : "Rejected",
+            approvedBy: action === "APPROVE" ? approverTag : null,
+            approvedAt: action === "APPROVE" ? new Date().toISOString() : null,
+          };
+        });
+
+        // Persist to backend
+        opsService
+          .updateVendorPayment(tripId, v.id, {
+            ...v,
+            history: updatedHist,
+            status:
+              action === "APPROVE"
+                ? v.remainingPayable === 0
+                  ? "Paid"
+                  : "Advance Paid"
+                : v.status,
+          })
+          .catch(() => {});
+
+        return {
+          ...v,
+          history: updatedHist,
+        };
+      }),
+    );
+
+    if (action === "APPROVE") {
+      toast.success(`Payment verified and approved by ${approverTag}!`);
+    } else {
+      toast.error(`Payment marked as rejected by ${approverTag}.`);
+    }
+  };
+
+  // Quick Proof Attach Save Handler
+  const handleSaveQuickProof = async () => {
+    if (!quickProofTarget || !quickProofTarget.proofUrl) {
+      toast.error("Please upload a payment proof screenshot first");
+      return;
+    }
+    const { vendorId, historyIndex, proofUrl } = quickProofTarget;
+    const uploader = admin?.name || admin?.email || "Operations Staff";
+
+    setVendorPayments((prev) =>
+      prev.map((v) => {
+        if (v.id !== vendorId) return v;
+        const updatedHist = (v.history || []).map((h: any, idx: number) => {
+          if (idx !== historyIndex) return h;
+          return {
+            ...h,
+            invoiceProof: proofUrl,
+            proofUrl: proofUrl,
+            uploadedBy: uploader,
+            approvalStatus: h.approvalStatus || "PENDING_APPROVAL",
+          };
+        });
+
+        opsService
+          .updateVendorPayment(tripId, v.id, {
+            ...v,
+            invoiceProof: proofUrl,
+            history: updatedHist,
+          })
+          .catch(() => {});
+
+        return {
+          ...v,
+          invoiceProof: proofUrl,
+          history: updatedHist,
+        };
+      }),
+    );
+
+    toast.success("Payment proof screenshot attached successfully!");
+    setQuickProofModalOpen(false);
+    setQuickProofTarget(null);
   };
 
   const handleActivityPaymentSubmit = async (e: React.FormEvent) => {
@@ -2617,49 +2762,146 @@ export default function DeparturePayments({
                                         recorded against this invoice yet.
                                       </div>
                                     ) : (
-                                      v.history.map((h: any, idx: number) => (
-                                        <div
-                                          key={idx}
-                                          className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs"
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-blue-50 rounded-lg">
-                                              <CreditCard className="w-4 h-4 text-blue-600" />
-                                            </div>
-                                            <div>
-                                              <div className="flex items-center gap-2">
-                                                <span className="font-extrabold text-slate-900 text-sm">
-                                                  {formatCurrency(h.amount)}
-                                                </span>
-                                                <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
-                                                  {h.method}
-                                                </span>
-                                                <span className="text-xs font-mono text-slate-500">
-                                                  TXN: {h.txnId}
-                                                </span>
-                                              </div>
-                                              <p className="text-xs text-slate-500 mt-0.5">
-                                                Date: {h.date} · Type:{" "}
-                                                {h.type || "ADVANCE"}
-                                              </p>
-                                            </div>
-                                          </div>
+                                      v.history.map((h: any, idx: number) => {
+                                        const isApproved =
+                                          h.approvalStatus === "APPROVED" ||
+                                          (h.status === "Verified" && h.approvedBy);
+                                        const isRejected =
+                                          h.approvalStatus === "REJECTED";
+                                        const isPending = !isApproved && !isRejected;
 
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                                              VERIFIED ✓
-                                            </span>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => generateVendorInvoicePDF(v, h)}
-                                              className="h-7 text-[11px] font-bold bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
-                                            >
-                                              Download Invoice PDF
-                                            </Button>
+                                        return (
+                                          <div
+                                            key={idx}
+                                            className="bg-white p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs"
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <div className="p-2 bg-blue-50 rounded-lg shrink-0">
+                                                <CreditCard className="w-4 h-4 text-blue-600" />
+                                              </div>
+                                              <div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                  <span className="font-extrabold text-slate-900 text-sm">
+                                                    {formatCurrency(h.amount)}
+                                                  </span>
+                                                  <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">
+                                                    {h.method}
+                                                  </span>
+                                                  <span className="text-xs font-mono text-slate-500">
+                                                    TXN: {h.txnId}
+                                                  </span>
+                                                </div>
+                                                <p className="text-xs text-slate-500 mt-0.5">
+                                                  Date: {h.date} · Type:{" "}
+                                                  {h.type || "ADVANCE"}
+                                                  {h.uploadedBy
+                                                    ? ` · Recorded by: ${h.uploadedBy}`
+                                                    : ""}
+                                                  {h.approvedBy
+                                                    ? ` · Approved by: ${h.approvedBy}`
+                                                    : ""}
+                                                </p>
+                                              </div>
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              {/* Payment Proof View or Upload Action */}
+                                              {h.invoiceProof || h.proofUrl ? (
+                                                <a
+                                                  href={h.invoiceProof || h.proofUrl}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  className="h-7 px-2.5 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md inline-flex items-center gap-1 transition-colors"
+                                                >
+                                                  <Eye className="w-3.5 h-3.5" />
+                                                  View Payment Proof
+                                                </a>
+                                              ) : (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setQuickProofTarget({
+                                                      vendorId: v.id,
+                                                      historyIndex: idx,
+                                                      vendorName: v.vendorName,
+                                                      amount: h.amount,
+                                                      proofUrl: "",
+                                                    });
+                                                    setQuickProofModalOpen(true);
+                                                  }}
+                                                  className="h-7 px-2.5 text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-md inline-flex items-center gap-1 transition-colors"
+                                                >
+                                                  <Upload className="w-3.5 h-3.5" />
+                                                  Upload Payment Proof
+                                                </button>
+                                              )}
+
+                                              {/* Verification & Approval Status / Action */}
+                                              {isApproved ? (
+                                                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-md flex items-center gap-1">
+                                                  <Check className="w-3 h-3 text-emerald-700" />
+                                                  APPROVED ✓
+                                                </span>
+                                              ) : isRejected ? (
+                                                <span className="text-[10px] font-bold bg-red-100 text-red-800 border border-red-300 px-2.5 py-1 rounded-md flex items-center gap-1">
+                                                  <X className="w-3 h-3 text-red-700" />
+                                                  REJECTED
+                                                </span>
+                                              ) : (
+                                                <div className="flex items-center gap-1.5">
+                                                  <span className="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded">
+                                                    PENDING APPROVAL
+                                                  </span>
+                                                  {isApprover && (
+                                                    <div className="flex items-center gap-1">
+                                                      <Button
+                                                        size="sm"
+                                                        onClick={() =>
+                                                          handleApproveVendorPaymentProof(
+                                                            v.id,
+                                                            idx,
+                                                            "APPROVE",
+                                                          )
+                                                        }
+                                                        className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5"
+                                                      >
+                                                        <Check className="w-3 h-3 mr-0.5" />
+                                                        Approve
+                                                      </Button>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() =>
+                                                          handleApproveVendorPaymentProof(
+                                                            v.id,
+                                                            idx,
+                                                            "REJECT",
+                                                          )
+                                                        }
+                                                        className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50 border-red-200 px-2"
+                                                      >
+                                                        <X className="w-3 h-3 mr-0.5" />
+                                                        Reject
+                                                      </Button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )}
+
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                  generateVendorInvoicePDF(v, h)
+                                                }
+                                                className="h-7 text-[11px] font-bold bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
+                                              >
+                                                Download Invoice PDF
+                                              </Button>
+                                            </div>
                                           </div>
-                                        </div>
-                                      ))
+                                        );
+                                      })
                                     )}
 
                                     {/* Next Settlement Card */}
@@ -3662,6 +3904,21 @@ export default function DeparturePayments({
               />
             </div>
 
+            {/* Payment Proof / Receipt Screenshot Upload */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Payment Proof / Receipt Screenshot
+              </label>
+              <ImageUpload
+                label="Upload Payment Proof Screenshot"
+                value={vendorPaymentForm.invoiceProof}
+                onUpload={(url) =>
+                  setVendorPaymentForm((prev) => ({ ...prev, invoiceProof: url }))
+                }
+                compact
+              />
+            </div>
+
             <div>
               <label className="text-[11px] font-bold text-slate-700 block mb-1">
                 Service Description
@@ -3680,7 +3937,7 @@ export default function DeparturePayments({
               />
             </div>
 
-            <div className="flex gap-2 justify-end pt-2">
+            <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
               <Button
                 type="button"
                 variant="ghost"
@@ -3691,12 +3948,70 @@ export default function DeparturePayments({
               </Button>
               <Button
                 type="submit"
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
               >
                 {editingVendorPayment ? "Save & Record Payment" : "Save & Record Payable"}
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── MODAL: QUICK ATTACH PAYMENT PROOF ──────────────────────── */}
+      <Dialog
+        open={quickProofModalOpen}
+        onOpenChange={(open) => {
+          setQuickProofModalOpen(open);
+          if (!open) setQuickProofTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-md bg-white p-5 rounded-xl border border-slate-200">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-sm font-black uppercase text-slate-900 tracking-wider">
+              Upload Payment Proof / Receipt
+            </h3>
+            {quickProofTarget && (
+              <p className="text-xs text-slate-600 font-semibold mt-1">
+                Vendor: {quickProofTarget.vendorName} · Amount: ₹{quickProofTarget.amount?.toLocaleString("en-IN")}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-3 my-3">
+            <label className="text-[11px] font-bold text-slate-700 block">
+              Attach Screenshot / Receipt Image
+            </label>
+            <ImageUpload
+              label="Upload Payment Receipt / Proof"
+              value={quickProofTarget?.proofUrl || ""}
+              onUpload={(url) =>
+                setQuickProofTarget((prev) => (prev ? { ...prev, proofUrl: url } : null))
+              }
+              compact
+            />
+          </div>
+
+          <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setQuickProofModalOpen(false);
+                setQuickProofTarget(null);
+              }}
+              className="h-8 text-xs font-bold text-slate-500"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveQuickProof}
+              disabled={!quickProofTarget?.proofUrl}
+              className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
+            >
+              Save & Attach Proof
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
