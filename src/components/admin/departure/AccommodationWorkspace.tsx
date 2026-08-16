@@ -213,15 +213,21 @@ export default function AccommodationWorkspace({
         parsedStay ||
         (day.plan ? day.plan.split("/")[0].split("-")[0].trim() : "—");
 
-      // Authoritative room count: Room & Vehicle Allocation tab > booking.numberOfRooms > totalPax / 2
+      // Authoritative room count: Explicit Booking Config > Room & Vehicle Allocation tab > totalPax / 2
+      const explicitBookingRooms = booking
+        ? (booking.doubleRoomsCount || 0) + (booking.tripleRoomsCount || 0) + (booking.quadRoomsCount || 0)
+        : 0;
+
       const authoritativeRooms =
-        physicalRoomAllocation.totalRooms > 0
-          ? physicalRoomAllocation.totalRooms
-          : booking?.numberOfRooms && booking.numberOfRooms > 0
-            ? booking.numberOfRooms
-            : totalPax > 0
-              ? Math.ceil(totalPax / 2)
-              : 1;
+        explicitBookingRooms > 0
+          ? explicitBookingRooms
+          : physicalRoomAllocation.totalRooms > 0
+            ? physicalRoomAllocation.totalRooms
+            : booking?.numberOfRooms && booking.numberOfRooms > 0
+              ? booking.numberOfRooms
+              : totalPax > 0
+                ? Math.ceil(totalPax / 2)
+                : 1;
 
       // Always derive physical room count regardless of booking status
       let physicalRooms = authoritativeRooms;
@@ -232,12 +238,10 @@ export default function AccommodationWorkspace({
       let status: AccommodationRow["status"] = "no-stay";
 
       if (hasStay && booking) {
-        nights = booking.nightsCount || 1;
+        // Each itinerary row corresponds to exactly 1 night
+        nights = 1;
         const derivedRooms = deriveRoomCountsFromAllocations(passengerAllocations, allPassengers);
-        const hasExplicitBookingRooms =
-          (booking.doubleRoomsCount || 0) > 0 ||
-          (booking.tripleRoomsCount || 0) > 0 ||
-          (booking.quadRoomsCount || 0) > 0;
+        const hasExplicitBookingRooms = explicitBookingRooms > 0;
 
         const dRooms = hasExplicitBookingRooms
           ? (booking.doubleRoomsCount ?? 0)
@@ -262,24 +266,21 @@ export default function AccommodationWorkspace({
         const tMult = isPerPerson ? 3 : 1;
         const qMult = isPerPerson ? 4 : 1;
 
-        let calcTotal =
+        let dailyCalcTotal =
           (dRooms * dMult * dRate +
             tRooms * tMult * tRate +
             qRooms * qMult * qRate +
             exPax * exRate) *
-          nights;
+          1;
 
-        totalAmount =
-          calcTotal > 0
-            ? calcTotal
-            : booking.totalAmount > 0
-            ? booking.totalAmount
-            : 0;
+        const bookingTotal = booking.totalAmount > 0 ? booking.totalAmount : dailyCalcTotal * (booking.nightsCount || 1);
+        totalAmount = bookingTotal / (booking.nightsCount || 1);
         status = "configured";
 
         const effectivePaxCount = totalPax > 0 ? totalPax : Math.max(1, authoritativeRooms * 2);
         costPerPaxStay = effectivePaxCount > 0 ? totalAmount / effectivePaxCount : 0;
-        costPerPaxPerNight = nights > 0 ? costPerPaxStay / nights : costPerPaxStay;
+        costPerPaxPerNight = costPerPaxStay;
+
       } else if (hasStay) {
         status = "pending";
       } else {
@@ -761,10 +762,10 @@ function DayDetailDrawer({
     const effectiveTotal = row.totalAmount > 0 ? row.totalAmount : (booking.totalAmount || 0);
 
     if (effectiveTotal > 0 && totalPax > 0) {
-      const nights = booking.nightsCount || 1;
+      const nights = 1; // Itinerary day row represents exactly 1 night
       const rooms = booking.numberOfRooms || 0;
       const costPerPaxStay = effectiveTotal / totalPax;
-      const costPerPaxPerNight = nights > 0 ? costPerPaxStay / nights : costPerPaxStay;
+      const costPerPaxPerNight = costPerPaxStay;
       const mode = normalisePricingMode(booking.pricingMethod);
 
       const steps = [];
@@ -777,21 +778,14 @@ function DayDetailDrawer({
         });
         steps.push({
           label: `${rooms} Rooms × ${formatINR(roomRate)} × ${nights} Night${nights !== 1 ? "s" : ""}`,
-          formula: `${rooms} × ${formatINR(roomRate)} × ${nights}`,
+          formula: `${rooms} × ${formatINR(roomRate)}`,
           result: formatINR(effectiveTotal),
         });
         steps.push({
-          label: "Cost per Pax / Stay",
+          label: "Cost per Pax",
           formula: `${formatINR(effectiveTotal)} ÷ ${totalPax} Pax`,
           result: formatINR(costPerPaxStay, 2),
         });
-        if (nights > 1) {
-          steps.push({
-            label: "Cost per Pax / Night",
-            formula: `${formatINR(costPerPaxStay, 2)} ÷ ${nights} Nights`,
-            result: formatINR(costPerPaxPerNight, 2),
-          });
-        }
       } else {
         const paxRate = totalPax > 0 && nights > 0 ? effectiveTotal / totalPax / nights : rate;
         steps.push({
@@ -801,12 +795,12 @@ function DayDetailDrawer({
         });
         steps.push({
           label: `${totalPax} Pax × ${nights} Night${nights !== 1 ? "s" : ""}`,
-          formula: `${totalPax} × ${formatINR(paxRate)} × ${nights}`,
+          formula: `${totalPax} × ${formatINR(paxRate)}`,
           result: formatINR(effectiveTotal),
         });
         steps.push({
-          label: "Cost per Pax / Stay",
-          formula: `${formatINR(paxRate)} × ${nights} Nights`,
+          label: "Cost per Pax",
+          formula: `${formatINR(paxRate)} × ${nights} Night`,
           result: formatINR(costPerPaxStay, 2),
         });
       }

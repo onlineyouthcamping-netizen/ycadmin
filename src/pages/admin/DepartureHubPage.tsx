@@ -7771,6 +7771,7 @@ useEffect(() => {
               </div>
             </div>
           )}
+        )}
 
           {/* ══════════════════════════ PLAN TAB ══════════════════════════ */}
           {/* Plan tab flattened — Hotels/Transport/Guides/Activities are now top-level tabs */}
