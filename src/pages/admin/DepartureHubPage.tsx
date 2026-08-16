@@ -60,8 +60,6 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
-  DollarSign,
   CreditCard,
   BarChart2,
   Activity,
@@ -70,11 +68,9 @@ import {
   MessageCircle,
   Save,
   Edit2,
-  IndianRupee,
-  Building2,
 } from "lucide-react";
 import { allocateWholeRupees, cn } from "@/lib/utils";
-import { DashCard, dashLink } from "@/modules/dashboard.chrome";
+import { dashLink } from "@/modules/dashboard.chrome";
 import api from "@/services/api";
 import { opsService } from "@/services/ops.service";
 import { toast } from "sonner";
@@ -2381,25 +2377,8 @@ useEffect(() => {
   };
 
   const getRelationshipBadge = (type: string) => {
-    const styles: Record<string, string> = {
-      Single: "bg-slate-50 text-slate-600 border-slate-200",
-      Double: "bg-pink-50 text-pink-700 border-pink-200",
-      Triple: "bg-purple-50 text-purple-700 border-purple-200",
-      Quad: "bg-blue-50 text-blue-700 border-blue-200",
-      Family: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      Dorm: "bg-amber-50 text-amber-700 border-amber-200",
-      Couple: "bg-pink-50 text-pink-700 border-pink-200",
-      Friends: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      "Triple Sharing": "bg-purple-50 text-purple-700 border-purple-200",
-      Individual: "bg-slate-50 text-slate-600 border-slate-200",
-    };
     return (
-      <span
-        className={cn(
-          "px-2 py-0.5 rounded text-[10px] font-bold border",
-          styles[type] || styles["Single"],
-        )}
-      >
+      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium border bg-white text-[#0B1528] border-[#E8EEF4]">
         {type || "Single"}
       </span>
     );
@@ -7267,21 +7246,23 @@ useEffect(() => {
 
               {/* Bulk Actions Bar */}
               {Object.values(selectedPassengerIds).some(v => v) && (
-                <div className="bg-slate-800 text-white rounded-[4px] p-2 flex items-center justify-between text-xs font-bold shadow-sm animate-in fade-in slide-in-from-top-2">
-                  <div className="flex items-center gap-2 pl-2">
-                    <span className="bg-slate-700 px-2 py-0.5 rounded-full text-[10px]">
-                      {Object.values(selectedPassengerIds).filter(v => v).length} Selected
+                <div className="px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] border-b border-[#E8EEF4] bg-[#F8FAFC] min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium border border-[#E8EEF4] bg-white text-[#0B1528] tabular-nums">
+                      {Object.values(selectedPassengerIds).filter(v => v).length} selected
                     </span>
-                    <span>Bulk Actions</span>
+                    <span className="text-slate-500">Bulk actions</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     <button 
+                      type="button"
                       onClick={() => toast.info("Select a booking group to use the Allocate Rooms button.")}
-                      className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded transition-colors"
+                      className="h-7 px-2.5 rounded-md border border-[#E8EEF4] bg-white text-[#0B1528] font-medium hover:bg-[#F4F7FB]"
                     >
-                      Update Room
+                      Update room
                     </button>
                     <button 
+                      type="button"
                       onClick={async () => {
                         const newPickup = prompt("Enter new pickup point for selected passengers:");
                         if (newPickup !== null) {
@@ -7335,13 +7316,14 @@ useEffect(() => {
                            }
                         }
                       }}
-                      className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded transition-colors"
+                      className="h-7 px-2.5 rounded-md border border-[#E8EEF4] bg-white text-[#0B1528] font-medium hover:bg-[#F4F7FB]"
                     >
-                      Set Pickup
+                      Set pickup
                     </button>
                     <button 
+                      type="button"
                       onClick={() => setSelectedPassengerIds({})}
-                      className="bg-red-500/80 hover:bg-red-500 px-3 py-1.5 rounded transition-colors"
+                      className="h-7 px-2.5 rounded-md border border-[#E8EEF4] bg-white text-slate-500 font-medium hover:bg-[#F4F7FB]"
                     >
                       Clear
                     </button>
@@ -7349,13 +7331,12 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Table */}
-              <div className="bg-white border border-[#E2E8F0] rounded-[4px] overflow-hidden overflow-x-auto shadow-sm">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 border-b border-[#E2E8F0]">
+              <div className="overflow-x-auto min-w-0">
+                <table className="w-full min-w-[920px] text-left text-[12px] border-collapse">
+                  <thead className="bg-[#F8FAFC] border-b border-[#E8EEF4]">
                     <tr>
-                      <th className="p-3 w-20 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                      <th className="p-3 w-14 text-center">
+                        <div className="flex items-center justify-center">
                           <input
                             type="checkbox"
                             checked={
@@ -7374,51 +7355,49 @@ useEffect(() => {
                               });
                               setSelectedPassengerIds(nextSelect);
                             }}
-                            className="rounded border-slate-300 text-[#F97316] focus:ring-[#F97316] w-3.5 h-3.5 cursor-pointer"
+                            className="rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00] w-3.5 h-3.5 cursor-pointer"
                           />
-                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                            SEL
-                          </span>
                         </div>
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                        PASSENGER
+                      <th className="p-3 text-slate-500 font-medium text-[11px]">
+                        Passenger
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                        PHONE
+                      <th className="p-3 text-slate-500 font-medium text-[11px]">
+                        Phone
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                        PICKUP
+                      <th className="p-3 text-slate-500 font-medium text-[11px]">
+                        Pickup
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
-                        TRAIN STATUS
+                      <th className="p-3 text-slate-500 font-medium text-[11px] text-center">
+                        Train
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                        PAYMENT
+                      <th className="p-3 text-slate-500 font-medium text-[11px]">
+                        Payment
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                        BALANCE
+                      <th className="p-3 text-slate-500 font-medium text-[11px] text-right">
+                        Balance
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                        ROOM
+                      <th className="p-3 text-slate-500 font-medium text-[11px]">
+                        Room
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                        REMARKS
+                      <th className="p-3 text-slate-500 font-medium text-[11px]">
+                        Remarks
                       </th>
-                      <th className="p-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
-                        ACTION
+                      <th className="p-3 text-slate-500 font-medium text-[11px] text-center">
+                        Action
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
+                  <tbody className="divide-y divide-[#E8EEF4]">
                     {paginatedBookingGroups.map((bg: any) => {
                       const isGroupExpanded =
                         expandedBookings[bg.bookingId] !== false;
                       return (
                         <React.Fragment key={bg.bookingId}>
                           {/* Expandable Group Header */}
-                          <tr className="bg-slate-100/80 font-semibold text-slate-800 border-t border-b border-slate-200">
-                            <td className="p-3 text-center flex items-center justify-center gap-1">
+                          <tr className="bg-[#F8FAFC] text-[#0B1528] border-y border-[#E8EEF4]">
+                            <td className="p-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
                               <input
                                 type="checkbox"
                                 checked={bg.passengers.every((p: any) => selectedPassengerIds[p.id])}
@@ -7432,9 +7411,10 @@ useEffect(() => {
                                     return next;
                                   });
                                 }}
-                                className="rounded border-slate-300 text-[#F97316] focus:ring-[#F97316] w-3.5 h-3.5 cursor-pointer mr-1"
+                                className="rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00] w-3.5 h-3.5 cursor-pointer"
                               />
                               <button
+                                type="button"
                                 onClick={() => {
                                   setExpandedBookings((prev) => ({
                                     ...prev,
@@ -7444,65 +7424,63 @@ useEffect(() => {
                                         : false,
                                   }));
                                 }}
-                                className="p-1 hover:bg-slate-200 rounded text-slate-500"
+                                className="p-1 hover:bg-white rounded-md text-slate-400"
                               >
                                 {isGroupExpanded ? (
-                                  <ChevronDown className="w-3.5 h-3.5" />
+                                  <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.75} />
                                 ) : (
-                                  <ChevronRight className="w-3.5 h-3.5" />
+                                  <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.75} />
                                 )}
                               </button>
+                              </div>
                             </td>
                             <td colSpan={9} className="p-3">
-                              <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-                                <div className="flex items-center gap-3">
-                                  <span className="font-bold text-slate-900 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+                              <div className="flex flex-wrap items-center justify-between gap-3 text-[12px] min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                  <span className="font-medium text-[#0B1528] bg-white border border-[#E8EEF4] rounded-md px-1.5 py-0.5">
                                     {bg.bookingRef}
                                   </span>
-                                  <span className="font-extrabold text-slate-800">
-                                    {bg.leadName}'s Group
+                                  <span className="font-medium text-[#0B1528]">
+                                    {bg.leadName}'s group
                                   </span>
-                                  <span className="text-slate-400">•</span>
-                                  <span className="font-semibold text-slate-600 bg-slate-200/50 rounded-full px-2 py-0.5">
-                                    {bg.totalPassengers} Passengers
+                                  <span className="text-[11px] font-medium text-slate-500">
+                                    {bg.totalPassengers} passengers
                                   </span>
                                   {bg.coupleCount > 0 && (
-                                    <span className="font-semibold text-pink-700 bg-pink-50 border border-pink-100 rounded-full px-2 py-0.5 flex items-center gap-1">
-                                      ♥ {bg.coupleCount} Couple
+                                    <span className="text-[11px] font-medium text-slate-500 border border-[#E8EEF4] bg-white rounded-md px-1.5 py-0.5">
+                                      {bg.coupleCount} couple
                                       {bg.coupleCount > 1 ? "s" : ""}
                                     </span>
                                   )}
-                                  <span className="text-slate-400">•</span>
                                   <span
-                                    className="text-slate-500 italic max-w-md truncate font-medium"
+                                    className="text-slate-400 text-[11px] max-w-md truncate"
                                     title={bg.roomRequirement}
                                   >
                                     Rooms: {bg.roomRequirement}
                                   </span>
                                 </div>
 
-                                <div className="flex items-center gap-4">
-                                  {/* Financials */}
-                                  <div className="text-right text-[11px] space-y-0.5">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="text-right text-[11px] text-slate-500 space-y-0.5">
                                     <div>
-                                      Total:{" "}
-                                      <span className="font-bold text-slate-700">
+                                      Total{" "}
+                                      <span className="font-medium text-[#0B1528] tabular-nums">
                                         ₹
                                         {Number(bg?.totalAmount || 0).toLocaleString("en-IN")}
-                                      </span>{" "}
-                                      | Paid:{" "}
-                                      <span className="font-bold text-emerald-600">
+                                      </span>
+                                      {" · "}Paid{" "}
+                                      <span className="font-medium text-[#0B1528] tabular-nums">
                                         ₹{Number(bg?.paidAmount || 0).toLocaleString("en-IN")}
                                       </span>
                                     </div>
                                     <div>
-                                      Balance:{" "}
+                                      Balance{" "}
                                       <span
                                         className={cn(
-                                          "font-bold",
+                                          "font-medium tabular-nums",
                                           (bg?.balance || 0) > 0
-                                            ? "text-red-650"
-                                            : "text-emerald-600",
+                                            ? "text-[#FF4D00]"
+                                            : "text-[#0B1528]",
                                         )}
                                       >
                                         ₹{Number(bg?.balance || 0).toLocaleString("en-IN")}
@@ -7510,9 +7488,9 @@ useEffect(() => {
                                     </div>
                                   </div>
 
-                                  {/* Actions */}
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1.5">
                                     <button
+                                      type="button"
                                       onClick={() => {
                                         setSelectedBookingForRoomAlloc(bg);
                                         const initialModal: any = {};
@@ -7526,15 +7504,16 @@ useEffect(() => {
                                         });
                                         setModalAllocations(initialModal);
                                       }}
-                                      className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold px-2 py-1 rounded transition-colors"
+                                      className="h-7 px-2.5 rounded-md border border-[#E8EEF4] bg-white text-[11px] font-medium text-[#0B1528] hover:bg-[#F4F7FB]"
                                     >
-                                      Allocate Rooms
+                                      Allocate rooms
                                     </button>
                                     <button
+                                      type="button"
                                       onClick={() =>
                                         handleOpenBookingDetails(bg.bookingId)
                                       }
-                                      className="border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold px-2 py-1 rounded transition-colors"
+                                      className="h-7 px-2.5 rounded-md border border-[#E8EEF4] bg-white text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB]"
                                     >
                                       Details
                                     </button>
@@ -7551,8 +7530,8 @@ useEffect(() => {
                                 className={cn(
                                   "transition-colors",
                                   p.isCancelled
-                                    ? "bg-red-100/90 hover:bg-red-200/90 border-l-4 border-l-red-600 shadow-xs"
-                                    : "hover:bg-slate-50/30",
+                                    ? "bg-[#F8FAFC] text-slate-400"
+                                    : "hover:bg-[#F8FAFC]",
                                 )}
                               >
                                 <td className="p-3 text-center">
@@ -7566,19 +7545,19 @@ useEffect(() => {
                                         [p.id]: e.target.checked,
                                       }));
                                     }}
-                                    className="rounded-[2px] border-slate-300 text-[#F97316] focus:ring-[#F97316] cursor-pointer disabled:opacity-40"
+                                    className="rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00] cursor-pointer disabled:opacity-40"
                                   />
                                 </td>
-                                <td className="p-3 pl-6">
-                                  <div className="flex items-center gap-1.5">
+                                <td className="p-3 pl-6 min-w-0">
+                                  <div className="flex items-center gap-1.5 min-w-0">
                                     <div
                                       className={cn(
-                                        "font-bold hover:underline cursor-pointer",
+                                        "font-medium cursor-pointer truncate",
                                         p.isCancelled
-                                          ? "text-red-950 line-through font-extrabold"
-                                          : "text-slate-800 hover:text-blue-600",
+                                          ? "text-slate-400 line-through"
+                                          : "text-[#0B1528] hover:text-[#FF4D00]",
                                         !p.isLead &&
-                                          "text-slate-650 font-medium pl-2 border-l border-slate-300",
+                                          "pl-2 border-l border-[#E8EEF4]",
                                       )}
                                       onClick={() =>
                                         handleOpenBookingDetails(bg.bookingId)
@@ -7587,12 +7566,12 @@ useEffect(() => {
                                       {(p.roomType === "Couple" ||
                                         p.roomType === "Double") &&
                                       p.coupleWith ? (
-                                        <span className="flex items-center gap-1">
-                                          <span>{p.name}</span>
-                                          <span className="text-pink-500 text-xs">
-                                            ♥
+                                        <span className="flex items-center gap-1 min-w-0">
+                                          <span className="truncate">{p.name}</span>
+                                          <span className="text-slate-400 font-normal shrink-0">
+                                            with
                                           </span>
-                                          <span className="text-slate-600 font-semibold">
+                                          <span className="text-slate-600 truncate">
                                             {p.coupleWith}
                                           </span>
                                         </span>
@@ -7601,70 +7580,79 @@ useEffect(() => {
                                       )}
                                     </div>
                                     {p.isCancelled ? (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-red-600 text-white shadow-2xs">
-                                        CANCELLED
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4] bg-white text-slate-500 shrink-0">
+                                        Cancelled
                                       </span>
                                     ) : (
                                       !p.isLead &&
                                       !p.coupleWith && (
-                                        <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                                          co-traveler
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#F4F7FB] text-slate-500 border border-[#E8EEF4] shrink-0">
+                                          Co-traveler
                                         </span>
                                       )
                                     )}
                                   </div>
                                   <div
                                     className={cn(
-                                      "text-[10px]",
-                                      p.isCancelled ? "text-red-800 font-bold" : "text-slate-400",
+                                      "text-[11px] text-slate-400",
                                       !p.isLead && "pl-4",
                                     )}
                                   >
-                                    {p.gender}, {p.age} yrs {p.isCancelled ? "• CANCELLED" : ""}
+                                    {p.gender}, {p.age} yrs
                                   </div>
                                 </td>
-                                <td className="p-3 font-mono text-slate-600">
+                                <td className="p-3 font-mono text-slate-600 text-[11px]">
                                   {p.phone}
                                 </td>
-                                <td className="p-3 font-semibold text-slate-700">
+                                <td className="p-3 font-medium text-[#0B1528]">
                                   {p.pickupPoint}
                                 </td>
 
-                                {/* Train Status */}
                                 <td className="p-3 text-center">
                                   <span
                                     className={cn(
-                                      "px-1.5 py-0.5 rounded text-[10px] font-bold border",
+                                      "px-1.5 py-0.5 rounded-md text-[10px] font-medium border bg-white",
                                       bg.trainTicketStatus === "CONFIRMED"
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                        : "bg-amber-50 text-amber-700 border-amber-200",
+                                        ? "text-[#0B1528] border-[#E8EEF4]"
+                                        : "text-[#FF4D00] border-[#E8EEF4]",
                                     )}
                                   >
-                                    {bg.trainTicketStatus}
+                                    {bg.trainTicketStatus === "CONFIRMED"
+                                      ? "Confirmed"
+                                      : bg.trainTicketStatus === "PENDING"
+                                        ? "Pending"
+                                        : bg.trainTicketStatus}
                                   </span>
                                 </td>
 
                                 <td className="p-3">
-                                  <StatusBadge
-                                    status={
+                                  <span
+                                    className={cn(
+                                      "px-1.5 py-0.5 rounded-md text-[10px] font-medium border bg-white",
                                       p.paymentStatus === "Paid in Full"
-                                        ? "PAID"
+                                        ? "text-[#0B1528] border-[#E8EEF4]"
                                         : p.paymentStatus === "Partial Payment"
-                                          ? "PARTIALLY PAID"
-                                          : "UNPAID"
-                                    }
-                                  />
-                                  <div className="text-[10px] text-slate-400 mt-0.5">
-                                    Paid: ₹
+                                          ? "text-[#0B1528] border-[#E8EEF4]"
+                                          : "text-[#FF4D00] border-[#E8EEF4]",
+                                    )}
+                                  >
+                                    {p.paymentStatus === "Paid in Full"
+                                      ? "Paid"
+                                      : p.paymentStatus === "Partial Payment"
+                                        ? "Partial"
+                                        : "Unpaid"}
+                                  </span>
+                                  <div className="text-[11px] text-slate-400 mt-0.5 tabular-nums">
+                                    Paid ₹
                                     {Number(p?.paidAmount || 0).toLocaleString("en-IN")} / pax
                                   </div>
                                 </td>
                                 <td
                                   className={cn(
-                                    "p-3 text-right font-bold",
+                                    "p-3 text-right font-medium tabular-nums",
                                     (p?.balance || 0) > 0
-                                      ? "text-red-500"
-                                      : "text-emerald-600",
+                                      ? "text-[#FF4D00]"
+                                      : "text-[#0B1528]",
                                   )}
                                 >
                                   <div>
@@ -7673,27 +7661,25 @@ useEffect(() => {
                                       / pax
                                     </span>
                                   </div>
-                                  <div className="text-[9.5px] text-slate-400 font-normal mt-0.5">
-                                    Group Due: ₹
+                                  <div className="text-[11px] text-slate-400 font-normal mt-0.5">
+                                    Group due ₹
                                     {Number(bg?.balance || 0).toLocaleString("en-IN")}
                                   </div>
                                 </td>
 
-                                {/* Room Type Badge / Relationship */}
                                 <td className="p-3">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1.5">
                                     {getRelationshipBadge(p.roomType)}
                                     {p.groupId && (
-                                      <span className="bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] font-mono">
-                                        Group: {p.groupId}
+                                      <span className="bg-[#F4F7FB] text-slate-600 border border-[#E8EEF4] px-1.5 py-0.5 rounded-md text-[10px] font-mono">
+                                        {p.groupId}
                                       </span>
                                     )}
                                   </div>
                                 </td>
 
-                                {/* Remarks */}
                                 <td
-                                  className="p-3 text-slate-600 italic text-[11px] max-w-[150px] truncate"
+                                  className="p-3 text-slate-500 text-[11px] max-w-[150px] truncate"
                                   title={
                                     p.notes || bg.rawBooking.adminNotes || "—"
                                   }
@@ -7702,10 +7688,10 @@ useEffect(() => {
                                 </td>
 
                                 <td className="p-3 text-center">
-                                  <div className="flex gap-2 justify-center">
-                                    <MessageSquare className="w-4 h-4 text-green-500 cursor-pointer hover:opacity-80" />
-                                    <PhoneCall className="w-3.5 h-3.5 text-blue-500 cursor-pointer hover:opacity-80" />
-                                    <MoreHorizontal className="w-4 h-4 text-slate-400 cursor-pointer hover:opacity-80" />
+                                  <div className="flex gap-1.5 justify-center">
+                                    <MessageSquare className="w-3.5 h-3.5 text-slate-400 cursor-pointer hover:text-[#0B1528]" strokeWidth={1.75} />
+                                    <PhoneCall className="w-3.5 h-3.5 text-slate-400 cursor-pointer hover:text-[#0B1528]" strokeWidth={1.75} />
+                                    <MoreHorizontal className="w-3.5 h-3.5 text-slate-400 cursor-pointer hover:text-[#0B1528]" strokeWidth={1.75} />
                                   </div>
                                 </td>
                               </tr>
@@ -7717,7 +7703,7 @@ useEffect(() => {
                       <tr>
                         <td
                           colSpan={10}
-                          className="text-center p-10 text-slate-400 font-semibold"
+                          className="text-center p-10 text-slate-400 text-[12px]"
                         >
                           No passengers found.
                         </td>
@@ -7725,7 +7711,8 @@ useEffect(() => {
                     )}
                   </tbody>
                 </table>
-                <div className="px-4 py-3 border-t border-[#E2E8F0] flex items-center justify-between text-[11px] text-slate-500">
+              </div>
+                <div className="px-4 py-3 border-t border-[#E8EEF4] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500 min-w-0">
                   <span>
                     Showing {(page - 1) * 10 + 1} to{" "}
                     {Math.min(page * 10, filteredBookingGroups.length)} of{" "}
@@ -7733,11 +7720,12 @@ useEffect(() => {
                   </span>
                   <div className="flex items-center gap-1">
                     <button
+                      type="button"
                       disabled={page === 1}
                       onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                      className="border border-slate-200 rounded-[4px] p-1 bg-white hover:bg-slate-50 disabled:opacity-40"
+                      className="border border-[#E8EEF4] rounded-md p-1 bg-white hover:bg-[#F4F7FB] disabled:opacity-40"
                     >
-                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
                     </button>
                     {[
                       ...Array(
@@ -7748,19 +7736,21 @@ useEffect(() => {
                       ),
                     ].map((_, i) => (
                       <button
+                        type="button"
                         key={i + 1}
                         onClick={() => setPage(i + 1)}
                         className={cn(
-                          "w-7 h-7 rounded-[4px] text-[11px] font-bold border",
+                          "w-7 h-7 rounded-md text-[11px] font-medium border",
                           page === i + 1
-                            ? "bg-[#F97316] text-white border-[#F97316]"
-                            : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700",
+                            ? "bg-[#FF4D00] text-white border-[#FF4D00]"
+                            : "bg-white border-[#E8EEF4] hover:bg-[#F4F7FB] text-[#0B1528]",
                         )}
                       >
                         {i + 1}
                       </button>
                     ))}
                     <button
+                      type="button"
                       disabled={
                         page >= Math.ceil(filteredBookingGroups.length / 10)
                       }
@@ -7772,9 +7762,9 @@ useEffect(() => {
                           ),
                         )
                       }
-                      className="border border-slate-200 rounded-[4px] p-1 bg-white hover:bg-slate-50 disabled:opacity-40"
+                      className="border border-[#E8EEF4] rounded-md p-1 bg-white hover:bg-[#F4F7FB] disabled:opacity-40"
                     >
-                      <ChevronRight className="w-3.5 h-3.5" />
+                      <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.75} />
                     </button>
                   </div>
                 </div>
