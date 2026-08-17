@@ -127,6 +127,7 @@ function ApprovalPill({ status }: { status?: string }) {
 
 const emptyForm = (defaultType: "DEPARTURE" | "RETURN" = "DEPARTURE") => ({
   travelerName: "",
+  travelerNames: [] as string[],
   passengerReference: defaultType,
   pnr: "",
   trainName: "",
@@ -323,6 +324,28 @@ export default function TrainTicketsPanel({
             : ""),
     }));
     toast.success(`Filled details from Trip ${legType} Template!`);
+  };
+
+  const getAvailableTrains = () => {
+    if (!tripTemplate) return [];
+    const trains = new Set<string>();
+    
+    const extractTrain = (leg: any) => {
+      if (leg?.trainName) {
+        trains.add(leg.trainNumber ? `${leg.trainName} (${leg.trainNumber})` : leg.trainName);
+      }
+    };
+
+    if (Array.isArray(tripTemplate.tiers) && tripTemplate.tiers.length > 0) {
+      tripTemplate.tiers.forEach((tier: any) => {
+        const leg = form.passengerReference === "RETURN" ? tier.returnJourney : tier.departureJourney;
+        extractTrain(leg);
+      });
+    } else {
+      const leg = form.passengerReference === "RETURN" ? tripTemplate.returnJourney : tripTemplate.departureJourney;
+      extractTrain(leg);
+    }
+    return Array.from(trains);
   };
 
   const handleSyncTemplate = async () => {
@@ -567,8 +590,12 @@ export default function TrainTicketsPanel({
 
   const handleSaveTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.travelerName.trim()) {
+    if (editingId && !form.travelerName.trim()) {
       toast.error("Traveler name is required");
+      return;
+    }
+    if (!editingId && form.travelerNames.length === 0) {
+      toast.error("Please select at least one traveler");
       return;
     }
 
@@ -581,11 +608,16 @@ export default function TrainTicketsPanel({
         });
         toast.success("Ticket updated successfully");
       } else {
-        await trainTicketService.createTicket(bookingId, {
-          ...form,
-          ticketAmount: parseFloat(form.ticketAmount) || 0,
-        });
-        toast.success("Ticket created successfully");
+        await Promise.all(
+          form.travelerNames.map((tName) =>
+            trainTicketService.createTicket(bookingId, {
+              ...form,
+              travelerName: tName,
+              ticketAmount: parseFloat(form.ticketAmount) || 0,
+            })
+          )
+        );
+        toast.success(`${form.travelerNames.length} ticket(s) created successfully`);
       }
       setShowForm(false);
       setEditingId(null);
@@ -619,8 +651,10 @@ export default function TrainTicketsPanel({
     if (passengers && passengers.length > 0) {
       const p = normalizePassenger(booking, passengers[0], 0);
       init.travelerName = p.name || booking?.fullName || "";
+      init.travelerNames = [p.name || booking?.fullName || ""];
     } else {
       init.travelerName = booking?.fullName || booking?.name || "";
+      init.travelerNames = [booking?.fullName || booking?.name || ""];
     }
     setForm(init);
     setShowForm(true);
@@ -647,8 +681,10 @@ export default function TrainTicketsPanel({
     if (passengers && passengers.length > 0) {
       const p = normalizePassenger(booking, passengers[0], 0);
       init.travelerName = p.name || booking?.fullName || "";
+      init.travelerNames = [p.name || booking?.fullName || ""];
     } else {
       init.travelerName = booking?.fullName || booking?.name || "";
+      init.travelerNames = [booking?.fullName || booking?.name || ""];
     }
     setForm(init);
     setShowForm(true);
@@ -658,6 +694,7 @@ export default function TrainTicketsPanel({
     setEditingId(ticket.id);
     setForm({
       travelerName: ticket.travelerName || "",
+      travelerNames: [ticket.travelerName || ""],
       passengerReference:
         (ticket.passengerReference as "DEPARTURE" | "RETURN") || "DEPARTURE",
       pnr: ticket.pnr || "",
@@ -1094,17 +1131,57 @@ export default function TrainTicketsPanel({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase text-slate-500">
-                Traveler Name *
+                {editingId ? "Traveler Name *" : "Select Travelers *"}
               </label>
-              <Input
-                required
-                value={form.travelerName}
-                onChange={(e) =>
-                  setForm({ ...form, travelerName: e.target.value })
-                }
-                placeholder="Full name"
-                className="h-8 text-xs"
-              />
+              {editingId ? (
+                <Input
+                  required
+                  value={form.travelerName}
+                  onChange={(e) =>
+                    setForm({ ...form, travelerName: e.target.value })
+                  }
+                  placeholder="Full name"
+                  className="h-8 text-xs"
+                />
+              ) : (
+                <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-1 bg-white">
+                  {(passengers.length > 0
+                    ? passengers.map(
+                        (p: any, i: number) =>
+                          normalizePassenger(booking, p, i).name ||
+                          `Passenger ${i + 1}`
+                      )
+                    : [booking?.fullName || booking?.name || "Lead Passenger"]
+                  ).map((pName: string, idx: number) => (
+                    <label
+                      key={idx}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                        checked={form.travelerNames.includes(pName)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setForm({
+                              ...form,
+                              travelerNames: [...form.travelerNames, pName],
+                            });
+                          } else {
+                            setForm({
+                              ...form,
+                              travelerNames: form.travelerNames.filter(
+                                (n) => n !== pName
+                              ),
+                            });
+                          }
+                        }}
+                      />
+                      <span className="text-xs text-slate-700">{pName}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -1202,6 +1279,7 @@ export default function TrainTicketsPanel({
                 Train Name / No.
               </label>
               <Input
+                list="available-trains"
                 value={form.trainName}
                 onChange={(e) =>
                   setForm({ ...form, trainName: e.target.value })
@@ -1209,6 +1287,11 @@ export default function TrainTicketsPanel({
                 placeholder="e.g. Rajdhani Exp (12951)"
                 className="h-8 text-xs"
               />
+              <datalist id="available-trains">
+                {getAvailableTrains().map((t, idx) => (
+                  <option key={idx} value={t} />
+                ))}
+              </datalist>
             </div>
 
             <div className="space-y-1">
