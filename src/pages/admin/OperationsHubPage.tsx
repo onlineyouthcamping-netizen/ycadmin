@@ -815,7 +815,7 @@ export default function OperationsHubPage() {
       .catch(() => toast.error("Failed to load trips"));
 
     bookingsService
-      .getAll({ limit: 1000 })
+      .getAll({ limit: 500, compact: true })
       .then((res) => {
         const rawList = Array.isArray(res)
           ? res
