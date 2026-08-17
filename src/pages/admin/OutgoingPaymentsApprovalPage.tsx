@@ -204,7 +204,7 @@ export default function OutgoingPaymentsApprovalPage({
               Outgoing Vendor Payments & Liabilities
             </h1>
             <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-              Verify and approve outgoing payouts for Hotels, Transport, Activities, Trek Guides, and Train Ticketing.
+              Verify and approve outgoing payouts for hotels, transport, activities, and trek guides.
             </p>
           </div>
 
@@ -315,7 +315,6 @@ export default function OutgoingPaymentsApprovalPage({
                 { key: "transport", label: "🚌 Transport Fleet", icon: Truck },
                 { key: "activities", label: "🎯 Activities & Permits", icon: Compass },
                 { key: "guides", label: "🧭 Guides & Leaders", icon: User },
-                { key: "train_ticketing", label: "🚆 Train Ticketing", icon: Ticket },
               ].map((cat) => (
                 <button
                   key={cat.key}
