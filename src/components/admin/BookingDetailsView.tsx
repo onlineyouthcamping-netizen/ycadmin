@@ -10,6 +10,8 @@ import {
 import {
   normalizePassenger,
   normalizeBookingPassengers,
+  normalizeGenderFull,
+  normalizeGenderCode,
 } from "@/utils/passengerUtils";
 import { generatePerPersonBookingItems } from "@/utils/bookingCalculations";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -4192,15 +4194,72 @@ export default function BookingDetailsView({
                       <tr>
                         <td className="px-4 py-2.5 text-slate-500">Gender</td>
                         <td className="px-4 py-2.5">
-                          <span className="bg-slate-150 text-slate-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
-                            {booking.gender}
-                          </span>
+                          {(() => {
+                            const leadPax =
+                              passengers.find(
+                                (p: any) =>
+                                  p.isLead ||
+                                  (booking.fullName &&
+                                    p.name?.toLowerCase().trim() ===
+                                      booking.fullName.toLowerCase().trim()),
+                              ) || passengers[0];
+                            const rawG =
+                              booking.gender && booking.gender.trim() !== ""
+                                ? booking.gender
+                                : leadPax?.gender;
+                            const resolvedGender = normalizeGenderFull(
+                              rawG,
+                              booking.fullName || booking.name,
+                            );
+                            const isFemale =
+                              normalizeGenderCode(
+                                resolvedGender,
+                                booking.fullName || booking.name,
+                              ) === "F";
+
+                            return (
+                              <span
+                                className={cn(
+                                  "text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase border",
+                                  isFemale
+                                    ? "bg-pink-50 text-pink-700 border-pink-200"
+                                    : "bg-blue-50 text-blue-700 border-blue-200",
+                                )}
+                              >
+                                {resolvedGender || "Not specified"}
+                              </span>
+                            );
+                          })()}
                         </td>
                       </tr>
                       <tr>
                         <td className="px-4 py-2.5 text-slate-500">Age</td>
-                        <td className="px-4 py-2.5 text-slate-850">
-                          {booking.age}
+                        <td className="px-4 py-2.5 text-slate-850 font-bold">
+                          {(() => {
+                            if (
+                              booking.age &&
+                              String(booking.age).trim() !== "" &&
+                              booking.age !== 0
+                            ) {
+                              return `${booking.age} yrs`;
+                            }
+                            const leadPax =
+                              passengers.find(
+                                (p: any) =>
+                                  p.isLead ||
+                                  (booking.fullName &&
+                                    p.name?.toLowerCase().trim() ===
+                                      booking.fullName.toLowerCase().trim()),
+                              ) || passengers[0];
+                            if (leadPax?.age) {
+                              return `${leadPax.age} yrs`;
+                            }
+                            return (
+                              <span className="text-slate-400 font-normal italic">
+                                Not specified
+                              </span>
+                            );
+                          })()}
                         </td>
                       </tr>
                       <tr>
