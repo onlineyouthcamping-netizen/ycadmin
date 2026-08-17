@@ -70,6 +70,8 @@ export default function QuotationFormPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
 
+  const [hotelTierTab, setHotelTierTab] = useState<"standard" | "luxury">("standard");
+
   const [formData, setFormData] = useState<Partial<Quotation>>({
     id: uuidv4(),
     status: "Draft",
@@ -91,15 +93,21 @@ export default function QuotationFormPage() {
     coverImage: "",
     heroImages: [],
     experiencePhotos: [],
+    lowLevelHotels: [],
+    highLevelHotels: [],
     staySummary: [],
-    roomsInfo: "",
-    mealsInfo: "",
+    roomsInfo: "Double / Triple Sharing with Attached Washrooms",
+    mealsInfo: "Breakfast & Dinner Included (MAP Plan)",
     travelling: [],
     expiryHours: 48,
     expert: {
-      name: "Suresh Chaudhary",
-      whatsapp: "919000000000",
+      name: "Zeel Panchal",
+      whatsapp: "918866699409",
+      phone: "918866699409",
       designation: "YOUTHCAMPING Destination Expert",
+      photo: "",
+      avatar: "",
+      description: "I'll guide you through your journey, customize your stays, and provide end-to-end trip support on WhatsApp.",
     },
   });
 
@@ -108,7 +116,53 @@ export default function QuotationFormPage() {
       quotationsService
         .getById(id)
         .then((data) => {
-          setFormData(data);
+          if (data) {
+            setFormData((prev) => ({
+              ...prev,
+              ...data,
+              expert: {
+                name: data.expert?.name || prev.expert?.name || "Zeel Panchal",
+                designation:
+                  data.expert?.designation ||
+                  prev.expert?.designation ||
+                  "YOUTHCAMPING Destination Expert",
+                whatsapp:
+                  data.expert?.whatsapp ||
+                  data.expert?.phone ||
+                  prev.expert?.whatsapp ||
+                  "918866699409",
+                phone:
+                  data.expert?.phone ||
+                  data.expert?.whatsapp ||
+                  prev.expert?.phone ||
+                  "918866699409",
+                photo: data.expert?.photo || data.expert?.avatar || "",
+                avatar: data.expert?.avatar || data.expert?.photo || "",
+                description:
+                  data.expert?.description ||
+                  prev.expert?.description ||
+                  "I'll guide you through your journey, customize your stays, and provide end-to-end trip support on WhatsApp.",
+              },
+              lowLevelHotels: Array.isArray(data.lowLevelHotels)
+                ? data.lowLevelHotels
+                : [],
+              highLevelHotels: Array.isArray(data.highLevelHotels)
+                ? data.highLevelHotels
+                : [],
+              itinerary: Array.isArray(data.itinerary) ? data.itinerary : [],
+              inclusions: Array.isArray(data.inclusions) ? data.inclusions : [],
+              exclusions: Array.isArray(data.exclusions) ? data.exclusions : [],
+              heroImages: Array.isArray(data.heroImages) ? data.heroImages : [],
+              mealsInfo:
+                data.mealsInfo ||
+                prev.mealsInfo ||
+                "Breakfast & Dinner Included (MAP Plan)",
+              roomsInfo:
+                data.roomsInfo ||
+                prev.roomsInfo ||
+                "Double / Triple Sharing with Attached Washrooms",
+            }));
+          }
           setLoading(false);
         })
         .catch(() => {
@@ -277,7 +331,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
     const newDay = {
       id: uuidv4(),
       day: (formData.itinerary?.length || 0) + 1,
-      title: "",
+      title: `Day ${(formData.itinerary?.length || 0) + 1} - ${formData.destination || "Destination"} Exploration`,
       description: "",
       meals: "B, D",
       stay: "Selected Stay",
@@ -287,6 +341,113 @@ ${formData.expert?.designation || "Destination Expert"}`;
       ...formData,
       itinerary: [...(formData.itinerary || []), newDay as any],
     });
+  };
+
+  const addHotel = (tier: "standard" | "luxury") => {
+    const field = tier === "standard" ? "lowLevelHotels" : "highLevelHotels";
+    const currentList = Array.isArray(formData[field]) ? formData[field]! : [];
+    const newHotel = {
+      id: uuidv4(),
+      name: "",
+      location: formData.destination || "",
+      stars: tier === "standard" ? 3 : 4,
+      rating: tier === "standard" ? 3 : 4,
+      roomType: tier === "standard" ? "Deluxe Valley View Room" : "Executive Suite / Premium Cottage",
+      meals: "Breakfast & Dinner Included",
+      image: "",
+      amenities: ["Mountain View", "WiFi", "Geyser", "Room Heater"],
+    };
+    setFormData({
+      ...formData,
+      [field]: [...currentList, newHotel],
+    });
+  };
+
+  const updateHotel = (tier: "standard" | "luxury", idx: number, key: string, value: any) => {
+    const field = tier === "standard" ? "lowLevelHotels" : "highLevelHotels";
+    const currentList = [...(Array.isArray(formData[field]) ? formData[field]! : [])];
+    if (currentList[idx]) {
+      currentList[idx] = { ...currentList[idx], [key]: value };
+      setFormData({ ...formData, [field]: currentList });
+    }
+  };
+
+  const deleteHotel = (tier: "standard" | "luxury", idx: number) => {
+    const field = tier === "standard" ? "lowLevelHotels" : "highLevelHotels";
+    const currentList = [...(Array.isArray(formData[field]) ? formData[field]! : [])];
+    currentList.splice(idx, 1);
+    setFormData({ ...formData, [field]: currentList });
+  };
+
+  const autoPopulateHotelsFromItinerary = () => {
+    if (!formData.itinerary || formData.itinerary.length === 0) {
+      toast.error("Please add days to the itinerary first");
+      return;
+    }
+    const standardList: any[] = [];
+    const luxuryList: any[] = [];
+    const uniqueStays = new Set<string>();
+
+    formData.itinerary.forEach((d: any) => {
+      const stayName = (d.stay || "").trim();
+      if (stayName && stayName.toLowerCase() !== "selected stay" && !uniqueStays.has(stayName.toLowerCase())) {
+        uniqueStays.add(stayName.toLowerCase());
+        standardList.push({
+          id: uuidv4(),
+          name: stayName,
+          location: d.title ? d.title.split("-")[0].trim() : formData.destination || "",
+          stars: 3,
+          rating: 3,
+          roomType: "Deluxe Valley View Room",
+          meals: d.meals || "Breakfast & Dinner Included",
+          image: d.photos?.[0] || "",
+          amenities: ["Mountain View", "Geyser", "WiFi", "Room Service"],
+        });
+        luxuryList.push({
+          id: uuidv4(),
+          name: `${stayName} (Premium / Luxury Wing)`,
+          location: d.title ? d.title.split("-")[0].trim() : formData.destination || "",
+          stars: 4,
+          rating: 4,
+          roomType: "Executive Suite / Luxury Cottage",
+          meals: "All Meals Included (Buffet)",
+          image: d.photos?.[0] || "",
+          amenities: ["Panoramic View", "Heated Rooms", "WiFi", "Bonfire", "Spa / Jacuzzi"],
+        });
+      }
+    });
+
+    if (standardList.length === 0) {
+      standardList.push({
+        id: uuidv4(),
+        name: `${formData.destination || "Mountain"} Resort & Spa`,
+        location: formData.destination || "Destination",
+        stars: 3,
+        rating: 3,
+        roomType: "Deluxe Valley View Room",
+        meals: "Breakfast & Dinner Included",
+        image: "",
+        amenities: ["Mountain View", "Geyser", "WiFi", "Room Service"],
+      });
+      luxuryList.push({
+        id: uuidv4(),
+        name: `Grand ${formData.destination || "Mountain"} Luxury Retreat`,
+        location: formData.destination || "Destination",
+        stars: 5,
+        rating: 5,
+        roomType: "Luxury Suite with Balcony",
+        meals: "All Meals Included (Buffet)",
+        image: "",
+        amenities: ["Panoramic Mountain View", "Heated Pool / Jacuzzi", "WiFi", "Bonfire", "Butler Service"],
+      });
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      lowLevelHotels: standardList,
+      highLevelHotels: luxuryList,
+    }));
+    toast.success(`Generated ${standardList.length} hotels from itinerary`);
   };
 
   if (loading)
@@ -790,7 +951,287 @@ ${formData.expert?.designation || "Destination Expert"}`;
             </div>
           </div>
 
-          {/* Section 6: Inclusions & Exclusions */}
+          {/* Section 6: Hotels & Stays (Accommodation Details) */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+                  <HotelIcon size={16} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-[#0B1528]">
+                    Hotels & Accommodations (Stay Details)
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Configure properties, room types, meal plans, and amenities per tier
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={autoPopulateHotelsFromItinerary}
+                  className="h-8 px-3 rounded-lg border-orange-200 bg-orange-50/50 text-[#D4541A] font-extrabold text-xs hover:bg-orange-100 cursor-pointer"
+                  title="Extract unique hotel names from itinerary days"
+                >
+                  <Sparkles size={13} className="mr-1.5" /> Auto-Sync from Itinerary
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => addHotel(hotelTierTab)}
+                  className="h-8 px-3 rounded-lg bg-[#0B1528] text-white font-extrabold text-xs hover:bg-slate-800 cursor-pointer"
+                >
+                  <Plus size={14} className="mr-1" /> Add Stay
+                </Button>
+              </div>
+            </div>
+
+            {/* General Stay & Meals Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/70 p-4 rounded-xl border border-slate-200/70">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-bold text-slate-600">
+                  Included Meals Plan
+                </Label>
+                <Input
+                  value={formData.mealsInfo || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mealsInfo: e.target.value })
+                  }
+                  placeholder="e.g. Breakfast & Dinner Included (MAP Plan)"
+                  className="h-9 bg-white border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-bold text-slate-600">
+                  Room Configuration & Sharing
+                </Label>
+                <Input
+                  value={formData.roomsInfo || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, roomsInfo: e.target.value })
+                  }
+                  placeholder="e.g. Double / Triple Sharing with Attached Bath"
+                  className="h-9 bg-white border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+            </div>
+
+            {/* Tier Switcher Tabs */}
+            <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 rounded-xl w-fit">
+              <button
+                type="button"
+                onClick={() => setHotelTierTab("standard")}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer",
+                  hotelTierTab === "standard"
+                    ? "bg-white text-[#0B1528] shadow-2xs font-black"
+                    : "text-slate-500 hover:text-slate-800",
+                )}
+              >
+                Standard Stays ({(formData.lowLevelHotels || []).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setHotelTierTab("luxury")}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer",
+                  hotelTierTab === "luxury"
+                    ? "bg-[#D4541A] text-white shadow-2xs font-black"
+                    : "text-slate-500 hover:text-slate-800",
+                )}
+              >
+                Luxury Upgrade Stays ({(formData.highLevelHotels || []).length})
+              </button>
+            </div>
+
+            {/* Hotels List for Current Tier */}
+            <div className="space-y-4">
+              {((hotelTierTab === "standard"
+                ? formData.lowLevelHotels
+                : formData.highLevelHotels) || []).length === 0 ? (
+                <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl space-y-3 bg-slate-50/50">
+                  <HotelIcon size={28} className="mx-auto text-slate-300" />
+                  <div>
+                    <p className="text-xs font-extrabold text-slate-700">
+                      No {hotelTierTab === "standard" ? "Standard" : "Luxury"} Stays Added Yet
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-medium">
+                      Add hotels manually or click "Auto-Sync from Itinerary" to generate stay cards.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addHotel(hotelTierTab)}
+                    className="h-8 text-xs font-extrabold rounded-lg border-slate-200 cursor-pointer"
+                  >
+                    <Plus size={14} className="mr-1" /> Add First Stay
+                  </Button>
+                </div>
+              ) : (
+                ((hotelTierTab === "standard"
+                  ? formData.lowLevelHotels
+                  : formData.highLevelHotels) || []).map((hotel: any, hIdx: number) => (
+                  <div
+                    key={hotel.id || hIdx}
+                    className="p-5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-4 relative group"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => deleteHotel(hotelTierTab, hIdx)}
+                      className="absolute top-4 right-4 h-7 w-7 rounded-lg bg-white flex items-center justify-center text-slate-400 hover:text-rose-500 shadow-2xs border border-slate-200 transition-all cursor-pointer"
+                      title="Delete Hotel"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pr-10">
+                      <div className="space-y-1 lg:col-span-2">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">
+                          Hotel / Property Name *
+                        </Label>
+                        <Input
+                          value={hotel.name || ""}
+                          onChange={(e) =>
+                            updateHotel(hotelTierTab, hIdx, "name", e.target.value)
+                          }
+                          placeholder="e.g. Snow Valley Resort / Grand Retreat"
+                          className="h-9 bg-white border-slate-200 rounded-xl text-xs font-extrabold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">
+                          Location / City
+                        </Label>
+                        <Input
+                          value={hotel.location || ""}
+                          onChange={(e) =>
+                            updateHotel(hotelTierTab, hIdx, "location", e.target.value)
+                          }
+                          placeholder="e.g. Manali / Kaza / Shimla"
+                          className="h-9 bg-white border-slate-200 rounded-xl text-xs font-semibold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">
+                          Category / Star Rating
+                        </Label>
+                        <select
+                          value={hotel.stars || hotel.rating || 3}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 3;
+                            updateHotel(hotelTierTab, hIdx, "stars", val);
+                            updateHotel(hotelTierTab, hIdx, "rating", val);
+                          }}
+                          className="w-full h-9 bg-white border border-slate-200 rounded-xl text-xs font-bold px-3 text-slate-800"
+                        >
+                          <option value="3">3-Star Hotel</option>
+                          <option value="4">4-Star Premium Resort</option>
+                          <option value="5">5-Star Luxury Palace</option>
+                          <option value="2">Boutique Homestay / Cottage</option>
+                          <option value="1">Luxury Swiss Camps</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">
+                          Room Category
+                        </Label>
+                        <Input
+                          value={hotel.roomType || ""}
+                          onChange={(e) =>
+                            updateHotel(hotelTierTab, hIdx, "roomType", e.target.value)
+                          }
+                          placeholder="e.g. Deluxe Room / Executive Suite"
+                          className="h-9 bg-white border-slate-200 rounded-xl text-xs font-semibold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">
+                          Meals Provided
+                        </Label>
+                        <Input
+                          value={hotel.meals || ""}
+                          onChange={(e) =>
+                            updateHotel(hotelTierTab, hIdx, "meals", e.target.value)
+                          }
+                          placeholder="e.g. Breakfast & Dinner Included"
+                          className="h-9 bg-white border-slate-200 rounded-xl text-xs font-semibold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">
+                          Key Amenities (Comma Separated)
+                        </Label>
+                        <Input
+                          value={Array.isArray(hotel.amenities) ? hotel.amenities.join(", ") : hotel.amenities || ""}
+                          onChange={(e) =>
+                            updateHotel(
+                              hotelTierTab,
+                              hIdx,
+                              "amenities",
+                              e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean),
+                            )
+                          }
+                          placeholder="Mountain View, Geyser, WiFi, Bonfire"
+                          className="h-9 bg-white border-slate-200 rounded-xl text-xs font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Hotel Photo */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase">
+                        Hotel Photo / Cover Image URL
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          value={hotel.image || ""}
+                          onChange={(e) =>
+                            updateHotel(hotelTierTab, hIdx, "image", e.target.value)
+                          }
+                          placeholder="https://images.unsplash.com/... or upload image"
+                          className="h-9 bg-white border-slate-200 rounded-xl text-xs font-mono flex-1"
+                        />
+                        <div className="w-32 shrink-0">
+                          <ImageUpload
+                            value={hotel.image ? [hotel.image] : []}
+                            onChange={(urls) =>
+                              updateHotel(hotelTierTab, hIdx, "image", urls[0] || "")
+                            }
+                            maxFiles={1}
+                          />
+                        </div>
+                      </div>
+                      {hotel.image && (
+                        <div className="relative w-24 h-16 rounded-xl overflow-hidden border border-slate-200 mt-2">
+                          <img
+                            src={formatUrl(hotel.image)}
+                            alt={hotel.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Section 7: Inclusions & Exclusions */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Inclusions */}
             <div className="space-y-3">
@@ -823,9 +1264,9 @@ ${formData.expert?.designation || "Destination Expert"}`;
                     <Input
                       value={item}
                       onChange={(e) => {
-                        const newList = [...formData.inclusions!];
-                        newList[i] = e.target.value;
-                        setFormData({ ...formData, inclusions: newList });
+                        const next = [...(formData.inclusions || [])];
+                        next[i] = e.target.value;
+                        setFormData({ ...formData, inclusions: next });
                       }}
                       placeholder="Included service..."
                       className="h-9 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-medium px-3"
@@ -833,11 +1274,11 @@ ${formData.expert?.designation || "Destination Expert"}`;
                     <button
                       type="button"
                       onClick={() => {
-                        const newList = [...formData.inclusions!];
-                        newList.splice(i, 1);
-                        setFormData({ ...formData, inclusions: newList });
+                        const next = [...(formData.inclusions || [])];
+                        next.splice(i, 1);
+                        setFormData({ ...formData, inclusions: next });
                       }}
-                      className="text-slate-300 hover:text-rose-500 transition-colors p-1"
+                      className="text-slate-400 hover:text-rose-500 transition-colors p-1"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -874,9 +1315,9 @@ ${formData.expert?.designation || "Destination Expert"}`;
                     <Input
                       value={item}
                       onChange={(e) => {
-                        const newList = [...formData.exclusions!];
-                        newList[i] = e.target.value;
-                        setFormData({ ...formData, exclusions: newList });
+                        const next = [...(formData.exclusions || [])];
+                        next[i] = e.target.value;
+                        setFormData({ ...formData, exclusions: next });
                       }}
                       placeholder="Excluded service..."
                       className="h-9 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-medium px-3"
@@ -884,11 +1325,11 @@ ${formData.expert?.designation || "Destination Expert"}`;
                     <button
                       type="button"
                       onClick={() => {
-                        const newList = [...formData.exclusions!];
-                        newList.splice(i, 1);
-                        setFormData({ ...formData, exclusions: newList });
+                        const next = [...(formData.exclusions || [])];
+                        next.splice(i, 1);
+                        setFormData({ ...formData, exclusions: next });
                       }}
-                      className="text-slate-300 hover:text-rose-500 transition-colors p-1"
+                      className="text-slate-400 hover:text-rose-500 transition-colors p-1"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -918,10 +1359,11 @@ ${formData.expert?.designation || "Destination Expert"}`;
             <div className="space-y-3">
               <ImageUpload
                 label="Primary Cover Image"
-                value={formData.coverImage}
-                onUpload={(url) =>
-                  setFormData({ ...formData, coverImage: url })
+                value={formData.coverImage ? [formData.coverImage] : []}
+                onChange={(urls) =>
+                  setFormData({ ...formData, coverImage: urls[0] || "" })
                 }
+                maxFiles={1}
               />
             </div>
           </div>
@@ -937,53 +1379,13 @@ ${formData.expert?.designation || "Destination Expert"}`;
               </span>
             </div>
 
-            {/* Multi-upload component */}
             <ImageUpload
-              multiple={true}
-              onMultipleUpload={(urls) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  heroImages: [...(prev.heroImages || []), ...urls],
-                }));
-              }}
-              onUpload={(url) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  heroImages: [...(prev.heroImages || []), url],
-                }));
-              }}
+              value={formData.heroImages || []}
+              onChange={(urls) =>
+                setFormData({ ...formData, heroImages: urls })
+              }
+              maxFiles={10}
             />
-
-            {/* Thumbnails preview list */}
-            {(formData.heroImages || []).length > 0 && (
-              <div className="grid grid-cols-3 gap-2.5 pt-2">
-                {(formData.heroImages || []).map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 group/img"
-                  >
-                    <img
-                      src={formatUrl(url)}
-                      className="w-full h-full object-cover"
-                      alt="Hero Slider"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newList = (formData.heroImages || []).filter(
-                          (_, i) => i !== idx,
-                        );
-                        setFormData({ ...formData, heroImages: newList });
-                      }}
-                      className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-md opacity-0 group-hover/img:opacity-100 transition-opacity cursor-pointer"
-                      title="Delete Image"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Proposal Validity & Expiry */}
@@ -1032,6 +1434,79 @@ ${formData.expert?.designation || "Destination Expert"}`;
               </h3>
             </div>
 
+            {/* Expert Photo / Avatar Upload */}
+            <div className="space-y-2">
+              <Label className="text-[11px] font-bold text-slate-500 block">
+                Expert Profile Photo
+              </Label>
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-400 font-extrabold text-lg">
+                  {formData.expert?.photo || formData.expert?.avatar ? (
+                    <img
+                      src={formatUrl(formData.expert?.photo || formData.expert?.avatar)}
+                      alt="Expert Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>{(formData.expert?.name || "E").charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <ImageUpload
+                    value={
+                      formData.expert?.photo
+                        ? [formData.expert.photo]
+                        : formData.expert?.avatar
+                          ? [formData.expert.avatar]
+                          : []
+                    }
+                    onChange={(urls) => {
+                      const newPhoto = urls[0] || "";
+                      setFormData({
+                        ...formData,
+                        expert: {
+                          ...(formData.expert || {}),
+                          name: formData.expert?.name || "Zeel Panchal",
+                          designation:
+                            formData.expert?.designation ||
+                            "YOUTHCAMPING Destination Expert",
+                          whatsapp: formData.expert?.whatsapp || "918866699409",
+                          phone: formData.expert?.phone || "918866699409",
+                          photo: newPhoto,
+                          avatar: newPhoto,
+                        },
+                      });
+                    }}
+                    maxFiles={1}
+                  />
+                  {(formData.expert?.photo || formData.expert?.avatar) && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          expert: {
+                            ...(formData.expert || {}),
+                            name: formData.expert?.name || "Zeel Panchal",
+                            designation:
+                              formData.expert?.designation ||
+                              "YOUTHCAMPING Destination Expert",
+                            whatsapp: formData.expert?.whatsapp || "918866699409",
+                            phone: formData.expert?.phone || "918866699409",
+                            photo: "",
+                            avatar: "",
+                          },
+                        })
+                      }
+                      className="text-[10px] font-bold text-rose-500 hover:underline"
+                    >
+                      Remove Photo
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label className="text-[11px] font-bold text-slate-500">
@@ -1042,10 +1517,18 @@ ${formData.expert?.designation || "Destination Expert"}`;
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      expert: { ...formData.expert!, name: e.target.value },
+                      expert: {
+                        ...(formData.expert || {}),
+                        name: e.target.value,
+                        designation:
+                          formData.expert?.designation ||
+                          "YOUTHCAMPING Destination Expert",
+                        whatsapp: formData.expert?.whatsapp || "918866699409",
+                        phone: formData.expert?.phone || "918866699409",
+                      },
                     })
                   }
-                  placeholder="Suresh Chaudhary"
+                  placeholder="Zeel Panchal"
                   className="h-9 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
                 />
               </div>
@@ -1060,13 +1543,70 @@ ${formData.expert?.designation || "Destination Expert"}`;
                     setFormData({
                       ...formData,
                       expert: {
-                        ...formData.expert!,
+                        ...(formData.expert || {}),
+                        name: formData.expert?.name || "Zeel Panchal",
                         designation: e.target.value,
+                        whatsapp: formData.expert?.whatsapp || "918866699409",
+                        phone: formData.expert?.phone || "918866699409",
                       },
                     })
                   }
                   placeholder="YOUTHCAMPING Destination Expert"
                   className="h-9 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-slate-500">
+                  WhatsApp / Contact Number
+                </Label>
+                <Input
+                  value={
+                    formData.expert?.whatsapp || formData.expert?.phone || ""
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      expert: {
+                        ...(formData.expert || {}),
+                        name: formData.expert?.name || "Zeel Panchal",
+                        designation:
+                          formData.expert?.designation ||
+                          "YOUTHCAMPING Destination Expert",
+                        whatsapp: val,
+                        phone: val,
+                      },
+                    });
+                  }}
+                  placeholder="8866699409"
+                  className="h-9 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-slate-500">
+                  Bio / Message (Optional)
+                </Label>
+                <Textarea
+                  value={formData.expert?.description || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      expert: {
+                        ...(formData.expert || {}),
+                        name: formData.expert?.name || "Zeel Panchal",
+                        designation:
+                          formData.expert?.designation ||
+                          "YOUTHCAMPING Destination Expert",
+                        whatsapp: formData.expert?.whatsapp || "918866699409",
+                        phone: formData.expert?.phone || "918866699409",
+                        description: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Personalized message from the expert to the client..."
+                  className="bg-slate-50/70 border-slate-200 rounded-xl p-2.5 text-xs min-h-[60px]"
                 />
               </div>
             </div>
