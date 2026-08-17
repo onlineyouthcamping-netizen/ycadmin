@@ -199,7 +199,7 @@ export function inferGenderFromName(nameStr?: string | null): "M" | "F" | "U" {
     "nirali",
     "saloni",
     "vidhi",
-    "zeel",
+    "shivali",
     "purvi",
     "namrata",
     "khushali",
@@ -285,11 +285,6 @@ export function normalizeGenderCode(
       clean === "men" ||
       clean === "he"
     ) {
-      // If the string is generic default "male" or "m", check if name strongly indicates Female
-      if (nameStr) {
-        const nameInferred = inferGenderFromName(nameStr);
-        if (nameInferred === "F") return "F";
-      }
       return "M";
     }
     if (clean.startsWith("o") || clean === "other") return "O";
