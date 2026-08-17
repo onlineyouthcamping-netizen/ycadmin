@@ -2943,10 +2943,74 @@ export default function BookingDetailsView({
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Room Sharing
                     </div>
-                    <div className="text-sm font-bold text-[#F5760E] mt-1">
-                      {passengers[0]?.roomSharing ||
-                        booking.roomType ||
-                        "Triple Sharing"}
+                    <div className="text-sm font-bold text-[#F5760E] mt-1 flex flex-wrap items-center gap-1.5">
+                      {(() => {
+                        const counts: Record<string, number> = {};
+                        const activePax = passengers.filter(
+                          (p: any) =>
+                            !p.isCancelled &&
+                            p.status !== "CANCELLED" &&
+                            p.status !== "cancelled",
+                        );
+
+                        if (activePax.length > 0) {
+                          activePax.forEach((p: any) => {
+                            const raw = (
+                              p.roomSharing ||
+                              p.roomType ||
+                              booking.roomType ||
+                              booking.roomSharing ||
+                              "Triple"
+                            )
+                              .toLowerCase()
+                              .trim();
+                            let label = "Triple Sharing";
+                            if (
+                              raw.includes("double") ||
+                              raw.includes("couple")
+                            ) {
+                              label = "Double Sharing";
+                            } else if (raw.includes("quad")) {
+                              label = "Quad Sharing";
+                            } else if (raw.includes("single")) {
+                              label = "Single Sharing";
+                            } else if (raw.includes("triple")) {
+                              label = "Triple Sharing";
+                            } else {
+                              label =
+                                raw.charAt(0).toUpperCase() + raw.slice(1);
+                            }
+                            counts[label] = (counts[label] || 0) + 1;
+                          });
+                        } else {
+                          const raw =
+                            booking.roomType ||
+                            booking.roomSharing ||
+                            "Triple Sharing";
+                          counts[raw] = 1;
+                        }
+
+                        const entries = Object.entries(counts);
+                        if (entries.length <= 1) {
+                          return (
+                            <span>
+                              {entries[0] ? entries[0][0] : "Triple Sharing"}
+                            </span>
+                          );
+                        }
+
+                        return entries.map(([sharingName, count]) => (
+                          <span
+                            key={sharingName}
+                            className="inline-flex items-center gap-1 bg-orange-50 border border-orange-200 text-[#F5760E] px-2 py-0.5 rounded text-xs font-bold shadow-2xs"
+                          >
+                            <span className="text-slate-700 font-black">
+                              {count}×
+                            </span>
+                            {sharingName}
+                          </span>
+                        ));
+                      })()}
                     </div>
                   </div>
                   <div>
@@ -3622,8 +3686,26 @@ export default function BookingDetailsView({
                             </td>
 
                             {/* Room Sharing */}
-                            <td className="px-4 py-3 font-medium text-slate-700">
-                              {getRoomSharingLabel(normP.roomSharing)}
+                            <td className="px-4 py-3 font-medium">
+                              <span
+                                className={cn(
+                                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
+                                  (normP.roomSharing || "")
+                                    .toLowerCase()
+                                    .includes("double") ||
+                                    (normP.roomSharing || "")
+                                      .toLowerCase()
+                                      .includes("couple")
+                                    ? "bg-purple-50 text-purple-700 border-purple-200"
+                                    : (normP.roomSharing || "")
+                                          .toLowerCase()
+                                          .includes("quad")
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : "bg-orange-50 text-orange-700 border-orange-200",
+                                )}
+                              >
+                                {getRoomSharingLabel(normP.roomSharing)}
+                              </span>
                             </td>
 
                             {/* Food Preference */}
