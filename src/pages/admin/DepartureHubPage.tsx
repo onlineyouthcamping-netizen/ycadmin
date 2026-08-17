@@ -1368,7 +1368,7 @@ export default function DepartureHubPage() {
           bookingDate: b.createdAt?.substring(0, 10) || "2027-06-15",
           departureDate: b.departureDate?.substring(0, 10) || departureDateStr,
           batchGroup: "Batch 1",
-          gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender || "Male"),
+          gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender, leadName),
           age: b.age || 24,
           phone: b.phone || b.mobile || "—",
           email: b.email || "—",
@@ -1446,7 +1446,7 @@ export default function DepartureHubPage() {
               balance: allocatedBalances[coPaxIdx] || 0,
               notes: p.notes || (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
               isLead: false,
-              gender: normalizeGenderFull(p.gender || p.genderFull || "Male"),
+              gender: normalizeGenderFull(p.gender || p.genderFull, p.name),
               age: p.age || 24,
               status: p.status || (p.isCancelled ? "CANCELLED" : "CONFIRMED"),
               isCancelled: p.isCancelled === true || p.status === "CANCELLED" || p.status === "cancelled" || b.status === "cancelled",
@@ -4887,7 +4887,7 @@ useEffect(() => {
       if (isPassengerCancelled(pObj)) return;
 
       const travelerName = pObj.name;
-      const isFemale = normalizeGenderCode(pObj.gender) === "F";
+      const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
       const gender = isFemale ? "GIRLS" : "BOYS";
       list.push({
         roomNumber: alloc.room,
@@ -4931,7 +4931,7 @@ useEffect(() => {
         const fleetItem = allocFleet.find(
           (f) => f.name === alloc.vehicle || f.id === alloc.vehicle || f.vehicleType === alloc.vehicle,
         );
-        const isFemale = normalizeGenderCode(pObj.gender) === "F";
+        const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
         list.push({
           fleetId: fleetItem?.id || alloc.vehicle || "tempo-1",
           vehicleType: fleetItem?.vehicleType || alloc.vehicle || "Tempo Traveller",

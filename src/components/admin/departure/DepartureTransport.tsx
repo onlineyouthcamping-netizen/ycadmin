@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { normalizeGenderCode } from "@/utils/passengerUtils";
 
 const outlineBtn =
   "h-8 w-full sm:w-auto min-w-0 text-[12px] font-medium rounded-md border border-[#E8EEF4] bg-white text-[#0B1528] hover:bg-[#F4F7FB] px-3 inline-flex items-center justify-center gap-1.5 shadow-none transition-colors disabled:opacity-50";
@@ -566,12 +567,8 @@ export default function DepartureTransport({
                       const passId = rData.passengerIds
                         ? rData.passengerIds[i]
                         : null;
-                      const rawG = (rData.rawGenders[i] || "").toLowerCase().trim();
                       const isFemale =
-                        rawG.startsWith("f") ||
-                        rawG === "female" ||
-                        rawG === "girls" ||
-                        rawG === "girl";
+                        normalizeGenderCode(rData.rawGenders[i], m) === "F";
                       const dotColor = isFemale ? "bg-pink-500" : "bg-blue-500";
                       return (
                         <li
@@ -706,12 +703,8 @@ export default function DepartureTransport({
                           );
                         })
                         .map((t: any, i: number) => {
-                          const rawG = (t.rawGender || "").toLowerCase().trim();
                           const isFemale =
-                            rawG.startsWith("f") ||
-                            rawG === "female" ||
-                            rawG === "girls" ||
-                            rawG === "girl";
+                            normalizeGenderCode(t.rawGender, t.travelerName) === "F";
                           const theme = isFemale
                             ? "text-pink-600 bg-pink-50 border-pink-100"
                             : "text-blue-600 bg-blue-50 border-blue-100";
