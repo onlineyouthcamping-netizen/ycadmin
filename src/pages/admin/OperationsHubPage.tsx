@@ -149,6 +149,9 @@ export default function OperationsHubPage() {
 
   const computedDepartures = useMemo(() => {
     const list: any[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const normalizeDate = (val: any) => {
       if (!val) return "";
       if (typeof val === "string") {
