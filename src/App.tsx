@@ -91,9 +91,6 @@ const FinanceControlCenterPage = lazy(
 
 // ── Travel Desk ──
 const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
-const TrainTemplatesPage = lazy(
-  () => import("./pages/admin/TrainTemplatesPage.tsx"),
-);
 
 // ── Business: Trips, Master Database, Website CMS ──
 const TripsPage = lazy(() => import("./pages/admin/TripsPage.tsx"));
@@ -493,11 +490,7 @@ const App = () => (
                 />
                 <Route
                   path="/admin/train-templates"
-                  element={
-                    <AdminRoute requiredPermission="tickets.templates.manage">
-                      <TrainTemplatesPage />
-                    </AdminRoute>
-                  }
+                  element={<Navigate to="/admin/bookings" replace />}
                 />
 
                 {/* Business: Trips, Master Database, Website CMS */}

@@ -89,7 +89,7 @@ export default function AccountingPage() {
     )
       return "expenses";
     if (["riya", "train", "tickets", "train_portal", "riya_wallet"].includes(t))
-      return "riya";
+      return "overview";
     if (["accounts", "bank_accounts", "cash_book", "bank", "banks", "cash"].includes(t))
       return "accounts";
     if (["profitability", "trip_profitability", "profit_loss", "pnl", "reports"].includes(t))
@@ -865,11 +865,6 @@ export default function AccountingPage() {
     },
     { id: "payments", label: "Collections in", meta: String(allClientReceipts.length) },
     { id: "expenses", label: "Payouts out", meta: String(vendorPayments.length) },
-    {
-      id: "riya",
-      label: "Riya wallet",
-      meta: formatINR(riyaData.availableRiyaBalance),
-    },
     { id: "accounts", label: "Treasury", meta: String(collectionAccounts.length) },
     { id: "profitability", label: "Trip P&L" },
   ];
@@ -889,7 +884,7 @@ export default function AccountingPage() {
               </span>
             </div>
             <p className="mt-0.5 text-[12px] text-slate-500">
-              Money ledger, verification queue, Riya wallet and trip margins.
+              Money ledger, verification queue, treasury and trip margins.
             </p>
           </div>
 
@@ -907,15 +902,6 @@ export default function AccountingPage() {
                 strokeWidth={1.75}
               />
               Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRechargeRiyaModal(true)}
-              className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB]"
-            >
-              <Ticket className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-              Recharge Riya
             </Button>
             <Button
               variant="outline"

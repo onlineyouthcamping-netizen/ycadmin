@@ -3,13 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import {
   ClipboardCheck,
   ShieldCheck,
-  Train,
   CreditCard,
   Building2,
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/auth.store";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { financeControllerService } from "@/services/financeController.service";
 import VerificationQueuePage from "./VerificationQueuePage";
@@ -18,7 +16,6 @@ import OutgoingPaymentsApprovalPage from "./OutgoingPaymentsApprovalPage";
 import RefundRequestsPage from "./RefundRequestsPage";
 
 export type ApprovalTab =
-  | "train-verification"
   | "booking-verification"
   | "payment-approvals"
   | "vendor-bills"
@@ -31,48 +28,43 @@ const TABS: {
   description: string;
 }[] = [
   {
-    key: "train-verification",
-    label: "1. Train Ticket Approvals",
-    icon: Train,
-    description: "Review and verify train tickets, PNRs, berths and ticket allowances",
-  },
-  {
     key: "booking-verification",
-    label: "2. Document & Booking Verification",
+    label: "1. Document & Booking Verification",
     icon: ShieldCheck,
-    description: "Verify passenger documents, ID proofs, medical & traveler manifests",
+    description:
+      "Verify passenger documents, ID proofs, medical & traveler manifests",
   },
   {
     key: "payment-approvals",
-    label: "3. Incoming Payments",
+    label: "2. Incoming Payments",
     icon: CreditCard,
-    description: "Approve customer online collections, bank transfers and cash submissions",
+    description:
+      "Approve customer online collections, bank transfers and cash submissions",
   },
   {
     key: "vendor-bills",
-    label: "4. Outgoing Vendor Payments",
+    label: "3. Outgoing Vendor Payments",
     icon: Building2,
-    description: "Verify payouts for Hotels, Transport, Activities, Guides & Ticketing balance",
+    description:
+      "Verify payouts for Hotels, Transport, Activities, Guides & ops balance",
   },
   {
     key: "refund-requests",
-    label: "5. Refund Requests & Credits",
+    label: "4. Refund Requests & Credits",
     icon: RefreshCw,
     description: "Review customer cancellation refunds and store credit notes",
   },
 ];
 
 export default function ApprovalsHubPage() {
-  const { admin } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab") as ApprovalTab;
+  const tabParam = searchParams.get("tab") as ApprovalTab | string | null;
   const activeTab: ApprovalTab =
     tabParam && TABS.some((t) => t.key === tabParam)
-      ? tabParam
-      : "train-verification";
+      ? (tabParam as ApprovalTab)
+      : "booking-verification";
 
   const [bookingPendingCount, setBookingPendingCount] = useState<number>(0);
-  const [trainPendingCount, setTrainPendingCount] = useState<number>(0);
   const [incomingPendingCount, setIncomingPendingCount] = useState<number>(0);
   const [vendorPendingCount, setVendorPendingCount] = useState<number>(0);
   const [refundPendingCount, setRefundPendingCount] = useState<number>(0);
@@ -80,20 +72,31 @@ export default function ApprovalsHubPage() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const [verifRes, trainRes, incRes, cashRes, vendorRes, refundRes] = await Promise.all([
-          bookingVerificationService.getVerificationQueue({ page: 1, limit: 1 }).catch(() => ({ total: 0 })),
-          bookingVerificationService.getTrainTicketVerificationQueue({ page: 1, limit: 1 }).catch(() => ({ total: 0 })),
-          financeControllerService.getIncomingQueue({ status: "PENDING_VERIFICATION", limit: 1 }).catch(() => ({ data: [] })),
-          financeControllerService.getCashQueue({ status: "PENDING_HANDOVER", limit: 1 }).catch(() => ({ data: [] })),
-          financeControllerService.getVendorQueue({ limit: 1 }).catch(() => ({ data: [] })),
-          financeControllerService.refunds.list({ status: "PENDING_APPROVAL", limit: 1 }).catch(() => ({ data: [] })),
-        ]);
+        const [verifRes, incRes, cashRes, vendorRes, refundRes] =
+          await Promise.all([
+            bookingVerificationService
+              .getVerificationQueue({ page: 1, limit: 1 })
+              .catch(() => ({ total: 0 })),
+            financeControllerService
+              .getIncomingQueue({ status: "PENDING_VERIFICATION", limit: 1 })
+              .catch(() => ({ data: [] })),
+            financeControllerService
+              .getCashQueue({ status: "PENDING_HANDOVER", limit: 1 })
+              .catch(() => ({ data: [] })),
+            financeControllerService
+              .getVendorQueue({ limit: 1 })
+              .catch(() => ({ data: [] })),
+            financeControllerService.refunds
+              .list({ status: "PENDING_APPROVAL", limit: 1 })
+              .catch(() => ({ data: [] })),
+          ]);
         setBookingPendingCount(verifRes?.total || 0);
-        setTrainPendingCount(trainRes?.total || 0);
-        setIncomingPendingCount((incRes?.data?.length || 0) + (cashRes?.data?.length || 0));
+        setIncomingPendingCount(
+          (incRes?.data?.length || 0) + (cashRes?.data?.length || 0),
+        );
         setVendorPendingCount(vendorRes?.data?.length || 0);
         setRefundPendingCount(refundRes?.data?.length || 0);
-      } catch (err) {
+      } catch {
         // silent fail
       }
     };
@@ -105,7 +108,6 @@ export default function ApprovalsHubPage() {
   };
 
   const getBadgeCount = (key: ApprovalTab) => {
-    if (key === "train-verification") return trainPendingCount;
     if (key === "booking-verification") return bookingPendingCount;
     if (key === "payment-approvals") return incomingPendingCount;
     if (key === "vendor-bills") return vendorPendingCount;
@@ -115,7 +117,6 @@ export default function ApprovalsHubPage() {
 
   return (
     <div className="space-y-4 font-sans antialiased text-[#0B1528] p-1 bg-transparent min-h-0">
-      {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2] bg-transparent">
         <div className="space-y-0.5">
           <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none flex items-center gap-2 font-montserrat">
@@ -128,7 +129,6 @@ export default function ApprovalsHubPage() {
         </div>
       </div>
 
-      {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
         {TABS.map((tab) => {
           const Icon = tab.icon;
@@ -145,7 +145,12 @@ export default function ApprovalsHubPage() {
                   : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900",
               )}
             >
-              <Icon className={cn("w-4 h-4", isActive ? "text-[#FF4D00]" : "text-slate-400")} />
+              <Icon
+                className={cn(
+                  "w-4 h-4",
+                  isActive ? "text-[#FF4D00]" : "text-slate-400",
+                )}
+              />
               <span>{tab.label}</span>
               {badgeCount > 0 && (
                 <span
@@ -164,13 +169,13 @@ export default function ApprovalsHubPage() {
         })}
       </div>
 
-      {/* Content Area */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 min-h-[500px]">
-        {activeTab === "train-verification" && (
-          <VerificationQueuePage defaultQueue="train" hideHeader={true} hideSideNav={true} />
-        )}
         {activeTab === "booking-verification" && (
-          <VerificationQueuePage defaultQueue="booking" hideHeader={true} hideSideNav={true} />
+          <VerificationQueuePage
+            defaultQueue="booking"
+            hideHeader={true}
+            hideSideNav={true}
+          />
         )}
         {activeTab === "payment-approvals" && (
           <IncomingPaymentsApprovalPage hideHeader={true} />

@@ -87,7 +87,6 @@ import DepartureDocuments from "@/components/admin/DepartureDocuments";
 import DeparturePayments from "@/components/admin/DeparturePayments";
 import DepartureReports from "@/components/admin/DepartureReports";
 import DepartureTasks from "@/components/admin/DepartureTasks";
-import DepartureTicketing from "@/components/admin/DepartureTicketing";
 import StationPaymentCollection from "@/components/admin/StationPaymentCollection";
 import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import HotelCalculator from "@/components/admin/hotels/HotelCalculator";

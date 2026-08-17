@@ -85,7 +85,6 @@ import {
 } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import VerificationDetailsPanel from "./VerificationDetailsPanel";
-import TrainTicketsPanel from "./TrainTicketsPanel";
 import { trainTicketService } from "@/services/trainTicket.service";
 import EmailComposerDrawer from "./EmailComposerDrawer";
 import EmailLogsTimeline from "./EmailLogsTimeline";
@@ -2732,47 +2731,6 @@ export default function BookingDetailsView({
         </div>
         <div
           className="workspace-kpi-card"
-          onClick={() => setAdminActiveTab("ticketing")}
-        >
-          <div className="text-[10px] uppercase font-semibold text-slate-400">
-            Ticketing
-          </div>
-          <div className="text-base font-bold text-slate-800">
-            {
-              tickets.filter(
-                (t: any) =>
-                  t.ticketStatus === "PENDING" || t.status === "PENDING",
-              ).length
-            }
-          </div>
-          {(() => {
-            const depT = tickets.filter((t: any) => t.journeyType !== "RETURN");
-            const retT = tickets.filter((t: any) => t.journeyType === "RETURN");
-            const depConf = depT.filter(
-              (t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED",
-            ).length;
-            const depWl = depT.filter(
-              (t: any) => (t.ticketStatus || "").toUpperCase() === "WAITLISTED",
-            ).length;
-            const retConf = retT.filter(
-              (t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED",
-            ).length;
-
-            return (
-              <div className="text-[10px] text-slate-600 font-medium space-y-0.5 mt-0.5">
-                <div>
-                  Dep: <b className="text-emerald-600">{depConf} Conf</b>
-                  {depWl > 0 ? `, ${depWl} WL` : ""}
-                </div>
-                <div>
-                  Ret: <b className="text-blue-600">{retConf} Conf</b>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-        <div
-          className="workspace-kpi-card"
           onClick={() => setAdminActiveTab("operations")}
         >
           <div className="text-[10px] uppercase font-semibold text-slate-400">
@@ -2820,16 +2778,6 @@ export default function BookingDetailsView({
                 id: "operations",
                 label: "Tasks",
                 badge: tasks.length ? `${tasks.length} tasks` : null,
-              },
-              {
-                id: "ticketing",
-                label: "Ticketing",
-                badge: tickets.filter(
-                  (t: any) =>
-                    t.ticketStatus === "PENDING" || t.status === "PENDING",
-                ).length
-                  ? `${tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length} pending`
-                  : null,
               },
               { id: "accounting", label: "Accounting", badge: null },
               { id: "files", label: "Notes", badge: null },
@@ -4445,21 +4393,6 @@ export default function BookingDetailsView({
                   )}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* === TICKETING TAB === */}
-          {adminActiveTab === "ticketing" && (
-            <div className="bg-white border border-slate-200 rounded p-4 shadow-sm space-y-4">
-              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider pb-2 border-b">
-                Ticket Booking & PNR Details
-              </h4>
-              <TrainTicketsPanel
-                bookingId={booking.id}
-                booking={booking}
-                passengers={passengers}
-                onCountChange={() => {}}
-              />
             </div>
           )}
 

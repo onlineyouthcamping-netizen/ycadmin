@@ -24,7 +24,6 @@ import { TravelDeskDepartures } from "@/components/travel-desk/TravelDeskDepartu
 import { TravelDeskItinerary } from "@/components/travel-desk/TravelDeskItinerary";
 import { TravelDeskDocuments } from "@/components/travel-desk/TravelDeskDocuments";
 import { TravelDeskSops } from "@/components/travel-desk/TravelDeskSops";
-import { TravelDeskTicketing } from "@/components/travel-desk/TravelDeskTicketing";
 import { TravelDeskGallery } from "@/components/travel-desk/TravelDeskGallery";
 import { TravelDeskActivityLog } from "@/components/travel-desk/TravelDeskActivityLog";
 import { TravelDeskVendors } from "@/components/travel-desk/TravelDeskVendors";
@@ -227,8 +226,6 @@ export default function TravelDeskPage() {
                 <TravelDeskDocuments trip={activeTrip} />
               ) : tab === "sops" ? (
                 <TravelDeskSops trip={activeTrip} />
-              ) : tab === "ticketing" ? (
-                <TravelDeskTicketing trip={activeTrip} />
               ) : tab === "gallery" ? (
                 <TravelDeskGallery trip={activeTrip} />
               ) : tab === "activity" ? (

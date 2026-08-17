@@ -135,11 +135,15 @@ export default function FinanceControlCenterPage({
       ? "expenses"
       : undefined;
 
-  const activeTab =
+  const rawActiveTab =
     (searchParams.get("queue") as QueueTab) ||
     (searchParams.get("subtab") as QueueTab) ||
     defaultTabFromApprovalHub ||
     "cash";
+  const activeTab: QueueTab =
+    rawActiveTab === "ticketing" || rawActiveTab === "ticket_repository"
+      ? "cash"
+      : rawActiveTab;
 
   // Data states
   const [stats, setStats] = useState<FinanceControlCenterStats | null>(null);
@@ -805,10 +809,8 @@ export default function FinanceControlCenterPage({
     { id: "cash", label: "Cash" },
     { id: "incoming", label: "Incoming" },
     { id: "vendor", label: "Vendors" },
-    { id: "ticketing", label: "Ticketing" },
     { id: "refunds", label: "Refunds" },
     { id: "credits", label: "Credits" },
-    { id: "ticket_repository", label: "Tickets" },
     { id: "tasks", label: "Tasks" },
     { id: "coupons", label: "Coupons" },
     { id: "departures", label: "Departures" },
@@ -830,7 +832,7 @@ export default function FinanceControlCenterPage({
               <h1 className="text-lg md:text-xl font-bold text-[#0B1528] tracking-tight">Finance Control Center</h1>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Approvals, cash, refunds, ticketing, vendors, and audit — one queue.
+              Approvals, cash, refunds, vendors, and audit — one queue.
             </p>
           </div>
         )}
@@ -927,13 +929,6 @@ export default function FinanceControlCenterPage({
             label: "Vendors",
             val: queueCounts.vendor,
             sub: "Outstanding payouts",
-            alert: true,
-          },
-          {
-            id: "ticketing" as QueueTab,
-            label: "Ticketing",
-            val: queueCounts.ticketing,
-            sub: "Margin audit",
             alert: true,
           },
           {
