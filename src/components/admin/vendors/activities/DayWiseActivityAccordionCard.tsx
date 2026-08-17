@@ -422,8 +422,29 @@ export default function DayWiseActivityAccordionCard({
           )}
         </div>
 
-        {/* Right: Details Button */}
-        <div className="flex items-center gap-2 self-end xl:self-center">
+        {/* Right: Details & Delete Buttons */}
+        <div className="flex items-center gap-1.5 self-end xl:self-center shrink-0">
+          {onDeleteActivity && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (
+                  window.confirm(
+                    `Are you sure you want to delete "${activityName}" from this departure?`,
+                  )
+                ) {
+                  onDeleteActivity(activity.id);
+                }
+              }}
+              className="text-xs font-semibold px-2.5 h-8 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition shadow-2xs cursor-pointer"
+              title="Delete Activity"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"
