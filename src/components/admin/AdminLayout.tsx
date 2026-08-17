@@ -133,10 +133,6 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       {
-        title: "Booking & docs",
-        url: "/admin/approvals-hub?tab=booking-verification",
-      },
-      {
         title: "Incoming payments",
         url: "/admin/approvals-hub?tab=payment-approvals",
       },

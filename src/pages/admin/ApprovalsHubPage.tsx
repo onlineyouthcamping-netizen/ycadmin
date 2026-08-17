@@ -2,21 +2,17 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ClipboardCheck,
-  ShieldCheck,
   CreditCard,
   Building2,
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { financeControllerService } from "@/services/financeController.service";
-import VerificationQueuePage from "./VerificationQueuePage";
 import IncomingPaymentsApprovalPage from "./IncomingPaymentsApprovalPage";
 import OutgoingPaymentsApprovalPage from "./OutgoingPaymentsApprovalPage";
 import RefundRequestsPage from "./RefundRequestsPage";
 
 export type ApprovalTab =
-  | "booking-verification"
   | "payment-approvals"
   | "vendor-bills"
   | "refund-requests";
@@ -28,29 +24,22 @@ const TABS: {
   description: string;
 }[] = [
   {
-    key: "booking-verification",
-    label: "1. Document & Booking Verification",
-    icon: ShieldCheck,
-    description:
-      "Verify passenger documents, ID proofs, medical & traveler manifests",
-  },
-  {
     key: "payment-approvals",
-    label: "2. Incoming Payments",
+    label: "1. Incoming Payments",
     icon: CreditCard,
     description:
       "Approve customer online collections, bank transfers and cash submissions",
   },
   {
     key: "vendor-bills",
-    label: "3. Outgoing Vendor Payments",
+    label: "2. Outgoing Vendor Payments",
     icon: Building2,
     description:
       "Verify payouts for Hotels, Transport, Activities, Guides & ops balance",
   },
   {
     key: "refund-requests",
-    label: "4. Refund Requests & Credits",
+    label: "3. Refund Requests & Credits",
     icon: RefreshCw,
     description: "Review customer cancellation refunds and store credit notes",
   },
@@ -62,9 +51,8 @@ export default function ApprovalsHubPage() {
   const activeTab: ApprovalTab =
     tabParam && TABS.some((t) => t.key === tabParam)
       ? (tabParam as ApprovalTab)
-      : "booking-verification";
+      : "payment-approvals";
 
-  const [bookingPendingCount, setBookingPendingCount] = useState<number>(0);
   const [incomingPendingCount, setIncomingPendingCount] = useState<number>(0);
   const [vendorPendingCount, setVendorPendingCount] = useState<number>(0);
   const [refundPendingCount, setRefundPendingCount] = useState<number>(0);
@@ -72,25 +60,20 @@ export default function ApprovalsHubPage() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const [verifRes, incRes, cashRes, vendorRes, refundRes] =
-          await Promise.all([
-            bookingVerificationService
-              .getVerificationQueue({ page: 1, limit: 1 })
-              .catch(() => ({ total: 0 })),
-            financeControllerService
-              .getIncomingQueue({ status: "PENDING_VERIFICATION", limit: 1 })
-              .catch(() => ({ data: [] })),
-            financeControllerService
-              .getCashQueue({ status: "PENDING_HANDOVER", limit: 1 })
-              .catch(() => ({ data: [] })),
-            financeControllerService
-              .getVendorQueue({ limit: 1 })
-              .catch(() => ({ data: [] })),
-            financeControllerService.refunds
-              .list({ status: "PENDING_APPROVAL", limit: 1 })
-              .catch(() => ({ data: [] })),
-          ]);
-        setBookingPendingCount(verifRes?.total || 0);
+        const [incRes, cashRes, vendorRes, refundRes] = await Promise.all([
+          financeControllerService
+            .getIncomingQueue({ status: "PENDING_VERIFICATION", limit: 1 })
+            .catch(() => ({ data: [] })),
+          financeControllerService
+            .getCashQueue({ status: "PENDING_HANDOVER", limit: 1 })
+            .catch(() => ({ data: [] })),
+          financeControllerService
+            .getVendorQueue({ limit: 1 })
+            .catch(() => ({ data: [] })),
+          financeControllerService.refunds
+            .list({ status: "PENDING_APPROVAL", limit: 1 })
+            .catch(() => ({ data: [] })),
+        ]);
         setIncomingPendingCount(
           (incRes?.data?.length || 0) + (cashRes?.data?.length || 0),
         );
@@ -108,7 +91,6 @@ export default function ApprovalsHubPage() {
   };
 
   const getBadgeCount = (key: ApprovalTab) => {
-    if (key === "booking-verification") return bookingPendingCount;
     if (key === "payment-approvals") return incomingPendingCount;
     if (key === "vendor-bills") return vendorPendingCount;
     if (key === "refund-requests") return refundPendingCount;
@@ -124,7 +106,7 @@ export default function ApprovalsHubPage() {
             Approval Center
           </h1>
           <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-            Review and approve pending requests across all operational modules.
+            Review and approve pending payment, vendor, and refund requests.
           </p>
         </div>
       </div>
@@ -170,13 +152,6 @@ export default function ApprovalsHubPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 min-h-[500px]">
-        {activeTab === "booking-verification" && (
-          <VerificationQueuePage
-            defaultQueue="booking"
-            hideHeader={true}
-            hideSideNav={true}
-          />
-        )}
         {activeTab === "payment-approvals" && (
           <IncomingPaymentsApprovalPage hideHeader={true} />
         )}

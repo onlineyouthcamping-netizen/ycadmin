@@ -79,9 +79,6 @@ const CompanyDocumentsPage = lazy(
 const ApprovalsHubPage = lazy(
   () => import("./pages/admin/ApprovalsHubPage.tsx"),
 );
-const VerificationQueuePage = lazy(
-  () => import("./pages/admin/VerificationQueuePage.tsx"),
-);
 
 // ── Finance ──
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
@@ -426,11 +423,7 @@ const App = () => (
                 {/* Approval Center */}
                 <Route
                   path="/admin/verification-queue"
-                  element={
-                    <AdminRoute requiredPermission="bookings.view">
-                      <VerificationQueuePage />
-                    </AdminRoute>
-                  }
+                  element={<Navigate to="/admin/approvals-hub?tab=payment-approvals" replace />}
                 />
                 <Route
                   path="/admin/approvals-hub"
@@ -442,7 +435,7 @@ const App = () => (
                 />
                 <Route
                   path="/admin/ticket-approvals"
-                  element={<Navigate to="/admin/approvals-hub" replace />}
+                  element={<Navigate to="/admin/approvals-hub?tab=payment-approvals" replace />}
                 />
 
                 {/* Unified Finance Control Hub */}
