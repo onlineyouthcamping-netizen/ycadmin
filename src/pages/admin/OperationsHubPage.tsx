@@ -167,38 +167,58 @@ export default function OperationsHubPage() {
 
     const getActivePassengerCount = (booking: any): number => {
       if (!booking) return 0;
-      let paxList: any[] = [];
-      if (Array.isArray(booking.passengers)) {
-        paxList = booking.passengers;
-      } else if (booking.passengers && typeof booking.passengers === "object") {
-        if (Array.isArray(booking.passengers.persons)) {
-          paxList = booking.passengers.persons;
-        } else if (Array.isArray(booking.passengers.passengers)) {
-          paxList = booking.passengers.passengers;
-        }
-      } else if (typeof booking.passengers === "string") {
-        try {
-          const parsed = JSON.parse(booking.passengers);
-          if (Array.isArray(parsed)) {
-            paxList = parsed;
-          } else if (parsed && typeof parsed === "object") {
-            if (Array.isArray(parsed.persons)) {
-              paxList = parsed.persons;
-            } else if (Array.isArray(parsed.passengers)) {
-              paxList = parsed.passengers;
-            }
-          }
-        } catch (e) {}
+      const bStatus = String(
+        booking.status || booking.bookingStatus || "",
+      ).toLowerCase();
+      if (
+        booking.isCancelled ||
+        booking.cancelled ||
+        bStatus === "cancelled" ||
+        bStatus === "rejected" ||
+        bStatus === "expired" ||
+        bStatus === "failed" ||
+        bStatus === "refunded"
+      ) {
+        return 0;
       }
 
+      let paxObj = booking.passengers;
+      if (typeof paxObj === "string") {
+        try {
+          paxObj = JSON.parse(paxObj);
+        } catch (e) {
+          paxObj = {};
+        }
+      }
+      const paxList = Array.isArray(paxObj?.persons)
+        ? paxObj.persons
+        : Array.isArray(paxObj?.passengers)
+          ? paxObj.passengers
+          : Array.isArray(paxObj)
+            ? paxObj
+            : [];
+
+      const normalizeCompareName = (nameStr: string) => {
+        if (!nameStr) return "";
+        let clean = nameStr.toLowerCase().trim();
+        if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
+        else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
+        else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
+        return clean;
+      };
+
+      const leadName = booking.fullName || booking.name || "";
+      const normLeadName = normalizeCompareName(leadName);
+
       if (paxList.length > 0) {
-        const active = paxList.filter(
+        const filteredCoPax = paxList.filter(
           (p: any) =>
             !p.isCancelled &&
             !p.cancelled &&
-            String(p.status || "").toLowerCase() !== "cancelled",
+            String(p.status || "").toLowerCase() !== "cancelled" &&
+            normalizeCompareName(p?.name || "") !== normLeadName,
         );
-        return active.length;
+        return filteredCoPax.length + 1;
       }
       return Number(booking.numberOfTravelers) || 1;
     };
