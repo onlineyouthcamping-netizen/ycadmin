@@ -15,11 +15,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
-  onUpload: (url: string) => void;
+  onUpload?: (url: string) => void;
   onMultipleUpload?: (urls: string[]) => void;
+  onChange?: (urls: string[]) => void;
   label?: string;
-  value?: string;
+  value?: string | string[];
   multiple?: boolean;
+  maxFiles?: number;
   className?: string;
   compact?: boolean;
   accept?: string;
@@ -43,9 +45,11 @@ const formatUrl = (url: any): string => {
 export function ImageUpload({
   onUpload,
   onMultipleUpload,
+  onChange,
   label,
   value,
   multiple = false,
+  maxFiles,
   className,
   compact = false,
   accept = "*",
@@ -57,13 +61,27 @@ export function ImageUpload({
   const [id] = useState(() => Math.random().toString(36).substring(7));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const notifySingle = (url: string) => {
+    if (typeof onUpload === "function") onUpload(url);
+    if (typeof onChange === "function") onChange(url ? [url] : []);
+    if (typeof onMultipleUpload === "function") onMultipleUpload(url ? [url] : []);
+  };
+
+  const notifyMultiple = (urls: string[]) => {
+    if (typeof onMultipleUpload === "function") onMultipleUpload(urls);
+    if (typeof onChange === "function") onChange(urls);
+    if (typeof onUpload === "function") urls.forEach((u) => onUpload(u));
+  };
+
   const handleFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
     const maxLimitBytes = ENV.IMAGE_MAX_BYTES;
     const maxLimitMb = ENV.IMAGE_MAX_BYTES / (1024 * 1024);
 
-    if (multiple) {
+    const isMultiMode = multiple || (maxFiles !== undefined && maxFiles > 1);
+
+    if (isMultiMode) {
       const formData = new FormData();
       let validCount = 0;
       for (let i = 0; i < files.length; i++) {
@@ -86,11 +104,7 @@ export function ImageUpload({
           },
         });
         if (res.data.success) {
-          if (onMultipleUpload) {
-            onMultipleUpload(res.data.urls);
-          } else {
-            res.data.urls.forEach((url: string) => onUpload(url));
-          }
+          notifyMultiple(res.data.urls || []);
           toast.success("Uploaded successfully");
         } else {
           toast.error(
@@ -126,7 +140,7 @@ export function ImageUpload({
           },
         });
         if (res.data.success) {
-          onUpload(res.data.url);
+          notifySingle(res.data.url);
           toast.success("Photo updated");
         } else {
           toast.error(
@@ -158,15 +172,16 @@ export function ImageUpload({
   };
 
   const handleRemove = async () => {
-    if (!value) return;
-    if (typeof value === "string" && value.startsWith("/uploads/")) {
+    const currentVal = Array.isArray(value) ? value[0] : value;
+    if (!currentVal) return;
+    if (typeof currentVal === "string" && currentVal.startsWith("/uploads/")) {
       try {
-        await api.delete("/upload/photo", { data: { url: value } });
+        await api.delete("/upload/photo", { data: { url: currentVal } });
       } catch (err) {
         console.warn("Server delete failed (continuing):", err);
       }
     }
-    onUpload("");
+    notifySingle("");
   };
 
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -190,7 +205,12 @@ export function ImageUpload({
     [multiple],
   );
 
-  const displayUrl = formatUrl(value);
+  const singleValue = Array.isArray(value) ? value[0] || "" : value || "";
+  const displayUrl = formatUrl(singleValue);
+  const isMultiMode = multiple || (maxFiles !== undefined && maxFiles > 1);
+  const hasValue = Array.isArray(value)
+    ? value.length > 0 && Boolean(value[0])
+    : Boolean(value);
 
   return (
     <div className={cn("space-y-1.5 w-full h-full", className)}>
@@ -205,7 +225,7 @@ export function ImageUpload({
         ref={fileInputRef}
         type="file"
         accept={accept}
-        multiple={multiple}
+        multiple={isMultiMode}
         onChange={handleFileChange}
         className="hidden"
         id={`file-replace-${id}`}
@@ -223,7 +243,7 @@ export function ImageUpload({
             : "border-slate-200/80 bg-slate-50/70 hover:bg-slate-100/70 hover:border-slate-300",
         )}
       >
-        {value && !multiple ? (
+        {hasValue && !isMultiMode ? (
           <div className="relative w-full h-full min-h-[56px] rounded-lg overflow-hidden bg-slate-900/5 border border-slate-200 group/preview flex items-center justify-center">
             {!imgError ? (
               <img
