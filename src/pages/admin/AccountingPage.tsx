@@ -122,11 +122,13 @@ export default function AccountingPage() {
     pendingClientPayments: any[];
     pendingStationPayments: any[];
     pendingVendorPayments: any[];
+    pendingTrainTickets: any[];
     totalPendingCount: number;
   }>({
     pendingClientPayments: [],
     pendingStationPayments: [],
     pendingVendorPayments: [],
+    pendingTrainTickets: [],
     totalPendingCount: 0,
   });
   const [riyaData, setRiyaData] = useState<{
@@ -272,6 +274,7 @@ export default function AccountingPage() {
           pendingClientPayments: qRes.data.data.pendingClientPayments || [],
           pendingStationPayments: qRes.data.data.pendingStationPayments || [],
           pendingVendorPayments: qRes.data.data.pendingVendorPayments || [],
+          pendingTrainTickets: qRes.data.data.pendingTrainTickets || [],
           totalPendingCount: qRes.data.data.totalPendingCount || 0,
         });
       }
@@ -1224,7 +1227,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {verificationQueue.pendingClientPayments.map((p: any) => (
+                    {(verificationQueue.pendingClientPayments || []).map((p: any) => (
                       <tr key={p.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {p.booking?.fullName || "Customer"}
@@ -1334,7 +1337,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {verificationQueue.pendingStationPayments.map((p: any) => (
+                    {(verificationQueue.pendingStationPayments || []).map((p: any) => (
                       <tr key={p.id} className="hover:bg-slate-50/60 font-medium">
                         <td className="py-2.5 px-4 font-bold text-slate-900">
                           {p.booking?.fullName || p.collectedFrom || "Passenger"}
@@ -1449,7 +1452,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {verificationQueue.pendingVendorPayments.map((v: any) => (
+                    {(verificationQueue.pendingVendorPayments || []).map((v: any) => (
                       <tr key={v.id} className="hover:bg-[#F8FAFC]/60 font-medium">
                         <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {v.vendorName}
@@ -1569,7 +1572,7 @@ export default function AccountingPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E8EEF4]">
-                      {verificationQueue.pendingTrainTickets.map((t: any) => {
+                      {(verificationQueue.pendingTrainTickets || []).map((t: any) => {
                         const exp = Number(t.expectedTicketAmount) || 0;
                         const act = Number(t.ticketAmount) || 0;
                         const variance = act - exp;
