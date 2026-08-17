@@ -229,24 +229,30 @@ export default function QuotationFormPage() {
     }
   };
 
-  const copyLink = () => {
-    const baseUrl =
+  const getPublicQuoteUrl = () => {
+    let baseUrl =
       import.meta.env.VITE_FRONTEND_URL || "https://youthcamping.online";
-    const tokenPart = formData.shareToken
-      ? `?token=${formData.shareToken}`
-      : "";
-    const url = `${baseUrl}/quote/${formData.slug || formData.id}${tokenPart}`;
+    if (
+      typeof window !== "undefined" &&
+      window.location.hostname.includes("localhost")
+    ) {
+      baseUrl = "http://localhost:3000";
+    }
+    const target = formData.slug || formData.id || "quote";
+    const isDraft = formData.status?.toLowerCase() === "draft";
+    const tokenPart =
+      isDraft && formData.shareToken ? `?token=${formData.shareToken}` : "";
+    return `${baseUrl}/quote/${target}${tokenPart}`;
+  };
+
+  const copyLink = () => {
+    const url = getPublicQuoteUrl();
     navigator.clipboard.writeText(url);
     toast.success("Public quotation link copied to clipboard!");
   };
 
   const sendWhatsApp = () => {
-    const baseUrl =
-      import.meta.env.VITE_FRONTEND_URL || "https://youthcamping.online";
-    const tokenPart = formData.shareToken
-      ? `?token=${formData.shareToken}`
-      : "";
-    const quoteLink = `${baseUrl}/quote/${formData.slug || formData.id}${tokenPart}`;
+    const quoteLink = getPublicQuoteUrl();
     const message = `Hi ${formData.customerName},
 
 Greetings from YOUTHCAMPING Experiences!
@@ -342,16 +348,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
               <Button
                 variant="outline"
                 onClick={() => {
-                  const baseUrl =
-                    import.meta.env.VITE_FRONTEND_URL ||
-                    "https://youthcamping.online";
-                  const tokenPart = formData.shareToken
-                    ? `?token=${formData.shareToken}`
-                    : "";
-                  window.open(
-                    `${baseUrl}/quote/${formData.slug}${tokenPart}`,
-                    "_blank",
-                  );
+                  window.open(getPublicQuoteUrl(), "_blank");
                 }}
                 className="h-10 px-3.5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
               >

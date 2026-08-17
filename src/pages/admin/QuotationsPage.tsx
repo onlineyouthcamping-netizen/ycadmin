@@ -129,10 +129,23 @@ export default function QuotationsPage() {
     }
   };
 
+  const getPublicQuoteUrl = (q: any) => {
+    let baseUrl =
+      import.meta.env.VITE_FRONTEND_URL || "https://youthcamping.online";
+    if (
+      typeof window !== "undefined" &&
+      window.location.hostname.includes("localhost")
+    ) {
+      baseUrl = "http://localhost:3000";
+    }
+    const target = q.slug || q.id;
+    const isDraft = q.status?.toLowerCase() === "draft";
+    const tokenPart = isDraft && q.shareToken ? `?token=${q.shareToken}` : "";
+    return `${baseUrl}/quote/${target}${tokenPart}`;
+  };
+
   const handleCopy = (q: any) => {
-    const baseUrl = window.location.origin;
-    const tokenPart = q.shareToken ? `?token=${q.shareToken}` : "";
-    const url = `${baseUrl}/quote/${q.slug || q.id}${tokenPart}`;
+    const url = getPublicQuoteUrl(q);
     navigator.clipboard.writeText(url);
     toast.success("Public quote link copied to clipboard!");
   };
@@ -284,12 +297,7 @@ export default function QuotationsPage() {
             variant="ghost"
             size="icon"
             onClick={() => {
-              const baseUrl = window.location.origin;
-              const tokenPart = q.shareToken ? `?token=${q.shareToken}` : "";
-              window.open(
-                `${baseUrl}/quote/${q.slug || q.id}${tokenPart}`,
-                "_blank",
-              );
+              window.open(getPublicQuoteUrl(q), "_blank");
             }}
             title="Preview proposal"
             className="h-7 w-7 text-slate-400 hover:text-[#0B1528] hover:bg-slate-50 rounded-md cursor-pointer"
