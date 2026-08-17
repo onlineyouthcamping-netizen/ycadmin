@@ -946,6 +946,30 @@ ${formData.expert?.designation || "Destination Expert"}`;
                       />
                     </div>
                   </div>
+
+                  {/* Day Highlights & Sightseeing Photos */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-200/60">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                        <ImageIcon size={12} className="text-[#D4541A]" /> Day Photos & Sightseeing Highlights
+                      </Label>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {(day.photos || (day.image ? [day.image] : [])).length} Photos
+                      </span>
+                    </div>
+                    <ImageUpload
+                      value={day.photos || (day.image ? [day.image] : [])}
+                      onChange={(urls) => {
+                        const newList = [...formData.itinerary!];
+                        newList[idx].photos = urls;
+                        newList[idx].image = urls[0] || "";
+                        setFormData({ ...formData, itinerary: newList });
+                      }}
+                      maxFiles={6}
+                      multiple={true}
+                      compact={false}
+                    />
+                  </div>
                 </motion.div>
               ))}
             </div>
