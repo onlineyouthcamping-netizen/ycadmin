@@ -1965,6 +1965,14 @@ export default function BookingDetailsView({
       return;
     }
 
+    if (newPassenger.age && newPassenger.age !== "N/A") {
+      const ageNum = parseInt(String(newPassenger.age), 10);
+      if (isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
+        toast.error("Please enter a valid age between 1 and 120");
+        return;
+      }
+    }
+
     let updatedPassengers = [];
     let isMainGuestUpdate = false;
     const salutationPrefix = newPassenger.salutation
@@ -6452,11 +6460,23 @@ export default function BookingDetailsView({
                 </label>
                 <Input
                   type="number"
+                  min={1}
+                  max={120}
                   value={newPassenger.age}
-                  onChange={(e) =>
-                    setNewPassenger({ ...newPassenger, age: e.target.value })
-                  }
-                  placeholder="Years"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      setNewPassenger({ ...newPassenger, age: "" });
+                      return;
+                    }
+                    const num = parseInt(val, 10);
+                    if (!isNaN(num) && num > 120) {
+                      setNewPassenger({ ...newPassenger, age: "120" });
+                    } else {
+                      setNewPassenger({ ...newPassenger, age: val });
+                    }
+                  }}
+                  placeholder="Years (1-120)"
                   className="h-8 text-xs rounded"
                 />
               </div>
