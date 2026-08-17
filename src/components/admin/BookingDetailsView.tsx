@@ -2,7 +2,6 @@ import DocumentManager from "@/components/admin/DocumentManager";
 import { PassengerDrawer } from "./PassengerDrawer";
 import { PassengerTimeline } from "./PassengerTimeline";
 import api from "@/services/api";
-import { cn } from "@/lib/utils";
 import {
   getPaymentReceivedColorClass,
   getPaymentReceivedColorHex,
