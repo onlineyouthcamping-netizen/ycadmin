@@ -32,6 +32,7 @@ import { cn, safeFormatDate } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
 import { useAuthStore } from "@/store/auth.store";
 import { useStaffUsers } from "@/hooks/useStaffUsers";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -230,7 +231,7 @@ export default function IncomingPaymentsApprovalPage({
   };
 
   return (
-    <div className="space-y-4 font-sans select-none antialiased text-[#162B45]">
+    <div className="space-y-3 font-sans antialiased text-[#162B45]">
       {/* 1. COMPACT HEADER */}
       {!hideHeader && (
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
@@ -264,124 +265,146 @@ export default function IncomingPaymentsApprovalPage({
         </div>
       )}
 
-      {/* 2. KPI METRICS CARDS */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* 2. MONEY MANIFEST */}
+      <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#DCE5ED] bg-[#F8FAFC] lg:grid-cols-4">
         {/* KPI 1: Pending Verification */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
+        <div className="relative min-h-[86px] border-b border-r border-[#DCE5ED] bg-white p-3.5 lg:border-b-0">
           <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Pending Verification
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
+              Needs review
             </p>
-            <h3 className="text-[20px] font-extrabold text-[#D97706] leading-none mt-1">
+            <h3 className="mt-2 text-[22px] font-bold leading-none text-[#C56A08] tabular-nums">
               {loading ? "..." : pendingCount}
             </h3>
           </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Awaiting finance approval
+          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
+            Payment entries
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-amber-50 flex items-center justify-center text-[#D97706] border border-amber-100 shrink-0">
+          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-[#C56A08]">
             <Clock className="w-3.5 h-3.5" />
           </div>
         </div>
 
         {/* KPI 2: Pending Volume */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
+        <div className="relative min-h-[86px] border-b border-[#DCE5ED] bg-white p-3.5 lg:border-b-0 lg:border-r">
           <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Pending Volume
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
+              Awaiting credit
             </p>
-            <h3 className="text-[20px] font-extrabold text-blue-600 leading-none mt-1">
+            <h3 className="mt-2 text-[20px] font-bold leading-none text-[#1769AA] tabular-nums">
               {loading ? "..." : `₹${totalPendingSum.toLocaleString("en-IN")}`}
             </h3>
           </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Awaiting bank reconciliation
+          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
+            Pending value
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shrink-0">
+          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-[#1769AA]">
             <DollarSign className="w-3.5 h-3.5" />
           </div>
         </div>
 
         {/* KPI 3: Verified Today */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
+        <div className="relative min-h-[86px] border-r border-[#DCE5ED] bg-white p-3.5">
           <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Verified Payments
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
+              Reconciled
             </p>
-            <h3 className="text-[20px] font-extrabold text-emerald-600 leading-none mt-1">
+            <h3 className="mt-2 text-[22px] font-bold leading-none text-[#138A68] tabular-nums">
               {loading ? "..." : verifiedCount}
             </h3>
           </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Credited & reconciled
+          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
+            Verified entries
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shrink-0">
+          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#138A68]">
             <CheckCircle2 className="w-3.5 h-3.5" />
           </div>
         </div>
 
         {/* KPI 4: Verified Total Value */}
-        <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
+        <div className="relative min-h-[86px] bg-white p-3.5">
           <div>
-            <p className="text-[9px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
-              Total Collections
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
+              Cleared value
             </p>
-            <h3 className="text-[20px] font-extrabold text-slate-900 leading-none mt-1">
+            <h3 className="mt-2 text-[20px] font-bold leading-none text-[#13283F] tabular-nums">
               {loading ? "..." : `₹${totalVerifiedSum.toLocaleString("en-IN")}`}
             </h3>
           </div>
-          <p className="text-[9px] text-[#74839A] font-semibold leading-none">
-            Customer booking inflows
+          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
+            Verified inflow
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100 shrink-0">
+          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
             <ArrowDownRight className="w-3.5 h-3.5" />
           </div>
         </div>
       </div>
 
-      {/* 3. TABLE WORKSPACE */}
-      <div className="bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden flex flex-col">
+      {/* 3. REVIEW WORKSPACE */}
+      <div className="flex flex-col overflow-hidden rounded-xl border border-[#DCE5ED] bg-white">
         {/* Filters Header */}
-        <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex bg-slate-100 p-1 rounded-lg border border-slate-200/70">
+        <div className="space-y-3 border-b border-[#E5ECF2] bg-[#FBFCFD] p-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-[13px] font-bold text-[#13283F]">
+                Payment review queue
+              </h3>
+              <p className="mt-0.5 text-[10px] text-[#8293A3]">
+                Match references, assign an approver, then clear the entry.
+              </p>
+            </div>
+            <Button
+              onClick={loadData}
+              variant="outline"
+              className="h-8 shrink-0 rounded-lg border-[#DCE5ED] bg-white px-2.5 text-[10px] font-bold text-[#526A7F] shadow-none hover:bg-slate-50"
+            >
+              <RotateCw
+                className={cn("mr-1.5 h-3.5 w-3.5", loading && "animate-spin")}
+              />
+              Refresh
+            </Button>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-2 overflow-x-auto no-scrollbar">
+            <div className="inline-flex shrink-0 rounded-lg border border-[#DCE5ED] bg-[#EDF3F7] p-0.5">
               <button
                 onClick={() => setPaymentType("all")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
+                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
                   paymentType === "all"
-                    ? "bg-white text-[#F97316] shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-white text-[#E84712] shadow-sm"
+                    : "text-[#61778A] hover:text-[#13283F]"
                 )}
               >
-                All Payments ({allItems.length})
+                All <span className="ml-1 text-[9px] opacity-60">{allItems.length}</span>
               </button>
               <button
                 onClick={() => setPaymentType("online")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
+                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
                   paymentType === "online"
-                    ? "bg-white text-[#F97316] shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-white text-[#E84712] shadow-sm"
+                    : "text-[#61778A] hover:text-[#13283F]"
                 )}
               >
-                Online & Bank Transfers ({incomingPayments.length})
+                Bank & online <span className="ml-1 text-[9px] opacity-60">{incomingPayments.length}</span>
               </button>
               <button
                 onClick={() => setPaymentType("cash")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
+                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
                   paymentType === "cash"
-                    ? "bg-white text-[#F97316] shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-white text-[#E84712] shadow-sm"
+                    : "text-[#61778A] hover:text-[#13283F]"
                 )}
               >
-                Cash Payments & Submissions ({cashSubmissions.length})
+                Cash <span className="ml-1 text-[9px] opacity-60">{cashSubmissions.length}</span>
               </button>
             </div>
 
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-              <SelectTrigger className="h-8 text-xs w-40 rounded border-[#E3EAF2] bg-white font-semibold">
+              <SelectTrigger className="h-8 w-36 shrink-0 rounded-lg border-[#DCE5ED] bg-white text-[10px] font-semibold">
                 <SelectValue placeholder="Assignee Filter" />
               </SelectTrigger>
               <SelectContent className="rounded">
@@ -392,8 +415,8 @@ export default function IncomingPaymentsApprovalPage({
             </Select>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto no-scrollbar rounded-lg bg-[#EDF3F7] p-0.5">
               {[
                 { key: "ALL", label: "ALL" },
                 { key: "PENDING_VERIFICATION", label: "PENDING" },
@@ -404,10 +427,10 @@ export default function IncomingPaymentsApprovalPage({
                   key={tab.key}
                   onClick={() => setStatusFilter(tab.key)}
                   className={cn(
-                    "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
+                    "rounded-md px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-all",
                     statusFilter === tab.key
-                      ? "bg-white text-[#162B45] shadow-xs"
-                      : "text-[#74839A] hover:text-[#162B45]"
+                      ? "bg-white text-[#13283F] shadow-sm"
+                      : "text-[#74839A] hover:text-[#13283F]"
                   )}
                 >
                   {tab.label}
@@ -415,20 +438,21 @@ export default function IncomingPaymentsApprovalPage({
               ))}
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
+            <div className="relative min-w-0 flex-1 lg:w-52 lg:flex-none">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8293A3]" />
               <Input
-                placeholder="Search payments..."
+                placeholder="Booking, customer or UTR"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-7.5 w-48 pl-8 text-[11px] rounded bg-slate-50 border-[#E3EAF2] focus:border-[#F97316] outline-none"
+                className="h-8 w-full rounded-lg border-[#DCE5ED] bg-white pl-8 text-[10px] outline-none focus:border-[#FF5A1F]"
               />
             </div>
+          </div>
           </div>
         </div>
 
         {/* Payments Table */}
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto lg:block">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-[#F97316] border-t-transparent rounded-full animate-spin" />
@@ -596,6 +620,129 @@ export default function IncomingPaymentsApprovalPage({
                 })}
               </tbody>
             </table>
+          )}
+        </div>
+
+        <div className="divide-y divide-[#E5ECF2] lg:hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#FF5A1F] border-t-transparent" />
+            </div>
+          ) : allItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
+              <CreditCard className="mb-2 h-8 w-8 text-slate-300" />
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#13283F]">
+                Queue clear
+              </h4>
+              <p className="mt-1 text-[10px] text-[#8293A3]">
+                No incoming payments match this filter.
+              </p>
+            </div>
+          ) : (
+            allItems.map((item) => {
+              const isCash =
+                item.type === "CASH_HANDOVER" ||
+                item.paymentMode?.toUpperCase().includes("CASH");
+              const isPending =
+                item.status === "PENDING_VERIFICATION" ||
+                item.status === "PENDING_HANDOVER" ||
+                item.status === "PENDING";
+
+              return (
+                <div key={item.id} className="space-y-3 p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-mono text-[11px] font-bold text-[#E84712]">
+                        {item.bookingId || "—"}
+                      </div>
+                      <div className="mt-0.5 truncate text-[13px] font-bold text-[#13283F]">
+                        {item.customerName}
+                      </div>
+                      <div className="mt-1 text-[10px] text-[#8293A3]">
+                        {safeFormatDate(item.date)} · {item.collectedBy}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[15px] font-bold tabular-nums text-[#138A68]">
+                        ₹{Number(item.amount || 0).toLocaleString("en-IN")}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "mt-1 text-[8px] font-bold uppercase",
+                          item.status === "VERIFIED" ||
+                            item.status === "APPROVED" ||
+                            item.status === "COMPLETED"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : item.status === "REJECTED"
+                              ? "border-rose-200 bg-rose-50 text-rose-700"
+                              : "border-amber-200 bg-amber-50 text-amber-700",
+                        )}
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="rounded-lg border border-[#E5ECF2] bg-[#FBFCFD] px-2.5 py-2">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-[#8293A3]">
+                        Mode
+                      </div>
+                      <div className="mt-0.5 font-semibold text-[#13283F]">
+                        {isCash ? "Cash handover" : item.paymentMode?.replace(/_/g, " ")}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-[#E5ECF2] bg-[#FBFCFD] px-2.5 py-2">
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-[#8293A3]">
+                        Reference
+                      </div>
+                      <div className="mt-0.5 truncate font-mono font-semibold text-[#13283F]">
+                        {item.reference || "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isPending ? (
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      {isCash && !isSuperuserFounder ? (
+                        <Button
+                          size="sm"
+                          disabled
+                          className="h-9 w-full text-[10px] font-bold"
+                        >
+                          Superuser approval required
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedPayment(item);
+                              setActionModalType("verify");
+                            }}
+                            className="h-9 flex-1 bg-emerald-600 text-[10px] font-bold hover:bg-emerald-700"
+                          >
+                            {isCash ? "Approve cash" : "Verify payment"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedPayment(item);
+                              setActionModalType("reject");
+                            }}
+                            className="h-9 flex-1 border-rose-200 text-[10px] font-bold text-rose-600 hover:bg-rose-50"
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })
           )}
         </div>
       </div>
