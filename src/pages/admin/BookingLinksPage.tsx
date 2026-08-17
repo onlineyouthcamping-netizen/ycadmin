@@ -689,7 +689,7 @@ export default function BookingLinksPage() {
                     Booking Status
                   </th>
                   <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px] text-center">
-                    Seats / Capacity
+                    Booked Seats
                   </th>
                   <th className="px-4 py-3 font-bold text-[#74839A] uppercase tracking-wider text-[10px]">
                     Cutoff Date
@@ -755,19 +755,14 @@ export default function BookingLinksPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span
-                            className={cn(
-                              "font-bold text-xs",
-                              dep.bookedPax > 0
-                                ? "text-blue-600 font-extrabold"
-                                : "text-slate-700",
-                            )}
-                          >
-                            {dep.capacity}
-                          </span>
-                          {dep.bookedPax > 0 && (
-                            <span className="ml-1.5 text-[9px] bg-blue-50 text-blue-700 border border-blue-100 font-extrabold px-1.5 py-0.5 rounded">
-                              {dep.bookedPax} Pax
+                          {dep.bookedPax > 0 ? (
+                            <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 font-extrabold px-2.5 py-1 rounded-md inline-flex items-center gap-1">
+                              <span>{dep.bookedPax}</span>
+                              <span className="text-[10px] font-semibold text-blue-600">Pax</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold text-slate-400">
+                              0 Pax
                             </span>
                           )}
                         </td>
