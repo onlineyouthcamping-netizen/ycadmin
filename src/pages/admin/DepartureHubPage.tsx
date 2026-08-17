@@ -5355,43 +5355,45 @@ useEffect(() => {
   }, [allPassengers]);
 
   const passengerStats = useMemo(() => {
-    const total = allPassengers.length;
-    const paidInFull = allPassengers.filter(
+    const activePassengers = allPassengers.filter((p: any) => !p.isCancelled);
+    const total = activePassengers.length;
+    const paidInFull = activePassengers.filter(
       (p) => p.paymentStatus === "Paid in Full",
     ).length;
-    const partial = allPassengers.filter(
+    const partial = activePassengers.filter(
       (p) => p.paymentStatus === "Partial Payment",
     ).length;
-    const pending = allPassengers.filter(
+    const pending = activePassengers.filter(
       (p) => p.paymentStatus === "Payment Pending",
     ).length;
-    const withDue = allPassengers.filter((p) => p.balance > 0).length;
-    const totalDue = allPassengers
+    const withDue = activePassengers.filter((p) => p.balance > 0).length;
+    const totalDue = activePassengers
       .filter((p) => p.balance > 0)
       .reduce((s, p) => s + p.balance, 0);
-    const outstandingPartial = allPassengers
+    const outstandingPartial = activePassengers
       .filter((p) => p.paymentStatus === "Partial Payment")
       .reduce((s, p) => s + p.balance, 0);
-    const outstandingPending = allPassengers
+    const outstandingPending = activePassengers
       .filter((p) => p.paymentStatus === "Payment Pending")
       .reduce((s, p) => s + p.balance, 0);
     // Reconciliation checklist stats
-    const ticketed = allPassengers.filter(
-      (p) => p.ticketStatus && p.ticketStatus !== "PENDING",
+    const ticketed = activePassengers.filter(
+      (p) => p.ticketStatus && p.ticketStatus !== "PENDING" && p.ticketStatus !== "CANCELLED",
     ).length;
-    const ticketVerified = allPassengers.filter(
+    const ticketVerified = activePassengers.filter(
       (p) => p.ticketVerified === true,
     ).length;
-    const roomAllocated = allPassengers.filter(
+    const roomAllocated = activePassengers.filter(
       (p) => p.roomNo && p.roomNo !== "—" && p.roomNo !== "Unassigned",
     ).length;
-    const transportAllocated = allPassengers.filter(
+    const transportAllocated = activePassengers.filter(
       (p) => p.pickupPoint && p.pickupPoint !== "—",
     ).length;
-    const missingDocument = allPassengers.filter(
+    const missingDocument = activePassengers.filter(
       (p) => p.documentStatus === "Missing",
     ).length;
     const cancelled = allPassengers.filter((p) => p.isCancelled).length;
+    const allTotal = total + cancelled;
     return {
       total,
       paidInFull,
@@ -5404,7 +5406,7 @@ useEffect(() => {
       totalDue,
       cancelled,
       cancelledPercent:
-        total > 0 ? ((cancelled / total) * 100).toFixed(1) : "0",
+        allTotal > 0 ? ((cancelled / allTotal) * 100).toFixed(1) : "0",
       ticketed,
       ticketVerified,
       roomAllocated,
@@ -5704,13 +5706,16 @@ useEffect(() => {
         return `${rNo}: ${roomDesc}`;
       });
 
-      const roomRequirement = roomSummaries.join(" | ") || "No rooms allocated";
+      const activePersons = personsList.filter((p: any) => !p.isCancelled);
+      const cancelledPersons = personsList.filter((p: any) => p.isCancelled);
 
       return {
         bookingId: b.id,
         bookingRef: b.bookingId || b.id,
         leadName,
-        totalPassengers: personsList.length,
+        totalPassengers: activePersons.length,
+        cancelledPassengers: cancelledPersons.length,
+        rawPassengerCount: personsList.length,
         coupleCount,
         roomRequirement,
         totalAmount: b.totalAmount || 0,
@@ -6891,10 +6896,19 @@ useEffect(() => {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
                   <p className="text-[11px] text-slate-500 min-w-0">
                     <span className="font-medium text-[#0B1528] tabular-nums">
-                      {filteredPassengers.length}
+                      {passengerStats.total}
                     </span>{" "}
-                    passengers ·{" "}
-                    <span className="tabular-nums">{filteredBookingGroups.length}</span>{" "}
+                    active passengers
+                    {passengerStats.cancelled > 0 && (
+                      <span className="text-slate-400">
+                        {" "}
+                        ({passengerStats.cancelled} cancelled)
+                      </span>
+                    )}{" "}
+                    ·{" "}
+                    <span className="tabular-nums">
+                      {filteredBookingGroups.length}
+                    </span>{" "}
                     bookings
                   </p>
                   <button
@@ -7227,7 +7241,13 @@ useEffect(() => {
                                     {bg.leadName}'s group
                                   </span>
                                   <span className="text-[11px] font-medium text-slate-500">
-                                    {bg.totalPassengers} passengers
+                                    {bg.totalPassengers} active passengers
+                                    {bg.cancelledPassengers > 0 && (
+                                      <span className="text-slate-400">
+                                        {" "}
+                                        ({bg.cancelledPassengers} cancelled)
+                                      </span>
+                                    )}
                                   </span>
                                   {bg.coupleCount > 0 && (
                                     <span className="text-[11px] font-medium text-slate-500 border border-[#E8EEF4] bg-white rounded-md px-1.5 py-0.5">

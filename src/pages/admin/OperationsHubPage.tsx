@@ -162,6 +162,44 @@ export default function OperationsHubPage() {
       return String(val).split("T")[0];
     };
 
+    const getActivePassengerCount = (booking: any): number => {
+      if (!booking) return 0;
+      let paxList: any[] = [];
+      if (Array.isArray(booking.passengers)) {
+        paxList = booking.passengers;
+      } else if (booking.passengers && typeof booking.passengers === "object") {
+        if (Array.isArray(booking.passengers.persons)) {
+          paxList = booking.passengers.persons;
+        } else if (Array.isArray(booking.passengers.passengers)) {
+          paxList = booking.passengers.passengers;
+        }
+      } else if (typeof booking.passengers === "string") {
+        try {
+          const parsed = JSON.parse(booking.passengers);
+          if (Array.isArray(parsed)) {
+            paxList = parsed;
+          } else if (parsed && typeof parsed === "object") {
+            if (Array.isArray(parsed.persons)) {
+              paxList = parsed.persons;
+            } else if (Array.isArray(parsed.passengers)) {
+              paxList = parsed.passengers;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (paxList.length > 0) {
+        const active = paxList.filter(
+          (p: any) =>
+            !p.isCancelled &&
+            !p.cancelled &&
+            String(p.status || "").toLowerCase() !== "cancelled",
+        );
+        return active.length;
+      }
+      return Number(booking.numberOfTravelers) || 1;
+    };
+
     trips.forEach((trip) => {
       let datesArr: any[] = [];
       if (Array.isArray(trip.availableDates)) {
@@ -169,14 +207,15 @@ export default function OperationsHubPage() {
       } else if (typeof trip.availableDates === "string") {
         try {
           datesArr = JSON.parse(trip.availableDates);
-        } catch (e) {}
+        } catch (e) {
+          datesArr = [];
+        }
       }
 
-      datesArr.forEach((d) => {
+      datesArr.forEach((d: any) => {
         if (!d || !d.date) return;
         const depDate = new Date(d.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        if (isNaN(depDate.getTime())) return;
         depDate.setHours(0, 0, 0, 0);
 
         const diffTime = depDate.getTime() - today.getTime();
@@ -211,18 +250,7 @@ export default function OperationsHubPage() {
         });
 
         const booked = depBookings.reduce(
-          (sum, b) => {
-            if (Array.isArray(b.passengers) && b.passengers.length > 0) {
-              const activePassengers = b.passengers.filter(
-                (p: any) =>
-                  !p.isCancelled &&
-                  !p.cancelled &&
-                  String(p.status || "").toLowerCase() !== "cancelled",
-              );
-              return sum + activePassengers.length;
-            }
-            return sum + (Number(b.numberOfTravelers) || 1);
-          },
+          (sum, b) => sum + getActivePassengerCount(b),
           0,
         );
         const cap = d.capacity || 30;
