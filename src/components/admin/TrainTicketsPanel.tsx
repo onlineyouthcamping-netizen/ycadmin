@@ -651,10 +651,10 @@ export default function TrainTicketsPanel({
     if (passengers && passengers.length > 0) {
       const p = normalizePassenger(booking, passengers[0], 0);
       init.travelerName = p.name || booking?.fullName || "";
-      init.travelerNames = [p.name || booking?.fullName || ""];
+      init.travelerNames = [];
     } else {
       init.travelerName = booking?.fullName || booking?.name || "";
-      init.travelerNames = [booking?.fullName || booking?.name || ""];
+      init.travelerNames = [];
     }
     setForm(init);
     setShowForm(true);
@@ -681,10 +681,10 @@ export default function TrainTicketsPanel({
     if (passengers && passengers.length > 0) {
       const p = normalizePassenger(booking, passengers[0], 0);
       init.travelerName = p.name || booking?.fullName || "";
-      init.travelerNames = [p.name || booking?.fullName || ""];
+      init.travelerNames = [];
     } else {
       init.travelerName = booking?.fullName || booking?.name || "";
-      init.travelerNames = [booking?.fullName || booking?.name || ""];
+      init.travelerNames = [];
     }
     setForm(init);
     setShowForm(true);
@@ -1152,16 +1152,26 @@ export default function TrainTicketsPanel({
                           `Passenger ${i + 1}`
                       )
                     : [booking?.fullName || booking?.name || "Lead Passenger"]
-                  ).map((pName: string, idx: number) => (
+                  ).map((pName: string, idx: number) => {
+                    const currentLegTickets = form.passengerReference === "RETURN" ? returnTickets : departureTickets;
+                    const hasTicket = currentLegTickets.some(
+                      (t: any) => t.travelerName.toLowerCase().trim() === pName.toLowerCase().trim()
+                    );
+                    return (
                     <label
                       key={idx}
-                      className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded"
+                      className={cn(
+                        "flex items-center gap-2 p-1 rounded",
+                        hasTicket ? "opacity-50 cursor-not-allowed bg-slate-50" : "cursor-pointer hover:bg-slate-50"
+                      )}
                     >
                       <input
                         type="checkbox"
-                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
-                        checked={form.travelerNames.includes(pName)}
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 disabled:opacity-50"
+                        checked={hasTicket || form.travelerNames.includes(pName)}
+                        disabled={hasTicket}
                         onChange={(e) => {
+                          if (hasTicket) return;
                           if (e.target.checked) {
                             setForm({
                               ...form,
@@ -1177,9 +1187,11 @@ export default function TrainTicketsPanel({
                           }
                         }}
                       />
-                      <span className="text-xs text-slate-700">{pName}</span>
+                      <span className="text-xs text-slate-700">
+                        {pName} {hasTicket && <span className="text-[9px] text-slate-400 italic ml-1">(Ticket added)</span>}
+                      </span>
                     </label>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
