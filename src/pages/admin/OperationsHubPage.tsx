@@ -196,18 +196,33 @@ export default function OperationsHubPage() {
             b.tripId === trip.id ||
             (trip.slug && b.tripSlug === trip.slug) ||
             (trip.title && b.tripTitle === trip.title);
-          if (!matchTrip || b.status === "cancelled" || b.status === "Cancelled")
+          const bStatus = String(b.status || b.bookingStatus || "").toLowerCase();
+          if (
+            !matchTrip ||
+            bStatus === "cancelled" ||
+            bStatus === "rejected" ||
+            bStatus === "expired" ||
+            b.isCancelled === true ||
+            b.cancelled === true
+          )
             return false;
           const bDateStr = normalizeDate(b.departureDate || b.travelDate || b.date);
           return bDateStr === targetDateStr;
         });
 
         const booked = depBookings.reduce(
-          (sum, b) =>
-            sum +
-            (Number(b.numberOfTravelers) ||
-              (Array.isArray(b.passengers) ? b.passengers.length : 0) ||
-              1),
+          (sum, b) => {
+            if (Array.isArray(b.passengers) && b.passengers.length > 0) {
+              const activePassengers = b.passengers.filter(
+                (p: any) =>
+                  !p.isCancelled &&
+                  !p.cancelled &&
+                  String(p.status || "").toLowerCase() !== "cancelled",
+              );
+              return sum + activePassengers.length;
+            }
+            return sum + (Number(b.numberOfTravelers) || 1);
+          },
           0,
         );
         const cap = d.capacity || 30;
@@ -218,7 +233,14 @@ export default function OperationsHubPage() {
         );
         const balanceFormatted = `₹ ${totalOutstanding.toLocaleString("en-IN")}`;
         const pendingCount = depBookings.filter(
-          (b) => b.paymentStatus !== "paid" && b.paymentStatus !== "Paid",
+          (b) => {
+            const pStat = String(b.paymentStatus || "").toLowerCase();
+            return (
+              pStat !== "paid" &&
+              pStat !== "completed" &&
+              (Number(b.remainingAmount) || 0) > 0
+            );
+          },
         ).length;
         const balanceSub =
           pendingCount > 0 ? `${pendingCount} pending` : "All collected";

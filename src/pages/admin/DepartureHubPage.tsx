@@ -1362,6 +1362,12 @@ export default function DepartureHubPage() {
           (passengersObj?.persons && Array.isArray(passengersObj.persons) && passengersObj.persons[0]?.trainOption) ||
           "3 TIER AC TRAIN";
 
+        const isBookingCancelled =
+          b.isCancelled === true ||
+          b.cancelled === true ||
+          String(b.status || "").toLowerCase() === "cancelled" ||
+          String(b.bookingStatus || "").toLowerCase() === "cancelled";
+
         const base = {
           bookingId: b.id,
           bookingRef: b.bookingId || b.id,
@@ -1370,6 +1376,8 @@ export default function DepartureHubPage() {
           batchGroup: "Batch 1",
           gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender, leadName),
           age: b.age || 24,
+          status: isBookingCancelled ? "CANCELLED" : (b.status || "CONFIRMED"),
+          isCancelled: isBookingCancelled,
           phone: b.phone || b.mobile || "—",
           email: b.email || "—",
           pickupPoint: b.pickupCity || "Ahmedabad",
@@ -1429,6 +1437,12 @@ export default function DepartureHubPage() {
             const coCoupleWith = coRoomInfo.coupleWith || "";
             const coTrainOpt = p.trainOption || p.trainClass || trainOpt;
 
+            const isCoPaxCancelled =
+              isBookingCancelled ||
+              p.isCancelled === true ||
+              p.cancelled === true ||
+              String(p.status || "").toLowerCase() === "cancelled";
+
             arr.push({
               id: `${b.id}-co-${idx}`,
               name: p.name,
@@ -1444,16 +1458,16 @@ export default function DepartureHubPage() {
               amount: allocatedAmounts[coPaxIdx] || 0,
               paidAmount: allocatedPaid[coPaxIdx] || 0,
               balance: allocatedBalances[coPaxIdx] || 0,
-              notes: p.notes || (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
+              notes: p.notes || (isCoPaxCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
               isLead: false,
               gender: normalizeGenderFull(p.gender || p.genderFull, p.name),
               age: p.age || 24,
-              status: p.status || (p.isCancelled ? "CANCELLED" : "CONFIRMED"),
-              isCancelled: p.isCancelled === true || p.status === "CANCELLED" || p.status === "cancelled" || b.status === "cancelled",
-              ticketStatus: p.ticketStatus || (p.isCancelled ? "CANCELLED" : b.trainTicketStatus) || "PENDING",
+              status: isCoPaxCancelled ? "CANCELLED" : (p.status || "CONFIRMED"),
+              isCancelled: isCoPaxCancelled,
+              ticketStatus: p.ticketStatus || (isCoPaxCancelled ? "CANCELLED" : b.trainTicketStatus) || "PENDING",
               ticketVerified:
-                p.ticketStatus === "CONFIRMED" ||
-                (!p.isCancelled && b.trainTicketStatus === "CONFIRMED"),
+                !isCoPaxCancelled &&
+                (p.ticketStatus === "CONFIRMED" || b.trainTicketStatus === "CONFIRMED"),
               documentStatus: p.idProof ? "Verified" : "Missing",
             });
           });
