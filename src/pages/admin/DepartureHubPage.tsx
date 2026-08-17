@@ -5706,6 +5706,9 @@ useEffect(() => {
         return `${rNo}: ${roomDesc}`;
       });
 
+      const roomRequirement =
+        roomSummaries.join(" | ") || "No rooms allocated";
+
       const activePersons = personsList.filter((p: any) => !p.isCancelled);
       const cancelledPersons = personsList.filter((p: any) => p.isCancelled);
 
