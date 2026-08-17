@@ -297,95 +297,148 @@ export default function BookingLinksPage() {
   // Generate Departures List for selected Trip with Real Booked Pax & Filters
   const departuresList = useMemo<MockDepartureDate[]>(() => {
     if (!selectedTrip) return [];
+
+    // 1. Gather and deduplicate all potential dates for this trip by normalized YYYY-MM-DD
+    const dateMap = new Map<string, string>(); // key: YYYY-MM-DD, value: original/canonical date string
+
+    // From Trip availableDates
     const rawDates =
       selectedTrip.availableDates && selectedTrip.availableDates.length > 0
         ? selectedTrip.availableDates
         : getUpcomingDefaultDates();
-    const dates = rawDates.map((d: any) =>
-      typeof d === "string" ? d : d?.date || "",
-    );
+
+    rawDates.forEach((d: any) => {
+      const str = typeof d === "string" ? d : d?.date || "";
+      const ymd = getYYYYMMDD(str);
+      if (ymd && !dateMap.has(ymd)) {
+        dateMap.set(ymd, str);
+      }
+    });
+
+    // From existing Bookings for this trip (consolidate any scheduled dates)
+    bookings.forEach((b: any) => {
+      const tripMatches =
+        b.tripId === selectedTrip.id ||
+        (b.tripName &&
+          b.tripName.toLowerCase() === selectedTrip.title?.toLowerCase());
+      if (tripMatches && b.departureDate) {
+        const ymd = getYYYYMMDD(b.departureDate);
+        if (ymd && !dateMap.has(ymd)) {
+          dateMap.set(ymd, b.departureDate);
+        }
+      }
+    });
+
+    // From existing Booking Links for this trip
+    links.forEach((l: any) => {
+      const tripMatches =
+        l.tripId === selectedTrip.id ||
+        (l.tripName &&
+          l.tripName.toLowerCase() === selectedTrip.title?.toLowerCase());
+      if (tripMatches && l.departureDate) {
+        const ymd = getYYYYMMDD(l.departureDate);
+        if (ymd && !dateMap.has(ymd)) {
+          dateMap.set(ymd, l.departureDate);
+        }
+      }
+    });
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    const allDeps = dates.map((dateStr) => {
-      const dateObj = new Date(dateStr);
-      const isPast =
-        !isNaN(dateObj.getTime()) &&
-        dateObj.setHours(0, 0, 0, 0) < now.getTime();
+    const allDeps: MockDepartureDate[] = Array.from(dateMap.entries()).map(
+      ([ymd, dateStr]) => {
+        const dateObj = new Date(dateStr);
+        const isPast =
+          !isNaN(dateObj.getTime()) &&
+          dateObj.setHours(0, 0, 0, 0) < now.getTime();
 
-      // 1. Calculate actual Pax booked from bookings table
-      const bookingsForDate = bookings.filter((b: any) => {
-        const tripMatches =
-          b.tripId === selectedTrip.id ||
-          (b.tripName &&
-            b.tripName.toLowerCase() === selectedTrip.title?.toLowerCase());
-        const dateMatches =
-          getYYYYMMDD(b.departureDate) === getYYYYMMDD(dateStr);
-        const notCancelled =
-          b.status?.toLowerCase() !== "cancelled" &&
-          b.bookingStatus?.toLowerCase() !== "cancelled";
-        return tripMatches && dateMatches && notCancelled;
-      });
+        // 1. Calculate actual Pax booked from bookings table for this consolidated date
+        const bookingsForDate = bookings.filter((b: any) => {
+          const tripMatches =
+            b.tripId === selectedTrip.id ||
+            (b.tripName &&
+              b.tripName.toLowerCase() === selectedTrip.title?.toLowerCase());
+          const dateMatches = getYYYYMMDD(b.departureDate) === ymd;
+          const notCancelled =
+            b.status?.toLowerCase() !== "cancelled" &&
+            b.bookingStatus?.toLowerCase() !== "cancelled";
+          return tripMatches && dateMatches && notCancelled;
+        });
 
-      const bookedFromBookings = bookingsForDate.reduce(
-        (sum: number, b: any) => {
-          const pax =
-            Array.isArray(b.passengers) && b.passengers.length > 0
-              ? b.passengers.length
-              : Number(b.numberOfPassengers || b.travelerCount || b.seats || 1);
-          return sum + pax;
-        },
-        0,
-      );
+        const bookedFromBookings = bookingsForDate.reduce(
+          (sum: number, b: any) => {
+            const pax =
+              Array.isArray(b.passengers) && b.passengers.length > 0
+                ? b.passengers.length
+                : Number(
+                    b.numberOfPassengers || b.travelerCount || b.seats || 1,
+                  );
+            return sum + pax;
+          },
+          0,
+        );
 
-      // 2. Completed count from booking links
-      const linksForDate = links.filter(
-        (l) =>
-          (l.tripId === selectedTrip.id ||
-            l.tripName?.toLowerCase() === selectedTrip.title?.toLowerCase()) &&
-          getYYYYMMDD(l.departureDate) === getYYYYMMDD(dateStr),
-      );
-      const completedFromLinks = linksForDate.reduce(
-        (sum, l) => sum + (l.completedCount || 0),
-        0,
-      );
+        // 2. Completed count from booking links for this consolidated date
+        const linksForDate = links.filter(
+          (l) =>
+            (l.tripId === selectedTrip.id ||
+              l.tripName?.toLowerCase() ===
+                selectedTrip.title?.toLowerCase()) &&
+            getYYYYMMDD(l.departureDate) === ymd,
+        );
+        const completedFromLinks = linksForDate.reduce(
+          (sum, l) => sum + (l.completedCount || 0),
+          0,
+        );
 
-      const bookedPax = Math.max(bookedFromBookings, completedFromLinks);
-      const capacityNum = Number(
-        selectedTrip.maxGroupSize ||
-          selectedTrip.groupSize ||
-          selectedTrip.capacity ||
-          20,
-      );
+        const bookedPax = Math.max(bookedFromBookings, completedFromLinks);
+        const capacityNum = Number(
+          selectedTrip.maxGroupSize ||
+            selectedTrip.groupSize ||
+            selectedTrip.capacity ||
+            20,
+        );
 
-      let status: MockDepartureDate["status"] = isPast
-        ? "Completed / Past Departure"
-        : "Open for Booking";
-      if (!isPast && capacityNum > 0 && bookedPax >= capacityNum) {
-        status = "Full";
-      } else if (!isPast && capacityNum > 0 && bookedPax >= capacityNum * 0.85) {
-        status = "Closing Soon";
-      } else if (!isPast) {
-        status = "Open for Booking";
-      }
+        let status: MockDepartureDate["status"] = isPast
+          ? "Completed / Past Departure"
+          : "Open for Booking";
+        if (!isPast && capacityNum > 0 && bookedPax >= capacityNum) {
+          status = "Full";
+        } else if (
+          !isPast &&
+          capacityNum > 0 &&
+          bookedPax >= capacityNum * 0.85
+        ) {
+          status = "Closing Soon";
+        } else if (!isPast) {
+          status = "Open for Booking";
+        }
 
-      const d = new Date(dateStr);
-      let cutoff = "N/A";
-      if (!isNaN(d.getTime())) {
-        d.setDate(d.getDate() - 3);
-        cutoff = d.toISOString().split("T")[0];
-      }
+        const d = new Date(dateStr);
+        let cutoff = "N/A";
+        if (!isNaN(d.getTime())) {
+          d.setDate(d.getDate() - 3);
+          cutoff = d.toISOString().split("T")[0];
+        }
 
-      return {
-        date: dateStr,
-        status,
-        capacity: `${bookedPax} / ${capacityNum}`,
-        cutoff,
-        isPast,
-        bookedPax,
-        capacityNum,
-      };
+        return {
+          date: dateStr,
+          status,
+          capacity: `${bookedPax} / ${capacityNum}`,
+          cutoff,
+          isPast,
+          bookedPax,
+          capacityNum,
+        };
+      },
+    );
+
+    // Sort chronologically by date
+    allDeps.sort((a, b) => {
+      const timeA = new Date(a.date).getTime() || 0;
+      const timeB = new Date(b.date).getTime() || 0;
+      return timeA - timeB;
     });
 
     // Filter based on departureFilterTab:
