@@ -32,6 +32,7 @@ import {
   Undo2,
   Split,
   Eye,
+  Clock,
 } from "lucide-react";
 import { normalizePassenger } from "@/utils/passengerUtils";
 import { Button } from "@/components/ui/button";
@@ -369,13 +370,90 @@ export default function TrainTicketsPanel({
     }
   };
 
+  const handleMarkTicketDone = async (t: TrainTicket) => {
+    setActionBusy(true);
+    try {
+      await trainTicketService.updateTicket(t.id, {
+        ticketStatus: "BOOKED",
+        approvalStatus: "DRAFT",
+      });
+      const cost = Number(t.ticketAmount || 0);
+      toast.success(
+        `✓ Step 1 Complete: Ticket for ${t.travelerName} marked Done & ₹${cost.toLocaleString(
+          "en-IN",
+        )} recorded in Riya Wallet.`,
+      );
+      loadTickets();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to mark ticket done");
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const handleBulkMarkTicketsDone = async (legTickets: TrainTicket[]) => {
+    const pending = legTickets.filter(
+      (t) =>
+        t.ticketStatus !== "BOOKED" &&
+        t.ticketStatus !== "CONFIRMED" &&
+        t.ticketStatus !== "CANCELLED",
+    );
+    if (pending.length === 0) return;
+    setActionBusy(true);
+    try {
+      await Promise.all(
+        pending.map((t) =>
+          trainTicketService.updateTicket(t.id, {
+            ticketStatus: "BOOKED",
+            approvalStatus: "DRAFT",
+          }),
+        ),
+      );
+      toast.success(
+        `✓ Step 1 Complete: ${pending.length} tickets marked as Done and recorded in Riya Wallet`,
+      );
+      loadTickets();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to mark tickets done");
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
   const handleSubmitTicket = async (t: TrainTicket) => {
     try {
       await trainTicketService.submitTicket(t.id);
-      toast.success(`Ticket for ${t.travelerName} submitted for approval`);
+      toast.success(
+        `✓ Step 2 Complete: Ticket for ${t.travelerName} sent for verification (visible in Approval Center)`,
+      );
       loadTickets();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to submit ticket");
+    }
+  };
+
+  const handleBulkSubmitTickets = async (legTickets: TrainTicket[]) => {
+    const drafts = legTickets.filter(
+      (t) =>
+        (t.approvalStatus === "DRAFT" || !t.approvalStatus) &&
+        t.ticketStatus !== "CANCELLED",
+    );
+    if (drafts.length === 0) return;
+    setActionBusy(true);
+    try {
+      await Promise.all(
+        drafts.map((t) => trainTicketService.submitTicket(t.id)),
+      );
+      toast.success(
+        `✓ Step 2 Complete: ${drafts.length} tickets sent for verification (visible in Approval Center)`,
+      );
+      loadTickets();
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Failed to submit tickets for verification",
+      );
+    } finally {
+      setActionBusy(false);
     }
   };
 
@@ -1229,21 +1307,77 @@ export default function TrainTicketsPanel({
       <div className="space-y-6">
         {/* Departure Journey Section */}
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs space-y-0">
-          <div className="px-4 py-3 bg-emerald-50/60 border-b border-slate-200 flex justify-between items-center">
+          <div className="px-4 py-3 bg-emerald-50/60 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
             <div className="flex items-center gap-2">
               <ArrowRight className="w-4 h-4 text-emerald-600" />
               <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
                 Departure Journey ({departureTickets.length} Tickets)
               </h4>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleOpenAddDeparture}
-              className="h-7 text-[10px] font-bold border-emerald-200 text-emerald-800 bg-white hover:bg-emerald-100 gap-1"
-            >
-              + Add Departure Ticket
-            </Button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Bulk Step 1 Button */}
+              {canManage &&
+                departureTickets.some(
+                  (t) =>
+                    t.ticketStatus !== "BOOKED" &&
+                    t.ticketStatus !== "CONFIRMED" &&
+                    t.ticketStatus !== "CANCELLED",
+                ) && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleBulkMarkTicketsDone(departureTickets)}
+                    disabled={actionBusy}
+                    className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-1 shadow-xs cursor-pointer"
+                    title="Step 1: Mark all pending departure tickets as Done & Add Cost to Riya Wallet"
+                  >
+                    <CheckCircle2 className="w-3 h-3" /> Step 1: Mark All Done (
+                    {
+                      departureTickets.filter(
+                        (t) =>
+                          t.ticketStatus !== "BOOKED" &&
+                          t.ticketStatus !== "CONFIRMED" &&
+                          t.ticketStatus !== "CANCELLED",
+                      ).length
+                    }
+                    )
+                  </Button>
+                )}
+
+              {/* Bulk Step 2 Button */}
+              {canManage &&
+                departureTickets.some(
+                  (t) =>
+                    (t.approvalStatus === "DRAFT" || !t.approvalStatus) &&
+                    t.ticketStatus !== "CANCELLED",
+                ) && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleBulkSubmitTickets(departureTickets)}
+                    disabled={actionBusy}
+                    className="h-7 text-[10px] font-bold bg-amber-600 hover:bg-amber-700 text-white gap-1 shadow-xs cursor-pointer"
+                    title="Step 2: Send all draft departure tickets to Verification Queue"
+                  >
+                    <Send className="w-3 h-3" /> Step 2: Send All for Verification (
+                    {
+                      departureTickets.filter(
+                        (t) =>
+                          (t.approvalStatus === "DRAFT" || !t.approvalStatus) &&
+                          t.ticketStatus !== "CANCELLED",
+                      ).length
+                    }
+                    )
+                  </Button>
+                )}
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleOpenAddDeparture}
+                className="h-7 text-[10px] font-bold border-emerald-200 text-emerald-800 bg-white hover:bg-emerald-100 gap-1"
+              >
+                + Add Departure Ticket
+              </Button>
+            </div>
           </div>
 
           {departureTickets.length === 0 ? (
@@ -1360,6 +1494,44 @@ export default function TrainTicketsPanel({
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <ApprovalPill status={t.approvalStatus} />
+
+                          {/* Step 1 Button: Mark Done if pending */}
+                          {canManage &&
+                            t.ticketStatus !== "BOOKED" &&
+                            t.ticketStatus !== "CONFIRMED" &&
+                            t.ticketStatus !== "CANCELLED" && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleMarkTicketDone(t)}
+                                disabled={actionBusy}
+                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0 gap-1 rounded shadow-xs cursor-pointer"
+                                title="Step 1: Mark Ticket Done & Add Cost to Riya Wallet"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Step 1: Ticket Done
+                              </Button>
+                            )}
+
+                          {/* Step 2 Button: Send for verification if draft */}
+                          {canManage &&
+                            (t.approvalStatus === "DRAFT" || !t.approvalStatus) &&
+                            t.ticketStatus !== "CANCELLED" && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleSubmitTicket(t)}
+                                disabled={actionBusy}
+                                className="h-6 text-[9px] text-amber-900 border-amber-300 bg-amber-100 hover:bg-amber-200 font-bold px-2 py-0 gap-1 rounded shadow-xs cursor-pointer"
+                                title="Step 2: Send for Manager Verification"
+                              >
+                                <Send className="w-2.5 h-2.5" /> Step 2: Send for Verification
+                              </Button>
+                            )}
+
+                          {t.approvalStatus === "SUBMITTED" && (
+                            <span className="text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" /> In Approval Queue
+                            </span>
+                          )}
+
                           {canApprove && t.approvalStatus === "SUBMITTED" && (
                             <div className="flex items-center gap-1">
                               <Button
@@ -1380,17 +1552,6 @@ export default function TrainTicketsPanel({
                                 <Ban className="w-3 h-3" /> Reject
                               </Button>
                             </div>
-                          )}
-                          {canManage && (t.approvalStatus === "DRAFT" || !t.approvalStatus) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSubmitTicket(t)}
-                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-bold px-2 py-0 gap-1 rounded"
-                              title="Submit for Manager Approval"
-                            >
-                              <Send className="w-2.5 h-2.5" /> Submit
-                            </Button>
                           )}
                           {canManage && t.approvalStatus === "REJECTED" && (
                             <Button
@@ -1459,21 +1620,77 @@ export default function TrainTicketsPanel({
 
         {/* Return Journey Section */}
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs space-y-0">
-          <div className="px-4 py-3 bg-blue-50/60 border-b border-slate-200 flex justify-between items-center">
+          <div className="px-4 py-3 bg-blue-50/60 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
             <div className="flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-blue-600" />
               <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
                 Return Journey ({returnTickets.length} Tickets)
               </h4>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleOpenAddReturn}
-              className="h-7 text-[10px] font-bold border-blue-200 text-blue-800 bg-white hover:bg-blue-100 gap-1"
-            >
-              + Add Return Ticket
-            </Button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Bulk Step 1 Button */}
+              {canManage &&
+                returnTickets.some(
+                  (t) =>
+                    t.ticketStatus !== "BOOKED" &&
+                    t.ticketStatus !== "CONFIRMED" &&
+                    t.ticketStatus !== "CANCELLED",
+                ) && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleBulkMarkTicketsDone(returnTickets)}
+                    disabled={actionBusy}
+                    className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-1 shadow-xs cursor-pointer"
+                    title="Step 1: Mark all pending return tickets as Done & Add Cost to Riya Wallet"
+                  >
+                    <CheckCircle2 className="w-3 h-3" /> Step 1: Mark All Done (
+                    {
+                      returnTickets.filter(
+                        (t) =>
+                          t.ticketStatus !== "BOOKED" &&
+                          t.ticketStatus !== "CONFIRMED" &&
+                          t.ticketStatus !== "CANCELLED",
+                      ).length
+                    }
+                    )
+                  </Button>
+                )}
+
+              {/* Bulk Step 2 Button */}
+              {canManage &&
+                returnTickets.some(
+                  (t) =>
+                    (t.approvalStatus === "DRAFT" || !t.approvalStatus) &&
+                    t.ticketStatus !== "CANCELLED",
+                ) && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleBulkSubmitTickets(returnTickets)}
+                    disabled={actionBusy}
+                    className="h-7 text-[10px] font-bold bg-amber-600 hover:bg-amber-700 text-white gap-1 shadow-xs cursor-pointer"
+                    title="Step 2: Send all draft return tickets to Verification Queue"
+                  >
+                    <Send className="w-3 h-3" /> Step 2: Send All for Verification (
+                    {
+                      returnTickets.filter(
+                        (t) =>
+                          (t.approvalStatus === "DRAFT" || !t.approvalStatus) &&
+                          t.ticketStatus !== "CANCELLED",
+                      ).length
+                    }
+                    )
+                  </Button>
+                )}
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleOpenAddReturn}
+                className="h-7 text-[10px] font-bold border-blue-200 text-blue-800 bg-white hover:bg-blue-100 gap-1"
+              >
+                + Add Return Ticket
+              </Button>
+            </div>
           </div>
 
           {returnTickets.length === 0 ? (
@@ -1590,6 +1807,44 @@ export default function TrainTicketsPanel({
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <ApprovalPill status={t.approvalStatus} />
+
+                          {/* Step 1 Button: Mark Done if pending */}
+                          {canManage &&
+                            t.ticketStatus !== "BOOKED" &&
+                            t.ticketStatus !== "CONFIRMED" &&
+                            t.ticketStatus !== "CANCELLED" && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleMarkTicketDone(t)}
+                                disabled={actionBusy}
+                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0 gap-1 rounded shadow-xs cursor-pointer"
+                                title="Step 1: Mark Ticket Done & Add Cost to Riya Wallet"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Step 1: Ticket Done
+                              </Button>
+                            )}
+
+                          {/* Step 2 Button: Send for verification if draft */}
+                          {canManage &&
+                            (t.approvalStatus === "DRAFT" || !t.approvalStatus) &&
+                            t.ticketStatus !== "CANCELLED" && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleSubmitTicket(t)}
+                                disabled={actionBusy}
+                                className="h-6 text-[9px] text-amber-900 border-amber-300 bg-amber-100 hover:bg-amber-200 font-bold px-2 py-0 gap-1 rounded shadow-xs cursor-pointer"
+                                title="Step 2: Send for Manager Verification"
+                              >
+                                <Send className="w-2.5 h-2.5" /> Step 2: Send for Verification
+                              </Button>
+                            )}
+
+                          {t.approvalStatus === "SUBMITTED" && (
+                            <span className="text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" /> In Approval Queue
+                            </span>
+                          )}
+
                           {canApprove && t.approvalStatus === "SUBMITTED" && (
                             <div className="flex items-center gap-1">
                               <Button
@@ -1610,17 +1865,6 @@ export default function TrainTicketsPanel({
                                 <Ban className="w-3 h-3" /> Reject
                               </Button>
                             </div>
-                          )}
-                          {canManage && (t.approvalStatus === "DRAFT" || !t.approvalStatus) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSubmitTicket(t)}
-                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-bold px-2 py-0 gap-1 rounded"
-                              title="Submit for Manager Approval"
-                            >
-                              <Send className="w-2.5 h-2.5" /> Submit
-                            </Button>
                           )}
                           {canManage && t.approvalStatus === "REJECTED" && (
                             <Button
