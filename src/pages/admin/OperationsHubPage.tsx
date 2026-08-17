@@ -198,27 +198,14 @@ export default function OperationsHubPage() {
             ? paxObj
             : [];
 
-      const normalizeCompareName = (nameStr: string) => {
-        if (!nameStr) return "";
-        let clean = nameStr.toLowerCase().trim();
-        if (clean.startsWith("mr. ")) clean = clean.substring(4).trim();
-        else if (clean.startsWith("mrs. ")) clean = clean.substring(5).trim();
-        else if (clean.startsWith("ms. ")) clean = clean.substring(4).trim();
-        return clean;
-      };
-
-      const leadName = booking.fullName || booking.name || "";
-      const normLeadName = normalizeCompareName(leadName);
-
       if (paxList.length > 0) {
-        const filteredCoPax = paxList.filter(
+        const active = paxList.filter(
           (p: any) =>
             !p.isCancelled &&
             !p.cancelled &&
-            String(p.status || "").toLowerCase() !== "cancelled" &&
-            normalizeCompareName(p?.name || "") !== normLeadName,
+            String(p.status || "").toLowerCase() !== "cancelled",
         );
-        return filteredCoPax.length + 1;
+        return active.length;
       }
       return Number(booking.numberOfTravelers) || 1;
     };
