@@ -32,6 +32,7 @@ export default function DepartureCommunication({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = async () => {
+    if (!tripId || !departureDateStr) return;
     try {
       const data = await opsService.getMessages(tripId, departureDateStr);
       setMessages(data);
@@ -41,11 +42,16 @@ export default function DepartureCommunication({
   };
 
   useEffect(() => {
+    if (!tripId || !departureDateStr) return;
     setLoading(true);
     fetchMessages().finally(() => setLoading(false));
 
-    // Poll messages every 6 seconds to feel live without web sockets
-    const interval = setInterval(fetchMessages, 6000);
+    // Visibility-aware light polling (60s) only when active and document is visible
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchMessages();
+      }
+    }, 60000);
     return () => clearInterval(interval);
   }, [tripId, departureDateStr]);
 

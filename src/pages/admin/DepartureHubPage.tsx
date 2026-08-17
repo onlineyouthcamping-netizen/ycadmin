@@ -2046,6 +2046,11 @@ export default function DepartureHubPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchPageData = async () => {
+    if (!tripId || !departureDateStr) {
+      setLoading(false);
+      return;
+    }
+
     // 1. Abort previous pending requests
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -4792,31 +4797,43 @@ useEffect(() => {
   }, [tripDetails]);
 
   const computedMessages = useMemo(() => {
-    if (Array.isArray(tripDetails?.messages) && tripDetails.messages.length > 0) {
+    if (
+      Array.isArray(tripDetails?.messages) &&
+      tripDetails.messages.length > 0
+    ) {
       return tripDetails.messages.map((m: any, idx: number) => ({
         id: m.id || `msg-${idx}`,
         convId: m.conversationId || m.convId || "g1",
         sender: m.senderName || m.sender || "Operations",
         role: m.senderRole || m.role || "Admin",
         avatar: (m.senderName || "OP").substring(0, 2).toUpperCase(),
-        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+        time: m.createdAt
+          ? new Date(m.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "",
         text: m.text || m.content || "",
         reactions: m.reactions || [],
         isMine: m.isMine || false,
       }));
     }
     return [];
-  }, [tripDetails]);
+  }, [tripDetails?.messages]);
 
   useEffect(() => {
-    if (bookings.length > 0) {
+    if (computedMessages.length > 0) {
       setChatMessages(computedMessages);
     }
-  }, [bookings, computedMessages]);
+  }, [computedMessages]);
 
   const hotelStats = useMemo(() => {
     const activePax = filterActivePassengers(allPassengers);
-    const summary = calculateRoomOccupancy(opsHotels, activePax, passengerAllocations);
+    const summary = calculateRoomOccupancy(
+      opsHotels,
+      activePax,
+      passengerAllocations,
+    );
 
     return {
       totalNights: summary.configuredNights,
@@ -4830,7 +4847,10 @@ useEffect(() => {
       isCapacityShortfall: summary.isCapacityShortfall,
       shortfallPax: summary.shortfallPax,
       hasAccommodationConfigured: summary.hasAccommodationConfigured,
-      occupancy: summary.roomCapacity > 0 ? ((summary.totalActivePax / summary.roomCapacity) * 100).toFixed(1) : "0",
+      occupancy:
+        summary.roomCapacity > 0
+          ? ((summary.totalActivePax / summary.roomCapacity) * 100).toFixed(1)
+          : "0",
     };
   }, [opsHotels, allPassengers, passengerAllocations]);
 
@@ -4853,7 +4873,7 @@ useEffect(() => {
       });
       return hasChanges ? next : prev;
     });
-  }, [bookings]);
+  }, [bookings.length]);
 
   const computedRoomAllocations = useMemo(() => {
     const list: any[] = [];
