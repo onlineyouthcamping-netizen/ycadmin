@@ -222,8 +222,18 @@ export default function OperationsHubPage() {
         }
       }
 
+      // Deduplicate dates to prevent UI duplicate rows
+      const uniqueDatesMap = new Map();
       datesArr.forEach((d: any) => {
         if (!d || !d.date) return;
+        const targetDateStr = normalizeDate(d.date);
+        if (!uniqueDatesMap.has(targetDateStr)) {
+          uniqueDatesMap.set(targetDateStr, d);
+        }
+      });
+      const uniqueDatesArr = Array.from(uniqueDatesMap.values());
+
+      uniqueDatesArr.forEach((d: any) => {
         const depDate = new Date(d.date);
         if (isNaN(depDate.getTime())) return;
         depDate.setHours(0, 0, 0, 0);

@@ -32,6 +32,7 @@ import {
   normalizeDestinationName,
   HotelEligibleDestination,
   deriveRoomCountsFromAllocations,
+  normaliseDate,
 } from "@/utils/accommodationCalculator";
 
 interface InitialDayInfo {
