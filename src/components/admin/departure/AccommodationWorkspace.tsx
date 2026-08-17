@@ -355,12 +355,17 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
         status = "no-stay";
       }
 
+      const isCheckInDay =
+        booking &&
+        normaliseDate(booking.checkIn) === normaliseDate(dayDate);
       const bookingNights = booking?.nightsCount || 1;
       const nightsText =
         !hasStay
           ? "No Stay"
           : bookingNights > 1
-            ? `${bookingNights} Nights`
+            ? isCheckInDay
+              ? `${bookingNights} Nights`
+              : `Cont. (${bookingNights}N)`
             : "1 Night";
 
       return {
