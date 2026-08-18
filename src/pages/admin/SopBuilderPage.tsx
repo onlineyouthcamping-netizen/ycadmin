@@ -454,8 +454,8 @@ export default function SopBuilderPage() {
       </div>
 
       {/* Stage Selector Tabs */}
-      <div className="w-full min-w-0 overflow-x-auto no-scrollbar pb-1">
-        <div className="flex items-center gap-1.5 w-max min-w-full">
+      <div className="w-full bg-white p-3 rounded-xl border border-slate-200 shadow-3xs">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {visibleStages.map((s) => {
             const isSelected = activeStage === s.id;
             const count =
@@ -465,20 +465,24 @@ export default function SopBuilderPage() {
                     .length;
 
             return (
-              <div key={s.id} className="relative group flex items-center shrink-0">
+              <div key={s.id} className="relative group flex items-center">
                 <button
                   type="button"
                   onClick={() => setActiveStage(s.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 cursor-pointer ${
                     isSelected
-                      ? "bg-[#F97316] text-white border-[#F97316] shadow-sm"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                      ? "bg-[#F97316] text-white border-[#F97316] shadow-xs"
+                      : "bg-slate-50/80 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100"
                   }`}
                 >
                   <span>{s.label}</span>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[10px] font-bold tabular-nums ${
-                      isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                      isSelected
+                        ? "bg-white/20 text-white"
+                        : count > 0
+                        ? "bg-orange-100 text-orange-800 font-extrabold"
+                        : "bg-slate-200/60 text-slate-400"
                     }`}
                   >
                     {count}
@@ -490,12 +494,12 @@ export default function SopBuilderPage() {
                         e.stopPropagation();
                         handleDeleteStage(s.id);
                       }}
-                      className={`ml-1 hover:bg-red-500 hover:text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[11px] font-bold transition-colors ${
+                      className={`ml-0.5 rounded-full w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] font-bold transition-colors ${
                         isSelected
-                          ? "text-white/80 hover:text-white"
-                          : "text-slate-400 hover:text-white"
+                          ? "text-white/80 hover:bg-white/20 hover:text-white"
+                          : "text-slate-400 hover:bg-red-100 hover:text-red-600"
                       }`}
-                      title={`Delete / Remove ${s.label} stage`}
+                      title={`Remove ${s.label} stage tab`}
                     >
                       ×
                     </span>
@@ -508,7 +512,7 @@ export default function SopBuilderPage() {
           <button
             type="button"
             onClick={() => setAddStageModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border border-dashed border-orange-400 text-orange-600 hover:bg-orange-50 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border border-dashed border-orange-400 text-orange-600 hover:bg-orange-50 transition-colors flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Stage
@@ -518,7 +522,7 @@ export default function SopBuilderPage() {
             <button
               type="button"
               onClick={handleResetDefaultStages}
-              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
               title="Reset & restore default stage pills"
             >
               Reset Defaults
