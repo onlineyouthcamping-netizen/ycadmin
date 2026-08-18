@@ -524,29 +524,11 @@ export default function HotelAssignmentWizardModal({
     );
     setCheckInDate(initCheckIn);
 
-    // Auto-detect consecutive stay nights in the itinerary for this destination
-    let detectedConsecutiveNights = 1;
-    if (Array.isArray(computedItinerary) && computedItinerary.length > 0) {
-      const startIdx = Math.max(0, (initialDayInfo?.dayNum || currentDayNum || 1) - 1);
-      const currentDestNorm = normalizeDestinationName(destName).toLowerCase().trim();
-      let count = 0;
-      for (let i = startIdx; i < computedItinerary.length; i++) {
-        const d = computedItinerary[i];
-        const stayNorm = normalizeDestinationName(d.stay || d.destination || d.city || d.plan || "").toLowerCase().trim();
-        if (currentDestNorm && (stayNorm.includes(currentDestNorm) || currentDestNorm.includes(stayNorm))) {
-          count++;
-        } else {
-          break;
-        }
-      }
-      if (count > 1) {
-        detectedConsecutiveNights = count;
-      }
-    }
-
-    const n = (existingB?.nightsCount && existingB.nightsCount > 1)
-      ? existingB.nightsCount
-      : (detectedConsecutiveNights > 1 ? detectedConsecutiveNights : (existingB?.nightsCount || 1));
+    // Default to 1 night for accurate day-wise allocation unless an existing booking has explicit nightsCount
+    const n =
+      existingB?.nightsCount && existingB.nightsCount >= 1
+        ? existingB.nightsCount
+        : 1;
     setNightsCount(n);
     setCheckOutDate(addNightsToDate(initCheckIn, n));
 

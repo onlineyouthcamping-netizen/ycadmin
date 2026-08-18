@@ -211,7 +211,7 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
         }
         setStayOverrides((prev) => ({ ...prev, [row.key]: true }));
       }
-      if (onRefresh) {
+      if (next === false && onRefresh) {
         await onRefresh();
       }
     } catch (err) {
