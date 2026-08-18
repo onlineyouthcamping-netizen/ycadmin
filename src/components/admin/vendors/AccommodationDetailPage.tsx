@@ -1386,8 +1386,12 @@ export function AccommodationDetailPage({
   const handleSaveOverview = async () => {
     setIsSavingOverview(true);
     try {
-      const res = await api.patch(`/vendors/directory/${vendor.id}`, overviewForm);
-      const updated = res.data?.data || { ...vendor, ...overviewForm };
+      const payload: any = { ...overviewForm };
+      if (isRestaurant) {
+        delete payload.mealPlans;
+      }
+      const res = await api.patch(`/vendors/directory/${vendor.id}`, payload);
+      const updated = res.data?.data || { ...vendor, ...payload };
       setVendor(updated);
       setOverviewForm(extractOverviewState(updated));
       if (onUpdateVendor) {
