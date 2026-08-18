@@ -190,7 +190,7 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     label: "Travel Desk",
     path: "/admin/travel-desk",
     authenticatedOnly: true,
-    navigation: { visible: true, group: "Travel Desk", iconName: "Plane" },
+    navigation: { visible: false, group: "Travel Desk", iconName: "Plane" },
     breadcrumbLabel: "Travel Desk",
   },
 

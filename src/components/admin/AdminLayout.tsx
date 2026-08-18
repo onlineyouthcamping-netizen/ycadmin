@@ -153,12 +153,6 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: false,
   },
   {
-    title: "Travel Desk",
-    url: "/admin/travel-desk",
-    icon: Compass,
-    hasSubItems: false,
-  },
-  {
     title: "Business",
     icon: Tent,
     hasSubItems: true,
