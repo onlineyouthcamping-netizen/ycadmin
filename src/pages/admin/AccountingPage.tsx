@@ -667,8 +667,9 @@ export default function AccountingPage() {
     }
   };
 
-  const handleFounderApproveCollection = async (paymentId: string, proofUrl?: string) => {
-    if (!proofUrl) {
+  const handleFounderApproveCollection = async (paymentId: string, proofUrl?: string, paymentMode?: string) => {
+    const isCash = paymentMode?.toUpperCase().includes("CASH");
+    if (!proofUrl && !isCash) {
       setProofModalState({
         open: true,
         paymentId,
@@ -1490,6 +1491,8 @@ export default function AccountingPage() {
                                 <Eye className="w-3.5 h-3.5 mr-1" />
                                 View
                               </Button>
+                            ) : p.paymentMode?.toUpperCase().includes("CASH") ? (
+                              <span className="text-[10px] text-slate-400 font-medium">No Proof Required</span>
                             ) : (
                               <Button
                                 variant="outline"
@@ -1524,7 +1527,7 @@ export default function AccountingPage() {
                               {isReviewedFC && (
                                 <Button
                                   size="sm"
-                                  onClick={() => handleFounderApproveCollection(p.id, proof)}
+                                  onClick={() => handleFounderApproveCollection(p.id, proof, p.paymentMode)}
                                   className="h-7 gap-1 rounded-md bg-emerald-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-emerald-700 cursor-pointer"
                                 >
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
