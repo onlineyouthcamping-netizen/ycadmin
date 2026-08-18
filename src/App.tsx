@@ -79,9 +79,6 @@ const CompanyDocumentsPage = lazy(
 const ApprovalsHubPage = lazy(
   () => import("./pages/admin/ApprovalsHubPage.tsx"),
 );
-const VerificationQueuePage = lazy(
-  () => import("./pages/admin/VerificationQueuePage.tsx"),
-);
 
 // ── Finance ──
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
@@ -91,9 +88,6 @@ const FinanceControlCenterPage = lazy(
 
 // ── Travel Desk ──
 const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
-const TrainTemplatesPage = lazy(
-  () => import("./pages/admin/TrainTemplatesPage.tsx"),
-);
 
 // ── Business: Trips, Master Database, Website CMS ──
 const TripsPage = lazy(() => import("./pages/admin/TripsPage.tsx"));
@@ -140,7 +134,9 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 30000,
+      refetchOnReconnect: false,
+      staleTime: 60000, // 1 minute
+      gcTime: 300000, // 5 minutes
     },
   },
 });
@@ -427,11 +423,7 @@ const App = () => (
                 {/* Approval Center */}
                 <Route
                   path="/admin/verification-queue"
-                  element={
-                    <AdminRoute requiredPermission="bookings.view">
-                      <VerificationQueuePage />
-                    </AdminRoute>
-                  }
+                  element={<Navigate to="/admin/approvals-hub?tab=payment-approvals" replace />}
                 />
                 <Route
                   path="/admin/approvals-hub"
@@ -443,7 +435,7 @@ const App = () => (
                 />
                 <Route
                   path="/admin/ticket-approvals"
-                  element={<Navigate to="/admin/approvals-hub" replace />}
+                  element={<Navigate to="/admin/approvals-hub?tab=payment-approvals" replace />}
                 />
 
                 {/* Unified Finance Control Hub */}
@@ -491,11 +483,7 @@ const App = () => (
                 />
                 <Route
                   path="/admin/train-templates"
-                  element={
-                    <AdminRoute requiredPermission="tickets.templates.manage">
-                      <TrainTemplatesPage />
-                    </AdminRoute>
-                  }
+                  element={<Navigate to="/admin/bookings" replace />}
                 />
 
                 {/* Business: Trips, Master Database, Website CMS */}

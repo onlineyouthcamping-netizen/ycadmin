@@ -129,7 +129,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
   };
 
   return (
-    <div className="space-y-4 font-sans select-none antialiased text-[#162B45]">
+    <div className="space-y-3 font-sans antialiased text-[#162B45]">
       {/* 1. HEADER (if not embedded) */}
       {!hideHeader && (
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
@@ -164,7 +164,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
       )}
 
       {/* 2. KPI METRICS CARDS */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl border border-[#DCE5ED] bg-[#F8FAFC] lg:grid-cols-4 lg:gap-0">
         {/* KPI 1: Pending Approvals */}
         <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
           <div>

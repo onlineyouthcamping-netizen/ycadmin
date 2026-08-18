@@ -38,7 +38,7 @@ interface OutgoingPaymentsApprovalPageProps {
   hideHeader?: boolean;
 }
 
-type OutgoingCategory = "all" | "hotels" | "transport" | "activities" | "guides" | "train_ticketing";
+type OutgoingCategory = "all" | "hotels" | "transport" | "activities" | "guides";
 
 export default function OutgoingPaymentsApprovalPage({
   hideHeader = false,
@@ -62,14 +62,13 @@ export default function OutgoingPaymentsApprovalPage({
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [vRes, dRes, tRes] = await Promise.all([
+      const [vRes, dRes] = await Promise.all([
         financeControllerService.getVendorQueue({ limit: 50 }).catch(() => ({ data: [], pagination: {} })),
         financeControllerService.getDeparturesQueue().catch(() => []),
-        financeControllerService.getTicketingQueue({ limit: 50 }).catch(() => ({ data: [], pagination: {} })),
       ]);
       setVendorItems(vRes?.data || []);
       setDepartureItems(dRes || []);
-      setTicketingItems(tRes?.data || []);
+      setTicketingItems([]);
     } catch (err: any) {
       toast.error(err?.message || "Failed to load outgoing payment requests");
     } finally {
@@ -99,23 +98,7 @@ export default function OutgoingPaymentsApprovalPage({
       raw: v,
       sourceType: "VENDOR_BILL",
     })),
-    // 2. Train Ticketing Balances
-    ...ticketingItems.map((t) => ({
-      id: t.id,
-      category: "train_ticketing",
-      categoryLabel: "TRAIN TICKETING",
-      vendorName: t.passengerName ? `IRCTC (${t.passengerName})` : "IRCTC / Rail Desk",
-      tripName: t.trainNumber ? `Train ${t.trainNumber}` : "Railway Operations",
-      totalCost: t.cost || 0,
-      paidAmount: 0,
-      dueAmount: t.cost || 0,
-      dueDate: t.createdAt,
-      status: t.status === "APPROVED" ? "APPROVED" : "PENDING_APPROVAL",
-      reference: t.pnr || `TIX-${t.id?.slice(-6)}`,
-      raw: t,
-      sourceType: "TRAIN_TICKET",
-    })),
-    // 3. Departure Vendor Settlements
+    // 2. Departure Vendor Settlements
     ...departureItems.map((d) => ({
       id: d.id,
       category: "hotels",
@@ -138,7 +121,6 @@ export default function OutgoingPaymentsApprovalPage({
       if (activeCategory === "transport" && !["transport", "transportation", "bus", "cab"].includes(item.category.toLowerCase())) return false;
       if (activeCategory === "activities" && !["activity", "activities", "permit"].includes(item.category.toLowerCase())) return false;
       if (activeCategory === "guides" && !["guide", "guides", "leader", "trek leader"].includes(item.category.toLowerCase())) return false;
-      if (activeCategory === "train_ticketing" && item.category !== "train_ticketing") return false;
     }
     // Status filter
     if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
@@ -212,7 +194,7 @@ export default function OutgoingPaymentsApprovalPage({
   };
 
   return (
-    <div className="space-y-4 font-sans select-none antialiased text-[#162B45]">
+    <div className="space-y-3 font-sans antialiased text-[#162B45]">
       {/* 1. HEADER */}
       {!hideHeader && (
         <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
@@ -222,7 +204,7 @@ export default function OutgoingPaymentsApprovalPage({
               Outgoing Vendor Payments & Liabilities
             </h1>
             <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-              Verify and approve outgoing payouts for Hotels, Transport, Activities, Trek Guides, and Train Ticketing.
+              Verify and approve outgoing payouts for hotels, transport, activities, and trek guides.
             </p>
           </div>
 
@@ -247,7 +229,7 @@ export default function OutgoingPaymentsApprovalPage({
       )}
 
       {/* 2. KPI METRICS */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl border border-[#DCE5ED] bg-[#F8FAFC] lg:grid-cols-4 lg:gap-0">
         {/* KPI 1: Pending Approval Count */}
         <div className="bg-white border border-[#E3EAF2] rounded-[8px] p-3.5 h-[80px] relative shadow-[0_1px_2px_rgba(15,23,42,0.02)] flex flex-col justify-between">
           <div>
@@ -333,7 +315,6 @@ export default function OutgoingPaymentsApprovalPage({
                 { key: "transport", label: "🚌 Transport Fleet", icon: Truck },
                 { key: "activities", label: "🎯 Activities & Permits", icon: Compass },
                 { key: "guides", label: "🧭 Guides & Leaders", icon: User },
-                { key: "train_ticketing", label: "🚆 Train Ticketing", icon: Ticket },
               ].map((cat) => (
                 <button
                   key={cat.key}

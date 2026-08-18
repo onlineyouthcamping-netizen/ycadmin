@@ -693,9 +693,11 @@ export function findHotelForDay(
       if (normLoc) {
         const locMatches = rangeMatches.filter((b) => {
           const bLoc = normalizeDestinationName(b.location || "");
-          return bLoc && (bLoc === normLoc || bLoc.includes(normLoc) || normLoc.includes(bLoc));
+          return !bLoc || bLoc === normLoc || bLoc.includes(normLoc) || normLoc.includes(bLoc);
         });
         if (locMatches.length > 0) return pickLatest(locMatches);
+        // Do not bleed a hotel from another city into this day if day has a distinct destination
+        return null;
       }
       return pickLatest(rangeMatches);
     }

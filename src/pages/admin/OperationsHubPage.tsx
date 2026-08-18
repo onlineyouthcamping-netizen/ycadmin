@@ -149,6 +149,9 @@ export default function OperationsHubPage() {
 
   const computedDepartures = useMemo(() => {
     const list: any[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const normalizeDate = (val: any) => {
       if (!val) return "";
       if (typeof val === "string") {
@@ -162,6 +165,51 @@ export default function OperationsHubPage() {
       return String(val).split("T")[0];
     };
 
+    const getActivePassengerCount = (booking: any): number => {
+      if (!booking) return 0;
+      const bStatus = String(
+        booking.status || booking.bookingStatus || "",
+      ).toLowerCase();
+      if (
+        booking.isCancelled ||
+        booking.cancelled ||
+        bStatus === "cancelled" ||
+        bStatus === "rejected" ||
+        bStatus === "expired" ||
+        bStatus === "failed" ||
+        bStatus === "refunded"
+      ) {
+        return 0;
+      }
+
+      let paxObj = booking.passengers;
+      if (typeof paxObj === "string") {
+        try {
+          paxObj = JSON.parse(paxObj);
+        } catch (e) {
+          paxObj = {};
+        }
+      }
+      const paxList = Array.isArray(paxObj?.persons)
+        ? paxObj.persons
+        : Array.isArray(paxObj?.passengers)
+          ? paxObj.passengers
+          : Array.isArray(paxObj)
+            ? paxObj
+            : [];
+
+      if (paxList.length > 0) {
+        const active = paxList.filter(
+          (p: any) =>
+            !p.isCancelled &&
+            !p.cancelled &&
+            String(p.status || "").toLowerCase() !== "cancelled",
+        );
+        return active.length;
+      }
+      return Number(booking.numberOfTravelers) || 1;
+    };
+
     trips.forEach((trip) => {
       let datesArr: any[] = [];
       if (Array.isArray(trip.availableDates)) {
@@ -169,14 +217,25 @@ export default function OperationsHubPage() {
       } else if (typeof trip.availableDates === "string") {
         try {
           datesArr = JSON.parse(trip.availableDates);
-        } catch (e) {}
+        } catch (e) {
+          datesArr = [];
+        }
       }
 
-      datesArr.forEach((d) => {
+      // Deduplicate dates to prevent UI duplicate rows
+      const uniqueDatesMap = new Map();
+      datesArr.forEach((d: any) => {
         if (!d || !d.date) return;
+        const targetDateStr = normalizeDate(d.date);
+        if (!uniqueDatesMap.has(targetDateStr)) {
+          uniqueDatesMap.set(targetDateStr, d);
+        }
+      });
+      const uniqueDatesArr = Array.from(uniqueDatesMap.values());
+
+      uniqueDatesArr.forEach((d: any) => {
         const depDate = new Date(d.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        if (isNaN(depDate.getTime())) return;
         depDate.setHours(0, 0, 0, 0);
 
         const diffTime = depDate.getTime() - today.getTime();
@@ -196,18 +255,22 @@ export default function OperationsHubPage() {
             b.tripId === trip.id ||
             (trip.slug && b.tripSlug === trip.slug) ||
             (trip.title && b.tripTitle === trip.title);
-          if (!matchTrip || b.status === "cancelled" || b.status === "Cancelled")
+          const bStatus = String(b.status || b.bookingStatus || "").toLowerCase();
+          if (
+            !matchTrip ||
+            bStatus === "cancelled" ||
+            bStatus === "rejected" ||
+            bStatus === "expired" ||
+            b.isCancelled === true ||
+            b.cancelled === true
+          )
             return false;
           const bDateStr = normalizeDate(b.departureDate || b.travelDate || b.date);
           return bDateStr === targetDateStr;
         });
 
         const booked = depBookings.reduce(
-          (sum, b) =>
-            sum +
-            (Number(b.numberOfTravelers) ||
-              (Array.isArray(b.passengers) ? b.passengers.length : 0) ||
-              1),
+          (sum, b) => sum + getActivePassengerCount(b),
           0,
         );
         const cap = d.capacity || 30;
@@ -218,7 +281,14 @@ export default function OperationsHubPage() {
         );
         const balanceFormatted = `₹ ${totalOutstanding.toLocaleString("en-IN")}`;
         const pendingCount = depBookings.filter(
-          (b) => b.paymentStatus !== "paid" && b.paymentStatus !== "Paid",
+          (b) => {
+            const pStat = String(b.paymentStatus || "").toLowerCase();
+            return (
+              pStat !== "paid" &&
+              pStat !== "completed" &&
+              (Number(b.remainingAmount) || 0) > 0
+            );
+          },
         ).length;
         const balanceSub =
           pendingCount > 0 ? `${pendingCount} pending` : "All collected";
@@ -815,7 +885,7 @@ export default function OperationsHubPage() {
       .catch(() => toast.error("Failed to load trips"));
 
     bookingsService
-      .getAll({ limit: 1000 })
+      .getAll({ limit: 500, compact: true })
       .then((res) => {
         const rawList = Array.isArray(res)
           ? res

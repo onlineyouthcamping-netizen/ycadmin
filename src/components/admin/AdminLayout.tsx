@@ -55,7 +55,6 @@ import {
   Bell,
   Shield,
   ClipboardCheck,
-  Train,
   Building2,
   History,
   Wrench,
@@ -67,7 +66,6 @@ import {
   Briefcase,
   Megaphone,
   ShieldAlert,
-  Ticket,
   Key,
   ShieldCheck,
   Sliders,
@@ -135,14 +133,6 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       {
-        title: "Train tickets",
-        url: "/admin/approvals-hub?tab=train-verification",
-      },
-      {
-        title: "Booking & docs",
-        url: "/admin/approvals-hub?tab=booking-verification",
-      },
-      {
         title: "Incoming payments",
         url: "/admin/approvals-hub?tab=payment-approvals",
       },
@@ -165,7 +155,7 @@ const sidebarModules: SidebarModule[] = [
   {
     title: "Travel Desk",
     url: "/admin/travel-desk",
-    icon: Ticket,
+    icon: Compass,
     hasSubItems: false,
   },
   {

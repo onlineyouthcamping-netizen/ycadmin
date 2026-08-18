@@ -32,6 +32,7 @@ import {
   normalizeDestinationName,
   HotelEligibleDestination,
   deriveRoomCountsFromAllocations,
+  normaliseDate,
 } from "@/utils/accommodationCalculator";
 
 interface InitialDayInfo {
@@ -135,8 +136,17 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
         else if (r.notes && typeof r.notes === "object") extra = r.notes;
       } catch {}
 
-      const type = String(r.sharingType || r.roomType || r.category || "").toUpperCase();
-      const amt = Number(r.amount || extra.doubleRate || r.doubleRate || r.baseRate || r.base || 0);
+      const type = String(r.sharingType || r.roomType || r.category || r.roomCategory || r.roomName || r.name || "").toUpperCase();
+      const directDouble = Number(r.doubleRate || extra.doubleRate || 0);
+      const directTriple = Number(r.tripleRate || extra.tripleRate || 0);
+      const directQuad = Number(r.quadRate || extra.quadRate || 0);
+      const amt = Number(r.amount || r.baseRate || r.base || directDouble || 0);
+      const extraMattressAmt = Number(r.extraMattressRate || r.extraBedRate || extra.extraBedRate || 0);
+
+      if (directDouble > 0 && (!d || directDouble < d)) d = directDouble;
+      if (directTriple > 0 && (!t || directTriple < t)) t = directTriple;
+      if (directQuad > 0 && (!q || directQuad < q)) q = directQuad;
+      if (extraMattressAmt > 0 && (!ex || extraMattressAmt < ex)) ex = extraMattressAmt;
 
       if (type.includes("DOUBLE") || type.includes("TWIN") || type.includes("2")) {
         if (amt > 0 && (!d || amt < d)) d = amt;
@@ -146,15 +156,18 @@ function extractHotelRates(hotelOrVendor: any, destinationCity?: string) {
         if (amt > 0 && (!q || amt < q)) q = amt;
       } else if (type.includes("EXTRA") || type.includes("BED") || type.includes("MATTRESS")) {
         if (amt > 0 && (!ex || amt < ex)) ex = amt;
+      } else {
+        // If it doesn't specify sharing type, assume base rate is double sharing
+        if (amt > 0 && (!d || amt < d)) d = amt;
       }
     }
 
-    if (d > 0) {
+    if (d > 0 || t > 0 || q > 0) {
       return {
-        doubleRate: d,
-        tripleRate: t > 0 ? t : Math.round(d * 0.75),
-        quadRate: q > 0 ? q : Math.round(d * 0.65),
-        extraBedRate: ex > 0 ? ex : Math.round(d * 0.4),
+        doubleRate: d > 0 ? d : 1200,
+        tripleRate: t > 0 ? t : Math.round((d > 0 ? d : 1200) * 0.75),
+        quadRate: q > 0 ? q : Math.round((d > 0 ? d : 1200) * 0.65),
+        extraBedRate: ex > 0 ? ex : Math.round((d > 0 ? d : 1200) * 0.4),
       };
     }
   }

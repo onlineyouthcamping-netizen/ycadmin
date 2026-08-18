@@ -9,7 +9,6 @@ export const TRAVEL_DESK_TABS = [
   { id: "itinerary", label: "Itinerary" },
   { id: "documents", label: "Documents" },
   { id: "sops", label: "SOPs" },
-  { id: "ticketing", label: "Ticketing" },
   { id: "gallery", label: "Gallery" },
   { id: "activity", label: "Activity" },
 ];

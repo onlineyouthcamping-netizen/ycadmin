@@ -148,6 +148,21 @@ export const stationPaymentService = {
     departureDate: string;
     [key: string]: string;
   }) => {
+    if (!params.tripId || !params.departureDate) {
+      return {
+        success: true,
+        stats: {
+          totalDue: 0,
+          totalCollected: 0,
+          balanceRemaining: 0,
+          cashInHand: 0,
+          upiVerified: 0,
+          upiPending: 0,
+        },
+        bookings: [],
+        handovers: [],
+      };
+    }
     const qs = new URLSearchParams(params as Record<string, string>).toString();
     const r = await api.get(`/station-payments?${qs}`);
     return r.data as {

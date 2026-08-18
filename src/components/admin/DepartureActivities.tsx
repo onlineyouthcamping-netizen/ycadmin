@@ -55,7 +55,7 @@ export default function DepartureActivities({
   const totalPaxCount = allPassengers.length > 0 ? allPassengers.length : 5;
 
   const currentActivities: DepartureActivityItem[] = useMemo(() => {
-    if (activitiesList && activitiesList.length > 0) {
+    if (Array.isArray(activitiesList)) {
       return activitiesList.map((a, idx) => ({
         id: a.id || `act-${idx}`,
         name: a.name || a.act || "Activity",
@@ -96,43 +96,8 @@ export default function DepartureActivities({
       }));
     }
 
-    // Dynamic fallback derived from real trip computedItinerary
-    if (computedItinerary && computedItinerary.length > 0) {
-      return computedItinerary.map((item, idx) => {
-        const dayNum =
-          typeof item.day === "number"
-            ? item.day
-            : parseInt(String(item.day || "").replace(/\D/g, ""), 10) || idx + 1;
-
-        const name = item.plan
-          ? item.plan.split("/")[0].split("-")[0].trim()
-          : item.title || `Day ${dayNum} Activity`;
-
-        return {
-          id: `itin-act-${dayNum}`,
-          name,
-          category: "SIGHTSEEING",
-          dayNumber: dayNum,
-          scheduledTime: "09:00 AM",
-          endTime: "05:00 PM",
-          status: "CONFIRMED",
-          vendorName: "Contracted Supplier",
-          maxCapacity: totalPaxCount,
-          bookedCount: totalPaxCount,
-          isIncluded: true,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Lead Guide",
-          vehicleName: "Tempo 1",
-          mealIncluded: "Included",
-          notes: item.activities || item.sub || item.description || "",
-        };
-      });
-    }
-
     return [];
-  }, [activitiesList, computedItinerary, totalPaxCount]);
+  }, [activitiesList, totalPaxCount]);
 
   const computedActivities = useMemo(() => {
     return currentActivities
@@ -183,6 +148,10 @@ export default function DepartureActivities({
       item.id === id ? { ...item, ...updated } : item,
     );
     setActivitiesList(nextList);
+    const depKey = `yc_activities_${tripId}_${departureDateStr}`;
+    try {
+      localStorage.setItem(depKey, JSON.stringify(nextList));
+    } catch (e) {}
     try {
       await api.put(`/ops/activities/${tripId}/${id}`, updated);
     } catch (e) {
@@ -193,6 +162,10 @@ export default function DepartureActivities({
   const handleDeleteActivityItem = async (id: string) => {
     const nextList = currentActivities.filter((item) => item.id !== id);
     setActivitiesList(nextList);
+    const depKey = `yc_activities_${tripId}_${departureDateStr}`;
+    try {
+      localStorage.setItem(depKey, JSON.stringify(nextList));
+    } catch (e) {}
     toast.success("Activity removed from departure");
     try {
       await api.delete(`/ops/activities/${tripId}/${id}`);

@@ -668,8 +668,11 @@ export interface Quotation {
   expert?: {
     name: string;
     whatsapp: string;
+    phone?: string;
     designation: string;
     photo?: string;
+    avatar?: string;
+    description?: string;
   };
   staySummary?: { nights: number; location: string }[];
   roomsInfo?: string;

@@ -87,7 +87,6 @@ import DepartureDocuments from "@/components/admin/DepartureDocuments";
 import DeparturePayments from "@/components/admin/DeparturePayments";
 import DepartureReports from "@/components/admin/DepartureReports";
 import DepartureTasks from "@/components/admin/DepartureTasks";
-import DepartureTicketing from "@/components/admin/DepartureTicketing";
 import StationPaymentCollection from "@/components/admin/StationPaymentCollection";
 import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import HotelCalculator from "@/components/admin/hotels/HotelCalculator";
@@ -1362,14 +1361,22 @@ export default function DepartureHubPage() {
           (passengersObj?.persons && Array.isArray(passengersObj.persons) && passengersObj.persons[0]?.trainOption) ||
           "3 TIER AC TRAIN";
 
+        const isBookingCancelled =
+          b.isCancelled === true ||
+          b.cancelled === true ||
+          String(b.status || "").toLowerCase() === "cancelled" ||
+          String(b.bookingStatus || "").toLowerCase() === "cancelled";
+
         const base = {
           bookingId: b.id,
           bookingRef: b.bookingId || b.id,
           bookingDate: b.createdAt?.substring(0, 10) || "2027-06-15",
           departureDate: b.departureDate?.substring(0, 10) || departureDateStr,
           batchGroup: "Batch 1",
-          gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender || "Male"),
+          gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender, leadName),
           age: b.age || 24,
+          status: isBookingCancelled ? "CANCELLED" : (b.status || "CONFIRMED"),
+          isCancelled: isBookingCancelled,
           phone: b.phone || b.mobile || "—",
           email: b.email || "—",
           pickupPoint: b.pickupCity || "Ahmedabad",
@@ -1429,6 +1436,12 @@ export default function DepartureHubPage() {
             const coCoupleWith = coRoomInfo.coupleWith || "";
             const coTrainOpt = p.trainOption || p.trainClass || trainOpt;
 
+            const isCoPaxCancelled =
+              isBookingCancelled ||
+              p.isCancelled === true ||
+              p.cancelled === true ||
+              String(p.status || "").toLowerCase() === "cancelled";
+
             arr.push({
               id: `${b.id}-co-${idx}`,
               name: p.name,
@@ -1444,16 +1457,16 @@ export default function DepartureHubPage() {
               amount: allocatedAmounts[coPaxIdx] || 0,
               paidAmount: allocatedPaid[coPaxIdx] || 0,
               balance: allocatedBalances[coPaxIdx] || 0,
-              notes: p.notes || (p.isCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
+              notes: p.notes || (isCoPaxCancelled ? "Cancelled by customer (Redline in manifest)" : "Co-traveler"),
               isLead: false,
-              gender: normalizeGenderFull(p.gender || p.genderFull || "Male"),
+              gender: normalizeGenderFull(p.gender || p.genderFull, p.name),
               age: p.age || 24,
-              status: p.status || (p.isCancelled ? "CANCELLED" : "CONFIRMED"),
-              isCancelled: p.isCancelled === true || p.status === "CANCELLED" || p.status === "cancelled" || b.status === "cancelled",
-              ticketStatus: p.ticketStatus || (p.isCancelled ? "CANCELLED" : b.trainTicketStatus) || "PENDING",
+              status: isCoPaxCancelled ? "CANCELLED" : (p.status || "CONFIRMED"),
+              isCancelled: isCoPaxCancelled,
+              ticketStatus: p.ticketStatus || (isCoPaxCancelled ? "CANCELLED" : b.trainTicketStatus) || "PENDING",
               ticketVerified:
-                p.ticketStatus === "CONFIRMED" ||
-                (!p.isCancelled && b.trainTicketStatus === "CONFIRMED"),
+                !isCoPaxCancelled &&
+                (p.ticketStatus === "CONFIRMED" || b.trainTicketStatus === "CONFIRMED"),
               documentStatus: p.idProof ? "Verified" : "Missing",
             });
           });
@@ -2046,6 +2059,11 @@ export default function DepartureHubPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchPageData = async () => {
+    if (!tripId || !departureDateStr) {
+      setLoading(false);
+      return;
+    }
+
     // 1. Abort previous pending requests
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -4792,31 +4810,43 @@ useEffect(() => {
   }, [tripDetails]);
 
   const computedMessages = useMemo(() => {
-    if (Array.isArray(tripDetails?.messages) && tripDetails.messages.length > 0) {
+    if (
+      Array.isArray(tripDetails?.messages) &&
+      tripDetails.messages.length > 0
+    ) {
       return tripDetails.messages.map((m: any, idx: number) => ({
         id: m.id || `msg-${idx}`,
         convId: m.conversationId || m.convId || "g1",
         sender: m.senderName || m.sender || "Operations",
         role: m.senderRole || m.role || "Admin",
         avatar: (m.senderName || "OP").substring(0, 2).toUpperCase(),
-        time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
+        time: m.createdAt
+          ? new Date(m.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "",
         text: m.text || m.content || "",
         reactions: m.reactions || [],
         isMine: m.isMine || false,
       }));
     }
     return [];
-  }, [tripDetails]);
+  }, [tripDetails?.messages]);
 
   useEffect(() => {
-    if (bookings.length > 0) {
+    if (computedMessages.length > 0) {
       setChatMessages(computedMessages);
     }
-  }, [bookings, computedMessages]);
+  }, [computedMessages]);
 
   const hotelStats = useMemo(() => {
     const activePax = filterActivePassengers(allPassengers);
-    const summary = calculateRoomOccupancy(opsHotels, activePax, passengerAllocations);
+    const summary = calculateRoomOccupancy(
+      opsHotels,
+      activePax,
+      passengerAllocations,
+    );
 
     return {
       totalNights: summary.configuredNights,
@@ -4830,7 +4860,10 @@ useEffect(() => {
       isCapacityShortfall: summary.isCapacityShortfall,
       shortfallPax: summary.shortfallPax,
       hasAccommodationConfigured: summary.hasAccommodationConfigured,
-      occupancy: summary.roomCapacity > 0 ? ((summary.totalActivePax / summary.roomCapacity) * 100).toFixed(1) : "0",
+      occupancy:
+        summary.roomCapacity > 0
+          ? ((summary.totalActivePax / summary.roomCapacity) * 100).toFixed(1)
+          : "0",
     };
   }, [opsHotels, allPassengers, passengerAllocations]);
 
@@ -4853,7 +4886,7 @@ useEffect(() => {
       });
       return hasChanges ? next : prev;
     });
-  }, [bookings]);
+  }, [bookings.length]);
 
   const computedRoomAllocations = useMemo(() => {
     const list: any[] = [];
@@ -4867,7 +4900,7 @@ useEffect(() => {
       if (isPassengerCancelled(pObj)) return;
 
       const travelerName = pObj.name;
-      const isFemale = normalizeGenderCode(pObj.gender) === "F";
+      const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
       const gender = isFemale ? "GIRLS" : "BOYS";
       list.push({
         roomNumber: alloc.room,
@@ -4911,7 +4944,7 @@ useEffect(() => {
         const fleetItem = allocFleet.find(
           (f) => f.name === alloc.vehicle || f.id === alloc.vehicle || f.vehicleType === alloc.vehicle,
         );
-        const isFemale = normalizeGenderCode(pObj.gender) === "F";
+        const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
         list.push({
           fleetId: fleetItem?.id || alloc.vehicle || "tempo-1",
           vehicleType: fleetItem?.vehicleType || alloc.vehicle || "Tempo Traveller",
@@ -4992,522 +5025,73 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    if (tripId.toLowerCase().includes("spt")) {
-      setActivitiesList(MOCK_SPITI_ACTIVITIES);
-    } else {
-      setActivitiesList([
-        // DAY 1: Train Journey
-        {
-          id: "dep-act-1",
-          name: "Ahmedabad Station Check-in",
-          dayNumber: 1,
-          day: "Day 1",
-          scheduledTime: "09:00 AM",
-          endTime: "10:00 AM",
-          status: "CONFIRMED",
-          vendorName: "Indian Railways",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Train 19223",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "TRAVEL",
-        },
-        {
-          id: "dep-act-2",
-          name: "Group Briefing & Itinerary Handout",
-          dayNumber: 1,
-          day: "Day 1",
-          scheduledTime: "11:30 AM",
-          endTime: "12:00 PM",
-          status: "CONFIRMED",
-          vendorName: "YouthCamping Core",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Train Coach B4",
-          mealIncluded: "Included",
-          isIncluded: true,
-          type: "TRAVEL",
-        },
-        {
-          id: "dep-act-3",
-          name: "Ice Breaking & Music Session",
-          dayNumber: 1,
-          day: "Day 1",
-          scheduledTime: "12:00 PM",
-          endTime: "01:30 PM",
-          status: "READY",
-          vendorName: "YouthCamping Core",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Anand Verma",
-          vehicleName: "Train Coach B4",
-          mealIncluded: "Included",
-          isIncluded: true,
-          type: "ENTERTAINMENT",
-        },
-        // DAY 2: Amritsar
-        {
-          id: "dep-act-4",
-          name: "Punjabi Breakfast at Kesar Da Dhaba",
-          dayNumber: 2,
-          day: "Day 2",
-          scheduledTime: "08:00 AM",
-          endTime: "09:00 AM",
-          status: "CONFIRMED",
-          vendorName: "Kesar Da Dhaba",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 350,
-          childPrice: 250,
-          vendorCost: 200,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 1",
-          mealIncluded: "Included",
-          isIncluded: true,
-          type: "MEAL",
-        },
-        {
-          id: "dep-act-5",
-          name: "Golden Temple Visit & Langar",
-          dayNumber: 2,
-          day: "Day 2",
-          scheduledTime: "11:00 AM",
-          endTime: "01:00 PM",
-          status: "CONFIRMED",
-          vendorName: "SGPC Heritage",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 1",
-          mealIncluded: "Langar Included",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        {
-          id: "dep-act-6",
-          name: "Jallianwala Bagh Historic Tour",
-          dayNumber: 2,
-          day: "Day 2",
-          scheduledTime: "01:00 PM",
-          endTime: "02:30 PM",
-          status: "CONFIRMED",
-          vendorName: "Heritage Trust",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 1",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        {
-          id: "dep-act-7",
-          name: "Wagah Border Excursion",
-          dayNumber: 2,
-          day: "Day 2",
-          scheduledTime: "04:00 PM",
-          endTime: "06:30 PM",
-          status: "READY",
-          vendorName: "Punjab Tourism",
-          maxCapacity: 40,
-          bookedCount: 38,
-          adultPrice: 300,
-          childPrice: 200,
-          vendorCost: 150,
-          guideName: "Anand Verma",
-          vehicleName: "Traveller 1",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        {
-          id: "dep-act-8",
-          name: "Departure to Kasol (Overnight Journey)",
-          dayNumber: 2,
-          day: "Day 2",
-          scheduledTime: "10:00 PM",
-          endTime: "06:00 AM",
-          status: "CONFIRMED",
-          vendorName: "Himachal Wheels",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Volvo 2+2 Bus",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "TRAVEL",
-        },
-        // DAY 3: Kasol
-        {
-          id: "dep-act-9",
-          name: "Check-in & Refresh at Parvati Woods",
-          dayNumber: 3,
-          day: "Day 3",
-          scheduledTime: "08:00 AM",
-          endTime: "09:30 AM",
-          status: "CONFIRMED",
-          vendorName: "Parvati Woods Camp",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Kasol Shuttle",
-          mealIncluded: "Included",
-          isIncluded: true,
-          type: "ACCOMMODATION",
-        },
-        {
-          id: "dep-act-10",
-          name: "Manikaran Sahib Gurudwara & Hot Springs",
-          dayNumber: 3,
-          day: "Day 3",
-          scheduledTime: "11:00 AM",
-          endTime: "01:30 PM",
-          status: "CONFIRMED",
-          vendorName: "Parvati Valley Tours",
-          maxCapacity: 40,
-          bookedCount: 36,
-          adultPrice: 200,
-          childPrice: 150,
-          vendorCost: 100,
-          guideName: "Neel Patel",
-          vehicleName: "Kasol Shuttle",
-          mealIncluded: "Langar Included",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        {
-          id: "dep-act-11",
-          name: "Chalal Trek & Cafe Walk",
-          dayNumber: 3,
-          day: "Day 3",
-          scheduledTime: "05:30 PM",
-          endTime: "07:30 PM",
-          status: "READY",
-          vendorName: "Local Mountain Guides",
-          maxCapacity: 40,
-          bookedCount: 35,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 200,
-          guideName: "Anand Verma",
-          vehicleName: "Self Guided",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "ADVENTURE",
-        },
-        {
-          id: "dep-act-12",
-          name: "Campfire & Acoustic Music",
-          dayNumber: 3,
-          day: "Day 3",
-          scheduledTime: "08:00 PM",
-          endTime: "10:30 PM",
-          status: "CONFIRMED",
-          vendorName: "Parvati Woods Camp",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Camp Ground",
-          mealIncluded: "Dinner Included",
-          isIncluded: true,
-          type: "ENTERTAINMENT",
-        },
-        // DAY 4: Bijli Mahadev
-        {
-          id: "dep-act-13",
-          name: "Bijli Mahadev Trek",
-          dayNumber: 4,
-          day: "Day 4",
-          scheduledTime: "12:00 PM",
-          endTime: "04:30 PM",
-          status: "READY",
-          vendorName: "Kullu Trekking Co.",
-          maxCapacity: 40,
-          bookedCount: 32,
-          adultPrice: 600,
-          childPrice: 450,
-          vendorCost: 350,
-          guideName: "Anand Verma",
-          vehicleName: "Traveller 2",
-          mealIncluded: "Packed Lunch",
-          isIncluded: true,
-          type: "ADVENTURE",
-        },
-        {
-          id: "dep-act-14",
-          name: "Manali Basecamp Check-in & Dinner",
-          dayNumber: 4,
-          day: "Day 4",
-          scheduledTime: "07:00 PM",
-          endTime: "09:30 PM",
-          status: "CONFIRMED",
-          vendorName: "Solang Heights Hotel",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 2",
-          mealIncluded: "Dinner Included",
-          isIncluded: true,
-          type: "ACCOMMODATION",
-        },
-        // DAY 5: Adventure Day (Manali)
-        {
-          id: "dep-act-15",
-          name: "Paragliding High Fly (Add-on)",
-          dayNumber: 5,
-          day: "Day 5",
-          scheduledTime: "10:00 AM",
-          endTime: "12:30 PM",
-          status: "READY",
-          vendorName: "Sky Riders Manali",
-          maxCapacity: 35,
-          bookedCount: 28,
-          adultPrice: 2500,
-          childPrice: 2000,
-          vendorCost: 1900,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 1",
-          mealIncluded: "Not Included",
-          isIncluded: false,
-          type: "ADVENTURE",
-        },
-        {
-          id: "dep-act-16",
-          name: "River Rafting — Beas River",
-          dayNumber: 5,
-          day: "Day 5",
-          scheduledTime: "01:00 PM",
-          endTime: "03:30 PM",
-          status: "CONFIRMED",
-          vendorName: "ABC Adventures",
-          maxCapacity: 40,
-          bookedCount: 32,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 200,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 1",
-          mealIncluded: "Included",
-          isIncluded: true,
-          type: "ADVENTURE",
-        },
-        {
-          id: "dep-act-17",
-          name: "Kullu Shawl Factory Walk",
-          dayNumber: 5,
-          day: "Day 5",
-          scheduledTime: "04:00 PM",
-          endTime: "06:00 PM",
-          status: "CONFIRMED",
-          vendorName: "Bhuntar Weavers",
-          maxCapacity: 40,
-          bookedCount: 35,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Anand Verma",
-          vehicleName: "Traveller 1",
-          mealIncluded: "Tea & Snacks",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        // DAY 6: Solang
-        {
-          id: "dep-act-18",
-          name: "ATV & Bike Ride (Add-on)",
-          dayNumber: 6,
-          day: "Day 6",
-          scheduledTime: "10:00 AM",
-          endTime: "11:30 AM",
-          status: "CONFIRMED",
-          vendorName: "Mountain Trails ATV",
-          maxCapacity: 30,
-          bookedCount: 24,
-          adultPrice: 1500,
-          childPrice: 1200,
-          vendorCost: 900,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 2",
-          mealIncluded: "Not Included",
-          isIncluded: false,
-          type: "ADVENTURE",
-        },
-        {
-          id: "dep-act-19",
-          name: "Solang Valley Snow Activities",
-          dayNumber: 6,
-          day: "Day 6",
-          scheduledTime: "11:30 AM",
-          endTime: "01:00 PM",
-          status: "CONFIRMED",
-          vendorName: "Solang Snow Club",
-          maxCapacity: 40,
-          bookedCount: 38,
-          adultPrice: 800,
-          childPrice: 600,
-          vendorCost: 500,
-          guideName: "Neel Patel",
-          vehicleName: "Traveller 2",
-          mealIncluded: "Not Included",
-          isIncluded: false,
-          type: "ADVENTURE",
-        },
-        {
-          id: "dep-act-20",
-          name: "Atal Tunnel & Sissu Visit",
-          dayNumber: 6,
-          day: "Day 6",
-          scheduledTime: "01:00 PM",
-          endTime: "05:00 PM",
-          status: "READY",
-          vendorName: "Lahaul Eco Tourism",
-          maxCapacity: 40,
-          bookedCount: 36,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 250,
-          guideName: "Anand Verma",
-          vehicleName: "4x4 Tempo Traveller",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        // DAY 7: Manali
-        {
-          id: "dep-act-21",
-          name: "Jogini Waterfall Trek",
-          dayNumber: 7,
-          day: "Day 7",
-          scheduledTime: "08:00 AM",
-          endTime: "11:30 AM",
-          status: "CONFIRMED",
-          vendorName: "Vashisht Trekking",
-          maxCapacity: 40,
-          bookedCount: 30,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 200,
-          guideName: "Neel Patel",
-          vehicleName: "Self Guided",
-          mealIncluded: "Breakfast Included",
-          isIncluded: true,
-          type: "ADVENTURE",
-        },
-        {
-          id: "dep-act-22",
-          name: "Hadimba Temple & Club House",
-          dayNumber: 7,
-          day: "Day 7",
-          scheduledTime: "01:00 PM",
-          endTime: "04:30 PM",
-          status: "CONFIRMED",
-          vendorName: "Manali Cultural Trust",
-          maxCapacity: 40,
-          bookedCount: 38,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 100,
-          guideName: "Neel Patel",
-          vehicleName: "Manali Shuttle",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        {
-          id: "dep-act-23",
-          name: "Mall Road Shopping & Cafe Hop",
-          dayNumber: 7,
-          day: "Day 7",
-          scheduledTime: "05:00 PM",
-          endTime: "09:00 PM",
-          status: "CONFIRMED",
-          vendorName: "Self Guided",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Anand Verma",
-          vehicleName: "Self Guided",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "SIGHTSEEING",
-        },
-        // DAY 8: Return Journey
-        {
-          id: "dep-act-24",
-          name: "Train Boarding — Return Journey",
-          dayNumber: 8,
-          day: "Day 8",
-          scheduledTime: "09:00 AM",
-          endTime: "10:00 AM",
-          status: "CONFIRMED",
-          vendorName: "Indian Railways",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Train 19224",
-          mealIncluded: "Included",
-          isIncluded: true,
-          type: "TRAVEL",
-        },
-        // DAY 9: Arrival
-        {
-          id: "dep-act-25",
-          name: "Arrival & Trip Conclusion",
-          dayNumber: 9,
-          day: "Day 9",
-          scheduledTime: "08:00 AM",
-          endTime: "09:00 AM",
-          status: "CONFIRMED",
-          vendorName: "YouthCamping Core",
-          maxCapacity: 40,
-          bookedCount: 40,
-          adultPrice: 0,
-          childPrice: 0,
-          vendorCost: 0,
-          guideName: "Neel Patel",
-          vehicleName: "Train 19224",
-          mealIncluded: "Not Included",
-          isIncluded: true,
-          type: "TRAVEL",
-        },
-      ]);
+    let isMounted = true;
+    const depKey = `yc_activities_${tripId}_${departureDateStr}`;
+    const cached = localStorage.getItem(depKey);
+    if (cached !== null) {
+      try {
+        setActivitiesList(JSON.parse(cached));
+        return;
+      } catch (e) {}
     }
-  }, [tripId]);
+
+    const loadBackendActivities = async () => {
+      try {
+        const res = await api.get(`/ops/activities/${tripId}`, {
+          params: { departureDate: departureDateStr },
+        });
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          if (isMounted) {
+            setActivitiesList(res.data.data);
+            localStorage.setItem(depKey, JSON.stringify(res.data.data));
+          }
+          return;
+        }
+      } catch (e) {
+        // Backend fallback
+      }
+
+      if (isMounted) {
+        let initialList = [];
+        if (tripId.toLowerCase().includes("spt")) {
+          initialList = MOCK_SPITI_ACTIVITIES;
+        } else {
+          initialList = [
+            // DAY 1: Train Journey
+            {
+              id: "dep-act-1",
+              name: "Ahmedabad Station Check-in",
+              dayNumber: 1,
+              day: "Day 1",
+              scheduledTime: "09:00 AM",
+              endTime: "10:00 AM",
+              status: "CONFIRMED",
+              vendorName: "Indian Railways",
+              maxCapacity: 40,
+              bookedCount: 40,
+              adultPrice: 0,
+              childPrice: 0,
+              vendorCost: 0,
+              guideName: "Neel Patel",
+              vehicleName: "Train 19223",
+              mealIncluded: "Not Included",
+              isIncluded: true,
+              type: "TRAVEL",
+            },
+          ];
+        }
+        setActivitiesList(initialList);
+        try {
+          localStorage.setItem(depKey, JSON.stringify(initialList));
+        } catch (e) {}
+      }
+    };
+
+    loadBackendActivities();
+    return () => {
+      isMounted = false;
+    };
+  }, [tripId, departureDateStr]);
 
   const computedActivities = useMemo(() => {
     return activitiesList;
@@ -5770,43 +5354,45 @@ useEffect(() => {
   }, [allPassengers]);
 
   const passengerStats = useMemo(() => {
-    const total = allPassengers.length;
-    const paidInFull = allPassengers.filter(
+    const activePassengers = allPassengers.filter((p: any) => !p.isCancelled);
+    const total = activePassengers.length;
+    const paidInFull = activePassengers.filter(
       (p) => p.paymentStatus === "Paid in Full",
     ).length;
-    const partial = allPassengers.filter(
+    const partial = activePassengers.filter(
       (p) => p.paymentStatus === "Partial Payment",
     ).length;
-    const pending = allPassengers.filter(
+    const pending = activePassengers.filter(
       (p) => p.paymentStatus === "Payment Pending",
     ).length;
-    const withDue = allPassengers.filter((p) => p.balance > 0).length;
-    const totalDue = allPassengers
+    const withDue = activePassengers.filter((p) => p.balance > 0).length;
+    const totalDue = activePassengers
       .filter((p) => p.balance > 0)
       .reduce((s, p) => s + p.balance, 0);
-    const outstandingPartial = allPassengers
+    const outstandingPartial = activePassengers
       .filter((p) => p.paymentStatus === "Partial Payment")
       .reduce((s, p) => s + p.balance, 0);
-    const outstandingPending = allPassengers
+    const outstandingPending = activePassengers
       .filter((p) => p.paymentStatus === "Payment Pending")
       .reduce((s, p) => s + p.balance, 0);
     // Reconciliation checklist stats
-    const ticketed = allPassengers.filter(
-      (p) => p.ticketStatus && p.ticketStatus !== "PENDING",
+    const ticketed = activePassengers.filter(
+      (p) => p.ticketStatus && p.ticketStatus !== "PENDING" && p.ticketStatus !== "CANCELLED",
     ).length;
-    const ticketVerified = allPassengers.filter(
+    const ticketVerified = activePassengers.filter(
       (p) => p.ticketVerified === true,
     ).length;
-    const roomAllocated = allPassengers.filter(
+    const roomAllocated = activePassengers.filter(
       (p) => p.roomNo && p.roomNo !== "—" && p.roomNo !== "Unassigned",
     ).length;
-    const transportAllocated = allPassengers.filter(
+    const transportAllocated = activePassengers.filter(
       (p) => p.pickupPoint && p.pickupPoint !== "—",
     ).length;
-    const missingDocument = allPassengers.filter(
+    const missingDocument = activePassengers.filter(
       (p) => p.documentStatus === "Missing",
     ).length;
     const cancelled = allPassengers.filter((p) => p.isCancelled).length;
+    const allTotal = total + cancelled;
     return {
       total,
       paidInFull,
@@ -5819,7 +5405,7 @@ useEffect(() => {
       totalDue,
       cancelled,
       cancelledPercent:
-        total > 0 ? ((cancelled / total) * 100).toFixed(1) : "0",
+        allTotal > 0 ? ((cancelled / allTotal) * 100).toFixed(1) : "0",
       ticketed,
       ticketVerified,
       roomAllocated,
@@ -6119,13 +5705,19 @@ useEffect(() => {
         return `${rNo}: ${roomDesc}`;
       });
 
-      const roomRequirement = roomSummaries.join(" | ") || "No rooms allocated";
+      const roomRequirement =
+        roomSummaries.join(" | ") || "No rooms allocated";
+
+      const activePersons = personsList.filter((p: any) => !p.isCancelled);
+      const cancelledPersons = personsList.filter((p: any) => p.isCancelled);
 
       return {
         bookingId: b.id,
         bookingRef: b.bookingId || b.id,
         leadName,
-        totalPassengers: personsList.length,
+        totalPassengers: activePersons.length,
+        cancelledPassengers: cancelledPersons.length,
+        rawPassengerCount: personsList.length,
         coupleCount,
         roomRequirement,
         totalAmount: b.totalAmount || 0,
@@ -7306,10 +6898,19 @@ useEffect(() => {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
                   <p className="text-[11px] text-slate-500 min-w-0">
                     <span className="font-medium text-[#0B1528] tabular-nums">
-                      {filteredPassengers.length}
+                      {passengerStats.total}
                     </span>{" "}
-                    passengers ·{" "}
-                    <span className="tabular-nums">{filteredBookingGroups.length}</span>{" "}
+                    active passengers
+                    {passengerStats.cancelled > 0 && (
+                      <span className="text-slate-400">
+                        {" "}
+                        ({passengerStats.cancelled} cancelled)
+                      </span>
+                    )}{" "}
+                    ·{" "}
+                    <span className="tabular-nums">
+                      {filteredBookingGroups.length}
+                    </span>{" "}
                     bookings
                   </p>
                   <button
@@ -7642,7 +7243,13 @@ useEffect(() => {
                                     {bg.leadName}'s group
                                   </span>
                                   <span className="text-[11px] font-medium text-slate-500">
-                                    {bg.totalPassengers} passengers
+                                    {bg.totalPassengers} active passengers
+                                    {bg.cancelledPassengers > 0 && (
+                                      <span className="text-slate-400">
+                                        {" "}
+                                        ({bg.cancelledPassengers} cancelled)
+                                      </span>
+                                    )}
                                   </span>
                                   {bg.coupleCount > 0 && (
                                     <span className="text-[11px] font-medium text-slate-500 border border-[#E8EEF4] bg-white rounded-md px-1.5 py-0.5">

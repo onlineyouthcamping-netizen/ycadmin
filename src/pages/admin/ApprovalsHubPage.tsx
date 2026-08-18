@@ -1,25 +1,19 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  ClipboardCheck,
-  ShieldCheck,
-  Train,
   CreditCard,
   Building2,
   RefreshCw,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/auth.store";
-import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { financeControllerService } from "@/services/financeController.service";
-import VerificationQueuePage from "./VerificationQueuePage";
 import IncomingPaymentsApprovalPage from "./IncomingPaymentsApprovalPage";
 import OutgoingPaymentsApprovalPage from "./OutgoingPaymentsApprovalPage";
 import RefundRequestsPage from "./RefundRequestsPage";
 
 export type ApprovalTab =
-  | "train-verification"
-  | "booking-verification"
   | "payment-approvals"
   | "vendor-bills"
   | "refund-requests";
@@ -31,48 +25,35 @@ const TABS: {
   description: string;
 }[] = [
   {
-    key: "train-verification",
-    label: "1. Train Ticket Approvals",
-    icon: Train,
-    description: "Review and verify train tickets, PNRs, berths and ticket allowances",
-  },
-  {
-    key: "booking-verification",
-    label: "2. Document & Booking Verification",
-    icon: ShieldCheck,
-    description: "Verify passenger documents, ID proofs, medical & traveler manifests",
-  },
-  {
     key: "payment-approvals",
-    label: "3. Incoming Payments",
+    label: "1. Incoming Payments",
     icon: CreditCard,
-    description: "Approve customer online collections, bank transfers and cash submissions",
+    description:
+      "Approve customer online collections, bank transfers and cash submissions",
   },
   {
     key: "vendor-bills",
-    label: "4. Outgoing Vendor Payments",
+    label: "2. Outgoing Vendor Payments",
     icon: Building2,
-    description: "Verify payouts for Hotels, Transport, Activities, Guides & Ticketing balance",
+    description:
+      "Verify payouts for Hotels, Transport, Activities, Guides & ops balance",
   },
   {
     key: "refund-requests",
-    label: "5. Refund Requests & Credits",
+    label: "3. Refund Requests & Credits",
     icon: RefreshCw,
     description: "Review customer cancellation refunds and store credit notes",
   },
 ];
 
 export default function ApprovalsHubPage() {
-  const { admin } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab") as ApprovalTab;
+  const tabParam = searchParams.get("tab") as ApprovalTab | string | null;
   const activeTab: ApprovalTab =
     tabParam && TABS.some((t) => t.key === tabParam)
-      ? tabParam
-      : "train-verification";
+      ? (tabParam as ApprovalTab)
+      : "payment-approvals";
 
-  const [bookingPendingCount, setBookingPendingCount] = useState<number>(0);
-  const [trainPendingCount, setTrainPendingCount] = useState<number>(0);
   const [incomingPendingCount, setIncomingPendingCount] = useState<number>(0);
   const [vendorPendingCount, setVendorPendingCount] = useState<number>(0);
   const [refundPendingCount, setRefundPendingCount] = useState<number>(0);
@@ -80,20 +61,26 @@ export default function ApprovalsHubPage() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const [verifRes, trainRes, incRes, cashRes, vendorRes, refundRes] = await Promise.all([
-          bookingVerificationService.getVerificationQueue({ page: 1, limit: 1 }).catch(() => ({ total: 0 })),
-          bookingVerificationService.getTrainTicketVerificationQueue({ page: 1, limit: 1 }).catch(() => ({ total: 0 })),
-          financeControllerService.getIncomingQueue({ status: "PENDING_VERIFICATION", limit: 1 }).catch(() => ({ data: [] })),
-          financeControllerService.getCashQueue({ status: "PENDING_HANDOVER", limit: 1 }).catch(() => ({ data: [] })),
-          financeControllerService.getVendorQueue({ limit: 1 }).catch(() => ({ data: [] })),
-          financeControllerService.refunds.list({ status: "PENDING_APPROVAL", limit: 1 }).catch(() => ({ data: [] })),
+        const [incRes, cashRes, vendorRes, refundRes] = await Promise.all([
+          financeControllerService
+            .getIncomingQueue({ status: "PENDING_VERIFICATION", limit: 1 })
+            .catch(() => ({ data: [] })),
+          financeControllerService
+            .getCashQueue({ status: "PENDING_HANDOVER", limit: 1 })
+            .catch(() => ({ data: [] })),
+          financeControllerService
+            .getVendorQueue({ limit: 1 })
+            .catch(() => ({ data: [] })),
+          financeControllerService.refunds
+            .list({ status: "PENDING_APPROVAL", limit: 1 })
+            .catch(() => ({ data: [] })),
         ]);
-        setBookingPendingCount(verifRes?.total || 0);
-        setTrainPendingCount(trainRes?.total || 0);
-        setIncomingPendingCount((incRes?.data?.length || 0) + (cashRes?.data?.length || 0));
+        setIncomingPendingCount(
+          (incRes?.data?.length || 0) + (cashRes?.data?.length || 0),
+        );
         setVendorPendingCount(vendorRes?.data?.length || 0);
         setRefundPendingCount(refundRes?.data?.length || 0);
-      } catch (err) {
+      } catch {
         // silent fail
       }
     };
@@ -105,31 +92,63 @@ export default function ApprovalsHubPage() {
   };
 
   const getBadgeCount = (key: ApprovalTab) => {
-    if (key === "train-verification") return trainPendingCount;
-    if (key === "booking-verification") return bookingPendingCount;
     if (key === "payment-approvals") return incomingPendingCount;
     if (key === "vendor-bills") return vendorPendingCount;
     if (key === "refund-requests") return refundPendingCount;
     return 0;
   };
 
-  return (
-    <div className="space-y-4 font-sans antialiased text-[#0B1528] p-1 bg-transparent min-h-0">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2] bg-transparent">
-        <div className="space-y-0.5">
-          <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none flex items-center gap-2 font-montserrat">
-            <ClipboardCheck className="w-5 h-5 text-[#FF4D00]" />
-            Approval Center
-          </h1>
-          <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-            Review and approve pending requests across all operational modules.
-          </p>
-        </div>
-      </div>
+  const activeConfig = TABS.find((tab) => tab.key === activeTab) ?? TABS[0];
+  const totalOpen =
+    incomingPendingCount + vendorPendingCount + refundPendingCount;
 
-      {/* Category tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+  return (
+    <div className="min-h-0 space-y-3 font-sans text-[#13283F] antialiased">
+      <section className="relative overflow-hidden rounded-2xl bg-[#10263D] px-4 py-4 text-white shadow-[0_12px_32px_rgba(16,38,61,0.16)] md:px-6 md:py-5">
+        <div
+          aria-hidden="true"
+          className="absolute -right-16 -top-20 h-52 w-52 rounded-full border-[28px] border-white/[0.04]"
+        />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FF5A1F] shadow-[0_6px_16px_rgba(255,90,31,0.35)]">
+                <ShieldCheck className="h-4 w-4" />
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-300">
+                Finance control desk
+              </span>
+            </div>
+            <h1 className="text-[22px] font-bold tracking-[-0.03em] md:text-[26px]">
+              Approvals
+            </h1>
+            <p className="mt-1 max-w-xl text-[12px] leading-relaxed text-slate-300 md:text-[13px]">
+              Review money moving into and out of YouthCamping.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.07] px-3.5 py-2.5 backdrop-blur-sm">
+            <div>
+              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Open actions
+              </div>
+              <div className="mt-0.5 text-xl font-bold tabular-nums">
+                {totalOpen}
+              </div>
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div className="text-[10px] leading-4 text-slate-300">
+              Across all
+              <br />
+              finance queues
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <nav
+        aria-label="Approval queues"
+        className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+      >
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -139,39 +158,63 @@ export default function ApprovalsHubPage() {
               key={tab.key}
               onClick={() => handleTabChange(tab.key)}
               className={cn(
-                "flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all border shadow-2xs",
+                "group flex min-w-0 items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F]/40",
                 isActive
-                  ? "bg-white text-[#FF4D00] border-[#FF4D00] shadow-sm"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900",
+                  ? "border-[#FF5A1F]/40 bg-white shadow-[0_8px_24px_rgba(15,35,55,0.08)]"
+                  : "border-[#DCE5ED] bg-white/65 hover:border-[#B7C7D6] hover:bg-white",
               )}
             >
-              <Icon className={cn("w-4 h-4", isActive ? "text-[#FF4D00]" : "text-slate-400")} />
-              <span>{tab.label}</span>
-              {badgeCount > 0 && (
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                  isActive
+                    ? "bg-[#FFF0EA] text-[#E84712]"
+                    : "bg-[#EDF3F7] text-[#6B8195]",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
                 <span
                   className={cn(
-                    "text-[9.5px] font-black px-1.5 py-0.2 rounded-full",
-                    isActive
-                      ? "bg-orange-100 text-[#FF4D00]"
-                      : "bg-slate-100 text-slate-600",
+                    "block truncate text-[12px] font-bold",
+                    isActive ? "text-[#13283F]" : "text-[#526A7F]",
                   )}
                 >
-                  {badgeCount}
+                  {tab.label.replace(/^\d+\.\s*/, "")}
                 </span>
-              )}
+                <span className="mt-0.5 block truncate text-[10px] text-[#8293A3]">
+                  {badgeCount ? `${badgeCount} need review` : "Queue clear"}
+                </span>
+              </span>
+              <ArrowRight
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0 transition-transform",
+                  isActive
+                    ? "translate-x-0 text-[#FF5A1F]"
+                    : "-translate-x-1 text-slate-300 group-hover:translate-x-0",
+                )}
+              />
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* Content Area */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 min-h-[500px]">
-        {activeTab === "train-verification" && (
-          <VerificationQueuePage defaultQueue="train" hideHeader={true} hideSideNav={true} />
-        )}
-        {activeTab === "booking-verification" && (
-          <VerificationQueuePage defaultQueue="booking" hideHeader={true} hideSideNav={true} />
-        )}
+      <section className="overflow-hidden rounded-2xl border border-[#DCE5ED] bg-white shadow-[0_6px_22px_rgba(15,35,55,0.06)]">
+        <header className="flex flex-col gap-2 border-b border-[#E5ECF2] px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-5">
+          <div>
+            <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#FF5A1F]">
+              Active queue
+            </div>
+            <h2 className="mt-0.5 text-[15px] font-bold tracking-[-0.01em] text-[#13283F]">
+              {activeConfig.label.replace(/^\d+\.\s*/, "")}
+            </h2>
+          </div>
+          <p className="max-w-lg text-[11px] leading-4 text-[#718598]">
+            {activeConfig.description}
+          </p>
+        </header>
+        <div className="p-3 md:p-4">
         {activeTab === "payment-approvals" && (
           <IncomingPaymentsApprovalPage hideHeader={true} />
         )}
@@ -181,7 +224,8 @@ export default function ApprovalsHubPage() {
         {activeTab === "refund-requests" && (
           <RefundRequestsPage hideHeader={true} />
         )}
-      </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -128,7 +128,7 @@ export default function DepartureTicketing({
         return next;
       });
     }
-  }, [allPassengers, tripDetails]);
+  }, [allPassengers]);
 
   // Derived ticket list
   const ticketList = useMemo(() => {

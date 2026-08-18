@@ -99,19 +99,210 @@ export function calculateAgeFromDOB(dobStr?: string | null): number | null {
   return age >= 0 && age < 120 ? age : null;
 }
 
-export function normalizeGenderCode(
-  genderStr?: string | null,
-): "M" | "F" | "O" | "U" {
-  if (!genderStr || typeof genderStr !== "string") return "U";
-  const clean = genderStr.trim().toLowerCase();
-  if (clean.startsWith("m") || clean === "male") return "M";
-  if (clean.startsWith("f") || clean === "female") return "F";
-  if (clean.startsWith("o") || clean === "other") return "O";
+export function inferGenderFromName(nameStr?: string | null): "M" | "F" | "U" {
+  if (!nameStr || typeof nameStr !== "string") return "U";
+  const lower = nameStr.toLowerCase().trim();
+
+  // Explicit title prefixes
+  if (
+    lower.startsWith("mrs.") ||
+    lower.startsWith("mrs ") ||
+    lower.startsWith("ms.") ||
+    lower.startsWith("ms ") ||
+    lower.startsWith("miss ") ||
+    lower.startsWith("miss.") ||
+    lower.startsWith("smt.") ||
+    lower.startsWith("smt ") ||
+    lower.startsWith("dr. mrs") ||
+    lower.startsWith("dr. ms")
+  ) {
+    return "F";
+  }
+
+  if (
+    lower.startsWith("mr.") ||
+    lower.startsWith("mr ") ||
+    lower.startsWith("shri ") ||
+    lower.startsWith("shree ") ||
+    lower.startsWith("master ")
+  ) {
+    return "M";
+  }
+
+  // Token-based matching on individual name words
+  const tokens = lower
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const femaleTokens = new Set([
+    "riddhi",
+    "ridhi",
+    "sneha",
+    "vanshika",
+    "khushi",
+    "rushvi",
+    "khushbu",
+    "khushboo",
+    "khushbuben",
+    "ruchi",
+    "priya",
+    "priyanka",
+    "pooja",
+    "puja",
+    "anjali",
+    "neha",
+    "shreya",
+    "tanvi",
+    "dimple",
+    "hetal",
+    "kinjal",
+    "nisha",
+    "payal",
+    "bhavna",
+    "bhavana",
+    "monika",
+    "monica",
+    "heena",
+    "hina",
+    "divya",
+    "disha",
+    "aditi",
+    "kriti",
+    "isha",
+    "aarti",
+    "arti",
+    "kajal",
+    "sonal",
+    "prachi",
+    "mansi",
+    "kruti",
+    "urvashi",
+    "drasti",
+    "drashti",
+    "vaishali",
+    "diya",
+    "jiya",
+    "siya",
+    "riya",
+    "jinal",
+    "hiral",
+    "twinkle",
+    "swati",
+    "sweta",
+    "shweta",
+    "charmy",
+    "dharti",
+    "dhwani",
+    "foram",
+    "bansari",
+    "nirali",
+    "saloni",
+    "vidhi",
+    "shivali",
+    "purvi",
+    "namrata",
+    "khushali",
+    "jahnvi",
+    "janvi",
+    "yashvi",
+    "janhavi",
+    "grishma",
+    "shraddha",
+    "tejal",
+    "nikita",
+    "komal",
+    "nidhi",
+    "simran",
+    "radhika",
+    "megha",
+    "bhumika",
+    "ashima",
+    "anushka",
+    "avani",
+    "avni",
+    "sakshi",
+    "muskan",
+    "kavya",
+    "dipti",
+    "deepa",
+    "deepika",
+    "jyoti",
+    "rekha",
+    "geeta",
+    "gita",
+    "seema",
+    "sita",
+    "parul",
+    "alka",
+    "chhaya",
+    "meena",
+    "leena",
+    "sheetal",
+    "shital",
+    "sapna",
+  ]);
+
+  for (const token of tokens) {
+    if (
+      femaleTokens.has(token) ||
+      token.endsWith("ben") ||
+      token.endsWith("ba") ||
+      token.endsWith("devi")
+    ) {
+      return "F";
+    }
+  }
+
   return "U";
 }
 
-export function normalizeGenderFull(genderStr?: string | null): string {
-  const code = normalizeGenderCode(genderStr);
+export function normalizeGenderCode(
+  genderStr?: string | null,
+  nameStr?: string | null,
+): "M" | "F" | "O" | "U" {
+  if (genderStr && typeof genderStr === "string") {
+    const clean = genderStr.trim().toLowerCase();
+    if (
+      clean.startsWith("f") ||
+      clean === "female" ||
+      clean === "girl" ||
+      clean === "girls" ||
+      clean === "woman" ||
+      clean === "women" ||
+      clean === "lady" ||
+      clean === "ladies" ||
+      clean === "she"
+    ) {
+      return "F";
+    }
+    if (
+      clean.startsWith("m") ||
+      clean === "male" ||
+      clean === "boy" ||
+      clean === "boys" ||
+      clean === "man" ||
+      clean === "men" ||
+      clean === "he"
+    ) {
+      return "M";
+    }
+    if (clean.startsWith("o") || clean === "other") return "O";
+  }
+
+  if (nameStr) {
+    const inferred = inferGenderFromName(nameStr);
+    if (inferred !== "U") return inferred;
+  }
+
+  return "U";
+}
+
+export function normalizeGenderFull(
+  genderStr?: string | null,
+  nameStr?: string | null,
+): string {
+  const code = normalizeGenderCode(genderStr, nameStr);
   if (code === "M") return "Male";
   if (code === "F") return "Female";
   if (code === "O") return "Other";

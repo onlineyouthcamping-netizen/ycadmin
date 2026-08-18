@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Users,
-  Train,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
@@ -139,8 +138,6 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
     userRole,
   );
   const canViewTrips = hasPermission(userPerms, PERMISSIONS.TRIPS_VIEW, userRole);
-  const canViewTicketing = hasPermission(userPerms, "tickets.view", userRole);
-
   const periodPrefix = PERIOD_PREFIX[dateFilter] || "TOTAL";
 
   const upcomingDepartures = stats?.tripsDepartingNext7Days || [];
@@ -273,19 +270,6 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
               stats?.totalTravelers
                 ? `${stats.totalTravelers} travelers`
                 : "Bookings recorded"
-            }
-          />
-        )}
-
-        {canViewTicketing && (
-          <MetricCard
-            label="Ticketing queue"
-            icon={<Train className="h-3.5 w-3.5" strokeWidth={1.75} />}
-            onClick={() => navigate("/admin/travel-desk")}
-            loading={loading}
-            value={stats?.pendingTickets}
-            caption={
-              stats?.pendingTickets ? "Needs action" : "All cleared"
             }
           />
         )}

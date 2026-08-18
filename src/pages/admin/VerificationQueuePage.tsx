@@ -153,15 +153,8 @@ export default function VerificationQueuePage({
 }: VerificationQueuePageProps) {
   const { admin } = useAuthStore();
 
-  const [activeQueue, setActiveQueue] = useState<"booking" | "train">(
-    defaultQueue,
-  );
-
-  useEffect(() => {
-    if (defaultQueue) {
-      setActiveQueue(defaultQueue);
-    }
-  }, [defaultQueue]);
+  // Train ticketing module removed — booking verification only
+  const [activeQueue, setActiveQueue] = useState<"booking" | "train">("booking");
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -518,23 +511,6 @@ export default function VerificationQueuePage({
                   </span>
                 )}
               </button>
-              <button
-                onClick={() => setActiveQueue("train")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all",
-                  activeQueue === "train"
-                    ? "bg-white text-[#F97316] shadow-sm"
-                    : "text-slate-600 hover:text-slate-900",
-                )}
-              >
-                <Train className="w-3.5 h-3.5" />
-                Train Tickets
-                {trainPendingCount > 0 && (
-                  <span className="ml-1 text-[9px] bg-orange-100 text-[#F97316] px-1.5 py-0.2 rounded font-black">
-                    {trainPendingCount}
-                  </span>
-                )}
-              </button>
             </div>
           </div>
 
@@ -678,40 +654,6 @@ export default function VerificationQueuePage({
                 )}
               </button>
 
-              {/* Train Ticket Approvals */}
-              <button
-                onClick={() => setActiveQueue("train")}
-                className={cn(
-                  "w-full h-10 px-2.5 rounded text-left flex items-center justify-between text-[11.5px] font-[600] transition-all",
-                  activeQueue === "train"
-                    ? "bg-slate-50 text-[#162B45] border-l-[3px] border-[#F97316] font-bold shadow-xs"
-                    : "text-[#74839A] hover:bg-slate-50/70 hover:text-[#162B45]",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Train
-                    className={cn(
-                      "w-4 h-4",
-                      activeQueue === "train"
-                        ? "text-[#F97316]"
-                        : "text-[#74839A]",
-                    )}
-                  />
-                  <span>Train Ticket Approvals</span>
-                </div>
-                {trainPendingCount > 0 && (
-                  <span
-                    className={cn(
-                      "text-[9px] px-1.5 py-0.2 rounded font-black",
-                      activeQueue === "train"
-                        ? "bg-[#F97316] text-white"
-                        : "bg-[#E3EAF2] text-[#162B45]",
-                    )}
-                  >
-                    {trainPendingCount}
-                  </span>
-                )}
-              </button>
             </div>
           </div>
         )}

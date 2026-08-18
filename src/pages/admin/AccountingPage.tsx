@@ -89,7 +89,7 @@ export default function AccountingPage() {
     )
       return "expenses";
     if (["riya", "train", "tickets", "train_portal", "riya_wallet"].includes(t))
-      return "riya";
+      return "overview";
     if (["accounts", "bank_accounts", "cash_book", "bank", "banks", "cash"].includes(t))
       return "accounts";
     if (["profitability", "trip_profitability", "profit_loss", "pnl", "reports"].includes(t))
@@ -122,11 +122,13 @@ export default function AccountingPage() {
     pendingClientPayments: any[];
     pendingStationPayments: any[];
     pendingVendorPayments: any[];
+    pendingTrainTickets: any[];
     totalPendingCount: number;
   }>({
     pendingClientPayments: [],
     pendingStationPayments: [],
     pendingVendorPayments: [],
+    pendingTrainTickets: [],
     totalPendingCount: 0,
   });
   const [riyaData, setRiyaData] = useState<{
@@ -272,6 +274,7 @@ export default function AccountingPage() {
           pendingClientPayments: qRes.data.data.pendingClientPayments || [],
           pendingStationPayments: qRes.data.data.pendingStationPayments || [],
           pendingVendorPayments: qRes.data.data.pendingVendorPayments || [],
+          pendingTrainTickets: qRes.data.data.pendingTrainTickets || [],
           totalPendingCount: qRes.data.data.totalPendingCount || 0,
         });
       }
@@ -862,11 +865,6 @@ export default function AccountingPage() {
     },
     { id: "payments", label: "Collections in", meta: String(allClientReceipts.length) },
     { id: "expenses", label: "Payouts out", meta: String(vendorPayments.length) },
-    {
-      id: "riya",
-      label: "Riya wallet",
-      meta: formatINR(riyaData.availableRiyaBalance),
-    },
     { id: "accounts", label: "Treasury", meta: String(collectionAccounts.length) },
     { id: "profitability", label: "Trip P&L" },
   ];
@@ -886,7 +884,7 @@ export default function AccountingPage() {
               </span>
             </div>
             <p className="mt-0.5 text-[12px] text-slate-500">
-              Money ledger, verification queue, Riya wallet and trip margins.
+              Money ledger, verification queue, treasury and trip margins.
             </p>
           </div>
 
@@ -904,15 +902,6 @@ export default function AccountingPage() {
                 strokeWidth={1.75}
               />
               Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowRechargeRiyaModal(true)}
-              className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB]"
-            >
-              <Ticket className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-              Recharge Riya
             </Button>
             <Button
               variant="outline"
@@ -1224,7 +1213,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {verificationQueue.pendingClientPayments.map((p: any) => (
+                    {(verificationQueue.pendingClientPayments || []).map((p: any) => (
                       <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {p.booking?.fullName || "Customer"}
@@ -1336,7 +1325,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {verificationQueue.pendingStationPayments.map((p: any) => (
+                    {(verificationQueue.pendingStationPayments || []).map((p: any) => (
                       <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {p.booking?.fullName || p.collectedFrom || "Passenger"}
@@ -1452,7 +1441,7 @@ export default function AccountingPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {verificationQueue.pendingVendorPayments.map((v: any) => (
+                    {(verificationQueue.pendingVendorPayments || []).map((v: any) => (
                       <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {v.vendorName}
@@ -1572,7 +1561,7 @@ export default function AccountingPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E8EEF4]">
-                      {verificationQueue.pendingTrainTickets.map((t: any) => {
+                      {(verificationQueue.pendingTrainTickets || []).map((t: any) => {
                         const exp = Number(t.expectedTicketAmount) || 0;
                         const act = Number(t.ticketAmount) || 0;
                         const variance = act - exp;
