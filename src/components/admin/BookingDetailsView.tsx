@@ -661,8 +661,19 @@ export default function BookingDetailsView({
     const seen = new Set<string>();
     const tripPrice = Number(fullTrip.price || 0);
 
-    if (Array.isArray(fullTrip.variants)) {
-      fullTrip.variants.forEach((v: any) => {
+    const safeParse = (val: any) => {
+      if (Array.isArray(val)) return val;
+      if (typeof val === "string") {
+        try { return JSON.parse(val); } catch (e) { return []; }
+      }
+      return [];
+    };
+
+    const variants = safeParse(fullTrip.variants);
+    const pickupCities = safeParse(fullTrip.pickupCities);
+
+    if (variants.length > 0) {
+      variants.forEach((v: any) => {
         const name = (
           v.location ||
           v.cityName ||
@@ -680,8 +691,8 @@ export default function BookingDetailsView({
       });
     }
 
-    if (Array.isArray(fullTrip.pickupCities)) {
-      fullTrip.pickupCities.forEach((c: any) => {
+    if (pickupCities.length > 0) {
+      pickupCities.forEach((c: any) => {
         const name = (c.cityName || c.location || c.name || "").trim();
         if (name && !seen.has(name.toLowerCase())) {
           seen.add(name.toLowerCase());
@@ -700,8 +711,17 @@ export default function BookingDetailsView({
     const list: { name: string; priceDelta: number }[] = [];
     const seen = new Set<string>();
 
-    if (Array.isArray(fullTrip.travelOptions)) {
-      fullTrip.travelOptions.forEach((opt: any) => {
+    const safeParse = (val: any) => {
+      if (Array.isArray(val)) return val;
+      if (typeof val === "string") {
+        try { return JSON.parse(val); } catch (e) { return []; }
+      }
+      return [];
+    };
+    const travelOptions = safeParse(fullTrip.travelOptions);
+
+    if (travelOptions.length > 0) {
+      travelOptions.forEach((opt: any) => {
         const name = (opt.label || "").trim();
         if (name && !seen.has(name.toLowerCase())) {
           seen.add(name.toLowerCase());
@@ -7141,16 +7161,18 @@ export default function BookingDetailsView({
                 </Select>
               </div>
             ) : (
-              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] text-[10.5px]">
-                <span className="font-semibold text-slate-500 uppercase mr-1">
-                  Passenger Option:
-                </span>
-                <span className="font-medium">
-                  {(booking.pickupCity || "").toLowerCase().includes("chandigarh to chandigarh") || (booking.pickupCity || "").toLowerCase().trim() === "chandigarh"
-                    ? "Base Package"
-                    : `${booking.trainClass || "Standard"} Sleeper`}, Pickup/Drop:{" "}
-                  {booking.pickupCity || "Direct Join / Main Pickup"}
-                </span>
+              <div className="space-y-1 bg-slate-50 p-2.5 rounded border border-[#E8EEF4]">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
+                  Passenger Option (Package)
+                </label>
+                <Input
+                  value={newPassenger.trainOption !== undefined && newPassenger.trainOption !== "" ? newPassenger.trainOption : (booking.pickupCity || booking.trainClass || "")}
+                  onChange={(e) =>
+                    setNewPassenger({ ...newPassenger, trainOption: e.target.value })
+                  }
+                  placeholder="e.g. Base Package / Ahmedabad (3AC)"
+                  className="h-8 text-xs rounded bg-white shadow-xs focus-visible:ring-slate-300"
+                />
               </div>
             )}
 

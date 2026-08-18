@@ -3,16 +3,25 @@ export function generatePerPersonBookingItems(
   personsList: any[],
   resObj: any,
 ): any[] {
-  const travOpts = resObj?.travelOptions || [];
-  const roomOpts = resObj?.roomOptions || [];
+  const safeParse = (val: any) => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === "string") {
+      try { return JSON.parse(val); } catch (e) { return []; }
+    }
+    return [];
+  };
+
+  const travOpts = safeParse(resObj?.travelOptions);
+  const roomOpts = safeParse(resObj?.roomOptions);
   const gstRate = (resObj?.gstPercentage ?? 5) / 100;
   
   const tripPrice = Number(resObj?.price || 0);
   const locationOptions: { name: string; price: number }[] = [];
   const seenLocs = new Set<string>();
 
-  if (resObj?.variants && Array.isArray(resObj.variants)) {
-    resObj.variants.forEach((v: any) => {
+  const variants = safeParse(resObj?.variants);
+  if (variants.length > 0) {
+    variants.forEach((v: any) => {
       const name = (v.location || v.cityName || v.name || v.variantName || v.city || "").trim();
       if (name && !seenLocs.has(name.toLowerCase())) {
         seenLocs.add(name.toLowerCase());
@@ -22,7 +31,8 @@ export function generatePerPersonBookingItems(
     });
   }
 
-  if (resObj?.pickupCities && Array.isArray(resObj.pickupCities)) {
+  const pickupCities = safeParse(resObj?.pickupCities);
+  if (pickupCities.length > 0) {
     resObj.pickupCities.forEach((c: any) => {
       const name = (c.cityName || c.location || c.name || "").trim();
       if (name && !seenLocs.has(name.toLowerCase())) {
