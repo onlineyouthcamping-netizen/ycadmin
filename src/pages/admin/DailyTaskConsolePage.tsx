@@ -802,12 +802,14 @@ export default function DailyTaskConsolePage() {
                       <span
                         className={cn(
                           "text-[9px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider inline-block",
-                          t.source === "MANUAL"
-                            ? "bg-orange-50 text-orange-700 border-orange-200"
-                            : "bg-orange-50 text-orange-700 border-orange-200",
+                          t.source === "BOOKING"
+                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            : t.source === "MANUAL"
+                              ? "bg-orange-50 text-orange-700 border-orange-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200",
                         )}
                       >
-                        {t.source === "MANUAL" ? "Senior / Colleague" : "SOP & Checklist"}
+                        {t.source === "BOOKING" ? "Booking Task" : t.source === "MANUAL" ? "Senior / Colleague" : "SOP & Checklist"}
                       </span>
                     </td>
 
@@ -833,29 +835,39 @@ export default function DailyTaskConsolePage() {
 
                     {/* ACTION */}
                     <td className="p-3.5 text-center">
-                      <Button
-                        onClick={() => {
-                          setEditingTask(t);
-                          setTaskForm({
-                            tripId: t.tripId || "SPT-1",
-                            departureDate: t.departureDate || todayStr,
-                            taskName: t.taskName,
-                            stage: t.stage || "PRE_TRIP_30D",
-                            assignedTo: t.assignedTo || "OPERATIONS",
-                            priority: t.priority || "HIGH",
-                            dueDate: dueStr || todayStr,
-                            status: t.status || "Pending",
-                            notes: t.notes || "",
-                            remarks: t.remarks || "",
-                          });
-                          setIsTaskModalOpen(true);
-                        }}
-                        variant="ghost"
-                        size="xs"
-                        className="text-xs font-bold text-slate-600 hover:text-orange-600 hover:bg-orange-50"
-                      >
-                        Edit
-                      </Button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {t.bookingId && (
+                          <a
+                            href={`/admin/bookings?id=${t.bookingId}&tab=tasks`}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded border border-purple-200 transition-colors"
+                          >
+                            Booking <ArrowUpRight className="w-3 h-3" />
+                          </a>
+                        )}
+                        <Button
+                          onClick={() => {
+                            setEditingTask(t);
+                            setTaskForm({
+                              tripId: t.tripId || "SPT-1",
+                              departureDate: t.departureDate || todayStr,
+                              taskName: t.taskName,
+                              stage: t.stage || "PRE_TRIP_30D",
+                              assignedTo: t.assignedTo || "OPERATIONS",
+                              priority: t.priority || "HIGH",
+                              dueDate: dueStr || todayStr,
+                              status: t.status || "Pending",
+                              notes: t.notes || "",
+                              remarks: t.remarks || "",
+                            });
+                            setIsTaskModalOpen(true);
+                          }}
+                          variant="ghost"
+                          size="xs"
+                          className="text-xs font-bold text-slate-600 hover:text-orange-600 hover:bg-orange-50"
+                        >
+                          Edit
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );
