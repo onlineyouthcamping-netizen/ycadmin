@@ -998,6 +998,28 @@ export default function AccountingPage() {
     });
   }, [vendorPayments, expenseSearch, expenseCategoryFilter, expenseStatusFilter]);
 
+  // Section 1: Payments Due & Pending Approval
+  const pendingDueExpenses = useMemo(() => {
+    return filteredExpenses.filter((v) => {
+      const balanceDue = (v.agreedAmount || 0) - (v.advancePaid || 0);
+      const isSettled =
+        (v.approvalStatus === "APPROVED_FOUNDER" || v.status === "Paid") &&
+        balanceDue <= 0;
+      return !isSettled;
+    });
+  }, [filteredExpenses]);
+
+  // Section 2: Completed / Settled Disbursements (Payment Done)
+  const completedExpenses = useMemo(() => {
+    return filteredExpenses.filter((v) => {
+      const balanceDue = (v.agreedAmount || 0) - (v.advancePaid || 0);
+      const isSettled =
+        (v.approvalStatus === "APPROVED_FOUNDER" || v.status === "Paid") ||
+        balanceDue <= 0;
+      return isSettled;
+    });
+  }, [filteredExpenses]);
+
   // Filtered Riya Tickets
   const filteredRiyaTickets = useMemo(() => {
     return (riyaData.tickets || []).filter((t: any) => {
@@ -2216,171 +2238,310 @@ export default function AccountingPage() {
 
         {/* ──────────────────────── TAB 4: OUTGOING DISBURSEMENTS ──────────────────────── */}
         {activeTab === "expenses" && (
-          <div className="space-y-3">
-            {/* Expenses panel */}
-            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
-              <div className="flex min-w-0 flex-col gap-2 border-b border-[#E8EEF4] px-3 py-2.5 lg:flex-row lg:items-center">
-                <div className="relative w-full min-w-0 lg:w-72">
-                  <Search
-                    className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
-                    strokeWidth={1.75}
-                  />
-                  <Input
-                    placeholder="Search vendor, trip or category"
-                    value={expenseSearch}
-                    onChange={(e) => setExpenseSearch(e.target.value)}
-                    className="h-8 rounded-md border-[#E8EEF4] bg-white pl-8 text-[12px] font-medium text-[#0B1528] shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
-                  />
+          <div className="space-y-4">
+            {/* Search & Filter Toolbar */}
+            <div className="flex min-w-0 flex-col gap-2 rounded-xl border border-[#E8EEF4] bg-white p-3 lg:flex-row lg:items-center">
+              <div className="relative w-full min-w-0 lg:w-72">
+                <Search
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                  strokeWidth={1.75}
+                />
+                <Input
+                  placeholder="Search vendor, trip or category"
+                  value={expenseSearch}
+                  onChange={(e) => setExpenseSearch(e.target.value)}
+                  className="h-8 rounded-md border-[#E8EEF4] bg-white pl-8 text-[12px] font-medium text-[#0B1528] shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                />
+              </div>
+
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <select
+                  value={expenseCategoryFilter}
+                  onChange={(e) => setExpenseCategoryFilter(e.target.value)}
+                  className={filterSelectClass}
+                  aria-label="Filter by category"
+                >
+                  <option value="ALL">All categories</option>
+                  <option value="Hotels">Hotels and camps</option>
+                  <option value="Transport">Transport and fleets</option>
+                  <option value="Guides">Guides and leaders</option>
+                  <option value="Activities">Activities and permits</option>
+                  <option value="Office">Office ops</option>
+                </select>
+
+                <select
+                  value={expenseStatusFilter}
+                  onChange={(e) => setExpenseStatusFilter(e.target.value)}
+                  className={filterSelectClass}
+                  aria-label="Filter by status"
+                >
+                  <option value="ALL">All statuses</option>
+                  <option value="PENDING">Pending approval / Balance due</option>
+                  <option value="REVIEWED">Reviewed (FC)</option>
+                  <option value="PAID">Approved & Paid</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 lg:ml-auto">
+                <span className="rounded bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-200">
+                  Due: {pendingDueExpenses.length}
+                </span>
+                <span className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-700 border border-emerald-200">
+                  Done: {completedExpenses.length}
+                </span>
+              </div>
+            </div>
+
+            {/* SECTION 1: PAYMENTS DUE & PENDING APPROVAL */}
+            <div className="min-w-0 overflow-hidden rounded-xl border border-amber-200/80 bg-white shadow-sm">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-amber-100 bg-amber-50/40 px-3 py-2.5 md:px-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  <span className="truncate text-[12px] font-semibold text-[#0B1528]">
+                    Payments Due / Pending Approval
+                  </span>
                 </div>
-
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <select
-                    value={expenseCategoryFilter}
-                    onChange={(e) => setExpenseCategoryFilter(e.target.value)}
-                    className={filterSelectClass}
-                    aria-label="Filter by category"
-                  >
-                    <option value="ALL">All categories</option>
-                    <option value="Hotels">Hotels and camps</option>
-                    <option value="Transport">Transport and fleets</option>
-                    <option value="Guides">Guides and leaders</option>
-                    <option value="Activities">Activities and permits</option>
-                    <option value="Office">Office ops</option>
-                  </select>
-
-                  <select
-                    value={expenseStatusFilter}
-                    onChange={(e) => setExpenseStatusFilter(e.target.value)}
-                    className={filterSelectClass}
-                    aria-label="Filter by status"
-                  >
-                    <option value="ALL">All statuses</option>
-                    <option value="PENDING">Pending approval / Balance due</option>
-                    <option value="REVIEWED">Reviewed (FC)</option>
-                    <option value="PAID">Approved & Paid</option>
-                  </select>
-                </div>
-
-                <span className="text-[11px] font-medium text-slate-400 lg:ml-auto">
-                  Showing {filteredExpenses.length} payouts
+                <span className="shrink-0 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold tabular-nums text-amber-800">
+                  {pendingDueExpenses.length} Pending
                 </span>
               </div>
 
               <div className="min-w-0 overflow-x-auto">
-              <table className="w-full min-w-[1150px] text-left text-[12px]">
-                <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
-                  <tr>
-                    <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4">Vendor / payee</th>
-                    <th className="py-2.5 px-4">Trip</th>
-                    <th className="py-2.5 px-4">Category</th>
-                    <th className="py-2.5 px-4 text-right">Agreed cost</th>
-                    <th className="py-2.5 px-4 text-right">Paid out</th>
-                    <th className="py-2.5 px-4 text-right">Pending / Due</th>
-                    <th className="py-2.5 px-4">Paid from</th>
-                    <th className="py-2.5 px-4">Approval status</th>
-                    <th className="py-2.5 px-4 text-right">Invoice</th>
-                    <th className="py-2.5 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E8EEF4]">
-                  {filteredExpenses.length === 0 ? (
+                <table className="w-full min-w-[1150px] text-left text-[12px]">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
-                      <td colSpan={11} className="p-8 text-center text-slate-400">
-                        No vendor disbursements match current search & filter.
-                      </td>
+                      <th className="py-2.5 px-4">Date</th>
+                      <th className="py-2.5 px-4">Vendor / payee</th>
+                      <th className="py-2.5 px-4">Trip</th>
+                      <th className="py-2.5 px-4">Category</th>
+                      <th className="py-2.5 px-4 text-right">Agreed cost</th>
+                      <th className="py-2.5 px-4 text-right">Paid out</th>
+                      <th className="py-2.5 px-4 text-right">Pending / Due</th>
+                      <th className="py-2.5 px-4">Paid from</th>
+                      <th className="py-2.5 px-4">Approval status</th>
+                      <th className="py-2.5 px-4 text-right">Invoice</th>
+                      <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
-                  ) : (
-                    filteredExpenses.map((v) => {
-                      const balanceDue = (v.agreedAmount || 0) - (v.advancePaid || 0);
-                      const requiresFounder = v.requiresFounderApproval || balanceDue > 50000;
+                  </thead>
+                  <tbody className="divide-y divide-[#E8EEF4]">
+                    {pendingDueExpenses.length === 0 ? (
+                      <tr>
+                        <td colSpan={11} className="p-8 text-center text-slate-400">
+                          No pending vendor dues or unapproved payouts.
+                        </td>
+                      </tr>
+                    ) : (
+                      pendingDueExpenses.map((v) => {
+                        const balanceDue = (v.agreedAmount || 0) - (v.advancePaid || 0);
+                        const requiresFounder = v.requiresFounderApproval || balanceDue > 50000;
 
-                      return (
-                        <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
-                          <td className="py-2.5 px-4 text-slate-500 text-[11px]">
-                            {safeFormatDate(v.paymentDate || v.createdAt)}
-                          </td>
-                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                            {v.vendorName}
-                            <div className="text-[10px] text-slate-400 font-normal">
-                              {v.serviceDescription || "Vendor Service"}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
-                            {v.trip?.title || "—"}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            <Badge variant="outline" className="text-[10px] font-medium">
-                              {v.category}
-                            </Badge>
-                          </td>
-                          <td className="py-2.5 px-4 text-right text-slate-600 font-medium">
-                            {formatINR(v.agreedAmount)}
-                          </td>
-                          <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
-                            {formatINR(v.advancePaid)}
-                          </td>
-                          <td className="py-2.5 px-4 text-right font-semibold">
-                            {balanceDue > 0 ? (
+                        return (
+                          <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
+                            <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                              {safeFormatDate(v.paymentDate || v.createdAt)}
+                            </td>
+                            <td className="py-2.5 px-4 font-medium text-[#0B1528]">
+                              {v.vendorName}
+                              <div className="text-[10px] text-slate-400 font-normal">
+                                {v.serviceDescription || "Vendor Service"}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
+                              {v.trip?.title || "—"}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <Badge variant="outline" className="text-[10px] font-medium">
+                                {v.category}
+                              </Badge>
+                            </td>
+                            <td className="py-2.5 px-4 text-right text-slate-600 font-medium">
+                              {formatINR(v.agreedAmount)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
+                              {formatINR(v.advancePaid)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-semibold">
                               <span className="text-amber-600 font-semibold">{formatINR(balanceDue)}</span>
-                            ) : (
-                              <span className="text-emerald-600 text-[11px] font-medium">Settled (₹0)</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-600">
-                            {v.collectionAccount?.accountName || "Primary bank"}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            {getApprovalBadge(v.approvalStatus, v.status, requiresFounder)}
-                          </td>
-                          <td className="py-2.5 px-4 text-right">
-                            {v.invoiceProof ? (
+                            </td>
+                            <td className="py-2.5 px-4 text-slate-600">
+                              {v.collectionAccount?.accountName || "Primary bank"}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              {getApprovalBadge(v.approvalStatus, v.status, requiresFounder)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right">
+                              {v.invoiceProof ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    setProofPreviewModal({
+                                      open: true,
+                                      title: `Vendor Invoice - ${v.vendorName}`,
+                                      subtitle: `Trip: ${v.trip?.title}`,
+                                      imageUrl: v.invoiceProof,
+                                      amount: v.advancePaid,
+                                      date: safeFormatDate(v.paymentDate || v.createdAt),
+                                    })
+                                  }
+                                  className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5 mr-1" />
+                                  View
+                                </Button>
+                              ) : (
+                                <span className="text-[10px] text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-4 text-right">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() =>
-                                  setProofPreviewModal({
-                                    open: true,
-                                    title: `Vendor Invoice - ${v.vendorName}`,
-                                    subtitle: `Trip: ${v.trip?.title}`,
-                                    imageUrl: v.invoiceProof,
-                                    amount: v.advancePaid,
-                                    date: safeFormatDate(v.paymentDate || v.createdAt),
-                                  })
+                                  handleOpenAuditLog(
+                                    v.id,
+                                    `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`,
+                                    true
+                                  )
                                 }
-                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                                title="View approval chain & audit trail"
+                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
                               >
-                                <Eye className="w-3.5 h-3.5 mr-1" />
-                                View
+                                <FileText className="w-3.5 h-3.5 mr-1" />
+                                Audit
                               </Button>
-                            ) : (
-                              <span className="text-[10px] text-slate-400">—</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-4 text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleOpenAuditLog(
-                                  v.id,
-                                  `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`,
-                                  true
-                                )
-                              }
-                              title="View approval chain & audit trail"
-                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
-                            >
-                              <FileText className="w-3.5 h-3.5 mr-1" />
-                              Audit
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* SECTION 2: PAYMENT DONE / FULLY SETTLED DISBURSEMENTS */}
+            <div className="min-w-0 overflow-hidden rounded-xl border border-emerald-200/80 bg-white shadow-sm">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-emerald-100 bg-emerald-50/40 px-3 py-2.5 md:px-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="truncate text-[12px] font-semibold text-[#0B1528]">
+                    Payment Done / Fully Settled Disbursements
+                  </span>
+                </div>
+                <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold tabular-nums text-emerald-800">
+                  {completedExpenses.length} Completed
+                </span>
+              </div>
+
+              <div className="min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[1150px] text-left text-[12px]">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
+                    <tr>
+                      <th className="py-2.5 px-4">Date</th>
+                      <th className="py-2.5 px-4">Vendor / payee</th>
+                      <th className="py-2.5 px-4">Trip</th>
+                      <th className="py-2.5 px-4">Category</th>
+                      <th className="py-2.5 px-4 text-right">Agreed cost</th>
+                      <th className="py-2.5 px-4 text-right">Paid out</th>
+                      <th className="py-2.5 px-4 text-right">Pending / Due</th>
+                      <th className="py-2.5 px-4">Paid from</th>
+                      <th className="py-2.5 px-4">Approval status</th>
+                      <th className="py-2.5 px-4 text-right">Invoice</th>
+                      <th className="py-2.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8EEF4]">
+                    {completedExpenses.length === 0 ? (
+                      <tr>
+                        <td colSpan={11} className="p-8 text-center text-slate-400">
+                          No completed vendor payments found.
+                        </td>
+                      </tr>
+                    ) : (
+                      completedExpenses.map((v) => {
+                        return (
+                          <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
+                            <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                              {safeFormatDate(v.paymentDate || v.createdAt)}
+                            </td>
+                            <td className="py-2.5 px-4 font-medium text-[#0B1528]">
+                              {v.vendorName}
+                              <div className="text-[10px] text-slate-400 font-normal">
+                                {v.serviceDescription || "Vendor Service"}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
+                              {v.trip?.title || "—"}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <Badge variant="outline" className="text-[10px] font-medium">
+                                {v.category}
+                              </Badge>
+                            </td>
+                            <td className="py-2.5 px-4 text-right text-slate-600 font-medium">
+                              {formatINR(v.agreedAmount)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
+                              {formatINR(v.advancePaid)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-semibold">
+                              <span className="text-emerald-600 text-[11px] font-medium">Settled (₹0)</span>
+                            </td>
+                            <td className="py-2.5 px-4 text-slate-600">
+                              {v.collectionAccount?.accountName || "Primary bank"}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              {getApprovalBadge(v.approvalStatus, v.status, false)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right">
+                              {v.invoiceProof ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    setProofPreviewModal({
+                                      open: true,
+                                      title: `Vendor Invoice - ${v.vendorName}`,
+                                      subtitle: `Trip: ${v.trip?.title}`,
+                                      imageUrl: v.invoiceProof,
+                                      amount: v.advancePaid,
+                                      date: safeFormatDate(v.paymentDate || v.createdAt),
+                                    })
+                                  }
+                                  className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5 mr-1" />
+                                  View
+                                </Button>
+                              ) : (
+                                <span className="text-[10px] text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleOpenAuditLog(
+                                    v.id,
+                                    `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`,
+                                    true
+                                  )
+                                }
+                                title="View approval chain & audit trail"
+                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
+                              >
+                                <FileText className="w-3.5 h-3.5 mr-1" />
+                                Audit
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
