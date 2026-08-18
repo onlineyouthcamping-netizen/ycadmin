@@ -348,7 +348,7 @@ export default function BookingDetailsView({
   const [showCreatePayment, setShowCreatePayment] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [paymentSource, setPaymentSource] = useState<
-    "collected" | "online" | "venue"
+    "collected" | "venue"
   >("collected");
   const [payAmount, setPayAmount] = useState("");
   const [payMode, setPayMode] = useState("UPI");
@@ -2082,14 +2082,6 @@ export default function BookingDetailsView({
         toast.error("Failed to record payment");
       } finally {
         setSavingPayment(false);
-      }
-    } else if (paymentSource === "online") {
-      try {
-        await handleSendEmail("reminder");
-        toast.success("Online payment request sent to guest!");
-        setShowCreatePayment(false);
-      } catch (e) {
-        toast.error("Failed to send online request");
       }
     } else if (paymentSource === "venue") {
       const remaining = Number(booking.remainingAmount || 0);
@@ -7590,16 +7582,6 @@ export default function BookingDetailsView({
                   <input
                     type="radio"
                     name="paySource"
-                    checked={paymentSource === "online"}
-                    onChange={() => setPaymentSource("online")}
-                    className="text-primary focus:ring-primary w-3.5 h-3.5"
-                  />
-                  <span>Request it Online</span>
-                </label>
-                <label className="flex items-center gap-1.5 font-medium cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paySource"
                     checked={paymentSource === "venue"}
                     onChange={() => setPaymentSource("venue")}
                     className="text-primary focus:ring-primary w-3.5 h-3.5"
@@ -7690,19 +7672,6 @@ export default function BookingDetailsView({
                     className="h-8 text-xs rounded"
                   />
                 </div>
-              </div>
-            )}
-
-            {paymentSource === "online" && (
-              <div className="p-3 bg-primary/5 border border-primary/20 rounded text-primary animate-fade-in">
-                <p className="font-semibold mb-0.5">
-                  Online Request Automation:
-                </p>
-                <p>
-                  Saving this will auto-generate a secure checkout payment link
-                  and send it via email reminder to:{" "}
-                  <strong>{booking.email || "no-email"}</strong>.
-                </p>
               </div>
             )}
 
