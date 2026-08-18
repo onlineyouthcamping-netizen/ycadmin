@@ -459,6 +459,17 @@ export default function AccountingPage() {
     }
     setSubmittingAction(true);
     try {
+      const methods: string[] = [];
+      if (newAccForm.accountType === "CASH") {
+        methods.push("CASH");
+      } else {
+        if (newAccForm.upiId?.trim()) methods.push("UPI");
+        if (newAccForm.accountNumber?.trim() || newAccForm.bankName?.trim()) {
+          methods.push("BANK_TRANSFER");
+        }
+        if (methods.length === 0) methods.push("BANK_TRANSFER", "UPI");
+      }
+
       await collectionAccountsService.createAccount({
         accountName: newAccForm.accountName.trim(),
         accountHolderName:
@@ -468,7 +479,7 @@ export default function AccountingPage() {
         accountNumber: newAccForm.accountNumber.trim() || undefined,
         ifsc: newAccForm.ifsc.trim() || undefined,
         upiId: newAccForm.upiId.trim() || undefined,
-        paymentMethods: ["UPI", "BANK_TRANSFER", "CASH"],
+        paymentMethods: methods,
         isActive: true,
       });
       toast.success(`Account "${newAccForm.accountName}" created successfully!`);
