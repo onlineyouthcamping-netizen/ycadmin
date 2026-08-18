@@ -1614,11 +1614,11 @@ export default function AccountingPage() {
               )}
             </div>
 
-            {/* Sub-Queue: Pending Station Online Collections (UPI) */}
+            {/* Sub-Queue: Pending Station Collections (UPI & Cash) */}
             <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
               <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
                 <span className="truncate text-[12px] font-semibold text-[#0B1528]">
-                  Station collections (UPI)
+                  Station collections (UPI & Cash)
                 </span>
                 <span className="shrink-0 rounded bg-[#F4F7FB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500">
                   {verificationQueue.pendingStationPayments?.length || 0}
@@ -1637,7 +1637,7 @@ export default function AccountingPage() {
                       <th className="py-2.5 px-4">Booking / passenger</th>
                       <th className="py-2.5 px-4">Station / collector</th>
                       <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">UTR / account</th>
+                      <th className="py-2.5 px-4">Mode / Account</th>
                       <th className="py-2.5 px-4">Proof</th>
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
@@ -1661,11 +1661,26 @@ export default function AccountingPage() {
                           {formatINR(p.amount)}
                         </td>
                         <td className="py-2.5 px-4">
-                          <span className="inline-flex rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                            UTR: {p.utrNumber || "N/A"}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] font-semibold uppercase",
+                                p.paymentMode === "CASH"
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  : "border-blue-200 bg-blue-50 text-blue-700"
+                              )}
+                            >
+                              {p.paymentMode || "UPI"}
+                            </Badge>
+                            {p.utrNumber && (
+                              <span className="inline-flex rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                                UTR: {p.utrNumber}
+                              </span>
+                            )}
+                          </div>
                           <div className="mt-0.5 text-[10px] text-slate-400">
-                            {p.receivingAccount?.accountName || "Company bank account"}
+                            {p.receivingAccount?.accountName || (p.paymentMode === "CASH" ? "Cash Collection Account" : "Nikulbhai Patel Account")}
                           </div>
                         </td>
                         <td className="py-2.5 px-4">
@@ -1677,7 +1692,7 @@ export default function AccountingPage() {
                                 setProofPreviewModal({
                                   open: true,
                                   title: `Station Payment Proof - ${p.booking?.fullName || p.collectedFrom}`,
-                                  subtitle: `Station: ${p.station} · UTR: ${p.utrNumber}`,
+                                  subtitle: `Station: ${p.station} · ${p.utrNumber ? `UTR: ${p.utrNumber}` : 'Cash Receipt'}`,
                                   imageUrl: p.proofImageUrl,
                                   amount: p.amount,
                                   date: safeFormatDate(p.createdAt),
