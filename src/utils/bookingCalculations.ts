@@ -97,9 +97,13 @@ export function generatePerPersonBookingItems(
   }
 
   const items: any[] = [];
+  const activePersonsList = (personsList || []).filter(
+    (p: any) => !p.isCancelled && p.status !== "CANCELLED"
+  );
+
   const paxCount =
-    personsList && personsList.length > 0
-      ? personsList.length
+    activePersonsList.length > 0
+      ? activePersonsList.length
       : bookingObj.numberOfTravelers || 1;
 
   const rawTotal =
@@ -112,10 +116,10 @@ export function generatePerPersonBookingItems(
     Number(bookingObj.discount) || Number(bookingObj.discountAmount) || 0;
 
   let subtotal = 0;
-  if (rawBase > 0) {
+  if (rawTotal > 0) {
+    subtotal = rawTotal / (1 + gstRate);
+  } else if (rawBase > 0) {
     subtotal = rawBase;
-  } else if (rawTotal > 0) {
-    subtotal = Math.round(rawTotal / (1 + gstRate));
   } else if (resObj?.price) {
     subtotal = (Number(resObj.price) || 15000) * paxCount;
   } else {
@@ -126,8 +130,8 @@ export function generatePerPersonBookingItems(
   let sumOfDeltas = 0;
   const processedPersons: any[] = [];
 
-  if (personsList && personsList.length > 0) {
-    personsList.forEach((p: any, idx: number) => {
+  if (activePersonsList.length > 0) {
+    activePersonsList.forEach((p: any, idx: number) => {
       const pTrain =
         p.trainOption || p.trainClass || bookingObj.trainClass || "Sleeper";
       const pRoom =
