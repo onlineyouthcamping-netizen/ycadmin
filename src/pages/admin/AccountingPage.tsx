@@ -2957,7 +2957,7 @@ export default function AccountingPage() {
               <label className="font-medium text-slate-600 block mb-1">Account Display Name *</label>
               <Input
                 required
-                placeholder="e.g. HDFC Main Operating, Cash Desk"
+                placeholder={newAccForm.accountType === "CASH" ? "e.g. YouthCamping Cash Desk / Venue Register" : "e.g. HDFC Main Operating"}
                 value={newAccForm.accountName}
                 onChange={(e) =>
                   setNewAccForm((prev) => ({ ...prev, accountName: e.target.value }))
@@ -2971,9 +2971,18 @@ export default function AccountingPage() {
                 <label className="font-medium text-slate-600 block mb-1">Account Type *</label>
                 <select
                   value={newAccForm.accountType}
-                  onChange={(e) =>
-                    setNewAccForm((prev) => ({ ...prev, accountType: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewAccForm((prev) => ({
+                      ...prev,
+                      accountType: val,
+                      paymentMethods: val === "CASH" ? ["CASH"] : ["UPI", "BANK_TRANSFER"],
+                      bankName: val === "CASH" ? "" : prev.bankName,
+                      accountNumber: val === "CASH" ? "" : prev.accountNumber,
+                      ifsc: val === "CASH" ? "" : prev.ifsc,
+                      upiId: val === "CASH" ? "" : prev.upiId,
+                    }));
+                  }}
                   className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
                 >
                   <option value="COMPANY">Company Bank Account</option>
@@ -2984,123 +2993,132 @@ export default function AccountingPage() {
               </div>
 
               <div>
-                <label className="font-medium text-slate-600 block mb-1">Bank Name</label>
+                <label className="font-medium text-slate-600 block mb-1">
+                  {newAccForm.accountType === "CASH" ? "Custodian / Responsible Person" : "Account Holder Name"}
+                </label>
                 <Input
-                  placeholder="e.g. HDFC Bank, SBI"
-                  value={newAccForm.bankName}
+                  placeholder={newAccForm.accountType === "CASH" ? "e.g. Cash Desk Custodian / Manager" : "e.g. Youth Camping Pvt Ltd"}
+                  value={newAccForm.accountHolderName}
                   onChange={(e) =>
-                    setNewAccForm((prev) => ({ ...prev, bankName: e.target.value }))
+                    setNewAccForm((prev) => ({ ...prev, accountHolderName: e.target.value }))
                   }
                   className="h-9 text-xs font-medium"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-medium text-slate-600 block mb-1">Account Number</label>
-                <Input
-                  placeholder="Account Number"
-                  value={newAccForm.accountNumber}
-                  onChange={(e) =>
-                    setNewAccForm((prev) => ({ ...prev, accountNumber: e.target.value }))
-                  }
-                  className="h-9 text-xs font-medium"
-                />
+            {newAccForm.accountType === "CASH" ? (
+              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] space-y-1">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Banknote className="w-4 h-4 text-emerald-600" /> Physical Cash Desk Configuration
+                </p>
+                <p className="text-emerald-700">
+                  This register is exclusively dedicated to tracking on-ground physical cash collections and handovers. Bank, IFSC, and UPI configurations are disabled.
+                </p>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">Bank Name</label>
+                    <Input
+                      placeholder="e.g. HDFC Bank, SBI"
+                      value={newAccForm.bankName}
+                      onChange={(e) =>
+                        setNewAccForm((prev) => ({ ...prev, bankName: e.target.value }))
+                      }
+                      className="h-9 text-xs font-medium"
+                    />
+                  </div>
 
-              <div>
-                <label className="font-medium text-slate-600 block mb-1">IFSC Code</label>
-                <Input
-                  placeholder="e.g. HDFC0001234"
-                  value={newAccForm.ifsc}
-                  onChange={(e) =>
-                    setNewAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
-                  }
-                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
-                />
-              </div>
-            </div>
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">Account Number</label>
+                    <Input
+                      placeholder="Account Number"
+                      value={newAccForm.accountNumber}
+                      onChange={(e) =>
+                        setNewAccForm((prev) => ({ ...prev, accountNumber: e.target.value }))
+                      }
+                      className="h-9 text-xs font-medium font-mono"
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="font-medium text-slate-600 block mb-1">UPI ID</label>
-              <Input
-                placeholder="e.g. youthcamping@hdfcbank"
-                value={newAccForm.upiId}
-                onChange={(e) =>
-                  setNewAccForm((prev) => ({ ...prev, upiId: e.target.value }))
-                }
-                className="h-9 text-xs font-medium"
-              />
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">IFSC Code</label>
+                    <Input
+                      placeholder="e.g. HDFC0001234"
+                      value={newAccForm.ifsc}
+                      onChange={(e) =>
+                        setNewAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
+                      }
+                      className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase font-mono shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                    />
+                  </div>
 
-            {/* Channel Mapping Selection */}
-            <div>
-              <label className="font-medium text-slate-600 block mb-1.5">
-                Connect / Map Payment Channels *
-              </label>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const exists = newAccForm.paymentMethods.includes("CASH");
-                    const updated = exists
-                      ? newAccForm.paymentMethods.filter((m) => m !== "CASH")
-                      : [...newAccForm.paymentMethods, "CASH"];
-                    setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
-                    newAccForm.paymentMethods.includes("CASH")
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
-                  )}
-                >
-                  <Banknote className="w-3.5 h-3.5" />
-                  Cash Desk (CASH)
-                </button>
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">UPI ID</label>
+                    <Input
+                      placeholder="e.g. youthcamping@hdfcbank"
+                      value={newAccForm.upiId}
+                      onChange={(e) =>
+                        setNewAccForm((prev) => ({ ...prev, upiId: e.target.value }))
+                      }
+                      className="h-9 text-xs font-medium font-mono"
+                    />
+                  </div>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const exists = newAccForm.paymentMethods.includes("UPI");
-                    const updated = exists
-                      ? newAccForm.paymentMethods.filter((m) => m !== "UPI")
-                      : [...newAccForm.paymentMethods, "UPI"];
-                    setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
-                    newAccForm.paymentMethods.includes("UPI")
-                      ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
-                  )}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  UPI (PhonePe/GPay/QR)
-                </button>
+                {/* Channel Mapping Selection */}
+                <div>
+                  <label className="font-medium text-slate-600 block mb-1.5">
+                    Connect / Map Payment Channels *
+                  </label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const exists = newAccForm.paymentMethods.includes("UPI");
+                        const updated = exists
+                          ? newAccForm.paymentMethods.filter((m) => m !== "UPI")
+                          : [...newAccForm.paymentMethods, "UPI"];
+                        setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                        newAccForm.paymentMethods.includes("UPI")
+                          ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
+                          : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                      UPI (PhonePe/GPay/QR)
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const exists = newAccForm.paymentMethods.includes("BANK_TRANSFER");
-                    const updated = exists
-                      ? newAccForm.paymentMethods.filter((m) => m !== "BANK_TRANSFER")
-                      : [...newAccForm.paymentMethods, "BANK_TRANSFER"];
-                    setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
-                    newAccForm.paymentMethods.includes("BANK_TRANSFER")
-                      ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
-                  )}
-                >
-                  <Building2 className="w-3.5 h-3.5" />
-                  Bank Transfer (NEFT/IMPS)
-                </button>
-              </div>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const exists = newAccForm.paymentMethods.includes("BANK_TRANSFER");
+                        const updated = exists
+                          ? newAccForm.paymentMethods.filter((m) => m !== "BANK_TRANSFER")
+                          : [...newAccForm.paymentMethods, "BANK_TRANSFER"];
+                        setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                        newAccForm.paymentMethods.includes("BANK_TRANSFER")
+                          ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                          : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      <Building2 className="w-3.5 h-3.5" />
+                      Bank Transfer (NEFT/IMPS)
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="pt-2 flex justify-end gap-2">
               <Button
@@ -3142,7 +3160,7 @@ export default function AccountingPage() {
               <label className="font-medium text-slate-600 block mb-1">Account Display Name *</label>
               <Input
                 required
-                placeholder="e.g. HDFC Main Operating, Cash Desk"
+                placeholder={editAccForm.accountType === "CASH" ? "e.g. YouthCamping Cash Desk" : "e.g. HDFC Main Operating"}
                 value={editAccForm.accountName}
                 onChange={(e) =>
                   setEditAccForm((prev) => ({ ...prev, accountName: e.target.value }))
@@ -3156,9 +3174,18 @@ export default function AccountingPage() {
                 <label className="font-medium text-slate-600 block mb-1">Account Type *</label>
                 <select
                   value={editAccForm.accountType}
-                  onChange={(e) =>
-                    setEditAccForm((prev) => ({ ...prev, accountType: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditAccForm((prev) => ({
+                      ...prev,
+                      accountType: val,
+                      paymentMethods: val === "CASH" ? ["CASH"] : (prev.paymentMethods.includes("CASH") ? ["UPI", "BANK_TRANSFER"] : prev.paymentMethods),
+                      bankName: val === "CASH" ? "" : prev.bankName,
+                      accountNumber: val === "CASH" ? "" : prev.accountNumber,
+                      ifsc: val === "CASH" ? "" : prev.ifsc,
+                      upiId: val === "CASH" ? "" : prev.upiId,
+                    }));
+                  }}
                   className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
                 >
                   <option value="COMPANY">Company Bank Account</option>
@@ -3169,123 +3196,132 @@ export default function AccountingPage() {
               </div>
 
               <div>
-                <label className="font-medium text-slate-600 block mb-1">Bank Name</label>
+                <label className="font-medium text-slate-600 block mb-1">
+                  {editAccForm.accountType === "CASH" ? "Custodian / Responsible Person" : "Account Holder Name"}
+                </label>
                 <Input
-                  placeholder="e.g. HDFC Bank, SBI"
-                  value={editAccForm.bankName}
+                  placeholder={editAccForm.accountType === "CASH" ? "e.g. YouthCamping Cash Desk" : "e.g. Youth Camping Pvt Ltd"}
+                  value={editAccForm.accountHolderName}
                   onChange={(e) =>
-                    setEditAccForm((prev) => ({ ...prev, bankName: e.target.value }))
+                    setEditAccForm((prev) => ({ ...prev, accountHolderName: e.target.value }))
                   }
                   className="h-9 text-xs font-medium"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-medium text-slate-600 block mb-1">Account Number</label>
-                <Input
-                  placeholder="Account Number"
-                  value={editAccForm.accountNumber}
-                  onChange={(e) =>
-                    setEditAccForm((prev) => ({ ...prev, accountNumber: e.target.value }))
-                  }
-                  className="h-9 text-xs font-medium"
-                />
+            {editAccForm.accountType === "CASH" ? (
+              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] space-y-1">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Banknote className="w-4 h-4 text-emerald-600" /> Physical Cash Desk Register
+                </p>
+                <p className="text-emerald-700">
+                  This register is mapped directly to on-venue physical cash collections. Bank, IFSC, and UPI fields are not applicable and hidden.
+                </p>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">Bank Name</label>
+                    <Input
+                      placeholder="e.g. HDFC Bank, SBI"
+                      value={editAccForm.bankName}
+                      onChange={(e) =>
+                        setEditAccForm((prev) => ({ ...prev, bankName: e.target.value }))
+                      }
+                      className="h-9 text-xs font-medium"
+                    />
+                  </div>
 
-              <div>
-                <label className="font-medium text-slate-600 block mb-1">IFSC Code</label>
-                <Input
-                  placeholder="e.g. HDFC0001234"
-                  value={editAccForm.ifsc}
-                  onChange={(e) =>
-                    setEditAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
-                  }
-                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
-                />
-              </div>
-            </div>
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">Account Number</label>
+                    <Input
+                      placeholder="Account Number"
+                      value={editAccForm.accountNumber}
+                      onChange={(e) =>
+                        setEditAccForm((prev) => ({ ...prev, accountNumber: e.target.value }))
+                      }
+                      className="h-9 text-xs font-medium font-mono"
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="font-medium text-slate-600 block mb-1">UPI ID</label>
-              <Input
-                placeholder="e.g. youthcamping@hdfcbank"
-                value={editAccForm.upiId}
-                onChange={(e) =>
-                  setEditAccForm((prev) => ({ ...prev, upiId: e.target.value }))
-                }
-                className="h-9 text-xs font-medium"
-              />
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">IFSC Code</label>
+                    <Input
+                      placeholder="e.g. HDFC0001234"
+                      value={editAccForm.ifsc}
+                      onChange={(e) =>
+                        setEditAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
+                      }
+                      className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase font-mono shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                    />
+                  </div>
 
-            {/* Channel Mapping Selection */}
-            <div>
-              <label className="font-medium text-slate-600 block mb-1.5">
-                Connect / Map Payment Channels *
-              </label>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const exists = editAccForm.paymentMethods.includes("CASH");
-                    const updated = exists
-                      ? editAccForm.paymentMethods.filter((m) => m !== "CASH")
-                      : [...editAccForm.paymentMethods, "CASH"];
-                    setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
-                    editAccForm.paymentMethods.includes("CASH")
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
-                  )}
-                >
-                  <Banknote className="w-3.5 h-3.5" />
-                  Cash Desk (CASH)
-                </button>
+                  <div>
+                    <label className="font-medium text-slate-600 block mb-1">UPI ID</label>
+                    <Input
+                      placeholder="e.g. youthcamping@hdfcbank"
+                      value={editAccForm.upiId}
+                      onChange={(e) =>
+                        setEditAccForm((prev) => ({ ...prev, upiId: e.target.value }))
+                      }
+                      className="h-9 text-xs font-medium font-mono"
+                    />
+                  </div>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const exists = editAccForm.paymentMethods.includes("UPI");
-                    const updated = exists
-                      ? editAccForm.paymentMethods.filter((m) => m !== "UPI")
-                      : [...editAccForm.paymentMethods, "UPI"];
-                    setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
-                    editAccForm.paymentMethods.includes("UPI")
-                      ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
-                  )}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  UPI (PhonePe/GPay/QR)
-                </button>
+                {/* Channel Mapping Selection */}
+                <div>
+                  <label className="font-medium text-slate-600 block mb-1.5">
+                    Connect / Map Payment Channels *
+                  </label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const exists = editAccForm.paymentMethods.includes("UPI");
+                        const updated = exists
+                          ? editAccForm.paymentMethods.filter((m) => m !== "UPI")
+                          : [...editAccForm.paymentMethods, "UPI"];
+                        setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                        editAccForm.paymentMethods.includes("UPI")
+                          ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
+                          : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                      UPI (PhonePe/GPay/QR)
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const exists = editAccForm.paymentMethods.includes("BANK_TRANSFER");
-                    const updated = exists
-                      ? editAccForm.paymentMethods.filter((m) => m !== "BANK_TRANSFER")
-                      : [...editAccForm.paymentMethods, "BANK_TRANSFER"];
-                    setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
-                  }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
-                    editAccForm.paymentMethods.includes("BANK_TRANSFER")
-                      ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
-                  )}
-                >
-                  <Building2 className="w-3.5 h-3.5" />
-                  Bank Transfer (NEFT/IMPS)
-                </button>
-              </div>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const exists = editAccForm.paymentMethods.includes("BANK_TRANSFER");
+                        const updated = exists
+                          ? editAccForm.paymentMethods.filter((m) => m !== "BANK_TRANSFER")
+                          : [...editAccForm.paymentMethods, "BANK_TRANSFER"];
+                        setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                        editAccForm.paymentMethods.includes("BANK_TRANSFER")
+                          ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                          : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      <Building2 className="w-3.5 h-3.5" />
+                      Bank Transfer (NEFT/IMPS)
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="pt-2 flex justify-end gap-2">
               <Button
