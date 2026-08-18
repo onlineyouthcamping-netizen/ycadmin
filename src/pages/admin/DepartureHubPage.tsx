@@ -3802,7 +3802,8 @@ useEffect(() => {
 
       const wd = dayNames[d.getDay()];
       const dateFormatted = `${String(d.getDate()).padStart(2, "0")} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-      return { wd, date: dateFormatted };
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      return { wd, date: dateFormatted, dateStr };
     } catch (err) {
       return { wd: "SAT", date: "05 Jul 2027" };
     }
@@ -3917,11 +3918,12 @@ useEffect(() => {
     }));
 
     return baseItin.map((item: any, idx: number) => {
-      const { wd, date } = getDayDateAndWd(departureDateStr, idx);
+      const { wd, date, dateStr } = getDayDateAndWd(departureDateStr, idx);
       return {
         ...item,
         wd,
         date,
+        dateStr,
       };
     });
   }, [tripDetails, itineraryList, departureDateStr, tripId]);

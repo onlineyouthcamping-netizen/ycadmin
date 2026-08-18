@@ -82,7 +82,8 @@ interface AccommodationWorkspaceProps {
 interface AccommodationRow {
   key: string;
   dayLabel: string;
-  date: string;
+  date: string;       // display format ("05 Oct 2026") for UI rendering
+  dateStr: string;    // YYYY-MM-DD for programmatic use
   destination: string;
   hasStay: boolean;
   nightsText: string;
@@ -245,8 +246,10 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
   // ── Build accommodation rows (one per itinerary day) ──
   const rows = useMemo<AccommodationRow[]>(() => {
     return computedItinerary.map((day: any, idx: number) => {
-      const dayDate = day.date || "";
-      const rowKey = dayDate || day.day || `day-${idx}`;
+      // Use YYYY-MM-DD dateStr for all programmatic matching; display date only for UI
+      const dayDateStr = day.dateStr || ""; // YYYY-MM-DD (reliable)
+      const dayDate = dayDateStr || day.date || ""; // fallback to display format
+      const rowKey = dayDateStr || day.date || day.day || `day-${idx}`;
 
       // Extract stay or destination city
       const parsedStay =
@@ -262,13 +265,13 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
       const noStayBooking = (opsHotelBookings || []).find((b: any) => {
         const name = String(b?.hotelName || "").trim().toUpperCase();
         if (name !== "NO_STAY" && name !== "NO STAY") return false;
-        return normaliseDate(b.checkIn) === normaliseDate(dayDate);
+        return normaliseDate(b.checkIn) === dayDateStr;
       });
 
       // 1. Try finding a saved hotel booking for this day date (check-in / multi-night)
       const booking = noStayBooking
         ? null
-        : findHotelForDay(dayDate, cityLocation, opsHotelBookings);
+        : findHotelForDay(dayDateStr, cityLocation, opsHotelBookings);
 
       // 2. Check default stay day status
       const isEnrouteDay =
@@ -369,7 +372,7 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
 
       const isCheckInDay =
         booking &&
-        normaliseDate(booking.checkIn) === normaliseDate(dayDate);
+        normaliseDate(booking.checkIn) === dayDateStr;
       const bookingNights = booking?.nightsCount || 1;
       const nightsText =
         !hasStay
@@ -383,7 +386,8 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
       return {
         key: rowKey,
         dayLabel: day.day || `Day ${idx + 1}`,
-        date: dayDate,
+        date: day.date || "",   // display format for UI rendering ("05 Oct 2026")
+        dateStr: dayDateStr,     // YYYY-MM-DD for wizard & programmatic use
         destination,
         hasStay,
         nightsText,
@@ -497,7 +501,7 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
                     dayNum: idx + 1,
                     dayLabel: row.dayLabel,
                     destination: row.destination,
-                    dateStr: row.date,
+                    dateStr: row.dateStr,
                     existingBooking: row.booking,
                   });
                 }}
