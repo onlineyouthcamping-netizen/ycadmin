@@ -56,6 +56,16 @@ export default function DepartureActivities({
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardInitialDay, setWizardInitialDay] = useState(1);
 
+  // Derived counts & manifest (declared early to prevent TDZ errors)
+  const totalPaxCount = allPassengers.length > 0 ? allPassengers.length : 5;
+
+  const formattedManifest = useMemo(() => {
+    return (allPassengers || []).map((p: any, idx: number) => ({
+      id: p.id || `pax-${idx + 1}`,
+      name: p.name || p.fullName || `Passenger ${idx + 1}`,
+    }));
+  }, [allPassengers]);
+
   // Live Trip Vendors Directory (Restaurants, Activities, Others)
   const [tripVendorsList, setTripVendorsList] = useState<any[]>([]);
   const [masterActivities, setMasterActivities] = useState<any[]>([]);
@@ -246,16 +256,6 @@ export default function DepartureActivities({
 
     return list;
   }, [tripVendorsList, tripVendors]);
-
-  // Passenger manifest formatted for Step 5
-  const formattedManifest = useMemo(() => {
-    return (allPassengers || []).map((p: any, idx: number) => ({
-      id: p.id || `pax-${idx + 1}`,
-      name: p.name || p.fullName || `Passenger ${idx + 1}`,
-    }));
-  }, [allPassengers]);
-
-  const totalPaxCount = allPassengers.length > 0 ? allPassengers.length : 5;
 
   const currentActivities: DepartureActivityItem[] = useMemo(() => {
     if (Array.isArray(activitiesList)) {
