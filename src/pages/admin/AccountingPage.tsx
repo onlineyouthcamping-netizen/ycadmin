@@ -35,6 +35,8 @@ import {
   FileCheck,
   HelpCircle,
   QrCode,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -202,6 +204,19 @@ export default function AccountingPage() {
     accountNumber: "",
     ifsc: "",
     upiId: "",
+    paymentMethods: ["UPI", "BANK_TRANSFER"],
+  });
+  const [editingAccount, setEditingAccount] = useState<CollectionAccount | null>(null);
+  const [editAccForm, setEditAccForm] = useState({
+    accountName: "",
+    accountHolderName: "",
+    accountType: "COMPANY",
+    bankName: "",
+    accountNumber: "",
+    ifsc: "",
+    upiId: "",
+    paymentMethods: ["UPI", "BANK_TRANSFER"],
+    isActive: true,
   });
   const [submitFundsForm, setSubmitFundsForm] = useState({
     accountId: "",
@@ -454,22 +469,10 @@ export default function AccountingPage() {
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAccForm.accountName.trim()) {
-      toast.error("Please enter account name");
-      return;
+      return toast.error("Please enter account display name");
     }
     setSubmittingAction(true);
     try {
-      const methods: string[] = [];
-      if (newAccForm.accountType === "CASH") {
-        methods.push("CASH");
-      } else {
-        if (newAccForm.upiId?.trim()) methods.push("UPI");
-        if (newAccForm.accountNumber?.trim() || newAccForm.bankName?.trim()) {
-          methods.push("BANK_TRANSFER");
-        }
-        if (methods.length === 0) methods.push("BANK_TRANSFER", "UPI");
-      }
-
       await collectionAccountsService.createAccount({
         accountName: newAccForm.accountName.trim(),
         accountHolderName:
@@ -479,7 +482,7 @@ export default function AccountingPage() {
         accountNumber: newAccForm.accountNumber.trim() || undefined,
         ifsc: newAccForm.ifsc.trim() || undefined,
         upiId: newAccForm.upiId.trim() || undefined,
-        paymentMethods: methods,
+        paymentMethods: newAccForm.paymentMethods.length > 0 ? newAccForm.paymentMethods : ["BANK_TRANSFER"],
         isActive: true,
       });
       toast.success(`Account "${newAccForm.accountName}" created successfully!`);
@@ -492,12 +495,68 @@ export default function AccountingPage() {
         accountNumber: "",
         ifsc: "",
         upiId: "",
+        paymentMethods: ["UPI", "BANK_TRANSFER"],
       });
       loadData();
     } catch {
       toast.error("Failed to add account");
     } finally {
       setSubmittingAction(false);
+    }
+  };
+
+  const handleOpenEditAccount = (acc: CollectionAccount) => {
+    setEditingAccount(acc);
+    setEditAccForm({
+      accountName: acc.accountName || "",
+      accountHolderName: acc.accountHolderName || "",
+      accountType: acc.accountType || "COMPANY",
+      bankName: acc.bankName || "",
+      accountNumber: acc.accountNumber || "",
+      ifsc: acc.ifsc || "",
+      upiId: acc.upiId || "",
+      paymentMethods: acc.paymentMethods?.length ? acc.paymentMethods : (acc.accountType === "CASH" ? ["CASH"] : ["UPI", "BANK_TRANSFER"]),
+      isActive: acc.isActive !== false,
+    });
+  };
+
+  const handleSaveEditAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAccount) return;
+    if (!editAccForm.accountName.trim()) {
+      return toast.error("Please enter account display name");
+    }
+    setSubmittingAction(true);
+    try {
+      await collectionAccountsService.updateAccount(editingAccount.id, {
+        accountName: editAccForm.accountName.trim(),
+        accountHolderName: editAccForm.accountHolderName.trim() || editAccForm.accountName.trim(),
+        accountType: editAccForm.accountType as any,
+        bankName: editAccForm.bankName.trim() || null,
+        accountNumber: editAccForm.accountNumber.trim() || null,
+        ifsc: editAccForm.ifsc.trim() || null,
+        upiId: editAccForm.upiId.trim() || null,
+        paymentMethods: editAccForm.paymentMethods.length > 0 ? editAccForm.paymentMethods : ["BANK_TRANSFER"],
+        isActive: editAccForm.isActive,
+      });
+      toast.success(`Account "${editAccForm.accountName}" updated successfully!`);
+      setEditingAccount(null);
+      loadData();
+    } catch {
+      toast.error("Failed to update account");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleDeleteAccount = async (acc: CollectionAccount) => {
+    if (!window.confirm(`Are you sure you want to delete / archive "${acc.accountName}"?`)) return;
+    try {
+      await collectionAccountsService.deleteAccount(acc.id);
+      toast.success(`Account "${acc.accountName}" removed.`);
+      loadData();
+    } catch {
+      toast.error("Failed to delete account");
     }
   };
 
@@ -2151,16 +2210,31 @@ export default function AccountingPage() {
               {collectionAccounts.map((acc) => (
                 <div
                   key={acc.id}
-                  className="flex min-w-0 flex-col justify-between rounded-xl border border-[#E8EEF4] bg-white p-4"
+                  className="flex min-w-0 flex-col justify-between rounded-xl border border-[#E8EEF4] bg-white p-4 shadow-2xs hover:shadow-xs transition-shadow"
                 >
                   <div className="min-w-0">
                     <div className="flex min-w-0 items-center justify-between gap-2">
                       <span className="shrink-0 rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                         {acc.accountType}
                       </span>
-                      <span className="truncate text-[11px] text-slate-400">
-                        {acc.isActive ? "Active" : "Archived"}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditAccount(acc)}
+                          title="Edit account & channel mappings"
+                          className="p-1 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded cursor-pointer transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAccount(acc)}
+                          title="Delete / Archive account"
+                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <h4 className="mt-2 truncate text-[13px] font-semibold text-[#0B1528]">
@@ -2180,6 +2254,25 @@ export default function AccountingPage() {
                         UPI: {acc.upiId}
                       </p>
                     )}
+
+                    {/* Connected Channel Mappings */}
+                    <div className="flex items-center gap-1 mt-2.5 flex-wrap">
+                      {(acc.paymentMethods?.includes("CASH") || acc.accountType === "CASH") && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Banknote className="w-2.5 h-2.5" /> Cash Desk
+                        </span>
+                      )}
+                      {(acc.paymentMethods?.includes("UPI") || acc.upiId) && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                          <Smartphone className="w-2.5 h-2.5" /> UPI Linked
+                        </span>
+                      )}
+                      {(acc.paymentMethods?.includes("BANK_TRANSFER") || acc.accountNumber) && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          <Building2 className="w-2.5 h-2.5" /> Bank Transfer
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-4 border-t border-[#E8EEF4] pt-3">
@@ -2196,7 +2289,7 @@ export default function AccountingPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenAccountLedger(acc)}
-                      className="h-8 w-full gap-1.5 rounded-md border-[#E8EEF4] bg-white text-[12px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-[#0B1528]"
+                      className="h-8 w-full gap-1.5 rounded-md border-[#E8EEF4] bg-white text-[12px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5" strokeWidth={1.75} />
                       View ledger
@@ -2941,6 +3034,74 @@ export default function AccountingPage() {
               />
             </div>
 
+            {/* Channel Mapping Selection */}
+            <div>
+              <label className="font-medium text-slate-600 block mb-1.5">
+                Connect / Map Payment Channels *
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const exists = newAccForm.paymentMethods.includes("CASH");
+                    const updated = exists
+                      ? newAccForm.paymentMethods.filter((m) => m !== "CASH")
+                      : [...newAccForm.paymentMethods, "CASH"];
+                    setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                    newAccForm.paymentMethods.includes("CASH")
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <Banknote className="w-3.5 h-3.5" />
+                  Cash Desk (CASH)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const exists = newAccForm.paymentMethods.includes("UPI");
+                    const updated = exists
+                      ? newAccForm.paymentMethods.filter((m) => m !== "UPI")
+                      : [...newAccForm.paymentMethods, "UPI"];
+                    setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                    newAccForm.paymentMethods.includes("UPI")
+                      ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  UPI (PhonePe/GPay/QR)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const exists = newAccForm.paymentMethods.includes("BANK_TRANSFER");
+                    const updated = exists
+                      ? newAccForm.paymentMethods.filter((m) => m !== "BANK_TRANSFER")
+                      : [...newAccForm.paymentMethods, "BANK_TRANSFER"];
+                    setNewAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                    newAccForm.paymentMethods.includes("BANK_TRANSFER")
+                      ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  Bank Transfer (NEFT/IMPS)
+                </button>
+              </div>
+            </div>
+
             <div className="pt-2 flex justify-end gap-2">
               <Button
                 type="button"
@@ -2959,6 +3120,191 @@ export default function AccountingPage() {
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   "Save Account"
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── DIALOG: EDIT ACCOUNT & CHANNEL MAPPINGS ──────────────────────── */}
+      <Dialog open={Boolean(editingAccount)} onOpenChange={(open) => !open && setEditingAccount(null)}>
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-[#FF4D00]" />
+              Edit Treasury Account & Mappings
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveEditAccount} className="space-y-3.5 mt-2 text-xs">
+            <div>
+              <label className="font-medium text-slate-600 block mb-1">Account Display Name *</label>
+              <Input
+                required
+                placeholder="e.g. HDFC Main Operating, Cash Desk"
+                value={editAccForm.accountName}
+                onChange={(e) =>
+                  setEditAccForm((prev) => ({ ...prev, accountName: e.target.value }))
+                }
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-medium text-slate-600 block mb-1">Account Type *</label>
+                <select
+                  value={editAccForm.accountType}
+                  onChange={(e) =>
+                    setEditAccForm((prev) => ({ ...prev, accountType: e.target.value }))
+                  }
+                  className="h-9 w-full cursor-pointer rounded-md border border-[#E8EEF4] bg-white px-3 text-[12px] font-medium text-[#0B1528] shadow-none focus:outline-none focus:ring-1 focus:ring-[#FF4D00]/40"
+                >
+                  <option value="COMPANY">Company Bank Account</option>
+                  <option value="CASH">Office Cash Desk</option>
+                  <option value="INDIVIDUAL">Director / Personal Account</option>
+                  <option value="OTHER">Custom / Partner Wallet</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-medium text-slate-600 block mb-1">Bank Name</label>
+                <Input
+                  placeholder="e.g. HDFC Bank, SBI"
+                  value={editAccForm.bankName}
+                  onChange={(e) =>
+                    setEditAccForm((prev) => ({ ...prev, bankName: e.target.value }))
+                  }
+                  className="h-9 text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-medium text-slate-600 block mb-1">Account Number</label>
+                <Input
+                  placeholder="Account Number"
+                  value={editAccForm.accountNumber}
+                  onChange={(e) =>
+                    setEditAccForm((prev) => ({ ...prev, accountNumber: e.target.value }))
+                  }
+                  className="h-9 text-xs font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-medium text-slate-600 block mb-1">IFSC Code</label>
+                <Input
+                  placeholder="e.g. HDFC0001234"
+                  value={editAccForm.ifsc}
+                  onChange={(e) =>
+                    setEditAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
+                  }
+                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-medium text-slate-600 block mb-1">UPI ID</label>
+              <Input
+                placeholder="e.g. youthcamping@hdfcbank"
+                value={editAccForm.upiId}
+                onChange={(e) =>
+                  setEditAccForm((prev) => ({ ...prev, upiId: e.target.value }))
+                }
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            {/* Channel Mapping Selection */}
+            <div>
+              <label className="font-medium text-slate-600 block mb-1.5">
+                Connect / Map Payment Channels *
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const exists = editAccForm.paymentMethods.includes("CASH");
+                    const updated = exists
+                      ? editAccForm.paymentMethods.filter((m) => m !== "CASH")
+                      : [...editAccForm.paymentMethods, "CASH"];
+                    setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                    editAccForm.paymentMethods.includes("CASH")
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <Banknote className="w-3.5 h-3.5" />
+                  Cash Desk (CASH)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const exists = editAccForm.paymentMethods.includes("UPI");
+                    const updated = exists
+                      ? editAccForm.paymentMethods.filter((m) => m !== "UPI")
+                      : [...editAccForm.paymentMethods, "UPI"];
+                    setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                    editAccForm.paymentMethods.includes("UPI")
+                      ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  UPI (PhonePe/GPay/QR)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const exists = editAccForm.paymentMethods.includes("BANK_TRANSFER");
+                    const updated = exists
+                      ? editAccForm.paymentMethods.filter((m) => m !== "BANK_TRANSFER")
+                      : [...editAccForm.paymentMethods, "BANK_TRANSFER"];
+                    setEditAccForm((prev) => ({ ...prev, paymentMethods: updated }));
+                  }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
+                    editAccForm.paymentMethods.includes("BANK_TRANSFER")
+                      ? "bg-blue-50 border-blue-300 text-blue-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                  )}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  Bank Transfer (NEFT/IMPS)
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingAccount(null)}
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingAction}
+                className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
+              >
+                {submittingAction ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  "Save Changes"
                 )}
               </Button>
             </div>
