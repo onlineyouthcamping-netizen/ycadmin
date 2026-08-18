@@ -300,7 +300,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
     );
 
   return (
-    <div className="max-w-7xl mx-auto pb-32 space-y-8 font-sans">
+    <div className="admin-page pb-32">
       {/* Top Navigation & Action Header */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-4 z-40">
         <div className="flex items-center gap-4">

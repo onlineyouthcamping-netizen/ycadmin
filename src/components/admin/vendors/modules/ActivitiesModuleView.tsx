@@ -71,7 +71,7 @@ export function ActivitiesModuleView({
               <tr>
                 <td colSpan={5} className="p-12 text-center bg-slate-50/50">
                   <div className="space-y-2 max-w-sm mx-auto">
-                    <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 mx-auto">
+                    <div className="w-12 h-12 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 mx-auto">
                       <Compass className="w-6 h-6" />
                     </div>
                     <p className="text-sm font-bold text-slate-800">
@@ -97,7 +97,7 @@ export function ActivitiesModuleView({
                 >
                   <td className="py-2.5 px-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-md bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-700 font-bold shrink-0">
                         <Compass className="w-3.5 h-3.5" />
                       </div>
                       <div>

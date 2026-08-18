@@ -59,10 +59,14 @@ export const ApprovalQueueWidget: React.FC<DashboardWidgetContextProps> = ({
       }
     />
     <DashBody>
-      <DashList className="gap-1">
+      <DashList>
         {APPROVAL_QUEUE.map((appr, idx) => (
-          <DashRow key={idx} onClick={() => navigate(appr.path)}>
-            <span className={dashRowLabel}>{appr.label}</span>
+          <DashRow
+            key={idx}
+            onClick={() => navigate(appr.path)}
+            className="py-1.5"
+          >
+            <span className={`${dashRowLabel} min-w-0`}>{appr.label}</span>
             <span
               className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${appr.color}`}
             >

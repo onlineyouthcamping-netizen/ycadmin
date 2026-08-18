@@ -100,7 +100,11 @@ export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
       <DashList>
         {(stats?.attentionItems || ATTENTION_FALLBACK).map(
           (item: any, idx: number) => (
-            <DashRow key={idx} onClick={() => navigate(item.path)}>
+            <DashRow
+              key={idx}
+              onClick={() => navigate(item.path)}
+              className="py-1.5"
+            >
               <span className="flex min-w-0 items-center gap-2">
                 <span
                   className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.color}`}
@@ -144,12 +148,12 @@ export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({
       {!stats?.tripsRunningNow || stats.tripsRunningNow.length === 0 ? (
         <p className={dashEmpty}>No active trips running today.</p>
       ) : (
-        <DashList className="gap-1">
+        <DashList>
           {stats.tripsRunningNow.map((trip: any, idx: number) => (
             <DashRow
               key={idx}
               onClick={() => navigate("/admin/departure-workspace")}
-              className="h-9"
+              className="py-2"
             >
               <span className="min-w-0">
                 <span className="block truncate text-[12px] font-semibold leading-tight text-[#0B1528]">
@@ -200,12 +204,12 @@ export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({
       stats.tripsDepartingNext7Days.length === 0 ? (
         <p className={dashEmpty}>No departures in the next 7 days.</p>
       ) : (
-        <DashList className="gap-1">
+        <DashList>
           {stats.tripsDepartingNext7Days.map((trip: any, idx: number) => (
             <DashRow
               key={idx}
               onClick={() => navigate("/admin/operations")}
-              className="h-9"
+              className="py-2"
             >
               <span className="min-w-0">
                 <span className="block truncate text-[12px] font-semibold leading-tight text-[#0B1528]">
@@ -259,7 +263,7 @@ export const TodaysScheduleWidget: React.FC<DashboardWidgetContextProps> = ({
             <DashRow
               key={idx}
               onClick={() => navigate("/admin/departure-workspace")}
-              className="justify-start gap-2"
+              className="justify-start gap-2 py-1.5"
             >
               <span className="w-[52px] shrink-0 text-[10px] font-medium tabular-nums text-slate-400">
                 {sched.time}
@@ -267,7 +271,7 @@ export const TodaysScheduleWidget: React.FC<DashboardWidgetContextProps> = ({
               <span
                 className={`h-1.5 w-1.5 shrink-0 rounded-full ${sched.color}`}
               />
-              <span className={dashRowLabel}>{sched.label}</span>
+              <span className={`${dashRowLabel} min-w-0`}>{sched.label}</span>
             </DashRow>
           ))}
         </DashList>

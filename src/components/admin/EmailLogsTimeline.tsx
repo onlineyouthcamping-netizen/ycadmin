@@ -186,7 +186,7 @@ export default function EmailLogsTimeline({
                   variant="ghost"
                   size="icon"
                   onClick={() => setPreviewLog(log)}
-                  className="h-8 w-8 hover:bg-slate-100 text-slate-500 hover:text-indigo-600"
+                  className="h-8 w-8 hover:bg-slate-100 text-slate-500 hover:text-orange-600"
                   title="Preview Sent Email"
                 >
                   <Eye className="h-4 w-4" />
@@ -205,7 +205,7 @@ export default function EmailLogsTimeline({
         <DialogContent className="max-w-[700px] w-full bg-white p-6 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <Mail className="h-5 w-5 text-indigo-600" />
+              <Mail className="h-5 w-5 text-orange-600" />
               Email Preview
             </DialogTitle>
           </DialogHeader>

@@ -92,7 +92,7 @@ const ROLES: {
     value: "operations",
     label: "Operations",
     desc: "View rosters, assign guides & rooms",
-    color: "bg-purple-50 text-purple-700 border-purple-200",
+    color: "bg-orange-50 text-orange-700 border-orange-200",
   },
   {
     value: "finance",

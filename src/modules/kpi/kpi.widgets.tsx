@@ -17,8 +17,8 @@ import type {
 
 function KpiIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[#E8EEF4] bg-[#F4F7FB] text-[#0B1528]">
-      <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#F4F7FB] text-slate-400">
+      <Icon className="h-3 w-3" strokeWidth={1.75} />
     </div>
   );
 }
@@ -43,25 +43,24 @@ function KpiCard({
   return (
     <div
       onClick={onClick}
-      className="flex h-full min-h-[108px] min-w-0 cursor-pointer flex-col justify-between rounded-xl border border-[#E8EEF4] bg-white p-3.5 shadow-none transition-colors hover:border-slate-300"
+      className="flex h-full min-h-[92px] min-w-0 cursor-pointer flex-col justify-between gap-3 rounded-xl border border-[#E8EEF4] bg-white p-3 shadow-none transition-colors hover:border-slate-300"
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-semibold tracking-wide text-slate-500">
+        <span className="min-w-0 text-[11px] font-medium leading-tight text-slate-500">
           {label}
         </span>
         <KpiIcon icon={icon} />
       </div>
-      <div className="min-w-0 space-y-0.5">
-        <h3 className="truncate text-[18px] font-bold leading-none text-[#0B1528]">
-          {loading ? "Loading..." : value}
+      <div className="min-w-0">
+        <h3 className="truncate text-[17px] font-semibold leading-none tracking-tight text-[#0B1528]">
+          {loading ? "…" : value}
         </h3>
-        <p
-          className={`mt-1 flex items-center gap-1 text-[10px] font-medium ${
-            trend ? "text-emerald-600" : "text-slate-400"
-          }`}
-        >
+        <p className="mt-1.5 flex items-center gap-1 truncate text-[10px] font-medium leading-none text-slate-400">
           {trend ? (
-            <TrendingUp className="h-3 w-3 shrink-0" strokeWidth={1.75} />
+            <TrendingUp
+              className="h-2.5 w-2.5 shrink-0 text-emerald-600"
+              strokeWidth={2}
+            />
           ) : null}
           {caption}
         </p>
@@ -81,11 +80,7 @@ export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     loading={loading}
     value={`₹ ${(stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
     trend
-    caption={
-      <>
-        Gross <span className="font-medium text-slate-400">all-time</span>
-      </>
-    }
+    caption="Gross all-time"
     onClick={() => navigate("/admin/accounting")}
   />
 );
@@ -101,11 +96,7 @@ export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     loading={loading}
     value={`₹ ${(stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue || stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
     trend
-    caption={
-      <>
-        Active <span className="font-medium text-slate-400">this month</span>
-      </>
-    }
+    caption="Active this month"
     onClick={() => navigate("/admin/accounting")}
   />
 );
@@ -120,12 +111,7 @@ export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({
     icon={Users}
     loading={loading}
     value={`₹ ${(stats?.pendingPayments || 0).toLocaleString("en-IN")}`}
-    caption={
-      <>
-        {loading ? "..." : stats?.totalBookings || 0}{" "}
-        <span className="font-medium text-slate-400">bookings</span>
-      </>
-    }
+    caption={`${loading ? "…" : stats?.totalBookings || 0} bookings`}
     onClick={() => navigate("/admin/accounting?tab=payments")}
   />
 );
@@ -140,12 +126,7 @@ export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({
     icon={Building2}
     loading={loading}
     value={`₹ ${(stats?.pendingVendorsCost || 0).toLocaleString("en-IN")}`}
-    caption={
-      <>
-        {loading ? "..." : stats?.pendingVendorsCount || 0}{" "}
-        <span className="font-medium text-slate-400">vendors</span>
-      </>
-    }
+    caption={`${loading ? "…" : stats?.pendingVendorsCount || 0} vendors`}
     onClick={() => navigate("/admin/accounting?tab=vendor_payments")}
   />
 );
@@ -159,12 +140,8 @@ export const TripsRunningCard: React.FC<DashboardWidgetContextProps> = ({
     label="Trips running"
     icon={Compass}
     loading={loading}
-    value={loading ? "..." : String(stats?.totalTrips || 0)}
-    caption={
-      <>
-        Active <span className="font-medium text-slate-400">itineraries</span>
-      </>
-    }
+    value={loading ? "…" : String(stats?.totalTrips || 0)}
+    caption="Active itineraries"
     onClick={() => navigate("/admin/live-operations")}
   />
 );
@@ -178,13 +155,9 @@ export const BookingsMonthCard: React.FC<DashboardWidgetContextProps> = ({
     label="Bookings this month"
     icon={Calendar}
     loading={loading}
-    value={loading ? "..." : String(stats?.totalBookings || 0)}
+    value={loading ? "…" : String(stats?.totalBookings || 0)}
     trend
-    caption={
-      <>
-        Overall <span className="font-medium text-slate-400">reservations</span>
-      </>
-    }
+    caption="Overall reservations"
     onClick={() => navigate("/admin/bookings")}
   />
 );

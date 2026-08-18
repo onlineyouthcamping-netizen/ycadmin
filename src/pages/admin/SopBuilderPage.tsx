@@ -359,7 +359,7 @@ export default function SopBuilderPage() {
   }
 
   return (
-    <div className="p-6 bg-slate-50/50 min-h-screen space-y-6">
+    <div className="admin-page">
       {/* Top Navigation & Title Bar */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center justify-between">

@@ -974,7 +974,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-200",
     PENDING: "bg-amber-50 text-amber-700 border-amber-200",
     CANCELLED: "bg-slate-100 text-slate-500 border-slate-200",
-    OPTIONAL: "bg-purple-50 text-purple-700 border-purple-200",
+    OPTIONAL: "bg-orange-50 text-orange-700 border-orange-200",
     PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
     "PARTIALLY PAID": "bg-amber-50 text-amber-700 border-amber-200",
     UNPAID: "bg-red-50 text-red-600 border-red-200",
@@ -1001,11 +1001,11 @@ const StatusBadge = ({ status }: { status: string }) => {
 const TypeBadge = ({ type }: { type: string }) => {
   const map: Record<string, string> = {
     TRAVEL: "bg-blue-100 text-blue-700",
-    SIGHTSEEING: "bg-indigo-100 text-indigo-700",
+    SIGHTSEEING: "bg-orange-100 text-orange-700",
     ADVENTURE: "bg-orange-100 text-orange-700",
     COMMUNICATION: "bg-pink-100 text-pink-700",
     PAYMENTS: "bg-emerald-100 text-emerald-700",
-    DOCUMENTS: "bg-purple-100 text-purple-700",
+    DOCUMENTS: "bg-orange-100 text-orange-700",
     HOTELS: "bg-amber-100 text-amber-700",
     TRANSPORT: "bg-cyan-100 text-cyan-700",
     GUIDES: "bg-teal-100 text-teal-700",

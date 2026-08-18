@@ -394,7 +394,7 @@ export default function DayWiseActivityAccordionCard({
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Booked</span>
-                <strong className="text-purple-900 font-bold text-sm">
+                <strong className="text-orange-900 font-bold text-sm">
                   {optedCount} Pax
                 </strong>
               </div>
@@ -402,14 +402,14 @@ export default function DayWiseActivityAccordionCard({
                 <span className="text-slate-400 block text-[11px]">
                   Revenue
                 </span>
-                <strong className="text-purple-900 font-bold text-sm">
+                <strong className="text-orange-900 font-bold text-sm">
                   ₹{(optedCount * sellingPrice).toLocaleString()}
                 </strong>
               </div>
             </>
           ) : (
             <div className="flex items-center gap-4">
-              <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-md text-xs font-semibold">
+              <span className="px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-xs font-semibold">
                 Optional Activity • Price Not Set
               </span>
               <div className="pl-2 border-l border-slate-200">
@@ -608,7 +608,7 @@ export default function DayWiseActivityAccordionCard({
                   className={cn(
                     "px-4 py-2 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5",
                     !isIncluded
-                      ? "bg-purple-600 text-white border-purple-700 shadow-sm"
+                      ? "bg-orange-600 text-white border-orange-700 shadow-sm"
                       : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                   )}
                 >
@@ -670,13 +670,13 @@ export default function DayWiseActivityAccordionCard({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-purple-50/60 p-4 rounded-xl border border-purple-200">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-orange-50/60 p-4 rounded-xl border border-orange-200">
                 <div>
-                  <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-orange-900 uppercase tracking-wider mb-1">
                     Selling Price
                   </label>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">
+                    <span className="absolute left-2.5 top-1.5 text-orange-700 font-bold text-xs">
                       ₹
                     </span>
                     <input
@@ -685,17 +685,17 @@ export default function DayWiseActivityAccordionCard({
                       onChange={(e) =>
                         setSellingPrice(Number(e.target.value) || 0)
                       }
-                      className="w-full pl-6 pr-2 py-1.5 text-sm font-black text-purple-950 rounded-lg border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                      className="w-full pl-6 pr-2 py-1.5 text-sm font-black text-orange-950 rounded-lg border border-orange-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-orange-900 uppercase tracking-wider mb-1">
                     Vendor Cost
                   </label>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-purple-700 font-bold text-xs">
+                    <span className="absolute left-2.5 top-1.5 text-orange-700 font-bold text-xs">
                       ₹
                     </span>
                     <input
@@ -704,13 +704,13 @@ export default function DayWiseActivityAccordionCard({
                       onChange={(e) =>
                         setVendorCost(Number(e.target.value) || 0)
                       }
-                      className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-700 rounded-lg border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                      className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-700 rounded-lg border border-orange-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                     />
                   </div>
                 </div>
 
-                <div className="bg-white/80 p-2 rounded-lg border border-purple-200">
-                  <span className="text-[11px] font-bold text-purple-800 uppercase block">
+                <div className="bg-white/80 p-2 rounded-lg border border-orange-200">
+                  <span className="text-[11px] font-bold text-orange-800 uppercase block">
                     Profit / Pax
                   </span>
                   <span className="text-base font-black text-emerald-600 mt-0.5 block">
@@ -718,8 +718,8 @@ export default function DayWiseActivityAccordionCard({
                   </span>
                 </div>
 
-                <div className="bg-white/80 p-2 rounded-lg border border-purple-200">
-                  <label className="text-[11px] font-bold text-purple-800 uppercase block mb-1">
+                <div className="bg-white/80 p-2 rounded-lg border border-orange-200">
+                  <label className="text-[11px] font-bold text-orange-800 uppercase block mb-1">
                     Booked Count (Pax)
                   </label>
                   <div className="relative">
@@ -731,16 +731,16 @@ export default function DayWiseActivityAccordionCard({
                           Math.max(0, Number(e.target.value) || 0),
                         )
                       }
-                      className="w-full pl-2.5 pr-8 py-1 text-sm font-black text-purple-950 rounded border border-purple-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                      className="w-full pl-2.5 pr-8 py-1 text-sm font-black text-orange-950 rounded border border-orange-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                     />
-                    <span className="absolute right-2 top-1.5 text-purple-700 font-bold text-xs">
+                    <span className="absolute right-2 top-1.5 text-orange-700 font-bold text-xs">
                       Pax
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-purple-900 text-white p-2 rounded-lg flex flex-col justify-center">
-                  <span className="text-[11px] font-semibold text-purple-200 uppercase">
+                <div className="bg-orange-900 text-white p-2 rounded-lg flex flex-col justify-center">
+                  <span className="text-[11px] font-semibold text-orange-200 uppercase">
                     Total Revenue
                   </span>
                   <span className="text-base font-black text-white">
@@ -862,7 +862,7 @@ export default function DayWiseActivityAccordionCard({
                     className={cn(
                       "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5",
                       p.isOpted
-                        ? "bg-purple-600 text-white border-purple-600 shadow-sm font-bold"
+                        ? "bg-orange-600 text-white border-orange-600 shadow-sm font-bold"
                         : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200",
                     )}
                   >

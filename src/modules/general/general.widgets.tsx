@@ -6,6 +6,7 @@ import type {
   DashboardWidgetContextProps,
 } from "@/config/dashboardWidgetRegistry";
 import {
+  cnDashAction,
   DashBody,
   DashCard,
   DashHead,
@@ -65,10 +66,6 @@ export const AnnouncementsWidget: React.FC<DashboardWidgetContextProps> = ({
     </DashBody>
   </DashCard>
 );
-
-function cnDashAction() {
-  return `inline-flex items-center gap-1 ${dashLink}`;
-}
 
 function relativeTime(createdAt: string) {
   const diffMs = new Date().getTime() - new Date(createdAt).getTime();

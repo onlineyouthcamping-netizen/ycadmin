@@ -621,7 +621,7 @@ export default function TripFormEditor({
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] h-12 px-10 rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95"
+          className="h-12 rounded-xl bg-[#FF4D00] px-10 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-colors hover:bg-[#E04400]"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
           {editing ? "Update Experience" : "Create Experience"}
@@ -634,7 +634,7 @@ export default function TripFormEditor({
     <Tabs
       value={activeTab}
       onValueChange={handleTabChange}
-      className="w-full min-h-screen bg-slate-50/50"
+      className="min-h-0 min-w-0 w-full bg-slate-50/50"
     >
       {/* ─── STICKY HEADER ─── */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-xs">

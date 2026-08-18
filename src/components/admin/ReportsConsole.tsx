@@ -119,10 +119,10 @@ const colorMap: Record<
   { bg: string; text: string; border: string; lightBg: string }
 > = {
   indigo: {
-    bg: "bg-indigo-600",
-    text: "text-indigo-600",
-    border: "border-indigo-100",
-    lightBg: "bg-indigo-50",
+    bg: "bg-orange-600",
+    text: "text-orange-600",
+    border: "border-orange-100",
+    lightBg: "bg-orange-50",
   },
   emerald: {
     bg: "bg-emerald-600",

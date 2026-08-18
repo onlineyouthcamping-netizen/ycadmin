@@ -182,8 +182,8 @@ export default function HotelRateManager({ api }: HotelRateManagerProps) {
               <tr>
                 <th className="px-4 py-3 min-w-[120px]">Month</th>
                 <th className="px-4 py-3 bg-blue-50/50">Double ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
-                <th className="px-4 py-3 bg-indigo-50/50">Triple ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
-                <th className="px-4 py-3 bg-purple-50/50">Quad ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
+                <th className="px-4 py-3 bg-orange-50/50">Triple ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
+                <th className="px-4 py-3 bg-orange-50/50">Quad ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -208,24 +208,24 @@ export default function HotelRateManager({ api }: HotelRateManagerProps) {
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 bg-indigo-50/10">
+                    <td className="px-4 py-3 bg-orange-50/10">
                       <div className="relative">
                         <span className="absolute left-2.5 top-2 text-slate-400 text-xs">₹</span>
                         <input
                           type="number"
-                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
                           value={pricingToggle === 'per_room' ? rate.triple_sharing_per_room : rate.triple_sharing_per_pax}
                           onChange={(e) => handleRateChange(idx, pricingToggle === 'per_room' ? 'triple_sharing_per_room' : 'triple_sharing_per_pax', Number(e.target.value))}
                         />
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 bg-purple-50/10">
+                    <td className="px-4 py-3 bg-orange-50/10">
                       <div className="relative">
                         <span className="absolute left-2.5 top-2 text-slate-400 text-xs">₹</span>
                         <input
                           type="number"
-                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
                           value={pricingToggle === 'per_room' ? rate.quad_sharing_per_room : rate.quad_sharing_per_pax}
                           onChange={(e) => handleRateChange(idx, pricingToggle === 'per_room' ? 'quad_sharing_per_room' : 'quad_sharing_per_pax', Number(e.target.value))}
                         />

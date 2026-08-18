@@ -96,7 +96,7 @@ export default function SopLibraryPage() {
   };
 
   return (
-    <div className="p-6 bg-slate-50/50 min-h-screen space-y-6">
+    <div className="admin-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div>

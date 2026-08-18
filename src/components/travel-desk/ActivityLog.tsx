@@ -98,9 +98,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
       case "upload":
         return {
           label: "Upload",
-          badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
+          badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
           icon: UploadCloud,
-          iconColor: "text-purple-600",
+          iconColor: "text-orange-600",
         };
       default:
         return {
@@ -158,7 +158,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen text-[#0A192F] font-sans space-y-6">
+    <div className="admin-page text-[#0A192F]">
       {/* ─── Top Filter Header ─── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">

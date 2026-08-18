@@ -88,15 +88,15 @@ const STATUS_STYLES: Record<
   PENDING: { bg: "bg-amber-50", text: "text-amber-700", label: "Pending" },
   BOOKED: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Booked" },
   WAITLISTED: {
-    bg: "bg-indigo-50",
-    text: "text-indigo-700",
+    bg: "bg-orange-50",
+    text: "text-orange-700",
     label: "Waitlisted",
   },
   CONFIRMED: { bg: "bg-teal-50", text: "text-teal-700", label: "Confirmed" },
   RAC: { bg: "bg-pink-50", text: "text-pink-700", label: "RAC" },
   SELF_BOOKED: {
-    bg: "bg-purple-50",
-    text: "text-purple-700",
+    bg: "bg-orange-50",
+    text: "text-orange-700",
     label: "Self Booked",
   },
   CANCELLED: { bg: "bg-red-50", text: "text-red-700", label: "Cancelled" },
@@ -1288,7 +1288,7 @@ export default function VerificationDetailsPanel({
                  ───────────────────────────────────────────────────────────── */}
               <div className="space-y-2.5">
                 <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
-                  <Building2 className="w-4 h-4 text-purple-600" />
+                  <Building2 className="w-4 h-4 text-orange-600" />
                   4. Vendor Payments & Trip Operations
                 </h3>
 
@@ -1299,7 +1299,7 @@ export default function VerificationDetailsPanel({
                     <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
-                          <Bed className="w-3 h-3 text-indigo-500" /> Hotels / Stays
+                          <Bed className="w-3 h-3 text-orange-500" /> Hotels / Stays
                         </span>
                         <span className="font-mono font-bold text-slate-900 text-[11px]">
                           ₹{(opsSummary?.hotelCost || 2400).toLocaleString("en-IN")}
@@ -1391,16 +1391,16 @@ export default function VerificationDetailsPanel({
                   )}
 
                   {/* Operations Profitability Margin Summary Bar */}
-                  <div className="bg-purple-50/60 border border-purple-100 rounded-lg p-2.5 flex items-center justify-between text-xs">
+                  <div className="bg-orange-50/60 border border-orange-100 rounded-lg p-2.5 flex items-center justify-between text-xs">
                     <div>
-                      <p className="text-[8px] font-bold text-purple-700 uppercase tracking-wider">
+                      <p className="text-[8px] font-bold text-orange-700 uppercase tracking-wider">
                         Net Operating Margin
                       </p>
-                      <p className="text-[10px] text-purple-900 font-medium mt-0.5">
+                      <p className="text-[10px] text-orange-900 font-medium mt-0.5">
                         Booking revenue minus ticketing & vendor liabilities
                       </p>
                     </div>
-                    <div className="text-right font-mono font-extrabold text-purple-900 text-[13px]">
+                    <div className="text-right font-mono font-extrabold text-orange-900 text-[13px]">
                       ₹
                       {Math.max(
                         0,

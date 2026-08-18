@@ -88,7 +88,7 @@ export default function PermissionMatrixPage() {
   );
 
   return (
-    <div className="p-6 space-y-6 max-w-[1700px] mx-auto">
+    <div className="admin-page">
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-lg border border-slate-800">
         <div className="space-y-1">

@@ -89,7 +89,7 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     badge: "REVIEWS",
     description: "Customer review cards with 5-star ratings & trip links.",
     icon: MessageSquare,
-    color: "bg-purple-50 text-purple-600 border-purple-100",
+    color: "bg-orange-50 text-orange-600 border-orange-100",
   },
   {
     id: "stories",
@@ -98,7 +98,7 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     description:
       "Blog & travel journal story cards with author avatars & read time.",
     icon: BookOpen,
-    color: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    color: "bg-orange-50 text-orange-600 border-orange-100",
   },
   {
     id: "recent_photos",

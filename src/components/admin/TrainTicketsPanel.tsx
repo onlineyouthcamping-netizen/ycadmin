@@ -4,7 +4,6 @@
  * Includes Group Ticket Summary, Independent Journey Sections, and Passenger Matrix.
  */
 import React, { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import {
   Train,
   Plus,
@@ -74,7 +73,7 @@ function StatusPill({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border border-transparent",
+        "px-2 py-0.5 rounded-full text-[9px] font-semibold border border-transparent",
         colorClass,
       )}
     >
@@ -87,7 +86,7 @@ function ApprovalPill({ status }: { status?: string }) {
   const s = (status || "DRAFT").toUpperCase();
   if (s === "APPROVED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
         <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
         Approved
       </span>
@@ -95,7 +94,7 @@ function ApprovalPill({ status }: { status?: string }) {
   }
   if (s === "SUBMITTED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
         <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
         Pending Approval
       </span>
@@ -103,7 +102,7 @@ function ApprovalPill({ status }: { status?: string }) {
   }
   if (s === "REJECTED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
         <XCircle className="w-2.5 h-2.5 text-rose-600" />
         Rejected
       </span>
@@ -111,14 +110,14 @@ function ApprovalPill({ status }: { status?: string }) {
   }
   if (s === "REOPENED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-orange-50 text-orange-700 border border-orange-200">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
         <RefreshCw className="w-2.5 h-2.5 text-orange-600" />
         Reopened
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-600 border border-[#E8EEF4]">
       <Edit3 className="w-2.5 h-2.5 text-slate-500" />
       Draft
     </span>
@@ -757,29 +756,33 @@ export default function TrainTicketsPanel({
   };
 
   return (
-    <div className="space-y-5 text-xs">
+    <div className="space-y-3 text-xs min-w-0">
       {/* ─── GROUP TICKET SUMMARY CARD (REQUIREMENT 4) ─── */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-950 text-white rounded-xl p-4 shadow-md space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
-          <div className="flex items-center gap-2">
-            <Train className="w-5 h-5 text-emerald-400" />
-            <div>
-              <h3 className="font-bold text-sm">Group Ticketing Summary</h3>
-              <p className="text-[10px] text-slate-300">
-                Group Size:{" "}
-                <span className="font-bold text-white">
-                  {groupSize} Travelers
+      <div className="bg-white border border-[#E8EEF4] rounded-xl shadow-sm overflow-hidden min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-[#F8FAFC] border-b border-[#E8EEF4]">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#FF4D00]/10 shrink-0">
+              <Train className="w-3.5 h-3.5 text-[#FF4D00]" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-xs text-[#0B1528]">
+                Group ticketing summary
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Group size:{" "}
+                <span className="font-semibold text-[#0B1528]">
+                  {groupSize} travellers
                 </span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-              className="h-7 text-[10px] text-slate-300 hover:text-white hover:bg-slate-800 gap-1"
+              className="h-8 text-xs font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-[#E8EEF4]/70 gap-1.5"
             >
               {isSummaryExpanded ? (
                 <ChevronUp className="w-3.5 h-3.5" />
@@ -787,37 +790,39 @@ export default function TrainTicketsPanel({
                 <ChevronDown className="w-3.5 h-3.5" />
               )}
               {isSummaryExpanded
-                ? "Collapse Matrix"
-                : "Expand Passenger Matrix"}
+                ? "Collapse matrix"
+                : "Expand passenger matrix"}
             </Button>
 
             {canManage && (
               <>
                 <Button
                   size="sm"
+                  variant="ghost"
                   onClick={handleSyncTemplate}
                   disabled={actionBusy}
-                  className="h-7 text-[10px] font-bold bg-orange-600 hover:bg-orange-500 text-white gap-1 shadow-xs cursor-pointer"
+                  className="h-8 text-xs font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-[#E8EEF4]/70 gap-1.5 cursor-pointer"
                 >
                   {actionBusy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <RefreshCw className="w-3.5 h-3.5" />
                   )}
-                  Sync Trip Template
+                  Sync trip template
                 </Button>
                 <Button
                   size="sm"
+                  variant="ghost"
                   onClick={handleAutoGenerate}
                   disabled={actionBusy}
-                  className="h-7 text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white gap-1"
+                  className="h-8 text-xs font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-[#E8EEF4]/70 gap-1.5 cursor-pointer"
                 >
                   {actionBusy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Wand2 className="w-3.5 h-3.5" />
                   )}
-                  Auto-Generate
+                  Auto-generate
                 </Button>
                 <Button
                   size="sm"
@@ -826,9 +831,9 @@ export default function TrainTicketsPanel({
                     setForm(emptyForm("DEPARTURE"));
                     setShowForm(true);
                   }}
-                  className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-1"
+                  className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white gap-1.5 cursor-pointer shadow-sm shadow-[#FF4D00]/20"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add Ticket
+                  <Plus className="w-3.5 h-3.5" /> Add ticket
                 </Button>
               </>
             )}
@@ -836,47 +841,57 @@ export default function TrainTicketsPanel({
         </div>
 
         {/* Departure & Return Quick Status Badges */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
           {/* Departure Summary */}
-          <div className="bg-slate-800/80 rounded-lg p-3 border border-slate-700/80 space-y-1.5">
-            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-              <span>Departure Journey</span>
-              <span>{departureTickets.length} Tickets</span>
+          <div className="bg-[#F8FAFC] rounded-lg p-3 border border-[#E8EEF4] space-y-2 min-w-0">
+            <div className="flex justify-between items-center gap-2 text-[11px] font-semibold">
+              <span className="flex items-center gap-1.5 truncate text-[#0B1528]">
+                <ArrowRight className="w-3.5 h-3.5 text-[#FF4D00] shrink-0" />
+                Departure journey
+              </span>
+              <span className="shrink-0 text-slate-500">
+                {departureTickets.length} tickets
+              </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <span className="bg-emerald-950/80 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                {depCounts.CONFIRMED} Confirmed
+              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                {depCounts.CONFIRMED} confirmed
               </span>
-              <span className="bg-amber-950/80 text-amber-300 border border-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                {depCounts.WAITLISTED} Waitlisted
+              <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                {depCounts.WAITLISTED} waitlisted
               </span>
-              <span className="bg-blue-950/80 text-blue-300 border border-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">
+              <span className="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded text-[11px] font-semibold">
                 {depCounts.RAC} RAC
               </span>
-              <span className="bg-slate-900 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
-                {depCounts.PENDING} Pending
+              <span className="bg-white text-slate-600 border border-[#E8EEF4] px-2 py-0.5 rounded text-[11px] font-semibold">
+                {depCounts.PENDING} pending
               </span>
             </div>
           </div>
 
           {/* Return Summary */}
-          <div className="bg-slate-800/80 rounded-lg p-3 border border-slate-700/80 space-y-1.5">
-            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-blue-400">
-              <span>Return Journey</span>
-              <span>{returnTickets.length} Tickets</span>
+          <div className="bg-[#F8FAFC] rounded-lg p-3 border border-[#E8EEF4] space-y-2 min-w-0">
+            <div className="flex justify-between items-center gap-2 text-[11px] font-semibold">
+              <span className="flex items-center gap-1.5 truncate text-[#0B1528]">
+                <RotateCcw className="w-3.5 h-3.5 text-[#0B1528]/50 shrink-0" />
+                Return journey
+              </span>
+              <span className="shrink-0 text-slate-500">
+                {returnTickets.length} tickets
+              </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <span className="bg-emerald-950/80 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                {retCounts.CONFIRMED} Confirmed
+              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                {retCounts.CONFIRMED} confirmed
               </span>
-              <span className="bg-amber-950/80 text-amber-300 border border-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                {retCounts.WAITLISTED} Waitlisted
+              <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold">
+                {retCounts.WAITLISTED} waitlisted
               </span>
-              <span className="bg-blue-950/80 text-blue-300 border border-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">
+              <span className="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded text-[11px] font-semibold">
                 {retCounts.RAC} RAC
               </span>
-              <span className="bg-slate-900 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
-                {retCounts.PENDING} Pending
+              <span className="bg-white text-slate-600 border border-[#E8EEF4] px-2 py-0.5 rounded text-[11px] font-semibold">
+                {retCounts.PENDING} pending
               </span>
             </div>
           </div>
@@ -884,16 +899,16 @@ export default function TrainTicketsPanel({
 
         {/* Expandable Passenger Matrix */}
         {isSummaryExpanded && (
-          <div className="pt-2 border-t border-slate-800 overflow-x-auto">
+          <div className="border-t border-[#E8EEF4] px-4 py-3 overflow-x-auto min-w-0">
             <table className="w-full text-left text-[11px]">
               <thead>
-                <tr className="text-slate-400 uppercase border-b border-slate-800 text-[9px] font-bold">
+                <tr className="text-slate-400 uppercase border-b border-[#E8EEF4] text-[9px] font-semibold">
                   <th className="py-1.5 px-2">Passenger</th>
                   <th className="py-1.5 px-2">Departure Ticket</th>
                   <th className="py-1.5 px-2">Return Ticket</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-200">
+              <tbody className="divide-y divide-[#E8EEF4] text-slate-700">
                 {(passengers.length > 0
                   ? passengers
                   : [{ name: booking?.fullName || "Lead Passenger" }]
@@ -919,14 +934,14 @@ export default function TrainTicketsPanel({
                   );
 
                   return (
-                    <tr key={idx} className="hover:bg-slate-800/40">
-                      <td className="py-2 px-2 font-bold">
+                    <tr key={idx} className="hover:bg-[#F8FAFC]">
+                      <td className="py-2 px-2 font-semibold text-[#0B1528]">
                         <div>{pName}</div>
                         {(() => {
                           const phone = getTravelerPhone(pName);
                           if (!phone || phone === "N/A") return null;
                           return (
-                            <span className="block text-[9.5px] font-normal font-mono text-slate-400">
+                            <span className="block text-[9.5px] font-normal font-mono text-slate-500">
                               📞 {phone}
                             </span>
                           );
@@ -937,17 +952,17 @@ export default function TrainTicketsPanel({
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusPill status={depT.ticketStatus} />
                             <ApprovalPill status={depT.approvalStatus} />
-                            <span className="font-mono font-bold text-slate-200">
+                            <span className="font-mono font-semibold text-[#0B1528]">
                               {depT.pnr ? `PNR: ${depT.pnr}` : "No PNR"}
                             </span>
                             {depT.trainName && (
-                              <span className="text-slate-400 text-[10px] truncate max-w-[140px]" title={depT.trainName}>
+                              <span className="text-slate-500 text-[10px] truncate max-w-[140px]" title={depT.trainName}>
                                 • {depT.trainName}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-500 italic">
+                          <span className="text-slate-400 italic">
                             Not issued
                           </span>
                         )}
@@ -957,17 +972,17 @@ export default function TrainTicketsPanel({
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusPill status={retT.ticketStatus} />
                             <ApprovalPill status={retT.approvalStatus} />
-                            <span className="font-mono font-bold text-slate-200">
+                            <span className="font-mono font-semibold text-[#0B1528]">
                               {retT.pnr ? `PNR: ${retT.pnr}` : "No PNR"}
                             </span>
                             {retT.trainName && (
-                              <span className="text-slate-400 text-[10px] truncate max-w-[140px]" title={retT.trainName}>
+                              <span className="text-slate-500 text-[10px] truncate max-w-[140px]" title={retT.trainName}>
                                 • {retT.trainName}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-500 italic">
+                          <span className="text-slate-400 italic">
                             Not issued
                           </span>
                         )}
@@ -985,10 +1000,10 @@ export default function TrainTicketsPanel({
       {showForm && (
         <form
           onSubmit={handleSaveTicket}
-          className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3"
+          className="p-4 bg-slate-50 border border-[#E8EEF4] rounded-xl space-y-3"
         >
           <div className="flex justify-between items-center border-b pb-2 flex-wrap gap-2">
-            <h4 className="font-bold text-slate-800 text-xs">
+            <h4 className="font-semibold text-[#0B1528] text-xs">
               {editingId ? "Edit Train Ticket" : "Create New Train Ticket"}
             </h4>
             <div className="flex items-center gap-2">
@@ -997,7 +1012,7 @@ export default function TrainTicketsPanel({
                 variant="outline"
                 size="sm"
                 onClick={() => handleFillFromTemplate()}
-                className="h-6 text-[10px] font-bold text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100 gap-1 cursor-pointer"
+                className="h-6 text-[10px] font-semibold text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100 gap-1 cursor-pointer"
               >
                 <RefreshCw className="w-2.5 h-2.5" />
                 Fill from Trip Template
@@ -1016,7 +1031,7 @@ export default function TrainTicketsPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Traveler Name *
               </label>
               <Input
@@ -1031,7 +1046,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Journey Type *
               </label>
               <Select
@@ -1051,7 +1066,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Ticket Status *
               </label>
               <Select
@@ -1076,7 +1091,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Paid By *
               </label>
               <Select
@@ -1096,7 +1111,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Internal Ticket Cost (₹)
               </label>
               <Input
@@ -1104,12 +1119,12 @@ export default function TrainTicketsPanel({
                 value={form.ticketAmount}
                 onChange={(e) => setForm({ ...form, ticketAmount: e.target.value })}
                 placeholder="e.g. 1850"
-                className="h-8 text-xs font-bold text-emerald-600"
+                className="h-8 text-xs font-semibold text-emerald-600"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 PNR Number
               </label>
               <Input
@@ -1121,7 +1136,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Train Name / No.
               </label>
               <Input
@@ -1135,7 +1150,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Journey Date
               </label>
               <Input
@@ -1149,7 +1164,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Coach / Seat
               </label>
               <div className="grid grid-cols-2 gap-1">
@@ -1171,7 +1186,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Source Station
               </label>
               <Input
@@ -1185,7 +1200,7 @@ export default function TrainTicketsPanel({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Destination Station
               </label>
               <Input
@@ -1213,7 +1228,7 @@ export default function TrainTicketsPanel({
               type="submit"
               disabled={actionBusy}
               size="sm"
-              className="h-8 text-xs bg-slate-900 text-white font-bold"
+              className="h-8 text-xs bg-slate-900 text-white font-semibold"
             >
               {actionBusy
                 ? "Saving..."
@@ -1226,48 +1241,52 @@ export default function TrainTicketsPanel({
       )}
 
       {/* ─── TWO-WAY JOURNEY SECTIONS ─── */}
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Departure Journey Section */}
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs space-y-0">
-          <div className="px-4 py-3 bg-emerald-50/60 border-b border-slate-200 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <ArrowRight className="w-4 h-4 text-emerald-600" />
-              <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                Departure Journey ({departureTickets.length} Tickets)
+        <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+          <div className="px-4 py-3 border-b border-[#E8EEF4] flex flex-wrap justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <h4 className="font-semibold text-[#0B1528] text-xs truncate">
+                Departure journey
               </h4>
+              <span className="text-[11px] text-slate-400 shrink-0">
+                {departureTickets.length} tickets
+              </span>
             </div>
             <Button
               size="sm"
               variant="outline"
               onClick={handleOpenAddDeparture}
-              className="h-7 text-[10px] font-bold border-emerald-200 text-emerald-800 bg-white hover:bg-emerald-100 gap-1"
+              className="h-8 text-xs font-semibold border-[#E8EEF4] text-[#0B1528] bg-white hover:bg-[#F4F7FB] gap-1.5"
             >
-              + Add Departure Ticket
+              <Plus className="w-3.5 h-3.5 text-slate-400" /> Add departure
+              ticket
             </Button>
           </div>
 
           {departureTickets.length === 0 ? (
-            <div className="p-5 text-center text-slate-400 italic">
+            <div className="px-4 py-6 text-center text-slate-400">
               No departure tickets created yet.
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-w-0">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="px-4 py-2">Traveler</th>
-                    <th className="px-4 py-2">Status & Lifecycle</th>
-                    <th className="px-4 py-2 font-mono">PNR</th>
-                    <th className="px-4 py-2">Train Name & Route</th>
-                    <th className="px-4 py-2">Internal Cost</th>
-                    <th className="px-4 py-2">Approval & Actions</th>
-                    <th className="px-4 py-2 text-right">Actions</th>
+                  <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                    <th className="px-4 py-2.5">Traveller</th>
+                    <th className="px-4 py-2.5">Status</th>
+                    <th className="px-4 py-2.5">PNR</th>
+                    <th className="px-4 py-2.5">Train &amp; route</th>
+                    <th className="px-4 py-2.5">Internal cost</th>
+                    <th className="px-4 py-2.5">Approval</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E8EEF4]">
                   {departureTickets.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 font-bold text-slate-800">
+                    <tr key={t.id} className="hover:bg-[#F8FAFC]">
+                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
                         <div>{t.travelerName}</div>
                         {(() => {
                           const phone = getTravelerPhone(t.travelerName);
@@ -1288,10 +1307,10 @@ export default function TrainTicketsPanel({
                           <StatusPill status={t.ticketStatus} />
                           <span
                             className={cn(
-                              "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border",
+                              "px-1.5 py-0.5 rounded text-[8px] font-semibold border",
                               t.paidBy === "CUSTOMER"
                                 ? "bg-purple-50 text-purple-700 border-purple-200"
-                                : "bg-slate-100 text-slate-700 border-slate-200",
+                                : "bg-slate-100 text-slate-700 border-[#E8EEF4]",
                             )}
                           >
                             {t.paidBy === "CUSTOMER" ? "Customer Paid" : "Company Paid"}
@@ -1307,12 +1326,12 @@ export default function TrainTicketsPanel({
                             )}
                             {Number(t.refundAmount || 0) > 0 && (
                               <div className="flex items-center gap-1 mt-0.5">
-                                <span className="font-bold text-emerald-700">
+                                <span className="font-semibold text-emerald-700">
                                   Refund: ₹{Number(t.refundAmount)}
                                 </span>
                                 <span
                                   className={cn(
-                                    "px-1 py-0.2 rounded text-[8px] font-bold uppercase",
+                                    "px-1 py-0.2 rounded text-[8px] font-semibold uppercase",
                                     t.refundStatus === "COMPLETED"
                                       ? "bg-emerald-100 text-emerald-800"
                                       : "bg-amber-100 text-amber-800",
@@ -1325,19 +1344,19 @@ export default function TrainTicketsPanel({
                           </div>
                         )}
                         {t.supersedesTicketId && (
-                          <div className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">
+                          <div className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">
                             ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
                           </div>
                         )}
                         {t.supersededByTicketId && (
-                          <div className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
+                          <div className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
                             ↳ Replaced by #{t.supersededByTicketId.slice(-6)}
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-slate-800 font-black">
+                      <td className="px-4 py-2.5 font-mono text-[#0B1528] font-semibold">
                         {t.pnr ? (
-                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-900 font-mono">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-[#E8EEF4] text-slate-900 font-mono">
                             {t.pnr}
                           </span>
                         ) : (
@@ -1345,7 +1364,7 @@ export default function TrainTicketsPanel({
                         )}
                       </td>
                       <td className="px-4 py-2.5 text-slate-700 font-medium">
-                        <div className="font-bold text-slate-900">
+                        <div className="font-semibold text-slate-900">
                           {t.trainName || "—"} {t.trainNumber ? `(${t.trainNumber})` : ""}
                         </div>
                         {t.sourceStation && (
@@ -1354,7 +1373,7 @@ export default function TrainTicketsPanel({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-bold text-slate-800">
+                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
                         ₹{Number(t.ticketAmount || 0).toLocaleString("en-IN")}
                       </td>
                       <td className="px-4 py-2.5">
@@ -1365,7 +1384,7 @@ export default function TrainTicketsPanel({
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveTicket(t)}
-                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0 gap-1 rounded shadow-xs"
+                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-2 py-0 gap-1 rounded"
                                 title="Approve Ticket"
                               >
                                 <Check className="w-3 h-3" /> Approve
@@ -1374,7 +1393,7 @@ export default function TrainTicketsPanel({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenReject(t)}
-                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-bold px-2 py-0 gap-1 rounded"
+                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold px-2 py-0 gap-1 rounded"
                                 title="Reject Ticket"
                               >
                                 <Ban className="w-3 h-3" /> Reject
@@ -1386,7 +1405,7 @@ export default function TrainTicketsPanel({
                               size="sm"
                               variant="outline"
                               onClick={() => handleSubmitTicket(t)}
-                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-bold px-2 py-0 gap-1 rounded"
+                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-semibold px-2 py-0 gap-1 rounded"
                               title="Submit for Manager Approval"
                             >
                               <Send className="w-2.5 h-2.5" /> Submit
@@ -1397,7 +1416,7 @@ export default function TrainTicketsPanel({
                               size="sm"
                               variant="outline"
                               onClick={() => handleReopenTicket(t)}
-                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-bold px-2 py-0 gap-1 rounded"
+                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-semibold px-2 py-0 gap-1 rounded"
                               title="Reopen Ticket to Draft"
                             >
                               <RotateCcw className="w-2.5 h-2.5" /> Reopen
@@ -1412,20 +1431,20 @@ export default function TrainTicketsPanel({
                               <>
                                 <button
                                   onClick={() => handleEdit(t)}
-                                  className="text-blue-600 hover:underline font-bold text-[10px] px-1 py-0.5"
+                                  className="text-blue-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => handleOpenReticket(t)}
-                                  className="text-indigo-600 hover:underline font-bold text-[10px] px-1 py-0.5"
+                                  className="text-indigo-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                   title="Reticket to different date/train"
                                 >
                                   Reticket
                                 </button>
                                 <button
                                   onClick={() => handleOpenCancel(t)}
-                                  className="text-rose-600 hover:underline font-bold text-[10px] px-1 py-0.5"
+                                  className="text-rose-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                 >
                                   Cancel
                                 </button>
@@ -1434,14 +1453,14 @@ export default function TrainTicketsPanel({
                             {t.ticketStatus === "CANCELLED" && Number(t.refundAmount || 0) > 0 && t.refundStatus !== "COMPLETED" && (
                               <button
                                 onClick={() => handleOpenRefund(t)}
-                                className="text-emerald-700 hover:underline font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                                className="text-emerald-700 hover:underline font-semibold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
                               >
                                 Record Refund
                               </button>
                             )}
                             <button
                               onClick={() => handleViewHistory(t.id)}
-                              className="text-slate-500 hover:text-slate-800 font-bold text-[10px] px-1 py-0.5"
+                              className="text-slate-500 hover:text-[#0B1528] font-semibold text-[10px] px-1 py-0.5"
                               title="Audit History"
                             >
                               History
@@ -1458,46 +1477,49 @@ export default function TrainTicketsPanel({
         </div>
 
         {/* Return Journey Section */}
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs space-y-0">
-          <div className="px-4 py-3 bg-blue-50/60 border-b border-slate-200 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <RotateCcw className="w-4 h-4 text-blue-600" />
-              <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                Return Journey ({returnTickets.length} Tickets)
+        <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden min-w-0">
+          <div className="px-4 py-3 border-b border-[#E8EEF4] flex flex-wrap justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <RotateCcw className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <h4 className="font-semibold text-[#0B1528] text-xs truncate">
+                Return journey
               </h4>
+              <span className="text-[11px] text-slate-400 shrink-0">
+                {returnTickets.length} tickets
+              </span>
             </div>
             <Button
               size="sm"
               variant="outline"
               onClick={handleOpenAddReturn}
-              className="h-7 text-[10px] font-bold border-blue-200 text-blue-800 bg-white hover:bg-blue-100 gap-1"
+              className="h-8 text-xs font-semibold border-[#E8EEF4] text-[#0B1528] bg-white hover:bg-[#F4F7FB] gap-1.5"
             >
-              + Add Return Ticket
+              <Plus className="w-3.5 h-3.5 text-slate-400" /> Add return ticket
             </Button>
           </div>
 
           {returnTickets.length === 0 ? (
-            <div className="p-5 text-center text-slate-400 italic">
+            <div className="px-4 py-6 text-center text-slate-400">
               No return tickets created yet.
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-w-0">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="px-4 py-2">Traveler</th>
-                    <th className="px-4 py-2">Status & Lifecycle</th>
-                    <th className="px-4 py-2 font-mono">PNR</th>
-                    <th className="px-4 py-2">Train Name & Route</th>
-                    <th className="px-4 py-2">Internal Cost</th>
-                    <th className="px-4 py-2">Approval & Actions</th>
-                    <th className="px-4 py-2 text-right">Actions</th>
+                  <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                    <th className="px-4 py-2.5">Traveller</th>
+                    <th className="px-4 py-2.5">Status</th>
+                    <th className="px-4 py-2.5">PNR</th>
+                    <th className="px-4 py-2.5">Train &amp; route</th>
+                    <th className="px-4 py-2.5">Internal cost</th>
+                    <th className="px-4 py-2.5">Approval</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E8EEF4]">
                   {returnTickets.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 font-bold text-slate-800">
+                    <tr key={t.id} className="hover:bg-[#F8FAFC]">
+                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
                         <div>{t.travelerName}</div>
                         {(() => {
                           const phone = getTravelerPhone(t.travelerName);
@@ -1518,10 +1540,10 @@ export default function TrainTicketsPanel({
                           <StatusPill status={t.ticketStatus} />
                           <span
                             className={cn(
-                              "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border",
+                              "px-1.5 py-0.5 rounded text-[8px] font-semibold border",
                               t.paidBy === "CUSTOMER"
                                 ? "bg-purple-50 text-purple-700 border-purple-200"
-                                : "bg-slate-100 text-slate-700 border-slate-200",
+                                : "bg-slate-100 text-slate-700 border-[#E8EEF4]",
                             )}
                           >
                             {t.paidBy === "CUSTOMER" ? "Customer Paid" : "Company Paid"}
@@ -1537,12 +1559,12 @@ export default function TrainTicketsPanel({
                             )}
                             {Number(t.refundAmount || 0) > 0 && (
                               <div className="flex items-center gap-1 mt-0.5">
-                                <span className="font-bold text-emerald-700">
+                                <span className="font-semibold text-emerald-700">
                                   Refund: ₹{Number(t.refundAmount)}
                                 </span>
                                 <span
                                   className={cn(
-                                    "px-1 py-0.2 rounded text-[8px] font-bold uppercase",
+                                    "px-1 py-0.2 rounded text-[8px] font-semibold uppercase",
                                     t.refundStatus === "COMPLETED"
                                       ? "bg-emerald-100 text-emerald-800"
                                       : "bg-amber-100 text-amber-800",
@@ -1555,19 +1577,19 @@ export default function TrainTicketsPanel({
                           </div>
                         )}
                         {t.supersedesTicketId && (
-                          <div className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">
+                          <div className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">
                             ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
                           </div>
                         )}
                         {t.supersededByTicketId && (
-                          <div className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
+                          <div className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
                             ↳ Replaced by #{t.supersededByTicketId.slice(-6)}
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-slate-800 font-black">
+                      <td className="px-4 py-2.5 font-mono text-[#0B1528] font-semibold">
                         {t.pnr ? (
-                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-900 font-mono">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded border border-[#E8EEF4] text-slate-900 font-mono">
                             {t.pnr}
                           </span>
                         ) : (
@@ -1575,7 +1597,7 @@ export default function TrainTicketsPanel({
                         )}
                       </td>
                       <td className="px-4 py-2.5 text-slate-700 font-medium">
-                        <div className="font-bold text-slate-900">
+                        <div className="font-semibold text-slate-900">
                           {t.trainName || "—"} {t.trainNumber ? `(${t.trainNumber})` : ""}
                         </div>
                         {t.sourceStation && (
@@ -1584,7 +1606,7 @@ export default function TrainTicketsPanel({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-bold text-slate-800">
+                      <td className="px-4 py-2.5 font-semibold text-[#0B1528]">
                         ₹{Number(t.ticketAmount || 0).toLocaleString("en-IN")}
                       </td>
                       <td className="px-4 py-2.5">
@@ -1595,7 +1617,7 @@ export default function TrainTicketsPanel({
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveTicket(t)}
-                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0 gap-1 rounded shadow-xs"
+                                className="h-6 text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-2 py-0 gap-1 rounded"
                                 title="Approve Ticket"
                               >
                                 <Check className="w-3 h-3" /> Approve
@@ -1604,7 +1626,7 @@ export default function TrainTicketsPanel({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenReject(t)}
-                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-bold px-2 py-0 gap-1 rounded"
+                                className="h-6 text-[9px] text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold px-2 py-0 gap-1 rounded"
                                 title="Reject Ticket"
                               >
                                 <Ban className="w-3 h-3" /> Reject
@@ -1616,7 +1638,7 @@ export default function TrainTicketsPanel({
                               size="sm"
                               variant="outline"
                               onClick={() => handleSubmitTicket(t)}
-                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-bold px-2 py-0 gap-1 rounded"
+                              className="h-6 text-[9px] text-amber-800 border-amber-200 bg-amber-50 hover:bg-amber-100 font-semibold px-2 py-0 gap-1 rounded"
                               title="Submit for Manager Approval"
                             >
                               <Send className="w-2.5 h-2.5" /> Submit
@@ -1627,7 +1649,7 @@ export default function TrainTicketsPanel({
                               size="sm"
                               variant="outline"
                               onClick={() => handleReopenTicket(t)}
-                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-bold px-2 py-0 gap-1 rounded"
+                              className="h-6 text-[9px] text-blue-700 border-blue-200 bg-blue-50 hover:bg-blue-100 font-semibold px-2 py-0 gap-1 rounded"
                               title="Reopen Ticket to Draft"
                             >
                               <RotateCcw className="w-2.5 h-2.5" /> Reopen
@@ -1642,20 +1664,20 @@ export default function TrainTicketsPanel({
                               <>
                                 <button
                                   onClick={() => handleEdit(t)}
-                                  className="text-blue-600 hover:underline font-bold text-[10px] px-1 py-0.5"
+                                  className="text-blue-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => handleOpenReticket(t)}
-                                  className="text-indigo-600 hover:underline font-bold text-[10px] px-1 py-0.5"
+                                  className="text-indigo-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                   title="Reticket to different date/train"
                                 >
                                   Reticket
                                 </button>
                                 <button
                                   onClick={() => handleOpenCancel(t)}
-                                  className="text-rose-600 hover:underline font-bold text-[10px] px-1 py-0.5"
+                                  className="text-rose-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                 >
                                   Cancel
                                 </button>
@@ -1664,14 +1686,14 @@ export default function TrainTicketsPanel({
                             {t.ticketStatus === "CANCELLED" && Number(t.refundAmount || 0) > 0 && t.refundStatus !== "COMPLETED" && (
                               <button
                                 onClick={() => handleOpenRefund(t)}
-                                className="text-emerald-700 hover:underline font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                                className="text-emerald-700 hover:underline font-semibold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
                               >
                                 Record Refund
                               </button>
                             )}
                             <button
                               onClick={() => handleViewHistory(t.id)}
-                              className="text-slate-500 hover:text-slate-800 font-bold text-[10px] px-1 py-0.5"
+                              className="text-slate-500 hover:text-[#0B1528] font-semibold text-[10px] px-1 py-0.5"
                               title="Audit History"
                             >
                               History
@@ -1692,21 +1714,21 @@ export default function TrainTicketsPanel({
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
               <Ban className="w-4 h-4 text-rose-600" /> Cancel Train Ticket
             </DialogTitle>
           </DialogHeader>
           {ticketToCancel && (
             <div className="space-y-3 py-2 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200 space-y-1">
-                <div className="flex justify-between font-bold text-slate-800">
+              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] space-y-1">
+                <div className="flex justify-between font-semibold text-[#0B1528]">
                   <span>{ticketToCancel.travelerName}</span>
                   <span className="font-mono">PNR: {ticketToCancel.pnr || "N/A"}</span>
                 </div>
                 <div className="text-[11px] text-slate-500">
                   {ticketToCancel.trainName} ({ticketToCancel.trainNumber}) • Coach {ticketToCancel.coach || "-"}-{ticketToCancel.seatNumber || "-"}
                 </div>
-                <div className="text-[11px] font-bold text-emerald-700 pt-1 border-t border-slate-200 mt-1 flex justify-between">
+                <div className="text-[11px] font-semibold text-emerald-700 pt-1 border-t border-[#E8EEF4] mt-1 flex justify-between">
                   <span>Current Ticket Internal Cost:</span>
                   <span>₹{Number(ticketToCancel.ticketAmount || 0).toLocaleString("en-IN")}</span>
                 </div>
@@ -1714,7 +1736,7 @@ export default function TrainTicketsPanel({
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     Railway Cancellation Fee (₹)
                   </label>
                   <Input
@@ -1722,11 +1744,11 @@ export default function TrainTicketsPanel({
                     value={cancelRailwayCharge}
                     onChange={(e) => setCancelRailwayCharge(e.target.value)}
                     placeholder="e.g. 500"
-                    className="h-8 text-xs font-mono font-bold text-rose-600"
+                    className="h-8 text-xs font-mono font-semibold text-rose-600"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     YC Cancellation Fee (₹)
                   </label>
                   <Input
@@ -1734,15 +1756,15 @@ export default function TrainTicketsPanel({
                     value={cancelYcCharge}
                     onChange={(e) => setCancelYcCharge(e.target.value)}
                     placeholder="e.g. 100"
-                    className="h-8 text-xs font-mono font-bold text-slate-700"
+                    className="h-8 text-xs font-mono font-semibold text-slate-700"
                   />
                 </div>
               </div>
 
               {/* Real-time refund due calculation */}
               <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded flex justify-between items-center">
-                <span className="font-bold text-emerald-800 text-[11px]">Net Refund Due / Credit:</span>
-                <span className="font-extrabold text-sm text-emerald-700 font-mono">
+                <span className="font-semibold text-emerald-800 text-[11px]">Net Refund Due / Credit:</span>
+                <span className="font-semibold text-sm text-emerald-700 font-mono">
                   ₹{Math.max(
                     0,
                     Number(ticketToCancel.ticketAmount || 0) -
@@ -1753,7 +1775,7 @@ export default function TrainTicketsPanel({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Cancellation Reason *
                 </label>
                 <Input
@@ -1766,7 +1788,7 @@ export default function TrainTicketsPanel({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Internal Notes
                 </label>
                 <Textarea
@@ -1794,7 +1816,7 @@ export default function TrainTicketsPanel({
               disabled={actionBusy || !cancelReason.trim()}
               onClick={handleSubmitCancel}
               size="sm"
-              className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold"
+              className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold"
             >
               {actionBusy ? "Processing..." : "Confirm Cancellation"}
             </Button>
@@ -1806,14 +1828,14 @@ export default function TrainTicketsPanel({
       <Dialog open={reticketModalOpen} onOpenChange={setReticketModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-indigo-600" /> Reticket Passenger
             </DialogTitle>
           </DialogHeader>
           {ticketToReticket && (
             <div className="space-y-3 py-2 text-xs max-h-[70vh] overflow-y-auto pr-1">
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200 space-y-1">
-                <div className="flex justify-between font-bold text-slate-800">
+              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] space-y-1">
+                <div className="flex justify-between font-semibold text-[#0B1528]">
                   <span>{ticketToReticket.travelerName}</span>
                   <span>Old Cost: ₹{Number(ticketToReticket.ticketAmount || 0)}</span>
                 </div>
@@ -1824,7 +1846,7 @@ export default function TrainTicketsPanel({
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     Old Railway Deduction (₹)
                   </label>
                   <Input
@@ -1832,11 +1854,11 @@ export default function TrainTicketsPanel({
                     value={reticketRailwayCharge}
                     onChange={(e) => setReticketRailwayCharge(e.target.value)}
                     placeholder="0"
-                    className="h-8 text-xs font-mono font-bold text-rose-600"
+                    className="h-8 text-xs font-mono font-semibold text-rose-600"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     New Ticket Fare / Cost (₹) *
                   </label>
                   <Input
@@ -1844,7 +1866,7 @@ export default function TrainTicketsPanel({
                     value={reticketNewCost}
                     onChange={(e) => setReticketNewCost(e.target.value)}
                     placeholder="e.g. 2100"
-                    className="h-8 text-xs font-mono font-bold text-emerald-700"
+                    className="h-8 text-xs font-mono font-semibold text-emerald-700"
                   />
                 </div>
               </div>
@@ -1859,12 +1881,12 @@ export default function TrainTicketsPanel({
                 return (
                   <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded flex justify-between items-center">
                     <div>
-                      <div className="font-bold text-indigo-900 text-[11px]">Net Financial Adjustment:</div>
+                      <div className="font-semibold text-indigo-900 text-[11px]">Net Financial Adjustment:</div>
                       <div className="text-[9px] text-indigo-700">
                         New Fare (₹{newCost}) - Old Refund Due (₹{oldRefund})
                       </div>
                     </div>
-                    <span className="font-extrabold text-sm text-indigo-900 font-mono">
+                    <span className="font-semibold text-sm text-indigo-900 font-mono">
                       {netDiff >= 0 ? `+₹${netDiff.toLocaleString("en-IN")}` : `-₹${Math.abs(netDiff).toLocaleString("en-IN")}`}
                     </span>
                   </div>
@@ -1873,7 +1895,7 @@ export default function TrainTicketsPanel({
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     New Train Name
                   </label>
                   <Input
@@ -1884,7 +1906,7 @@ export default function TrainTicketsPanel({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     New Train Number
                   </label>
                   <Input
@@ -1898,7 +1920,7 @@ export default function TrainTicketsPanel({
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     New Journey Date
                   </label>
                   <Input
@@ -1909,7 +1931,7 @@ export default function TrainTicketsPanel({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">
+                  <label className="text-[9px] font-semibold uppercase text-slate-500">
                     Coach & Seat
                   </label>
                   <div className="grid grid-cols-2 gap-1">
@@ -1930,7 +1952,7 @@ export default function TrainTicketsPanel({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Reason for Reticketing
                 </label>
                 <Input
@@ -1957,7 +1979,7 @@ export default function TrainTicketsPanel({
               disabled={actionBusy}
               onClick={handleSubmitReticket}
               size="sm"
-              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold"
             >
               {actionBusy ? "Rebooking..." : "Create Rebooked Ticket"}
             </Button>
@@ -1969,22 +1991,22 @@ export default function TrainTicketsPanel({
       <Dialog open={refundModalOpen} onOpenChange={setRefundModalOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
               <Receipt className="w-4 h-4 text-emerald-600" /> Record Refund in Finance
             </DialogTitle>
           </DialogHeader>
           {ticketForRefund && (
             <div className="space-y-3 py-2 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded border border-slate-200 space-y-1">
-                <div className="font-bold text-slate-800">{ticketForRefund.travelerName}</div>
-                <div className="flex justify-between font-bold text-emerald-700">
+              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] space-y-1">
+                <div className="font-semibold text-[#0B1528]">{ticketForRefund.travelerName}</div>
+                <div className="flex justify-between font-semibold text-emerald-700">
                   <span>Refund Due:</span>
                   <span>₹{Number(ticketForRefund.refundAmount || 0).toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Refund Status *
                 </label>
                 <Select value={refundStatus} onValueChange={setRefundStatus}>
@@ -2000,7 +2022,7 @@ export default function TrainTicketsPanel({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Transaction / UTR Reference
                 </label>
                 <Input
@@ -2012,19 +2034,19 @@ export default function TrainTicketsPanel({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Confirmed Refund Amount (₹)
                 </label>
                 <Input
                   type="number"
                   value={refundCustomAmount}
                   onChange={(e) => setRefundCustomAmount(e.target.value)}
-                  className="h-8 text-xs font-mono font-bold text-emerald-700"
+                  className="h-8 text-xs font-mono font-semibold text-emerald-700"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Internal Notes
                 </label>
                 <Textarea
@@ -2052,7 +2074,7 @@ export default function TrainTicketsPanel({
               disabled={actionBusy}
               onClick={handleSubmitRefund}
               size="sm"
-              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
             >
               {actionBusy ? "Saving..." : "Save Refund Record"}
             </Button>
@@ -2064,7 +2086,7 @@ export default function TrainTicketsPanel({
       <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
               <History className="w-4 h-4 text-slate-600" /> Ticket Audit History
             </DialogTitle>
           </DialogHeader>
@@ -2075,9 +2097,9 @@ export default function TrainTicketsPanel({
               <div className="py-8 text-center text-slate-400 italic">No history logged yet.</div>
             ) : (
               ticketHistory.map((item, i) => (
-                <div key={i} className="p-2.5 bg-slate-50 border border-slate-200 rounded space-y-1">
-                  <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800">
+                <div key={i} className="p-2.5 bg-slate-50 border border-[#E8EEF4] rounded space-y-1">
+                  <div className="flex justify-between items-center text-[10px] font-semibold">
+                    <span className="px-1.5 py-0.5 rounded bg-slate-200 text-[#0B1528]">
                       {item.action}
                     </span>
                     <span className="text-slate-400">
@@ -2111,14 +2133,14 @@ export default function TrainTicketsPanel({
       <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
               <Ban className="w-4 h-4 text-rose-600" /> Reject Train Ticket
             </DialogTitle>
           </DialogHeader>
           {ticketToReject && (
             <div className="space-y-3 py-2 text-xs">
               <div className="bg-rose-50 border border-rose-200 p-2.5 rounded text-rose-900 space-y-0.5">
-                <div className="font-bold">
+                <div className="font-semibold">
                   {ticketToReject.travelerName} • PNR: {ticketToReject.pnr || "—"}
                 </div>
                 <div className="text-[11px] text-rose-700">
@@ -2127,7 +2149,7 @@ export default function TrainTicketsPanel({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Reason for Rejection *
                 </label>
                 <Textarea
@@ -2155,7 +2177,7 @@ export default function TrainTicketsPanel({
               disabled={isRejecting || !rejectionNotes.trim()}
               onClick={handleConfirmReject}
               size="sm"
-              className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold"
+              className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold"
             >
               {isRejecting ? "Rejecting..." : "Confirm Rejection"}
             </Button>

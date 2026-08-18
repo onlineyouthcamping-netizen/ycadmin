@@ -1,6 +1,7 @@
 import React from "react";
 import { CheckCircle2, Circle, AlertCircle } from "lucide-react";
 import { NormalizedPassenger } from "@/utils/passengerUtils";
+import { cn } from "@/lib/utils";
 
 interface PassengerTimelineProps {
   passenger: NormalizedPassenger;
@@ -107,101 +108,108 @@ export function PassengerTimeline({
     },
   ];
 
+  const completedCount = steps.filter((s) => s.completed).length;
+  const progressPct = Math.min(
+    100,
+    (completedCount / (steps.length - 1)) * 100,
+  );
+
   return (
-    <div className="py-2 px-1 w-full space-y-2">
-      <div className="flex justify-between items-center relative min-w-[360px] overflow-x-auto scrollbar-none pb-1">
-        <div className="absolute top-3 left-3 right-3 h-0.5 bg-slate-150 -z-10 rounded-full"></div>
-        <div
-          className="absolute top-3 left-3 h-0.5 bg-emerald-500 -z-10 transition-all duration-500 ease-in-out"
-          style={{
-            width: `${(steps.filter((s) => s.completed).length / (steps.length - 1)) * 100}%`,
-          }}
-        ></div>
+    <div className="w-full space-y-3">
+      <div className="-mx-1 overflow-x-auto scrollbar-none px-1">
+        <div className="relative flex min-w-[430px] items-start justify-between gap-1 pt-1">
+          <div className="absolute left-4 right-4 top-3.5 h-[3px] rounded-full bg-[#E8EEF4]" />
+          <div
+            className="absolute left-4 top-3.5 h-[3px] rounded-full bg-emerald-500/80 transition-all duration-500 ease-in-out"
+            style={{ width: `calc((100% - 2rem) * ${progressPct} / 100)` }}
+          />
 
-        {steps.map((step, idx) => {
-          const isActive = activeStep === idx;
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => onSelectStep && onSelectStep(idx)}
-              className="flex flex-col items-center group relative cursor-pointer focus:outline-none px-1"
-              title={`${step.label}: ${step.completed ? "Complete ✓" : step.actionRequired ? "Action Required !" : "Pending"}`}
-            >
-              <div
-                className={`w-6.5 h-6.5 rounded-full flex items-center justify-center border-2 transition-all ${
-                  isActive
-                    ? "ring-2 ring-orange-500 ring-offset-2 shadow-xs"
-                    : ""
-                } ${
-                  step.completed
-                    ? "border-emerald-500 bg-white text-emerald-600"
-                    : step.actionRequired
-                      ? "border-amber-500 bg-amber-50 text-amber-600"
-                      : "border-slate-300 bg-white text-slate-300"
-                }`}
+          {steps.map((step, idx) => {
+            const isActive = activeStep === idx;
+            const stateText = step.completed
+              ? "Complete"
+              : step.actionRequired
+                ? "Action required"
+                : "Pending";
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => onSelectStep && onSelectStep(idx)}
+                className="relative z-10 flex flex-1 min-w-[48px] cursor-pointer flex-col items-center gap-2 focus:outline-none"
+                title={`${step.label}: ${stateText}`}
               >
-                {step.completed ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                ) : step.actionRequired ? (
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                ) : (
-                  <Circle className="w-2.5 h-2.5 text-slate-300 fill-slate-100 shrink-0" />
-                )}
-              </div>
-
-              {/* Tooltip for step label (floating above step circle) */}
-              <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-max px-2 py-0.5 bg-slate-900 text-white text-[9.5px] font-bold rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
-                {step.label}: {step.completed ? "Complete ✓" : step.actionRequired ? "Action Required !" : "Pending"}
-              </div>
-
-              <div
-                className={`mt-1.5 text-[9.5px] whitespace-nowrap text-center transition-colors ${
-                  isActive
-                    ? "text-orange-600 font-black underline"
-                    : step.completed
-                      ? "text-emerald-700 font-bold"
+                <span
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-full border-2 bg-white transition-all",
+                    isActive && "ring-2 ring-[#FF4D00]/40 ring-offset-2",
+                    step.completed
+                      ? "border-emerald-500/70 text-emerald-600"
                       : step.actionRequired
-                        ? "text-amber-700 font-bold"
-                        : "text-slate-400 font-medium"
-                }`}
-              >
-                {step.label}
-              </div>
-            </button>
-          );
-        })}
+                        ? "border-[#FF4D00]/45 bg-[#FF4D00]/[0.07] text-[#FF4D00]"
+                        : "border-[#E8EEF4] text-slate-300",
+                  )}
+                >
+                  {step.completed ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  ) : step.actionRequired ? (
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <Circle className="h-2.5 w-2.5 shrink-0 fill-slate-100" />
+                  )}
+                </span>
+
+                <span
+                  className={cn(
+                    "whitespace-nowrap text-center text-[10px] leading-none transition-colors",
+                    isActive
+                      ? "font-semibold text-[#FF4D00]"
+                      : step.completed
+                        ? "font-medium text-emerald-700"
+                        : step.actionRequired
+                          ? "font-semibold text-[#9A3412]"
+                          : "font-medium text-slate-400",
+                  )}
+                >
+                  {step.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Derived Readiness Badge Banner (Shown only when no specific step detail is open) */}
       {activeStep === undefined && (
         <div
-          className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-bold border ${
+          className={cn(
+            "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border px-3 py-2",
             isDepartureReady
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : "bg-amber-50 text-amber-800 border-amber-200"
-          }`}
+              ? "border-emerald-200 bg-emerald-50/70"
+              : "border-[#FF4D00]/20 bg-[#FF4D00]/[0.06]",
+          )}
         >
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {isDepartureReady ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-[#FF4D00]" />
             )}
-            <span>
-              Departure Readiness:{" "}
-              <span
-                className={
-                  isDepartureReady ? "text-emerald-700" : "text-amber-700"
-                }
-              >
-                {isDepartureReady ? "READY FOR DEPARTURE" : "ACTION REQUIRED"}
-              </span>
+            <span className="text-[11px] font-medium text-slate-500">
+              Departure readiness
+            </span>
+            <span
+              className={cn(
+                "text-[11px] font-semibold",
+                isDepartureReady ? "text-emerald-800" : "text-[#9A3412]",
+              )}
+            >
+              {isDepartureReady ? "Ready for departure" : "Action required"}
             </span>
           </div>
           {!isDepartureReady && missingRequirements.length > 0 && (
-            <span className="text-[10px] font-normal text-amber-700 truncate max-w-[220px]">
-              Missing: {missingRequirements.join(", ")}
+            <span className="max-w-[240px] truncate text-[10px] text-[#9A3412]/80">
+              Pending: {missingRequirements.join(", ")}
             </span>
           )}
         </div>

@@ -96,7 +96,7 @@ export default function TrainTemplatesPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in p-6 bg-[#F4F7FB] min-h-screen -mx-6 -my-6">
+    <div className="admin-page animate-fade-in">
       {/* Page Header */}
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4 bg-white -mx-6 -mt-6 p-6 shadow-sm">
         <div className="flex items-center gap-2.5">

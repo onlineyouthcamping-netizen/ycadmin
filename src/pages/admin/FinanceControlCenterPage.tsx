@@ -977,7 +977,7 @@ export default function FinanceControlCenterPage({
         ))}
       </div>
 
-      <div className="sticky top-[72px] z-20 -mx-1 px-1 bg-[#F4F7FB]/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-20 -mx-1 bg-[#F4F7FB]/95 px-1 backdrop-blur-sm">
         <div className="flex items-center gap-1.5 border-b border-slate-200 overflow-x-auto no-scrollbar">
           {queueTabs.map((tab) => {
             const count = queueCounts[tab.id];

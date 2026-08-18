@@ -1156,7 +1156,7 @@ function DayDetailDrawer({
                   <SharingDisplay
                     type="Triple"
                     pax={daySharing.triplePax}
-                    color="bg-purple-50 border-purple-200 text-purple-700"
+                    color="bg-orange-50 border-orange-200 text-orange-700"
                   />
                 )}
                 {daySharing.quadPax > 0 && (

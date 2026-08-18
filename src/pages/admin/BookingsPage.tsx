@@ -945,7 +945,7 @@ export default function BookingsPage() {
                 Mark Complete
               </button>
               <button
-                className="h-8 px-3 rounded border border-indigo-400/40 bg-indigo-650 hover:bg-indigo-600 text-white font-bold text-xs transition-colors cursor-pointer"
+                className="h-8 px-3 rounded border border-orange-400/40 bg-orange-650 hover:bg-orange-600 text-white font-bold text-xs transition-colors cursor-pointer"
                 onClick={() => setIsBulkEmailOpen(true)}
               >
                 Send Email

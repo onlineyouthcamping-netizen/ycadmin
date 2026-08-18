@@ -194,9 +194,9 @@ export default function RolesPage() {
   const customRoles = roles.filter((r) => !r.isSystem);
 
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+    <div className="admin-page">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-lg border border-slate-800">
+      <div className="flex flex-col justify-between gap-4 rounded-xl border border-[#152238] bg-[#0B1528] p-4 text-white sm:p-6 md:flex-row md:items-center">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-7 h-7 text-amber-500" />

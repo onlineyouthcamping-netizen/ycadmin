@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Search,
   Plus,
   Compass,
   AlertTriangle,
-  Users,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,86 +51,76 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({
   });
 
   return (
-    <div className="w-80 bg-white border-r border-[#E2E8F0] flex flex-col h-full overflow-hidden shrink-0 font-sans">
-      <div className="p-4 border-b border-[#E2E8F0] space-y-3 shrink-0">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-[#0A192F] uppercase tracking-wider">
-            My Trips
+    <div className="flex min-h-0 min-w-0 shrink-0 flex-col border-b border-[#E8EEF4] bg-white font-sans lg:h-full lg:w-[240px] lg:overflow-hidden lg:border-b-0 lg:border-r">
+      <div className="shrink-0 space-y-2 border-b border-[#E8EEF4] p-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="truncate text-[13px] font-semibold tracking-tight text-[#0B1528]">
+            My trips
           </h3>
-          <span className="text-[10px] font-semibold text-[#64748B] bg-[#F8FAFC] px-2 py-0.5 rounded border border-[#E2E8F0]">
-            {filteredTrips.length} Destinations
+          <span className="shrink-0 text-[11px] font-medium tabular-nums text-slate-500">
+            {filteredTrips.length} active
           </span>
         </div>
 
-        {/* TAB FILTER (DOMESTIC: Orange #F97316, INTERNATIONAL: Navy #0A192F) */}
-        <div className="flex gap-4 border-b border-[#E2E8F0]">
-          <button
-            onClick={() => setTripTypeFilter("domestic")}
-            className={cn(
-              "pb-2 text-xs font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer",
-              tripTypeFilter === "domestic"
-                ? "text-[#F97316] border-[#F97316]"
-                : "text-[#0A192F] border-transparent hover:text-[#F97316]",
-            )}
-          >
-            Domestic
-          </button>
-          <button
-            onClick={() => setTripTypeFilter("international")}
-            className={cn(
-              "pb-2 text-xs font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer",
-              tripTypeFilter === "international"
-                ? "text-[#F97316] border-[#F97316]"
-                : "text-[#0A192F] border-transparent hover:text-[#F97316]",
-            )}
-          >
-            International
-          </button>
+        {/* TRIP TYPE FILTER */}
+        <div className="flex items-center gap-0.5 rounded-lg border border-[#E8EEF4] bg-[#F8FAFC] p-0.5">
+          {(["domestic", "international"] as const).map((type) => (
+            <button
+              key={type}
+              onClick={() => setTripTypeFilter(type)}
+              className={cn(
+                "h-7 min-w-0 flex-1 truncate rounded-md px-1 text-[11.5px] font-medium capitalize transition-colors",
+                tripTypeFilter === type
+                  ? "bg-white text-[#FF4D00] shadow-xs"
+                  : "text-slate-500 hover:text-[#0B1528]",
+              )}
+            >
+              {type}
+            </button>
+          ))}
         </div>
 
-        {/* SEARCH */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search active trips..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg pl-3 pr-8 py-2 text-xs font-medium placeholder-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#F97316] text-[#0A192F]"
-          />
-          <Search className="absolute right-3 top-2.5 text-[#64748B] w-3.5 h-3.5" />
-        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search trips"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 w-full rounded-lg border border-[#E8EEF4] bg-[#F8FAFC] pl-8 pr-2.5 text-[12px] font-medium text-[#0B1528] placeholder-slate-400 transition-colors focus:border-[#0B1528]/20 focus:bg-white focus:outline-none"
+            />
+          </div>
 
-        {/* ACTION BUTTONS: MANUALLY ADD DESTINATION & ACTIVATE MASTER */}
-        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={onAddTripClick}
-            className="flex items-center justify-center gap-1 bg-[#F97316] hover:bg-[#ea580c] text-white py-2 px-2 rounded-lg font-bold text-[11px] transition-colors shadow-xs cursor-pointer truncate"
-            title="Manually Add Destination Trip"
+            aria-label="New trip"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FF4D00] text-white transition-colors hover:bg-[#E04400]"
+            title="Add a destination trip manually"
           >
-            <Plus className="w-3 h-3" />+ New Trip
-          </button>
-
-          <button
-            onClick={onFeedClick}
-            className="flex items-center justify-center gap-1 bg-[#0A192F] text-white py-2 px-2 rounded-lg font-bold text-[11px] hover:bg-[#112240] transition-colors shadow-xs cursor-pointer truncate"
-            title="Activate Existing Master Trip"
-          >
-            <Compass className="w-3 h-3 text-[#F97316]" />
-            Activate
+            <Plus className="h-4 w-4" strokeWidth={2.25} />
           </button>
         </div>
+
+        <button
+          onClick={onFeedClick}
+          className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#0B1528]/15 bg-white px-2 text-[11.5px] font-medium text-[#0B1528] transition-colors hover:border-[#0B1528] hover:bg-[#0B1528] hover:text-white"
+          title="Activate an existing master trip"
+        >
+          <Compass className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+          Activate existing trip
+        </button>
       </div>
 
-      {/* 8px Spacing Between Trip List Items */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div className="min-h-0 max-h-[320px] flex-1 space-y-1.5 overflow-y-auto p-3 lg:max-h-none">
         {isLoading ? (
-          <div className="flex justify-center p-4">
-            <div className="w-6 h-6 border-2 border-slate-200 border-t-[#F97316] rounded-full animate-spin" />
+          <div className="flex justify-center py-6">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#E8EEF4] border-t-[#FF4D00]" />
           </div>
         ) : filteredTrips.length === 0 ? (
-          <div className="text-center p-4 text-[#64748B] text-xs font-semibold">
+          <p className="py-6 text-center text-[12px] font-medium text-slate-500">
             No matching trips.
-          </div>
+          </p>
         ) : (
           filteredTrips.map((trip) => {
             const isActive = trip.id === activeTripId;
@@ -144,65 +133,68 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({
                   setSearchParams({ tripId: trip.id, tab: currentTab })
                 }
                 className={cn(
-                  "block p-2.5 rounded-xl border transition-all cursor-pointer",
+                  "cursor-pointer rounded-lg border px-2 py-1.5 transition-colors",
                   isActive
-                    ? "bg-[#FFF7ED] border-[#F97316]/40 shadow-xs"
-                    : "bg-white border-[#E2E8F0] hover:border-slate-300 hover:bg-[#F8FAFC]",
+                    ? "border-[#0B1528]/15 bg-[#F8FAFC]"
+                    : "border-transparent hover:bg-[#F8FAFC]",
                 )}
               >
-                <div className="flex gap-2.5 items-center">
-                  {/* Thumbnail Image */}
-                  <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 shrink-0 overflow-hidden rounded-md border border-[#E8EEF4] bg-[#F8FAFC]">
                     {trip.heroImage ? (
                       <img
                         src={trip.heroImage}
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                         alt=""
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400">
-                        <Compass className="w-4.5 h-4.5" />
+                      <div className="flex h-full w-full items-center justify-center text-slate-400">
+                        <Compass className="h-4 w-4" />
                       </div>
                     )}
                   </div>
 
-                  {/* Text Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
                       <h4
                         className={cn(
-                          "text-[12px] font-bold truncate pr-1.5",
-                          isActive ? "text-[#F97316]" : "text-[#0A192F]",
+                          "min-w-0 flex-1 truncate text-[12px] leading-tight text-[#0B1528]",
+                          isActive ? "font-semibold" : "font-medium",
                         )}
+                        title={trip.shortName || trip.title}
                       >
                         {trip.shortName || trip.title}
                       </h4>
                       {score < 50 && (
-                        <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444] shrink-0" />
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      {/* Trip Code MKA-1: Muted #64748B */}
-                      <p className="text-[10px] font-semibold text-[#64748B] truncate">
+                    <div className="mt-0.5 flex items-center gap-1">
+                      <p className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-500">
                         {trip.code || trip.id}
                       </p>
-
-                      {/* Progress Badge: Orange #F97316 if warning, Green #10B981 if good */}
-                      <div
+                      <span
                         className={cn(
-                          "px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0",
+                          "shrink-0 text-[11px] font-medium tabular-nums",
                           score >= 80
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "text-emerald-600"
                             : score >= 50
-                              ? "bg-[#FFF7ED] text-[#F97316] border border-[#F97316]/30"
-                              : "bg-rose-100 text-rose-800",
+                              ? "text-[#FF4D00]"
+                              : "text-rose-500",
                         )}
                       >
                         {score}%
-                      </div>
+                      </span>
                     </div>
                   </div>
+
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="h-8 w-[3px] shrink-0 rounded-full bg-[#FF4D00]"
+                    />
+                  )}
                 </div>
               </div>
             );
@@ -210,13 +202,12 @@ export const TravelDeskTripSidebar: React.FC<TravelDeskTripSidebarProps> = ({
         )}
       </div>
 
-      {/* FOOTER LINK */}
-      <div className="p-3 border-t border-[#E2E8F0] bg-[#F8FAFC] shrink-0 text-center">
+      <div className="shrink-0 border-t border-[#E8EEF4] px-3 py-2.5">
         <Link
           to="/admin/trips"
-          className="text-xs font-bold text-[#0A192F] hover:text-[#F97316] inline-flex items-center gap-0.5 transition-colors"
+          className="inline-flex items-center gap-0.5 text-[12px] font-medium text-slate-500 transition-colors hover:text-[#FF4D00]"
         >
-          View all trips <ChevronRight className="w-3.5 h-3.5" />
+          View all trips <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </div>

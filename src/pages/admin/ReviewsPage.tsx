@@ -203,7 +203,7 @@ export default function ReviewsPage() {
   }, [reviews]);
 
   return (
-    <div className="space-y-6 animate-fade-in p-6 bg-slate-50/50 min-h-screen -mx-6 -my-6">
+    <div className="admin-page animate-fade-in">
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs">
         <div className="flex items-center gap-3.5">
@@ -286,11 +286,11 @@ export default function ReviewsPage() {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
               Trips Covered
             </p>
-            <p className="text-2xl font-black text-purple-600 mt-1">
+            <p className="text-2xl font-black text-orange-600 mt-1">
               {stats.uniqueTrips}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
             <Sparkles className="w-5 h-5" />
           </div>
         </div>

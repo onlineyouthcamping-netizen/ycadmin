@@ -173,12 +173,12 @@ export default function EmailTemplatesPage() {
   );
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="admin-page">
       {/* Header Area */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white border border-slate-100 p-6 rounded-2xl shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Mail className="h-6 w-6 text-indigo-600" />
+      <div className="admin-page-header admin-card">
+        <div className="min-w-0">
+          <h1 className="admin-title flex items-center gap-2">
+            <Mail className="h-5 w-5 text-[#FF4D00]" />
             Email Templates
           </h1>
           <p className="text-xs font-semibold text-slate-500 mt-1">
@@ -188,7 +188,7 @@ export default function EmailTemplatesPage() {
         </div>
         <Button
           onClick={handleCreateNew}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+          className="admin-button-accent min-h-11 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Create Template
@@ -198,7 +198,7 @@ export default function EmailTemplatesPage() {
       {/* Main Grid View */}
       <div className="space-y-4">
         {/* Search Bar */}
-        <div className="flex max-w-md bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm items-center px-3.5 gap-2 focus-within:border-indigo-500 transition-colors">
+        <div className="flex w-full max-w-md items-center gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm transition-colors focus-within:border-[#FF4D00]">
           <Search className="h-4 w-4 text-slate-400 shrink-0" />
           <Input
             value={search}
@@ -217,7 +217,7 @@ export default function EmailTemplatesPage() {
             No email templates found matching search criteria.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-5">
             {filteredTemplates.map((template) => (
               <div
                 key={template.id}
@@ -229,7 +229,7 @@ export default function EmailTemplatesPage() {
               >
                 <div className="space-y-2">
                   <div className="flex justify-between items-center gap-2">
-                    <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full uppercase tracking-wide">
+                    <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-orange-700">
                       {template.category}
                     </span>
                     <span
@@ -261,7 +261,7 @@ export default function EmailTemplatesPage() {
                   <button
                     type="button"
                     onClick={() => handleToggleStatus(template)}
-                    className="text-slate-500 hover:text-indigo-600 transition-colors p-1"
+                    className="min-h-10 min-w-10 p-1 text-slate-500 transition-colors hover:text-[#FF4D00]"
                     title={
                       template.isActive
                         ? "Deactivate Template"
@@ -281,7 +281,7 @@ export default function EmailTemplatesPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEdit(template)}
-                      className="h-8 w-8 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg"
+                      className="h-10 w-10 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-[#FF4D00]"
                       title="Edit Template"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -291,7 +291,7 @@ export default function EmailTemplatesPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDuplicate(template.id)}
-                      className="h-8 w-8 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg"
+                      className="h-10 w-10 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-[#FF4D00]"
                       title="Duplicate Template"
                     >
                       <Copy className="h-4 w-4" />
@@ -301,7 +301,7 @@ export default function EmailTemplatesPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(template.id)}
-                      className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                      className="h-10 w-10 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-600"
                       title="Delete Template"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -319,10 +319,10 @@ export default function EmailTemplatesPage() {
         open={isEditOpen}
         onOpenChange={(open) => !open && setIsEditOpen(false)}
       >
-        <DialogContent className="max-w-[700px] w-full bg-white p-6 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogContent className="flex w-full max-w-[700px] flex-col overflow-hidden bg-white">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Mail className="h-5 w-5 text-indigo-600" />
+              <Mail className="h-5 w-5 text-[#FF4D00]" />
               {editingTemplate?.id
                 ? "Edit Email Template"
                 : "Create New Email Template"}
@@ -345,7 +345,7 @@ export default function EmailTemplatesPage() {
                       }))
                     }
                     placeholder="e.g. Booking Confirmation"
-                    className="border-slate-200 text-sm font-semibold focus:border-indigo-500"
+                    className="border-slate-200 text-sm font-semibold focus:border-orange-500"
                   />
                 </div>
                 <div>
@@ -360,7 +360,7 @@ export default function EmailTemplatesPage() {
                         category: e.target.value,
                       }))
                     }
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold outline-none focus:border-indigo-500 transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold outline-none focus:border-orange-500 transition-colors"
                   >
                     <option value="Booking">Booking</option>
                     <option value="Inquiry">Inquiry</option>
@@ -383,7 +383,7 @@ export default function EmailTemplatesPage() {
                     }))
                   }
                   placeholder="e.g. Your booking is confirmed! {{booking.reference}}"
-                  className="border-slate-200 text-sm font-semibold focus:border-indigo-500"
+                  className="border-slate-200 text-sm font-semibold focus:border-orange-500"
                 />
               </div>
 
@@ -505,7 +505,7 @@ export default function EmailTemplatesPage() {
             <Button
               type="button"
               onClick={handleSave}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 shadow-sm"
+              className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs px-5 shadow-sm"
             >
               Save Template
             </Button>

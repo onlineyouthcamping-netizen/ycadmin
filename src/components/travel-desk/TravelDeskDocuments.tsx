@@ -84,7 +84,7 @@ export const TravelDeskDocuments: React.FC<TravelDeskDocumentsProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto p-3">
       <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
         <div>
           <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">

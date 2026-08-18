@@ -132,7 +132,7 @@ export function AccommodationModuleView({
                   sType === "CAMP" || sType === "TENT"
                     ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
                     : sType === "RESORT"
-                    ? "bg-purple-50 text-purple-800 border-purple-200/80"
+                    ? "bg-orange-50 text-orange-800 border-orange-200/80"
                     : sType === "HOMESTAY"
                     ? "bg-[#F4F7FB] text-[#0B1528] border-[#E8EEF4]"
                     : "bg-[#F4F7FB] text-[#0B1528] border-[#E8EEF4]";

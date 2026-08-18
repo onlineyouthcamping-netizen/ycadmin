@@ -48,7 +48,7 @@ const TYPE_COLORS: Record<string, string> = {
   transport: "bg-amber-100 text-amber-700",
   guide: "bg-emerald-100 text-emerald-700",
   meals: "bg-orange-100 text-orange-700",
-  equipment: "bg-purple-100 text-purple-700",
+  equipment: "bg-orange-100 text-orange-700",
   other: "bg-gray-100 text-gray-700",
 };
 

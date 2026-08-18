@@ -2,7 +2,7 @@ import DocumentManager from "@/components/admin/DocumentManager";
 import { PassengerDrawer } from "./PassengerDrawer";
 import { PassengerTimeline } from "./PassengerTimeline";
 import api from "@/services/api";
-import { cn } from "@/lib/utils";
+import ENV from "@/config/environment";
 import {
   getPaymentReceivedColorClass,
   getPaymentReceivedColorHex,
@@ -49,8 +49,16 @@ import {
   UserCheck,
   Ban,
   ExternalLink,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -100,6 +108,92 @@ import type {
   ServiceRegistryItem,
   AuditLogItem,
 } from "@/types";
+
+/** Badge tints for the workspace tab strip — each tab keeps a stable hue so
+ *  scanning the row reads as a colour map rather than a wall of grey pills. */
+const TAB_BADGE_TONES: Record<string, { active: string; idle: string }> = {
+  slate: {
+    active: "bg-[#0B1528]/[0.07] text-[#0B1528] border border-[#0B1528]/10",
+    idle: "bg-[#F4F7FB] text-slate-500 border border-[#E8EEF4]",
+  },
+  emerald: {
+    active: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+    idle: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  },
+  amber: {
+    active: "bg-amber-100 text-amber-800 border border-amber-200",
+    idle: "bg-amber-50 text-amber-700 border border-amber-100",
+  },
+  orange: {
+    active: "bg-[#FF4D00]/15 text-[#C2410C] border border-[#FF4D00]/25",
+    idle: "bg-[#FF4D00]/[0.07] text-[#C2410C] border border-[#FF4D00]/15",
+  },
+  indigo: {
+    active: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+    idle: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+  },
+  violet: {
+    active: "bg-violet-100 text-violet-800 border border-violet-200",
+    idle: "bg-violet-50 text-violet-700 border border-violet-100",
+  },
+  sky: {
+    active: "bg-sky-100 text-sky-800 border border-sky-200",
+    idle: "bg-sky-50 text-sky-700 border border-sky-100",
+  },
+  teal: {
+    active: "bg-teal-100 text-teal-800 border border-teal-200",
+    idle: "bg-teal-50 text-teal-700 border border-teal-100",
+  },
+};
+
+const getGenderTone = (gender: string) => {
+  const normalized = String(gender || "").trim().toLowerCase();
+  if (normalized.startsWith("f"))
+    return "bg-rose-50 text-rose-700 border-rose-200";
+  if (normalized.startsWith("m"))
+    return "bg-sky-50 text-sky-700 border-sky-200";
+  return "bg-violet-50 text-violet-700 border-violet-200";
+};
+
+type RoomSummaryPassenger = {
+  id?: string;
+  isCancelled?: boolean;
+  status?: string;
+  roomSharing?: string;
+  roomType?: string;
+};
+
+const getRoomSharingSummary = (
+  passengers: RoomSummaryPassenger[],
+  booking: Booking,
+) => {
+  const roomCounts = new Map<string, number>();
+  passengers
+    .filter(
+      (passenger) =>
+        !passenger.isCancelled &&
+        passenger.status !== "CANCELLED" &&
+        !String(passenger.id || "").startsWith("gen-co-"),
+    )
+    .forEach((passenger) => {
+      const rawRoom = String(
+        passenger.roomSharing || passenger.roomType || "",
+      ).trim();
+      if (!rawRoom) return;
+      const room = rawRoom
+        .replace(/\s+sharing$/i, "")
+        .replace(/^couple$/i, "Double");
+      roomCounts.set(room, (roomCounts.get(room) || 0) + 1);
+    });
+
+  if (roomCounts.size === 0) {
+    return booking.roomSharing || booking.roomType || "Triple Sharing";
+  }
+
+  return Array.from(roomCounts.entries())
+    .map(([room, count]) => `${count}× ${room}`)
+    .join(", ");
+};
 
 interface BookingDetailsViewProps {
   booking: Booking;
@@ -988,8 +1082,9 @@ export default function BookingDetailsView({
             (idx === 0 ? booking.mobile || booking.phone : "") ||
             "Not specified",
           email: p.email || (idx === 0 ? booking.email : "") || "Not specified",
-          gender: p.gender || (idx === 0 ? booking.gender : "Male") || "Male",
-          age: p.age || (idx === 0 ? booking.age : 20) || 20,
+          gender: p.gender || (idx === 0 ? booking.gender : null),
+          age: p.age ?? (idx === 0 ? booking.age : null),
+          dob: p.dob || p.dateOfBirth || p.birthDate || null,
           type: p.type || `${pTrain} Train`,
           trainOption: pTrain,
           status: isCancelled ? "CANCELLED" : (p.status || "Form complete"),
@@ -1015,8 +1110,10 @@ export default function BookingDetailsView({
         name: booking.fullName || booking.name || "Guest",
         phone: booking.mobile || booking.phone || "Not specified",
         email: booking.email || "Not specified",
-        gender: booking.gender || "Male",
-        age: booking.age || 20,
+        gender: booking.gender || null,
+        age: booking.age ?? null,
+        dob:
+          (booking as any).dob || (booking as any).dateOfBirth || null,
         type: `${defaultTrain} Train`,
         trainOption: defaultTrain,
         status: "Form complete",
@@ -2203,7 +2300,7 @@ export default function BookingDetailsView({
   };
 
   return (
-    <div className="min-h-full flex flex-col bg-white text-[#1a1a1a] font-sans antialiased relative">
+    <div className="min-h-full flex flex-col min-w-0 bg-[#F4F7FB] text-[#0B1528] font-sans antialiased relative">
       <PassengerDrawer
         isOpen={isPassengerDrawerOpen}
         onClose={() => setIsPassengerDrawerOpen(false)}
@@ -2231,79 +2328,139 @@ export default function BookingDetailsView({
       <style
         dangerouslySetInnerHTML={{
           __html: `
+        /* Single hairline-divided KPI panel (quiet admin chrome, no sticky/overlap) */
         .workspace-kpi-strip {
             background: #fff;
-            border-bottom: 1px solid #f5f5f5;
-            padding: 16px 24px;
+            border: 1px solid #E8EEF4;
+            border-radius: 12px;
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 16px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            overflow: hidden;
         }
-        @media (max-width: 1024px) {
-            .workspace-kpi-strip { grid-template-columns: repeat(3, 1fr); }
+        @media (max-width: 1279px) {
+            .workspace-kpi-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
-        @media (max-width: 640px) {
-            .workspace-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+        @media (max-width: 639px) {
+            .workspace-kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .workspace-kpi-card {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
-            padding: 12px;
-            background: #fafafa;
-            border: 1px solid #f5f5f5;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+            align-items: flex-start;
+            gap: 10px;
+            min-width: 0;
+            padding: 12px 14px;
+            text-align: left;
+            background: #fff;
+            border-right: 1px solid #E8EEF4;
+            border-bottom: 1px solid #E8EEF4;
+            transition: background 0.15s ease;
         }
-        .workspace-kpi-card:hover {
-            background: #f5f5f5;
-            border-color: #c0c0c0;
+        button.workspace-kpi-card { cursor: pointer; }
+        button.workspace-kpi-card:hover { background: #F8FAFC; }
+        /* Icon well carries the metric's hue so the strip reads in colour without shouting */
+        .workspace-kpi-well {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+            border: 1px solid transparent;
+        }
+        .workspace-kpi-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .workspace-kpi-card[data-tone="emerald"] { background: linear-gradient(180deg, #F1FBF6 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="emerald"] .workspace-kpi-well { background: #D7F3E5; border-color: #B6E7D0; color: #047857; }
+        button.workspace-kpi-card[data-tone="emerald"]:hover { background: linear-gradient(180deg, #E3F7EE 0%, #FAFEFC 78%); }
+        .workspace-kpi-card[data-tone="amber"] { background: linear-gradient(180deg, #FEF8EC 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="amber"] .workspace-kpi-well { background: #FBEBC8; border-color: #F5DCA8; color: #B45309; }
+        button.workspace-kpi-card[data-tone="amber"]:hover { background: linear-gradient(180deg, #FDF1DC 0%, #FFFDF8 78%); }
+        .workspace-kpi-card[data-tone="rose"] { background: linear-gradient(180deg, #FEF2F4 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="rose"] .workspace-kpi-well { background: #FBDDE3; border-color: #F6C7D0; color: #BE123C; }
+        button.workspace-kpi-card[data-tone="rose"]:hover { background: linear-gradient(180deg, #FDE7EB 0%, #FFFBFC 78%); }
+        .workspace-kpi-card[data-tone="sky"] { background: linear-gradient(180deg, #EFF7FE 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="sky"] .workspace-kpi-well { background: #D5EAFB; border-color: #B9DBF6; color: #0369A1; }
+        button.workspace-kpi-card[data-tone="sky"]:hover { background: linear-gradient(180deg, #E3F1FE 0%, #FBFDFF 78%); }
+        .workspace-kpi-card[data-tone="indigo"] { background: linear-gradient(180deg, #F2F3FE 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="indigo"] .workspace-kpi-well { background: #DDDFFA; border-color: #C7CBF4; color: #4338CA; }
+        button.workspace-kpi-card[data-tone="indigo"]:hover { background: linear-gradient(180deg, #E7E9FD 0%, #FCFCFF 78%); }
+        .workspace-kpi-card[data-tone="violet"] { background: linear-gradient(180deg, #F7F2FE 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="violet"] .workspace-kpi-well { background: #EBDDFB; border-color: #DFC9F7; color: #6D28D9; }
+        button.workspace-kpi-card[data-tone="violet"]:hover { background: linear-gradient(180deg, #F1E7FE 0%, #FDFBFF 78%); }
+        .workspace-kpi-card[data-tone="orange"] { background: linear-gradient(180deg, #FFF4EF 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="orange"] .workspace-kpi-well { background: #FFDECF; border-color: #FFC9B1; color: #C2410C; }
+        button.workspace-kpi-card[data-tone="orange"]:hover { background: linear-gradient(180deg, #FFEAE1 0%, #FFFCFA 78%); }
+        .workspace-kpi-card[data-tone="teal"] { background: linear-gradient(180deg, #EFFAFA 0%, #FFFFFF 70%); }
+        .workspace-kpi-card[data-tone="teal"] .workspace-kpi-well { background: #CFEFEE; border-color: #B2E4E2; color: #0F766E; }
+        button.workspace-kpi-card[data-tone="teal"]:hover { background: linear-gradient(180deg, #E1F5F4 0%, #FAFEFE 78%); }
+        /* Remove trailing dividers per breakpoint so the panel reads as one block */
+        .workspace-kpi-strip > .workspace-kpi-card:nth-child(2n) { border-right: 0; }
+        .workspace-kpi-strip > .workspace-kpi-card:nth-last-child(-n + 2) { border-bottom: 0; }
+        @media (min-width: 640px) {
+            .workspace-kpi-strip > .workspace-kpi-card:nth-child(2n) { border-right: 1px solid #E8EEF4; }
+            .workspace-kpi-strip > .workspace-kpi-card:nth-child(3n) { border-right: 0; }
+            .workspace-kpi-strip > .workspace-kpi-card:nth-last-child(-n + 2) { border-bottom: 1px solid #E8EEF4; }
+            .workspace-kpi-strip > .workspace-kpi-card:nth-last-child(-n + 3) { border-bottom: 0; }
+        }
+        @media (min-width: 1280px) {
+            .workspace-kpi-strip > .workspace-kpi-card { border-bottom: 0; }
+            .workspace-kpi-strip > .workspace-kpi-card:nth-child(3n) { border-right: 1px solid #E8EEF4; }
+            .workspace-kpi-strip > .workspace-kpi-card:last-child { border-right: 0; }
         }
       `,
         }}
       />
 
       {/* ─── Workspace Header ─── */}
-      <div className="border-b border-zinc-200 px-4 py-3 md:px-6 md:py-4 flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 bg-white sticky top-0 z-30 font-sans">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto justify-between sm:justify-start">
+      <div className="border-b border-[#E8EEF4] px-4 pt-3.5 pb-3 md:px-6 md:pt-4 md:pb-4 flex flex-col lg:flex-row flex-wrap items-start lg:items-center justify-between gap-3 lg:gap-6 bg-gradient-to-r from-white via-white to-[#F6F9FD] sticky top-0 z-30 font-sans">
+        {/* Brand accent rail keeps the chrome from reading as plain white */}
+        <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FF4D00] via-[#FF8A3D] to-[#0B1528]" />
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full lg:w-auto justify-between lg:justify-start">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => {
                 if (onBack) onBack();
                 else navigate("/admin/bookings");
               }}
-              className="flex items-center gap-1 text-slate-500 hover:text-slate-900 text-xs font-bold pr-3 border-r border-slate-200 cursor-pointer"
+              className="flex items-center gap-1 text-slate-500 hover:text-[#FF4D00] text-xs font-semibold pr-3 border-r border-[#E8EEF4] cursor-pointer transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider truncate">
+            <div className="flex flex-col min-w-0 rounded-lg bg-[#0B1528]/[0.05] border border-[#0B1528]/[0.07] px-2.5 py-1">
+              <span className="text-[10px] text-[#0B1528]/50 font-semibold truncate">
                 Booking ID
               </span>
-              <span className="font-bold text-slate-800 text-xs sm:text-sm font-mono truncate">
+              <span className="font-semibold text-[#0B1528] text-xs sm:text-sm font-mono truncate">
                 {booking.bookingId}
               </span>
             </div>
           </div>
           <span
             className={cn(
-              "sm:hidden px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shrink-0",
+              "lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shrink-0",
               booking.status === "confirmed"
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                : "bg-amber-50 text-amber-600 border border-amber-200",
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200",
             )}
           >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                booking.status === "confirmed"
+                  ? "bg-emerald-500"
+                  : "bg-amber-500",
+              )}
+            />
             {booking.status === "confirmed" ? "Confirmed" : flowStatus}
           </span>
         </div>
 
-        <div className="flex-1 min-w-0 w-full sm:w-auto">
-          <div className="font-bold text-slate-900 text-sm sm:text-base truncate">
+        <div className="flex-1 min-w-0 w-full lg:w-auto">
+          <div className="font-semibold text-[#0B1528] text-sm sm:text-base truncate">
             {booking.tripName || fullTrip?.tripName || "Trip"}
           </div>
-          <div className="text-slate-500 text-xs mt-0.5 font-medium truncate">
+          <div className="text-slate-500 text-xs mt-0.5 truncate">
             {booking.departureDate
               ? `${safeFormatDate(booking.departureDate, { day: "2-digit", month: "short" })} to ${(() => {
                   const durationStr =
@@ -2323,9 +2480,9 @@ export default function BookingDetailsView({
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-3 shrink-0">
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
           <div className="text-right">
-            <div className="font-bold text-slate-800 text-xs">
+            <div className="font-semibold text-[#0B1528] text-xs">
               {booking.fullName || booking.name}
             </div>
             <div className="text-slate-400 font-mono text-[11px] mt-0.5">
@@ -2334,17 +2491,26 @@ export default function BookingDetailsView({
           </div>
           <span
             className={cn(
-              "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase",
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold",
               booking.status === "confirmed"
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                : "bg-amber-50 text-amber-600 border border-amber-200",
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200",
             )}
           >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                booking.status === "confirmed"
+                  ? "bg-emerald-500"
+                  : "bg-amber-500",
+              )}
+            />
             {booking.status === "confirmed" ? "Confirmed" : flowStatus}
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+        {/* One primary action, quiet secondaries, rare/destructive actions in overflow */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
           <button
             onClick={() => {
               setPayAmount(booking.remainingAmount.toString());
@@ -2353,95 +2519,145 @@ export default function BookingDetailsView({
               setPayComments("");
               setShowCreatePayment(true);
             }}
-            className="bg-[#F5760E] hover:opacity-90 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs"
+            className="h-8 inline-flex items-center gap-1.5 bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs px-3.5 rounded-lg shadow-[0_1px_2px_rgba(255,77,0,0.35)] transition-colors cursor-pointer"
           >
-            + Add Payment
+            <Plus className="h-3.5 w-3.5" />
+            Add payment
           </button>
           <button
             onClick={() => setShowCreateTask(true)}
-            className="bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-all"
+            className="h-8 inline-flex items-center gap-1.5 bg-white border border-[#E8EEF4] text-[#0B1528] font-semibold text-xs px-3.5 rounded-lg hover:bg-indigo-50/70 hover:border-indigo-200 transition-colors cursor-pointer"
           >
-            Assign Task
+            <UserCheck className="h-3.5 w-3.5 text-indigo-500" />
+            Assign task
           </button>
-          {(booking.status === "confirmed" || flowStatus === "Confirmed") && (
-            <button
-              onClick={handleRevertConfirmation}
-              disabled={revertingLoading}
-              className="hidden sm:inline-flex bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs"
-            >
-              {revertingLoading ? "Reverting..." : "Revert Confirmation"}
-            </button>
-          )}
-          {booking.status !== "cancelled" && (
-            <button
-              onClick={() => {
-                setCancelReason("");
-                setCancelCharges("0");
-                setCancelRefund((booking.advancePaid || 0).toString());
-                setCancelRefundMode("UPI");
-                setShowCancelModal(true);
-              }}
-              className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold text-xs px-3.5 py-1.5 rounded-lg transition-all"
-            >
-              Cancel Booking
-            </button>
-          )}
-          {isFounder && (
-            <button
-              onClick={() => setShowDeleteFounderModal(true)}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-            >
-              <Trash2 className="h-3.5 w-3.5 text-white" />
-              Delete Booking
-            </button>
-          )}
           <button
             onClick={() => setIsComposerOpen(true)}
-            className="bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-1.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-1.5"
+            className="h-8 inline-flex items-center gap-1.5 bg-white border border-[#E8EEF4] text-[#0B1528] font-semibold text-xs px-3.5 rounded-lg hover:bg-sky-50/70 hover:border-sky-200 transition-colors cursor-pointer"
           >
-            <Mail className="h-3.5 w-3.5 text-slate-500" />
-            Send Email
+            <Mail className="h-3.5 w-3.5 text-sky-500" />
+            Send email
           </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                aria-label="More booking actions"
+                className="h-8 w-8 inline-flex items-center justify-center bg-white border border-[#E8EEF4] text-slate-500 rounded-lg hover:bg-[#F4F7FB] hover:text-[#0B1528] transition-colors cursor-pointer"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 border-[#E8EEF4] rounded-lg p-1"
+            >
+              {(booking.status === "confirmed" || flowStatus === "Confirmed") && (
+                <DropdownMenuItem
+                  disabled={revertingLoading}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    handleRevertConfirmation();
+                  }}
+                  className="text-xs font-semibold text-[#0B1528] rounded cursor-pointer gap-2"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+                  {revertingLoading
+                    ? "Reverting..."
+                    : "Revert confirmation"}
+                </DropdownMenuItem>
+              )}
+              {booking.status !== "cancelled" && (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setCancelReason("");
+                    setCancelCharges("0");
+                    setCancelRefund((booking.advancePaid || 0).toString());
+                    setCancelRefundMode("UPI");
+                    setShowCancelModal(true);
+                  }}
+                  className="text-xs font-semibold text-rose-600 rounded cursor-pointer gap-2 focus:bg-rose-50 focus:text-rose-700"
+                >
+                  <Ban className="h-3.5 w-3.5" />
+                  Cancel booking
+                </DropdownMenuItem>
+              )}
+              {isFounder && (
+                <>
+                  <DropdownMenuSeparator className="bg-[#E8EEF4]" />
+                  <DropdownMenuItem
+                    onSelect={() => setShowDeleteFounderModal(true)}
+                    className="text-xs font-semibold text-rose-600 rounded cursor-pointer gap-2 focus:bg-rose-50 focus:text-rose-700"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete booking
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Inline alerts */}
+      {/* ─── Body ─── */}
+      {/* Gutters match the header's px-4/md:px-6 so cards align with the header text */}
+      <div className="flex-1 min-w-0 px-4 md:px-6 py-4 space-y-3">
+      {/* Status strip — quiet, single row. Full status detail lives in the header chip. */}
       {flowStatus === "Confirmed" || booking.status === "confirmed" ? (
-        <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 bg-emerald-50 border border-emerald-200 rounded-xl px-3 sm:px-4 py-3 text-xs text-emerald-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+        <div className="bg-gradient-to-r from-emerald-50 via-emerald-50/40 to-white border border-emerald-200/80 border-l-[3px] border-l-emerald-500 rounded-xl px-3 sm:px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded uppercase leading-none shrink-0">
-              CONFIRMED
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span className="font-semibold text-emerald-900 truncate">
+              Booking confirmed
             </span>
-            <span className="font-semibold truncate">This booking is confirmed.</span>
+            <span className="text-emerald-700/70 truncate hidden sm:inline">
+              Ticket and confirmation email can be re-issued below.
+            </span>
           </div>
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => {
-                setConfirmTotal((booking.totalAmount || 0).toString());
-                setConfirmAdvance((booking.advancePaid || 0).toString());
-                setConfirmEmail(booking.email || "");
-                setIsConfirming(!isConfirming);
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9.5px] sm:text-[10px] leading-tight uppercase px-2 sm:px-3 h-8 sm:h-auto sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center flex items-center justify-center"
-            >
-              {isConfirming ? "Hide Panel" : "Update Ticket & Email"}
-            </button>
-            <button
-              onClick={handleRevertConfirmation}
-              disabled={revertingLoading}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[9.5px] sm:text-[10px] leading-tight uppercase px-2 sm:px-3 h-8 sm:h-auto sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer shadow-2xs text-center flex items-center justify-center"
-            >
-              {revertingLoading ? "Reverting..." : "Revert Confirmation"}
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setConfirmTotal((booking.totalAmount || 0).toString());
+              setConfirmAdvance((booking.advancePaid || 0).toString());
+              setConfirmEmail(booking.email || "");
+              setIsConfirming(!isConfirming);
+            }}
+            className="h-8 shrink-0 inline-flex items-center justify-center gap-1.5 bg-white border border-emerald-200 text-emerald-800 font-semibold text-xs px-3 rounded-lg hover:bg-emerald-50 transition-colors cursor-pointer"
+          >
+            <Mail className="h-3.5 w-3.5 text-emerald-600" />
+            {isConfirming ? "Hide panel" : "Update ticket & email"}
+          </button>
         </div>
       ) : (
-        <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 bg-[#fffbea] border border-[#fce588] rounded-xl px-3 sm:px-4 py-3 text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+        <div
+          className={cn(
+            "rounded-xl px-3 sm:px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border border-l-[3px]",
+            flowStatus === "Cancelled"
+              ? "bg-gradient-to-r from-rose-50 via-rose-50/40 to-white border-rose-200/80 border-l-rose-500"
+              : "bg-gradient-to-r from-amber-50 via-amber-50/40 to-white border-amber-200/80 border-l-amber-500",
+          )}
+        >
           <div className="flex items-start sm:items-center gap-2 min-w-0">
-            <span className="bg-[#f0ad4e] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase leading-none shrink-0">
+            <AlertCircle
+              className={cn(
+                "h-4 w-4 shrink-0 mt-0.5 sm:mt-0",
+                flowStatus === "Cancelled" ? "text-rose-600" : "text-amber-600",
+              )}
+            />
+            <span
+              className={cn(
+                "font-semibold shrink-0",
+                flowStatus === "Cancelled" ? "text-rose-900" : "text-amber-900",
+              )}
+            >
               {flowStatus}
             </span>
-            <span className="leading-snug">
+            <span
+              className={cn(
+                "leading-snug",
+                flowStatus === "Cancelled"
+                  ? "text-rose-700/80"
+                  : "text-amber-800/80",
+              )}
+            >
               {flowStatus === "Cancelled"
                 ? "This booking was cancelled."
                 : flowStatus === "Expired"
@@ -2450,7 +2666,7 @@ export default function BookingDetailsView({
                     ? "Partially paid. Remaining balance is pending."
                     : flowStatus === "Pending Payment"
                       ? "Payment pending. Confirmation will be possible once paid."
-                      : "Pending Inquiry."}
+                      : "Pending inquiry."}
             </span>
           </div>
           {flowStatus !== "Cancelled" && (
@@ -2461,29 +2677,29 @@ export default function BookingDetailsView({
                 setConfirmEmail(booking.email || "");
                 setIsConfirming(true);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase px-3 h-8 sm:h-auto sm:py-1.5 rounded transition-all w-full sm:w-auto sm:shrink-0 cursor-pointer text-center flex items-center justify-center"
+              className="h-8 shrink-0 inline-flex items-center justify-center bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs px-3.5 rounded-lg transition-colors cursor-pointer"
             >
-              Confirm Booking
+              Confirm booking
             </button>
           )}
         </div>
       )}
 
       {isRejecting && (
-        <div className="mx-6 mt-3 p-4 bg-red-50 border border-red-200 rounded-xl text-xs space-y-2">
-          <p className="font-bold text-red-800">
+        <div className="p-4 bg-white border-l-2 border-l-rose-400 border-y border-r border-[#E8EEF4] rounded-xl text-xs space-y-2">
+          <p className="font-semibold text-[#0B1528]">
             Are you sure you want to reject this booking?
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleRejectSubmit}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded"
+              className="h-8 inline-flex items-center bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold px-3 rounded-lg transition-colors cursor-pointer"
             >
-              Yes, Reject
+              Yes, reject
             </button>
             <button
               onClick={() => setIsRejecting(false)}
-              className="bg-slate-200 text-slate-700 font-medium px-3 py-1.5 rounded"
+              className="h-8 inline-flex items-center bg-white border border-[#E8EEF4] text-[#0B1528] hover:bg-[#F4F7FB] font-semibold px-3 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -2492,11 +2708,11 @@ export default function BookingDetailsView({
       )}
 
       {isConfirming && (
-        <div className="mx-6 mt-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs space-y-3">
-          <h3 className="font-bold text-emerald-800">Confirm Booking Inline</h3>
+        <div className="p-4 bg-white border border-[#E8EEF4] rounded-xl text-xs space-y-3">
+          <h3 className="font-semibold text-[#0B1528]">Confirm booking</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div>
-              <label className="text-[9px] font-bold uppercase text-slate-400">
+              <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Total Amount
               </label>
               <Input
@@ -2507,7 +2723,7 @@ export default function BookingDetailsView({
               />
             </div>
             <div>
-              <label className="text-[9px] font-bold uppercase text-slate-400">
+              <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Advance Paid
               </label>
               <Input
@@ -2518,7 +2734,7 @@ export default function BookingDetailsView({
               />
             </div>
             <div>
-              <label className="text-[9px] font-bold uppercase text-slate-400">
+              <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Mode
               </label>
               <Select value={confirmMode} onValueChange={setConfirmMode}>
@@ -2533,7 +2749,7 @@ export default function BookingDetailsView({
               </Select>
             </div>
             <div>
-              <label className="text-[9px] font-bold uppercase text-slate-400">
+              <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Train Ticket Status
               </label>
               <Select
@@ -2554,7 +2770,7 @@ export default function BookingDetailsView({
               </Select>
             </div>
             <div>
-              <label className="text-[9px] font-bold uppercase text-slate-400">
+              <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Email
               </label>
               <Input
@@ -2566,25 +2782,25 @@ export default function BookingDetailsView({
             </div>
           </div>
           {confirmTrainStatus !== "SELF_BOOKED" && (
-            <div className="flex flex-col gap-2 p-2 bg-emerald-100/60 rounded border border-emerald-200/50 max-w-md">
+            <div className="flex flex-col gap-2 p-3 bg-[#F4F7FB] rounded-lg border border-[#E8EEF4] max-w-md">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="sendTrainWithEmail"
                   checked={confirmSendTicket}
                   onChange={(e) => setConfirmSendTicket(e.target.checked)}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                  className="rounded text-[#FF4D00] focus:ring-[#FF4D00] w-3.5 h-3.5 cursor-pointer"
                 />
                 <label
                   htmlFor="sendTrainWithEmail"
-                  className="text-[10px] font-bold text-emerald-800 cursor-pointer select-none"
+                  className="text-[11px] font-semibold text-[#0B1528] cursor-pointer select-none"
                 >
                   Include train ticket confirmation details inside email
                 </label>
               </div>
               {confirmSendTicket && (
                 <div className="space-y-1.5 pl-5">
-                  <label className="block text-[9px] font-bold uppercase text-slate-600">
+                  <label className="block text-[9px] font-semibold uppercase text-slate-600">
                     Attach Train Tickets / Voucher Files (Multiple Supported)
                   </label>
                   <input
@@ -2617,14 +2833,14 @@ export default function BookingDetailsView({
                   />
                   {confirmTicketFilesList.length > 0 && (
                     <div className="space-y-1 pt-1">
-                      <p className="text-[10px] text-emerald-800 font-extrabold">
-                        Attached Files ({confirmTicketFilesList.length}):
+                      <p className="text-[10px] text-slate-500 font-semibold">
+                        Attached files ({confirmTicketFilesList.length}):
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {confirmTicketFilesList.map((f, fIdx) => (
                           <div
                             key={fIdx}
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-white border border-emerald-300 text-[10px] font-mono font-bold text-slate-700 shadow-2xs"
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-white border border-[#E8EEF4] text-[10px] font-mono font-semibold text-[#0B1528]"
                           >
                             <span className="truncate max-w-[200px]">
                               {f.name}
@@ -2636,7 +2852,7 @@ export default function BookingDetailsView({
                                   prev.filter((_, i) => i !== fIdx),
                                 )
                               }
-                              className="text-slate-400 hover:text-rose-600 font-black cursor-pointer"
+                              className="text-slate-400 hover:text-rose-600 font-semibold cursor-pointer"
                               title="Remove file"
                             >
                               ✕
@@ -2650,144 +2866,225 @@ export default function BookingDetailsView({
               )}
             </div>
           )}
-          <div className="flex gap-2 justify-end pt-2 border-t">
+          <div className="flex flex-wrap gap-2 justify-end pt-3 border-t border-[#E8EEF4]">
             <button
               onClick={() => setIsConfirming(false)}
-              className="bg-white border text-slate-655 px-4 py-1.5 rounded"
+              className="h-8 inline-flex items-center bg-white border border-[#E8EEF4] text-[#0B1528] font-semibold px-4 rounded-lg hover:bg-[#F4F7FB] transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirmSubmit}
               disabled={confirmingLoading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-1.5 rounded"
+              className="h-8 inline-flex items-center bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold px-5 rounded-lg transition-colors cursor-pointer disabled:opacity-60"
             >
-              {confirmingLoading ? "Confirming..." : "Confirm Booking"}
+              {confirmingLoading ? "Confirming..." : "Confirm booking"}
             </button>
           </div>
         </div>
       )}
 
-      {/* ─── KPI Strip ─── */}
-      <div className="workspace-kpi-strip sticky top-[53px] z-20">
-        <div
+      {/* ─── KPI Strip — one divided panel, not sticky (avoids overlapping panels below) ─── */}
+      <div className="workspace-kpi-strip">
+        {(() => {
+          const dueAmount = booking.remainingAmount || 0;
+          const isOverdue = dueAmount > 0 && daysToGo <= 7;
+          return (
+            <button
+              type="button"
+              className="workspace-kpi-card"
+              data-tone={
+                dueAmount > 0 ? (isOverdue ? "rose" : "amber") : "emerald"
+              }
+              onClick={() => setAdminActiveTab("payments")}
+            >
+              <span className="workspace-kpi-well">
+                <CreditCard className="h-4 w-4" />
+              </span>
+              <span className="workspace-kpi-body">
+                <span className="text-[11px] font-semibold text-slate-500 truncate">
+                  Payment
+                </span>
+                <span className="text-[15px] font-semibold text-[#0B1528] truncate">
+                  ₹{(booking.totalAmount || 0).toLocaleString("en-IN")}
+                </span>
+                <span
+                  className={cn(
+                    "text-[11px] font-semibold truncate",
+                    dueAmount > 0
+                      ? isOverdue
+                        ? "text-rose-600"
+                        : "text-amber-700"
+                      : "text-emerald-700",
+                  )}
+                >
+                  {dueAmount > 0
+                    ? `Due ₹${dueAmount.toLocaleString("en-IN")}`
+                    : "Fully collected"}
+                </span>
+              </span>
+            </button>
+          );
+        })()}
+        <button
+          type="button"
           className="workspace-kpi-card"
-          onClick={() => setAdminActiveTab("payments")}
-        >
-          <div className="text-[10px] uppercase font-semibold text-slate-400">
-            Payment
-          </div>
-          <div className="text-base font-bold text-slate-800">
-            ₹{(booking.totalAmount || 0).toLocaleString("en-IN")}
-          </div>
-          <div className="text-[11px] text-slate-500 font-medium">
-            Due ₹{(booking.remainingAmount || 0).toLocaleString("en-IN")}
-          </div>
-        </div>
-        <div
-          className="workspace-kpi-card"
+          data-tone="indigo"
           onClick={() => setAdminActiveTab("passengers")}
         >
-          <div className="text-[10px] uppercase font-semibold text-slate-400">
-            Passengers
-          </div>
-          <div className="text-base font-bold text-slate-800">{qty}</div>
-          <div className="text-[11px] text-emerald-600 font-semibold">
-            {passengers.length >= qty
-              ? "Confirmed"
-              : `${passengers.length}/${qty} Added`}
-          </div>
+          <span className="workspace-kpi-well">
+            <Users className="h-4 w-4" />
+          </span>
+          <span className="workspace-kpi-body">
+            <span className="text-[11px] font-semibold text-slate-500 truncate">
+              Passengers
+            </span>
+            <span className="text-[15px] font-semibold text-[#0B1528]">
+              {qty}
+            </span>
+            <span
+              className={cn(
+                "text-[11px] font-semibold truncate",
+                passengers.length >= qty ? "text-emerald-700" : "text-amber-700",
+              )}
+            >
+              {passengers.length >= qty
+                ? "All added"
+                : `${passengers.length}/${qty} added`}
+            </span>
+          </span>
+        </button>
+        <div className="workspace-kpi-card" data-tone="sky">
+          <span className="workspace-kpi-well">
+            <Calendar className="h-4 w-4" />
+          </span>
+          <span className="workspace-kpi-body">
+            <span className="text-[11px] font-semibold text-slate-500 truncate">
+              Departure
+            </span>
+            <span className="text-[15px] font-semibold text-[#0B1528]">
+              {daysToGo}
+            </span>
+            <span className="text-[11px] font-semibold text-sky-700 truncate">
+              Days to go
+            </span>
+          </span>
         </div>
-        <div className="workspace-kpi-card">
-          <div className="text-[10px] uppercase font-semibold text-slate-400">
-            Departure
-          </div>
-          <div className="text-base font-bold text-slate-800">{daysToGo}</div>
-          <div className="text-[11px] text-slate-500 font-medium">
-            Days to go
-          </div>
-        </div>
-        <div
+        <button
+          type="button"
           className="workspace-kpi-card"
+          data-tone="teal"
           onClick={() => setAdminActiveTab("operations")}
         >
-          <div className="text-[10px] uppercase font-semibold text-slate-400">
-            Operations
-          </div>
-          <div className="text-base font-bold text-slate-800">
-            {passengers.length || qty}/{qty}
-          </div>
-          <div className="text-[11px] text-emerald-600 font-semibold">
-            Booked
-          </div>
-        </div>
-        <div
-          className="workspace-kpi-card"
-          onClick={() => setAdminActiveTab("ticketing")}
-        >
-          <div className="text-[10px] uppercase font-semibold text-slate-400">
-            Ticketing
-          </div>
-          <div className="text-base font-bold text-slate-800">
-            {
-              tickets.filter(
-                (t: any) =>
-                  t.ticketStatus === "PENDING" || t.status === "PENDING",
-              ).length
-            }
-          </div>
-          {(() => {
-            const depT = tickets.filter((t: any) => t.journeyType !== "RETURN");
-            const retT = tickets.filter((t: any) => t.journeyType === "RETURN");
-            const depConf = depT.filter(
-              (t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED",
-            ).length;
-            const depWl = depT.filter(
-              (t: any) => (t.ticketStatus || "").toUpperCase() === "WAITLISTED",
-            ).length;
-            const retConf = retT.filter(
-              (t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED",
-            ).length;
+          <span className="workspace-kpi-well">
+            <Layers className="h-4 w-4" />
+          </span>
+          <span className="workspace-kpi-body">
+            <span className="text-[11px] font-semibold text-slate-500 truncate">
+              Operations
+            </span>
+            <span className="text-[15px] font-semibold text-[#0B1528]">
+              {passengers.length || qty}/{qty}
+            </span>
+            <span className="text-[11px] font-semibold text-teal-700 truncate">
+              Booked
+            </span>
+          </span>
+        </button>
+        {(() => {
+          const pendingTickets = tickets.filter(
+            (t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING",
+          ).length;
+          const depT = tickets.filter((t: any) => t.journeyType !== "RETURN");
+          const retT = tickets.filter((t: any) => t.journeyType === "RETURN");
+          const depConf = depT.filter(
+            (t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED",
+          ).length;
+          const depWl = depT.filter(
+            (t: any) => (t.ticketStatus || "").toUpperCase() === "WAITLISTED",
+          ).length;
+          const retConf = retT.filter(
+            (t: any) => (t.ticketStatus || "").toUpperCase() === "CONFIRMED",
+          ).length;
 
-            return (
-              <div className="text-[10px] text-slate-600 font-medium space-y-0.5 mt-0.5">
-                <div>
-                  Dep: <b className="text-emerald-600">{depConf} Conf</b>
-                  {depWl > 0 ? `, ${depWl} WL` : ""}
-                </div>
-                <div>
-                  Ret: <b className="text-blue-600">{retConf} Conf</b>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-        <div
-          className="workspace-kpi-card"
-          onClick={() => setAdminActiveTab("operations")}
-        >
-          <div className="text-[10px] uppercase font-semibold text-slate-400">
-            Tasks
-          </div>
-          <div className="text-base font-bold text-slate-800">
-            {tasks.filter((t: any) => t.status !== "completed").length}
-          </div>
-          <div className="text-[11px] text-slate-500 font-medium">Open</div>
-        </div>
+          return (
+            <button
+              type="button"
+              className="workspace-kpi-card"
+              data-tone={pendingTickets > 0 ? "amber" : "violet"}
+              onClick={() => setAdminActiveTab("ticketing")}
+            >
+              <span className="workspace-kpi-well">
+                <Train className="h-4 w-4" />
+              </span>
+              <span className="workspace-kpi-body">
+                <span className="text-[11px] font-semibold text-slate-500 truncate">
+                  Ticketing
+                </span>
+                <span className="text-[15px] font-semibold text-[#0B1528]">
+                  {pendingTickets}
+                </span>
+                <span
+                  className={cn(
+                    "text-[11px] font-semibold truncate",
+                    depWl > 0 ? "text-amber-700" : "text-slate-500",
+                  )}
+                >
+                  Dep {depConf} conf
+                  {depWl > 0 ? ` · ${depWl} WL` : ""} · Ret {retConf} conf
+                </span>
+              </span>
+            </button>
+          );
+        })()}
+        {(() => {
+          const openTasks = tasks.filter(
+            (t: any) => t.status !== "completed",
+          ).length;
+          return (
+            <button
+              type="button"
+              className="workspace-kpi-card"
+              data-tone={openTasks > 0 ? "orange" : "emerald"}
+              onClick={() => setAdminActiveTab("operations")}
+            >
+              <span className="workspace-kpi-well">
+                <UserCheck className="h-4 w-4" />
+              </span>
+              <span className="workspace-kpi-body">
+                <span className="text-[11px] font-semibold text-slate-500 truncate">
+                  Tasks
+                </span>
+                <span className="text-[15px] font-semibold text-[#0B1528]">
+                  {openTasks}
+                </span>
+                <span
+                  className={cn(
+                    "text-[11px] font-semibold truncate",
+                    openTasks > 0 ? "text-[#C2410C]" : "text-emerald-700",
+                  )}
+                >
+                  {openTasks > 0 ? "Open" : "All clear"}
+                </span>
+              </span>
+            </button>
+          );
+        })()}
       </div>
 
       {/* ─── Main Content Split Layout ─── */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto min-h-0">
-        {/* Left Column - scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
+      <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 min-w-0">
+        {/* Left Column */}
+        <div className="flex-1 min-w-0 space-y-3">
           {/* Tab Strip */}
-          <div className="border-b border-slate-200 bg-white flex gap-3 md:gap-4 overflow-x-auto no-scrollbar sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6 shadow-2xs">
+          <div className="border border-[#E8EEF4] rounded-xl bg-gradient-to-b from-white to-[#F9FBFE] flex gap-4 md:gap-5 overflow-x-auto no-scrollbar px-4 min-w-0">
             {[
-              { id: "overview", label: "Overview", badge: null },
+              { id: "overview", label: "Overview", badge: null, tone: "slate" },
               {
                 id: "passengers",
                 label: "Passengers",
                 badge: passengers.length ? `${passengers.length}` : `${qty}`,
+                tone: "indigo",
               },
               {
                 id: "payments",
@@ -2796,21 +3093,27 @@ export default function BookingDetailsView({
                   booking.remainingAmount > 0
                     ? `Due ₹${Math.round(booking.remainingAmount / 1000)}k`
                     : "Paid",
+                tone: booking.remainingAmount > 0 ? "amber" : "emerald",
               },
               {
                 id: "services",
                 label: "Services",
                 badge: bookingServices.length ? `${bookingServices.length}` : null,
+                tone: "teal",
               },
               {
                 id: "refunds",
                 label: "Refunds & Credits",
                 badge: bookingRefunds.length ? `${bookingRefunds.length}` : null,
+                tone: "violet",
               },
               {
                 id: "operations",
                 label: "Tasks",
                 badge: tasks.length ? `${tasks.length} tasks` : null,
+                tone: tasks.some((t: any) => t.status !== "completed")
+                  ? "orange"
+                  : "slate",
               },
               {
                 id: "ticketing",
@@ -2821,136 +3124,200 @@ export default function BookingDetailsView({
                 ).length
                   ? `${tickets.filter((t: any) => t.ticketStatus === "PENDING" || t.status === "PENDING").length} pending`
                   : null,
+                tone: "amber",
               },
-              { id: "accounting", label: "Accounting", badge: null },
-              { id: "files", label: "Notes", badge: null },
-              { id: "attachments", label: "Attachments", badge: null },
+              { id: "accounting", label: "Accounting", badge: null, tone: "slate" },
+              { id: "files", label: "Notes", badge: null, tone: "slate" },
+              { id: "attachments", label: "Attachments", badge: null, tone: "slate" },
               {
                 id: "emails",
                 label: "Email Logs",
                 badge: emailLogs.length ? `${emailLogs.length}` : null,
+                tone: "sky",
               },
               {
                 id: "activity",
                 label: "Activity",
                 badge: activityLogs.length ? `${activityLogs.length}` : null,
+                tone: "slate",
               },
               {
                 id: "finance_audit",
                 label: "Audit Trail",
                 badge: bookingAuditLogs.length ? `${bookingAuditLogs.length}` : null,
+                tone: "slate",
               },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setAdminActiveTab(tab.id)}
-                className={cn(
-                  "py-2.5 px-1 text-[12px] font-bold border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5",
-                  adminActiveTab === tab.id
-                    ? "border-[#F5760E] text-[#F5760E]"
-                    : "border-transparent text-slate-500 hover:text-slate-900",
-                )}
-              >
-                <span>{tab.label}</span>
-                {tab.badge && (
-                  <span
-                    className={cn(
-                      "text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold leading-none",
-                      adminActiveTab === tab.id
-                        ? "bg-[#F5760E]/10 text-[#F5760E]"
-                        : "bg-slate-100 text-slate-600",
-                    )}
-                  >
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
+            ].map((tab) => {
+              const isActive = adminActiveTab === tab.id;
+              const badgeTone =
+                TAB_BADGE_TONES[tab.tone] || TAB_BADGE_TONES.slate;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setAdminActiveTab(tab.id)}
+                  className={cn(
+                    "py-3 px-0.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer",
+                    isActive
+                      ? "border-[#FF4D00] text-[#0B1528]"
+                      : "border-transparent text-slate-500 hover:text-[#FF4D00]",
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span
+                      className={cn(
+                        "text-[10px] px-1.5 py-0.5 rounded-full font-semibold leading-none",
+                        isActive ? badgeTone.active : badgeTone.idle,
+                      )}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* === OVERVIEW TAB === */}
           {adminActiveTab === "overview" && (
-            <div className="space-y-6">
-              {/* Items Needing Attention */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  ⚠️ Items Needing Attention
-                </h3>
-                <div className="space-y-2.5">
-                  {booking.remainingAmount > 0 && (
-                    <div className="bg-[#fffbea] border-l-4 border-[#f5760e] rounded-r-lg px-4 py-3 text-xs text-slate-700 flex items-center gap-2.5 shadow-sm">
-                      <span className="text-base">💰</span>
-                      <span className="font-semibold">
-                        Outstanding Balance: ₹
-                        {(booking.remainingAmount || 0).toLocaleString("en-IN")}{" "}
-                        due
-                      </span>
-                    </div>
-                  )}
-                  {(booking.trainTicketStatus === "PENDING" ||
-                    tickets.some(
-                      (t: any) =>
-                        t.ticketStatus === "PENDING" || t.status === "PENDING",
-                    )) && (
-                    <div className="bg-[#fffbea] border-l-4 border-[#f5760e] rounded-r-lg px-4 py-3 text-xs text-slate-700 flex items-center gap-2.5 shadow-sm">
-                      <span className="text-base">🎫</span>
-                      <span className="font-semibold">
-                        Train ticket verification pending approval
-                      </span>
-                    </div>
-                  )}
-                  {passengers.length < (booking.numberOfTravelers || 1) && (
-                    <div className="bg-[#fffbea] border-l-4 border-[#f5760e] rounded-r-lg px-4 py-3 text-xs text-slate-700 flex items-center gap-2.5 shadow-sm">
-                      <span className="text-base">👥</span>
-                      <span className="font-semibold">
-                        Passenger Details Incomplete: {passengers.length} of{" "}
-                        {booking.numberOfTravelers || 1} travelers added
-                      </span>
-                    </div>
-                  )}
-                  {booking.remainingAmount <= 0 &&
-                    booking.trainTicketStatus !== "PENDING" &&
-                    !tickets.some((t: any) => t.ticketStatus === "PENDING") &&
-                    passengers.length >= (booking.numberOfTravelers || 1) && (
-                      <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-r-lg px-4 py-3 text-xs text-emerald-800 flex items-center gap-2.5 shadow-xs">
-                        <span className="text-base">✓</span>
-                        <span className="font-semibold">
-                          All operational requirements and payments are up to
-                          date!
-                        </span>
-                      </div>
+            <div className="space-y-3">
+              {/* Needs attention — one quiet panel with divided rows */}
+              {(() => {
+                const allClear =
+                  booking.remainingAmount <= 0 &&
+                  booking.trainTicketStatus !== "PENDING" &&
+                  !tickets.some((t: any) => t.ticketStatus === "PENDING") &&
+                  passengers.length >= (booking.numberOfTravelers || 1);
+
+                return (
+                  <div
+                    className={cn(
+                      "bg-white rounded-xl overflow-hidden border",
+                      allClear ? "border-emerald-200/70" : "border-amber-200/70",
                     )}
-                </div>
-              </div>
+                  >
+                    <div
+                      className={cn(
+                        "px-4 py-3 border-b flex items-center gap-2",
+                        allClear
+                          ? "bg-gradient-to-r from-emerald-50 to-white border-emerald-100"
+                          : "bg-gradient-to-r from-amber-50 to-white border-amber-100",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "h-6 w-6 rounded-lg inline-flex items-center justify-center border shrink-0",
+                          allClear
+                            ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                            : "bg-amber-100 border-amber-200 text-amber-700",
+                        )}
+                      >
+                        {allClear ? (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        ) : (
+                          <AlertCircle className="w-3.5 h-3.5" />
+                        )}
+                      </span>
+                      <h3
+                        className={cn(
+                          "text-xs font-semibold",
+                          allClear ? "text-emerald-900" : "text-amber-900",
+                        )}
+                      >
+                        {allClear ? "All clear" : "Needs attention"}
+                      </h3>
+                    </div>
+                    <div className="divide-y divide-[#E8EEF4]">
+                      {booking.remainingAmount > 0 && (
+                        <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5 bg-[#FF4D00]/[0.025]">
+                          <span className="h-5 w-5 rounded-md bg-[#FF4D00]/10 text-[#C2410C] inline-flex items-center justify-center shrink-0">
+                            <CreditCard className="w-3 h-3" />
+                          </span>
+                          <span>
+                            Outstanding balance of{" "}
+                            <span className="font-semibold text-[#C2410C]">
+                              ₹
+                              {(booking.remainingAmount || 0).toLocaleString(
+                                "en-IN",
+                              )}
+                            </span>{" "}
+                            is due
+                          </span>
+                        </div>
+                      )}
+                      {(booking.trainTicketStatus === "PENDING" ||
+                        tickets.some(
+                          (t: any) =>
+                            t.ticketStatus === "PENDING" ||
+                            t.status === "PENDING",
+                        )) && (
+                        <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5 bg-amber-50/40">
+                          <span className="h-5 w-5 rounded-md bg-amber-100 text-amber-700 inline-flex items-center justify-center shrink-0">
+                            <Train className="w-3 h-3" />
+                          </span>
+                          <span>Train ticket verification pending approval</span>
+                        </div>
+                      )}
+                      {passengers.length < (booking.numberOfTravelers || 1) && (
+                        <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5 bg-indigo-50/40">
+                          <span className="h-5 w-5 rounded-md bg-indigo-100 text-indigo-700 inline-flex items-center justify-center shrink-0">
+                            <Users className="w-3 h-3" />
+                          </span>
+                          <span>
+                            Passenger details incomplete —{" "}
+                            <span className="font-semibold text-indigo-800">
+                              {passengers.length} of{" "}
+                              {booking.numberOfTravelers || 1}
+                            </span>{" "}
+                            travellers added
+                          </span>
+                        </div>
+                      )}
+                      {allClear && (
+                        <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>
+                            All operational requirements and payments are up to
+                            date
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Trip Summary */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Trip Summary
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#E8EEF4] bg-gradient-to-r from-[#0B1528]/[0.04] to-transparent flex items-center gap-2">
+                  <span className="h-6 w-6 rounded-lg bg-[#0B1528]/[0.07] text-[#0B1528] inline-flex items-center justify-center shrink-0">
+                    <MapPin className="w-3.5 h-3.5" />
+                  </span>
+                  <h3 className="text-xs font-semibold text-[#0B1528]">
+                    Trip summary
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 p-4">
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-semibold text-slate-400">
                       Package
                     </div>
-                    <div className="text-sm font-bold text-slate-800 mt-1">
+                    <div className="text-xs font-semibold text-[#0B1528] mt-1">
                       {(booking.pickupCity || "").toLowerCase().includes("chandigarh to chandigarh") || (booking.pickupCity || "").toLowerCase().trim() === "chandigarh"
                         ? "Base Package"
                         : booking.trainClass || "Sleeper Train"}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Room Sharing
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-semibold text-slate-400">
+                      Room sharing
                     </div>
-                    <div className="text-sm font-bold text-[#F5760E] mt-1">
-                      {passengers[0]?.roomSharing ||
-                        booking.roomType ||
-                        "Triple Sharing"}
+                    <div className="text-xs font-semibold text-[#0B1528] mt-1">
+                      {getRoomSharingSummary(passengers, booking)}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-semibold text-slate-400 flex items-center justify-between gap-2">
                       <span>Departure</span>
                       {canManageBooking && !isExpired && (
                         <button
@@ -2961,13 +3328,13 @@ export default function BookingDetailsView({
                             setChangeReason("");
                             setShowChangeDates(true);
                           }}
-                          className="text-blue-600 hover:text-blue-800 text-[10px] font-semibold flex items-center gap-0.5"
+                          className="text-slate-400 hover:text-[#FF4D00] text-[11px] font-semibold flex items-center gap-0.5 cursor-pointer"
                         >
                           <Pencil className="w-2.5 h-2.5" /> Edit
                         </button>
                       )}
                     </div>
-                    <div className="text-sm font-bold text-slate-800 mt-1">
+                    <div className="text-xs font-semibold text-[#0B1528] mt-1">
                       {safeFormatDate(
                         booking.departureDate,
                         { day: "2-digit", month: "short", year: "numeric" },
@@ -2975,11 +3342,11 @@ export default function BookingDetailsView({
                       )}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-semibold text-slate-400">
                       Duration
                     </div>
-                    <div className="text-sm font-bold text-slate-800 mt-1">
+                    <div className="text-xs font-semibold text-[#0B1528] mt-1">
                       {(() => {
                         if (!fullTrip?.duration) return "10 Days";
                         const raw = String(fullTrip.duration).trim();
@@ -2996,30 +3363,40 @@ export default function BookingDetailsView({
               </div>
 
               {/* Departure History */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Departure History
-                </h3>
-                <div className="overflow-x-auto">
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#E8EEF4]">
+                  <h3 className="text-xs font-semibold text-[#0B1528]">
+                    Departure history
+                  </h3>
+                </div>
+                <div className="overflow-x-auto min-w-0">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-250 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="px-4 py-2.5">Departure Date</th>
-                        <th className="px-4 py-2.5">Return Date</th>
-                        <th className="px-4 py-2.5">Changed By</th>
-                        <th className="px-4 py-2.5">Updated At</th>
+                      <tr className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-semibold text-slate-400">
+                        <th className="px-4 py-2.5 whitespace-nowrap">
+                          Departure date
+                        </th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">
+                          Return date
+                        </th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">
+                          Changed by
+                        </th>
+                        <th className="px-4 py-2.5 whitespace-nowrap">
+                          Updated at
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      <tr className="hover:bg-slate-50/50 transition-colors text-slate-700">
-                        <td className="px-4 py-3 font-medium">
+                    <tbody className="divide-y divide-[#E8EEF4]">
+                      <tr className="hover:bg-[#F8FAFC] transition-colors text-slate-600">
+                        <td className="px-4 py-3 font-semibold text-[#0B1528] whitespace-nowrap">
                           {safeFormatDate(
                             booking.departureDate,
                             { day: "2-digit", month: "short", year: "numeric" },
                             "—",
                           )}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           {booking.departureDate
                             ? (() => {
                                 const durationStr =
@@ -3045,12 +3422,12 @@ export default function BookingDetailsView({
                               })()
                             : "—"}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-slate-800">
+                        <td className="px-4 py-3 font-semibold text-[#0B1528]">
                           {booking.createdByName ||
                             (booking as any).assignedSalesPerson?.name ||
                             "System"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           {safeFormatDate(
                             booking.updatedAt || booking.createdAt,
                             { day: "2-digit", month: "short", year: "numeric" },
@@ -3065,621 +3442,1012 @@ export default function BookingDetailsView({
           )}
 
           {/* === PASSENGERS TAB === */}
-          {adminActiveTab === "passengers" && (
-            <div className="space-y-4">
-              <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-                <div className="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                      Passengers Manifest
-                    </h3>
-                    {(() => {
-                      const activePaxCount = passengers.filter(
-                        (p) => !p.isCancelled && p.status !== "CANCELLED",
-                      ).length;
-                      const cancelledPaxCount = passengers.filter(
-                        (p) => p.isCancelled || p.status === "CANCELLED",
-                      ).length;
-                      return (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono">
-                          {activePaxCount} Active / {passengers.length} Total{" "}
-                          {cancelledPaxCount > 0 && (
-                            <span className="text-rose-600 font-bold">
-                              ({cancelledPaxCount} Cancelled)
+          {adminActiveTab === "passengers" &&
+            (() => {
+              const canEditPassengers = canManageBooking && !isExpired;
+              const activePaxCount = passengers.filter(
+                (p: any) => !p.isCancelled && p.status !== "CANCELLED",
+              ).length;
+              const cancelledPaxCount = passengers.length - activePaxCount;
+              const expectedPaxCount =
+                booking.numberOfTravelers || passengers.length;
+
+              const openAddPassenger = () => {
+                setEditingPassenger(null);
+                setNewPassenger({
+                  firstName: "",
+                  lastName: "",
+                  gender: "Male",
+                  age: "",
+                  phone: "",
+                  email: "",
+                  foodPreference: "Normal Food",
+                  salutation: "Mr.",
+                  roomSharing: booking.roomType || "Triple",
+                });
+                setShowAddPassenger(true);
+              };
+
+              const hasValue = (value?: string | null) =>
+                !!value &&
+                value !== "N/A" &&
+                value !== "Not specified" &&
+                String(value).trim() !== "";
+
+              const getRoomSharingLabel = (roomType: string) => {
+                if (!roomType) return "Double";
+                const lower = roomType.toLowerCase();
+                if (lower.includes("quad")) return "Quad";
+                if (lower.includes("triple")) return "Triple";
+                if (lower.includes("couple") || lower.includes("double"))
+                  return "Double";
+                return roomType;
+              };
+
+              const getInitials = (name: string) => {
+                const parts = String(name || "")
+                  .replace(/^(mr|mrs|ms|dr)\.?\s+/i, "")
+                  .split(/\s+/)
+                  .filter(Boolean);
+                const initials = parts
+                  .slice(0, 2)
+                  .map((part) => part[0]?.toUpperCase() || "")
+                  .join("");
+                return initials || "?";
+              };
+
+              /** Train-ticket derived readiness label shown as the row status. */
+              const getPassengerStatus = (
+                passengerName: string,
+                isCancelled: boolean,
+              ) => {
+                if (isCancelled) {
+                  return {
+                    label: "Cancelled",
+                    colorClass: "bg-rose-100 text-rose-700 border-rose-300",
+                  };
+                }
+                const ticket = tickets.find(
+                  (t) => t.travelerName === passengerName,
+                );
+                if (ticket) {
+                  if (ticket.ticketStatus === "RAC") {
+                    return {
+                      label: `${ticket.sourceStation || booking.pickupCity || "Train"} (RAC)`,
+                      colorClass: "bg-amber-50 text-amber-700 border-amber-200",
+                    };
+                  }
+                  if (ticket.ticketStatus === "WAITLISTED") {
+                    return {
+                      label: `${ticket.sourceStation || booking.pickupCity || "Train"} (WL)`,
+                      colorClass: "bg-amber-50 text-amber-700 border-amber-200",
+                    };
+                  }
+                  if (ticket.ticketStatus === "SELF_BOOKED") {
+                    return {
+                      label: "Self booked",
+                      colorClass:
+                        "bg-purple-50 text-purple-700 border-purple-200",
+                    };
+                  }
+                  if (ticket.ticketStatus === "PENDING") {
+                    return {
+                      label: "Pending",
+                      colorClass: "bg-slate-50 text-slate-600 border-[#E8EEF4]",
+                    };
+                  }
+                  if (ticket.ticketStatus === "BOOKED") {
+                    return {
+                      label: "Booked",
+                      colorClass: "bg-blue-50 text-blue-700 border-blue-200",
+                    };
+                  }
+                }
+                return {
+                  label: "Confirmed",
+                  colorClass:
+                    "bg-emerald-50 text-emerald-700 border-emerald-200",
+                };
+              };
+
+              /** Documents can arrive on the booking, the normalised passenger,
+               *  the raw passenger, or as a bare Aadhaar URL — merge + dedupe. */
+              const collectDocuments = (p: any, normP: any, index: number) => {
+                const rawDocs: any[] = [];
+
+                if (Array.isArray((booking as any)?.documents)) {
+                  (booking as any).documents.forEach((d: any) => {
+                    if (
+                      String(d.passengerId) === String(p.id) ||
+                      (index === 0 &&
+                        (!d.passengerId || d.passengerId === "primary"))
+                    ) {
+                      rawDocs.push({
+                        id: d.id,
+                        title: d.originalFileName || d.title || "Document",
+                        originalFileName:
+                          d.originalFileName || d.title || "Document",
+                        url: d.url || d.fileUrl,
+                      });
+                    }
+                  });
+                }
+
+                if (Array.isArray(normP.documents)) {
+                  normP.documents.forEach((d: any) => {
+                    rawDocs.push({
+                      id: d.id || `norm-${d.url}`,
+                      title:
+                        d.title || d.originalFileName || "Aadhaar / ID Proof",
+                      originalFileName:
+                        d.title || d.originalFileName || "Aadhaar / ID Proof",
+                      url: d.url || d.fileUrl,
+                    });
+                  });
+                }
+
+                if (Array.isArray(p.documents)) {
+                  p.documents.forEach((d: any) => {
+                    rawDocs.push({
+                      id: d.id || `pdoc-${d.url}`,
+                      title: d.title || d.originalFileName || "Document",
+                      originalFileName:
+                        d.title || d.originalFileName || "Document",
+                      url: d.url || d.fileUrl,
+                    });
+                  });
+                }
+
+                const directIdProof =
+                  p.aadhaarUrl || p.idProofUrl || p.aadhaar || p.idProof;
+                if (
+                  directIdProof &&
+                  typeof directIdProof === "string" &&
+                  (directIdProof.startsWith("http") ||
+                    directIdProof.startsWith("/"))
+                ) {
+                  rawDocs.push({
+                    id: `direct-idproof-${p.id || index}`,
+                    title: "Aadhaar / ID Proof",
+                    originalFileName: "Aadhaar / ID Proof",
+                    url: directIdProof,
+                  });
+                }
+
+                return rawDocs.filter(
+                  (doc, idx, self) =>
+                    doc &&
+                    doc.url &&
+                    self.findIndex(
+                      (d) => d.url === doc.url || (d.id && d.id === doc.id),
+                    ) === idx,
+                );
+              };
+
+              const openDocPreview = (
+                doc: any,
+                passengerName: string,
+                passengerId: string,
+              ) => {
+                const docUrl = doc.url || doc.fileUrl;
+                const title =
+                  doc.originalFileName || doc.title || "Aadhaar / ID Proof";
+                if (docUrl) {
+                  const fullUrl = /^(https?:|data:|blob:)/.test(docUrl)
+                    ? docUrl
+                    : `${ENV.API_BASE_URL}${docUrl.startsWith("/") ? "" : "/"}${docUrl}`;
+                  setDocPreviewModal({
+                    url: fullUrl,
+                    title,
+                    passengerName,
+                  });
+                } else {
+                  handleViewDoc(passengerId, title, doc.id);
+                }
+              };
+
+              const deletePassenger = async (p: any, name: string) => {
+                if (!confirm(`Permanently delete passenger ${name}?`)) return;
+                const updated = passengers.filter((x: any) => x.id !== p.id);
+                setPassengers(updated);
+                try {
+                  await syncBookingDataWithPassengers(updated);
+                  toast.success("Passenger removed and booking items updated");
+                  if (onRefresh) onRefresh();
+                } catch (e) {
+                  toast.error("Failed to delete passenger");
+                }
+              };
+
+              const cancelPassenger = (normP: any) => {
+                setCancellingPassenger(normP);
+                setCancellationReason("Customer Requested Cancellation");
+                setCancellationNotes("");
+                setCancelPassengerModalOpen(true);
+              };
+
+              const openPassengerDrawer = (normP: any) => {
+                setActivePassenger(normP);
+                setIsPassengerDrawerOpen(true);
+              };
+
+              const toggleSelected = (id: string, checked: boolean) => {
+                setSelectedPassengerIds((prev) =>
+                  checked ? [...prev, id] : prev.filter((x) => x !== id),
+                );
+              };
+
+              const rows = passengers.map((p: any, index: number) => {
+                const normP = normalizePassenger(booking, p, index);
+                const isCancelled =
+                  normP.isCancelled ||
+                  p.isCancelled === true ||
+                  p.status === "CANCELLED" ||
+                  (typeof p.status === "string" &&
+                    p.status.toLowerCase().includes("cancel"));
+                const food = p.foodPreference || "Normal Food";
+                return {
+                  key: p.id || `pax-${index}`,
+                  raw: p,
+                  index,
+                  normP,
+                  isCancelled,
+                  initials: getInitials(normP.name),
+                  documents: collectDocuments(p, normP, index),
+                  status: getPassengerStatus(normP.name, isCancelled),
+                  docInputId: `doc-file-${normP.id}`,
+                  cancellationReason:
+                    normP.cancellationReason || p.cancellationReason || "",
+                  roomLabel: getRoomSharingLabel(normP.roomSharing),
+                  food,
+                  isJainFood: ["jain food", "jain"].includes(
+                    String(food).toLowerCase(),
+                  ),
+                };
+              });
+
+              const allSelected =
+                rows.length > 0 &&
+                rows.every((row) =>
+                  selectedPassengerIds.includes(row.normP.id),
+                );
+
+              const iconBtn =
+                "h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 transition-colors cursor-pointer";
+
+              return (
+                <div className="space-y-3 min-w-0">
+                  <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+                    {/* Section header */}
+                    <div className="px-4 md:px-5 py-3.5 border-b border-[#E8EEF4] bg-gradient-to-r from-[#0B1528]/[0.045] to-transparent">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="h-6 w-6 rounded-lg bg-[#0B1528]/[0.07] text-[#0B1528] inline-flex items-center justify-center shrink-0">
+                              <Users className="w-3.5 h-3.5" />
                             </span>
-                          )}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                  {canManageBooking && !isExpired ? (
-                    <button
-                      onClick={() => {
-                        setEditingPassenger(null);
-                        setNewPassenger({
-                          firstName: "",
-                          lastName: "",
-                          gender: "Male",
-                          age: "",
-                          phone: "",
-                          email: "",
-                          foodPreference: "Normal Food",
-                          salutation: "Mr.",
-                          roomSharing: booking.roomType || "Triple",
-                        });
-                        setShowAddPassenger(true);
-                      }}
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1 cursor-pointer"
-                    >
-                      + Add Passenger
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      Passengers locked
-                    </span>
-                  )}
-                </div>
-
-                {selectedPassengerIds.length > 0 && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 mx-4 mt-3">
-                    <span className="text-xs font-bold text-orange-800 ml-2">
-                      {selectedPassengerIds.length} passenger(s) selected
-                    </span>
-                    <div className="flex gap-2 items-center">
-                      <button
-                        className="text-[10px] bg-rose-600 text-white px-2.5 py-1 rounded hover:bg-rose-700 font-bold uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
-                        onClick={handleBulkCancelPassengers}
-                      >
-                        <UserX className="w-3 h-3" /> Cancel Selected ({selectedPassengerIds.length})
-                      </button>
-                      <button
-                        className="text-[10px] bg-emerald-600 text-white px-2.5 py-1 rounded hover:bg-emerald-700 font-bold uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
-                        onClick={handleBulkRestorePassengers}
-                      >
-                        <RotateCcw className="w-3 h-3" /> Restore Selected
-                      </button>
-                      <button
-                        className="text-[10px] bg-green-500 border border-green-600 text-white px-2 py-1 rounded hover:bg-green-600 font-bold uppercase flex items-center gap-1"
-                        onClick={() => toast.success("WhatsApp sharing initiated")}
-                      >
-                        <MessageSquare className="w-3 h-3" /> WhatsApp
-                      </button>
-                      <button
-                        className="text-[10px] bg-slate-900 border border-slate-900 text-white px-2 py-1 rounded hover:bg-slate-800 font-bold uppercase"
-                        onClick={() => toast.success("Bulk Excel download coming soon!")}
-                      >
-                        Download Excel
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div className="p-0 overflow-x-auto no-scrollbar">
-                  <table className="w-full text-left text-xs table-striped min-w-[700px]">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="px-4 py-2 w-10">
-                          <input 
-                            type="checkbox" 
-                            className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
-                            checked={passengers.length > 0 && selectedPassengerIds.length === passengers.length}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedPassengerIds(passengers.map((p, i) => p.id || `primary`));
-                              } else {
-                                setSelectedPassengerIds([]);
-                              }
-                            }}
-                          />
-                        </th>
-                        <th className="px-4 py-2 w-24">Action</th>
-                        <th className="px-4 py-2">Name</th>
-                        <th className="px-4 py-2 w-16">Age</th>
-                        <th className="px-4 py-2 w-18">Gender</th>
-                        <th className="px-4 py-2 w-32">Phone</th>
-                        <th className="px-4 py-2 w-40">E-mail</th>
-                        <th className="px-4 py-2 w-28">Documents</th>
-                        <th className="px-4 py-2 w-32">Room Sharing</th>
-                        <th className="px-4 py-2 w-32">Food Preference</th>
-                        <th className="px-4 py-2 w-36">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {passengers.map((p, index) => {
-                        const normP = normalizePassenger(booking, p, index);
-                        const isCancelled =
-                          normP.isCancelled ||
-                          p.isCancelled === true ||
-                          p.status === "CANCELLED" ||
-                          (typeof p.status === "string" &&
-                            p.status.toLowerCase().includes("cancel"));
-
-                        // Room sharing option label helper
-                        const getRoomSharingLabel = (roomType: string) => {
-                          if (!roomType) return "Double";
-                          const lower = roomType.toLowerCase();
-                          if (lower.includes("quad")) return "Quad";
-                          if (lower.includes("triple")) return "Triple";
-                          if (
-                            lower.includes("couple") ||
-                            lower.includes("double")
-                          )
-                            return "Double";
-                          return roomType;
-                        };
-
-                        // Train status check helper
-                        const getPassengerStatus = (passengerName: string) => {
-                          if (isCancelled) {
-                            return {
-                              label: "Cancelled",
-                              colorClass:
-                                "bg-rose-100 text-rose-700 border-rose-300 font-black",
-                            };
-                          }
-                          const ticket = tickets.find(
-                            (t) => t.travelerName === passengerName,
-                          );
-                          if (ticket) {
-                            if (ticket.ticketStatus === "RAC") {
-                              return {
-                                label: `${ticket.sourceStation || booking.pickupCity || "Train"} (RAC)`,
-                                colorClass:
-                                  "bg-amber-50 text-amber-700 border-amber-200",
-                              };
-                            }
-                            if (ticket.ticketStatus === "WAITLISTED") {
-                              return {
-                                label: `${ticket.sourceStation || booking.pickupCity || "Train"} (WL)`,
-                                colorClass:
-                                  "bg-amber-50 text-amber-700 border-amber-200",
-                              };
-                            }
-                            if (ticket.ticketStatus === "SELF_BOOKED") {
-                              return {
-                                label: "Self Booked",
-                                colorClass:
-                                  "bg-purple-50 text-purple-700 border-purple-200",
-                              };
-                            }
-                            if (ticket.ticketStatus === "PENDING") {
-                              return {
-                                label: "Pending",
-                                colorClass:
-                                  "bg-slate-50 text-slate-700 border-slate-200",
-                              };
-                            }
-                            if (ticket.ticketStatus === "BOOKED") {
-                              return {
-                                label: "Booked",
-                                colorClass:
-                                  "bg-blue-50 text-blue-700 border-blue-200",
-                              };
-                            }
-                            if (ticket.ticketStatus === "CONFIRMED") {
-                              return {
-                                label: "Confirmed",
-                                colorClass:
-                                  "bg-green-50 text-green-700 border-green-200",
-                              };
-                            }
-                          }
-                          return {
-                            label: "Confirmed",
-                            colorClass:
-                              "bg-green-50 text-green-700 border-green-200",
-                          };
-                        };
-
-                        const passStatus = getPassengerStatus(normP.name);
-
-                        return (
-                          <tr 
-                            key={p.id || index}
-                            className={cn(
-                              "cursor-pointer transition-colors group",
-                              isCancelled
-                                ? "bg-rose-50/70 hover:bg-rose-100/70 border-l-4 border-l-rose-500"
-                                : "hover:bg-orange-50/50"
+                            <h3 className="text-xs font-semibold text-[#0B1528]">
+                              Passengers manifest
+                            </h3>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white border border-[#E8EEF4] text-[#0B1528]">
+                              {activePaxCount} active
+                            </span>
+                            {cancelledPaxCount > 0 && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700">
+                                {cancelledPaxCount} cancelled
+                              </span>
                             )}
-                            onClick={() => {
-                              setActivePassenger(normP);
-                              setIsPassengerDrawerOpen(true);
-                            }}
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-1.5 md:ml-8">
+                            {passengers.length} of {expectedPaxCount} travellers
+                            captured
+                            {passengers.length < expectedPaxCount && (
+                              <span className="text-[#C2410C] font-semibold">
+                                {" "}
+                                — details pending
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {canEditPassengers ? (
+                          <button
+                            onClick={openAddPassenger}
+                            className="h-8 shrink-0 inline-flex items-center gap-1.5 bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs px-3.5 rounded-lg shadow-[0_1px_2px_rgba(255,77,0,0.35)] transition-colors cursor-pointer"
                           >
-                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                              <input 
-                                type="checkbox" 
-                                className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
-                                checked={selectedPassengerIds.includes(normP.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedPassengerIds(prev => [...prev, normP.id]);
-                                  } else {
-                                    setSelectedPassengerIds(prev => prev.filter(id => id !== normP.id));
-                                  }
-                                }}
-                              />
-                            </td>
-                            {/* Action buttons */}
-                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex gap-1.5 items-center">
-                                {canManageBooking && !isExpired ? (
-                                  <>
-                                    <button
-                                      onClick={() => {
-                                        setActivePassenger(normP);
-                                        setIsPassengerDrawerOpen(true);
-                                      }}
-                                      className="p-1 text-slate-400 hover:text-slate-700 border border-slate-200 bg-slate-50/60 rounded cursor-pointer"
-                                      title="Open Passenger Module"
-                                    >
-                                      <User className="w-3.5 h-3.5" />
-                                    </button>
+                            <Plus className="w-3.5 h-3.5" /> Add passenger
+                          </button>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-slate-400 inline-flex items-center gap-1.5 shrink-0">
+                            <Ban className="w-3.5 h-3.5" /> Passengers locked
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                                    {isCancelled ? (
-                                      <button
-                                        onClick={() => handleRestorePassenger(normP)}
-                                        className="p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border border-emerald-200 bg-emerald-50/40 rounded transition-colors cursor-pointer"
-                                        title="Restore Passenger (Re-activate to Confirmed)"
-                                      >
-                                        <RotateCcw className="w-3.5 h-3.5" />
-                                      </button>
-                                    ) : (
-                                      <button
-                                        onClick={() => {
-                                          setCancellingPassenger(normP);
-                                          setCancellationReason(
-                                            "Customer Requested Cancellation",
-                                          );
-                                          setCancellationNotes("");
-                                          setCancelPassengerModalOpen(true);
-                                        }}
-                                        className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 bg-rose-50/40 rounded transition-colors cursor-pointer"
-                                        title="Cancel This Passenger (1-person cancellation in group)"
-                                      >
-                                        <UserX className="w-3.5 h-3.5" />
-                                      </button>
-                                    )}
+                    {/* Bulk selection bar */}
+                    {selectedPassengerIds.length > 0 && (
+                      <div className="px-4 md:px-5 py-2.5 bg-[#FF4D00]/[0.05] border-b border-[#FF4D00]/20 flex items-center justify-between gap-3 flex-wrap animate-in fade-in slide-in-from-top-1">
+                        <div className="flex items-center gap-2 text-[11px] font-semibold text-[#C2410C]">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>
+                            {selectedPassengerIds.length} selected
+                          </span>
+                          <button
+                            onClick={() => setSelectedPassengerIds([])}
+                            className="text-slate-500 hover:text-[#0B1528] font-semibold underline underline-offset-2 cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={handleBulkCancelPassengers}
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-[11px] font-semibold transition-colors cursor-pointer"
+                          >
+                            <UserX className="w-3 h-3" /> Cancel
+                          </button>
+                          <button
+                            onClick={handleBulkRestorePassengers}
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-[11px] font-semibold transition-colors cursor-pointer"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Restore
+                          </button>
+                          <button
+                            onClick={() =>
+                              toast.success("WhatsApp sharing initiated")
+                            }
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-[#E8EEF4] text-slate-600 hover:text-[#0B1528] hover:border-slate-300 text-[11px] font-semibold transition-colors cursor-pointer"
+                          >
+                            <MessageSquare className="w-3 h-3" /> WhatsApp
+                          </button>
+                          <button
+                            onClick={() =>
+                              toast.success("Bulk Excel download coming soon!")
+                            }
+                            className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md bg-white border border-[#E8EEF4] text-slate-600 hover:text-[#0B1528] hover:border-slate-300 text-[11px] font-semibold transition-colors cursor-pointer"
+                          >
+                            <FileText className="w-3 h-3" /> Excel
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
-                                    <button
-                                      onClick={async () => {
-                                        if (
-                                          confirm(
-                                            `Permanently delete passenger ${normP.name}?`,
-                                          )
-                                        ) {
-                                          const updated = passengers.filter(
-                                            (x) => x.id !== p.id,
-                                          );
-                                          setPassengers(updated);
-                                          try {
-                                            await syncBookingDataWithPassengers(
-                                              updated,
-                                            );
-                                            toast.success(
-                                              "Passenger removed and booking items updated",
-                                            );
-                                            if (onRefresh) onRefresh();
-                                          } catch (e) {
-                                            toast.error(
-                                              "Failed to delete passenger",
-                                            );
-                                          }
-                                        }
-                                      }}
-                                      className="p-1 text-red-400 hover:text-red-600 border border-slate-200 bg-slate-50/60 rounded cursor-pointer"
-                                      title="Permanently Delete"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                    —
-                                  </span>
-                                )}
-                              </div>
-                            </td>
+                    {rows.length === 0 ? (
+                      /* Empty state */
+                      <div className="px-6 py-12 text-center">
+                        <span className="h-11 w-11 rounded-2xl bg-[#F4F7FB] border border-[#E8EEF4] text-slate-400 inline-flex items-center justify-center">
+                          <Users className="w-5 h-5" />
+                        </span>
+                        <p className="text-xs font-semibold text-[#0B1528] mt-3">
+                          No passengers on this manifest yet
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-1 max-w-[300px] mx-auto leading-relaxed">
+                          Add travellers with names, ages and ID proofs —
+                          ticketing, rooming and meal planning all read from
+                          here.
+                        </p>
+                        {canEditPassengers && (
+                          <button
+                            onClick={openAddPassenger}
+                            className="h-8 mt-4 inline-flex items-center gap-1.5 bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs px-3.5 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add passenger
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        {/* One hidden upload input per passenger, shared by the
+                            desktop table and the mobile card list. */}
+                        {rows.map((row) => (
+                          <input
+                            key={`upload-${row.key}`}
+                            type="file"
+                            id={row.docInputId}
+                            className="hidden"
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            onChange={(e) => handleFileChange(e, row.raw.id)}
+                          />
+                        ))}
 
-                            <td className="px-4 py-3 font-bold text-slate-800">
-                              <div
-                                className={cn(
-                                  "flex items-center gap-1.5",
-                                  isCancelled
-                                    ? "line-through text-rose-700 font-bold"
-                                    : "",
-                                )}
-                              >
-                                <span>{normP.name || "N/A"}</span>
-                                {isCancelled && (
-                                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-rose-200/90 text-rose-800 rounded border border-rose-300 no-underline inline-block">
-                                    CANCELLED
-                                  </span>
-                                )}
-                              </div>
-                              {isCancelled &&
-                                (normP.cancellationReason ||
-                                  p.cancellationReason) && (
-                                  <div className="text-[10px] text-rose-600 font-medium italic mt-0.5">
-                                    Reason:{" "}
-                                    {normP.cancellationReason ||
-                                      p.cancellationReason}
-                                  </div>
-                                )}
-                              {normP.phone &&
-                                normP.phone !== "N/A" &&
-                                normP.phone !== "Not specified" &&
-                                normP.phone.trim() !== "" && (
-                                  <div className="text-[11px] font-normal font-mono text-slate-500 flex items-center gap-1 mt-0.5">
-                                    <Phone className="w-3 h-3 text-slate-400 shrink-0 inline" />
-                                    <span>{normP.phone}</span>
-                                  </div>
-                                )}
-                            </td>
-
-                            <td className="px-4 py-3 font-mono font-bold text-slate-800">
-                              {normP.age !== null ? `${normP.age}y` : "N/A"}
-                              {normP.dob && (
-                                <span className="block text-[9px] text-slate-400 font-normal">
-                                  DOB: {normP.dob}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 font-medium text-slate-700">
-                              {normP.genderFull}
-                            </td>
-
-                            <td className="px-4 py-3 font-mono text-slate-700 text-xs truncate max-w-[130px]">
-                              {normP.phone &&
-                              normP.phone !== "N/A" &&
-                              normP.phone !== "Not specified" &&
-                              normP.phone.trim() !== "" ? (
-                                <a
-                                  href={`tel:${normP.phone}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="hover:text-orange-600 hover:underline flex items-center gap-1"
-                                >
-                                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                                  <span>{normP.phone}</span>
-                                </a>
-                              ) : (
-                                <span className="text-slate-400 italic text-[11px]">Not specified</span>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-3 font-mono text-slate-500 truncate max-w-[120px]">
-                              {normP.email && normP.email !== "N/A" ? (
-                                <span>{normP.email}</span>
-                              ) : (
-                                <span className="text-slate-400 italic text-[11px]">Not specified</span>
-                              )}
-                            </td>
-
-                            {/* Documents */}
-                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                              {(() => {
-                                const isGuide = currentAdmin?.role === "guide";
-                                const isSales = currentAdmin?.role === "sales";
-                                const isOwnBooking =
-                                  booking.salesAdminId === currentAdmin?.id;
-                                const canAccessDocs = true;
-
-                                if (!canAccessDocs) {
-                                  return (
-                                    <span className="text-slate-400 font-medium">
-                                      —
-                                    </span>
-                                  );
-                                }
-
-                                const rawDocs: any[] = [];
-                                if (Array.isArray((booking as any)?.documents)) {
-                                  (booking as any).documents.forEach((d: any) => {
-                                    if (
-                                      String(d.passengerId) === String(p.id) ||
-                                      (index === 0 && (!d.passengerId || d.passengerId === "primary"))
-                                    ) {
-                                      rawDocs.push({
-                                        id: d.id,
-                                        title: d.originalFileName || d.title || "Document",
-                                        originalFileName: d.originalFileName || d.title || "Document",
-                                        url: d.url || d.fileUrl,
-                                      });
-                                    }
-                                  });
-                                }
-
-                                if (Array.isArray(normP.documents)) {
-                                  normP.documents.forEach((d: any) => {
-                                    rawDocs.push({
-                                      id: d.id || `norm-${d.url}`,
-                                      title: d.title || d.originalFileName || "Aadhaar / ID Proof",
-                                      originalFileName: d.title || d.originalFileName || "Aadhaar / ID Proof",
-                                      url: d.url || d.fileUrl,
-                                    });
-                                  });
-                                }
-
-                                if (Array.isArray(p.documents)) {
-                                  p.documents.forEach((d: any) => {
-                                    rawDocs.push({
-                                      id: d.id || `pdoc-${d.url}`,
-                                      title: d.title || d.originalFileName || "Document",
-                                      originalFileName: d.title || d.originalFileName || "Document",
-                                      url: d.url || d.fileUrl,
-                                    });
-                                  });
-                                }
-
-                                const directIdProof = p.aadhaarUrl || p.idProofUrl || p.aadhaar || p.idProof;
-                                if (
-                                  directIdProof &&
-                                  typeof directIdProof === "string" &&
-                                  (directIdProof.startsWith("http") || directIdProof.startsWith("/"))
-                                ) {
-                                  rawDocs.push({
-                                    id: `direct-idproof-${p.id || index}`,
-                                    title: "Aadhaar / ID Proof",
-                                    originalFileName: "Aadhaar / ID Proof",
-                                    url: directIdProof,
-                                  });
-                                }
-
-                                const passengerDocs = rawDocs.filter(
-                                  (doc, idx, self) =>
-                                    doc &&
-                                    doc.url &&
-                                    self.findIndex(
-                                      (d) => d.url === doc.url || (d.id && d.id === doc.id),
-                                    ) === idx,
-                                );
-
-                                return (
-                                  <div className="flex flex-col gap-1.5 items-start min-w-[120px]">
-                                    <input
-                                      type="file"
-                                      id={`doc-file-${p.id}`}
-                                      className="hidden"
-                                      accept=".jpg,.jpeg,.png,.pdf"
-                                      onChange={(e) =>
-                                        handleFileChange(e, p.id)
+                        {/* Desktop / tablet table */}
+                        <div className="hidden md:block overflow-x-auto no-scrollbar">
+                          <table className="w-full text-left text-xs min-w-[820px]">
+                            <thead>
+                              <tr className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                                <th className="px-4 py-2.5 w-10">
+                                  <input
+                                    type="checkbox"
+                                    className="rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00] w-3.5 h-3.5 cursor-pointer"
+                                    checked={allSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedPassengerIds(
+                                          rows.map((row) => row.normP.id),
+                                        );
+                                      } else {
+                                        setSelectedPassengerIds([]);
                                       }
-                                    />
+                                    }}
+                                    aria-label="Select all passengers"
+                                  />
+                                </th>
+                                <th className="px-3 py-2.5">Passenger</th>
+                                <th className="px-3 py-2.5 w-16">Age</th>
+                                <th className="px-3 py-2.5 w-24">Gender</th>
+                                <th className="px-3 py-2.5 w-32">
+                                  Room &amp; meal
+                                </th>
+                                <th className="px-3 py-2.5 w-44">ID proof</th>
+                                <th className="px-3 py-2.5 w-28">Status</th>
+                                <th className="px-3 py-2.5 w-24 text-right">
+                                  Actions
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E8EEF4] text-slate-700">
+                              {rows.map((row) => {
+                                const { normP, raw, isCancelled } = row;
+                                return (
+                                  <tr
+                                    key={row.key}
+                                    onClick={() => openPassengerDrawer(normP)}
+                                    className={cn(
+                                      "group cursor-pointer transition-colors",
+                                      isCancelled
+                                        ? "bg-rose-50/50 hover:bg-rose-50"
+                                        : "hover:bg-[#FFF6F1]",
+                                    )}
+                                  >
+                                    <td
+                                      className="px-4 py-3 align-top"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00] w-3.5 h-3.5 cursor-pointer mt-1"
+                                        checked={selectedPassengerIds.includes(
+                                          normP.id,
+                                        )}
+                                        onChange={(e) =>
+                                          toggleSelected(
+                                            normP.id,
+                                            e.target.checked,
+                                          )
+                                        }
+                                        aria-label={`Select ${normP.name}`}
+                                      />
+                                    </td>
 
-                                    {passengerDocs.length > 0 && (
-                                      <div className="flex flex-col gap-1.5 items-start w-full">
-                                        {passengerDocs.map((doc: any) => (
+                                    {/* Passenger — name primary, contact secondary */}
+                                    <td className="px-3 py-3 align-top">
+                                      <div className="flex items-start gap-2.5 min-w-0">
+                                        <span
+                                          className={cn(
+                                            "h-8 w-8 rounded-full border inline-flex items-center justify-center text-[11px] font-semibold shrink-0",
+                                            isCancelled
+                                              ? "bg-rose-100 border-rose-200 text-rose-700"
+                                              : row.index === 0
+                                                ? "bg-[#FF4D00]/10 border-[#FF4D00]/25 text-[#C2410C]"
+                                                : "bg-[#0B1528]/[0.06] border-[#0B1528]/10 text-[#0B1528]",
+                                          )}
+                                        >
+                                          {row.initials}
+                                        </span>
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <span
+                                              className={cn(
+                                                "text-xs font-semibold truncate",
+                                                isCancelled
+                                                  ? "line-through text-rose-700"
+                                                  : "text-[#0B1528]",
+                                              )}
+                                            >
+                                              {normP.name || "N/A"}
+                                            </span>
+                                            {row.index === 0 && (
+                                              <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[#FF4D00]/[0.08] text-[#C2410C] border border-[#FF4D00]/20 shrink-0">
+                                                Lead
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-2.5 flex-wrap mt-1">
+                                            {hasValue(normP.phone) ? (
+                                              <a
+                                                href={`tel:${normP.phone}`}
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                                className="text-[11px] font-mono text-slate-500 hover:text-[#FF4D00] inline-flex items-center gap-1"
+                                              >
+                                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                                {normP.phone}
+                                              </a>
+                                            ) : (
+                                              <span className="text-[11px] text-slate-400 inline-flex items-center gap-1">
+                                                <Phone className="w-3 h-3 shrink-0" />
+                                                No phone
+                                              </span>
+                                            )}
+                                            {hasValue(normP.email) && (
+                                              <span
+                                                className="text-[11px] text-slate-500 inline-flex items-center gap-1 truncate max-w-[190px]"
+                                                title={normP.email}
+                                              >
+                                                <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                                                {normP.email}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {isCancelled &&
+                                            row.cancellationReason && (
+                                              <div className="text-[10px] text-rose-600 mt-1">
+                                                {row.cancellationReason}
+                                              </div>
+                                            )}
+                                        </div>
+                                      </div>
+                                    </td>
+
+                                    <td className="px-3 py-3 align-top">
+                                      <span className="font-mono font-semibold text-[#0B1528] text-xs">
+                                        {normP.age !== null
+                                          ? `${normP.age}y`
+                                          : "—"}
+                                      </span>
+                                      {normP.dob && (
+                                        <span className="block text-[9px] text-slate-400 font-mono mt-0.5">
+                                          {normP.dob}
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    <td className="px-3 py-3 align-top">
+                                      {normP.genderFull ? (
+                                        <span
+                                          className={cn(
+                                            "inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-semibold",
+                                            getGenderTone(normP.genderFull),
+                                          )}
+                                        >
+                                          {normP.genderFull}
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-400">
+                                          —
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    <td className="px-3 py-3 align-top">
+                                      <div className="text-[11px] font-semibold text-[#0B1528]">
+                                        {row.roomLabel}
+                                      </div>
+                                      <span
+                                        className={cn(
+                                          "inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border",
+                                          row.isJainFood
+                                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                                            : "bg-emerald-50 text-emerald-700 border-emerald-200",
+                                        )}
+                                      >
+                                        {row.food}
+                                      </span>
+                                    </td>
+
+                                    {/* ID proof */}
+                                    <td
+                                      className="px-3 py-3 align-top"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="flex flex-col gap-1.5 items-start">
+                                        {row.documents.map((doc: any) => (
                                           <div
                                             key={doc.id || doc.url}
-                                            className="flex flex-col gap-0.5 items-start bg-slate-50 border border-slate-200 p-1.5 rounded-md w-full"
+                                            className="w-full bg-[#F8FAFC] border border-[#E8EEF4] rounded-md px-2 py-1.5"
                                           >
-                                            <span
-                                              className="text-[10px] text-slate-700 font-bold truncate max-w-[130px]"
-                                              title={doc.originalFileName || doc.title}
+                                            <div
+                                              className="flex items-center gap-1.5 min-w-0"
+                                              title={
+                                                doc.originalFileName ||
+                                                doc.title
+                                              }
                                             >
-                                              📄 {doc.originalFileName || doc.title}
-                                            </span>
-                                            <div className="flex gap-1.5 items-center">
+                                              <FileText className="w-3 h-3 text-slate-400 shrink-0" />
+                                              <span className="text-[10px] font-semibold text-slate-700 truncate">
+                                                {doc.originalFileName ||
+                                                  doc.title}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-0.5 pl-4">
                                               <button
                                                 type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  const docUrl = doc.url || doc.fileUrl;
-                                                  if (docUrl) {
-                                                    const fullUrl = docUrl.startsWith("http://") || docUrl.startsWith("https://") || docUrl.startsWith("data:") || docUrl.startsWith("blob:")
-                                                      ? docUrl
-                                                      : `${API_BASE_URL}${docUrl.startsWith("/") ? "" : "/"}${docUrl}`;
-                                                    setDocPreviewModal({
-                                                      url: fullUrl,
-                                                      title: doc.originalFileName || doc.title || "Aadhaar / ID Proof",
-                                                      passengerName: normP.name,
-                                                    });
-                                                  } else {
-                                                    handleViewDoc(
-                                                      normP.id,
-                                                      doc.originalFileName || doc.title || "Aadhaar / ID Proof",
-                                                      doc.id,
-                                                    );
-                                                  }
-                                                }}
-                                                className="text-[9px] text-orange-600 hover:text-orange-700 font-bold cursor-pointer"
+                                                onClick={() =>
+                                                  openDocPreview(
+                                                    doc,
+                                                    normP.name,
+                                                    normP.id,
+                                                  )
+                                                }
+                                                className="text-[10px] font-semibold text-[#FF4D00] hover:text-[#E04400] cursor-pointer"
                                               >
                                                 View
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
+                                                onClick={() =>
                                                   handleRemoveDoc(
-                                                    p.id,
+                                                    raw.id,
                                                     doc.id,
-                                                  );
-                                                }}
-                                                className="text-[9px] text-red-500 hover:text-red-700 font-bold cursor-pointer"
+                                                  )
+                                                }
+                                                className="text-[10px] font-semibold text-slate-400 hover:text-rose-600 cursor-pointer"
                                               >
-                                                Delete
+                                                Remove
                                               </button>
                                             </div>
                                           </div>
                                         ))}
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            document
+                                              .getElementById(row.docInputId)
+                                              ?.click()
+                                          }
+                                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-[#0B1528] border border-dashed border-[#E8EEF4] hover:border-slate-300 rounded-md px-2 py-1 transition-colors cursor-pointer"
+                                        >
+                                          <Plus className="w-3 h-3" />
+                                          {row.documents.length > 0
+                                            ? "Add"
+                                            : "Upload ID proof"}
+                                        </button>
                                       </div>
-                                    )}
+                                    </td>
 
+                                    <td className="px-3 py-3 align-top">
+                                      <span
+                                        className={cn(
+                                          "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                                          row.status.colorClass,
+                                        )}
+                                      >
+                                        {row.status.label}
+                                      </span>
+                                    </td>
+
+                                    {/* Actions — quiet until row hover */}
+                                    <td
+                                      className="px-3 py-3 align-top"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {canEditPassengers ? (
+                                        <div className="flex items-center justify-end gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                                          <button
+                                            onClick={() =>
+                                              openPassengerDrawer(normP)
+                                            }
+                                            className={cn(
+                                              iconBtn,
+                                              "hover:text-[#0B1528] hover:bg-[#0B1528]/[0.06]",
+                                            )}
+                                            title="Open passenger module"
+                                          >
+                                            <User className="w-3.5 h-3.5" />
+                                          </button>
+                                          {isCancelled ? (
+                                            <button
+                                              onClick={() =>
+                                                handleRestorePassenger(normP)
+                                              }
+                                              className={cn(
+                                                iconBtn,
+                                                "text-emerald-600 hover:bg-emerald-50",
+                                              )}
+                                              title="Restore passenger"
+                                            >
+                                              <RotateCcw className="w-3.5 h-3.5" />
+                                            </button>
+                                          ) : (
+                                            <button
+                                              onClick={() =>
+                                                cancelPassenger(normP)
+                                              }
+                                              className={cn(
+                                                iconBtn,
+                                                "hover:text-rose-600 hover:bg-rose-50",
+                                              )}
+                                              title="Cancel this passenger"
+                                            >
+                                              <UserX className="w-3.5 h-3.5" />
+                                            </button>
+                                          )}
+                                          <button
+                                            onClick={() =>
+                                              deletePassenger(raw, normP.name)
+                                            }
+                                            className={cn(
+                                              iconBtn,
+                                              "hover:text-rose-600 hover:bg-rose-50",
+                                            )}
+                                            title="Permanently delete"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex justify-end">
+                                          <button
+                                            onClick={() =>
+                                              openPassengerDrawer(normP)
+                                            }
+                                            className={cn(
+                                              iconBtn,
+                                              "hover:text-[#0B1528] hover:bg-[#0B1528]/[0.06]",
+                                            )}
+                                            title="Open passenger module"
+                                          >
+                                            <ChevronRight className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile card list */}
+                        <ul className="md:hidden divide-y divide-[#E8EEF4]">
+                          {rows.map((row) => {
+                            const { normP, raw, isCancelled } = row;
+                            return (
+                              <li
+                                key={`m-${row.key}`}
+                                className={cn(
+                                  "px-4 py-3.5",
+                                  isCancelled && "bg-rose-50/50",
+                                )}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <input
+                                    type="checkbox"
+                                    className="rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00] w-4 h-4 cursor-pointer mt-2 shrink-0"
+                                    checked={selectedPassengerIds.includes(
+                                      normP.id,
+                                    )}
+                                    onChange={(e) =>
+                                      toggleSelected(
+                                        normP.id,
+                                        e.target.checked,
+                                      )
+                                    }
+                                    aria-label={`Select ${normP.name}`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => openPassengerDrawer(normP)}
+                                    className="flex-1 min-w-0 text-left cursor-pointer"
+                                  >
+                                    <div className="flex items-start gap-2.5">
+                                      <span
+                                        className={cn(
+                                          "h-9 w-9 rounded-full border inline-flex items-center justify-center text-xs font-semibold shrink-0",
+                                          isCancelled
+                                            ? "bg-rose-100 border-rose-200 text-rose-700"
+                                            : row.index === 0
+                                              ? "bg-[#FF4D00]/10 border-[#FF4D00]/25 text-[#C2410C]"
+                                              : "bg-[#0B1528]/[0.06] border-[#0B1528]/10 text-[#0B1528]",
+                                        )}
+                                      >
+                                        {row.initials}
+                                      </span>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5">
+                                          <span
+                                            className={cn(
+                                              "text-xs font-semibold truncate",
+                                              isCancelled
+                                                ? "line-through text-rose-700"
+                                                : "text-[#0B1528]",
+                                            )}
+                                          >
+                                            {normP.name || "N/A"}
+                                          </span>
+                                          {row.index === 0 && (
+                                            <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[#FF4D00]/[0.08] text-[#C2410C] border border-[#FF4D00]/20 shrink-0">
+                                              Lead
+                                            </span>
+                                          )}
+                                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 ml-auto shrink-0" />
+                                        </div>
+                                        <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                                          <span
+                                            className={cn(
+                                              "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                                              row.status.colorClass,
+                                            )}
+                                          >
+                                            {row.status.label}
+                                          </span>
+                                          {normP.genderFull && (
+                                            <span
+                                              className={cn(
+                                                "inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-semibold",
+                                                getGenderTone(
+                                                  normP.genderFull,
+                                                ),
+                                              )}
+                                            >
+                                              {normP.genderFull}
+                                            </span>
+                                          )}
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#E8EEF4] bg-[#F8FAFC] text-[10px] font-semibold text-slate-600 font-mono">
+                                            {normP.age !== null
+                                              ? `${normP.age}y`
+                                              : "Age —"}
+                                          </span>
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#E8EEF4] bg-[#F8FAFC] text-[10px] font-semibold text-slate-600">
+                                            {row.roomLabel}
+                                          </span>
+                                          <span
+                                            className={cn(
+                                              "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                                              row.isJainFood
+                                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                                : "bg-emerald-50 text-emerald-700 border-emerald-200",
+                                            )}
+                                          >
+                                            {row.food}
+                                          </span>
+                                        </div>
+                                        {isCancelled &&
+                                          row.cancellationReason && (
+                                            <div className="text-[10px] text-rose-600 mt-1.5">
+                                              {row.cancellationReason}
+                                            </div>
+                                          )}
+                                      </div>
+                                    </div>
+                                  </button>
+                                </div>
+
+                                {/* Contact + documents */}
+                                <div className="mt-2.5 pl-7 space-y-1.5">
+                                  <div className="flex items-center gap-3 flex-wrap">
+                                    {hasValue(normP.phone) ? (
+                                      <a
+                                        href={`tel:${normP.phone}`}
+                                        className="text-[11px] font-mono font-semibold text-slate-600 hover:text-[#FF4D00] inline-flex items-center gap-1"
+                                      >
+                                        <Phone className="w-3 h-3 text-slate-400" />
+                                        {normP.phone}
+                                      </a>
+                                    ) : (
+                                      <span className="text-[11px] text-slate-400 inline-flex items-center gap-1">
+                                        <Phone className="w-3 h-3" /> No phone
+                                      </span>
+                                    )}
+                                    {hasValue(normP.email) && (
+                                      <a
+                                        href={`mailto:${normP.email}`}
+                                        className="text-[11px] text-slate-500 hover:text-[#FF4D00] inline-flex items-center gap-1 truncate max-w-full"
+                                      >
+                                        <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                                        <span className="truncate">
+                                          {normP.email}
+                                        </span>
+                                      </a>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {row.documents.length > 0 ? (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600">
+                                        <FileText className="w-3 h-3 text-slate-400" />
+                                        {row.documents.length} ID{" "}
+                                        {row.documents.length === 1
+                                          ? "proof"
+                                          : "proofs"}
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700">
+                                        <AlertCircle className="w-3 h-3" /> No
+                                        ID proof
+                                      </span>
+                                    )}
+                                    {row.documents.slice(0, 1).map((doc: any) => (
+                                      <button
+                                        key={`m-doc-${doc.id || doc.url}`}
+                                        type="button"
+                                        onClick={() =>
+                                          openDocPreview(
+                                            doc,
+                                            normP.name,
+                                            normP.id,
+                                          )
+                                        }
+                                        className="text-[11px] font-semibold text-[#FF4D00] hover:text-[#E04400] cursor-pointer"
+                                      >
+                                        View
+                                      </button>
+                                    ))}
                                     <button
                                       type="button"
                                       onClick={() =>
                                         document
-                                          .getElementById(`doc-file-${p.id}`)
+                                          .getElementById(row.docInputId)
                                           ?.click()
                                       }
-                                      className="text-[9px] bg-slate-900 hover:bg-slate-800 text-white font-bold py-1 px-2 rounded transition-all shadow-xs uppercase tracking-wider"
+                                      className="text-[11px] font-semibold text-slate-500 hover:text-[#0B1528] cursor-pointer"
                                     >
-                                      + Add Document
+                                      Upload
                                     </button>
                                   </div>
-                                );
-                              })()}
-                            </td>
 
-                            {/* Room Sharing */}
-                            <td className="px-4 py-3 font-medium text-slate-700">
-                              {getRoomSharingLabel(normP.roomSharing)}
-                            </td>
-
-                            {/* Food Preference */}
-                            <td className="px-4 py-3">
-                              <span
-                                className={cn(
-                                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
-                                  (p.foodPreference || "").toLowerCase() ===
-                                    "jain food" ||
-                                    (p.foodPreference || "").toLowerCase() ===
-                                      "jain"
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : "bg-green-50 text-green-700 border-green-200",
-                                )}
-                              >
-                                {p.foodPreference || "Normal Food"}
-                              </span>
-                            </td>
-
-                            {/* Status */}
-                            <td className="px-4 py-3">
-                              <span
-                                className={cn(
-                                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
-                                  passStatus.colorClass,
-                                )}
-                              >
-                                {passStatus.label}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                  {canEditPassengers && (
+                                    <div className="flex items-center gap-1.5 pt-1">
+                                      {isCancelled ? (
+                                        <button
+                                          onClick={() =>
+                                            handleRestorePassenger(normP)
+                                          }
+                                          className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md border border-emerald-200 bg-white text-emerald-700 text-[11px] font-semibold cursor-pointer"
+                                        >
+                                          <RotateCcw className="w-3 h-3" />{" "}
+                                          Restore
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() =>
+                                            cancelPassenger(normP)
+                                          }
+                                          className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md border border-[#E8EEF4] bg-white text-slate-600 text-[11px] font-semibold cursor-pointer"
+                                        >
+                                          <UserX className="w-3 h-3" /> Cancel
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() =>
+                                          deletePassenger(raw, normP.name)
+                                        }
+                                        className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-md border border-[#E8EEF4] bg-white text-slate-500 text-[11px] font-semibold cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3 h-3" /> Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              );
+            })()}
 
           {/* === PAYMENTS TAB === */}
           {adminActiveTab === "payments" && (
-            <div className="space-y-4">
-              <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-                <div className="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex justify-between items-center">
+            <div className="space-y-3 min-w-0">
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
+                <div className="px-5 py-3.5 bg-white border-b border-[#E8EEF4] flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                    <h3 className="font-semibold text-[#0B1528] text-xs">
                       Payment History & Transactions
                     </h3>
                     {booking.remainingAmount > 0 ? (
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 uppercase font-mono">
+                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 uppercase font-mono">
                         Balance Due ₹
                         {(booking.remainingAmount || 0).toLocaleString("en-IN")}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-mono">
+                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-mono">
                         Fully Paid
                       </span>
                     )}
@@ -3692,7 +4460,7 @@ export default function BookingDetailsView({
                       setPayComments("");
                       setShowCreatePayment(true);
                     }}
-                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase px-3.5 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1"
+                    className="bg-[#0B1528] hover:bg-[#182741] text-white font-semibold text-[10px] uppercase px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1"
                   >
                     + Record Payment
                   </button>
@@ -3700,13 +4468,13 @@ export default function BookingDetailsView({
 
                 {/* Inline Payment Submission block */}
                 {showAddPaymentInline && (
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 text-xs space-y-3">
-                    <p className="font-bold text-slate-850">
+                  <div className="p-4 bg-slate-50 border-b border-[#E8EEF4] text-xs space-y-3">
+                    <p className="font-semibold text-slate-850">
                       Record Manual Payment
                     </p>
                     <div className="flex gap-3 flex-wrap">
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold uppercase text-slate-400">
+                        <label className="text-[9px] font-semibold uppercase text-slate-400">
                           Amount Paid
                         </label>
                         <Input
@@ -3718,7 +4486,7 @@ export default function BookingDetailsView({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold uppercase text-slate-400">
+                        <label className="text-[9px] font-semibold uppercase text-slate-400">
                           Payment Mode
                         </label>
                         <Select
@@ -3742,7 +4510,7 @@ export default function BookingDetailsView({
                           onClick={handleAddPaymentSubmit}
                           disabled={recordingPayment}
                           size="sm"
-                          className="bg-slate-900 text-white text-[10px] font-bold uppercase h-8 px-3.5 rounded"
+                          className="bg-slate-900 text-white text-[10px] font-semibold uppercase h-8 px-3.5 rounded"
                         >
                           {recordingPayment ? "Recording..." : "Record"}
                         </Button>
@@ -3750,7 +4518,7 @@ export default function BookingDetailsView({
                           onClick={() => setShowAddPaymentInline(false)}
                           variant="ghost"
                           size="sm"
-                          className="text-slate-400 hover:text-slate-800 h-8 text-[10px]"
+                          className="text-slate-400 hover:text-[#0B1528] h-8 text-[10px]"
                         >
                           Cancel
                         </Button>
@@ -3767,7 +4535,7 @@ export default function BookingDetailsView({
                         key={tabName}
                         onClick={() => setPaymentTab(tabName)}
                         className={cn(
-                          "px-4 py-2 text-[10px] uppercase tracking-wide font-bold border-b-2 transition-all",
+                          "px-4 py-2 text-[10px] uppercase tracking-wide font-semibold border-b-2 transition-all",
                           paymentTab === tabName
                             ? "border-primary text-primary bg-slate-50/40"
                             : "border-transparent text-slate-400 hover:text-slate-700",
@@ -3787,16 +4555,16 @@ export default function BookingDetailsView({
                 <div className="p-5">
                   {paymentTab === "successful" &&
                     (paymentsList.length > 0 ? (
-                      <div className="border border-slate-200/60 rounded overflow-hidden">
+                      <div className="border border-[#E8EEF4]/60 rounded overflow-hidden">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-bold text-slate-450 uppercase tracking-wider">
+                            <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-semibold text-slate-450">
                               <th className="px-4 py-2">Payment comments</th>
                               <th className="px-4 py-2">Ref num</th>
                               <th className="px-4 py-2 text-right">Amt</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-[#E8EEF4]">
                             {paymentsList.map((p: any) => {
                               const isExpanded = expandedPaymentId === p.id;
                               const processor =
@@ -3820,7 +4588,7 @@ export default function BookingDetailsView({
                               return (
                                 <React.Fragment key={p.id}>
                                   <tr
-                                    className="text-slate-700 hover:bg-slate-50/50 cursor-pointer"
+                                    className="text-slate-700 hover:bg-[#F8FAFC] cursor-pointer"
                                     onClick={() =>
                                       setExpandedPaymentId(
                                         isExpanded ? null : p.id,
@@ -3828,11 +4596,11 @@ export default function BookingDetailsView({
                                     }
                                   >
                                     <td className="px-4 py-3 font-semibold flex items-center gap-1.5 flex-wrap">
-                                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase bg-slate-200 text-slate-700 font-mono">
+                                      <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded uppercase bg-slate-200 text-slate-700 font-mono">
                                         {p.paymentMode || "Unknown"}
                                       </span>
                                       {p.collectionAccount && (
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                                           🏛️ {p.collectionAccount.accountName}
                                         </span>
                                       )}
@@ -3844,7 +4612,7 @@ export default function BookingDetailsView({
                                     <td className="px-4 py-3 text-slate-400 font-mono">
                                       {processor}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-bold font-mono">
+                                    <td className="px-4 py-3 text-right font-semibold font-mono">
                                       ₹{" "}
                                       {p.amount.toLocaleString("en-IN", {
                                         minimumFractionDigits: 2,
@@ -3859,29 +4627,29 @@ export default function BookingDetailsView({
                                     >
                                       <td
                                         colSpan={3}
-                                        className="px-6 py-4 border-t border-b border-slate-200"
+                                        className="px-6 py-4 border-t border-b border-[#E8EEF4]"
                                       >
                                         <div className="max-w-xl space-y-2 text-xs text-slate-750">
                                           {p.collectionAccount && (
-                                            <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
-                                              <span className="text-blue-700 font-bold">
+                                            <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
+                                              <span className="text-blue-700 font-semibold">
                                                 Collection Account
                                               </span>
-                                              <span className="col-span-2 font-bold text-blue-900">
+                                              <span className="col-span-2 font-semibold text-blue-900">
                                                 {p.collectionAccount.accountName} ({p.collectionAccount.accountType})
                                               </span>
                                             </div>
                                           )}
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
-                                            <span className="text-red-600 font-bold">
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
+                                            <span className="text-red-600 font-semibold">
                                               Processor
                                             </span>
                                             <span className="col-span-2 font-mono text-slate-600">
                                               {processor}
                                             </span>
                                           </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
-                                            <span className="text-red-600 font-bold">
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
+                                            <span className="text-red-600 font-semibold">
                                               Successful at
                                             </span>
                                             <span className="col-span-2 text-slate-600">
@@ -3891,16 +4659,16 @@ export default function BookingDetailsView({
                                               </span>
                                             </span>
                                           </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
-                                            <span className="text-red-600 font-bold">
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
+                                            <span className="text-red-600 font-semibold">
                                               Payment mode
                                             </span>
-                                            <span className="col-span-2 font-bold text-slate-800">
+                                            <span className="col-span-2 font-semibold text-[#0B1528]">
                                               {p.paymentMode || "Unknown"}
                                             </span>
                                           </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
-                                            <span className="text-red-600 font-bold">
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
+                                            <span className="text-red-600 font-semibold">
                                               Merchant Ref#
                                             </span>
                                             <span className="col-span-2 font-mono text-slate-600">
@@ -3908,8 +4676,8 @@ export default function BookingDetailsView({
                                                 `${booking.bookingId}-${p.id.slice(-6)}`}
                                             </span>
                                           </div>
-                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-slate-200/60">
-                                            <span className="text-red-600 font-bold">
+                                          <div className="grid grid-cols-3 gap-y-1.5 py-1 border-b border-[#E8EEF4]/60">
+                                            <span className="text-red-600 font-semibold">
                                               Comments
                                             </span>
                                             <span className="col-span-2 text-slate-600">
@@ -3945,7 +4713,7 @@ export default function BookingDetailsView({
                                                   );
                                                 }
                                               }}
-                                              className="bg-[#31b0d5] hover:bg-[#269abc] text-white font-bold uppercase text-[9px] px-3.5 py-1.5 rounded transition-all shadow-sm"
+                                              className="bg-[#31b0d5] hover:bg-[#269abc] text-white font-semibold uppercase text-[9px] px-3.5 py-1.5 rounded transition-all"
                                             >
                                               Refund
                                             </button>
@@ -3973,7 +4741,7 @@ export default function BookingDetailsView({
                                                   );
                                                 }
                                               }}
-                                              className="bg-[#f0ad4e] hover:bg-[#ec971f] text-white font-bold uppercase text-[9px] px-3.5 py-1.5 rounded transition-all shadow-sm"
+                                              className="bg-[#f0ad4e] hover:bg-[#ec971f] text-white font-semibold uppercase text-[9px] px-3.5 py-1.5 rounded transition-all"
                                             >
                                               Reverse
                                             </button>
@@ -4002,7 +4770,7 @@ export default function BookingDetailsView({
                             setPayComments("");
                             setShowCreatePayment(true);
                           }}
-                          className="bg-primary hover:bg-primary/95 text-white font-bold text-[9px] uppercase px-4 py-1.5 rounded transition-all shadow-sm"
+                          className="bg-primary hover:bg-primary/95 text-white font-semibold text-[9px] uppercase px-4 py-1.5 rounded transition-all"
                         >
                           + Create Payment Request
                         </button>
@@ -4011,10 +4779,10 @@ export default function BookingDetailsView({
 
                   {paymentTab === "outstanding" &&
                     (booking.remainingAmount > 0 ? (
-                      <div className="border border-slate-200/60 rounded overflow-hidden">
+                      <div className="border border-[#E8EEF4]/60 rounded overflow-hidden">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                            <tr className="bg-slate-50 border-b border-slate-150 text-[9px] font-semibold text-slate-400">
                               <th className="px-4 py-2">Request Type</th>
                               <th className="px-4 py-2">Updated At</th>
                               <th className="px-4 py-2 text-right">
@@ -4026,7 +4794,7 @@ export default function BookingDetailsView({
                             <tr className="text-slate-700">
                               <td className="px-4 py-3 font-semibold">
                                 Balance Payment due collection
-                                <span className="ml-2 text-[8px] font-bold bg-amber-50 text-amber-600 border border-amber-250 px-1 py-0.2 rounded uppercase">
+                                <span className="ml-2 text-[8px] font-semibold bg-amber-50 text-amber-600 border border-amber-250 px-1 py-0.2 rounded uppercase">
                                   PENDING
                                 </span>
                               </td>
@@ -4036,7 +4804,7 @@ export default function BookingDetailsView({
                                   month: "short",
                                 })}
                               </td>
-                              <td className="px-4 py-3 text-right font-bold font-mono text-red-650">
+                              <td className="px-4 py-3 text-right font-semibold font-mono text-red-650">
                                 ₹{" "}
                                 {(booking.remainingAmount || 0).toLocaleString(
                                   "en-IN",
@@ -4060,13 +4828,13 @@ export default function BookingDetailsView({
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-                <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-200 flex justify-between items-center">
+              <div className="bg-white border border-[#E8EEF4] rounded overflow-hidden">
+                <div className="px-4 py-3 bg-white border-b border-[#E8EEF4] flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-800 text-xs">
+                    <h3 className="font-semibold text-[#0B1528] text-xs">
                       Additional booking details
                     </h3>
-                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 border border-emerald-250/30 uppercase">
+                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 border border-emerald-250/30 uppercase">
                       Form complete
                     </span>
                   </div>
@@ -4084,7 +4852,7 @@ export default function BookingDetailsView({
                         "Please use the guest attributes edit form in the right sidebar!",
                       );
                     }}
-                    className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                    className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1"
                   >
                     Edit
                   </button>
@@ -4093,32 +4861,42 @@ export default function BookingDetailsView({
                 <div className="p-0">
                   <table className="w-full text-left text-xs table-striped">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <tr className="border-b border-[#E8EEF4] bg-slate-50 text-[10px] font-semibold text-slate-400">
                         <th className="px-4 py-2 w-[40%]">Query</th>
                         <th className="px-4 py-2">Response</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                    <tbody className="divide-y divide-[#E8EEF4] text-slate-700 font-medium">
                       <tr>
                         <td className="px-4 py-2.5 text-slate-500">
                           Title first name and last name
                         </td>
-                        <td className="px-4 py-2.5 text-slate-850 font-bold">
-                          {booking.fullName}
+                        <td className="px-4 py-2.5 text-slate-850 font-semibold">
+                          {booking.fullName || passengers[0]?.name || "Not specified"}
                         </td>
                       </tr>
                       <tr>
                         <td className="px-4 py-2.5 text-slate-500">Gender</td>
                         <td className="px-4 py-2.5">
-                          <span className="bg-slate-150 text-slate-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
-                            {booking.gender}
+                          <span
+                            className={cn(
+                              "inline-flex border text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase",
+                              getGenderTone(
+                                normalizePassenger(booking, passengers[0], 0)
+                                  .genderFull,
+                              ),
+                            )}
+                          >
+                            {normalizePassenger(booking, passengers[0], 0)
+                              .genderFull || "Not specified"}
                           </span>
                         </td>
                       </tr>
                       <tr>
                         <td className="px-4 py-2.5 text-slate-500">Age</td>
                         <td className="px-4 py-2.5 text-slate-850">
-                          {booking.age}
+                          {normalizePassenger(booking, passengers[0], 0).age ??
+                            "Not specified"}
                         </td>
                       </tr>
                       <tr>
@@ -4160,11 +4938,11 @@ export default function BookingDetailsView({
 
           {/* === OPERATIONS TAB === */}
           {adminActiveTab === "operations" && (
-            <div className="space-y-4">
+            <div className="space-y-3 min-w-0">
               {/* Team Interaction & Booking Tasks */}
-              <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+              <div className="bg-white border border-[#E8EEF4] rounded p-5 space-y-4">
                 <div className="flex justify-between items-center pb-2 border-b">
-                  <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                  <h4 className="font-semibold text-[#0B1528] text-xs flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-primary" /> Team Interaction
                     & Tasks
                   </h4>
@@ -4172,7 +4950,7 @@ export default function BookingDetailsView({
                     size="sm"
                     variant="outline"
                     onClick={() => setShowCreateTask(true)}
-                    className="h-7 text-[9px] font-bold uppercase rounded"
+                    className="h-7 text-[9px] font-semibold uppercase rounded"
                   >
                     Assign Task
                   </Button>
@@ -4191,11 +4969,11 @@ export default function BookingDetailsView({
                     tasks.map((task: any) => (
                       <div
                         key={task.id}
-                        className="p-3 bg-slate-50/70 border border-slate-150 rounded-lg space-y-2"
+                        className="p-3 bg-white border border-slate-150 rounded-lg space-y-2"
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <h5 className="font-bold text-slate-800 text-xs">
+                            <h5 className="font-semibold text-[#0B1528] text-xs">
                               {task.title}
                             </h5>
                             {task.description && (
@@ -4206,7 +4984,7 @@ export default function BookingDetailsView({
                           </div>
                           <span
                             className={cn(
-                              "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider",
+                              "px-2 py-0.5 rounded-full text-[8px] font-semibold",
                               task.status === "COMPLETED"
                                 ? "bg-emerald-100 text-emerald-700"
                                 : task.status === "IN_PROGRESS"
@@ -4222,13 +5000,13 @@ export default function BookingDetailsView({
                           <div className="flex justify-between items-center text-slate-600 font-medium">
                             <span>
                               Created:{" "}
-                              <b className="text-slate-800">
+                              <b className="text-[#0B1528]">
                                 {task.createdAt
                                   ? safeFormatDateTime(task.createdAt)
                                   : "N/A"}
                               </b>{" "}
                               by{" "}
-                              <b className="text-slate-800">
+                              <b className="text-[#0B1528]">
                                 {task.assignedBy?.name ||
                                   task.assignedByAdmin?.name ||
                                   "System"}
@@ -4236,7 +5014,7 @@ export default function BookingDetailsView({
                             </span>
                             <span>
                               Assigned to:{" "}
-                              <b className="text-slate-800">
+                              <b className="text-[#0B1528]">
                                 {task.assignedTo?.name ||
                                   task.assignedToAdmin?.name ||
                                   "Unassigned"}
@@ -4254,7 +5032,7 @@ export default function BookingDetailsView({
                               </div>
                             )}
                           {task.completedAt && (
-                            <div className="text-[9px] text-emerald-600 font-bold">
+                            <div className="text-[9px] text-emerald-600 font-semibold">
                               Completed: {safeFormatDateTime(task.completedAt)}{" "}
                               {task.completedBy ? `by ${task.completedBy}` : ""}
                             </div>
@@ -4275,7 +5053,7 @@ export default function BookingDetailsView({
                                 onClick={() =>
                                   handleUpdateTaskStatus(task.id, "IN_PROGRESS")
                                 }
-                                className="h-6 px-2 text-[8px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 uppercase"
+                                className="h-6 px-2 text-[8px] font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 uppercase"
                               >
                                 Mark In Progress
                               </Button>
@@ -4286,7 +5064,7 @@ export default function BookingDetailsView({
                               onClick={() =>
                                 handleUpdateTaskStatus(task.id, "COMPLETED")
                               }
-                              className="h-6 px-2 text-[8px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 uppercase"
+                              className="h-6 px-2 text-[8px] font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 uppercase"
                             >
                               Mark Completed
                             </Button>
@@ -4302,10 +5080,7 @@ export default function BookingDetailsView({
 
           {/* === TICKETING TAB === */}
           {adminActiveTab === "ticketing" && (
-            <div className="bg-white border border-slate-200 rounded p-4 shadow-sm space-y-4">
-              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider pb-2 border-b">
-                Ticket Booking & PNR Details
-              </h4>
+            <div className="space-y-3 min-w-0">
               <TrainTicketsPanel
                 bookingId={booking.id}
                 booking={booking}
@@ -4317,12 +5092,12 @@ export default function BookingDetailsView({
 
           {/* === ACCOUNTING TAB === */}
           {adminActiveTab === "accounting" && (
-            <div className="space-y-4">
+            <div className="space-y-3 min-w-0">
               {/* Card 1: Booking Items */}
-              <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
-                <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-200 flex justify-between items-center">
+              <div className="bg-white border border-[#E8EEF4] rounded overflow-hidden">
+                <div className="px-4 py-3 bg-white border-b border-[#E8EEF4] flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-800 text-xs">
+                    <h3 className="font-semibold text-[#0B1528] text-xs">
                       Booking Items
                     </h3>
                     <div className="inline-flex items-center bg-slate-200/70 p-0.5 rounded-lg border border-slate-300/80">
@@ -4330,9 +5105,9 @@ export default function BookingDetailsView({
                         type="button"
                         onClick={() => setAccountingViewMode("per_person")}
                         className={cn(
-                          "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer flex items-center gap-1",
+                          "px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1",
                           accountingViewMode === "per_person"
-                            ? "bg-white text-emerald-700 shadow-xs border border-slate-200 font-extrabold"
+                            ? "bg-white text-emerald-700 border border-[#E8EEF4] font-semibold"
                             : "text-slate-600 hover:text-slate-900 font-semibold",
                         )}
                       >
@@ -4343,9 +5118,9 @@ export default function BookingDetailsView({
                         type="button"
                         onClick={() => setAccountingViewMode("group")}
                         className={cn(
-                          "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer flex items-center gap-1",
+                          "px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all cursor-pointer flex items-center gap-1",
                           accountingViewMode === "group"
-                            ? "bg-white text-blue-700 shadow-xs border border-slate-200 font-extrabold"
+                            ? "bg-white text-blue-700 border border-[#E8EEF4] font-semibold"
                             : "text-slate-600 hover:text-slate-900 font-semibold",
                         )}
                       >
@@ -4362,7 +5137,7 @@ export default function BookingDetailsView({
                         );
                         setShowChangeDates(true);
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 px-2.5 py-1 rounded transition-all shadow-sm"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 px-2.5 py-1 rounded transition-all"
                     >
                       <Calendar className="w-3.5 h-3.5 text-slate-500" />
                       Change dates
@@ -4376,7 +5151,7 @@ export default function BookingDetailsView({
                         setEditDiscount("");
                         setIsEditingItems(true);
                       }}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 px-2.5 py-1 rounded transition-all shadow-sm"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 px-2.5 py-1 rounded transition-all"
                     >
                       <Pencil className="w-3 h-3 text-slate-500" />
                       Edit
@@ -4394,7 +5169,7 @@ export default function BookingDetailsView({
                         setBookingItems(regenerated);
                         toast.success("Restored per-person line items");
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 px-2.5 py-1 rounded transition-all shadow-sm"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 px-2.5 py-1 rounded transition-all"
                       title="Reset to 1 Transport & 1 Accommodation line item per passenger"
                     >
                       <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
@@ -4407,13 +5182,13 @@ export default function BookingDetailsView({
                   /* ─── EDIT BOOKING ITEMS MODE (VACATIONLABS STYLE) ─── */
                   <div className="p-5 space-y-5 text-xs bg-[#fafbfc]">
                     {/* Header notes */}
-                    <div className="bg-[#f8fafc] border border-slate-200/80 rounded-lg p-4 text-slate-600 shadow-sm leading-relaxed">
+                    <div className="bg-[#f8fafc] border border-[#E8EEF4]/80 rounded-lg p-4 text-slate-600 leading-relaxed">
                       <div className="flex items-start gap-2.5">
                         <span className="text-amber-500 text-base mt-0.5">
                           ⚠️
                         </span>
                         <div>
-                          <p className="font-bold text-slate-800 mb-1">
+                          <p className="font-semibold text-[#0B1528] mb-1">
                             Impact Warning
                           </p>
                           <p className="text-[11px] text-slate-500">
@@ -4429,7 +5204,7 @@ export default function BookingDetailsView({
 
                     {/* Subactions bar */}
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 flex-wrap gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className="text-[10px] font-semibold text-slate-400">
                         Select Passengers
                       </span>
                       <div className="flex gap-2">
@@ -4456,7 +5231,7 @@ export default function BookingDetailsView({
                             setBookingItems((prev) => [...prev, newItem]);
                             toast.success(`Applied ₹${num} Special Discount!`);
                           }}
-                          className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all cursor-pointer"
+                          className="px-3 py-1.5 bg-white border border-[#E8EEF4] hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 transition-all cursor-pointer"
                         >
                           Special Charge/Discount
                         </button>
@@ -4490,7 +5265,7 @@ export default function BookingDetailsView({
                               `Applied Coupon ${code.toUpperCase()} (-₹${num})!`,
                             );
                           }}
-                          className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all cursor-pointer"
+                          className="px-3 py-1.5 bg-white border border-[#E8EEF4] hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 transition-all cursor-pointer"
                         >
                           Coupon
                         </button>
@@ -4499,7 +5274,7 @@ export default function BookingDetailsView({
                           onClick={() =>
                             toast.info("No addons configured for this trip.")
                           }
-                          className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 shadow-sm transition-all"
+                          className="px-3 py-1.5 bg-white border border-[#E8EEF4] hover:bg-slate-50 hover:border-slate-300 rounded text-[11px] font-semibold text-slate-700 transition-all"
                         >
                           Addon (0 Available)
                         </button>
@@ -4507,10 +5282,10 @@ export default function BookingDetailsView({
                     </div>
 
                     {/* Table for inputs */}
-                    <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-sm">
+                    <div className="border border-[#E8EEF4]/90 rounded-xl overflow-hidden bg-white">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <tr className="border-b border-[#E8EEF4] bg-slate-50 text-[10px] font-semibold text-slate-400">
                             <th className="px-5 py-3">Name & Description</th>
                             <th className="px-5 py-3 w-32">Rate</th>
                             <th className="px-5 py-3 w-24">Quantity</th>
@@ -4519,7 +5294,7 @@ export default function BookingDetailsView({
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                        <tbody className="divide-y divide-[#E8EEF4] text-slate-700">
                           {(() => {
                             // Aggregate items into clean group rows for edit view
                             const groupMap = new Map<
@@ -4583,7 +5358,7 @@ export default function BookingDetailsView({
                                         );
                                         setBookingItems(updated);
                                       }}
-                                      className="h-8 text-xs font-semibold text-slate-800 border-slate-200 focus-visible:ring-1 focus-visible:ring-slate-400 w-full bg-white rounded-lg"
+                                      className="h-8 text-xs font-semibold text-[#0B1528] border-[#E8EEF4] focus-visible:ring-1 focus-visible:ring-slate-400 w-full bg-white rounded-lg"
                                     />
                                   </td>
                                   <td className="px-5 py-3">
@@ -4607,7 +5382,7 @@ export default function BookingDetailsView({
                                           );
                                           setBookingItems(updated);
                                         }}
-                                        className="h-8 text-xs w-28 font-mono font-semibold border-slate-200 text-slate-800 focus-visible:ring-1 focus-visible:ring-slate-400 bg-white rounded-lg"
+                                        className="h-8 text-xs w-28 font-mono font-semibold border-[#E8EEF4] text-[#0B1528] focus-visible:ring-1 focus-visible:ring-slate-400 bg-white rounded-lg"
                                       />
                                     </div>
                                   </td>
@@ -4645,10 +5420,10 @@ export default function BookingDetailsView({
                                           );
                                         }
                                       }}
-                                      className="h-8 text-xs w-16 font-mono font-semibold border-slate-200 text-center focus-visible:ring-1 focus-visible:ring-slate-400 bg-white rounded-lg"
+                                      className="h-8 text-xs w-16 font-mono font-semibold border-[#E8EEF4] text-center focus-visible:ring-1 focus-visible:ring-slate-400 bg-white rounded-lg"
                                     />
                                   </td>
-                                  <td className="px-5 py-3 text-right font-bold font-mono text-[12px] text-slate-900">
+                                  <td className="px-5 py-3 text-right font-semibold font-mono text-[12px] text-slate-900">
                                     {(isDiscount ? "- " : "") +
                                       "₹ " +
                                       absAmt.toLocaleString("en-IN")}
@@ -4733,7 +5508,7 @@ export default function BookingDetailsView({
                                     );
                                   }
                                 }}
-                                className="h-8.5 text-xs w-full border-slate-200 placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-slate-450"
+                                className="h-8.5 text-xs w-full border-[#E8EEF4] placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-slate-450"
                               />
                               {customDescription && (
                                 <button
@@ -4743,7 +5518,7 @@ export default function BookingDetailsView({
                                     setCustomRate("");
                                     setCustomQty("1");
                                   }}
-                                  className="text-[10px] text-rose-500 font-bold hover:underline mt-1 block"
+                                  className="text-[10px] text-rose-500 font-semibold hover:underline mt-1 block"
                                 >
                                   Clear custom input
                                 </button>
@@ -4809,7 +5584,7 @@ export default function BookingDetailsView({
                                       );
                                     }
                                   }}
-                                  className="h-8.5 text-xs w-24 font-mono border-slate-200 text-slate-800 focus-visible:ring-1 focus-visible:ring-slate-450"
+                                  className="h-8.5 text-xs w-24 font-mono border-[#E8EEF4] text-[#0B1528] focus-visible:ring-1 focus-visible:ring-slate-450"
                                 />
                               </div>
                             </td>
@@ -4818,10 +5593,10 @@ export default function BookingDetailsView({
                                 type="number"
                                 value={customQty}
                                 onChange={(e) => setCustomQty(e.target.value)}
-                                className="h-8.5 text-xs w-16 font-mono border-slate-200 text-center focus-visible:ring-1 focus-visible:ring-slate-450"
+                                className="h-8.5 text-xs w-16 font-mono border-[#E8EEF4] text-center focus-visible:ring-1 focus-visible:ring-slate-450"
                               />
                             </td>
-                            <td className="px-5 py-4 text-right font-bold font-mono text-[12px] text-slate-800">
+                            <td className="px-5 py-4 text-right font-semibold font-mono text-[12px] text-[#0B1528]">
                               {(() => {
                                 const parsedRate = parseFloat(customRate) || 0;
                                 const isDescDiscount =
@@ -4889,7 +5664,7 @@ export default function BookingDetailsView({
                                     `Added ${newItem.name} (${finalRate < 0 ? `-₹${Math.abs(finalRate)}` : `₹${finalRate}`})!`,
                                   );
                                 }}
-                                className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[11px] font-bold transition-all shadow-xs flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                                className="px-2 py-1 bg-[#0B1528] hover:bg-[#182741] text-white rounded text-[11px] font-semibold transition-all flex items-center justify-center gap-1 mx-auto cursor-pointer"
                                 title="Add Item"
                               >
                                 <Plus className="w-3.5 h-3.5" /> Add
@@ -4898,14 +5673,14 @@ export default function BookingDetailsView({
                           </tr>
 
                           {/* Live Breakdown in Edit Mode */}
-                          <tr className="bg-slate-50/80 border-t border-slate-200">
+                          <tr className="bg-slate-50/80 border-t border-[#E8EEF4]">
                             <td
                               colSpan={3}
-                              className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider"
+                              className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px]"
                             >
                               Gross Base Price
                             </td>
-                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">
+                            <td className="px-5 py-2.5 text-right font-mono font-semibold text-slate-700">
                               ₹{" "}
                               {previewBasePrice.toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
@@ -4917,11 +5692,11 @@ export default function BookingDetailsView({
                           <tr className="bg-slate-50/80">
                             <td
                               colSpan={3}
-                              className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider"
+                              className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px]"
                             >
                               GST ({Math.round(gstRate * 100)}%) Amount
                             </td>
-                            <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">
+                            <td className="px-5 py-2.5 text-right font-mono font-semibold text-slate-700">
                               ₹{" "}
                               {previewGstAmount.toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
@@ -4934,11 +5709,11 @@ export default function BookingDetailsView({
                             <tr className="bg-rose-50/80 border-t border-rose-200">
                               <td
                                 colSpan={3}
-                                className="px-5 py-2.5 text-right font-black text-rose-700 text-[10px] uppercase tracking-wider"
+                                className="px-5 py-2.5 text-right font-semibold text-rose-700 text-[10px]"
                               >
                                 Applied Special Discount / Coupon
                               </td>
-                              <td className="px-5 py-2.5 text-right font-mono font-black text-rose-700">
+                              <td className="px-5 py-2.5 text-right font-mono font-semibold text-rose-700">
                                 -₹{" "}
                                 {previewOtherDiscount.toLocaleString("en-IN", {
                                   minimumFractionDigits: 2,
@@ -4952,11 +5727,11 @@ export default function BookingDetailsView({
                             <tr className="bg-rose-50/80">
                               <td
                                 colSpan={3}
-                                className="px-5 py-2.5 text-right font-bold text-rose-600 text-[10px] uppercase tracking-wider"
+                                className="px-5 py-2.5 text-right font-semibold text-rose-600 text-[10px]"
                               >
                                 GST Discount
                               </td>
-                              <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-600">
+                              <td className="px-5 py-2.5 text-right font-mono font-semibold text-rose-600">
                                 -₹{" "}
                                 {previewGstDiscount.toLocaleString("en-IN", {
                                   minimumFractionDigits: 2,
@@ -4969,20 +5744,20 @@ export default function BookingDetailsView({
                           <tr className="bg-slate-900 text-white">
                             <td
                               colSpan={3}
-                              className="px-5 py-3.5 text-right text-[11px] uppercase tracking-wider text-slate-300 font-bold align-middle"
+                              className="px-5 py-3.5 text-right text-[11px] text-slate-300 font-semibold align-middle"
                             >
                               <div className="flex items-center justify-end gap-3.5">
                                 <span>Final Total Preview</span>
                                 <button
                                   type="button"
                                   onClick={handleUpdateTotal}
-                                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] uppercase tracking-wider rounded font-bold transition-all shadow-sm"
+                                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] rounded font-semibold transition-all"
                                 >
                                   Update
                                 </button>
                               </div>
                             </td>
-                            <td className="px-5 py-3.5 text-right font-extrabold font-mono text-base text-emerald-400 align-middle">
+                            <td className="px-5 py-3.5 text-right font-semibold font-mono text-base text-emerald-400 align-middle">
                               ₹{" "}
                               {previewFinalTotal.toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
@@ -4995,9 +5770,9 @@ export default function BookingDetailsView({
                     </div>
 
                     {/* Dropdowns to add Room Sharing Options */}
-                    <div className="bg-[#f8fafc] border border-slate-200/80 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 shadow-sm">
+                    <div className="bg-[#f8fafc] border border-[#E8EEF4]/80 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        <label className="text-[10px] font-semibold text-slate-400 block">
                           Add Travel Options
                         </label>
                         <div className="flex gap-2">
@@ -5005,7 +5780,7 @@ export default function BookingDetailsView({
                             value={selectedTravelOptionToAdd}
                             onValueChange={setSelectedTravelOptionToAdd}
                           >
-                            <SelectTrigger className="h-9 text-xs flex-1 bg-white border-slate-200 shadow-sm">
+                            <SelectTrigger className="h-9 text-xs flex-1 bg-white border-[#E8EEF4]">
                               <SelectValue placeholder="Select Travel Option" />
                             </SelectTrigger>
                             <SelectContent>
@@ -5077,7 +5852,7 @@ export default function BookingDetailsView({
                               }
                               toast.success(`${opt.label} added to items`);
                             }}
-                            className="h-9 w-9 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
+                            className="h-9 w-9 flex items-center justify-center bg-[#0B1528] hover:bg-[#182741] text-white rounded-lg text-sm font-semibold transition-colors"
                           >
                             +
                           </button>
@@ -5085,7 +5860,7 @@ export default function BookingDetailsView({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        <label className="text-[10px] font-semibold text-slate-400 block">
                           Add Room Sharing Options
                         </label>
                         <div className="flex gap-2">
@@ -5093,7 +5868,7 @@ export default function BookingDetailsView({
                             value={selectedRoomOptionToAdd}
                             onValueChange={setSelectedRoomOptionToAdd}
                           >
-                            <SelectTrigger className="h-9 text-xs flex-1 bg-white border-slate-200 shadow-sm">
+                            <SelectTrigger className="h-9 text-xs flex-1 bg-white border-[#E8EEF4]">
                               <SelectValue placeholder="Select Room Option" />
                             </SelectTrigger>
                             <SelectContent>
@@ -5163,7 +5938,7 @@ export default function BookingDetailsView({
                               }
                               toast.success(`${opt.label} added to items`);
                             }}
-                            className="h-9 w-9 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
+                            className="h-9 w-9 flex items-center justify-center bg-[#0B1528] hover:bg-[#182741] text-white rounded-lg text-sm font-semibold transition-colors"
                           >
                             +
                           </button>
@@ -5189,7 +5964,7 @@ export default function BookingDetailsView({
                       <Button
                         onClick={handleSaveBookingItems}
                         size="sm"
-                        className="bg-[#C9A84C] hover:bg-[#b0913b] text-white h-9 font-bold px-5 text-xs rounded-lg shadow-md transition-all duration-150"
+                        className="bg-[#C9A84C] hover:bg-[#b0913b] text-white h-9 font-semibold px-5 text-xs rounded-lg shadow-md transition-all duration-150"
                       >
                         Save Changes
                       </Button>
@@ -5211,7 +5986,7 @@ export default function BookingDetailsView({
                       }
                       if (activeItems.length === 0) {
                         return (
-                          <div className="p-8 text-center space-y-3 bg-slate-50/50">
+                          <div className="p-8 text-center space-y-3 bg-white">
                             <p className="text-slate-500 font-semibold text-xs">
                               No booking items recorded for this booking yet.
                             </p>
@@ -5228,7 +6003,7 @@ export default function BookingDetailsView({
                                   "Generated per-person booking items!",
                                 );
                               }}
-                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition-all cursor-pointer inline-flex items-center gap-1.5"
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5"
                             >
                               <RefreshCw className="w-3.5 h-3.5" /> Generate
                               Per-Person Line Items
@@ -5330,10 +6105,10 @@ export default function BookingDetailsView({
                       );
 
                       return (
-                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                        <div className="border border-[#E8EEF4] rounded-xl overflow-hidden bg-white">
                           <table className="w-full text-left text-xs border-collapse">
                             <thead>
-                              <tr className="border-b border-slate-200 bg-slate-100/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                              <tr className="border-b border-[#E8EEF4] bg-slate-100/80 text-[10px] font-semibold text-slate-500">
                                 <th className="px-5 py-3">
                                   {accountingViewMode === "per_person"
                                     ? "PASSENGER & DESCRIPTION"
@@ -5350,7 +6125,7 @@ export default function BookingDetailsView({
                                 </th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                            <tbody className="divide-y divide-[#E8EEF4] text-slate-700 font-medium">
                               {displayRows.map((row) => {
                                 const isDiscount =
                                   row.rate < 0 || row.category === "discounts";
@@ -5360,9 +6135,9 @@ export default function BookingDetailsView({
                                 return (
                                   <tr
                                     key={row.key}
-                                    className="hover:bg-slate-50/50 transition-colors"
+                                    className="hover:bg-[#F8FAFC] transition-colors"
                                   >
-                                    <td className="px-5 py-3.5 font-semibold text-slate-800 text-xs">
+                                    <td className="px-5 py-3.5 font-semibold text-[#0B1528] text-xs">
                                       {row.name}
                                     </td>
                                     <td className="px-5 py-3.5 text-right font-mono text-slate-700">
@@ -5373,7 +6148,7 @@ export default function BookingDetailsView({
                                     <td className="px-5 py-3.5 text-center font-mono font-semibold text-slate-700">
                                       {row.qty}
                                     </td>
-                                    <td className="px-5 py-3.5 text-right font-mono font-bold text-slate-900">
+                                    <td className="px-5 py-3.5 text-right font-mono font-semibold text-slate-900">
                                       {(isDiscount ? "- " : "") +
                                         "₹ " +
                                         absAmt.toLocaleString("en-IN")}
@@ -5386,11 +6161,11 @@ export default function BookingDetailsView({
                               <tr className="bg-slate-50/60 border-t border-slate-100">
                                 <td
                                   colSpan={3}
-                                  className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider"
+                                  className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px]"
                                 >
                                   Gross Base Price
                                 </td>
-                                <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">
+                                <td className="px-5 py-2.5 text-right font-mono font-semibold text-slate-700">
                                   ₹{" "}
                                   {Math.round(subtotal).toLocaleString("en-IN")}
                                 </td>
@@ -5398,11 +6173,11 @@ export default function BookingDetailsView({
                               <tr className="bg-slate-50/60">
                                 <td
                                   colSpan={3}
-                                  className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wider"
+                                  className="px-5 py-2.5 text-right font-semibold text-slate-500 text-[10px]"
                                 >
                                   GST ({Math.round((gstRate || 0.05) * 100)}%)
                                 </td>
-                                <td className="px-5 py-2.5 text-right font-mono font-bold text-slate-700">
+                                <td className="px-5 py-2.5 text-right font-mono font-semibold text-slate-700">
                                   ₹ {gstAmount.toLocaleString("en-IN")}
                                 </td>
                               </tr>
@@ -5410,11 +6185,11 @@ export default function BookingDetailsView({
                                 <tr className="bg-rose-50/70 border-t border-rose-100">
                                   <td
                                     colSpan={3}
-                                    className="px-5 py-2.5 text-right font-bold text-rose-700 text-[10px] uppercase tracking-wider"
+                                    className="px-5 py-2.5 text-right font-semibold text-rose-700 text-[10px]"
                                   >
                                     Applied Special Discount / Coupon
                                   </td>
-                                  <td className="px-5 py-2.5 text-right font-mono font-bold text-rose-700">
+                                  <td className="px-5 py-2.5 text-right font-mono font-semibold text-rose-700">
                                     - ₹{" "}
                                     {Math.round(discountTotal).toLocaleString(
                                       "en-IN",
@@ -5427,11 +6202,11 @@ export default function BookingDetailsView({
                               <tr className="bg-slate-900 text-white">
                                 <td
                                   colSpan={3}
-                                  className="px-5 py-4 text-left font-extrabold uppercase tracking-[0.1em] text-xs text-slate-300"
+                                  className="px-5 py-4 text-left font-semibold uppercase tracking-[0.1em] text-xs text-slate-300"
                                 >
                                   GRAND TOTAL
                                 </td>
-                                <td className="px-5 py-4 text-right font-mono font-black text-xl text-emerald-400">
+                                <td className="px-5 py-4 text-right font-mono font-semibold text-xl text-emerald-400">
                                   ₹ {grandTotal.toLocaleString("en-IN")}
                                 </td>
                               </tr>
@@ -5448,22 +6223,22 @@ export default function BookingDetailsView({
 
           {/* === FILES TAB === */}
           {adminActiveTab === "files" && (
-            <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
-              <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider pb-2 border-b">
+            <div className="bg-white border border-[#E8EEF4] rounded p-5 space-y-4">
+              <h4 className="font-semibold text-[#0B1528] text-xs pb-2 border-b">
                 Customer & Office Notes
               </h4>
 
               {/* Customer Booking Notes / Special Requests */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  <label className="text-[10px] font-semibold text-slate-500 block">
                     Customer Booking Notes / Special Requests
                   </label>
                   {!editingNotes && (
                     <button
                       type="button"
                       onClick={() => setEditingNotes(true)}
-                      className="text-[10px] font-bold text-[#F5760E] hover:underline"
+                      className="text-[10px] font-semibold text-[#FF4D00] hover:underline"
                     >
                       Edit Notes
                     </button>
@@ -5474,7 +6249,7 @@ export default function BookingDetailsView({
                     <textarea
                       value={notesValue}
                       onChange={(e) => setNotesValue(e.target.value)}
-                      className="w-full min-h-[100px] text-xs p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#F5760E] focus:ring-1 focus:ring-[#F5760E]/20"
+                      className="w-full min-h-[100px] text-xs p-3 bg-slate-50 border border-[#E8EEF4] rounded-lg focus:outline-none focus:border-[#FF4D00] focus:ring-1 focus:ring-[#FF4D00]/20"
                       placeholder="Add customer requests or booking notes..."
                     />
                     <div className="flex gap-2 justify-end">
@@ -5489,7 +6264,7 @@ export default function BookingDetailsView({
                         type="button"
                         onClick={handleSaveNotes}
                         disabled={savingNotes}
-                        className="px-3 py-1.5 bg-[#F5760E] hover:bg-[#D9650C] text-white rounded text-xs font-semibold disabled:opacity-50"
+                        className="px-3 py-1.5 bg-[#FF4D00] hover:bg-[#E04400] text-white rounded text-xs font-semibold disabled:opacity-50"
                       >
                         {savingNotes ? "Saving..." : "Save"}
                       </button>
@@ -5507,7 +6282,7 @@ export default function BookingDetailsView({
 
               {/* Office Admin Notes */}
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-semibold text-slate-500 block mb-1">
                   Office Admin Notes
                 </label>
                 <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-150 whitespace-pre-wrap">
@@ -5528,17 +6303,17 @@ export default function BookingDetailsView({
 
           {/* === EMAILS TAB === */}
           {adminActiveTab === "emails" && (
-            <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+            <div className="bg-white border border-[#E8EEF4] rounded p-5 space-y-4">
               <EmailLogsTimeline contextType="booking" contextId={booking.id} />
             </div>
           )}
 
           {/* === ACTIVITY TAB === */}
           {adminActiveTab === "activity" && (
-            <div className="space-y-4">
+            <div className="space-y-3 min-w-0">
               {/* Booking Activity Log / Audit Trail */}
-              <div className="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
-                <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider pb-2 border-b">
+              <div className="bg-white border border-[#E8EEF4] rounded p-5 space-y-4">
+                <h4 className="font-semibold text-[#0B1528] text-xs flex items-center gap-1.5 pb-2 border-b">
                   <History className="w-4 h-4 text-slate-450" /> Booking
                   Activity Logs
                 </h4>
@@ -5553,7 +6328,7 @@ export default function BookingDetailsView({
                       No activity logs recorded.
                     </p>
                   ) : (
-                    <div className="relative border-l border-slate-200 ml-2.5 pl-4 space-y-4">
+                    <div className="relative border-l border-[#E8EEF4] ml-2.5 pl-4 space-y-4">
                       {activityLogs.map((log: any) => {
                         const actionColors: Record<string, string> = {
                           CREATE: "bg-emerald-500",
@@ -5584,7 +6359,7 @@ export default function BookingDetailsView({
                             <div className="flex flex-wrap items-center justify-between gap-1 text-[9px]">
                               <span
                                 className={cn(
-                                  "px-1.5 py-0.5 rounded text-[8px] font-bold text-white uppercase",
+                                  "px-1.5 py-0.5 rounded text-[8px] font-semibold text-white uppercase",
                                   color,
                                 )}
                               >
@@ -5606,7 +6381,7 @@ export default function BookingDetailsView({
                             </p>
 
                             {log.performedBy && (
-                              <p className="text-[9px] text-slate-450 font-bold uppercase">
+                              <p className="text-[9px] text-slate-450 font-semibold uppercase">
                                 By {log.performedBy.name} (
                                 {log.performedBy.role})
                               </p>
@@ -5623,11 +6398,11 @@ export default function BookingDetailsView({
 
           {/* === SERVICES TAB === */}
           {adminActiveTab === "services" && (
-            <div className="space-y-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div className="space-y-3 min-w-0">
+              <div className="bg-white border border-[#E8EEF4] rounded-xl p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
                       <Layers className="w-4 h-4 text-orange-600" /> Auxiliary Services Registry
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -5637,7 +6412,7 @@ export default function BookingDetailsView({
                   <Button
                     size="sm"
                     onClick={() => setShowAddServiceModal(true)}
-                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 shadow-xs"
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Auxiliary Service
                   </Button>
@@ -5649,14 +6424,14 @@ export default function BookingDetailsView({
                     <span className="text-xs font-semibold">Loading auxiliary services...</span>
                   </div>
                 ) : bookingServices.length === 0 ? (
-                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-slate-200">
+                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-[#E8EEF4]">
                     <Layers className="w-8 h-8 text-slate-300 mx-auto" />
                     <p className="text-xs font-semibold text-slate-600">No auxiliary services recorded for this booking.</p>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setShowAddServiceModal(true)}
-                      className="text-xs font-bold border-slate-300"
+                      className="text-xs font-semibold border-slate-300"
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" /> Add First Service
                     </Button>
@@ -5669,15 +6444,15 @@ export default function BookingDetailsView({
                       return (
                         <div
                           key={srv.id}
-                          className="border border-slate-200 rounded-lg p-4 bg-white hover:border-slate-300 transition-all shadow-xs space-y-3"
+                          className="border border-[#E8EEF4] rounded-lg p-4 bg-white hover:border-slate-300 transition-all space-y-3"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                            <span className="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-[#E8EEF4]">
                               {srv.serviceType}
                             </span>
                             <span
                               className={cn(
-                                "px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1",
+                                "px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1",
                                 isVerified
                                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                   : "bg-amber-50 text-amber-700 border border-amber-200",
@@ -5696,7 +6471,7 @@ export default function BookingDetailsView({
                           </div>
 
                           <div>
-                            <h4 className="text-xs font-bold text-slate-800">{srv.vendorName}</h4>
+                            <h4 className="text-xs font-semibold text-[#0B1528]">{srv.vendorName}</h4>
                             {srv.remarks && (
                               <p className="text-[11px] text-slate-500 font-medium mt-0.5">{srv.remarks}</p>
                             )}
@@ -5704,16 +6479,16 @@ export default function BookingDetailsView({
 
                           <div className="grid grid-cols-3 gap-2 bg-slate-50/80 p-2.5 rounded border border-slate-150 text-[11px]">
                             <div>
-                              <span className="text-[9px] font-bold uppercase text-slate-400 block">Cost</span>
-                              <span className="font-mono font-bold text-slate-700">₹{(srv.costPrice || 0).toLocaleString("en-IN")}</span>
+                              <span className="text-[9px] font-semibold uppercase text-slate-400 block">Cost</span>
+                              <span className="font-mono font-semibold text-slate-700">₹{(srv.costPrice || 0).toLocaleString("en-IN")}</span>
                             </div>
                             <div>
-                              <span className="text-[9px] font-bold uppercase text-slate-400 block">Selling</span>
-                              <span className="font-mono font-bold text-slate-800">₹{(srv.sellingPrice || 0).toLocaleString("en-IN")}</span>
+                              <span className="text-[9px] font-semibold uppercase text-slate-400 block">Selling</span>
+                              <span className="font-mono font-semibold text-[#0B1528]">₹{(srv.sellingPrice || 0).toLocaleString("en-IN")}</span>
                             </div>
                             <div>
-                              <span className="text-[9px] font-bold uppercase text-slate-400 block">Margin</span>
-                              <span className={cn("font-mono font-bold", margin >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                              <span className="text-[9px] font-semibold uppercase text-slate-400 block">Margin</span>
+                              <span className={cn("font-mono font-semibold", margin >= 0 ? "text-emerald-600" : "text-rose-600")}>
                                 ₹{margin.toLocaleString("en-IN")}
                               </span>
                             </div>
@@ -5728,7 +6503,7 @@ export default function BookingDetailsView({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleVerifyService(srv.id)}
-                                className="h-6 text-[10px] font-bold text-emerald-700 hover:bg-emerald-50 border-emerald-300"
+                                className="h-6 text-[10px] font-semibold text-emerald-700 hover:bg-emerald-50 border-emerald-300"
                               >
                                 <Check className="w-3 h-3 mr-1" /> Mark Verified
                               </Button>
@@ -5745,11 +6520,11 @@ export default function BookingDetailsView({
 
           {/* === REFUNDS & CREDITS TAB === */}
           {adminActiveTab === "refunds" && (
-            <div className="space-y-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+            <div className="space-y-3 min-w-0">
+              <div className="bg-white border border-[#E8EEF4] rounded-xl p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-orange-600" /> Refunds & Store Credits
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -5759,7 +6534,7 @@ export default function BookingDetailsView({
                   <Button
                     size="sm"
                     onClick={() => setShowBookingRefundModal(true)}
-                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 shadow-xs"
+                    className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" /> Request Refund
                   </Button>
@@ -5767,9 +6542,9 @@ export default function BookingDetailsView({
 
                 {/* Refund & Credits KPI Summary */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                    <span className="text-[10px] font-bold uppercase text-slate-400">Total Refunded</span>
-                    <div className="text-base font-bold text-slate-800 font-mono mt-0.5">
+                  <div className="bg-slate-50 border border-[#E8EEF4] rounded-lg p-3">
+                    <span className="text-[10px] font-semibold uppercase text-slate-400">Total Refunded</span>
+                    <div className="text-base font-semibold text-[#0B1528] font-mono mt-0.5">
                       ₹{bookingRefunds
                         .filter((r) => r.status === "APPROVED")
                         .reduce((acc, r) => acc + (r.totalAmount || 0), 0)
@@ -5777,8 +6552,8 @@ export default function BookingDetailsView({
                     </div>
                   </div>
                   <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-3">
-                    <span className="text-[10px] font-bold uppercase text-emerald-700">Active Credit Note</span>
-                    <div className="text-base font-bold text-emerald-700 font-mono mt-0.5">
+                    <span className="text-[10px] font-semibold uppercase text-emerald-700">Active Credit Note</span>
+                    <div className="text-base font-semibold text-emerald-700 font-mono mt-0.5">
                       ₹{bookingRefunds
                         .filter((r) => r.creditNoteStatus === "ACTIVE")
                         .reduce((acc, r) => acc + (r.creditAmount || 0), 0)
@@ -5786,8 +6561,8 @@ export default function BookingDetailsView({
                     </div>
                   </div>
                   <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-3">
-                    <span className="text-[10px] font-bold uppercase text-amber-700">Pending Approvals</span>
-                    <div className="text-base font-bold text-amber-700 font-mono mt-0.5">
+                    <span className="text-[10px] font-semibold uppercase text-amber-700">Pending Approvals</span>
+                    <div className="text-base font-semibold text-amber-700 font-mono mt-0.5">
                       {bookingRefunds.filter((r) => r.status === "PENDING_APPROVAL").length}
                     </div>
                   </div>
@@ -5799,7 +6574,7 @@ export default function BookingDetailsView({
                     <span className="text-xs font-semibold">Loading refunds history...</span>
                   </div>
                 ) : bookingRefunds.length === 0 ? (
-                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-slate-200">
+                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-[#E8EEF4]">
                     <CreditCard className="w-8 h-8 text-slate-300 mx-auto" />
                     <p className="text-xs font-semibold text-slate-600">No refunds or credit notes requested for this booking.</p>
                   </div>
@@ -5808,20 +6583,20 @@ export default function BookingDetailsView({
                     {bookingRefunds.map((ref) => (
                       <div
                         key={ref.id}
-                        className="border border-slate-200 rounded-lg p-4 bg-white hover:border-slate-300 transition-all shadow-xs space-y-2.5"
+                        className="border border-[#E8EEF4] rounded-lg p-4 bg-white hover:border-slate-300 transition-all space-y-2.5"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase font-mono bg-slate-100 text-slate-700 border border-[#E8EEF4]">
                               {ref.refundNumber}
                             </span>
-                            <span className="text-xs font-bold text-slate-800">
+                            <span className="text-xs font-semibold text-[#0B1528]">
                               Mode: <span className="text-orange-600">{ref.refundMode}</span>
                             </span>
                           </div>
                           <span
                             className={cn(
-                              "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                              "px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase",
                               ref.status === "APPROVED"
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                 : ref.status === "REJECTED"
@@ -5835,30 +6610,30 @@ export default function BookingDetailsView({
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50/60 p-2.5 rounded border border-slate-150 text-[11px]">
                           <div>
-                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Total Refund</span>
-                            <span className="font-mono font-bold text-slate-900">₹{(ref.totalAmount || 0).toLocaleString("en-IN")}</span>
+                            <span className="text-[9px] font-semibold uppercase text-slate-400 block">Total Refund</span>
+                            <span className="font-mono font-semibold text-slate-900">₹{(ref.totalAmount || 0).toLocaleString("en-IN")}</span>
                           </div>
                           <div>
-                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Cash/Bank</span>
-                            <span className="font-mono font-bold text-slate-700">₹{(ref.cashAmount || 0).toLocaleString("en-IN")}</span>
+                            <span className="text-[9px] font-semibold uppercase text-slate-400 block">Cash/Bank</span>
+                            <span className="font-mono font-semibold text-slate-700">₹{(ref.cashAmount || 0).toLocaleString("en-IN")}</span>
                           </div>
                           <div>
-                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Credit Note</span>
-                            <span className="font-mono font-bold text-emerald-700">₹{(ref.creditAmount || 0).toLocaleString("en-IN")}</span>
+                            <span className="text-[9px] font-semibold uppercase text-slate-400 block">Credit Note</span>
+                            <span className="font-mono font-semibold text-emerald-700">₹{(ref.creditAmount || 0).toLocaleString("en-IN")}</span>
                           </div>
                           <div>
-                            <span className="text-[9px] font-bold uppercase text-slate-400 block">Bank Reference</span>
-                            <span className="font-mono font-bold text-slate-700 truncate block">{ref.bankReference || "N/A"}</span>
+                            <span className="text-[9px] font-semibold uppercase text-slate-400 block">Bank Reference</span>
+                            <span className="font-mono font-semibold text-slate-700 truncate block">{ref.bankReference || "N/A"}</span>
                           </div>
                         </div>
 
                         <p className="text-xs text-slate-600 font-medium">
-                          <span className="font-bold text-slate-700">Reason:</span> {ref.reason}
+                          <span className="font-semibold text-slate-700">Reason:</span> {ref.reason}
                         </p>
 
                         {ref.rejectionReason && (
                           <p className="text-xs text-rose-600 font-medium bg-rose-50 p-2 rounded border border-rose-200">
-                            <span className="font-bold">Rejection Note:</span> {ref.rejectionReason}
+                            <span className="font-semibold">Rejection Note:</span> {ref.rejectionReason}
                           </p>
                         )}
 
@@ -5882,10 +6657,10 @@ export default function BookingDetailsView({
 
           {/* === FINANCE AUDIT TRAIL TAB === */}
           {adminActiveTab === "finance_audit" && (
-            <div className="space-y-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+            <div className="space-y-3 min-w-0">
+              <div className="bg-white border border-[#E8EEF4] rounded-xl p-5 space-y-4">
                 <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-orange-600" /> Immutable Financial Audit Trail
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -5899,7 +6674,7 @@ export default function BookingDetailsView({
                     <span className="text-xs font-semibold">Loading audit trail...</span>
                   </div>
                 ) : bookingAuditLogs.length === 0 ? (
-                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-slate-200">
+                  <div className="py-10 text-center space-y-3 bg-slate-50/60 rounded-lg border border-dashed border-[#E8EEF4]">
                     <History className="w-8 h-8 text-slate-300 mx-auto" />
                     <p className="text-xs font-semibold text-slate-600">No financial audit records logged for this booking yet.</p>
                   </div>
@@ -5908,25 +6683,25 @@ export default function BookingDetailsView({
                     {bookingAuditLogs.map((log) => (
                       <div
                         key={log.id}
-                        className="border border-slate-200 rounded-lg p-3.5 bg-white text-xs space-y-2"
+                        className="border border-[#E8EEF4] rounded-lg p-3.5 bg-white text-xs space-y-2"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
-                                "px-2 py-0.5 rounded font-bold uppercase",
+                                "px-2 py-0.5 rounded font-semibold uppercase",
                                 log.action === "APPROVE"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : log.action === "REJECT"
                                     ? "bg-rose-100 text-rose-800"
                                     : log.action === "CREATE"
                                       ? "bg-blue-100 text-blue-800"
-                                      : "bg-slate-100 text-slate-800",
+                                      : "bg-slate-100 text-[#0B1528]",
                               )}
                             >
                               {log.action}
                             </span>
-                            <span className="font-bold text-slate-700">{log.entityType}</span>
+                            <span className="font-semibold text-slate-700">{log.entityType}</span>
                           </div>
                           <span className="text-slate-400">
                             {safeFormatDateTime(log.createdAt, {
@@ -5945,7 +6720,7 @@ export default function BookingDetailsView({
                         )}
 
                         <div className="text-[10px] text-slate-400 font-semibold">
-                          Actor: <span className="text-slate-700 font-bold">{log.performedBy?.name || "System"}</span> (
+                          Actor: <span className="text-slate-700 font-semibold">{log.performedBy?.name || "System"}</span> (
                           {log.performedBy?.role || "SYSTEM"})
                         </div>
                       </div>
@@ -5957,15 +6732,15 @@ export default function BookingDetailsView({
           )}
         </div>
 
-        {/* Right Column Sidebar - scrollable */}
-        <div className="w-full lg:w-[340px] border-t lg:border-t-0 lg:border-l border-slate-200 p-4 md:p-6 overflow-y-auto flex-shrink-0 space-y-4 font-sans">
+        {/* Right Column Sidebar — stacks under main content below lg */}
+        <aside className="w-full lg:w-[320px] xl:w-[340px] shrink-0 min-w-0 space-y-3 font-sans">
           {/* Customer Main Info Card */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4 text-xs">
+          <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden p-4 space-y-4 text-xs">
             {isEditingCustomer ? (
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-400">
-                    Guest Name
+                  <label className="text-[11px] font-semibold text-slate-400">
+                    Guest name
                   </label>
                   <Input
                     value={editedCustomerName}
@@ -5974,7 +6749,7 @@ export default function BookingDetailsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-400">
+                  <label className="text-[11px] font-semibold text-slate-400">
                     Phone
                   </label>
                   <Input
@@ -5984,7 +6759,7 @@ export default function BookingDetailsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-400">
+                  <label className="text-[11px] font-semibold text-slate-400">
                     Email
                   </label>
                   <Input
@@ -5997,14 +6772,14 @@ export default function BookingDetailsView({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-[10px] uppercase font-bold"
+                    className="h-8 text-xs font-semibold border-[#E8EEF4]"
                     onClick={() => setIsEditingCustomer(false)}
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
-                    className="h-7 text-[10px] uppercase font-bold bg-primary text-white"
+                    className="h-8 text-xs font-semibold bg-[#FF4D00] hover:bg-[#E04400] text-white"
                     onClick={async () => {
                       try {
                         const updatedPassengers = passengers.map((p) => {
@@ -6042,8 +6817,25 @@ export default function BookingDetailsView({
               </div>
             ) : (
               <div className="space-y-1 relative group">
-                <h2 className="text-lg font-bold text-slate-800 leading-tight flex justify-between items-center">
-                  {booking.fullName || booking.name}
+                {/* Navy identity band — anchors the rail and breaks the white card wall */}
+                <div className="-mx-4 -mt-4 mb-3 px-4 py-3.5 bg-gradient-to-r from-[#0B1528] via-[#132038] to-[#1E3055] flex items-start gap-3">
+                  <span className="h-9 w-9 rounded-xl bg-[#FF4D00] text-white text-[11px] font-semibold inline-flex items-center justify-center shrink-0 ring-2 ring-white/15">
+                    {(booking.fullName || booking.name || "?")
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((w: string) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-semibold text-white leading-tight break-words">
+                      {booking.fullName || booking.name}
+                    </h2>
+                    <div className="text-[10px] font-semibold text-white/50 mt-0.5">
+                      Guest profile
+                    </div>
+                  </div>
                   <button
                     onClick={() => {
                       setEditedCustomerName(
@@ -6055,123 +6847,168 @@ export default function BookingDetailsView({
                       setEditedCustomerEmail(booking.email || "");
                       setIsEditingCustomer(true);
                     }}
-                    className="text-primary hover:text-primary-dark ml-2 p-1 rounded hover:bg-slate-50 transition-all border border-slate-100"
-                    title="Edit Customer Info"
+                    className="shrink-0 text-white/50 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors border border-white/15 cursor-pointer"
+                    title="Edit customer info"
                   >
                     <Pencil className="w-3 h-3" />
                   </button>
-                </h2>
-                <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[11px] mt-1.5">
-                  <span>📞</span>
-                  <span>{booking.mobile || booking.phone || "—"}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
-                  <span>✉️</span>
-                  <span>{booking.email || "—"}</span>
+                <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px]">
+                  <span className="h-5 w-5 rounded-md bg-emerald-50 border border-emerald-100 text-emerald-600 inline-flex items-center justify-center shrink-0">
+                    <Phone className="w-3 h-3" />
+                  </span>
+                  <span className="truncate">
+                    {booking.mobile || booking.phone || "—"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600 text-[11px] pt-1">
+                  <span className="h-5 w-5 rounded-md bg-sky-50 border border-sky-100 text-sky-600 inline-flex items-center justify-center shrink-0">
+                    <Mail className="w-3 h-3" />
+                  </span>
+                  <span className="truncate">{booking.email || "—"}</span>
                 </div>
                 <button
                   onClick={handleViewCustomerTimeline}
-                  className="mt-2.5 flex items-center gap-1 text-[9px] font-extrabold uppercase text-[#FF6B00] hover:text-[#E56000] tracking-wider transition-colors hover:underline"
+                  className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#FF4D00] hover:text-[#E04400] bg-[#FF4D00]/[0.07] hover:bg-[#FF4D00]/[0.12] border border-[#FF4D00]/20 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer"
                 >
-                  View Lifetime Journey →
+                  View lifetime journey →
                 </button>
               </div>
             )}
 
-            <div className="border-t border-slate-100 pt-4 space-y-3">
-              <div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Lead Source
+            <div className="border-t border-[#E8EEF4] pt-4 grid grid-cols-1 gap-2">
+              <div className="rounded-lg bg-[#F6F9FD] border border-[#E8EEF4] px-3 py-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Lead source
                 </div>
-                <div className="font-semibold text-slate-700 mt-0.5">
+                <div className="font-semibold text-[#0B1528] mt-0.5">
                   {booking.leadSource || booking.source || "Website Booking"}
                 </div>
               </div>
-              <div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Booking Executive
+              <div className="rounded-lg bg-indigo-50/50 border border-indigo-100 px-3 py-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500/80">
+                  Booking executive
                 </div>
-                <div className="font-semibold text-slate-700 mt-0.5">
+                <div className="font-semibold text-[#0B1528] mt-0.5">
                   {(booking as any).assignedSalesPerson?.name ||
                     (booking as any).salesPersonName ||
                     "Web Direct"}
                 </div>
               </div>
-              <div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Pickup City
+              <div className="rounded-lg bg-teal-50/50 border border-teal-100 px-3 py-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-teal-600/80">
+                  Pickup city
                 </div>
-                <div className="font-semibold text-slate-700 mt-0.5">
+                <div className="font-semibold text-[#0B1528] mt-0.5">
                   {booking.pickupCity || "Direct Join / N/A"}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Internal Note Card */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3 text-xs">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Internal Note
+          {/* Internal Note — only rendered when a note actually exists */}
+          {(booking.adminNotes ||
+            booking.notes ||
+            (booking as any).sourceBookingLink?.internalNote) && (
+            <div className="bg-gradient-to-br from-amber-50/70 to-white border border-amber-200/70 rounded-xl p-4 space-y-2 text-xs">
+              <div className="text-[11px] font-semibold text-amber-800 flex items-center gap-1.5">
+                <FileText className="w-3 h-3" />
+                Internal note
+              </div>
+              <div className="text-slate-600 leading-relaxed">
+                {booking.adminNotes ||
+                  booking.notes ||
+                  (booking as any).sourceBookingLink?.internalNote}
+              </div>
             </div>
-            <div className="bg-[#fafafa] border border-slate-200/80 rounded-lg p-3 text-slate-700 leading-relaxed font-medium">
-              {booking.adminNotes ||
-                booking.notes ||
-                (booking as any).sourceBookingLink?.internalNote || (
-                  <span className="text-slate-400 italic">
-                    No internal note attached to this booking
-                  </span>
-                )}
-            </div>
-          </div>
+          )}
 
-          {/* Tags Card */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3 text-xs">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Tags
-            </div>
-            <div className="bg-[#fafafa] border border-slate-200/80 rounded-lg p-3 text-center text-slate-400 italic">
-              No tags added
-            </div>
-          </div>
-
-          {/* Automation Actions Card */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3 text-xs">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Automation
-            </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => handleSendEmail("confirmation")}
-                className="w-full py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded shadow-sm text-center"
-              >
-                Resend Confirmation
-              </button>
-              <button
-                onClick={() => handleSendEmail("reminder")}
-                className="w-full py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded shadow-sm text-center"
-              >
-                Send Reminder
-              </button>
-              <button
-                onClick={() => {
+          {/* Quick actions — contextual only, so the rail stays quiet */}
+          {(() => {
+            const quickActions = [
+              (booking.status === "confirmed" || flowStatus === "Confirmed") && {
+                key: "confirmation",
+                label: "Resend confirmation",
+                icon: Send,
+                chip: "bg-emerald-50 border-emerald-100 text-emerald-600",
+                hover: "hover:bg-emerald-50/50",
+                onClick: () => handleSendEmail("confirmation"),
+              },
+              (booking.remainingAmount || 0) > 0 && {
+                key: "reminder",
+                label: "Send payment reminder",
+                icon: Clock,
+                chip: "bg-amber-50 border-amber-100 text-amber-600",
+                hover: "hover:bg-amber-50/50",
+                onClick: () => handleSendEmail("reminder"),
+              },
+              (booking.remainingAmount || 0) > 0 && {
+                key: "paylink",
+                label: "Copy payment link",
+                icon: CreditCard,
+                chip: "bg-sky-50 border-sky-100 text-sky-600",
+                hover: "hover:bg-sky-50/50",
+                onClick: () => {
                   navigator.clipboard.writeText(
                     `https://onlineyouthcamping.net/pay/${booking.bookingId}`,
                   );
                   toast.success("Payment link copied to clipboard");
-                }}
-                className="w-full py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded shadow-sm text-center"
-              >
-                Payment Link
-              </button>
-              <button
-                onClick={() => handleSendEmail("invoice")}
-                className="w-full py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded shadow-sm text-center"
-              >
-                Push Invoice
-              </button>
-            </div>
-          </div>
-        </div>
+                },
+              },
+              (booking.totalAmount || 0) > 0 && {
+                key: "invoice",
+                label: "Email invoice",
+                icon: FileText,
+                chip: "bg-violet-50 border-violet-100 text-violet-600",
+                hover: "hover:bg-violet-50/50",
+                onClick: () => handleSendEmail("invoice"),
+              },
+            ].filter(Boolean) as {
+              key: string;
+              label: string;
+              icon: typeof Send;
+              chip: string;
+              hover: string;
+              onClick: () => void;
+            }[];
+
+            if (quickActions.length === 0) return null;
+
+            return (
+              <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden text-xs">
+                <div className="px-4 py-3 border-b border-[#E8EEF4] bg-gradient-to-r from-[#0B1528]/[0.04] to-transparent text-[11px] font-semibold uppercase tracking-wide text-[#0B1528]/60">
+                  Quick actions
+                </div>
+                <div className="divide-y divide-[#E8EEF4]">
+                  {quickActions.map(
+                    ({ key, label, icon: Icon, chip, hover, onClick }) => (
+                      <button
+                        key={key}
+                        onClick={onClick}
+                        className={cn(
+                          "w-full px-4 py-2.5 flex items-center gap-2.5 text-left font-semibold text-[#0B1528] transition-colors cursor-pointer",
+                          hover,
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "h-6 w-6 rounded-lg border inline-flex items-center justify-center shrink-0",
+                            chip,
+                          )}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="truncate">{label}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-300 ml-auto shrink-0" />
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </aside>
+      </div>
       </div>
 
       {/* Dialogs & Overlays */}
@@ -6185,10 +7022,10 @@ export default function BookingDetailsView({
       >
         <DialogContent
           hideClose
-          className="sm:max-w-[480px] p-0 border border-slate-200 rounded-lg overflow-hidden shadow-premium bg-white"
+          className="sm:max-w-[480px] p-0 border border-[#E8EEF4] rounded-lg overflow-hidden shadow-premium bg-white"
         >
           <div className="bg-slate-900 px-4 py-3 text-white flex justify-between items-center">
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider text-white">
+            <DialogTitle className="text-xs font-semibold text-white">
               {editingPassenger
                 ? "Edit Passenger Details"
                 : "Please enter details for new passenger"}
@@ -6208,8 +7045,8 @@ export default function BookingDetailsView({
           </div>
 
           <div className="p-5 space-y-3.5 text-xs text-slate-700">
-            <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-[10.5px]">
-              <span className="font-bold text-slate-500 uppercase mr-1">
+            <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] text-[10.5px]">
+              <span className="font-semibold text-slate-500 uppercase mr-1">
                 Passenger Option:
               </span>
               <span className="font-medium">
@@ -6222,7 +7059,7 @@ export default function BookingDetailsView({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   Salutation
                 </label>
                 <Select
@@ -6248,7 +7085,7 @@ export default function BookingDetailsView({
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   First Name *
                 </label>
                 <Input
@@ -6264,7 +7101,7 @@ export default function BookingDetailsView({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   Last Name
                 </label>
                 <Input
@@ -6280,7 +7117,7 @@ export default function BookingDetailsView({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   Gender
                 </label>
                 <Select
@@ -6306,7 +7143,7 @@ export default function BookingDetailsView({
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   Age
                 </label>
                 <Input
@@ -6320,7 +7157,7 @@ export default function BookingDetailsView({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   Phone number
                 </label>
                 <Input
@@ -6333,7 +7170,7 @@ export default function BookingDetailsView({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   E-mail
                 </label>
                 <Input
@@ -6346,7 +7183,7 @@ export default function BookingDetailsView({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   Food Preference
                 </label>
                 <Select
@@ -6369,7 +7206,7 @@ export default function BookingDetailsView({
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
                   Room Sharing
                 </label>
                 <Select
@@ -6407,21 +7244,21 @@ export default function BookingDetailsView({
                   setShowAddPassenger(false);
                   setEditingPassenger(null);
                 }}
-                className="bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold uppercase text-[9px] px-3.5 h-8 rounded"
+                className="bg-white border border-[#E8EEF4] text-slate-650 hover:bg-slate-50 font-semibold uppercase text-[9px] px-3.5 h-8 rounded"
               >
                 Close
               </button>
               {!editingPassenger && (
                 <button
                   onClick={() => handleSavePassenger(true)}
-                  className="bg-[#31b0d5] hover:bg-[#269abc] text-white font-bold uppercase text-[9px] px-4 h-8 rounded"
+                  className="bg-[#31b0d5] hover:bg-[#269abc] text-white font-semibold uppercase text-[9px] px-4 h-8 rounded"
                 >
                   Save & add another
                 </button>
               )}
               <button
                 onClick={() => handleSavePassenger(false)}
-                className="bg-[#5cb85c] hover:bg-[#449d44] text-white font-bold uppercase text-[9px] px-4 h-8 rounded"
+                className="bg-[#5cb85c] hover:bg-[#449d44] text-white font-semibold uppercase text-[9px] px-4 h-8 rounded"
               >
                 {editingPassenger ? "Update details" : "Save"}
               </button>
@@ -6434,10 +7271,10 @@ export default function BookingDetailsView({
       <Dialog open={showChangeDates} onOpenChange={setShowChangeDates}>
         <DialogContent
           hideClose
-          className="sm:max-w-[400px] p-0 border border-slate-200 rounded-lg overflow-hidden shadow-premium bg-white"
+          className="sm:max-w-[400px] p-0 border border-[#E8EEF4] rounded-lg overflow-hidden shadow-premium bg-white"
         >
           <div className="bg-slate-900 px-4 py-3 text-white flex justify-between items-center">
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider text-white">
+            <DialogTitle className="text-xs font-semibold text-white">
               Change departure date
             </DialogTitle>
             <DialogDescription className="sr-only">
@@ -6452,7 +7289,7 @@ export default function BookingDetailsView({
           </div>
           <div className="p-5 space-y-4 text-xs text-slate-700">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-450">
+              <label className="text-[9px] font-semibold uppercase text-slate-450">
                 Departure Date
               </label>
               <Input
@@ -6463,7 +7300,7 @@ export default function BookingDetailsView({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-450">
+              <label className="text-[9px] font-semibold uppercase text-slate-450">
                 Reason for Change
               </label>
               <Input
@@ -6477,13 +7314,13 @@ export default function BookingDetailsView({
             <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
               <button
                 onClick={() => setShowChangeDates(false)}
-                className="bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold uppercase text-[9px] px-3.5 h-8 rounded"
+                className="bg-white border border-[#E8EEF4] text-slate-650 hover:bg-slate-50 font-semibold uppercase text-[9px] px-3.5 h-8 rounded"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveDates}
-                className="bg-[#5cb85c] hover:bg-[#449d44] text-white font-bold uppercase text-[9px] px-4 h-8 rounded"
+                className="bg-[#5cb85c] hover:bg-[#449d44] text-white font-semibold uppercase text-[9px] px-4 h-8 rounded"
               >
                 Save
               </button>
@@ -6496,10 +7333,10 @@ export default function BookingDetailsView({
       <Dialog open={showCreatePayment} onOpenChange={setShowCreatePayment}>
         <DialogContent
           hideClose
-          className="sm:max-w-[500px] p-0 border border-slate-200 rounded-lg overflow-hidden shadow-premium bg-white"
+          className="sm:max-w-[500px] p-0 border border-[#E8EEF4] rounded-lg overflow-hidden shadow-premium bg-white"
         >
           <div className="bg-slate-900 px-4 py-3 text-white flex justify-between items-center">
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider text-white">
+            <DialogTitle className="text-xs font-semibold text-white">
               Create a payment
             </DialogTitle>
             <DialogDescription className="sr-only">
@@ -6516,7 +7353,7 @@ export default function BookingDetailsView({
           <div className="p-5 space-y-4 text-xs text-slate-700">
             {/* Payment Source Radios */}
             <div className="space-y-1.5">
-              <label className="text-[9px] font-bold uppercase text-slate-400">
+              <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Payment Source
               </label>
               <div className="flex items-center gap-4 mt-1">
@@ -6558,12 +7395,12 @@ export default function BookingDetailsView({
               <div className="space-y-3 pt-2 border-t border-slate-100 animate-fade-in">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-550">
+                    <label className="text-[10px] font-semibold uppercase text-slate-550">
                       Amount
                     </label>
                     <div className="flex items-center gap-1.5">
                       <div className="relative flex-1">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-[10px]">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-semibold text-slate-400 text-[10px]">
                           INR
                         </span>
                         <Input
@@ -6593,13 +7430,13 @@ export default function BookingDetailsView({
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <label className="text-[10px] font-bold uppercase text-slate-550">
+                      <label className="text-[10px] font-semibold uppercase text-slate-550">
                         Collection Account
                       </label>
                       <button
                         type="button"
                         onClick={() => setShowAddAccountModal(true)}
-                        className="text-[9px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-0.5"
+                        className="text-[9px] font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-0.5"
                       >
                         <Plus className="w-2.5 h-2.5" /> Add Account
                       </button>
@@ -6608,7 +7445,7 @@ export default function BookingDetailsView({
                       value={payCollectionAccountId}
                       onValueChange={setPayCollectionAccountId}
                     >
-                      <SelectTrigger className="h-8 text-xs font-semibold border-slate-200">
+                      <SelectTrigger className="h-8 text-xs font-semibold border-[#E8EEF4]">
                         <SelectValue placeholder="Select Collection Account" />
                       </SelectTrigger>
                       <SelectContent>
@@ -6623,7 +7460,7 @@ export default function BookingDetailsView({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-slate-550">
+                  <label className="text-[10px] font-semibold uppercase text-slate-550">
                     Comments / Reference UTR
                   </label>
                   <Input
@@ -6669,14 +7506,14 @@ export default function BookingDetailsView({
               <button
                 onClick={() => setShowCreatePayment(false)}
                 disabled={savingPayment}
-                className="bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold uppercase text-[9px] px-3.5 h-8 rounded disabled:opacity-50"
+                className="bg-white border border-[#E8EEF4] text-slate-650 hover:bg-slate-50 font-semibold uppercase text-[9px] px-3.5 h-8 rounded disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreatePaymentSave}
                 disabled={savingPayment}
-                className="bg-[#5cb85c] hover:bg-[#449d44] text-white font-bold uppercase text-[9px] px-4 h-8 rounded"
+                className="bg-[#5cb85c] hover:bg-[#449d44] text-white font-semibold uppercase text-[9px] px-4 h-8 rounded"
               >
                 {savingPayment ? "Saving..." : "Save"}
               </button>
@@ -6689,7 +7526,7 @@ export default function BookingDetailsView({
       <Dialog open={showAddAccountModal} onOpenChange={setShowAddAccountModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-orange-500" /> Add Collection Account
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -6698,7 +7535,7 @@ export default function BookingDetailsView({
           </DialogHeader>
           <div className="space-y-3 py-2 text-xs">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-500">
+              <label className="text-[10px] font-semibold uppercase text-slate-500">
                 Account Name <span className="text-red-500">*</span>
               </label>
               <Input
@@ -6711,7 +7548,7 @@ export default function BookingDetailsView({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-500">
+                <label className="text-[10px] font-semibold uppercase text-slate-500">
                   Account Type
                 </label>
                 <Select value={newAccType} onValueChange={setNewAccType}>
@@ -6730,7 +7567,7 @@ export default function BookingDetailsView({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-500">
+                <label className="text-[10px] font-semibold uppercase text-slate-500">
                   Account Holder Name
                 </label>
                 <Input
@@ -6744,7 +7581,7 @@ export default function BookingDetailsView({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-500">
+                <label className="text-[10px] font-semibold uppercase text-slate-500">
                   UPI ID (Optional)
                 </label>
                 <Input
@@ -6756,7 +7593,7 @@ export default function BookingDetailsView({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-500">
+                <label className="text-[10px] font-semibold uppercase text-slate-500">
                   Bank Name (Optional)
                 </label>
                 <Input
@@ -6770,7 +7607,7 @@ export default function BookingDetailsView({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-500">
+                <label className="text-[10px] font-semibold uppercase text-slate-500">
                   Account Number (Optional)
                 </label>
                 <Input
@@ -6782,7 +7619,7 @@ export default function BookingDetailsView({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-500">
+                <label className="text-[10px] font-semibold uppercase text-slate-500">
                   IFSC Code (Optional)
                 </label>
                 <Input
@@ -6808,7 +7645,7 @@ export default function BookingDetailsView({
                 size="sm"
                 onClick={handleQuickCreateAccount}
                 disabled={savingNewAccount || !newAccName.trim()}
-                className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold"
+                className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white font-semibold"
               >
                 {savingNewAccount ? "Creating..." : "Create & Select"}
               </Button>
@@ -6844,16 +7681,16 @@ export default function BookingDetailsView({
       >
         <DialogContent className="sm:max-w-[450px] rounded-[4px] border border-[#E2E8F0] p-5 bg-white max-h-[80vh] overflow-y-auto shadow-xl">
           <DialogHeader className="border-b border-[#E2E8F0] pb-3">
-            <DialogTitle className="font-bold uppercase tracking-tight text-xs flex items-center gap-2 text-slate-850">
+            <DialogTitle className="font-semibold uppercase tracking-tight text-xs flex items-center gap-2 text-slate-850">
               👤 Customer Lifetime Journey
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <div className="relative border-l border-slate-200 ml-2.5 pl-4 space-y-4 text-xs font-semibold text-slate-705">
+            <div className="relative border-l border-[#E8EEF4] ml-2.5 pl-4 space-y-4 text-xs font-semibold text-slate-705">
               {customerTimeline.length > 0 ? (
                 customerTimeline.map((item, idx) => {
                   const colors: Record<string, string> = {
-                    Sales: "bg-[#FF6B00]",
+                    Sales: "bg-[#FF4D00]",
                     Finance: "bg-green-500",
                     Operations: "bg-blue-500",
                     Marketing: "bg-purple-500",
@@ -6867,7 +7704,7 @@ export default function BookingDetailsView({
                           color,
                         )}
                       />
-                      <div className="flex items-center justify-between gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                      <div className="flex items-center justify-between gap-2 text-[9px] text-slate-400 font-semibold">
                         <span
                           className={cn(
                             "px-1.5 py-0.2 rounded text-[7px] text-white",
@@ -6878,7 +7715,7 @@ export default function BookingDetailsView({
                         </span>
                         <span>{item.date}</span>
                       </div>
-                      <p className="text-slate-800 text-xs font-bold leading-normal">
+                      <p className="text-[#0B1528] text-xs font-semibold leading-normal">
                         {item.action}
                       </p>
                       {item.notes && (
@@ -6909,10 +7746,10 @@ export default function BookingDetailsView({
 
       {/* DIALOG: ASSIGN TASK TO COLLEAGUE */}
       <Dialog open={showCreateTask} onOpenChange={setShowCreateTask}>
-        <DialogContent className="sm:max-w-[425px] bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+        <DialogContent className="sm:max-w-[425px] bg-white p-6 rounded-xl shadow-lg border border-[#E8EEF4]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#F5760E]" /> Assign Task to
+            <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#FF4D00]" /> Assign Task to
               Colleague
             </DialogTitle>
             <DialogDescription className="text-[11px] text-slate-400">
@@ -6922,7 +7759,7 @@ export default function BookingDetailsView({
 
           <form onSubmit={handleCreateTask} className="space-y-4 mt-2">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Task Title *
               </label>
               <Input
@@ -6930,30 +7767,30 @@ export default function BookingDetailsView({
                 value={taskTitle}
                 onChange={(e) => setTaskTitle(e.target.value)}
                 placeholder="e.g. Call client for remaining payment"
-                className="h-9 text-xs bg-white border border-slate-200 rounded-lg"
+                className="h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Task Description
               </label>
               <Textarea
                 value={taskDescription}
                 onChange={(e) => setTaskDescription(e.target.value)}
                 placeholder="e.g. Ask for GPay screenshot"
-                className="text-xs bg-white border border-slate-200 rounded-lg min-h-[80px]"
+                className="text-xs bg-white border border-[#E8EEF4] rounded-lg min-h-[80px]"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Assign To *
                 </label>
                 <select
                   required
                   value={taskAssignedTo}
                   onChange={(e) => setTaskAssignedTo(e.target.value)}
-                  className="w-full h-9 text-xs bg-white border border-slate-200 rounded-lg px-2"
+                  className="w-full h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg px-2"
                 >
                   <option value="">Select colleague...</option>
                   {colleagues.map((c) => (
@@ -6964,14 +7801,14 @@ export default function BookingDetailsView({
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Due Date
                 </label>
                 <Input
                   type="date"
                   value={taskDueDate}
                   onChange={(e) => setTaskDueDate(e.target.value)}
-                  className="h-9 text-xs bg-white border border-slate-200 rounded-lg"
+                  className="h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg"
                 />
               </div>
             </div>
@@ -6987,7 +7824,7 @@ export default function BookingDetailsView({
               <Button
                 type="submit"
                 disabled={creatingTask}
-                className="h-9 text-xs font-semibold bg-[#F5760E] hover:opacity-90 text-white rounded-lg px-4"
+                className="h-9 text-xs font-semibold bg-[#FF4D00] hover:opacity-90 text-white rounded-lg px-4"
               >
                 {creatingTask ? "Assigning..." : "Assign"}
               </Button>
@@ -6998,9 +7835,9 @@ export default function BookingDetailsView({
 
       {/* DIALOG: CANCEL BOOKING & REFUND MODULE */}
       <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
-        <DialogContent className="sm:max-w-[450px] bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+        <DialogContent className="sm:max-w-[450px] bg-white p-6 rounded-xl shadow-lg border border-[#E8EEF4]">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-rose-600 uppercase tracking-wider flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-rose-600 flex items-center gap-2">
               ⚠️ Cancel Booking & Process Refund
             </DialogTitle>
             <DialogDescription className="text-[11px] text-slate-400">
@@ -7012,25 +7849,25 @@ export default function BookingDetailsView({
           <div className="space-y-4 mt-3 text-xs">
             <div className="bg-slate-55 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
               <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase">
+                <p className="text-[9px] font-semibold text-slate-400 uppercase">
                   Advance Paid
                 </p>
-                <p className="text-sm font-bold font-mono text-slate-800">
+                <p className="text-sm font-semibold font-mono text-[#0B1528]">
                   ₹{(booking.advancePaid || 0).toLocaleString("en-IN")}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[9px] font-bold text-slate-400 uppercase">
+                <p className="text-[9px] font-semibold text-slate-400 uppercase">
                   Booking ID
                 </p>
-                <p className="text-sm font-bold font-mono text-slate-800">
+                <p className="text-sm font-semibold font-mono text-[#0B1528]">
                   #{booking.bookingId}
                 </p>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Reason for Cancellation *
               </label>
               <Input
@@ -7038,13 +7875,13 @@ export default function BookingDetailsView({
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 placeholder="e.g. Traveler cancelled at last moment due to emergency"
-                className="h-9 text-xs bg-white border border-slate-200 rounded-lg"
+                className="h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Cancellation Charges (₹)
                 </label>
                 <Input
@@ -7056,24 +7893,24 @@ export default function BookingDetailsView({
                     const advance = booking.advancePaid || 0;
                     setCancelRefund(Math.max(0, advance - charges).toString());
                   }}
-                  className="h-9 text-xs bg-white border border-slate-200 rounded-lg font-mono"
+                  className="h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg font-mono"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">
+                <label className="text-[9px] font-semibold uppercase text-slate-500">
                   Refund Amount (₹)
                 </label>
                 <Input
                   type="number"
                   value={cancelRefund}
                   onChange={(e) => setCancelRefund(e.target.value)}
-                  className="h-9 text-xs bg-white border border-slate-200 rounded-lg font-mono text-emerald-600 font-bold"
+                  className="h-9 text-xs bg-white border border-[#E8EEF4] rounded-lg font-mono text-emerald-600 font-semibold"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-500">
+              <label className="text-[9px] font-semibold uppercase text-slate-500">
                 Refund Payment Method
               </label>
               <Select
@@ -7115,9 +7952,9 @@ export default function BookingDetailsView({
       {/* DIALOG: PERMANENT DELETE BOOKING FOR FOUNDER */}
       {isFounder && (
         <Dialog open={showDeleteFounderModal} onOpenChange={setShowDeleteFounderModal}>
-          <DialogContent className="sm:max-w-[420px] bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+          <DialogContent className="sm:max-w-[420px] bg-white p-6 rounded-xl shadow-lg border border-[#E8EEF4]">
             <DialogHeader>
-              <DialogTitle className="text-base font-extrabold text-rose-700 flex items-center gap-2">
+              <DialogTitle className="text-base font-semibold text-rose-700 flex items-center gap-2">
                 <Trash2 className="w-5 h-5 text-rose-600" /> Permanently Delete Booking
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
@@ -7125,9 +7962,9 @@ export default function BookingDetailsView({
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-2 text-xs text-slate-600">
-              <p className="font-semibold text-slate-800">
+              <p className="font-semibold text-[#0B1528]">
                 Are you sure you want to permanently delete booking{" "}
-                <span className="font-mono font-extrabold text-rose-900 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                <span className="font-mono font-semibold text-rose-900 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
                   {booking.bookingId || booking.id}
                 </span>{" "}
                 ({booking.fullName || booking.name})?
@@ -7141,7 +7978,7 @@ export default function BookingDetailsView({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowDeleteFounderModal(false)}
-                className="text-xs font-semibold h-9 rounded-lg border-slate-200 cursor-pointer"
+                className="text-xs font-semibold h-9 rounded-lg border-[#E8EEF4] cursor-pointer"
                 disabled={deletingFounderProcessing}
               >
                 Cancel
@@ -7150,7 +7987,7 @@ export default function BookingDetailsView({
                 size="sm"
                 onClick={handleDeleteBookingFounder}
                 disabled={deletingFounderProcessing}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer"
               >
                 {deletingFounderProcessing ? (
                   <>
@@ -7170,9 +8007,9 @@ export default function BookingDetailsView({
       )}
       {/* DIALOG: CANCEL INDIVIDUAL PASSENGER IN GROUP */}
       <Dialog open={cancelPassengerModalOpen} onOpenChange={setCancelPassengerModalOpen}>
-        <DialogContent className="sm:max-w-[460px] bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+        <DialogContent className="sm:max-w-[460px] bg-white p-6 rounded-xl shadow-lg border border-[#E8EEF4]">
           <DialogHeader>
-            <DialogTitle className="text-base font-extrabold text-rose-700 flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-rose-700 flex items-center gap-2">
               <UserX className="w-5 h-5 text-rose-600" /> Cancel Passenger from Group
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -7184,8 +8021,8 @@ export default function BookingDetailsView({
             <div className="space-y-4 py-2 text-xs">
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-rose-950 text-sm">{cancellingPassenger.name}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-200/80 text-rose-900 font-bold">
+                  <span className="font-semibold text-rose-950 text-sm">{cancellingPassenger.name}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-200/80 text-rose-900 font-semibold">
                     {cancellingPassenger.age ? `${cancellingPassenger.age}y` : ""} {cancellingPassenger.genderFull || cancellingPassenger.gender}
                   </span>
                 </div>
@@ -7195,11 +8032,11 @@ export default function BookingDetailsView({
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase text-slate-700 block mb-1">
+                <label className="text-[11px] font-semibold uppercase text-slate-700 block mb-1">
                   Cancellation Reason *
                 </label>
                 <Select value={cancellationReason} onValueChange={setCancellationReason}>
-                  <SelectTrigger className="h-9 text-xs bg-white border-slate-200 font-medium">
+                  <SelectTrigger className="h-9 text-xs bg-white border-[#E8EEF4] font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="text-xs bg-white">
@@ -7215,14 +8052,14 @@ export default function BookingDetailsView({
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase text-slate-700 block mb-1">
+                <label className="text-[11px] font-semibold uppercase text-slate-700 block mb-1">
                   Internal Cancellation Notes (Optional)
                 </label>
                 <Textarea
                   value={cancellationNotes}
                   onChange={(e) => setCancellationNotes(e.target.value)}
                   placeholder="e.g. Discussed with team / replacement pending..."
-                  className="text-xs min-h-[60px] bg-white border-slate-200"
+                  className="text-xs min-h-[60px] bg-white border-[#E8EEF4]"
                 />
               </div>
             </div>
@@ -7233,7 +8070,7 @@ export default function BookingDetailsView({
               variant="outline"
               size="sm"
               onClick={() => setCancelPassengerModalOpen(false)}
-              className="text-xs font-semibold h-9 rounded-lg border-slate-200 cursor-pointer"
+              className="text-xs font-semibold h-9 rounded-lg border-[#E8EEF4] cursor-pointer"
               disabled={isProcessingCancelPax}
             >
               Keep Active
@@ -7242,7 +8079,7 @@ export default function BookingDetailsView({
               size="sm"
               onClick={handleCancelPassengerSubmit}
               disabled={isProcessingCancelPax}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs h-9 rounded-lg px-4 flex items-center gap-1.5 cursor-pointer"
             >
               {isProcessingCancelPax ? (
                 <>
@@ -7263,12 +8100,12 @@ export default function BookingDetailsView({
       {/* Document Preview Modal */}
       {docPreviewModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-[#E8EEF4]">
+            <div className="p-4 border-b border-[#E8EEF4] flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-2.5">
                 <FileText className="w-5 h-5 text-orange-600" />
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">{docPreviewModal.title}</h3>
+                  <h3 className="font-semibold text-slate-900 text-sm">{docPreviewModal.title}</h3>
                   {docPreviewModal.passengerName && (
                     <p className="text-[11px] text-slate-500 font-medium">Passenger: {docPreviewModal.passengerName}</p>
                   )}
@@ -7279,14 +8116,14 @@ export default function BookingDetailsView({
                   href={docPreviewModal.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                  className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
                 >
                   Open in New Tab <ExternalLink className="w-3.5 h-3.5" />
                 </a>
                 <button
                   type="button"
                   onClick={() => setDocPreviewModal(null)}
-                  className="text-slate-400 hover:text-slate-700 font-bold text-lg px-2.5 py-1 rounded-lg hover:bg-slate-200/60 transition-colors"
+                  className="text-slate-400 hover:text-slate-700 font-semibold text-lg px-2.5 py-1 rounded-lg hover:bg-slate-200/60 transition-colors"
                 >
                   ✕
                 </button>
@@ -7296,7 +8133,7 @@ export default function BookingDetailsView({
               {docPreviewModal.url.toLowerCase().includes(".pdf") ? (
                 <iframe
                   src={docPreviewModal.url}
-                  className="w-full h-[550px] rounded-lg border border-slate-200 bg-white"
+                  className="w-full h-[550px] rounded-lg border border-[#E8EEF4] bg-white"
                   title={docPreviewModal.title}
                 />
               ) : (
@@ -7313,9 +8150,9 @@ export default function BookingDetailsView({
 
       {/* Add Auxiliary Service Modal */}
       <Dialog open={showAddServiceModal} onOpenChange={setShowAddServiceModal}>
-        <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-slate-200">
+        <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-[#E8EEF4]">
           <DialogHeader className="border-b border-slate-100 pb-3">
-            <DialogTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-orange-600" /> Add Auxiliary Service
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -7325,12 +8162,12 @@ export default function BookingDetailsView({
 
           <div className="space-y-3.5 py-3 text-xs">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Service Type</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-400">Service Type</label>
               <Select
                 value={serviceForm.serviceType}
                 onValueChange={(val: any) => setServiceForm({ ...serviceForm, serviceType: val })}
               >
-                <SelectTrigger className="h-8.5 text-xs rounded-lg border-slate-200">
+                <SelectTrigger className="h-8.5 text-xs rounded-lg border-[#E8EEF4]">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg">
@@ -7346,45 +8183,45 @@ export default function BookingDetailsView({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Vendor / Operator Name *</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-400">Vendor / Operator Name *</label>
               <Input
                 placeholder="e.g. IRCTC Agent / MakeMyTrip / Snow View Resort"
                 value={serviceForm.vendorName}
                 onChange={(e) => setServiceForm({ ...serviceForm, vendorName: e.target.value })}
-                className="h-8.5 text-xs rounded-lg border-slate-200"
+                className="h-8.5 text-xs rounded-lg border-[#E8EEF4]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Cost Price (₹)</label>
+                <label className="text-[10px] font-semibold uppercase text-slate-400">Cost Price (₹)</label>
                 <Input
                   type="number"
                   placeholder="e.g. 1500"
                   value={serviceForm.costPrice}
                   onChange={(e) => setServiceForm({ ...serviceForm, costPrice: e.target.value })}
-                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                  className="h-8.5 text-xs rounded-lg border-[#E8EEF4] font-mono"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Selling Price (₹) *</label>
+                <label className="text-[10px] font-semibold uppercase text-slate-400">Selling Price (₹) *</label>
                 <Input
                   type="number"
                   placeholder="e.g. 2200"
                   value={serviceForm.sellingPrice}
                   onChange={(e) => setServiceForm({ ...serviceForm, sellingPrice: e.target.value })}
-                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                  className="h-8.5 text-xs rounded-lg border-[#E8EEF4] font-mono"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Notes / Remarks</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-400">Notes / Remarks</label>
               <Textarea
                 placeholder="e.g. PNR: 2481928190, 2S Sleeper extra seat"
                 value={serviceForm.remarks}
                 onChange={(e) => setServiceForm({ ...serviceForm, remarks: e.target.value })}
-                className="text-xs rounded-lg border-slate-200"
+                className="text-xs rounded-lg border-[#E8EEF4]"
                 rows={2}
               />
             </div>
@@ -7395,7 +8232,7 @@ export default function BookingDetailsView({
               variant="outline"
               size="sm"
               onClick={() => setShowAddServiceModal(false)}
-              className="text-xs font-semibold h-8.5 rounded-lg border-slate-200"
+              className="text-xs font-semibold h-8.5 rounded-lg border-[#E8EEF4]"
             >
               Cancel
             </Button>
@@ -7403,7 +8240,7 @@ export default function BookingDetailsView({
               size="sm"
               onClick={handleCreateService}
               disabled={savingService}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8.5 px-4 rounded-lg shadow-xs"
+              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8.5 px-4 rounded-lg"
             >
               {savingService ? "Saving..." : "Save Service"}
             </Button>
@@ -7413,9 +8250,9 @@ export default function BookingDetailsView({
 
       {/* Request Booking Refund Modal */}
       <Dialog open={showBookingRefundModal} onOpenChange={setShowBookingRefundModal}>
-        <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-slate-200">
+        <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-[#E8EEF4]">
           <DialogHeader className="border-b border-slate-100 pb-3">
-            <DialogTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-orange-600" /> Request Booking Refund
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -7425,12 +8262,12 @@ export default function BookingDetailsView({
 
           <div className="space-y-3.5 py-3 text-xs">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Refund Mode</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-400">Refund Mode</label>
               <Select
                 value={refundForm.refundMode}
                 onValueChange={(val: any) => setRefundForm({ ...refundForm, refundMode: val })}
               >
-                <SelectTrigger className="h-8.5 text-xs rounded-lg border-slate-200">
+                <SelectTrigger className="h-8.5 text-xs rounded-lg border-[#E8EEF4]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg">
@@ -7443,47 +8280,47 @@ export default function BookingDetailsView({
 
             {(refundForm.refundMode === "CASH" || refundForm.refundMode === "HYBRID") && (
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Cash / Bank Payout Amount (₹)</label>
+                <label className="text-[10px] font-semibold uppercase text-slate-400">Cash / Bank Payout Amount (₹)</label>
                 <Input
                   type="number"
                   placeholder="e.g. 5000"
                   value={refundForm.cashAmount}
                   onChange={(e) => setRefundForm({ ...refundForm, cashAmount: e.target.value })}
-                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                  className="h-8.5 text-xs rounded-lg border-[#E8EEF4] font-mono"
                 />
               </div>
             )}
 
             {(refundForm.refundMode === "CREDIT" || refundForm.refundMode === "HYBRID") && (
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Store Credit Amount (₹)</label>
+                <label className="text-[10px] font-semibold uppercase text-slate-400">Store Credit Amount (₹)</label>
                 <Input
                   type="number"
                   placeholder="e.g. 5000"
                   value={refundForm.creditAmount}
                   onChange={(e) => setRefundForm({ ...refundForm, creditAmount: e.target.value })}
-                  className="h-8.5 text-xs rounded-lg border-slate-200 font-mono"
+                  className="h-8.5 text-xs rounded-lg border-[#E8EEF4] font-mono"
                 />
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Bank Reference / UPI ID (Optional)</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-400">Bank Reference / UPI ID (Optional)</label>
               <Input
                 placeholder="e.g. Customer HDFC A/C or UPI: customer@okhdfcbank"
                 value={refundForm.bankReference}
                 onChange={(e) => setRefundForm({ ...refundForm, bankReference: e.target.value })}
-                className="h-8.5 text-xs rounded-lg border-slate-200"
+                className="h-8.5 text-xs rounded-lg border-[#E8EEF4]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Reason for Refund *</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-400">Reason for Refund *</label>
               <Textarea
                 placeholder="e.g. Traveler medical emergency, agreed 50% refund as per policy"
                 value={refundForm.reason}
                 onChange={(e) => setRefundForm({ ...refundForm, reason: e.target.value })}
-                className="text-xs rounded-lg border-slate-200"
+                className="text-xs rounded-lg border-[#E8EEF4]"
                 rows={2}
               />
             </div>
@@ -7494,7 +8331,7 @@ export default function BookingDetailsView({
               variant="outline"
               size="sm"
               onClick={() => setShowBookingRefundModal(false)}
-              className="text-xs font-semibold h-8.5 rounded-lg border-slate-200"
+              className="text-xs font-semibold h-8.5 rounded-lg border-[#E8EEF4]"
             >
               Cancel
             </Button>
@@ -7502,7 +8339,7 @@ export default function BookingDetailsView({
               size="sm"
               onClick={handleCreateBookingRefund}
               disabled={submittingRefund}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8.5 px-4 rounded-lg shadow-xs"
+              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8.5 px-4 rounded-lg"
             >
               {submittingRefund ? "Submitting..." : "Submit Refund Request"}
             </Button>

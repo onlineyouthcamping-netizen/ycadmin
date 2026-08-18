@@ -402,7 +402,7 @@ export default function DailyTaskConsolePage() {
   const totalCount = tasks.length;
 
   return (
-    <div className="p-6 max-w-[1650px] mx-auto space-y-5 bg-slate-50/50 min-h-screen">
+    <div className="admin-page">
       {/* ── STICKY HEADER & WORKSTATION TITLE ── */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -791,7 +791,7 @@ export default function DailyTaskConsolePage() {
                         className={cn(
                           "text-[9px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider inline-block",
                           t.source === "MANUAL"
-                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            ? "bg-orange-50 text-orange-700 border-orange-200"
                             : "bg-orange-50 text-orange-700 border-orange-200",
                         )}
                       >

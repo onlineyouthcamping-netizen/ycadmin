@@ -2,14 +2,11 @@ import React from "react";
 import { Compass, Search, AlertTriangle } from "lucide-react";
 
 export const TravelDeskLoadingState = ({
-  message = "Loading Travel Desk...",
+  message = "Loading Travel Desk",
 }) => (
-  <div className="flex-1 flex flex-col items-center justify-center bg-white font-sans">
-    <div className="w-12 h-12 border-4 border-slate-100 border-t-[#F97316] rounded-full animate-spin mb-4" />
-    <h2 className="text-base font-bold text-[#0A192F]">{message}</h2>
-    <p className="text-[#64748B] text-xs mt-1">
-      Please wait while we gather the details.
-    </p>
+  <div className="flex flex-1 flex-col items-center justify-center gap-3 p-10 font-sans">
+    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E8EEF4] border-t-[#FF4D00]" />
+    <p className="text-[12px] font-medium text-slate-500">{message}</p>
   </div>
 );
 
@@ -20,27 +17,27 @@ export const TravelDeskErrorState = ({
   message?: string;
   onRetry?: () => void;
 }) => (
-  <div className="flex-1 flex flex-col items-center justify-center bg-white font-sans">
-    <AlertTriangle className="w-12 h-12 text-[#EF4444] mb-3" />
-    <h2 className="text-base font-bold text-[#0A192F]">
-      Error Loading Trip Data
+  <div className="flex flex-1 flex-col items-center justify-center p-10 text-center font-sans">
+    <AlertTriangle className="mb-3 h-7 w-7 text-rose-500" />
+    <h2 className="text-[14px] font-semibold text-[#0B1528]">
+      Could not load trip data
     </h2>
-    <p className="text-[#64748B] text-xs mt-1 max-w-md text-center">
+    <p className="mt-1 max-w-md text-[12px] font-medium text-slate-500">
       {message}
     </p>
     {onRetry && (
       <button
         onClick={onRetry}
-        className="mt-4 px-4 py-2 bg-[#0A192F] hover:bg-[#112240] text-white rounded-md font-semibold text-xs transition-colors"
+        className="mt-4 flex h-8 items-center rounded-md border border-[#0B1528]/15 bg-white px-3 text-[12px] font-medium text-[#0B1528] transition-colors hover:border-[#0B1528] hover:bg-[#0B1528] hover:text-white"
       >
-        Try Again
+        Try again
       </button>
     )}
   </div>
 );
 
 export const TravelDeskEmptyState = ({
-  title = "No Trips Found",
+  title = "No trips found",
   description = "We couldn't find any trips matching your criteria.",
   icon: Icon = Search,
   onClearFilters,
@@ -50,18 +47,20 @@ export const TravelDeskEmptyState = ({
   icon?: any;
   onClearFilters?: () => void;
 }) => (
-  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white font-sans">
-    <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-4 rounded-full mb-4">
-      <Icon className="w-8 h-8 text-[#64748B]" />
-    </div>
-    <h3 className="text-base font-bold text-[#0A192F]">{title}</h3>
-    <p className="text-[#64748B] text-xs mt-2 max-w-sm">{description}</p>
+  <div className="flex flex-1 flex-col items-center justify-center p-10 text-center font-sans">
+    <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-[#E8EEF4] bg-white">
+      <Icon className="h-4 w-4 text-slate-400" />
+    </span>
+    <h3 className="text-[14px] font-semibold text-[#0B1528]">{title}</h3>
+    <p className="mt-1 max-w-sm text-[12px] font-medium text-slate-500">
+      {description}
+    </p>
     {onClearFilters && (
       <button
         onClick={onClearFilters}
-        className="mt-5 px-4 py-2 bg-[#0A192F] hover:bg-[#112240] text-white rounded-md font-semibold text-xs transition-colors"
+        className="mt-4 flex h-8 items-center rounded-md border border-[#0B1528]/15 bg-white px-3 text-[12px] font-medium text-[#0B1528] transition-colors hover:border-[#0B1528] hover:bg-[#0B1528] hover:text-white"
       >
-        Clear Filters
+        Clear filters
       </button>
     )}
   </div>
@@ -76,27 +75,24 @@ export const TravelDeskActivationState = ({
   onActivate: () => void;
   isActivating: boolean;
 }) => (
-  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white font-sans">
-    <div className="bg-[#FFF7ED] border border-[#FED7AA] p-4 rounded-full mb-4">
-      <Compass className="w-8 h-8 text-[#F97316]" />
-    </div>
-    <h3 className="text-base font-bold text-[#0A192F]">
-      Activate Travel Desk Workspace
+  <div className="flex flex-1 flex-col items-center justify-center p-10 text-center font-sans">
+    <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-[#FFE1D1] bg-[#FFF3EC]">
+      <Compass className="h-4 w-4 text-[#FF4D00]" />
+    </span>
+    <h3 className="text-[14px] font-semibold text-[#0B1528]">
+      Activate the workspace
     </h3>
-    <p className="text-[#64748B] text-xs mt-2 max-w-md leading-relaxed">
-      A travel desk workspace has not been initialized for{" "}
-      <span className="font-bold text-[#F97316]">{tripTitle}</span> yet.
-      Activate it to begin tracking departures, managing custom itineraries,
-      syncing vendors, and configuring ticketing templates.
+    <p className="mt-1 max-w-md text-[12px] font-medium leading-relaxed text-slate-500">
+      No travel desk workspace exists for{" "}
+      <span className="font-semibold text-[#0B1528]">{tripTitle}</span> yet.
+      Activate it to track departures, itineraries, vendors and ticketing.
     </p>
     <button
       onClick={onActivate}
       disabled={isActivating}
-      className="mt-5 px-6 py-2.5 bg-[#0A192F] hover:bg-[#112240] text-white rounded-md font-bold text-xs disabled:opacity-50 transition-colors shadow-xs flex items-center gap-2 cursor-pointer"
+      className="mt-4 flex h-9 items-center rounded-md bg-[#FF4D00] px-4 text-[12px] font-semibold text-white transition-colors hover:bg-[#E04400] disabled:opacity-50"
     >
-      {isActivating
-        ? "Activating Workspace..."
-        : "Activate Master Trip Workspace"}
+      {isActivating ? "Activating…" : "Activate workspace"}
     </button>
   </div>
 );

@@ -33,6 +33,8 @@ export function normalizeBooking(raw: any): Booking {
     phone: raw.phone ?? raw.mobile ?? null,
     mobile: raw.mobile ?? raw.phone ?? null,
     email: raw.email ?? null,
+    age: raw.age ?? lead.age ?? details.age ?? null,
+    gender: raw.gender ?? lead.gender ?? details.gender ?? null,
     // Derived ownership
     createdByName: raw.salesAdmin?.name ?? raw.createdByName,
     salesAdminId: raw.salesAdminId ?? null,

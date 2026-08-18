@@ -1285,7 +1285,7 @@ export default function VendorDirectoryPage() {
 
               {/* ACTIVITIES PARAMETERS */}
               {vendorForm.type === "ACTIVITIES" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-purple-50/40 p-3.5 rounded-lg border border-purple-200/60 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-orange-50/40 p-3.5 rounded-lg border border-orange-200/60 text-xs">
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 uppercase block mb-1">
                       Activities Offered
@@ -1349,7 +1349,7 @@ export default function VendorDirectoryPage() {
                         })
                       }
                       placeholder="e.g. 15"
-                      className="h-8.5 bg-white font-bold text-purple-700"
+                      className="h-8.5 bg-white font-bold text-orange-700"
                     />
                   </div>
                 </div>
@@ -1440,7 +1440,7 @@ export default function VendorDirectoryPage() {
 
               {/* GUIDE PARAMETERS */}
               {vendorForm.type === "GUIDE" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-indigo-50/40 p-3.5 rounded-lg border border-indigo-200/60 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-orange-50/40 p-3.5 rounded-lg border border-orange-200/60 text-xs">
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 uppercase block mb-1">
                       Guide Expedition Role
@@ -1503,7 +1503,7 @@ export default function VendorDirectoryPage() {
                         })
                       }
                       placeholder="e.g. 2000"
-                      className="h-8.5 bg-white font-bold text-indigo-700"
+                      className="h-8.5 bg-white font-bold text-orange-700"
                     />
                   </div>
                 </div>

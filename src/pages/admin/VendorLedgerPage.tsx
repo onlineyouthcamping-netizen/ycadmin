@@ -31,10 +31,10 @@ export default function VendorLedgerPage() {
   }, []);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Financial Ledger</h1>
+    <div className="admin-page">
+      <div className="admin-page-header">
+        <div className="min-w-0">
+          <h1 className="admin-title">Financial Ledger</h1>
           <p className="text-sm text-slate-500 font-semibold mt-1">Centralized view of all vendor credits and debits.</p>
         </div>
         <Button onClick={loadData} variant="outline" className="h-9 font-bold bg-white" disabled={loading}>

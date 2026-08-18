@@ -801,7 +801,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F7FB]">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF7F2] via-[#F4F7FB] to-[#EEF2F8]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-7 w-7 animate-spin text-[#FF4D00]" />
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
@@ -822,7 +822,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider className="admin-app-shell min-h-0 overflow-hidden">
-      <div className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-[#F4F7FB]">
+      <div className="flex h-full min-h-0 w-full min-w-0 overflow-hidden bg-transparent">
         <AdminSidebar />
 
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -846,9 +846,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
           )}
           {/* Top command strip — 56px */}
-          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-[#E8EEF4] bg-white px-3 sm:px-6">
+          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-[#E8EEF4] bg-gradient-to-r from-white via-[#FFFCF9] to-[#F4F7FB] px-2 shadow-[inset_0_-2px_0_0_rgba(255,77,0,0.12)] sm:gap-4 sm:px-5">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              <SidebarTrigger className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-[#0B1528] hover:bg-[#F4F7FB]" />
+              <SidebarTrigger className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-none bg-transparent text-[#0B1528] hover:bg-[#FFF1E8] md:h-8 md:w-8" />
               <h1 className="min-w-0 truncate text-[15px] font-semibold leading-none tracking-tight text-[#0B1528]">
                 <span className="md:hidden">
                   {resolveAdminPageTitle(
@@ -872,20 +872,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setIsSearchOpen(true)}
               aria-label={isMac ? "Search (Command K)" : "Search (Control K)"}
-              className="hidden h-8 w-[14.5rem] shrink-0 items-center gap-2 rounded-md bg-[#F4F7FB] px-2.5 text-left transition-colors hover:bg-[#EEF2F7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30 md:flex"
+              className="hidden h-8 w-[14.5rem] shrink-0 items-center gap-2 rounded-md border border-[#E8EEF4] bg-white px-2.5 text-left shadow-xs transition-colors hover:border-[#FFD4BF] hover:bg-[#FFF7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30 md:flex"
             >
               <Search
-                className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                className="h-3.5 w-3.5 shrink-0 text-[#FF4D00]/70"
                 strokeWidth={1.75}
               />
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-400">
                 Search
               </span>
               <kbd className="inline-flex shrink-0 items-center gap-0.5">
-                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-white px-1 text-[10px] font-medium leading-none text-slate-400">
+                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-[#F4F7FB] px-1 text-[10px] font-medium leading-none text-slate-400">
                   {isMac ? "⌘" : "Ctrl"}
                 </span>
-                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-white px-1 text-[10px] font-medium leading-none text-slate-400">
+                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-[#F4F7FB] px-1 text-[10px] font-medium leading-none text-slate-400">
                   K
                 </span>
               </kbd>
@@ -896,7 +896,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => setIsSearchOpen(true)}
                 aria-label="Search"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528] md:hidden"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528] md:hidden"
               >
                 <Search className="h-4 w-4" strokeWidth={1.75} />
               </button>
@@ -1017,7 +1017,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => setBookingModalOpen(true)}
-                className="hidden h-8 items-center gap-1.5 rounded-md border border-[#0B1528]/15 bg-white px-2.5 text-[12px] font-medium text-[#0B1528] transition-colors hover:border-[#0B1528] hover:bg-[#0B1528] hover:text-white sm:inline-flex"
+                className="hidden h-8 items-center gap-1.5 rounded-md bg-[#FF4D00] px-2.5 text-[12px] font-semibold text-white shadow-[0_1px_2px_rgba(255,77,0,0.28)] transition-colors hover:bg-[#E04400] sm:inline-flex"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2} />
                 New Booking
@@ -1027,8 +1027,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
             {/* Main Content Area — single page scroller */}
-            <main ref={mainScrollRef} className="admin-main-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-[#F4F7FB] p-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:p-5 md:pb-5">
-              <div className="w-full min-h-0 min-w-0">{children}</div>
+            <main ref={mainScrollRef} className="admin-main-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:p-5 md:pb-5">
+              <div className="admin-content-host mx-auto min-h-0 w-full min-w-0 max-w-[1600px]">{children}</div>
             </main>
 
             {/* Help Sidebar */}

@@ -2319,7 +2319,7 @@ export function AccommodationDetailPage({
                 ) : isActivity ? (
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
-                      <Activity className="w-4 h-4 text-indigo-600" /> Adventure & Activity Profile
+                      <Activity className="w-4 h-4 text-orange-600" /> Adventure & Activity Profile
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -3121,7 +3121,7 @@ export function AccommodationDetailPage({
                           <span className="font-extrabold text-slate-900 text-sm leading-snug">
                             {rate.name}
                           </span>
-                          <span className="shrink-0 bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide border border-indigo-200">
+                          <span className="shrink-0 bg-orange-50 text-orange-700 font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide border border-orange-200">
                             {rate.category || "ACTIVITY"}
                           </span>
                         </div>
@@ -3745,7 +3745,7 @@ export function AccommodationDetailPage({
                       : isFleet
                         ? "bg-blue-100 text-blue-800 border-blue-200"
                         : isContact
-                          ? "bg-purple-100 text-purple-800 border-purple-200"
+                          ? "bg-orange-100 text-orange-800 border-orange-200"
                           : isPayment
                             ? "bg-emerald-100 text-emerald-800 border-emerald-200"
                             : isProfile

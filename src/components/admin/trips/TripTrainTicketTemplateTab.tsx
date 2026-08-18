@@ -859,7 +859,7 @@ export default function TripTrainTicketTemplateTab({
         <Card className="border border-slate-200 rounded-2xl shadow-xs overflow-hidden bg-white">
           <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-indigo-600 text-white rounded-lg">
+              <div className="p-1.5 bg-orange-600 text-white rounded-lg">
                 <ArrowLeft className="w-4 h-4" />
               </div>
               <div>

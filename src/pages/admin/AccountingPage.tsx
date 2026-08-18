@@ -1215,17 +1215,17 @@ export default function AccountingPage() {
                 <table className="w-full min-w-[880px] text-left text-[12px]">
                   <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
-                      <th className="py-2.5 px-4">Booking / Customer</th>
+                      <th className="py-2.5 px-4">Booking / customer</th>
                       <th className="py-2.5 px-4">Trip</th>
                       <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">Mode / Account</th>
+                      <th className="py-2.5 px-4">Mode / account</th>
                       <th className="py-2.5 px-4">Proof</th>
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
                     {verificationQueue.pendingClientPayments.map((p: any) => (
-                      <tr key={p.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {p.booking?.fullName || "Customer"}
                           <div className="text-[10px] text-slate-400 font-normal">
@@ -1308,55 +1308,57 @@ export default function AccountingPage() {
             </div>
 
             {/* Sub-Queue: Pending Station Online Collections (UPI) */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-blue-600" />
-                  Pending Station Online Collections (UPI) (
-                  {verificationQueue.pendingStationPayments?.length || 0})
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
+                <span className="truncate text-[12px] font-semibold text-[#0B1528]">
+                  Station collections (UPI)
+                </span>
+                <span className="shrink-0 rounded bg-[#F4F7FB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500">
+                  {verificationQueue.pendingStationPayments?.length || 0}
                 </span>
               </div>
 
               {verificationQueue.pendingStationPayments?.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-400 font-medium">
-                  No pending station online collections in verification queue. All caught up!
+                <div className="px-4 py-10 text-center text-[12px] text-slate-400">
+                  Nothing waiting here. All station collections are verified.
                 </div>
               ) : (
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-bold">
+                <div className="min-w-0 overflow-x-auto">
+                <table className="w-full min-w-[880px] text-left text-[12px]">
+                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
-                      <th className="py-2.5 px-4">Booking / Passenger</th>
-                      <th className="py-2.5 px-4">Station & Collector</th>
+                      <th className="py-2.5 px-4">Booking / passenger</th>
+                      <th className="py-2.5 px-4">Station / collector</th>
                       <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">UPI UTR & Account</th>
-                      <th className="py-2.5 px-4">Proof Screenshot</th>
+                      <th className="py-2.5 px-4">UTR / account</th>
+                      <th className="py-2.5 px-4">Proof</th>
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E8EEF4]">
                     {verificationQueue.pendingStationPayments.map((p: any) => (
-                      <tr key={p.id} className="hover:bg-slate-50/60 font-medium">
-                        <td className="py-2.5 px-4 font-bold text-slate-900">
+                      <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
+                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {p.booking?.fullName || p.collectedFrom || "Passenger"}
                           <div className="text-[10px] text-slate-400 font-normal">
                             Ref: {p.booking?.bookingId || p.bookingId} · Receipt: {p.receiptNumber}
                           </div>
                         </td>
-                        <td className="py-2.5 px-4 text-slate-700">
-                          <span className="font-bold text-slate-900">{p.station}</span>
-                          <div className="text-[10px] text-slate-500">
-                            By: {p.collectedBy?.name || "Station Staff"}
+                        <td className="py-2.5 px-4 text-slate-600">
+                          <span className="font-medium text-[#0B1528]">{p.station}</span>
+                          <div className="text-[10px] text-slate-400">
+                            By: {p.collectedBy?.name || "Station staff"}
                           </div>
                         </td>
-                        <td className="py-2.5 px-4 text-right font-black text-blue-600">
+                        <td className="py-2.5 px-4 text-right font-medium tabular-nums text-[#0B1528]">
                           {formatINR(p.amount)}
                         </td>
                         <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">
+                          <span className="inline-flex rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
                             UTR: {p.utrNumber || "N/A"}
-                          </Badge>
-                          <div className="text-[10px] text-slate-500 mt-0.5">
-                            {p.receivingAccount?.accountName || "Company Bank Account"}
+                          </span>
+                          <div className="mt-0.5 text-[10px] text-slate-400">
+                            {p.receivingAccount?.accountName || "Company bank account"}
                           </div>
                         </td>
                         <td className="py-2.5 px-4">
@@ -1374,13 +1376,13 @@ export default function AccountingPage() {
                                   date: safeFormatDate(p.createdAt),
                                 })
                               }
-                              className="h-7 text-[11px] font-bold text-blue-600 hover:bg-blue-50 px-2 cursor-pointer"
+                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 mr-1" />
-                              View Proof
+                              View proof
                             </Button>
                           ) : (
-                            <span className="text-[10px] text-slate-400">No Proof</span>
+                            <span className="text-[10px] text-slate-400">No proof</span>
                           )}
                         </td>
                         <td className="py-2.5 px-4 text-right">
@@ -1388,7 +1390,7 @@ export default function AccountingPage() {
                             <Button
                               size="sm"
                               onClick={() => handleVerifyStationPayment(p.id)}
-                              className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold cursor-pointer"
+                              className="h-7 gap-1 rounded-md bg-[#0B1528] px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-[#152238] cursor-pointer"
                             >
                               <CheckCircle2 className="w-3 h-3 mr-1" />
                               Verify
@@ -1405,7 +1407,7 @@ export default function AccountingPage() {
                                   title: `Reject Station Payment - ${p.booking?.fullName || p.collectedFrom} (${formatINR(p.amount)})`,
                                 })
                               }
-                              className="h-7 px-2.5 text-rose-600 hover:bg-rose-50 border-rose-200 text-[11px] font-bold cursor-pointer"
+                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
                             >
                               <XCircle className="w-3 h-3 mr-1" />
                               Reject
@@ -1416,6 +1418,7 @@ export default function AccountingPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
 
@@ -1439,18 +1442,18 @@ export default function AccountingPage() {
                 <table className="w-full min-w-[980px] text-left text-[12px]">
                   <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
-                      <th className="py-2.5 px-4">Vendor / Payee</th>
+                      <th className="py-2.5 px-4">Vendor / payee</th>
                       <th className="py-2.5 px-4">Trip</th>
                       <th className="py-2.5 px-4">Category</th>
                       <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">Paid From Account</th>
-                      <th className="py-2.5 px-4">Invoice / Proof</th>
+                      <th className="py-2.5 px-4">Paid from</th>
+                      <th className="py-2.5 px-4">Invoice</th>
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
                     {verificationQueue.pendingVendorPayments.map((v: any) => (
-                      <tr key={v.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-4 font-medium text-[#0B1528]">
                           {v.vendorName}
                           <div className="text-[10px] text-slate-400 font-normal">
@@ -1538,13 +1541,13 @@ export default function AccountingPage() {
             <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
               <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] bg-[#F8FAFC] px-3 py-2.5 md:px-4">
                 <span className="truncate text-[12px] font-semibold text-[#0B1528] flex items-center gap-2">
-                  <Ticket className="w-4 h-4 text-indigo-600" />
+                  <Ticket className="w-4 h-4 text-orange-600" />
                   Pending Train Ticket Deductions (Riya Train Account) (
                   {verificationQueue.pendingTrainTickets?.length || 0})
                 </span>
                 <Badge
                   variant="outline"
-                  className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] font-black uppercase"
+                  className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] font-black uppercase"
                 >
                   Auto-Deducted from Riya Wallet
                 </Badge>
@@ -1602,7 +1605,7 @@ export default function AccountingPage() {
                             <td className="px-3 py-2.5 text-right font-medium tabular-nums text-slate-600 md:px-4">
                               {formatINR(exp)}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-black tabular-nums text-indigo-700 md:px-4">
+                            <td className="px-3 py-2.5 text-right font-black tabular-nums text-orange-700 md:px-4">
                               {formatINR(act)}
                             </td>
                             <td className="px-3 py-2.5 text-center md:px-4">
@@ -1624,9 +1627,9 @@ export default function AccountingPage() {
                                     : "Exact Match"}
                               </Badge>
                             </td>
-                            <td className="px-3 py-2.5 md:px-4 text-xs font-semibold text-indigo-900">
+                            <td className="px-3 py-2.5 md:px-4 text-xs font-semibold text-orange-900">
                               <div className="flex items-center gap-1.5">
-                                <Wallet className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                <Wallet className="w-3.5 h-3.5 text-orange-600 shrink-0" />
                                 Riya Train Portal Account
                               </div>
                             </td>
@@ -1672,55 +1675,63 @@ export default function AccountingPage() {
 
         {/* ──────────────────────── TAB 3: INCOMING COLLECTIONS ──────────────────────── */}
         {activeTab === "payments" && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-1 max-w-md">
-                <div className="relative w-full">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="space-y-3">
+            {/* Receipts panel */}
+            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
+              <div className="flex min-w-0 flex-col gap-2 border-b border-[#E8EEF4] px-3 py-2.5 lg:flex-row lg:items-center">
+                <div className="relative w-full min-w-0 lg:w-72">
+                  <Search
+                    className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                    strokeWidth={1.75}
+                  />
                   <Input
-                    placeholder="Search by customer, booking ref, phone, trip..."
+                    placeholder="Search customer, booking ref or phone"
                     value={paymentSearch}
                     onChange={(e) => setPaymentSearch(e.target.value)}
-                    className="pl-8.5 h-8.5 text-xs bg-white"
+                    className="h-8 rounded-md border-[#E8EEF4] bg-white pl-8 text-[12px] font-medium text-[#0B1528] shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                   />
                 </div>
+
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <select
+                    value={paymentModeFilter}
+                    onChange={(e) => setPaymentModeFilter(e.target.value)}
+                    className={filterSelectClass}
+                    aria-label="Filter by payment mode"
+                  >
+                    <option value="ALL">All modes</option>
+                    <option value="UPI">UPI</option>
+                    <option value="BANK_TRANSFER">Bank transfer</option>
+                    <option value="CASH">Cash desk</option>
+                  </select>
+
+                  <select
+                    value={paymentStatusFilter}
+                    onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                    className={filterSelectClass}
+                    aria-label="Filter by status"
+                  >
+                    <option value="ALL">All statuses</option>
+                    <option value="verified">Verified</option>
+                    <option value="pending verification">Pending verification</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+
+                <span className="text-[11px] font-medium text-slate-400 lg:ml-auto">
+                  Showing {filteredReceipts.length} receipts
+                </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <select
-                  value={paymentModeFilter}
-                  onChange={(e) => setPaymentModeFilter(e.target.value)}
-                  className="h-8.5 px-3 rounded-lg border border-[#E8EEF4] bg-white text-xs font-medium text-slate-600"
-                >
-                  <option value="ALL">All Payment Modes</option>
-                  <option value="UPI">UPI</option>
-                  <option value="BANK_TRANSFER">Bank Transfer</option>
-                  <option value="CASH">Cash Desk</option>
-                </select>
-
-                <select
-                  value={paymentStatusFilter}
-                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                  className="h-8.5 px-3 rounded-lg border border-[#E8EEF4] bg-white text-xs font-medium text-slate-600"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="verified">Verified</option>
-                  <option value="pending verification">Pending Verification</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Receipts Table */}
-            <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden">
-              <table className="w-full text-left text-xs">
+              <div className="min-w-0 overflow-x-auto">
+              <table className="w-full min-w-[980px] text-left text-[12px]">
                 <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4">Customer / Booking</th>
+                    <th className="py-2.5 px-4">Customer / booking</th>
                     <th className="py-2.5 px-4">Trip</th>
                     <th className="py-2.5 px-4 text-right">Amount</th>
-                    <th className="py-2.5 px-4">Receiving Account</th>
+                    <th className="py-2.5 px-4">Receiving account</th>
                     <th className="py-2.5 px-4">Mode / UTR</th>
                     <th className="py-2.5 px-4 text-center">Status</th>
                     <th className="py-2.5 px-4 text-right">Proof</th>
@@ -1735,7 +1746,7 @@ export default function AccountingPage() {
                     </tr>
                   ) : (
                     filteredReceipts.map((r) => (
-                      <tr key={r.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={r.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                           {safeFormatDate(r.date)}
                         </td>
@@ -1751,7 +1762,7 @@ export default function AccountingPage() {
                         <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
                           {formatINR(r.amount)}
                         </td>
-                        <td className="py-2.5 px-4 text-slate-800 font-semibold">
+                        <td className="py-2.5 px-4 text-slate-600">
                           {r.accountName}
                         </td>
                         <td className="py-2.5 px-4">
@@ -1804,6 +1815,7 @@ export default function AccountingPage() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
@@ -1853,14 +1865,14 @@ export default function AccountingPage() {
                 <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4">Vendor / Payee</th>
+                    <th className="py-2.5 px-4">Vendor / payee</th>
                     <th className="py-2.5 px-4">Trip</th>
                     <th className="py-2.5 px-4">Category</th>
-                    <th className="py-2.5 px-4 text-right">Agreed Cost</th>
-                    <th className="py-2.5 px-4 text-right">Paid Outflow</th>
-                    <th className="py-2.5 px-4">Paid From Account</th>
+                    <th className="py-2.5 px-4 text-right">Agreed cost</th>
+                    <th className="py-2.5 px-4 text-right">Paid out</th>
+                    <th className="py-2.5 px-4">Paid from</th>
                     <th className="py-2.5 px-4 text-center">Status</th>
-                    <th className="py-2.5 px-4 text-right">Invoice Proof</th>
+                    <th className="py-2.5 px-4 text-right">Invoice</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E8EEF4]">
@@ -1872,7 +1884,7 @@ export default function AccountingPage() {
                     </tr>
                   ) : (
                     filteredExpenses.map((v) => (
-                      <tr key={v.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                           {safeFormatDate(v.paymentDate || v.createdAt)}
                         </td>
@@ -1896,8 +1908,8 @@ export default function AccountingPage() {
                         <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
                           {formatINR(v.advancePaid)}
                         </td>
-                        <td className="py-2.5 px-4 text-slate-800 font-semibold">
-                          {v.collectionAccount?.accountName || "Primary Bank"}
+                        <td className="py-2.5 px-4 text-slate-600">
+                          {v.collectionAccount?.accountName || "Primary bank"}
                         </td>
                         <td className="py-2.5 px-4 text-center">
                           <Badge
@@ -2030,13 +2042,13 @@ export default function AccountingPage() {
                 <table className="w-full min-w-[960px] text-left text-[12px]">
                   <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
-                      <th className="py-2.5 px-4">Journey Date</th>
-                      <th className="py-2.5 px-4">Traveler / Passenger</th>
-                      <th className="py-2.5 px-4">Trip & Departure</th>
-                      <th className="py-2.5 px-4">PNR / Train Number</th>
-                      <th className="py-2.5 px-4 text-right">Authoritative Cost</th>
+                      <th className="py-2.5 px-4">Journey date</th>
+                      <th className="py-2.5 px-4">Traveller</th>
+                      <th className="py-2.5 px-4">Trip / departure</th>
+                      <th className="py-2.5 px-4">PNR / train</th>
+                      <th className="py-2.5 px-4 text-right">Ticket cost</th>
                       <th className="py-2.5 px-4 text-center">Status</th>
-                      <th className="py-2.5 px-4 text-right">Riya Deduction</th>
+                      <th className="py-2.5 px-4 text-right">Wallet deduction</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
@@ -2048,7 +2060,7 @@ export default function AccountingPage() {
                       </tr>
                     ) : (
                       filteredRiyaTickets.map((t: any) => (
-                        <tr key={t.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                        <tr key={t.id} className="transition-colors hover:bg-[#F8FAFC]">
                           <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                             {safeFormatDate(t.journeyDate || t.createdAt)}
                           </td>
@@ -2318,7 +2330,7 @@ export default function AccountingPage() {
                           <td className="px-3 py-2.5 text-right tabular-nums text-slate-500 md:px-4">
                             {formatINR(t.expectedTrainCost)}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-indigo-700 md:px-4">
+                          <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-orange-700 md:px-4">
                             {formatINR(t.actualTrainCost)}
                           </td>
                           <td className="px-3 py-2.5 text-center md:px-4">
@@ -2383,7 +2395,7 @@ export default function AccountingPage() {
         <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <TrendingUp className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
               Record Client Booking Payment
             </DialogTitle>
           </DialogHeader>
@@ -2523,7 +2535,7 @@ export default function AccountingPage() {
         <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
-              <TrendingDown className="w-5 h-5 text-rose-600" />
+              <TrendingDown className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
               Record Vendor / Operational Outflow
             </DialogTitle>
           </DialogHeader>
@@ -2786,8 +2798,8 @@ export default function AccountingPage() {
       >
         <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-rose-950 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-rose-600" />
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-rose-500" strokeWidth={1.75} />
               {rejectModalState?.title || "Reject Payment"}
             </DialogTitle>
           </DialogHeader>
@@ -2912,7 +2924,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
                   }
-                  className="h-9 text-xs font-medium uppercase"
+                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                 />
               </div>
             </div>
@@ -3070,13 +3082,12 @@ export default function AccountingPage() {
         <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-4xl flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[88vh] sm:p-6">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#FF4D00]" />
-                Account Ledger: {selectedAccountForLedger?.accountName}
+              <DialogTitle className="min-w-0 truncate text-[15px] font-semibold text-[#0B1528]">
+                Ledger · {selectedAccountForLedger?.accountName}
               </DialogTitle>
-              <Badge variant="outline" className="text-xs font-semibold">
+              <span className="shrink-0 rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                 {selectedAccountForLedger?.accountType}
-              </Badge>
+              </span>
             </div>
           </DialogHeader>
 
@@ -3086,15 +3097,15 @@ export default function AccountingPage() {
             </div>
           ) : (
             <div className="space-y-4 mt-2 text-xs">
-              <div className="grid grid-cols-3 gap-3 p-3 bg-[#F8FAFC] rounded-xl border border-[#E8EEF4]">
+              <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E8EEF4] bg-[#F8FAFC] p-3 sm:grid-cols-3">
                 <div>
-                  <span className="text-[11px] text-slate-500 font-medium">Total Inflows</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Total inflows</span>
                   <div className="text-base font-semibold text-emerald-600">
                     {formatINR(accountLedgerData?.metrics?.totalCollected || 0)}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 font-medium">Total Outflows</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Total outflows</span>
                   <div className="text-base font-semibold text-rose-600">
                     {formatINR(
                       (accountLedgerData?.metrics?.totalSubmitted || 0) +
@@ -3103,7 +3114,7 @@ export default function AccountingPage() {
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 font-medium">Live Balance</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Live balance</span>
                   <div className="text-base font-semibold text-[#0B1528]">
                     {formatINR(accountLedgerData?.metrics?.totalPending || 0)}
                   </div>
@@ -3111,13 +3122,13 @@ export default function AccountingPage() {
               </div>
 
               {/* Transactions List */}
-              <div className="border border-[#E8EEF4] rounded-xl overflow-hidden">
-                <table className="w-full text-left text-xs">
+              <div className="min-w-0 overflow-x-auto rounded-xl border border-[#E8EEF4]">
+                <table className="w-full min-w-[720px] text-left text-[12px]">
                   <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
                       <th className="py-2.5 px-3">Date</th>
                       <th className="py-2.5 px-3">Type</th>
-                      <th className="py-2.5 px-3">Reference / Description</th>
+                      <th className="py-2.5 px-3">Reference</th>
                       <th className="py-2.5 px-3 text-right">Inflow (+)</th>
                       <th className="py-2.5 px-3 text-right">Outflow (−)</th>
                     </tr>
@@ -3125,7 +3136,7 @@ export default function AccountingPage() {
                   <tbody className="divide-y divide-[#E8EEF4]">
                     {/* Client Payments */}
                     {(accountLedgerData?.clientPayments || []).map((cp: any) => (
-                      <tr key={cp.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={cp.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(cp.paymentDate || cp.createdAt)}
                         </td>
@@ -3142,7 +3153,7 @@ export default function AccountingPage() {
 
                     {/* Vendor Payments */}
                     {(accountLedgerData?.vendorPayments || []).map((vp: any) => (
-                      <tr key={vp.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={vp.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(vp.paymentDate || vp.createdAt)}
                         </td>
@@ -3159,7 +3170,7 @@ export default function AccountingPage() {
 
                     {/* Submissions / Transfers */}
                     {(accountLedgerData?.submissions || []).map((sub: any) => (
-                      <tr key={sub.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={sub.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(sub.createdAt)}
                         </td>
@@ -3176,7 +3187,7 @@ export default function AccountingPage() {
 
                     {/* Train Tickets (For Riya Wallet) */}
                     {(accountLedgerData?.trainTickets || []).map((tt: any) => (
-                      <tr key={tt.id} className="hover:bg-[#F8FAFC]/60 font-medium">
+                      <tr key={tt.id} className="transition-colors hover:bg-[#F8FAFC]">
                         <td className="py-2 px-3 text-slate-500">
                           {safeFormatDate(tt.journeyDate || tt.createdAt)}
                         </td>
@@ -3225,7 +3236,7 @@ export default function AccountingPage() {
             <button
               type="button"
               onClick={() => setProofPreviewModal(null)}
-              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+              className="rounded-md bg-[#152238] p-1.5 text-slate-400 transition-colors hover:bg-[#1D2A44] hover:text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

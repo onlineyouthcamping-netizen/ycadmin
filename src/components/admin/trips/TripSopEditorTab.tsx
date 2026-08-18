@@ -445,7 +445,7 @@ export default function TripSopEditorTab({
                           <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                             {t.category || "General"}
                           </span>
-                          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200">
                             {t.taskType || "CHECKLIST"}
                           </span>
                           {t.isRequired && (

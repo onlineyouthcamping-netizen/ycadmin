@@ -299,7 +299,7 @@ export function WebsiteEditor({ page, onSave, onBack }: WebsiteEditorProps) {
           {/* Content Body */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
             <h3 className="text-sm font-extrabold text-[#0B1528] flex items-center gap-2">
-              <Eye className="w-4 h-4 text-purple-600" />
+              <Eye className="w-4 h-4 text-orange-600" />
               Page Content
             </h3>
 

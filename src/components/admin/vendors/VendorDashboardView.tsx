@@ -78,8 +78,8 @@ export function VendorDashboardView({
       value: guides.length,
       sub: "Expedition Leaders",
       icon: Compass,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
+      color: "text-orange-600",
+      bg: "bg-orange-50",
     },
     {
       title: "Preferred Partners",
@@ -123,7 +123,7 @@ export function VendorDashboardView({
       count: vendors.filter((v) => v.type === "ACTIVITIES").length,
       icon: Compass,
       desc: "Rafting, Paragliding, Trekking Operators",
-      color: "border-purple-200 hover:border-purple-400 bg-purple-50/20",
+      color: "border-orange-200 hover:border-orange-400 bg-orange-50/20",
     },
     {
       id: "restaurants",
@@ -142,7 +142,7 @@ export function VendorDashboardView({
       count: guides.length,
       icon: CheckCircle2,
       desc: "Mountain Guides, Tour Leaders & Experts",
-      color: "border-indigo-200 hover:border-indigo-400 bg-indigo-50/20",
+      color: "border-orange-200 hover:border-orange-400 bg-orange-50/20",
     },
     {
       id: "other",

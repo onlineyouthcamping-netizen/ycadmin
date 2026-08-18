@@ -1500,13 +1500,13 @@ export default function DeparturePayments({
             </div>
 
             {/* 3. Activity Payments (Purple) */}
-            <div className="bg-white border border-purple-200 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500" />
+            <div className="bg-white border border-orange-200 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-orange-500" />
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-purple-900 uppercase tracking-wider">
+                <span className="text-[11px] font-extrabold text-orange-900 uppercase tracking-wider">
                   Activity Payments
                 </span>
-                <span className="text-xs font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
                   {calculatedStats.activityPercent}% Complete
                 </span>
               </div>
@@ -1529,14 +1529,14 @@ export default function DeparturePayments({
                 </div>
                 <div className="flex justify-between text-xs pt-1.5 border-t border-slate-100">
                   <span className="text-slate-500 font-medium">Pending:</span>
-                  <span className="font-extrabold text-purple-700">
+                  <span className="font-extrabold text-orange-700">
                     {formatCurrency(calculatedStats.activityPending)}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setSubTab("activities")}
-                className="w-full text-center text-xs font-bold text-purple-700 hover:text-purple-800 hover:bg-purple-50 py-1.5 rounded-lg border border-purple-200 transition-all flex items-center justify-center gap-1"
+                className="w-full text-center text-xs font-bold text-orange-700 hover:text-orange-800 hover:bg-orange-50 py-1.5 rounded-lg border border-orange-200 transition-all flex items-center justify-center gap-1"
               >
                 View Activities <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -1825,10 +1825,10 @@ export default function DeparturePayments({
                   </tr>
 
                   {/* 5. TRAIN TICKETS (PACKAGE INCLUDED) */}
-                  <tr className="hover:bg-slate-50/60 transition-colors bg-indigo-50/30">
+                  <tr className="hover:bg-slate-50/60 transition-colors bg-orange-50/30">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                        <span className="w-2 h-2 rounded-full bg-orange-500" />
                         <span className="font-bold text-slate-800">
                           Train Tickets (Package Included)
                         </span>
@@ -1846,7 +1846,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.totalTrainDue)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-indigo-700 bg-indigo-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-orange-700 bg-orange-50/60 font-mono">
                       ₹{calculatedStats.trainCostPerPax.toLocaleString("en-IN")}/pax
                     </td>
                     <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
@@ -1865,7 +1865,7 @@ export default function DeparturePayments({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-purple-500" />
+                        <span className="w-2 h-2 rounded-full bg-orange-500" />
                         <span className="font-bold text-slate-800">
                           Adventure & Paid Activities
                         </span>
@@ -1883,7 +1883,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.activityPending)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-purple-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-orange-700 bg-orange-50/60 font-mono">
                       ₹
                       {calculatedStats.activitiesCostPerPax.toLocaleString(
                         "en-IN",
@@ -2029,7 +2029,7 @@ export default function DeparturePayments({
               <Button
                 size="sm"
                 onClick={() => setAddActivityPaymentOpen(true)}
-                className="h-8 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs"
+                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
               >
                 + Add Activity Payment
               </Button>
@@ -2896,7 +2896,7 @@ export default function DeparturePayments({
                                                           h.accountName?.includes("Personal") ||
                                                           h.accountName?.includes("Driver") ||
                                                           h.accountName?.includes("Reimbursement")
-                                                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                                                          ? "bg-orange-50 text-orange-700 border-orange-200"
                                                           : "bg-blue-50 text-blue-700 border-blue-100",
                                                       )}
                                                     >
@@ -3229,7 +3229,7 @@ export default function DeparturePayments({
                               });
                               setAddActivityPaymentOpen(true);
                             }}
-                            className="h-7 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] px-2.5"
+                            className="h-7 bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px] px-2.5"
                           >
                             Record Pay
                           </Button>
@@ -4114,9 +4114,9 @@ export default function DeparturePayments({
               vendorPaymentForm.collectionAccountId === "__trek_leader__" ||
               vendorPaymentForm.collectionAccountId === "__driver__" ||
               vendorPaymentForm.collectionAccountId === "__founder_personal__") && (
-              <div className="bg-purple-50/80 border border-purple-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
+              <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
                 <div>
-                  <label className="text-[11px] font-bold text-purple-950 block mb-1">
+                  <label className="text-[11px] font-bold text-orange-950 block mb-1">
                     Payer Name / Personal Account Details <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -4130,10 +4130,10 @@ export default function DeparturePayments({
                         customPayerName: e.target.value,
                       }))
                     }
-                    className="w-full h-8 text-xs font-bold border border-purple-300 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-purple-600"
+                    className="w-full h-8 text-xs font-bold border border-orange-300 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-orange-600"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-[11px] font-bold text-purple-900 cursor-pointer pt-1">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-orange-900 cursor-pointer pt-1">
                   <input
                     type="checkbox"
                     checked={vendorPaymentForm.needsReimbursement}
@@ -4143,7 +4143,7 @@ export default function DeparturePayments({
                         needsReimbursement: e.target.checked,
                       }))
                     }
-                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-purple-300"
+                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-orange-300"
                   />
                   <span>Mark as "Pending Reimbursement from Company"</span>
                 </label>
@@ -4370,7 +4370,7 @@ export default function DeparturePayments({
               </Button>
               <Button
                 type="submit"
-                className="h-8 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs"
+                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
               >
                 Record Activity Pay
               </Button>

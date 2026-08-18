@@ -190,14 +190,14 @@ export default function InquiriesPage() {
       {
         label: "Interested",
         count: counts.interested || 17,
-        color: "text-purple-600",
-        bg: "bg-purple-50",
+        color: "text-orange-600",
+        bg: "bg-orange-50",
       },
       {
         label: "Payment Pending",
         count: counts.paymentPending || 10,
-        color: "text-indigo-600",
-        bg: "bg-indigo-50",
+        color: "text-orange-600",
+        bg: "bg-orange-50",
       },
       {
         label: "Booked",
@@ -408,7 +408,7 @@ export default function InquiriesPage() {
                 <Button
                   size="sm"
                   onClick={handleBulkEmailClick}
-                  className="h-7 px-3 text-[11px] font-bold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 gap-1.5 transition-all"
+                  className="h-7 px-3 text-[11px] font-bold rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 gap-1.5 transition-all"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   Email Selected ({selectedRows.length})
@@ -652,7 +652,7 @@ export default function InquiriesPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => handleRowEmailClick(inq)}
-                                    className="cursor-pointer text-indigo-700"
+                                    className="cursor-pointer text-orange-700"
                                   >
                                     Send Email
                                   </DropdownMenuItem>
@@ -937,9 +937,9 @@ function InquiryDetailsDrawer({
                 )}
                 <button
                   onClick={() => onSendEmail(selected)}
-                  className="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100 text-indigo-700 flex flex-col items-center gap-1 transition-all"
+                  className="p-2.5 rounded-xl border border-orange-200 bg-orange-50/50 hover:bg-orange-100 text-orange-700 flex flex-col items-center gap-1 transition-all"
                 >
-                  <Mail className="w-4 h-4 text-indigo-600" />
+                  <Mail className="w-4 h-4 text-orange-600" />
                   <span>Email</span>
                 </button>
                 <button

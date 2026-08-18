@@ -747,7 +747,7 @@ export default function BookingAttachmentsTab({
                                 setVersionHistoryModalOpen(true);
                               }}
                               title="Version History"
-                              className="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                             >
                               <History className="w-4 h-4" />
                             </button>
@@ -1115,7 +1115,7 @@ export default function BookingAttachmentsTab({
                     className={cn(
                       "p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all",
                       sendChannel === "BOTH"
-                        ? "bg-purple-50 border-purple-500 text-purple-700 shadow-xs"
+                        ? "bg-orange-50 border-orange-500 text-orange-700 shadow-xs"
                         : "bg-white border-slate-200 text-slate-600",
                     )}
                   >

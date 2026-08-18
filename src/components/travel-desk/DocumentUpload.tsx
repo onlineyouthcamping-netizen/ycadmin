@@ -202,7 +202,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const documentsList = docsData?.documents || [];
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen text-[#0A192F] font-sans space-y-6">
+    <div className="admin-page text-[#0A192F]">
       {/* ─── Top Upload Box & Dropzone ─── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">

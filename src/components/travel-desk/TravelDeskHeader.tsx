@@ -70,7 +70,7 @@ export const TravelDeskHeader: React.FC<TravelDeskHeaderProps> = ({
 
   return (
     <>
-      <div className="shrink-0 p-3 pb-0 font-sans">
+      <div className="shrink-0 p-3 font-sans">
         <div className="relative overflow-hidden rounded-xl border border-[#132339] bg-[#0B1528] text-white">
           {trip.heroImage && (
             <div

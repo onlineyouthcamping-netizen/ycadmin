@@ -624,7 +624,7 @@ const CATEGORY_META: {
     id: "destinations",
     label: "Destinations",
     icon: MapPin,
-    color: "bg-purple-50 text-purple-700 border-purple-200",
+    color: "bg-orange-50 text-orange-700 border-orange-200",
   },
   {
     id: "hotels",
@@ -660,7 +660,7 @@ const CATEGORY_META: {
     id: "vendors",
     label: "Vendors",
     icon: UserCheck,
-    color: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    color: "bg-orange-50 text-orange-700 border-orange-200",
   },
 ];
 

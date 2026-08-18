@@ -593,7 +593,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
   });
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/40">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#F4F7FB]">
       {/* HEADER SECTION */}
       <div className="px-4 py-3 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">

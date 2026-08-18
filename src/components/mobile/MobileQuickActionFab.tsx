@@ -45,7 +45,7 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       label: "Create Quotation",
       desc: "Generate trip itinerary PDF",
       icon: FileText,
-      color: "bg-purple-50 text-purple-600 border-purple-100",
+      color: "bg-orange-50 text-orange-600 border-orange-100",
       onClick: () => {
         setIsOpen(false);
         navigate("/admin/quotations/new");

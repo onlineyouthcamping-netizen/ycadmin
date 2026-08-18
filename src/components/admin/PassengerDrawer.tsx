@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NormalizedPassenger, formatDOBForInput } from "@/utils/passengerUtils";
 import { trainTicketService } from "@/services/trainTicket.service";
-import API_BASE_URL from "@/config/environment";
+import ENV from "@/config/environment";
 import {
   Save,
   User,
@@ -42,6 +42,14 @@ interface PassengerDrawerProps {
   booking: any;
   onSave: (passengerId: string, updatedData: Partial<NormalizedPassenger>) => void;
 }
+
+const getGenderSelectionTone = (gender: "M" | "F" | "O") => {
+  if (gender === "F")
+    return "border-rose-200 bg-rose-50 font-semibold text-rose-700 shadow-2xs";
+  if (gender === "M")
+    return "border-sky-200 bg-sky-50 font-semibold text-sky-700 shadow-2xs";
+  return "border-violet-200 bg-violet-50 font-semibold text-violet-700 shadow-2xs";
+};
 
 export function PassengerDrawer({
   isOpen,
@@ -124,7 +132,7 @@ export function PassengerDrawer({
       const uploadData = new FormData();
       uploadData.append("image", file);
 
-      const res = await fetch(`${API_BASE_URL}/api/upload/single`, {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/upload/single`, {
         method: "POST",
         body: uploadData,
       });
@@ -180,10 +188,10 @@ export function PassengerDrawer({
         return url;
       }
       if (url && url.startsWith("/")) {
-        return `${API_BASE_URL}${url}`;
+        return `${ENV.API_BASE_URL}${url}`;
       }
       if (docId && booking?.id) {
-        return `${API_BASE_URL}/api/bookings/${booking.id}/documents/${docId}`;
+        return `${ENV.API_BASE_URL}/api/bookings/${booking.id}/documents/${docId}`;
       }
       return url || "";
     };
@@ -269,17 +277,64 @@ export function PassengerDrawer({
     );
   })();
 
+  const displayName = formData.name || passenger?.name || "Passenger";
+  const initials =
+    displayName
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase() || "P";
+
+  const cardCls =
+    "rounded-xl border border-[#E8EEF4] bg-white shadow-[0_1px_2px_rgba(11,21,40,0.04)]";
+  const labelCls = "text-[11px] font-medium text-slate-500";
+  const inputCls =
+    "h-9 rounded-lg border-[#E8EEF4] bg-white px-3 text-xs shadow-none focus-visible:border-[#FF4D00] focus-visible:ring-2 focus-visible:ring-[#FF4D00]/15";
+  const textareaCls =
+    "rounded-lg border-[#E8EEF4] bg-white text-xs focus-visible:border-[#FF4D00] focus-visible:ring-2 focus-visible:ring-[#FF4D00]/15 focus-visible:ring-offset-0";
+  const tabTriggerCls =
+    "shrink-0 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528] data-[state=active]:bg-[#0B1528] data-[state=active]:text-white data-[state=active]:shadow-sm";
+
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="sm:max-w-[540px] overflow-y-auto bg-white border-l border-slate-200 p-6 space-y-5">
-        <SheetHeader className="pb-3 border-b border-slate-150">
-          <SheetTitle className="text-xl font-black text-slate-900 flex justify-between items-center">
-            <span>{formData.name || passenger.name}</span>
+      <SheetContent className="flex h-full max-h-[100dvh] w-full flex-col gap-0 overflow-hidden border-l border-[#E8EEF4] bg-[#F4F7FB] p-0 shadow-2xl sm:max-w-[560px] [&>button:last-of-type]:z-30 [&>button:last-of-type]:text-white/60 [&>button:last-of-type]:hover:text-white">
+        <SheetHeader className="relative shrink-0 space-y-0 bg-[#0B1528] px-5 pb-4 pt-5 text-left">
+          <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FF4D00] via-[#FF8A3D] to-[#0B1528]" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.07] text-xs font-semibold tracking-wide text-white/90">
+                {initials}
+              </span>
+              <div className="min-w-0">
+                <SheetTitle className="truncate text-[17px] font-semibold text-white">
+                  {displayName}
+                </SheetTitle>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/55">
+                  <span>
+                    {formData.formattedAgeGender ||
+                      passenger?.formattedAgeGender ||
+                      "Age not set"}
+                  </span>
+                  <span className="text-white/25">•</span>
+                  <span className="font-mono">
+                    {formData.phone || passenger?.phone || "No phone"}
+                  </span>
+                  {booking?.bookingId && (
+                    <>
+                      <span className="text-white/25">•</span>
+                      <span className="font-mono">{booking.bookingId}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
             <Button
               size="sm"
               disabled={isSaving}
               onClick={handleSave}
-              className="gap-1.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs h-8 px-3 shadow-xs mr-8"
+              className="mr-8 h-8 shrink-0 gap-1.5 rounded-lg bg-[#FF4D00] px-3.5 text-xs font-semibold text-white shadow-sm hover:bg-[#E64500]"
             >
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -288,18 +343,20 @@ export function PassengerDrawer({
               )}
               {isSaving ? "Saving..." : "Save"}
             </Button>
-          </SheetTitle>
-          <div className="text-xs font-medium text-slate-500 flex items-center gap-2">
-            <span>
-              {formData.formattedAgeGender || passenger.formattedAgeGender}
-            </span>
-            <span>•</span>
-            <span className="font-mono">{formData.phone || passenger.phone || "No phone"}</span>
           </div>
         </SheetHeader>
 
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {/* Stepper Timeline */}
-        <div className="px-1">
+        <div className={cn(cardCls, "px-3.5 pb-3.5 pt-3")}>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-[11px] font-semibold text-[#0B1528]">
+              Readiness
+            </h3>
+            <span className="text-[10px] text-slate-400">
+              Select a step for detail
+            </span>
+          </div>
           <PassengerTimeline
             passenger={{ ...formData, documents: allPassengerDocs } as NormalizedPassenger}
             booking={booking}
@@ -317,37 +374,37 @@ export function PassengerDrawer({
 
         {/* Interactive Step Detail Card (Toggleable & Dismissible) */}
         {activeStep !== undefined && (
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs relative">
+          <div className={cn(cardCls, "relative space-y-2 border-l-2 border-l-[#FF4D00]/50 p-3.5 text-xs")}>
             <button
               type="button"
               onClick={() => setActiveStep(undefined)}
-              className="absolute top-2.5 right-2.5 text-slate-400 hover:text-slate-700 text-xs font-bold p-1 rounded hover:bg-slate-200/60 transition-colors"
+              className="absolute right-2.5 top-2.5 rounded p-1 text-[11px] text-slate-400 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528]"
               title="Close step detail"
             >
               ✕
             </button>
             {activeStep === 0 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Booking Overview
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <ShieldCheck className="w-4 h-4 text-[#FF4D00]" /> Booking overview
                 </h4>
-                <div className="grid grid-cols-2 gap-2 pt-1 text-slate-600">
-                  <div>Booking ID: <span className="font-bold font-mono text-slate-900">{booking?.bookingId}</span></div>
-                  <div>Status: <span className="font-bold uppercase text-emerald-700">{booking?.status}</span></div>
-                  <div>Trip: <span className="font-bold text-slate-900">{booking?.tripName || booking?.tripId}</span></div>
-                  <div>Departure: <span className="font-bold font-mono text-slate-900">{booking?.departureDate ? new Date(booking.departureDate).toLocaleDateString() : "Flexible"}</span></div>
-                  <div>Travelers: <span className="font-bold text-slate-900">{booking?.numberOfTravelers || 1} Pax</span></div>
-                  <div>Sales Owner: <span className="font-bold text-slate-900">{booking?.salesAdmin?.name || "Web Direct"}</span></div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-1 text-[11px] text-slate-500">
+                  <div>Booking ID <span className="font-mono font-semibold text-[#0B1528]">{booking?.bookingId}</span></div>
+                  <div>Status <span className="font-semibold text-emerald-700">{booking?.status}</span></div>
+                  <div>Trip <span className="font-semibold text-[#0B1528]">{booking?.tripName || booking?.tripId}</span></div>
+                  <div>Departure <span className="font-mono font-semibold text-[#0B1528]">{booking?.departureDate ? new Date(booking.departureDate).toLocaleDateString() : "Flexible"}</span></div>
+                  <div>Travellers <span className="font-semibold text-[#0B1528]">{booking?.numberOfTravelers || 1} pax</span></div>
+                  <div>Sales owner <span className="font-semibold text-[#0B1528]">{booking?.salesAdmin?.name || "Web Direct"}</span></div>
                 </div>
               </div>
             )}
 
             {activeStep === 1 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <FileText className="w-4 h-4 text-blue-600" /> ID Proof & Documents
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <FileText className="w-4 h-4 text-[#FF4D00]" /> ID proof & documents
                 </h4>
-                <p className="text-slate-600 text-[11px]">
+                <p className="text-[11px] text-slate-500">
                   {allPassengerDocs.length > 0
                     ? `${allPassengerDocs.length} document(s) attached for this passenger.`
                     : "No documents uploaded yet for this passenger."}
@@ -357,21 +414,21 @@ export function PassengerDrawer({
 
             {activeStep === 2 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <CreditCard className="w-4 h-4 text-amber-600" /> Booking Payment Status
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <CreditCard className="w-4 h-4 text-[#FF4D00]" /> Payment status
                 </h4>
-                <div className="grid grid-cols-3 gap-2 pt-1 text-center">
-                  <div className="bg-white p-2 rounded border border-slate-200">
-                    <span className="text-[10px] text-slate-400 block font-bold">TOTAL</span>
-                    <span className="font-mono font-bold text-slate-800">₹{booking?.totalAmount || booking?.amount || 0}</span>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div className="rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] px-2.5 py-2">
+                    <span className="block text-[10px] font-medium text-slate-400">Total</span>
+                    <span className="font-mono text-[13px] font-semibold text-[#0B1528]">₹{booking?.totalAmount || booking?.amount || 0}</span>
                   </div>
-                  <div className="bg-white p-2 rounded border border-slate-200">
-                    <span className="text-[10px] text-slate-400 block font-bold">PAID</span>
-                    <span className="font-mono font-bold text-emerald-600">₹{booking?.advancePaid || 0}</span>
+                  <div className="rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] px-2.5 py-2">
+                    <span className="block text-[10px] font-medium text-slate-400">Paid</span>
+                    <span className="font-mono text-[13px] font-semibold text-emerald-700">₹{booking?.advancePaid || 0}</span>
                   </div>
-                  <div className="bg-white p-2 rounded border border-slate-200">
-                    <span className="text-[10px] text-slate-400 block font-bold">DUE</span>
-                    <span className="font-mono font-bold text-rose-600">₹{booking?.remainingAmount || 0}</span>
+                  <div className="rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] px-2.5 py-2">
+                    <span className="block text-[10px] font-medium text-slate-400">Due</span>
+                    <span className="font-mono text-[13px] font-semibold text-[#FF4D00]">₹{booking?.remainingAmount || 0}</span>
                   </div>
                 </div>
               </div>
@@ -379,21 +436,21 @@ export function PassengerDrawer({
 
             {activeStep === 3 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <Train className="w-4 h-4 text-indigo-600" /> Passenger Train Tickets
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <Train className="w-4 h-4 text-[#FF4D00]" /> Train tickets
                 </h4>
-                <div className="text-slate-600 text-[11px]">
+                <div className="text-[11px] text-slate-500">
                   {passengerTickets.length > 0 ? (
                     <span>{passengerTickets.length} ticket(s) found for {formData.name || "passenger"}.</span>
                   ) : formData.trainDetails ? (
-                    <span>Train PNR Details: {formData.trainDetails}</span>
+                    <span>Train PNR details: {formData.trainDetails}</span>
                   ) : booking?.trainTicketRequired === false || booking?.trainTicketStatus === "NOT_REQUIRED" ? (
-                    <span className="text-emerald-700 font-medium flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 inline" /> No train ticket required for this journey.
+                    <span className="flex items-center gap-1.5 font-medium text-emerald-700">
+                      <CheckCircle2 className="inline w-3.5 h-3.5" /> No train ticket required for this journey.
                     </span>
                   ) : (
-                    <span className="text-amber-800 font-medium flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 inline" /> No passenger-specific ticket has been issued yet. Status: Action Required.
+                    <span className="flex items-center gap-1.5 font-medium text-[#9A3412]">
+                      <AlertCircle className="inline w-3.5 h-3.5 text-[#FF4D00]" /> No passenger ticket issued yet — action required.
                     </span>
                   )}
                 </div>
@@ -402,13 +459,13 @@ export function PassengerDrawer({
 
             {activeStep === 4 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <Building className="w-4 h-4 text-purple-600" /> Sharing & Occupancy
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <Building className="w-4 h-4 text-[#FF4D00]" /> Sharing & occupancy
                 </h4>
-                <p className="text-slate-600 text-[11px]">
-                  Type: <span className="font-bold text-slate-800">{formData.roomSharing || "Triple Sharing"}</span>
+                <p className="text-[11px] text-slate-500">
+                  Type <span className="font-semibold text-[#0B1528]">{formData.roomSharing || "Triple Sharing"}</span>
                   {formData.sharingWith && (
-                    <span className="block mt-0.5">Sharing with: <span className="font-bold text-slate-800">{formData.sharingWith}</span></span>
+                    <span className="mt-0.5 block">Sharing with <span className="font-semibold text-[#0B1528]">{formData.sharingWith}</span></span>
                   )}
                 </p>
               </div>
@@ -416,35 +473,35 @@ export function PassengerDrawer({
 
             {activeStep === 5 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <MapPin className="w-4 h-4 text-emerald-600" /> Transport & Pickup Allocation
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <MapPin className="w-4 h-4 text-[#FF4D00]" /> Transport & pickup
                 </h4>
-                <div className="grid grid-cols-2 gap-2 text-slate-600 pt-0.5">
-                  <div>Vehicle: <span className="font-bold text-slate-800">{formData.tempoAllocation || "Not assigned"}</span></div>
-                  <div>Seat: <span className="font-bold text-slate-800">{formData.seatNumber || "Unassigned"}</span></div>
-                  <div className="col-span-2">Pickup Point: <span className="font-bold text-slate-800">{formData.pickupPoint || booking?.pickupCity || "TBD"}</span></div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-0.5 text-[11px] text-slate-500">
+                  <div>Vehicle <span className="font-semibold text-[#0B1528]">{formData.tempoAllocation || "Not assigned"}</span></div>
+                  <div>Seat <span className="font-semibold text-[#0B1528]">{formData.seatNumber || "Unassigned"}</span></div>
+                  <div className="col-span-2">Pickup point <span className="font-semibold text-[#0B1528]">{formData.pickupPoint || booking?.pickupCity || "TBD"}</span></div>
                 </div>
               </div>
             )}
 
             {activeStep === 6 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <User className="w-4 h-4 text-blue-600" /> Guide Assignment
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <User className="w-4 h-4 text-[#FF4D00]" /> Guide assignment
                 </h4>
-                <p className="text-slate-600 text-[11px]">
-                  Trip Captain: <span className="font-bold text-slate-900">{booking?.guideName || booking?.tripRef?.guideAssignments?.[0]?.guideAdmin?.name || "Assigned closer to departure"}</span>
+                <p className="text-[11px] text-slate-500">
+                  Trip captain <span className="font-semibold text-[#0B1528]">{booking?.guideName || booking?.tripRef?.guideAssignments?.[0]?.guideAdmin?.name || "Assigned closer to departure"}</span>
                 </p>
               </div>
             )}
 
             {activeStep === 7 && (
               <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Departure Readiness Summary
+                <h4 className="flex items-center gap-2 text-[11px] font-semibold text-[#0B1528]">
+                  <CheckCircle2 className="w-4 h-4 text-[#FF4D00]" /> Departure readiness
                 </h4>
-                <p className="text-slate-600 text-[11px]">
-                  Derived from operational requirements: Booking status, payment settlement, ID proof, transport, and guide assignment.
+                <p className="text-[11px] text-slate-500">
+                  Derived from operational requirements: booking status, payment settlement, ID proof, transport, and guide assignment.
                 </p>
               </div>
             )}
@@ -455,38 +512,42 @@ export function PassengerDrawer({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList
             ref={tabsListRef}
-            className="w-full flex overflow-x-auto justify-start h-auto p-1 mb-4 bg-slate-100/80 border border-slate-200 rounded-lg scrollbar-none whitespace-nowrap"
+            className={cn(
+              cardCls,
+              "mb-3 flex h-auto w-full justify-start gap-1 overflow-x-auto whitespace-nowrap p-1 scrollbar-none",
+            )}
           >
-            <TabsTrigger value="profile" className="flex gap-1.5 text-xs font-bold shrink-0"><User className="w-3.5 h-3.5"/> Profile</TabsTrigger>
-            <TabsTrigger value="health" className="flex gap-1.5 text-xs font-bold shrink-0"><Heart className="w-3.5 h-3.5"/> Health</TabsTrigger>
-            <TabsTrigger value="logistics" className="flex gap-1.5 text-xs font-bold shrink-0"><MapPin className="w-3.5 h-3.5"/> Logistics</TabsTrigger>
-            <TabsTrigger value="train" className="flex gap-1.5 text-xs font-bold shrink-0"><Train className="w-3.5 h-3.5"/> Train</TabsTrigger>
-            <TabsTrigger value="notes" className="flex gap-1.5 text-xs font-bold shrink-0"><FileText className="w-3.5 h-3.5"/> Notes</TabsTrigger>
-            <TabsTrigger value="docs" className="flex gap-1.5 text-xs font-bold shrink-0"><CreditCard className="w-3.5 h-3.5"/> Documents</TabsTrigger>
+            <TabsTrigger value="profile" className={tabTriggerCls}><User className="w-3.5 h-3.5"/> Profile</TabsTrigger>
+            <TabsTrigger value="health" className={tabTriggerCls}><Heart className="w-3.5 h-3.5"/> Health</TabsTrigger>
+            <TabsTrigger value="logistics" className={tabTriggerCls}><MapPin className="w-3.5 h-3.5"/> Logistics</TabsTrigger>
+            <TabsTrigger value="train" className={tabTriggerCls}><Train className="w-3.5 h-3.5"/> Train</TabsTrigger>
+            <TabsTrigger value="notes" className={tabTriggerCls}><FileText className="w-3.5 h-3.5"/> Notes</TabsTrigger>
+            <TabsTrigger value="docs" className={tabTriggerCls}><CreditCard className="w-3.5 h-3.5"/> Documents</TabsTrigger>
           </TabsList>
 
           {/* 1. PROFILE TAB */}
-          <TabsContent value="profile" className="space-y-4">
-            <div className="grid grid-cols-2 gap-3.5">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Full Name *</Label>
-                <Input className="h-9 text-xs" value={formData.name || ""} onChange={(e) => handleChange("name", e.target.value)} />
+          <TabsContent value="profile" className={cn(cardCls, "mt-0 space-y-4 p-4")}>
+            <h4 className="text-[11px] font-semibold text-[#0B1528]">Personal details</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Full name *</Label>
+                <Input className={inputCls} value={formData.name || ""} onChange={(e) => handleChange("name", e.target.value)} />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Phone</Label>
-                <Input className="h-9 text-xs font-mono" value={formData.phone || ""} onChange={(e) => handleChange("phone", e.target.value)} />
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Phone</Label>
+                <Input className={cn(inputCls, "font-mono")} value={formData.phone || ""} onChange={(e) => handleChange("phone", e.target.value)} />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Email</Label>
-                <Input className="h-9 text-xs" value={formData.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Email</Label>
+                <Input className={inputCls} value={formData.email || ""} onChange={(e) => handleChange("email", e.target.value)} />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">DOB</Label>
-                <Input type="date" className="h-9 text-xs font-mono" value={formatDOBForInput(formData.dob) || ""} onChange={(e) => handleChange("dob", e.target.value)} />
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Date of birth</Label>
+                <Input type="date" className={cn(inputCls, "font-mono")} value={formatDOBForInput(formData.dob) || ""} onChange={(e) => handleChange("dob", e.target.value)} />
               </div>
-              <div className="space-y-1 col-span-2">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Gender</Label>
-                <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100/80 rounded-lg border border-slate-200">
+              <div className="col-span-2 space-y-1.5">
+                <Label className={labelCls}>Gender</Label>
+                <div className="grid grid-cols-3 gap-1 rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] p-1">
                   {[
                     { label: "Male", code: "M" as const, full: "Male" },
                     { label: "Female", code: "F" as const, full: "Female" },
@@ -508,10 +569,10 @@ export function PassengerDrawer({
                           }));
                         }}
                         className={cn(
-                          "py-1.5 px-3 text-xs font-bold rounded-md transition-all text-center",
+                          "rounded-md px-3 py-1.5 text-center text-xs font-medium transition-all",
                           isSelected
-                            ? "bg-white text-slate-900 shadow-2xs border border-slate-200/80"
-                            : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50",
+                            ? `border ${getGenderSelectionTone(g.code)}`
+                            : "text-slate-500 hover:bg-white/70 hover:text-[#0B1528]",
                         )}
                       >
                         {g.label}
@@ -520,32 +581,34 @@ export function PassengerDrawer({
                   })}
                 </div>
               </div>
-              <div className="space-y-1 col-span-2">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Food Preference</Label>
-                <Input className="h-9 text-xs" value={formData.foodPreference || ""} onChange={(e) => handleChange("foodPreference", e.target.value)} placeholder="e.g. Normal Food, Jain Food" />
+              <div className="col-span-2 space-y-1.5">
+                <Label className={labelCls}>Food preference</Label>
+                <Input className={inputCls} value={formData.foodPreference || ""} onChange={(e) => handleChange("foodPreference", e.target.value)} placeholder="e.g. Normal food, Jain food" />
               </div>
             </div>
           </TabsContent>
 
           {/* 2. HEALTH TAB */}
-          <TabsContent value="health" className="space-y-3.5">
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-slate-500">Emergency Contact (Name & Number)</Label>
-              <Input className="h-9 text-xs" value={formData.emergencyContact || ""} onChange={(e) => handleChange("emergencyContact", e.target.value)} placeholder="e.g. Parent Name (9876543210)" />
+          <TabsContent value="health" className={cn(cardCls, "mt-0 space-y-3.5 p-4")}>
+            <h4 className="text-[11px] font-semibold text-[#0B1528]">Health & emergency</h4>
+            <div className="space-y-1.5">
+              <Label className={labelCls}>Emergency contact (name & number)</Label>
+              <Input className={inputCls} value={formData.emergencyContact || ""} onChange={(e) => handleChange("emergencyContact", e.target.value)} placeholder="e.g. Parent name (9876543210)" />
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-slate-500">Medical Conditions / Allergies / Physical Requirements</Label>
-              <Textarea className="text-xs" value={formData.medicalConditions || ""} onChange={(e) => handleChange("medicalConditions", e.target.value)} rows={4} placeholder="e.g. Asthma, Peanut Allergy, Low BP" />
+            <div className="space-y-1.5">
+              <Label className={labelCls}>Medical conditions, allergies or physical requirements</Label>
+              <Textarea className={textareaCls} value={formData.medicalConditions || ""} onChange={(e) => handleChange("medicalConditions", e.target.value)} rows={4} placeholder="e.g. Asthma, peanut allergy, low BP" />
             </div>
           </TabsContent>
 
           {/* 3. LOGISTICS TAB */}
-          <TabsContent value="logistics" className="space-y-3.5">
-            <div className="grid grid-cols-2 gap-3.5">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Sharing Type (Occupancy)</Label>
+          <TabsContent value="logistics" className={cn(cardCls, "mt-0 space-y-3.5 p-4")}>
+            <h4 className="text-[11px] font-semibold text-[#0B1528]">Rooming & transport</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Sharing type (occupancy)</Label>
                 <select 
-                  className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-800 focus:outline-none focus:border-orange-500"
+                  className="flex h-9 w-full rounded-lg border border-[#E8EEF4] bg-white px-3 py-1 text-xs font-medium text-[#0B1528] focus:border-[#FF4D00] focus:outline-none"
                   value={formData.roomSharing || "Triple Sharing"} 
                   onChange={(e) => handleChange("roomSharing", e.target.value)}
                 >
@@ -557,44 +620,44 @@ export function PassengerDrawer({
                   <option value="Dormitory">Dormitory</option>
                 </select>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Sharing With (Partners)</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Rahul, Amit" value={formData.sharingWith || ""} onChange={(e) => handleChange("sharingWith", e.target.value)} />
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Sharing with (partners)</Label>
+                <Input className={inputCls} placeholder="e.g. Rahul, Amit" value={formData.sharingWith || ""} onChange={(e) => handleChange("sharingWith", e.target.value)} />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Tempo / Vehicle</Label>
-                <Input className="h-9 text-xs" placeholder="e.g. Tempo 1" value={formData.tempoAllocation || ""} onChange={(e) => handleChange("tempoAllocation", e.target.value)} />
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Tempo / vehicle</Label>
+                <Input className={inputCls} placeholder="e.g. Tempo 1" value={formData.tempoAllocation || ""} onChange={(e) => handleChange("tempoAllocation", e.target.value)} />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Seat Number</Label>
-                <Input className="h-9 text-xs font-mono" placeholder="e.g. 4B" value={formData.seatNumber || ""} onChange={(e) => handleChange("seatNumber", e.target.value)} />
+              <div className="space-y-1.5">
+                <Label className={labelCls}>Seat number</Label>
+                <Input className={cn(inputCls, "font-mono")} placeholder="e.g. 4B" value={formData.seatNumber || ""} onChange={(e) => handleChange("seatNumber", e.target.value)} />
               </div>
-              <div className="space-y-1 col-span-2">
-                <Label className="text-[10px] font-bold uppercase text-slate-500">Pickup Point</Label>
-                <Input className="h-9 text-xs" value={formData.pickupPoint || booking?.pickupCity || ""} onChange={(e) => handleChange("pickupPoint", e.target.value)} placeholder="e.g. Ahmedabad / Gandhinagar" />
+              <div className="col-span-2 space-y-1.5">
+                <Label className={labelCls}>Pickup point</Label>
+                <Input className={inputCls} value={formData.pickupPoint || booking?.pickupCity || ""} onChange={(e) => handleChange("pickupPoint", e.target.value)} placeholder="e.g. Ahmedabad / Gandhinagar" />
               </div>
             </div>
           </TabsContent>
 
           {/* 4. TRAIN TAB */}
-          <TabsContent value="train" className="space-y-3.5">
+          <TabsContent value="train" className={cn(cardCls, "mt-0 space-y-3.5 p-4")}>
             {passengerTickets.length > 0 ? (
               <div className="space-y-2.5">
-                <h5 className="font-bold text-xs text-slate-800 uppercase tracking-wider">Issued Train Tickets</h5>
+                <h4 className="text-[11px] font-semibold text-[#0B1528]">Issued train tickets</h4>
                 {passengerTickets.map((t: any) => (
-                  <div key={t.id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-slate-900">{t.trainName || "Train"} ({t.trainNumber || "N/A"})</span>
-                      <span className="font-mono font-bold bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded text-[10px]">
+                  <div key={t.id} className="space-y-1.5 rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] p-3 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-[#0B1528]">{t.trainName || "Train"} ({t.trainNumber || "N/A"})</span>
+                      <span className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#0B1528] shadow-2xs">
                         {t.ticketStatus}
                       </span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-slate-700">
-                      <span>PNR: <strong className="font-mono text-slate-900">{t.pnr || "—"}</strong></span>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t.passengerReference || "Journey"}</span>
+                    <div className="flex justify-between text-[11px] text-slate-500">
+                      <span>PNR <strong className="font-mono font-semibold text-[#0B1528]">{t.pnr || "—"}</strong></span>
+                      <span className="text-[10px] text-slate-400">{t.passengerReference || "Journey"}</span>
                     </div>
                     {t.sourceStation && (
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-slate-400">
                         {t.sourceStation} &rarr; {t.destinationStation}
                       </div>
                     )}
@@ -602,61 +665,61 @@ export function PassengerDrawer({
                 ))}
               </div>
             ) : booking?.trainTicketRequired === false || booking?.trainTicketStatus === "NOT_REQUIRED" ? (
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-xs font-medium text-emerald-800">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                 No train ticket required for this journey.
               </div>
             ) : (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-amber-800">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  Status: Action Required
+              <div className="space-y-1 rounded-lg border border-[#FF4D00]/20 bg-[#FF4D00]/[0.06] p-3 text-xs">
+                <div className="flex items-center gap-2 font-semibold text-[#9A3412]">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-[#FF4D00]" />
+                  Action required
                 </div>
-                <p className="text-[11px] text-amber-800 font-medium">
+                <p className="pl-6 text-[11px] text-[#9A3412]/80">
                   No passenger-specific ticket has been issued yet.
                 </p>
               </div>
             )}
 
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-slate-500">Train Details & PNR</Label>
-              <Input className="h-9 text-xs font-mono" value={formData.trainDetails || ""} onChange={(e) => handleChange("trainDetails", e.target.value)} placeholder="e.g. PNR 1234567890 (Confirmed)" />
+            <div className="space-y-1.5">
+              <Label className={labelCls}>Train details & PNR</Label>
+              <Input className={cn(inputCls, "font-mono")} value={formData.trainDetails || ""} onChange={(e) => handleChange("trainDetails", e.target.value)} placeholder="e.g. PNR 1234567890 (Confirmed)" />
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-slate-500">Activity / Tour Add-on Selection</Label>
-              <Textarea className="text-xs" value={formData.activitySelection || ""} onChange={(e) => handleChange("activitySelection", e.target.value)} placeholder="e.g. Scuba, Paragliding, Rafting" />
+            <div className="space-y-1.5">
+              <Label className={labelCls}>Activity / tour add-on selection</Label>
+              <Textarea className={textareaCls} value={formData.activitySelection || ""} onChange={(e) => handleChange("activitySelection", e.target.value)} placeholder="e.g. Scuba, paragliding, rafting" />
             </div>
           </TabsContent>
 
           {/* 5. NOTES TAB */}
-          <TabsContent value="notes" className="space-y-3.5">
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-slate-500">Passenger Remarks (Visible on operations manifest)</Label>
-              <Textarea className="text-xs" value={formData.remarks || ""} onChange={(e) => handleChange("remarks", e.target.value)} placeholder="e.g. Needs lower berth, prefers veg meals" />
+          <TabsContent value="notes" className={cn(cardCls, "mt-0 space-y-3.5 p-4")}>
+            <div className="space-y-1.5">
+              <Label className={labelCls}>Passenger remarks (visible on operations manifest)</Label>
+              <Textarea className={textareaCls} value={formData.remarks || ""} onChange={(e) => handleChange("remarks", e.target.value)} placeholder="e.g. Needs lower berth, prefers veg meals" />
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-slate-500">Internal Notes (Admin & Team only)</Label>
-              <Textarea className="text-xs bg-amber-50/60 border-amber-200" value={formData.internalNotes || ""} onChange={(e) => handleChange("internalNotes", e.target.value)} placeholder="e.g. Customer requested special follow-up" rows={3} />
+            <div className="space-y-1.5">
+              <Label className={labelCls}>Internal notes (admin & team only)</Label>
+              <Textarea className={cn(textareaCls, "border-[#FF4D00]/20 bg-[#FF4D00]/[0.04]")} value={formData.internalNotes || ""} onChange={(e) => handleChange("internalNotes", e.target.value)} placeholder="e.g. Customer requested special follow-up" rows={3} />
             </div>
           </TabsContent>
 
           {/* 6. DOCUMENTS TAB */}
-          <TabsContent value="docs" className="space-y-3.5">
-            <div className="flex justify-between items-center">
-              <Label className="text-[10px] font-bold uppercase text-slate-500">Passenger Documents & ID Proof</Label>
-              <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] px-2.5 py-1 rounded gap-1 flex items-center shadow-xs">
+          <TabsContent value="docs" className={cn(cardCls, "mt-0 space-y-3.5 p-4")}>
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-[11px] font-semibold text-[#0B1528]">Documents & ID proof</Label>
+              <label className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#0B1528] px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-xs transition-colors hover:bg-[#0B1528]/90">
                 {uploadingDoc ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
                   <Plus className="w-3 h-3" />
                 )}
-                Upload Document
+                Upload document
                 <input type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileUpload} />
               </label>
             </div>
 
             {uploadingDoc && (
-              <div className="text-xs text-amber-600 font-bold animate-pulse flex items-center gap-1.5">
+              <div className="flex animate-pulse items-center gap-1.5 text-[11px] font-medium text-[#9A3412]">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading file to server...
               </div>
             )}
@@ -667,19 +730,21 @@ export function PassengerDrawer({
                   const docUrl = doc.url || doc.fileUrl;
                   const isPdf = docUrl?.toLowerCase().includes(".pdf") || doc.mimeType?.includes("pdf");
                   return (
-                    <div key={doc.id || docUrl} className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs hover:bg-slate-100/70 transition-colors">
+                    <div key={doc.id || docUrl} className="flex items-center justify-between rounded-lg border border-[#E8EEF4] bg-[#F4F7FB] p-2.5 text-xs transition-colors hover:border-[#FF4D00]/25">
                       <div
-                        className="flex items-center gap-2 overflow-hidden min-w-0 cursor-pointer flex-1"
+                        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden"
                         onClick={() => setPreviewModalDoc({ url: docUrl, title: doc.title || "Aadhaar / ID Proof" })}
                       >
-                        <CreditCard className="w-4 h-4 text-orange-600 shrink-0" />
-                        <span className="font-bold text-slate-800 truncate hover:text-orange-600">{doc.title || "Aadhaar / ID Proof"}</span>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#FF4D00]/10 text-[#FF4D00]">
+                          <CreditCard className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="truncate font-medium text-[#0B1528] hover:text-[#FF4D00]">{doc.title || "Aadhaar / ID Proof"}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <div className="ml-2 flex shrink-0 items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => setPreviewModalDoc({ url: docUrl, title: doc.title || "Aadhaar / ID Proof" })}
-                          className="bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-[10px] flex items-center gap-0.5 px-2 py-1 rounded border border-orange-200"
+                          className="flex items-center gap-1 rounded-md border border-[#E8EEF4] bg-white px-2 py-1 text-[10px] font-semibold text-[#0B1528] transition-colors hover:border-[#FF4D00]/30 hover:text-[#FF4D00]"
                         >
                           View <ExternalLink className="w-3 h-3" />
                         </button>
@@ -687,7 +752,7 @@ export function PassengerDrawer({
                           href={docUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-slate-500 hover:text-slate-800 font-bold text-[10px] px-1.5 py-1"
+                          className="px-1.5 py-1 text-[10px] font-semibold text-slate-400 hover:text-[#0B1528]"
                           title="Open in new tab"
                         >
                           ↗
@@ -695,7 +760,7 @@ export function PassengerDrawer({
                         <button
                           type="button"
                           onClick={() => handleRemoveDoc(doc.id)}
-                          className="text-rose-600 hover:text-rose-700 font-bold text-[10px] px-1.5 py-0.5"
+                          className="px-1.5 py-0.5 text-slate-400 transition-colors hover:text-rose-600"
                           title="Remove document"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -706,45 +771,46 @@ export function PassengerDrawer({
                 })}
               </div>
             ) : (
-              <div className="p-4 border border-dashed border-slate-200 rounded-lg text-center text-slate-400 text-xs italic">
-                No documents uploaded for this passenger. Click "Upload Document" to add Aadhaar or ID proof.
+              <div className="rounded-lg border border-dashed border-[#E8EEF4] bg-[#F4F7FB] p-5 text-center text-[11px] text-slate-400">
+                No documents uploaded yet. Use “Upload document” to add an Aadhaar or ID proof.
               </div>
             )}
           </TabsContent>
         </Tabs>
+        </div>
 
         {/* In-drawer Document Preview Modal */}
         {previewModalDoc && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden border border-slate-200">
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-orange-600" />
-                  <span className="font-bold text-slate-900 text-sm">{previewModalDoc.title}</span>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1528]/70 p-4 backdrop-blur-xs">
+            <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-[#E8EEF4] bg-white shadow-2xl">
+              <div className="flex items-center justify-between gap-3 border-b border-[#E8EEF4] bg-[#F4F7FB] p-4">
+                <div className="flex min-w-0 items-center gap-2">
+                  <CreditCard className="w-4 h-4 shrink-0 text-[#FF4D00]" />
+                  <span className="truncate text-sm font-semibold text-[#0B1528]">{previewModalDoc.title}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <a
                     href={previewModalDoc.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded"
+                    className="flex items-center gap-1 rounded-lg border border-[#E8EEF4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0B1528] transition-colors hover:border-[#FF4D00]/30 hover:text-[#FF4D00]"
                   >
-                    Open Original <ExternalLink className="w-3 h-3" />
+                    Open original <ExternalLink className="w-3 h-3" />
                   </a>
                   <button
                     type="button"
                     onClick={() => setPreviewModalDoc(null)}
-                    className="text-slate-400 hover:text-slate-700 font-bold text-base px-2 py-0.5"
+                    className="px-2 py-0.5 text-base text-slate-400 transition-colors hover:text-[#0B1528]"
                   >
                     ✕
                   </button>
                 </div>
               </div>
-              <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-slate-100 min-h-[300px]">
+              <div className="flex min-h-[300px] flex-1 items-center justify-center overflow-auto bg-[#F4F7FB] p-4">
                 {previewModalDoc.url.toLowerCase().includes(".pdf") ? (
                   <iframe
                     src={previewModalDoc.url}
-                    className="w-full h-[500px] rounded border border-slate-200 bg-white"
+                    className="h-[500px] w-full rounded-lg border border-[#E8EEF4] bg-white"
                     title={previewModalDoc.title}
                   />
                 ) : (

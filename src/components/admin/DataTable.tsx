@@ -131,9 +131,9 @@ export function DataTable<T extends Record<string, any>>({
   const showToolbar = Boolean(searchKey) || Boolean(filters?.length);
 
   return (
-    <div className={cn(showToolbar ? "space-y-6" : "space-y-3")}>
+    <div className={cn("min-w-0", showToolbar ? "space-y-4 sm:space-y-6" : "space-y-3")}>
       {showToolbar && (
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:gap-4">
           {searchKey && (
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -174,15 +174,15 @@ export function DataTable<T extends Record<string, any>>({
       )}
 
       <div className="admin-card !p-0 overflow-hidden">
-        <div className="responsive-table">
-          <table className="w-full text-sm">
+        <div className="responsive-table" tabIndex={0} aria-label="Scrollable data table">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 {columns.map((col) => (
                   <th
                     key={col.key}
                     className={cn(
-                      "px-6 py-4 text-left text-xs font-semibold text-slate-500 tracking-tight",
+                      "whitespace-nowrap px-3 py-3 text-left text-xs font-semibold tracking-tight text-slate-500 sm:px-5 sm:py-4",
                       col.className,
                     )}
                   >
@@ -196,7 +196,7 @@ export function DataTable<T extends Record<string, any>>({
                 Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i}>
                     {columns.map((col) => (
-                      <td key={col.key} className="px-6 py-4">
+                      <td key={col.key} className="px-3 py-3 sm:px-5 sm:py-4">
                         <div className="h-4 bg-slate-50 animate-pulse rounded-lg w-full max-w-[120px]" />
                       </td>
                     ))}
@@ -228,7 +228,7 @@ export function DataTable<T extends Record<string, any>>({
                       <td
                         key={col.key}
                         className={cn(
-                          "px-6 py-4 text-slate-600 font-normal text-sm",
+                          "px-3 py-3 text-sm font-normal text-slate-600 sm:px-5 sm:py-4",
                           col.className,
                         )}
                       >
@@ -244,7 +244,7 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {(serverSide ? totalItemsCount > 0 : computedTotalPages > 1) && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4">
+        <div className="flex flex-col items-start justify-between gap-3 px-1 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-2 sm:py-4">
           <p className="text-xs font-normal text-slate-500">
             Showing{" "}
             {serverSide
@@ -263,7 +263,7 @@ export function DataTable<T extends Record<string, any>>({
                 )}{" "}
             of {totalItemsCount}
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end sm:gap-4">
             {serverSide && onPageSizeChange && (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-slate-500">
@@ -297,6 +297,7 @@ export function DataTable<T extends Record<string, any>>({
                 onClick={() => handlePageChange(activePage - 1)}
                 disabled={serverSide ? activePage <= 1 : activePage === 0}
                 className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-50"
+                aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -310,6 +311,7 @@ export function DataTable<T extends Record<string, any>>({
                     : activePage >= computedTotalPages - 1
                 }
                 className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-50"
+                aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>

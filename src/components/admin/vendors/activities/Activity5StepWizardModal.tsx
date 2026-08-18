@@ -744,7 +744,7 @@ export default function Activity5StepWizardModal({
                     className={cn(
                       "px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all",
                       !isIncluded
-                        ? "bg-purple-600 text-white border-purple-700 shadow-sm"
+                        ? "bg-orange-600 text-white border-orange-700 shadow-sm"
                         : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                     )}
                   >
@@ -788,13 +788,13 @@ export default function Activity5StepWizardModal({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-purple-50/70 p-4 rounded-xl border border-purple-200">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-orange-50/70 p-4 rounded-xl border border-orange-200">
                     <div>
-                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                      <label className="block text-xs font-bold text-orange-900 mb-1">
                         Adult Selling Price
                       </label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-purple-600 font-bold">
+                        <span className="absolute left-2.5 top-1.5 text-orange-600 font-bold">
                           ₹
                         </span>
                         <input
@@ -803,13 +803,13 @@ export default function Activity5StepWizardModal({
                           onChange={(e) =>
                             setAdultPrice(Number(e.target.value) || 0)
                           }
-                          className="w-full pl-6 pr-2 py-1.5 font-bold text-purple-950 rounded-lg border border-purple-300 bg-white"
+                          className="w-full pl-6 pr-2 py-1.5 font-bold text-orange-950 rounded-lg border border-orange-300 bg-white"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                      <label className="block text-xs font-bold text-orange-900 mb-1">
                         Vendor Net Cost
                       </label>
                       <div className="relative">
@@ -822,13 +822,13 @@ export default function Activity5StepWizardModal({
                           onChange={(e) =>
                             setVendorCost(Number(e.target.value) || 0)
                           }
-                          className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-700 rounded-lg border border-purple-300 bg-white"
+                          className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-700 rounded-lg border border-orange-300 bg-white"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                      <label className="block text-xs font-bold text-orange-900 mb-1">
                         Profit / Pax
                       </label>
                       <div className="text-lg font-black text-emerald-600 mt-1">
@@ -837,10 +837,10 @@ export default function Activity5StepWizardModal({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-purple-900 mb-1">
+                      <label className="block text-xs font-bold text-orange-900 mb-1">
                         Total Revenue
                       </label>
-                      <div className="text-lg font-black text-purple-950 mt-1">
+                      <div className="text-lg font-black text-orange-950 mt-1">
                         ₹{(selectedPaxIds.length * adultPrice).toLocaleString()}
                       </div>
                     </div>

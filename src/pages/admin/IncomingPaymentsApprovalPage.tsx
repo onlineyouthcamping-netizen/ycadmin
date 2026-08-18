@@ -333,7 +333,7 @@ export default function IncomingPaymentsApprovalPage({
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             Customer booking inflows
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-100 shrink-0">
             <ArrowDownRight className="w-3.5 h-3.5" />
           </div>
         </div>

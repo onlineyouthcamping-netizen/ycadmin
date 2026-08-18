@@ -200,7 +200,7 @@ export default function OutgoingPaymentsApprovalPage({
         return <Truck className="w-3.5 h-3.5 text-amber-500" />;
       case "activities":
       case "activity":
-        return <Compass className="w-3.5 h-3.5 text-purple-500" />;
+        return <Compass className="w-3.5 h-3.5 text-orange-500" />;
       case "guides":
       case "guide":
         return <User className="w-3.5 h-3.5 text-emerald-500" />;
@@ -315,7 +315,7 @@ export default function OutgoingPaymentsApprovalPage({
           <p className="text-[9px] text-[#74839A] font-semibold leading-none">
             Across active departures
           </p>
-          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100 shrink-0">
+          <div className="absolute right-3.5 top-3.5 w-[28px] h-[28px] rounded bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-100 shrink-0">
             <Building2 className="w-3.5 h-3.5" />
           </div>
         </div>

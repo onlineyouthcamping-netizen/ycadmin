@@ -73,8 +73,8 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
       value: data.passengersBooked.toString(),
       subtext: "Total activity seat-slots",
       icon: Users,
-      color: "text-purple-600 bg-purple-50 border-purple-200",
-      iconColor: "text-purple-600",
+      color: "text-orange-600 bg-orange-50 border-orange-200",
+      iconColor: "text-orange-600",
     },
     {
       label: "Vendor Cost",

@@ -304,7 +304,7 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({
   const itemsList: KnowledgeItem[] = sectionData?.items || [];
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen text-[#0A192F] font-sans">
+    <div className="admin-page text-[#0A192F]">
       {/* ─── Top Header & Global Search Bar ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>

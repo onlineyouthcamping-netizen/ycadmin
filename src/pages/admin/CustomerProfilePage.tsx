@@ -43,7 +43,7 @@ export default function CustomerProfilePage() {
                     <div className="font-bold text-slate-900">
                       {event.title}
                     </div>
-                    <time className="font-caveat font-medium text-indigo-500">
+                    <time className="font-caveat font-medium text-orange-500">
                       {event.date} {event.time}
                     </time>
                   </div>

@@ -124,7 +124,7 @@ export function TicketTemplateList({
                           className={cn(
                             "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider",
                             template.scope === "DEPARTURE"
-                              ? "bg-purple-100 text-purple-700"
+                              ? "bg-orange-100 text-orange-700"
                               : "bg-blue-100 text-blue-700",
                           )}
                         >

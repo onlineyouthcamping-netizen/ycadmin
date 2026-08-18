@@ -73,7 +73,7 @@ export function CampingModuleView({
       title: "Bonfire & Music Permitted",
       count: "100%",
       icon: MapPin,
-      color: "text-purple-600 bg-purple-50 border-purple-200",
+      color: "text-orange-600 bg-orange-50 border-orange-200",
     },
   ];
 
