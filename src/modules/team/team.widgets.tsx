@@ -52,7 +52,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
       <DashHead
         title={
           <div className="flex items-center gap-2">
-            <span>Booking tasks</span>
+            <span>Tasks & allotments</span>
             {openTasksCount > 0 && (
               <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-[#FF5A1F]">
                 {openTasksCount} open
@@ -72,15 +72,16 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
       />
       <DashBody className="no-scrollbar max-h-[220px] space-y-2 overflow-y-auto text-[12px]">
         {loading ? (
-          <p className={dashEmpty}>Loading booking tasks…</p>
+          <p className={dashEmpty}>Loading tasks…</p>
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-center text-slate-400">
             <ListTodo className="h-6 w-6 text-slate-300 mb-1" />
-            <p className="text-[11px] font-medium">No booking tasks assigned.</p>
+            <p className="text-[11px] font-medium">No tasks assigned. All clear!</p>
           </div>
         ) : (
           tasks.map((task) => {
             const isDone = task.status === "COMPLETED";
+            const isBooking = task.taskCategory === "BOOKING" || Boolean(task.booking);
             const isDueToday =
               task.dueDate &&
               new Date(task.dueDate).toISOString().split("T")[0] ===
@@ -90,7 +91,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
               <div
                 key={task.id}
                 onClick={() =>
-                  task.booking?.id
+                  isBooking && task.booking?.id
                     ? navigate(`/admin/bookings?id=${task.booking.id}&tab=tasks`)
                     : navigate("/admin/operations/booking-tasks")
                 }
@@ -116,14 +117,22 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
                       {task.title}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
-                      {task.booking?.bookingId && (
+                      {isBooking ? (
+                        <>
+                          {task.booking?.bookingId && (
+                            <span className="font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                              {task.booking.bookingId}
+                            </span>
+                          )}
+                          {task.booking?.fullName && (
+                            <span className="truncate max-w-[120px] text-slate-600 font-medium">
+                              {task.booking.fullName}
+                            </span>
+                          )}
+                        </>
+                      ) : (
                         <span className="font-bold text-[#FF5A1F] bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                          {task.booking.bookingId}
-                        </span>
-                      )}
-                      {task.booking?.fullName && (
-                        <span className="truncate max-w-[120px] text-slate-600 font-medium">
-                          {task.booking.fullName}
+                          Universal
                         </span>
                       )}
                       {task.assignedTo?.name && (
@@ -171,7 +180,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
 export const teamWidgets: DashboardWidget[] = [
   {
     id: "booking-tasks",
-    title: "Booking Tasks",
+    title: "Tasks & Allotments",
     category: "team",
     permission: PERMISSIONS.BOOKINGS_VIEW,
     order: 85,

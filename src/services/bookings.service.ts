@@ -282,9 +282,22 @@ export const bookingsService = {
     return res.data.data;
   },
 
-  async getAllBookingTasks(params?: { status?: string; assignee?: string }): Promise<any[]> {
+  async getAllBookingTasks(params?: { status?: string; assignee?: string; type?: string }): Promise<any[]> {
     const res = await api.get(`/bookings/tasks/all`, { params });
     return res.data?.data || res.data || [];
+  },
+
+  async createUniversalOrBookingTask(data: {
+    title: string;
+    description?: string;
+    assignedToId: string;
+    dueDate?: string;
+    priority?: string;
+    taskType?: string;
+    bookingId?: string;
+  }): Promise<any> {
+    const res = await api.post(`/bookings/tasks/create-universal`, data);
+    return res.data?.data || res.data;
   },
 
   async getColleagues(): Promise<any[]> {

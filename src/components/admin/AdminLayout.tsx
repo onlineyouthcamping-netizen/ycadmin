@@ -123,7 +123,7 @@ const sidebarModules: SidebarModule[] = [
       { title: "Departures", url: "/admin/operations" },
       { title: "Station payments", url: "/admin/operations?tab=stationpayments" },
       { title: "Daily tasks", url: "/admin/operations/daily-tasks" },
-      { title: "Booking tasks", url: "/admin/operations/booking-tasks" },
+      { title: "Tasks & allotments", url: "/admin/operations/booking-tasks" },
       { title: "SOP & checklists", url: "/admin/operations/sops" },
       { title: "Vendors", url: "/admin/vendors" },
       { title: "Company docs", url: "/admin/company-documents" },
