@@ -162,6 +162,7 @@ export default function DeparturePayments({
 
   const [addActivityPaymentOpen, setAddActivityPaymentOpen] = useState(false);
   const [activityPaymentForm, setActivityPaymentForm] = useState({
+    activityId: "",
     activityName: "",
     activityType: "Adventure",
     costPerPerson: "",
@@ -472,7 +473,7 @@ export default function DeparturePayments({
   // Fetch API data and merge cleanly with defaults if API is empty
   const fetchData = async () => {
     try {
-      const [clientRes, vendorRes, vendorsDirRes, expensesRes, trainSummaryRes, accountsRes] = await Promise.all([
+      const [clientRes, vendorRes, vendorsDirRes, expensesRes, trainSummaryRes, accountsRes, depActivitiesRes] = await Promise.all([
         opsService
           .getClientPayments(tripId, departureDateStr)
           .catch(() => ({ bookings: [], receipts: [] })),
@@ -485,6 +486,7 @@ export default function DeparturePayments({
         collectionAccountsService
           .getAccounts({ activeOnly: true })
           .catch(() => ({ data: [], summary: { totalCollected: 0, totalSubmitted: 0, totalPending: 0 } })),
+        api.get(`/ops/activities/${tripId}`, { params: { departureDate: departureDateStr } }).catch(() => ({ data: { data: [] } })),
       ]);
 
       if (accountsRes.data && accountsRes.data.length > 0) {
@@ -595,7 +597,90 @@ export default function DeparturePayments({
       });
 
       // Filter and map Trip Expenses into local activities and misc
-      const activities = (expensesRes || []).filter((e: any) => e.category === "ACTIVITIES");
+      let currentPax = 1;
+      if (mergedBookings.length > 0) {
+        currentPax = mergedBookings.reduce((sum: number, b: any) => {
+          if (b.numberOfTravelers && Number(b.numberOfTravelers) > 0) {
+            return sum + Number(b.numberOfTravelers);
+          }
+          try {
+            const parsed = typeof b.passengers === "string" ? JSON.parse(b.passengers) : b.passengers;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              return sum + parsed.length;
+            }
+          } catch {}
+          return sum + 1;
+        }, 0) || 1;
+      }
+
+      const fetchedActivities = Array.isArray(depActivitiesRes.data?.data)
+        ? depActivitiesRes.data.data.map((a: any) => {
+            const costPerPerson = Number(a.vendorCost || a.estimatedCost || 0);
+            const pax = Number(a.maxParticipants || a.bookedCount || currentPax);
+            const totalCost = costPerPerson * pax;
+            const amountPaid = Number(a.actualCost || 0);
+            const balanceDue = Math.max(0, totalCost - amountPaid);
+            const actVendorName = a.vendorName || "Direct Supplier";
+
+            return {
+              id: a.id,
+              activityId: a.id,
+              activityName: a.name,
+              activityType: a.type || a.category || "ADVENTURE",
+              vendorName: actVendorName,
+              vendorId: a.vendorId,
+              costPerPerson,
+              participantCount: pax,
+              totalCost,
+              amountPaid,
+              balanceDue,
+              isIncluded: false,
+              status: amountPaid >= totalCost && totalCost > 0 ? "PAID" : amountPaid > 0 ? "PARTIAL" : "PENDING",
+              dayNumber: a.dayNumber,
+              category: "activities",
+              history: amountPaid > 0 ? [
+                {
+                  id: `act-hist-${a.id}`,
+                  date: a.date ? String(a.date).substring(0, 10) : new Date().toISOString().substring(0, 10),
+                  amount: amountPaid,
+                  method: "Activity Sync",
+                  txnId: "AUTO-SYNC",
+                  type: "ADVANCE",
+                  status: amountPaid >= totalCost ? "PAID" : "PARTIAL",
+                }
+              ] : [],
+            };
+          })
+        : [];
+
+      fetchedActivities.forEach((act: any) => {
+        if (act.totalCost > 0) {
+          const vName = act.vendorName;
+          const existingIdx = mergedVendors.findIndex((v) => v.vendorName?.toLowerCase().trim() === vName.toLowerCase().trim());
+          if (existingIdx >= 0) {
+            mergedVendors[existingIdx].agreedAmount = (mergedVendors[existingIdx].agreedAmount || 0) + act.totalCost;
+            mergedVendors[existingIdx].advancePaid = (mergedVendors[existingIdx].advancePaid || 0) + act.amountPaid;
+            mergedVendors[existingIdx].balanceAmount = Math.max(0, mergedVendors[existingIdx].agreedAmount - mergedVendors[existingIdx].advancePaid);
+            const statusLabel = mergedVendors[existingIdx].advancePaid >= mergedVendors[existingIdx].agreedAmount ? "Paid" : mergedVendors[existingIdx].advancePaid > 0 ? "Advance Paid" : "Pending";
+            mergedVendors[existingIdx].status = statusLabel;
+          } else {
+            mergedVendors.push({
+              id: `act-vendor-${act.id}`,
+              vendorName: vName,
+              category: "Activities",
+              serviceDescription: act.activityName,
+              agreedAmount: act.totalCost,
+              advancePaid: act.amountPaid,
+              balanceAmount: act.balanceDue,
+              status: act.status === "PAID" ? "Paid" : act.status === "PARTIAL" ? "Advance Paid" : "Pending",
+              history: act.history,
+            });
+          }
+        }
+      });
+
+      const manualActivities = (expensesRes || []).filter((e: any) => e.category === "ACTIVITIES");
+      const combinedActivities = [...fetchedActivities, ...manualActivities];
       const misc = (expensesRes || []).filter((e: any) => e.category === "MISCELLANEOUS" || e.category === "OTHER");
       const recons = (expensesRes || []).filter((e: any) => e.category === "ADJUSTMENT");
 
@@ -605,7 +690,7 @@ export default function DeparturePayments({
       setDbVendors(vendorsDirRes.data?.data || []);
       setTrainTickets(trainSummaryRes?.tickets || []);
 
-      if (activities.length > 0) setActivityPayments(activities);
+      if (combinedActivities.length > 0) setActivityPayments(combinedActivities);
       if (misc.length > 0) setMiscPayments(misc);
       if (recons.length > 0) setAdjustments(recons);
 
@@ -1260,27 +1345,38 @@ export default function DeparturePayments({
     const status =
       paid >= total && total > 0 ? "PAID" : paid > 0 ? "PARTIAL" : "PENDING";
 
-    const newAct = {
-      id: `ACT-PAY-${Date.now()}`,
-      activityName: activityPaymentForm.activityName,
-      activityType: activityPaymentForm.activityType,
-      costPerPerson: cost,
-      participantCount: pax,
-      totalCost: total,
-      amountPaid: paid,
-      balanceDue: balance,
-      vendorName: activityPaymentForm.vendorName || "External Vendor",
-      isIncluded: false,
-      status,
-      category: "activities",
-    };
-
     try {
-      await opsService.upsertTripExpense(tripId, newAct as any);
-    } catch {}
+      if (activityPaymentForm.activityId) {
+        await api.put(`/ops/activities/${tripId}/${activityPaymentForm.activityId}`, {
+          actualCost: paid,
+          vendorCost: cost,
+          bookedCount: pax,
+        });
+        toast.success(`Updated payment for activity "${activityPaymentForm.activityName}"`);
+      } else {
+        const newAct = {
+          id: `ACT-PAY-${Date.now()}`,
+          activityName: activityPaymentForm.activityName,
+          activityType: activityPaymentForm.activityType,
+          costPerPerson: cost,
+          participantCount: pax,
+          totalCost: total,
+          amountPaid: paid,
+          balanceDue: balance,
+          vendorName: activityPaymentForm.vendorName || "External Vendor",
+          isIncluded: false,
+          status,
+          category: "ACTIVITIES",
+        };
+        await opsService.upsertTripExpense(tripId, newAct as any);
+        toast.success(`Recorded activity payment for "${newAct.activityName}"`);
+      }
+      fetchData();
+    } catch (err) {
+      console.error("Error recording activity payment:", err);
+      toast.error("Failed to record activity payment");
+    }
 
-    setActivityPayments((prev) => [newAct, ...prev]);
-    toast.success(`Recorded activity payment for "${newAct.activityName}"`);
     setAddActivityPaymentOpen(false);
   };
 
@@ -2028,7 +2124,22 @@ export default function DeparturePayments({
               </Button>
               <Button
                 size="sm"
-                onClick={() => setAddActivityPaymentOpen(true)}
+                onClick={() => {
+                  setActivityPaymentForm({
+                    activityId: "",
+                    activityName: "",
+                    activityType: "Adventure",
+                    costPerPerson: "",
+                    participantCount: "",
+                    vendorName: "",
+                    amountPaid: "",
+                    paymentDate: new Date().toISOString().substring(0, 10),
+                    paymentMode: "UPI",
+                    transactionId: "",
+                    remarks: "",
+                  });
+                  setAddActivityPaymentOpen(true);
+                }}
                 className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
               >
                 + Add Activity Payment
@@ -3112,7 +3223,22 @@ export default function DeparturePayments({
             </span>
             <Button
               size="sm"
-              onClick={() => setAddActivityPaymentOpen(true)}
+              onClick={() => {
+                setActivityPaymentForm({
+                  activityId: "",
+                  activityName: "",
+                  activityType: "Adventure",
+                  costPerPerson: "",
+                  participantCount: "",
+                  vendorName: "",
+                  amountPaid: "",
+                  paymentDate: new Date().toISOString().substring(0, 10),
+                  paymentMode: "UPI",
+                  transactionId: "",
+                  remarks: "",
+                });
+                setAddActivityPaymentOpen(true);
+              }}
               className="h-8 w-full sm:w-auto shrink-0 bg-[#0B1528] hover:bg-[#16253d] text-white font-semibold text-[11px]"
             >
               <Plus className="w-3.5 h-3.5 mr-1" /> Record Activity Payment
@@ -3214,6 +3340,7 @@ export default function DeparturePayments({
                             size="sm"
                             onClick={() => {
                               setActivityPaymentForm({
+                                activityId: act.activityId || "",
                                 activityName: act.activityName,
                                 activityType: act.activityType,
                                 costPerPerson: String(act.costPerPerson),
