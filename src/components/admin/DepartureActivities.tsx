@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -16,8 +16,11 @@ import ActivityKPIHeader from "./vendors/activities/ActivityKPIHeader";
 import DayWiseActivityAccordionCard, {
   DepartureActivityItem,
 } from "./vendors/activities/DayWiseActivityAccordionCard";
-import Activity5StepWizardModal from "./vendors/activities/Activity5StepWizardModal";
+import Activity5StepWizardModal, {
+  VendorOption,
+} from "./vendors/activities/Activity5StepWizardModal";
 import { saveActivityToBackend } from "@/utils/departure/activityMapper";
+import { vendorsService } from "@/services/vendors.service";
 
 interface DepartureActivitiesProps {
   tripId: string;
@@ -49,8 +52,107 @@ export default function DepartureActivities({
   const [actStatusFilter, setActStatusFilter] = useState("All Status");
   const [actSearch, setActSearch] = useState("");
 
-  // Modals
+  // Modals & Selection
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardInitialDay, setWizardInitialDay] = useState(1);
+
+  // Live Trip Vendors Directory (Restaurants, Activities, Others)
+  const [tripVendorsList, setTripVendorsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (tripId) {
+      vendorsService
+        .getVendorsByTrip(tripId)
+        .then((res) => {
+          if (Array.isArray(res)) {
+            setTripVendorsList(res);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [tripId]);
+
+  const mappedVendorsForWizard = useMemo<VendorOption[]>(() => {
+    const list: VendorOption[] = [];
+    const seen = new Set<string>();
+
+    // 1. Primary: Trip-wise Vendor Directory records (/vendors/trips/:tripId)
+    (tripVendorsList || []).forEach((tv: any) => {
+      const v = tv.vendor || tv;
+      const vId = v.id || tv.id || tv.vendorId;
+      const vName = v.name || tv.name;
+      if (!vName || seen.has(vName.toLowerCase())) return;
+      seen.add(vName.toLowerCase());
+
+      const rawCat = (tv.category || v.type || "other").toLowerCase();
+      const isRest =
+        rawCat.includes("restaurant") ||
+        rawCat.includes("food") ||
+        rawCat === "meal" ||
+        vName.toLowerCase().includes("dhaba") ||
+        vName.toLowerCase().includes("restaurant") ||
+        vName.toLowerCase().includes("cottage") ||
+        vName.toLowerCase().includes("cafe");
+
+      const rate =
+        tv.rates?.[0]?.negotiatedRate ||
+        tv.rates?.[0]?.costPerPerson ||
+        tv.rates?.[0]?.mealPrice ||
+        tv.rates?.[0]?.baseRate ||
+        tv.agreedCost ||
+        (isRest ? 250 : 500);
+
+      list.push({
+        vendorId: vId,
+        vendorName: vName,
+        category: isRest ? "restaurants" : "activities",
+        location: v.location || v.city || "",
+        contactPerson: v.contactPerson || "",
+        contactPhone: v.contactNumber || v.phone || "",
+        rating: v.rating || (isRest ? 4.8 : 4.6),
+        netCost: Number(rate) || (isRest ? 250 : 500),
+        seasonType: tv.rates?.[0]?.seasonType || "REGULAR",
+      });
+    });
+
+    // 2. Fallback: Any vendors passed directly from DepartureHubPage state
+    (tripVendors || []).forEach((tv: any) => {
+      const vName = tv.name || tv.vendorName;
+      if (!vName || seen.has(vName.toLowerCase())) return;
+      seen.add(vName.toLowerCase());
+
+      const rawCat = (tv.vendorType || tv.type || "other").toLowerCase();
+      const isRest =
+        rawCat.includes("restaurant") ||
+        rawCat.includes("food") ||
+        vName.toLowerCase().includes("dhaba") ||
+        vName.toLowerCase().includes("restaurant") ||
+        vName.toLowerCase().includes("cottage") ||
+        vName.toLowerCase().includes("cafe");
+
+      list.push({
+        vendorId: tv.id || `VND-${tv.name}`,
+        vendorName: vName,
+        category: isRest ? "restaurants" : "activities",
+        location: tv.location || tv.city || "",
+        contactPerson: tv.contactPerson || "",
+        contactPhone: tv.phone || "",
+        rating: tv.rating || 4.7,
+        netCost: Number(tv.agreedCost || tv.vendorCost || (isRest ? 250 : 500)),
+        seasonType: "REGULAR",
+      });
+    });
+
+    return list;
+  }, [tripVendorsList, tripVendors]);
+
+  // Passenger manifest formatted for Step 5
+  const formattedManifest = useMemo(() => {
+    return (allPassengers || []).map((p: any, idx: number) => ({
+      id: p.id || `pax-${idx + 1}`,
+      name: p.name || p.fullName || `Passenger ${idx + 1}`,
+    }));
+  }, [allPassengers]);
 
   const totalPaxCount = allPassengers.length > 0 ? allPassengers.length : 5;
 
@@ -330,21 +432,25 @@ export default function DepartureActivities({
                       <DayWiseActivityAccordionCard
                         key={activity.id}
                         activity={activity}
+                        availableVendors={mappedVendorsForWizard}
                         onUpdateActivity={handleUpdateActivityItem}
                         onDeleteActivity={handleDeleteActivityItem}
                       />
                     ))
                   ) : (
                     <div className="p-4 bg-white border border-dashed border-[#E8EEF4] rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-600 min-w-0">
-                      <span className="leading-relaxed">No activities scheduled for Day {day} yet.</span>
+                      <span className="leading-relaxed">No activities or restaurant meals scheduled for Day {day} yet.</span>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setWizardOpen(true)}
+                        onClick={() => {
+                          setWizardInitialDay(day);
+                          setWizardOpen(true);
+                        }}
                         className="h-8 w-full sm:w-auto px-3 text-xs bg-white hover:bg-[#FFF0E6] hover:text-[#FF4D00] border-[#E8EEF4] font-semibold"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
-                        Add Activity to Day {day}
+                        Add Activity / Meal to Day {day}
                       </Button>
                     </div>
                   )}
@@ -357,11 +463,11 @@ export default function DepartureActivities({
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
             <Sparkles className="w-10 h-10 text-orange-400 mx-auto mb-3" />
             <h4 className="font-bold text-slate-800 text-base">
-              No activities match your filters
+              No activities or meals match your filters
             </h4>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Try adjusting your day or status filters, or click "+ Add
-              Activity" to schedule a new experience for this departure.
+              Activity" to schedule a new experience or restaurant meal for this departure.
             </p>
             <Button
               variant="outline"
@@ -385,6 +491,9 @@ export default function DepartureActivities({
         onOpenChange={setWizardOpen}
         onAddActivity={handleAddActivityFromWizard}
         daysList={daysAvailable.length > 0 ? daysAvailable : [1, 2, 3, 4, 5]}
+        initialDay={wizardInitialDay}
+        vendorsList={mappedVendorsForWizard}
+        manifestPassengers={formattedManifest}
       />
     </div>
   );
