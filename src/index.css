@@ -527,6 +527,29 @@
   display: none;
 }
 
+/* Pill/tab rows: override min-width:0 guardrails so flex children don't squash/overlap */
+.admin-main-scroll .admin-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.admin-main-scroll .admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-main-scroll .admin-tabs > * {
+  flex: 0 0 auto;
+  min-width: auto;
+  max-width: none;
+}
+
 .admin-main-scroll :where(input, select, textarea) {
   max-width: 100%;
 }

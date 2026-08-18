@@ -420,8 +420,8 @@ export default function SopBuilderPage() {
         </div>
 
         {/* Version Switcher Strip */}
-        <div className="flex items-center gap-2 pt-3 border-t border-slate-100 overflow-x-auto">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2">
+        <div className="admin-tabs gap-2 border-t border-slate-100 pt-3">
+          <span className="mr-2 shrink-0 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             SOP Versions:
           </span>
           {template.versions.map((v) => {
@@ -539,11 +539,11 @@ export default function SopBuilderPage() {
             <tr className="bg-slate-900 text-white text-[10px] uppercase font-bold tracking-wider">
               <th className="p-3 w-12 text-center">#</th>
               <th className="p-3 border-r border-slate-800">TASK TEMPLATE NAME</th>
-              <th className="p-3 border-r border-slate-800">STAGE</th>
-              <th className="p-3 border-r border-slate-800 text-center">OFFSET</th>
-              <th className="p-3 border-r border-slate-800">ASSIGNEE</th>
-              <th className="p-3 border-r border-slate-800 text-center">PRIORITY</th>
-              <th className="p-3 border-r border-slate-800 text-center">REQUIRED</th>
+              <th className="p-3 border-r border-slate-800 whitespace-nowrap">STAGE</th>
+              <th className="p-3 border-r border-slate-800 text-center whitespace-nowrap">OFFSET</th>
+              <th className="p-3 border-r border-slate-800 whitespace-nowrap">ASSIGNEE</th>
+              <th className="p-3 border-r border-slate-800 text-center whitespace-nowrap">PRIORITY</th>
+              <th className="p-3 border-r border-slate-800 text-center whitespace-nowrap">REQUIRED</th>
               <th className="p-3 text-center w-24">ACTION</th>
             </tr>
           </thead>
@@ -604,22 +604,22 @@ export default function SopBuilderPage() {
                         <p className="text-[10px] text-slate-400 mt-0.5">{t.instructions}</p>
                       )}
                     </td>
-                    <td className="p-3 border-r border-slate-100">
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
+                    <td className="p-3 border-r border-slate-100 whitespace-nowrap">
+                      <span className="inline-flex items-center whitespace-nowrap text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
                         {displayStageLabel}
                       </span>
                     </td>
-                    <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-700">
-                      <span className="text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded border border-orange-100">
+                    <td className="p-3 border-r border-slate-100 text-center whitespace-nowrap font-bold text-slate-700">
+                      <span className="inline-flex items-center whitespace-nowrap text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded border border-orange-100">
                         {offsetText}
                       </span>
                     </td>
-                    <td className="p-3 border-r border-slate-100 font-medium text-slate-700">
+                    <td className="p-3 border-r border-slate-100 font-medium text-slate-700 whitespace-nowrap">
                       {t.defaultAssignee || "OPERATIONS"}
                     </td>
-                    <td className="p-3 border-r border-slate-100 text-center">
+                    <td className="p-3 border-r border-slate-100 text-center whitespace-nowrap">
                       <span
-                        className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
+                        className={`inline-flex items-center whitespace-nowrap text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
                           t.priority?.toUpperCase() === "CRITICAL"
                             ? "bg-rose-50 text-rose-700 border border-rose-200"
                             : t.priority?.toUpperCase() === "HIGH"
@@ -632,13 +632,13 @@ export default function SopBuilderPage() {
                         {t.priority || "MEDIUM"}
                       </span>
                     </td>
-                    <td className="p-3 border-r border-slate-100 text-center">
+                    <td className="p-3 border-r border-slate-100 text-center whitespace-nowrap">
                       {t.isRequired ? (
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                        <span className="inline-flex items-center whitespace-nowrap text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
                           YES
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">
+                        <span className="inline-flex items-center whitespace-nowrap text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">
                           OPTIONAL
                         </span>
                       )}

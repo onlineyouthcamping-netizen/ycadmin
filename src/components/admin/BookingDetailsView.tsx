@@ -2596,104 +2596,96 @@ export default function BookingDetailsView({
       />
 
       {/* ─── Workspace Header ─── */}
-      <div className="border-b border-[#E8EEF4] px-4 pt-3.5 pb-3 md:px-6 md:pt-4 md:pb-4 flex flex-col lg:flex-row flex-wrap items-start lg:items-center justify-between gap-3 lg:gap-6 bg-gradient-to-r from-white via-white to-[#F6F9FD] sticky top-0 z-30 font-sans">
+      <div className="relative sticky top-0 z-30 border-b border-[#E8EEF4] bg-gradient-to-r from-white via-white to-[#F6F9FD] px-3 pt-3 pb-3 shadow-[0_8px_24px_-20px_rgba(11,21,40,0.28)] md:px-6 md:pt-4 md:pb-4 font-sans">
         {/* Brand accent rail keeps the chrome from reading as plain white */}
         <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FF4D00] via-[#FF8A3D] to-[#0B1528]" />
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full lg:w-auto justify-between lg:justify-start">
-          <div className="flex items-center gap-3 min-w-0">
+
+        <div className="flex min-w-0 flex-col gap-3">
+          {/* One identity row: back → id → trip → customer → status */}
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
             <button
               onClick={() => {
                 if (onBack) onBack();
                 else navigate("/admin/bookings");
               }}
-              className="flex items-center gap-1 text-slate-500 hover:text-[#FF4D00] text-xs font-semibold pr-3 border-r border-[#E8EEF4] cursor-pointer transition-colors"
+              className="flex h-8 shrink-0 items-center gap-1 pr-2.5 text-xs font-semibold text-slate-500 transition-colors hover:text-[#FF4D00] sm:border-r sm:border-[#E8EEF4] sm:pr-3"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
-            <div className="flex flex-col min-w-0 rounded-lg bg-[#0B1528]/[0.05] border border-[#0B1528]/[0.07] px-2.5 py-1">
-              <span className="text-[10px] text-[#0B1528]/50 font-semibold truncate">
+
+            <div className="flex h-8 shrink-0 flex-col justify-center rounded-md border border-[#0B1528]/[0.07] bg-[#0B1528]/[0.05] px-2.5 leading-none">
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-[#0B1528]/50">
                 Booking ID
               </span>
-              <span className="font-semibold text-[#0B1528] text-xs sm:text-sm font-mono truncate">
+              <span className="font-mono text-[11px] font-semibold text-[#0B1528]">
                 {booking.bookingId}
               </span>
             </div>
-          </div>
-          <span
-            className={cn(
-              "lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shrink-0",
-              booking.status === "confirmed"
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                : "bg-amber-50 text-amber-700 border border-amber-200",
-            )}
-          >
+
+            <div className="flex h-8 min-w-0 flex-1 flex-col justify-center border-l border-[#E8EEF4] pl-2.5 sm:pl-3">
+              <div className="truncate text-[13px] font-semibold leading-4 text-[#0B1528]">
+                {booking.tripName || fullTrip?.tripName || "Trip"}
+              </div>
+              <div className="truncate text-[11px] leading-4 text-slate-500">
+                {booking.departureDate
+                  ? `${safeFormatDate(booking.departureDate, { day: "2-digit", month: "short" })} to ${(() => {
+                      const durationStr =
+                        fullTrip?.duration || booking.duration || "";
+                      const daysMatch = durationStr.match(/(\d+)\s*[Dd]ay/);
+                      const durationDays = daysMatch
+                        ? parseInt(daysMatch[1], 10)
+                        : 11;
+                      const returnDaysOffset = Math.max(0, durationDays - 1);
+                      return safeFormatDate(
+                        new Date(booking.departureDate).getTime() +
+                          returnDaysOffset * 24 * 60 * 60 * 1000,
+                        { day: "2-digit", month: "short", year: "numeric" },
+                      );
+                    })()}`
+                  : "—"}
+              </div>
+            </div>
+
+            <div className="hidden h-8 min-w-0 shrink-0 flex-col justify-center text-right sm:flex">
+              <div className="max-w-[160px] truncate text-xs font-semibold text-[#0B1528] xl:max-w-[220px]">
+                {booking.fullName || booking.name}
+              </div>
+              <div className="font-mono text-[11px] leading-4 text-slate-400">
+                {booking.mobile || booking.phone || "—"}
+              </div>
+            </div>
+
             <span
               className={cn(
-                "h-1.5 w-1.5 rounded-full",
+                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-semibold",
                 booking.status === "confirmed"
-                  ? "bg-emerald-500"
-                  : "bg-amber-500",
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200",
               )}
-            />
-            {booking.status === "confirmed" ? "Confirmed" : flowStatus}
-          </span>
-        </div>
-
-        <div className="flex-1 min-w-0 w-full lg:w-auto">
-          <div className="font-semibold text-[#0B1528] text-sm sm:text-base truncate">
-            {booking.tripName || fullTrip?.tripName || "Trip"}
+            >
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  booking.status === "confirmed"
+                    ? "bg-emerald-500"
+                    : "bg-amber-500",
+                )}
+              />
+              {booking.status === "confirmed" ? "Confirmed" : flowStatus}
+            </span>
           </div>
-          <div className="text-slate-500 text-xs mt-0.5 truncate">
-            {booking.departureDate
-              ? `${safeFormatDate(booking.departureDate, { day: "2-digit", month: "short" })} to ${(() => {
-                  const durationStr =
-                    fullTrip?.duration || booking.duration || "";
-                  const daysMatch = durationStr.match(/(\d+)\s*[Dd]ay/);
-                  const durationDays = daysMatch
-                    ? parseInt(daysMatch[1], 10)
-                    : 11;
-                  const returnDaysOffset = Math.max(0, durationDays - 1);
-                  return safeFormatDate(
-                    new Date(booking.departureDate).getTime() +
-                      returnDaysOffset * 24 * 60 * 60 * 1000,
-                    { day: "2-digit", month: "short", year: "numeric" },
-                  );
-                })()}`
-              : "—"}
-          </div>
-        </div>
 
-        <div className="hidden lg:flex items-center gap-3 shrink-0">
-          <div className="text-right">
-            <div className="font-semibold text-[#0B1528] text-xs">
+          <div className="min-w-0 sm:hidden">
+            <div className="truncate text-xs font-semibold text-[#0B1528]">
               {booking.fullName || booking.name}
             </div>
-            <div className="text-slate-400 font-mono text-[11px] mt-0.5">
+            <div className="font-mono text-[11px] text-slate-400">
               {booking.mobile || booking.phone || "—"}
             </div>
           </div>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold",
-              booking.status === "confirmed"
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                : "bg-amber-50 text-amber-700 border border-amber-200",
-            )}
-          >
-            <span
-              className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                booking.status === "confirmed"
-                  ? "bg-emerald-500"
-                  : "bg-amber-500",
-              )}
-            />
-            {booking.status === "confirmed" ? "Confirmed" : flowStatus}
-          </span>
-        </div>
 
-        {/* One primary action, quiet secondaries, rare/destructive actions in overflow */}
-        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+          {/* Actions start on the same left edge as Back */}
+          <div className="flex items-center gap-2 overflow-x-auto">
           <button
             onClick={() => {
               setPayAmount(booking.remainingAmount.toString());
@@ -2702,21 +2694,21 @@ export default function BookingDetailsView({
               setPayComments("");
               setShowCreatePayment(true);
             }}
-            className="h-8 inline-flex items-center gap-1.5 bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs px-3.5 rounded-lg shadow-[0_1px_2px_rgba(255,77,0,0.35)] transition-colors cursor-pointer"
+            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#FF4D00] px-3 text-xs font-semibold text-white shadow-[0_1px_2px_rgba(255,77,0,0.35)] transition-colors hover:bg-[#E04400] cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             Add payment
           </button>
           <button
             onClick={() => setShowCreateTask(true)}
-            className="h-8 inline-flex items-center gap-1.5 bg-white border border-[#E8EEF4] text-[#0B1528] font-semibold text-xs px-3.5 rounded-lg hover:bg-indigo-50/70 hover:border-indigo-200 transition-colors cursor-pointer"
+            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E8EEF4] bg-white px-3 text-xs font-semibold text-[#0B1528] transition-colors hover:border-indigo-200 hover:bg-indigo-50/70 cursor-pointer"
           >
             <UserCheck className="h-3.5 w-3.5 text-indigo-500" />
             Assign task
           </button>
           <button
             onClick={() => setIsComposerOpen(true)}
-            className="h-8 inline-flex items-center gap-1.5 bg-white border border-[#E8EEF4] text-[#0B1528] font-semibold text-xs px-3.5 rounded-lg hover:bg-sky-50/70 hover:border-sky-200 transition-colors cursor-pointer"
+            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E8EEF4] bg-white px-3 text-xs font-semibold text-[#0B1528] transition-colors hover:border-sky-200 hover:bg-sky-50/70 cursor-pointer"
           >
             <Mail className="h-3.5 w-3.5 text-sky-500" />
             Send email
@@ -2725,7 +2717,7 @@ export default function BookingDetailsView({
             <DropdownMenuTrigger asChild>
               <button
                 aria-label="More booking actions"
-                className="h-8 w-8 inline-flex items-center justify-center bg-white border border-[#E8EEF4] text-slate-500 rounded-lg hover:bg-[#F4F7FB] hover:text-[#0B1528] transition-colors cursor-pointer"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E8EEF4] bg-white text-slate-500 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
@@ -2779,11 +2771,12 @@ export default function BookingDetailsView({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        </div>
       </div>
 
       {/* ─── Body ─── */}
       {/* Gutters match the header's px-4/md:px-6 so cards align with the header text */}
-      <div className="flex-1 min-w-0 px-4 md:px-6 py-4 space-y-3">
+      <div className="flex-1 min-w-0 space-y-3 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
       {/* Status strip — quiet, single row. Full status detail lives in the header chip. */}
       {flowStatus === "Confirmed" || booking.status === "confirmed" ? (
         <div className="bg-gradient-to-r from-emerald-50 via-emerald-50/40 to-white border border-emerald-200/80 border-l-[3px] border-l-emerald-500 rounded-xl px-3 sm:px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
@@ -3256,11 +3249,11 @@ export default function BookingDetailsView({
       </div>
 
       {/* ─── Main Content Split Layout ─── */}
-      <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 min-w-0">
+      <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:gap-5">
         {/* Left Column */}
-        <div className="flex-1 min-w-0 space-y-3">
+        <div className="order-1 flex-1 min-w-0 space-y-3 lg:order-none">
           {/* Tab Strip */}
-          <div className="border border-[#E8EEF4] rounded-xl bg-gradient-to-b from-white to-[#F9FBFE] flex gap-4 md:gap-5 overflow-x-auto no-scrollbar px-4 min-w-0">
+          <div className="flex min-w-0 gap-4 overflow-x-auto rounded-xl border border-[#E8EEF4] bg-gradient-to-b from-white to-[#F9FBFE] px-3 sm:px-4 md:gap-5 no-scrollbar">
             {[
               { id: "overview", label: "Overview", badge: null, tone: "slate" },
               {
@@ -3480,7 +3473,7 @@ export default function BookingDetailsView({
                     Trip summary
                   </h3>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 p-4">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-4 p-4 sm:grid-cols-2 md:grid-cols-4">
                   <div className="min-w-0">
                     <div className="text-[11px] font-semibold text-slate-400">
                       Package
@@ -6916,12 +6909,12 @@ export default function BookingDetailsView({
           )}
         </div>
 
-        {/* Right Column Sidebar — stacks under main content below lg */}
-        <aside className="w-full lg:w-[320px] xl:w-[340px] shrink-0 min-w-0 space-y-3 font-sans">
+        {/* Right Column Sidebar — full width above main on mobile/tablet, rail on lg+ */}
+        <aside className="order-2 min-w-0 w-full max-w-full shrink-0 space-y-3 font-sans lg:order-none lg:w-[min(100%,320px)] xl:w-[min(100%,340px)]">
           {/* Customer Main Info Card */}
-          <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden p-4 space-y-4 text-xs">
+          <div className="bg-white border border-[#E8EEF4] rounded-xl overflow-hidden p-4 sm:p-5 space-y-4 text-xs sm:text-[13px] min-w-0">
             {isEditingCustomer ? (
-              <div className="space-y-3">
+              <div className="space-y-3 min-w-0">
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-400">
                     Guest name
@@ -7000,10 +6993,10 @@ export default function BookingDetailsView({
                 </div>
               </div>
             ) : (
-              <div className="space-y-1 relative group">
+              <div className="space-y-2 sm:space-y-2.5 relative group min-w-0">
                 {/* Navy identity band — anchors the rail and breaks the white card wall */}
-                <div className="-mx-4 -mt-4 mb-3 px-4 py-3.5 bg-gradient-to-r from-[#0B1528] via-[#132038] to-[#1E3055] flex items-start gap-3">
-                  <span className="h-9 w-9 rounded-xl bg-[#FF4D00] text-white text-[11px] font-semibold inline-flex items-center justify-center shrink-0 ring-2 ring-white/15">
+                <div className="-mx-4 sm:-mx-5 -mt-4 sm:-mt-5 mb-3 px-4 sm:px-5 py-3.5 sm:py-4 bg-gradient-to-r from-[#0B1528] via-[#132038] to-[#1E3055] flex items-start gap-3 min-w-0">
+                  <span className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-[#FF4D00] text-white text-[11px] font-semibold inline-flex items-center justify-center shrink-0 ring-2 ring-white/15">
                     {(booking.fullName || booking.name || "?")
                       .split(" ")
                       .filter(Boolean)
@@ -7013,10 +7006,10 @@ export default function BookingDetailsView({
                       .toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-sm font-semibold text-white leading-tight break-words">
+                    <h2 className="text-sm sm:text-[15px] font-semibold text-white leading-snug line-clamp-2 break-words">
                       {booking.fullName || booking.name}
                     </h2>
-                    <div className="text-[10px] font-semibold text-white/50 mt-0.5">
+                    <div className="text-[10px] sm:text-[11px] font-semibold text-white/50 mt-0.5">
                       Guest profile
                     </div>
                   </div>
@@ -7031,59 +7024,64 @@ export default function BookingDetailsView({
                       setEditedCustomerEmail(booking.email || "");
                       setIsEditingCustomer(true);
                     }}
-                    className="shrink-0 text-white/50 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors border border-white/15 cursor-pointer"
+                    className="shrink-0 text-white/50 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors border border-white/15 cursor-pointer min-h-9 min-w-9 inline-flex items-center justify-center touch-manipulation"
                     title="Edit customer info"
                   >
-                    <Pencil className="w-3 h-3" />
+                    <Pencil className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px]">
-                  <span className="h-5 w-5 rounded-md bg-emerald-50 border border-emerald-100 text-emerald-600 inline-flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0 text-slate-600 font-mono text-[11px] sm:text-xs">
+                  <span className="h-6 w-6 rounded-md bg-emerald-50 border border-emerald-100 text-emerald-600 inline-flex items-center justify-center shrink-0">
                     <Phone className="w-3 h-3" />
                   </span>
-                  <span className="truncate">
+                  <span className="min-w-0 truncate" title={booking.mobile || booking.phone || undefined}>
                     {booking.mobile || booking.phone || "—"}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 text-[11px] pt-1">
-                  <span className="h-5 w-5 rounded-md bg-sky-50 border border-sky-100 text-sky-600 inline-flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0 text-slate-600 text-[11px] sm:text-xs">
+                  <span className="h-6 w-6 rounded-md bg-sky-50 border border-sky-100 text-sky-600 inline-flex items-center justify-center shrink-0">
                     <Mail className="w-3 h-3" />
                   </span>
-                  <span className="truncate">{booking.email || "—"}</span>
+                  <span
+                    className="min-w-0 truncate"
+                    title={booking.email || undefined}
+                  >
+                    {booking.email || "—"}
+                  </span>
                 </div>
                 <button
                   onClick={handleViewCustomerTimeline}
-                  className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#FF4D00] hover:text-[#E04400] bg-[#FF4D00]/[0.07] hover:bg-[#FF4D00]/[0.12] border border-[#FF4D00]/20 rounded-lg px-2.5 py-1.5 transition-colors cursor-pointer"
+                  className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold text-[#FF4D00] hover:text-[#E04400] bg-[#FF4D00]/[0.07] hover:bg-[#FF4D00]/[0.12] border border-[#FF4D00]/20 rounded-lg px-3 py-2 min-h-10 transition-colors cursor-pointer touch-manipulation"
                 >
                   View lifetime journey →
                 </button>
               </div>
             )}
 
-            <div className="border-t border-[#E8EEF4] pt-4 grid grid-cols-1 gap-2">
-              <div className="rounded-lg bg-[#F6F9FD] border border-[#E8EEF4] px-3 py-2">
+            <div className="grid min-w-0 grid-cols-1 gap-2 border-t border-[#E8EEF4] pt-4 sm:grid-cols-2 sm:gap-2.5 lg:grid-cols-1">
+              <div className="rounded-lg bg-[#F6F9FD] border border-[#E8EEF4] px-3 py-2.5 min-w-0">
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   Lead source
                 </div>
-                <div className="font-semibold text-[#0B1528] mt-0.5">
+                <div className="font-semibold text-[#0B1528] mt-0.5 break-words min-w-0">
                   {booking.leadSource || booking.source || "Website Booking"}
                 </div>
               </div>
-              <div className="rounded-lg bg-indigo-50/50 border border-indigo-100 px-3 py-2">
+              <div className="rounded-lg bg-indigo-50/50 border border-indigo-100 px-3 py-2.5 min-w-0">
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500/80">
                   Booking executive
                 </div>
-                <div className="font-semibold text-[#0B1528] mt-0.5">
+                <div className="font-semibold text-[#0B1528] mt-0.5 break-words min-w-0">
                   {(booking as any).assignedSalesPerson?.name ||
                     (booking as any).salesPersonName ||
                     "Web Direct"}
                 </div>
               </div>
-              <div className="rounded-lg bg-teal-50/50 border border-teal-100 px-3 py-2">
+              <div className="rounded-lg bg-teal-50/50 border border-teal-100 px-3 py-2.5 min-w-0 md:col-span-2 lg:col-span-1">
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-teal-600/80">
                   Pickup city
                 </div>
-                <div className="font-semibold text-[#0B1528] mt-0.5">
+                <div className="font-semibold text-[#0B1528] mt-0.5 break-words min-w-0">
                   {booking.pickupCity || "Direct Join / N/A"}
                 </div>
               </div>

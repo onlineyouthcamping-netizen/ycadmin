@@ -741,8 +741,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         setIsSearchOpen(true);
       }
     };
+    const openSearch = () => setIsSearchOpen(true);
+    const openNewBooking = () => setBookingModalOpen(true);
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("yc:open-global-search", openSearch);
+    window.addEventListener("yc:open-new-booking", openNewBooking);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("yc:open-global-search", openSearch);
+      window.removeEventListener("yc:open-new-booking", openNewBooking);
+    };
   }, []);
 
   useEffect(() => {
