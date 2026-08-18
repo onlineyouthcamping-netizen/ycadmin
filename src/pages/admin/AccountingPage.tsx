@@ -845,8 +845,24 @@ export default function AccountingPage() {
   // Compute all client receipts across bookings
   const allClientReceipts = useMemo(() => {
     const list: any[] = [];
+    const pendingClientPayments = verificationQueue?.pendingClientPayments || [];
+
     bookings.forEach((b) => {
-      const payments = b.opsClientPayments || b.clientPayments || b.paymentHistory || [];
+      let payments = b.opsClientPayments || b.clientPayments || b.paymentHistory || [];
+      if (!Array.isArray(payments) || payments.length === 0) {
+        // Cross-reference with loaded verification queue if backend hasn't joined yet
+        const matchedPending = pendingClientPayments.filter(
+          (p: any) =>
+            p.bookingId === b.bookingId ||
+            p.bookingId === b.id ||
+            p.booking?.bookingId === b.bookingId ||
+            p.booking?.id === b.id,
+        );
+        if (matchedPending.length > 0) {
+          payments = matchedPending;
+        }
+      }
+
       if (Array.isArray(payments) && payments.length > 0) {
         payments.forEach((p: any) => {
           list.push({
@@ -862,8 +878,8 @@ export default function AccountingPage() {
               p.collectionAccount?.accountName ||
               (p.paymentMode === "CASH" ? "Office Cash Desk" : "Primary Company Bank"),
             transactionId: p.transactionId || p.utrNumber || "—",
-            status: p.status || "Verified",
-            approvalStatus: p.approvalStatus,
+            status: p.status || "Pending Verification",
+            approvalStatus: p.approvalStatus || "PENDING",
             proofUrl: p.proofUrl || p.proofImageUrl,
             date: p.paymentDate || p.createdAt || b.createdAt,
             remarks: p.remarks || p.notes || "—",
@@ -881,7 +897,8 @@ export default function AccountingPage() {
           paymentMode: b.paymentMode || "UPI",
           accountName: b.paymentMode === "CASH" ? "Office Cash Desk" : "Primary Company Bank",
           transactionId: b.transactionId || "—",
-          status: "Verified",
+          status: "Pending Verification",
+          approvalStatus: "PENDING",
           proofUrl: b.paymentScreenshotUrl,
           date: b.createdAt,
           remarks: "Advance Paid on Booking",
@@ -892,7 +909,7 @@ export default function AccountingPage() {
     return list.sort(
       (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
     );
-  }, [bookings]);
+  }, [bookings, verificationQueue]);
 
   // Aggregate Treasury Metrics
   const treasurySummary = useMemo(() => {
