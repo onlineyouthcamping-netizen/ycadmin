@@ -391,6 +391,14 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="/admin/tasks"
+                  element={
+                    <AdminRoute requiredPermission="bookings.view">
+                      <GlobalBookingTasksPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
                   path="/admin/operations/booking-tasks"
                   element={
                     <AdminRoute requiredPermission="bookings.view">

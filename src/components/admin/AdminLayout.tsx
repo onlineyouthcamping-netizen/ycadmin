@@ -74,6 +74,7 @@ import {
   Wallet,
   Tent,
   Settings2,
+  ListTodo,
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import {
@@ -116,6 +117,12 @@ const sidebarModules: SidebarModule[] = [
     ],
   },
   {
+    title: "Tasks & Allotments",
+    url: "/admin/tasks",
+    icon: ListTodo,
+    hasSubItems: false,
+  },
+  {
     title: "Operations",
     icon: Route,
     hasSubItems: true,
@@ -123,7 +130,6 @@ const sidebarModules: SidebarModule[] = [
       { title: "Departures", url: "/admin/operations" },
       { title: "Station payments", url: "/admin/operations?tab=stationpayments" },
       { title: "Daily tasks", url: "/admin/operations/daily-tasks" },
-      { title: "Tasks & allotments", url: "/admin/operations/booking-tasks" },
       { title: "SOP & checklists", url: "/admin/operations/sops" },
       { title: "Vendors", url: "/admin/vendors" },
       { title: "Company docs", url: "/admin/company-documents" },
@@ -349,6 +355,8 @@ function AdminSidebar() {
                 "/admin/quotations": ["quotations.view"],
                 "/admin/booking-forms": ["bookings.create", "bookings.view"],
                 "/admin/bookings": ["bookings.view"],
+                "/admin/tasks": ["bookings.view", "ops.view", "dashboard.view"],
+                "/admin/operations/booking-tasks": ["bookings.view", "ops.view", "dashboard.view"],
                 "/admin/operations": ["operations.view", "ops.view"],
                 "/admin/vendors": ["vendors.view", "vendors.manage", "ops.view"],
                 "/admin/company-documents": ["company_documents.view", "operations.view", "ops.view"],
