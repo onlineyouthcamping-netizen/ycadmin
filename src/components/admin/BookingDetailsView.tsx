@@ -1385,6 +1385,10 @@ export default function BookingDetailsView({
         passengers: updatedPassengers,
         numberOfTravelers: newQty,
         sourceMeta: newMeta,
+        baseAmount: calculatedBase,
+        gstAmount: calculatedGst,
+        totalAmount: totalAmount,
+        remainingAmount: remainingAmount,
         ...extraFields,
       });
     } catch (err: any) {

@@ -97,6 +97,7 @@ export function generatePerPersonBookingItems(
   }
 
   const items: any[] = [];
+  const originalPaxCount = bookingObj.numberOfTravelers || 1;
   const activePersonsList = (personsList || []).filter(
     (p: any) => !p.isCancelled && p.status !== "CANCELLED"
   );
@@ -104,7 +105,7 @@ export function generatePerPersonBookingItems(
   const paxCount =
     activePersonsList.length > 0
       ? activePersonsList.length
-      : bookingObj.numberOfTravelers || 1;
+      : originalPaxCount;
 
   const rawTotal =
     Number(bookingObj.totalAmount) ||
@@ -125,6 +126,11 @@ export function generatePerPersonBookingItems(
   } else {
     subtotal = 15000 * paxCount;
   }
+
+  if (paxCount !== originalPaxCount && originalPaxCount > 0 && subtotal > 0 && activePersonsList.length > 0) {
+    subtotal = (subtotal / originalPaxCount) * paxCount;
+  }
+
   const totalBaseRequired = Math.max(1000, subtotal + discount);
 
   let sumOfDeltas = 0;
