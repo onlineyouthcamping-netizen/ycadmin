@@ -164,6 +164,7 @@ export default function AccountingPage() {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("ALL");
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseCategoryFilter, setExpenseCategoryFilter] = useState("ALL");
+  const [expenseStatusFilter, setExpenseStatusFilter] = useState("ALL");
   const [riyaSearch, setRiyaSearch] = useState("");
 
   // Selected Account for Ledger Drawer Modal
@@ -979,9 +980,21 @@ export default function AccountingPage() {
         expenseCategoryFilter === "ALL" ||
         v.category?.toLowerCase() === expenseCategoryFilter.toLowerCase();
 
-      return matchesSearch && matchesCategory;
+      const matchesStatus =
+        expenseStatusFilter === "ALL" ||
+        (expenseStatusFilter === "PENDING" &&
+          (v.approvalStatus === "PENDING" ||
+            v.status === "Pending Approval" ||
+            v.status === "Not Paid" ||
+            ((v.agreedAmount || 0) - (v.advancePaid || 0) > 0))) ||
+        (expenseStatusFilter === "REVIEWED" &&
+          v.approvalStatus === "REVIEWED_FINANCE_CONTROLLER") ||
+        (expenseStatusFilter === "PAID" &&
+          (v.approvalStatus === "APPROVED_FOUNDER" || v.status === "Paid"));
+
+      return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [vendorPayments, expenseSearch, expenseCategoryFilter]);
+  }, [vendorPayments, expenseSearch, expenseCategoryFilter, expenseStatusFilter]);
 
   // Filtered Riya Tickets
   const filteredRiyaTickets = useMemo(() => {
@@ -2216,6 +2229,18 @@ export default function AccountingPage() {
                     <option value="Activities">Activities and permits</option>
                     <option value="Office">Office ops</option>
                   </select>
+
+                  <select
+                    value={expenseStatusFilter}
+                    onChange={(e) => setExpenseStatusFilter(e.target.value)}
+                    className={filterSelectClass}
+                    aria-label="Filter by status"
+                  >
+                    <option value="ALL">All statuses</option>
+                    <option value="PENDING">Pending approval / Balance due</option>
+                    <option value="REVIEWED">Reviewed (FC)</option>
+                    <option value="PAID">Approved & Paid</option>
+                  </select>
                 </div>
 
                 <span className="text-[11px] font-medium text-slate-400 lg:ml-auto">
@@ -2224,7 +2249,7 @@ export default function AccountingPage() {
               </div>
 
               <div className="min-w-0 overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-left text-[12px]">
+              <table className="w-full min-w-[1150px] text-left text-[12px]">
                 <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
@@ -2233,6 +2258,7 @@ export default function AccountingPage() {
                     <th className="py-2.5 px-4">Category</th>
                     <th className="py-2.5 px-4 text-right">Agreed cost</th>
                     <th className="py-2.5 px-4 text-right">Paid out</th>
+                    <th className="py-2.5 px-4 text-right">Pending / Due</th>
                     <th className="py-2.5 px-4">Paid from</th>
                     <th className="py-2.5 px-4">Approval status</th>
                     <th className="py-2.5 px-4 text-right">Invoice</th>
@@ -2242,7 +2268,7 @@ export default function AccountingPage() {
                 <tbody className="divide-y divide-[#E8EEF4]">
                   {filteredExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="p-8 text-center text-slate-400">
+                      <td colSpan={11} className="p-8 text-center text-slate-400">
                         No vendor disbursements match current search & filter.
                       </td>
                     </tr>
@@ -2270,11 +2296,18 @@ export default function AccountingPage() {
                               {v.category}
                             </Badge>
                           </td>
-                          <td className="py-2.5 px-4 text-right text-slate-500 font-semibold">
+                          <td className="py-2.5 px-4 text-right text-slate-600 font-medium">
                             {formatINR(v.agreedAmount)}
                           </td>
                           <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
                             {formatINR(v.advancePaid)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-semibold">
+                            {balanceDue > 0 ? (
+                              <span className="text-amber-600 font-semibold">{formatINR(balanceDue)}</span>
+                            ) : (
+                              <span className="text-emerald-600 text-[11px] font-medium">Settled (₹0)</span>
+                            )}
                           </td>
                           <td className="py-2.5 px-4 text-slate-600">
                             {v.collectionAccount?.accountName || "Primary bank"}
