@@ -130,23 +130,5 @@ export const EmployeeWorkloadWidget: React.FC<DashboardWidgetContextProps> = ({
   </DashCard>
 );
 
-export const teamWidgets: DashboardWidget[] = [
-  {
-    id: "employee-status",
-    title: "Employee Status",
-    category: "team",
-    permission: PERMISSIONS.USERS_VIEW,
-    order: 100,
-    colSpanDesktop: "col-span-12 sm:col-span-6 lg:col-span-4",
-    component: EmployeeStatusWidget,
-  },
-  {
-    id: "employee-workload",
-    title: "Employee Workload",
-    category: "team",
-    permission: PERMISSIONS.USERS_VIEW,
-    order: 110,
-    colSpanDesktop: "col-span-12 sm:col-span-6 lg:col-span-4",
-    component: EmployeeWorkloadWidget,
-  },
-];
+export const teamWidgets: DashboardWidget[] = [];
+
