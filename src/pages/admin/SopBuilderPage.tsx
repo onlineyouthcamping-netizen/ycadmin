@@ -362,16 +362,16 @@ export default function SopBuilderPage() {
     <div className="admin-page">
       {/* Top Navigation & Title Bar */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
             onClick={() => navigate("/admin/operations/sops")}
-            className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors w-fit"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to SOP Library
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
               {activeVersion.status} ({activeVersion.versionLabel})
             </span>
@@ -454,77 +454,83 @@ export default function SopBuilderPage() {
       </div>
 
       {/* Stage Selector Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {visibleStages.map((s) => {
-          const isSelected = activeStage === s.id;
-          const count =
-            s.id === "ALL"
-              ? activeVersion.taskTemplates.length
-              : activeVersion.taskTemplates.filter((t) => isTaskInStage(t, s))
-                  .length;
+      <div className="w-full min-w-0 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex items-center gap-1.5 w-max min-w-full">
+          {visibleStages.map((s) => {
+            const isSelected = activeStage === s.id;
+            const count =
+              s.id === "ALL"
+                ? activeVersion.taskTemplates.length
+                : activeVersion.taskTemplates.filter((t) => isTaskInStage(t, s))
+                    .length;
 
-          return (
-            <div key={s.id} className="relative group flex items-center">
-              <button
-                onClick={() => setActiveStage(s.id)}
-                className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 cursor-pointer ${
-                  isSelected
-                    ? "bg-[#F97316] text-white border-[#F97316] shadow-sm"
-                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <span>{s.label}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded text-[10px] ${
-                    isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+            return (
+              <div key={s.id} className="relative group flex items-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveStage(s.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                    isSelected
+                      ? "bg-[#F97316] text-white border-[#F97316] shadow-sm"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  {count}
-                </span>
-
-                {s.id !== "ALL" && (
+                  <span>{s.label}</span>
                   <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteStage(s.id);
-                    }}
-                    className={`ml-1 hover:bg-red-500 hover:text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[11px] font-bold transition-colors ${
-                      isSelected
-                        ? "text-white/80 hover:text-white"
-                        : "text-slate-400 hover:text-white"
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold tabular-nums ${
+                      isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
                     }`}
-                    title={`Delete / Remove ${s.label} stage`}
                   >
-                    ×
+                    {count}
                   </span>
-                )}
-              </button>
-            </div>
-          );
-        })}
 
-        <button
-          onClick={() => setAddStageModalOpen(true)}
-          className="px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap border border-dashed border-orange-400 text-orange-600 hover:bg-orange-50 transition-colors flex items-center gap-1 cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add Stage
-        </button>
+                  {s.id !== "ALL" && (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteStage(s.id);
+                      }}
+                      className={`ml-1 hover:bg-red-500 hover:text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[11px] font-bold transition-colors ${
+                        isSelected
+                          ? "text-white/80 hover:text-white"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                      title={`Delete / Remove ${s.label} stage`}
+                    >
+                      ×
+                    </span>
+                  )}
+                </button>
+              </div>
+            );
+          })}
 
-        {hiddenStageIds.length > 0 && (
           <button
-            onClick={handleResetDefaultStages}
-            className="px-2.5 py-2 rounded-lg text-[11px] font-semibold whitespace-nowrap text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Reset & restore default stage pills"
+            type="button"
+            onClick={() => setAddStageModalOpen(true)}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border border-dashed border-orange-400 text-orange-600 hover:bg-orange-50 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
           >
-            Reset Defaults
+            <Plus className="w-3.5 h-3.5" />
+            Add Stage
           </button>
-        )}
+
+          {hiddenStageIds.length > 0 && (
+            <button
+              type="button"
+              onClick={handleResetDefaultStages}
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              title="Reset & restore default stage pills"
+            >
+              Reset Defaults
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tasks Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-xs border-collapse">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-w-0">
+        <div className="overflow-x-auto min-w-0">
+          <table className="w-full text-left text-xs border-collapse min-w-[760px]">
           <thead>
             <tr className="bg-slate-900 text-white text-[10px] uppercase font-bold tracking-wider">
               <th className="p-3 w-12 text-center">#</th>
@@ -599,8 +605,8 @@ export default function SopBuilderPage() {
                         {displayStageLabel}
                       </span>
                     </td>
-                    <td className="p-3 border-r border-slate-100 text-center">
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-orange-50 text-[#F97316] border border-orange-200">
+                    <td className="p-3 border-r border-slate-100 text-center font-bold text-slate-700">
+                      <span className="text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded border border-orange-100">
                         {offsetText}
                       </span>
                     </td>
@@ -635,18 +641,22 @@ export default function SopBuilderPage() {
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="xs"
                           onClick={() => handleOpenEditTask(t)}
-                          className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          className="h-7 w-7 text-slate-500 hover:text-orange-600"
                         >
                           <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="xs"
                           onClick={() => handleDeleteTask(t.id)}
-                          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          className="h-7 w-7 text-slate-400 hover:text-red-600"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -655,6 +665,7 @@ export default function SopBuilderPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Add / Edit Task Modal */}
