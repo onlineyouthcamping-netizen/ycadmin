@@ -5029,13 +5029,6 @@ useEffect(() => {
   useEffect(() => {
     let isMounted = true;
     const depKey = `yc_activities_${tripId}_${departureDateStr}`;
-    const cached = localStorage.getItem(depKey);
-    if (cached !== null) {
-      try {
-        setActivitiesList(JSON.parse(cached));
-        return;
-      } catch (e) {}
-    }
 
     const loadBackendActivities = async () => {
       try {
@@ -5050,7 +5043,14 @@ useEffect(() => {
           return;
         }
       } catch (e) {
-        // Backend fallback
+        // Backend fallback: read cache
+        const cached = localStorage.getItem(depKey);
+        if (cached !== null) {
+          try {
+            if (isMounted) setActivitiesList(JSON.parse(cached));
+            return;
+          } catch (err) {}
+        }
       }
 
       if (isMounted) {

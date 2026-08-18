@@ -116,10 +116,28 @@ export async function saveActivityToBackend(
   try {
     const res = await api.post(
       `/ops/activities/${tripId}?departureDate=${departureDateStr}`,
-      newActivity
+      {
+        ...newActivity,
+        dayNumber: Number(newActivity.dayNumber) || 1,
+        startTime: newActivity.scheduledTime || newActivity.startTime,
+        estimatedCost: Number(newActivity.vendorCost) || Number(newActivity.estimatedCost) || 0,
+      }
     );
     toast.success("Activity created and saved to database!");
-    return res.data?.activity || res.data || newActivity;
+    const saved = res.data?.data || res.data?.activity || res.data;
+    return {
+      ...newActivity,
+      ...(saved && typeof saved === "object" ? saved : {}),
+      id: saved?.id || newActivity.id || `DEP-ACT-${Date.now()}`,
+      dayNumber: Number(saved?.dayNumber || newActivity.dayNumber || 1),
+      name: saved?.name || newActivity.name,
+      category: saved?.type || saved?.category || newActivity.category || "ADVENTURE",
+      scheduledTime: saved?.startTime || newActivity.scheduledTime || "10:00 AM",
+      endTime: saved?.endTime || newActivity.endTime || "01:00 PM",
+      vendorName: saved?.vendorName || newActivity.vendorName || "In-house",
+      vendorCost: Number(saved?.estimatedCost || newActivity.vendorCost || 0),
+      status: saved?.status || newActivity.status || "CONFIRMED",
+    };
   } catch (err: any) {
     console.error("[saveActivityToBackend] Failed to save activity:", err);
     const errMsg = err.response?.data?.message || err.message || "Failed to save activity to database";
