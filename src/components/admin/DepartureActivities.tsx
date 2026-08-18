@@ -109,23 +109,76 @@ export default function DepartureActivities({
     const list: VendorOption[] = [];
     const seen = new Set<string>();
 
-    // 1. Primary: Trip-wise Vendor Directory records (/vendors/trips/:tripId)
-    (tripVendorsList || []).forEach((tv: any) => {
+    const checkAndAdd = (tv: any) => {
       const v = tv.vendor || tv;
       const vId = v.id || tv.id || tv.vendorId;
-      const vName = v.name || tv.name;
+      const vName = v.name || tv.name || "";
       if (!vName || seen.has(vName.toLowerCase())) return;
-      seen.add(vName.toLowerCase());
 
-      const rawCat = (tv.category || v.type || "other").toLowerCase();
+      const rawCat = (tv.category || tv.vendorType || v.type || "other").toLowerCase();
+      const nameLower = vName.toLowerCase();
+
+      // STRICT EXCLUSION: Skip Hotels, Resorts, Homestays, Camps, Lodges (Accommodation)
+      const isAccommodation =
+        rawCat.includes("hotel") ||
+        rawCat.includes("resort") ||
+        rawCat.includes("homestay") ||
+        rawCat.includes("stay") ||
+        rawCat.includes("lodge") ||
+        rawCat.includes("camp") ||
+        rawCat.includes("inn") ||
+        rawCat.includes("accommodation") ||
+        nameLower.includes("hotel") ||
+        nameLower.includes("resort") ||
+        nameLower.includes("homestay") ||
+        nameLower.includes("camp") ||
+        (nameLower.includes("cottage") && !nameLower.includes("restaurant"));
+
+      // STRICT EXCLUSION: Skip Transport, Cabs, Vehicles, Drivers
+      const isTransport =
+        rawCat.includes("transport") ||
+        rawCat.includes("cab") ||
+        rawCat.includes("taxi") ||
+        rawCat.includes("vehicle") ||
+        rawCat.includes("bus") ||
+        rawCat.includes("driver") ||
+        nameLower.includes("cab") ||
+        nameLower.includes("taxi") ||
+        nameLower.includes("travels") ||
+        nameLower.includes("transport");
+
+      if (isAccommodation || isTransport) {
+        return; // Skip hotels and transport from activities
+      }
+
+      // Check if it's a Restaurant / Food Partner
       const isRest =
         rawCat.includes("restaurant") ||
         rawCat.includes("food") ||
         rawCat === "meal" ||
-        vName.toLowerCase().includes("dhaba") ||
-        vName.toLowerCase().includes("restaurant") ||
-        vName.toLowerCase().includes("cottage") ||
-        vName.toLowerCase().includes("cafe");
+        nameLower.includes("dhaba") ||
+        nameLower.includes("restaurant") ||
+        nameLower.includes("bhojnalaya") ||
+        nameLower.includes("cafe") ||
+        nameLower.includes("canteen");
+
+      // Check if it's an Activity / Adventure / Sightseeing Partner
+      const isAct =
+        rawCat.includes("activity") ||
+        rawCat.includes("activities") ||
+        rawCat.includes("adventure") ||
+        rawCat.includes("sightseeing") ||
+        rawCat.includes("guide") ||
+        rawCat.includes("trek") ||
+        rawCat.includes("rafting") ||
+        rawCat.includes("paragliding") ||
+        rawCat.includes("safari");
+
+      if (!isRest && !isAct) {
+        return;
+      }
+
+      seen.add(nameLower);
 
       const rate =
         tv.rates?.[0]?.negotiatedRate ||
@@ -133,67 +186,36 @@ export default function DepartureActivities({
         tv.rates?.[0]?.mealPrice ||
         tv.rates?.[0]?.baseRate ||
         tv.agreedCost ||
+        tv.vendorCost ||
         (isRest ? 250 : 500);
 
       list.push({
         vendorId: vId,
         vendorName: vName,
         category: isRest ? "restaurants" : "activities",
-        location: v.location || v.city || "",
-        contactPerson: v.contactPerson || "",
-        contactPhone: v.contactNumber || v.phone || "",
-        rating: v.rating || (isRest ? 4.8 : 4.6),
+        location: v.location || v.city || tv.location || tv.city || "",
+        contactPerson: v.contactPerson || tv.contactPerson || "",
+        contactPhone: v.contactNumber || v.phone || tv.phone || "",
+        rating: v.rating || tv.rating || (isRest ? 4.8 : 4.6),
         netCost: Number(rate) || (isRest ? 250 : 500),
         seasonType: tv.rates?.[0]?.seasonType || "REGULAR",
       });
-    });
+    };
 
-    // 2. Fallback: Any vendors passed directly from DepartureHubPage state
-    (tripVendors || []).forEach((tv: any) => {
-      const vName = tv.name || tv.vendorName;
-      if (!vName || seen.has(vName.toLowerCase())) return;
-      seen.add(vName.toLowerCase());
-
-      const rawCat = (tv.vendorType || tv.type || "other").toLowerCase();
-      const isRest =
-        rawCat.includes("restaurant") ||
-        rawCat.includes("food") ||
-        vName.toLowerCase().includes("dhaba") ||
-        vName.toLowerCase().includes("restaurant") ||
-        vName.toLowerCase().includes("cottage") ||
-        vName.toLowerCase().includes("cafe");
-
-      list.push({
-        vendorId: tv.id || `VND-${tv.name}`,
-        vendorName: vName,
-        category: isRest ? "restaurants" : "activities",
-        location: tv.location || tv.city || "",
-        contactPerson: tv.contactPerson || "",
-        contactPhone: tv.phone || "",
-        rating: tv.rating || 4.7,
-        netCost: Number(tv.agreedCost || tv.vendorCost || (isRest ? 250 : 500)),
-        seasonType: "REGULAR",
-      });
-    });
+    (tripVendorsList || []).forEach((tv) => checkAndAdd(tv));
+    (tripVendors || []).forEach((tv) => checkAndAdd(tv));
 
     return list;
   }, [tripVendorsList, tripVendors]);
 
-  // Combined authentic activities for Step 2 — 100% feeded from Trip Vendor Directory & Master Database
+  // Combined authentic activities for Step 2 — 100% feeded from Trip Vendor Directory & Master Database ONLY
   const authenticActivitiesMasterList = useMemo(() => {
     const list: any[] = [];
     const seen = new Set<string>();
 
-    // 1. Primary: Every Vendor contracted for this Trip (Restaurants, Activity providers, Meal stops)
+    // 1. Primary: Only authentic contracted Restaurant & Activity vendors for this Trip
     (mappedVendorsForWizard || []).forEach((vnd) => {
-      const isRest =
-        (vnd.category || "").toLowerCase().includes("restaurant") ||
-        (vnd.category || "").toLowerCase().includes("food") ||
-        vnd.vendorName.toLowerCase().includes("dhaba") ||
-        vnd.vendorName.toLowerCase().includes("restaurant") ||
-        vnd.vendorName.toLowerCase().includes("cottage") ||
-        vnd.vendorName.toLowerCase().includes("cafe");
-
+      const isRest = vnd.category === "restaurants";
       const actName = `${vnd.vendorName}${vnd.location ? ` (${vnd.location})` : ""}`;
 
       if (!seen.has(actName.toLowerCase())) {
@@ -224,32 +246,8 @@ export default function DepartureActivities({
       }
     });
 
-    // 3. Trip Itinerary planned items if any
-    (computedItinerary || []).forEach((dayItem: any, idx: number) => {
-      const plan = dayItem.plan || dayItem.title || "";
-      if (plan && plan !== "—" && !seen.has(plan.toLowerCase())) {
-        seen.add(plan.toLowerCase());
-        const isMeal =
-          plan.toLowerCase().includes("dinner") ||
-          plan.toLowerCase().includes("lunch") ||
-          plan.toLowerCase().includes("breakfast");
-        const isAdv =
-          plan.toLowerCase().includes("trek") ||
-          plan.toLowerCase().includes("rafting") ||
-          plan.toLowerCase().includes("safari") ||
-          plan.toLowerCase().includes("ride");
-        list.push({
-          id: `itin-act-${idx + 1}`,
-          name: plan,
-          category: isMeal ? "MEAL" : isAdv ? "ADVENTURE" : "SIGHTSEEING",
-          defaultCapacity: totalPaxCount || 40,
-          defaultCost: 0,
-        });
-      }
-    });
-
     return list;
-  }, [mappedVendorsForWizard, masterActivities, computedItinerary, totalPaxCount]);
+  }, [mappedVendorsForWizard, masterActivities, totalPaxCount]);
 
   const currentActivities: DepartureActivityItem[] = useMemo(() => {
     if (Array.isArray(activitiesList)) {

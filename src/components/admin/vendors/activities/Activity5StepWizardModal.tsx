@@ -151,17 +151,47 @@ export default function Activity5StepWizardModal({
       });
     }
 
-    // 2. Direct feed from vendorsList (Trip Vendors Directory)
+    // 2. Direct feed from vendorsList (Trip Vendors Directory) — Strictly Restaurants & Activities only
     if (vendorsList && vendorsList.length > 0) {
       vendorsList.forEach((vnd) => {
+        const rawCat = (vnd.category || "").toLowerCase();
+        const nameLower = (vnd.vendorName || "").toLowerCase();
+
+        // Strict Exclusion: Skip Accommodation and Transport
+        const isAccommodation =
+          rawCat.includes("hotel") ||
+          rawCat.includes("resort") ||
+          rawCat.includes("homestay") ||
+          rawCat.includes("stay") ||
+          rawCat.includes("lodge") ||
+          rawCat.includes("camp") ||
+          nameLower.includes("hotel") ||
+          nameLower.includes("resort") ||
+          nameLower.includes("homestay") ||
+          nameLower.includes("camp") ||
+          (nameLower.includes("cottage") && !nameLower.includes("restaurant"));
+
+        const isTransport =
+          rawCat.includes("transport") ||
+          rawCat.includes("cab") ||
+          rawCat.includes("taxi") ||
+          rawCat.includes("vehicle") ||
+          nameLower.includes("cab") ||
+          nameLower.includes("taxi") ||
+          nameLower.includes("travels") ||
+          nameLower.includes("transport");
+
+        if (isAccommodation || isTransport) return;
+
         const isRest =
-          (vnd.category || "").toLowerCase().includes("restaurant") ||
-          (vnd.category || "").toLowerCase().includes("food") ||
-          (vnd.category || "").toUpperCase() === "MEAL" ||
-          vnd.vendorName.toLowerCase().includes("dhaba") ||
-          vnd.vendorName.toLowerCase().includes("restaurant") ||
-          vnd.vendorName.toLowerCase().includes("cottage") ||
-          vnd.vendorName.toLowerCase().includes("cafe");
+          rawCat.includes("restaurant") ||
+          rawCat.includes("food") ||
+          rawCat.includes("meal") ||
+          nameLower.includes("dhaba") ||
+          nameLower.includes("restaurant") ||
+          nameLower.includes("bhojnalaya") ||
+          nameLower.includes("cafe") ||
+          nameLower.includes("canteen");
 
         const actName = `${vnd.vendorName}${vnd.location ? ` (${vnd.location})` : ""}`;
         if (!seen.has(actName.toLowerCase())) {
