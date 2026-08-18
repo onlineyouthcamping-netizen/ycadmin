@@ -260,7 +260,7 @@ export default function AccountingPage() {
       const [bRes, tRes, aRes, vRes, qRes, rRes] = await Promise.all([
         bookingsService.getAll({ page: 1, limit: 1000 }).catch(() => ({ data: [] })),
         tripsService.getAll().catch(() => []),
-        collectionAccountsService.getAccounts().catch(() => ({ data: [] })),
+        collectionAccountsService.getAccounts({ activeOnly: true }).catch(() => ({ data: [] })),
         api.get("/payments/vendor-payments").catch(() => ({ data: { data: [] } })),
         api.get("/payments/verification-queue").catch(() => ({ data: { data: {} } })),
         api.get("/payments/riya-summary").catch(() => ({ data: { data: {} } })),
@@ -550,10 +550,11 @@ export default function AccountingPage() {
   };
 
   const handleDeleteAccount = async (acc: CollectionAccount) => {
-    if (!window.confirm(`Are you sure you want to delete / archive "${acc.accountName}"?`)) return;
+    if (!window.confirm(`Are you sure you want to delete "${acc.accountName}"?`)) return;
     try {
       await collectionAccountsService.deleteAccount(acc.id);
       toast.success(`Account "${acc.accountName}" removed.`);
+      setCollectionAccounts((prev) => prev.filter((a) => a.id !== acc.id));
       loadData();
     } catch {
       toast.error("Failed to delete account");
