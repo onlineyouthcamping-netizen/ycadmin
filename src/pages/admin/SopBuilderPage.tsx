@@ -609,15 +609,17 @@ export default function SopBuilderPage() {
                     </td>
                     <td className="p-3 border-r border-slate-100 text-center">
                       <span
-                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded ${
-                          t.priority === "CRITICAL"
-                            ? "bg-red-50 text-red-600 border border-red-200"
-                            : t.priority === "HIGH"
-                            ? "bg-orange-50 text-orange-600 border border-orange-200"
-                            : "bg-slate-100 text-slate-600"
+                        className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
+                          t.priority?.toUpperCase() === "CRITICAL"
+                            ? "bg-rose-50 text-rose-700 border border-rose-200"
+                            : t.priority?.toUpperCase() === "HIGH"
+                            ? "bg-amber-50 text-amber-700 border border-amber-200"
+                            : t.priority?.toUpperCase() === "MEDIUM"
+                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : "bg-slate-100 text-slate-700 border border-slate-200"
                         }`}
                       >
-                        {t.priority}
+                        {t.priority || "MEDIUM"}
                       </span>
                     </td>
                     <td className="p-3 border-r border-slate-100 text-center">
@@ -735,10 +737,10 @@ export default function SopBuilderPage() {
                   onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
                   className="w-full h-9 text-xs border border-slate-200 rounded-lg px-2 bg-white text-slate-800"
                 >
-                  <option value="LOW">LOW</option>
-                  <option value="MEDIUM">MEDIUM</option>
-                  <option value="HIGH">HIGH</option>
                   <option value="CRITICAL">CRITICAL</option>
+                  <option value="HIGH">HIGH</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="LOW">LOW</option>
                 </select>
               </div>
 

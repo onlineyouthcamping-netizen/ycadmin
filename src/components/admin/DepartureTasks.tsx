@@ -331,22 +331,35 @@ export default function DepartureTasks({
     ).length,
   };
 
-  const filteredTasks = tasks.filter((t) => {
-    const matchStage = stageFilter === "All Stages" || t.stage === stageFilter;
-    const matchPriority =
-      priorityFilter === "All Priorities" || t.priority === priorityFilter;
-    const matchStatus =
-      statusFilter === "All Status" || t.status === statusFilter;
-    const matchSource =
-      sourceFilter === "All Sources" ||
-      (sourceFilter === "SOP Tasks" && (t.source === "SOP" || !t.source)) ||
-      (sourceFilter === "Manual Tasks" && t.source === "MANUAL");
-    const matchSearch =
-      search === "" ||
-      t.taskName.toLowerCase().includes(search.toLowerCase()) ||
-      (t.remarks && t.remarks.toLowerCase().includes(search.toLowerCase()));
-    return matchStage && matchPriority && matchStatus && matchSource && matchSearch;
-  });
+  const PRIORITY_ORDER: Record<string, number> = {
+    CRITICAL: 1,
+    HIGH: 2,
+    MEDIUM: 3,
+    LOW: 4,
+  };
+
+  const filteredTasks = tasks
+    .filter((t) => {
+      const matchStage = stageFilter === "All Stages" || t.stage === stageFilter;
+      const matchPriority =
+        priorityFilter === "All Priorities" || t.priority === priorityFilter;
+      const matchStatus =
+        statusFilter === "All Status" || t.status === statusFilter;
+      const matchSource =
+        sourceFilter === "All Sources" ||
+        (sourceFilter === "SOP Tasks" && (t.source === "SOP" || !t.source)) ||
+        (sourceFilter === "Manual Tasks" && t.source === "MANUAL");
+      const matchSearch =
+        search === "" ||
+        t.taskName.toLowerCase().includes(search.toLowerCase()) ||
+        (t.remarks && t.remarks.toLowerCase().includes(search.toLowerCase()));
+      return matchStage && matchPriority && matchStatus && matchSource && matchSearch;
+    })
+    .sort((a, b) => {
+      const rankA = PRIORITY_ORDER[a.priority?.toUpperCase()] || 99;
+      const rankB = PRIORITY_ORDER[b.priority?.toUpperCase()] || 99;
+      return rankA - rankB;
+    });
 
   const handleDownloadCSV = () => {
     if (filteredTasks.length === 0) {
@@ -613,15 +626,17 @@ export default function DepartureTasks({
                   <td className="p-3 border-r border-slate-100 text-center">
                     <span
                       className={cn(
-                        "text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider block w-fit mx-auto",
-                        t.priority === "HIGH"
-                          ? "bg-red-50 text-red-700 border-red-100"
-                          : t.priority === "MEDIUM"
-                            ? "bg-amber-50 text-amber-700 border-amber-100"
-                            : "bg-blue-50 text-blue-700 border-blue-100",
+                        "text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-wider block w-fit mx-auto",
+                        t.priority?.toUpperCase() === "CRITICAL"
+                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                          : t.priority?.toUpperCase() === "HIGH"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : t.priority?.toUpperCase() === "MEDIUM"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : "bg-slate-100 text-slate-700 border-slate-200",
                       )}
                     >
-                      {t.priority}
+                      {t.priority || "MEDIUM"}
                     </span>
                   </td>
                   <td className="p-3 border-r border-slate-100 font-semibold text-slate-600">
@@ -762,9 +777,10 @@ export default function DepartureTasks({
                   }
                   className="w-full h-9 text-xs font-bold border border-slate-200 rounded px-2 bg-white text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
                 >
-                  <option value="LOW">LOW</option>
-                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="CRITICAL">CRITICAL</option>
                   <option value="HIGH">HIGH</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="LOW">LOW</option>
                 </select>
               </div>
               <div>

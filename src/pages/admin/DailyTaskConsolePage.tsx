@@ -384,6 +384,16 @@ export default function DailyTaskConsolePage() {
     }
 
     return true;
+  }).sort((a, b) => {
+    const PRIORITY_RANK: Record<string, number> = {
+      CRITICAL: 1,
+      HIGH: 2,
+      MEDIUM: 3,
+      LOW: 4,
+    };
+    const rankA = PRIORITY_RANK[a.priority?.toUpperCase()] || 99;
+    const rankB = PRIORITY_RANK[b.priority?.toUpperCase()] || 99;
+    return rankA - rankB;
   });
 
   // KPI Counters
@@ -767,11 +777,13 @@ export default function DailyTaskConsolePage() {
                       <span
                         className={cn(
                           "text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-wider inline-block",
-                          t.priority === "CRITICAL"
-                            ? "bg-red-50 text-red-700 border-red-200"
-                            : t.priority === "HIGH"
+                          t.priority?.toUpperCase() === "CRITICAL"
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : t.priority?.toUpperCase() === "HIGH"
                               ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200",
+                              : t.priority?.toUpperCase() === "MEDIUM"
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : "bg-slate-100 text-slate-700 border-slate-200",
                         )}
                       >
                         {t.priority || "HIGH"}
