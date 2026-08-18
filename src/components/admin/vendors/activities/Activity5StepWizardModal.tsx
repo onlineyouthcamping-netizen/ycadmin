@@ -60,118 +60,41 @@ const WIZARD_STEPS = [
   { step: 5, label: "Passengers", icon: Users },
 ];
 
-const BUILT_IN_ACTIVITIES = [
+const STANDARD_MEAL_TEMPLATES = [
   {
-    id: "MEAL-1",
-    name: "Breakfast at Partner Restaurant / Dhaba",
+    id: "MEAL-BF",
+    name: "Breakfast (Partner Restaurant / En-Route)",
     category: "MEAL",
-    defaultCapacity: 50,
-    defaultCost: 150,
-  },
-  {
-    id: "MEAL-2",
-    name: "En-Route Buffet Lunch",
-    category: "MEAL",
-    defaultCapacity: 50,
-    defaultCost: 250,
-  },
-  {
-    id: "MEAL-3",
-    name: "Special Local / Himachali Dinner",
-    category: "MEAL",
-    defaultCapacity: 50,
-    defaultCost: 350,
-  },
-  {
-    id: "MEAL-4",
-    name: "Trail Cafe & Evening Snacks Stop",
-    category: "MEAL",
-    defaultCapacity: 50,
-    defaultCost: 120,
-  },
-  {
-    id: "MEAL-5",
-    name: "Packed Highway / Trek Lunch",
-    category: "MEAL",
-    defaultCapacity: 50,
-    defaultCost: 200,
-  },
-  {
-    id: "ACT-1",
-    name: "River Rafting",
-    category: "ADVENTURE",
     defaultCapacity: 40,
-    defaultCost: 700,
-  },
-  {
-    id: "ACT-2",
-    name: "Paragliding",
-    category: "ADVENTURE",
-    defaultCapacity: 30,
-    defaultCost: 2000,
-  },
-  {
-    id: "ACT-3",
-    name: "ATV Ride",
-    category: "ADVENTURE",
-    defaultCapacity: 20,
-    defaultCost: 900,
-  },
-  {
-    id: "ACT-4",
-    name: "Solang Valley Visit",
-    category: "SIGHTSEEING",
-    defaultCapacity: 50,
-    defaultCost: 400,
-  },
-  {
-    id: "ACT-5",
-    name: "DJ Night & Bonfire",
-    category: "ENTERTAINMENT",
-    defaultCapacity: 60,
-    defaultCost: 500,
-  },
-  {
-    id: "ACT-6",
-    name: "Golden Temple Visit",
-    category: "SIGHTSEEING",
-    defaultCapacity: 50,
     defaultCost: 0,
   },
   {
-    id: "ACT-7",
-    name: "Wagah Border Excursion",
-    category: "SIGHTSEEING",
-    defaultCapacity: 50,
-    defaultCost: 300,
-  },
-  {
-    id: "ACT-8",
-    name: "Manikaran Sahib Visit",
-    category: "SIGHTSEEING",
-    defaultCapacity: 50,
-    defaultCost: 200,
-  },
-  {
-    id: "ACT-9",
-    name: "Chalal Trek & Cafe Walk",
-    category: "ADVENTURE",
+    id: "MEAL-LU",
+    name: "Lunch (Partner Restaurant / Buffet)",
+    category: "MEAL",
     defaultCapacity: 40,
-    defaultCost: 400,
+    defaultCost: 0,
   },
   {
-    id: "ACT-10",
-    name: "Bijli Mahadev Day Trek",
-    category: "ADVENTURE",
+    id: "MEAL-DI",
+    name: "Dinner (Partner Restaurant / Special Meal)",
+    category: "MEAL",
     defaultCapacity: 40,
-    defaultCost: 600,
+    defaultCost: 0,
   },
   {
-    id: "ACT-11",
-    name: "Jogini Waterfall Trek",
-    category: "ADVENTURE",
+    id: "MEAL-SN",
+    name: "Evening Snacks / Cafe Stop",
+    category: "MEAL",
     defaultCapacity: 40,
-    defaultCost: 350,
+    defaultCost: 0,
+  },
+  {
+    id: "MEAL-PK",
+    name: "Packed Trail / Highway Meal",
+    category: "MEAL",
+    defaultCapacity: 40,
+    defaultCost: 0,
   },
 ];
 
@@ -199,9 +122,9 @@ export default function Activity5StepWizardModal({
 
   const [selectedVendor, setSelectedVendor] = useState<VendorOption | null>(null);
 
-  const [adultPrice, setAdultPrice] = useState(1200);
-  const [childPrice, setChildPrice] = useState(800);
-  const [vendorCost, setVendorCost] = useState(250);
+  const [adultPrice, setAdultPrice] = useState(0);
+  const [childPrice, setChildPrice] = useState(0);
+  const [vendorCost, setVendorCost] = useState(0);
   const [gstPercent, setGstPercent] = useState(5);
   const [isIncluded, setIsIncluded] = useState(true);
   const [scheduledTime, setScheduledTime] = useState("09:30 AM");
@@ -221,6 +144,8 @@ export default function Activity5StepWizardModal({
       }
       if (manifestPassengers && manifestPassengers.length > 0) {
         setSelectedPaxIds(manifestPassengers.map((p) => p.id));
+      } else {
+        setSelectedPaxIds([]);
       }
     }
   }, [open, initialDay, daysList, manifestPassengers]);
@@ -230,14 +155,14 @@ export default function Activity5StepWizardModal({
   const [newActName, setNewActName] = useState("");
   const [newActCategory, setNewActCategory] = useState("MEAL");
   const [newActCapacity, setNewActCapacity] = useState(40);
-  const [newActCost, setNewActCost] = useState(250);
+  const [newActCost, setNewActCost] = useState(0);
 
   const defaultActivities = useMemo(() => {
     return [
       ...customActivities,
       ...(activitiesMasterList && activitiesMasterList.length > 0
         ? activitiesMasterList
-        : BUILT_IN_ACTIVITIES),
+        : STANDARD_MEAL_TEMPLATES),
     ];
   }, [customActivities, activitiesMasterList]);
 
@@ -252,53 +177,6 @@ export default function Activity5StepWizardModal({
     const list = [...customVendors];
     if (vendorsList && vendorsList.length > 0) {
       list.push(...vendorsList);
-    } else {
-      list.push(
-        {
-          vendorId: "VND-BG",
-          vendorName: "Bal Gopal Restaurant",
-          category: "restaurants",
-          location: "Kasol",
-          contactPerson: "Rahul Sir",
-          contactPhone: "+91 8448269176",
-          rating: 4.8,
-          netCost: 250,
-          seasonType: "REGULAR",
-        },
-        {
-          vendorId: "VND-MD",
-          vendorName: "Musafir Dhaba",
-          category: "restaurants",
-          location: "Kullu",
-          contactPerson: "Chetan Sir",
-          contactPhone: "+91 9857362977",
-          rating: 4.6,
-          netCost: 200,
-          seasonType: "REGULAR",
-        },
-        {
-          vendorId: "VND-BC",
-          vendorName: "Barpa Cottage Restaurant",
-          category: "restaurants",
-          location: "Manali",
-          contactPerson: "Rajendra Kumar",
-          contactPhone: "+91 9418776426",
-          rating: 4.9,
-          netCost: 350,
-          seasonType: "REGULAR",
-        },
-        {
-          vendorId: "VND-ABC",
-          vendorName: "ABC Adventures",
-          category: "activities",
-          location: "Manali",
-          contactPerson: "Activity Lead",
-          contactPhone: "+91 9816000000",
-          rating: 4.8,
-          netCost: 700,
-          seasonType: "PEAK",
-        },
-      );
     }
     return list;
   }, [customVendors, vendorsList]);
@@ -327,16 +205,7 @@ export default function Activity5StepWizardModal({
     toast.success(`Selected partner/cost: ${newVnd.vendorName}`);
   };
 
-  const defaultPax = manifestPassengers || [
-    { id: "pax-1", name: "Rahul Sharma" },
-    { id: "pax-2", name: "Meet Patel" },
-    { id: "pax-3", name: "Krunal Shah" },
-    { id: "pax-4", name: "Yash Mehta" },
-    { id: "pax-5", name: "Vipul Joshi" },
-    { id: "pax-6", name: "Ananya Desai" },
-    { id: "pax-7", name: "Rohan Verma" },
-    { id: "pax-8", name: "Priya Nair" },
-  ];
+  const defaultPax = manifestPassengers || [];
 
   const handleSelectActivity = (act: any) => {
     setSelectedActivity(act);
@@ -1178,24 +1047,31 @@ export default function Activity5StepWizardModal({
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-[240px] overflow-y-auto">
-                {defaultPax.map((pax) => {
-                  const isChecked = selectedPaxIds.includes(pax.id);
-                  return (
-                    <div
-                      key={pax.id}
-                      onClick={() => handleTogglePax(pax.id)}
-                      className={cn(
-                        "p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 select-none",
-                        isChecked
-                          ? "bg-orange-50 border-orange-300 text-orange-950 font-bold"
-                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
-                      )}
-                    >
-                      <span className="text-base">{isChecked ? "☑" : "☐"}</span>
-                      <span className="text-xs line-clamp-1">{pax.name}</span>
-                    </div>
-                  );
-                })}
+                {defaultPax.length > 0 ? (
+                  defaultPax.map((pax) => {
+                    const isChecked = selectedPaxIds.includes(pax.id);
+                    return (
+                      <div
+                        key={pax.id}
+                        onClick={() => handleTogglePax(pax.id)}
+                        className={cn(
+                          "p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 select-none",
+                          isChecked
+                            ? "bg-orange-50 border-orange-300 text-orange-950 font-bold"
+                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
+                        )}
+                      >
+                        <span className="text-base">{isChecked ? "☑" : "☐"}</span>
+                        <span className="text-xs line-clamp-1">{pax.name}</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-2 sm:col-span-4 py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <p className="text-xs font-semibold text-slate-700">No passengers booked on this departure yet</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">All passengers who book this departure will automatically be included in this activity.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

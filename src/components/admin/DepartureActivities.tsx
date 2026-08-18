@@ -58,6 +58,7 @@ export default function DepartureActivities({
 
   // Live Trip Vendors Directory (Restaurants, Activities, Others)
   const [tripVendorsList, setTripVendorsList] = useState<any[]>([]);
+  const [masterActivities, setMasterActivities] = useState<any[]>([]);
 
   useEffect(() => {
     if (tripId) {
@@ -71,6 +72,106 @@ export default function DepartureActivities({
         .catch(() => {});
     }
   }, [tripId]);
+
+  useEffect(() => {
+    if (api) {
+      api
+        .get("/admin/activities")
+        .then((res: any) => {
+          const data = res.data?.data || res.data || [];
+          if (Array.isArray(data)) {
+            setMasterActivities(
+              data.map((m: any) => ({
+                id: m.id,
+                name: m.name,
+                category: m.category || "ADVENTURE",
+                defaultCapacity: m.defaultCapacity || 40,
+                defaultCost: m.defaultCost || 0,
+              })),
+            );
+          }
+        })
+        .catch(() => {});
+    }
+  }, [api]);
+
+  // Combined authentic activities for Step 2 (Master DB + Trip Itinerary + Generic Standard Meals)
+  const authenticActivitiesMasterList = useMemo(() => {
+    const list: any[] = [...masterActivities];
+    const seen = new Set(list.map((a) => a.name.toLowerCase()));
+
+    // Standard generic meal items
+    const standardMeals = [
+      {
+        id: "MEAL-BF",
+        name: "Breakfast (Partner Restaurant / En-Route)",
+        category: "MEAL",
+        defaultCapacity: 40,
+        defaultCost: 0,
+      },
+      {
+        id: "MEAL-LU",
+        name: "Lunch (Partner Restaurant / Buffet)",
+        category: "MEAL",
+        defaultCapacity: 40,
+        defaultCost: 0,
+      },
+      {
+        id: "MEAL-DI",
+        name: "Dinner (Partner Restaurant / Special Meal)",
+        category: "MEAL",
+        defaultCapacity: 40,
+        defaultCost: 0,
+      },
+      {
+        id: "MEAL-SN",
+        name: "Evening Snacks / Cafe Stop",
+        category: "MEAL",
+        defaultCapacity: 40,
+        defaultCost: 0,
+      },
+      {
+        id: "MEAL-PK",
+        name: "Packed Trail / Highway Meal",
+        category: "MEAL",
+        defaultCapacity: 40,
+        defaultCost: 0,
+      },
+    ];
+
+    standardMeals.forEach((m) => {
+      if (!seen.has(m.name.toLowerCase())) {
+        seen.add(m.name.toLowerCase());
+        list.push(m);
+      }
+    });
+
+    // Add trip's actual itinerary experiences if any
+    (computedItinerary || []).forEach((dayItem: any, idx: number) => {
+      const plan = dayItem.plan || dayItem.title || "";
+      if (plan && plan !== "—" && !seen.has(plan.toLowerCase())) {
+        seen.add(plan.toLowerCase());
+        const isMeal =
+          plan.toLowerCase().includes("dinner") ||
+          plan.toLowerCase().includes("lunch") ||
+          plan.toLowerCase().includes("breakfast");
+        const isAdv =
+          plan.toLowerCase().includes("trek") ||
+          plan.toLowerCase().includes("rafting") ||
+          plan.toLowerCase().includes("safari") ||
+          plan.toLowerCase().includes("ride");
+        list.push({
+          id: `itin-act-${idx + 1}`,
+          name: plan,
+          category: isMeal ? "MEAL" : isAdv ? "ADVENTURE" : "SIGHTSEEING",
+          defaultCapacity: totalPaxCount || 40,
+          defaultCost: 0,
+        });
+      }
+    });
+
+    return list;
+  }, [masterActivities, computedItinerary, totalPaxCount]);
 
   const mappedVendorsForWizard = useMemo<VendorOption[]>(() => {
     const list: VendorOption[] = [];
@@ -492,6 +593,7 @@ export default function DepartureActivities({
         onAddActivity={handleAddActivityFromWizard}
         daysList={daysAvailable.length > 0 ? daysAvailable : [1, 2, 3, 4, 5]}
         initialDay={wizardInitialDay}
+        activitiesMasterList={authenticActivitiesMasterList}
         vendorsList={mappedVendorsForWizard}
         manifestPassengers={formattedManifest}
       />

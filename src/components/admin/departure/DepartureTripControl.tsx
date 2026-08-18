@@ -364,27 +364,6 @@ export default function DepartureTripControl({
           remark: h.notes || `Hotel stay accommodation costing for ${h.location || "destination"}`,
         });
       });
-    } else {
-      const sampleStays = [
-        { date: "15-07-2026", name: "Shimla (Mountain Vista)", total: 10400, paid: 10400, due: 0, status: "Paid", remark: "(Double Sharing = 1600 x 5 = 8000) + (Extra persons = 600 x 4 = 2400) = 10400 Paid online" },
-        { date: "16-07-2026", name: "Sangla (Mehak Resort)", total: 17600, paid: 17600, due: 0, status: "Paid", remark: "(Double Sharing = 1400 x 4 = 5600) + (Triple & Quad = 10 x 1200 = 12000) = 17600 Paid online" },
-        { date: "17-07-2026", name: "Tabo (Apple Blossom)", total: 16800, paid: 16800, due: 0, status: "Paid", remark: "14 x 1200 = 16800 Paid online" },
-        { date: "18-07-2026 & 19-07-2026", name: "Kaza (Yankit Homestay)", total: 30800, paid: 30800, due: 0, status: "Paid", remark: "(14 x 1100 = 15400) x 2 days = 30800 paid online" },
-        { date: "20-07-2026", name: "Chandratal/Camp", total: 24500, paid: 0, due: 24500, status: "Due", remark: "14 x 1750 = 24500" },
-        { date: "21-07-2026", name: "Manali (Barpa Cottage)", total: 11800, paid: 0, due: 11800, status: "Due", remark: "(Double Sharing = 2 x 1100 = 2200) + (Triple & Quad = 12 x 800 = 9600) = 11800" },
-      ];
-      sampleStays.forEach((s) => {
-        rows.push({
-          date: s.date,
-          service: s.name,
-          paymentDate: "18-07-2026",
-          total: s.total,
-          paid: s.paid,
-          due: s.due,
-          status: s.status,
-          remark: s.remark,
-        });
-      });
     }
 
     if (transportCosts.length > 0) {

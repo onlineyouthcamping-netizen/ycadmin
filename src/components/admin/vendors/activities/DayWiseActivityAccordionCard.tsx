@@ -121,10 +121,10 @@ export default function DayWiseActivityAccordionCard({
     activity.status || "CONFIRMED",
   );
   const [guideName, setGuideName] = useState(
-    activity.guideName || "Neel Patel",
+    activity.guideName || "",
   );
   const [vehicleName, setVehicleName] = useState(
-    activity.vehicleName || "Traveller 2",
+    activity.vehicleName || "",
   );
   const [scheduledTime, setScheduledTime] = useState(
     activity.scheduledTime || "09:30 AM",
@@ -178,43 +178,12 @@ export default function DayWiseActivityAccordionCard({
 
   // Passengers Checkbox List
   const [passengers, setPassengers] = useState(
-    activity.passengers || [
-      { id: "p1", name: "Rahul Sharma", isOpted: true },
-      { id: "p2", name: "Meet Patel", isOpted: true },
-      { id: "p3", name: "Krunal Shah", isOpted: true },
-      { id: "p4", name: "Yash Mehta", isOpted: true },
-      { id: "p5", name: "Vipul Joshi", isOpted: false },
-      { id: "p6", name: "Ananya Desai", isOpted: true },
-      { id: "p7", name: "Rohan Verma", isOpted: true },
-      { id: "p8", name: "Priya Nair", isOpted: true },
-    ],
+    activity.passengers || [],
   );
   const [manualPaxCount, setManualPaxCount] = useState<number | null>(null);
 
-  // Vendor comparison mock defaults if not provided
-  const comparisonVendors = availableVendors || [
-    {
-      vendorId: "VND-ABC",
-      vendorName: "ABC Adventures",
-      rating: 4.8,
-      netCost: 700,
-      seasonType: "PEAK",
-    },
-    {
-      vendorId: "VND-XYZ",
-      vendorName: "XYZ Adventure",
-      rating: 4.2,
-      netCost: 650,
-      seasonType: "OFF_SEASON",
-    },
-    {
-      vendorId: "VND-MTN",
-      vendorName: "Mountain Adventure",
-      rating: 4.5,
-      netCost: 680,
-      seasonType: "REGULAR",
-    },
-  ];
+  // Real vendor list passed from trip vendor directory
+  const comparisonVendors = availableVendors || [];
 
   const currentStatusObj =
     SIX_OPERATIONAL_STATUSES.find((s) => s.value === status) ||
@@ -564,7 +533,7 @@ export default function DayWiseActivityAccordionCard({
                 type="text"
                 value={guideName}
                 onChange={(e) => setGuideName(e.target.value)}
-                placeholder="e.g. Neel Patel"
+                placeholder="e.g. Lead Guide / Trek Leader"
                 className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
             </div>
@@ -576,7 +545,7 @@ export default function DayWiseActivityAccordionCard({
                 type="text"
                 value={vehicleName}
                 onChange={(e) => setVehicleName(e.target.value)}
-                placeholder="e.g. Traveller 2"
+                placeholder="e.g. Tempo Traveller / Bus / Taxi"
                 className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
             </div>

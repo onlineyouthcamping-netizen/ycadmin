@@ -5042,7 +5042,7 @@ useEffect(() => {
         const res = await api.get(`/ops/activities/${tripId}`, {
           params: { departureDate: departureDateStr },
         });
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        if (res.data?.success && Array.isArray(res.data.data)) {
           if (isMounted) {
             setActivitiesList(res.data.data);
             localStorage.setItem(depKey, JSON.stringify(res.data.data));
@@ -5054,38 +5054,7 @@ useEffect(() => {
       }
 
       if (isMounted) {
-        let initialList = [];
-        if (tripId.toLowerCase().includes("spt")) {
-          initialList = MOCK_SPITI_ACTIVITIES;
-        } else {
-          initialList = [
-            // DAY 1: Train Journey
-            {
-              id: "dep-act-1",
-              name: "Ahmedabad Station Check-in",
-              dayNumber: 1,
-              day: "Day 1",
-              scheduledTime: "09:00 AM",
-              endTime: "10:00 AM",
-              status: "CONFIRMED",
-              vendorName: "Indian Railways",
-              maxCapacity: 40,
-              bookedCount: 40,
-              adultPrice: 0,
-              childPrice: 0,
-              vendorCost: 0,
-              guideName: "Neel Patel",
-              vehicleName: "Train 19223",
-              mealIncluded: "Not Included",
-              isIncluded: true,
-              type: "TRAVEL",
-            },
-          ];
-        }
-        setActivitiesList(initialList);
-        try {
-          localStorage.setItem(depKey, JSON.stringify(initialList));
-        } catch (e) {}
+        setActivitiesList([]);
       }
     };
 
