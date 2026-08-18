@@ -714,7 +714,7 @@ export default function AccountingPage() {
     }
   };
 
-  const handleOpenAuditLog = async (paymentId: string, title: string) => {
+  const handleOpenAuditLog = async (paymentId: string, title: string, isVendor = false) => {
     setAuditModalState({
       open: true,
       paymentId,
@@ -723,7 +723,9 @@ export default function AccountingPage() {
       auditTrail: [],
     });
     try {
-      const data = await financeApprovalsService.getCollectionAuditTrail(paymentId);
+      const data = isVendor
+        ? await financeApprovalsService.getVendorAuditTrail(paymentId)
+        : await financeApprovalsService.getCollectionAuditTrail(paymentId);
       setAuditModalState((prev) =>
         prev
           ? {
@@ -1871,7 +1873,8 @@ export default function AccountingPage() {
                                 onClick={() =>
                                   handleOpenAuditLog(
                                     v.id,
-                                    `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`
+                                    `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`,
+                                    true
                                   )
                                 }
                                 title="View full approval & audit timeline"
@@ -2346,7 +2349,8 @@ export default function AccountingPage() {
                               onClick={() =>
                                 handleOpenAuditLog(
                                   v.id,
-                                  `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`
+                                  `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`,
+                                  true
                                 )
                               }
                               title="View approval chain & audit trail"

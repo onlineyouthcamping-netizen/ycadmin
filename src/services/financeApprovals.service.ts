@@ -116,6 +116,11 @@ export const financeApprovalsService = {
     return res.data;
   },
 
+  getVendorAuditTrail: async (paymentId: string): Promise<CollectionAuditResponse> => {
+    const res = await api.get(`/finance/vendor-payments/${paymentId}`);
+    return res.data;
+  },
+
   // Outgoing Vendor Payments Approval
   reviewVendorPaymentFC: async (
     paymentId: string,
