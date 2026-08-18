@@ -697,7 +697,12 @@ export default function VendorDirectoryPage() {
           <AccommodationDetailPage
             vendor={viewingDetailVendor}
             onBack={() => setViewingDetailVendor(null)}
-            onUpdateVendor={invalidateTripVendorData}
+            onUpdateVendor={(updated) => {
+              if (updated && updated.id) {
+                setViewingDetailVendor((prev: any) => ({ ...prev, ...updated }));
+              }
+              invalidateTripVendorData();
+            }}
           />
         </React.Suspense>
       ) : (

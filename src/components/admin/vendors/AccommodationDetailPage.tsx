@@ -32,6 +32,7 @@ import {
   Check,
   Info,
   Hotel,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1381,19 +1382,27 @@ export function AccommodationDetailPage({
   };
 
   // Save Overview Updates
+  const [isSavingOverview, setIsSavingOverview] = useState(false);
   const handleSaveOverview = async () => {
+    setIsSavingOverview(true);
     try {
       const res = await api.patch(`/vendors/directory/${vendor.id}`, overviewForm);
       const updated = res.data?.data || { ...vendor, ...overviewForm };
       setVendor(updated);
-      onUpdateVendor(updated);
+      setOverviewForm(extractOverviewState(updated));
+      if (onUpdateVendor) {
+        onUpdateVendor(updated);
+      }
       logActivity(
         "PROFILE_UPDATED",
         "Updated vendor operational specs & financial compliance",
       );
       toast.success("Overview updated successfully!");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to save overview");
+      console.error("Save overview error:", err);
+      toast.error(err.response?.data?.message || err.message || "Failed to save overview");
+    } finally {
+      setIsSavingOverview(false);
     }
   };
 
@@ -2028,11 +2037,20 @@ export function AccommodationDetailPage({
                   </p>
                 </div>
                 <Button
+                  type="button"
                   onClick={handleSaveOverview}
-                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs"
+                  disabled={isSavingOverview}
+                  className="h-8.5 text-xs bg-[#F97316] hover:bg-[#E05E00] text-white font-bold px-4 shadow-2xs cursor-pointer"
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Save Overview
-                  Changes
+                  {isSavingOverview ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Saving Changes...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Save Overview Changes
+                    </>
+                  )}
                 </Button>
               </div>
 
