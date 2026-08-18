@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { CheckCircle2, Clock, User, ArrowUpRight, AlertCircle, ListTodo } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
 import type {
   DashboardWidget,
@@ -8,127 +10,172 @@ import {
   DashBody,
   DashCard,
   DashHead,
+  dashEmpty,
   dashLink,
 } from "@/modules/dashboard.chrome";
+import { bookingsService } from "@/services/bookings.service";
+import { cn } from "@/lib/utils";
 
-const ONLINE_FALLBACK = ["Suresh", "Vidhi", "Zeel", "Parth", "Neeki", "Vibhuti"];
-const LEAVE_FALLBACK = ["Sachin", "Jatin"];
-
-const WORKLOAD_FALLBACK = [
-  { name: "Suresh Bhai", state: "Normal", pct: 70, color: "bg-[#16A34A]" },
-  { name: "Vidhi", state: "High", pct: 78, color: "bg-[#D97706]" },
-  { name: "Zeel", state: "High", pct: 75, color: "bg-[#D97706]" },
-  { name: "Parth", state: "Available", pct: 50, color: "bg-[#2563EB]" },
-  { name: "Neeki", state: "Normal", pct: 60, color: "bg-[#16A34A]" },
-];
-
-// Employee Status Widget
-export const EmployeeStatusWidget: React.FC<DashboardWidgetContextProps> = ({
-  stats,
+// ─── BOOKING TASKS DASHBOARD WIDGET ───
+export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
   navigate,
 }) => {
-  const online: string[] = stats?.employeeStatus?.online || ONLINE_FALLBACK;
-  const onLeave: string[] = stats?.employeeStatus?.offline || LEAVE_FALLBACK;
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const fetchBookingTasks = async () => {
+      try {
+        setLoading(true);
+        const data = await bookingsService.getAllBookingTasks({ status: "ALL" });
+        if (active) {
+          const list = Array.isArray(data) ? data : (data as any)?.data || [];
+          setTasks(list.slice(0, 6)); // Top 6 active tasks
+        }
+      } catch (err) {
+        console.error("Failed to load booking tasks for dashboard:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchBookingTasks();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const openTasksCount = tasks.filter((t) => t.status !== "COMPLETED").length;
 
   return (
     <DashCard>
       <DashHead
-        title="Employee status"
+        title={
+          <div className="flex items-center gap-2">
+            <span>Booking tasks</span>
+            {openTasksCount > 0 && (
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-[#FF5A1F]">
+                {openTasksCount} open
+              </span>
+            )}
+          </div>
+        }
         action={
           <button
             type="button"
-            onClick={() => navigate("/admin/hr")}
+            onClick={() => navigate("/admin/operations/booking-tasks")}
             className={dashLink}
           >
             View all
           </button>
         }
       />
-      <DashBody className="grid grid-cols-2 gap-4">
-        <div className="min-w-0 space-y-2">
-          <p className="text-[10px] font-medium tabular-nums text-slate-400">
-            Online now ({online.length})
-          </p>
-          <div className="no-scrollbar flex max-h-[80px] flex-wrap gap-1 overflow-y-auto">
-            {online.map((name: string, i: number) => (
-              <span
-                key={i}
-                onClick={() => navigate("/admin/hr")}
-                className="cursor-pointer rounded border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
-              >
-                {name}
-              </span>
-            ))}
+      <DashBody className="no-scrollbar max-h-[220px] space-y-2 overflow-y-auto text-[12px]">
+        {loading ? (
+          <p className={dashEmpty}>Loading booking tasks…</p>
+        ) : tasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center text-slate-400">
+            <ListTodo className="h-6 w-6 text-slate-300 mb-1" />
+            <p className="text-[11px] font-medium">No booking tasks assigned.</p>
           </div>
-        </div>
+        ) : (
+          tasks.map((task) => {
+            const isDone = task.status === "COMPLETED";
+            const isDueToday =
+              task.dueDate &&
+              new Date(task.dueDate).toISOString().split("T")[0] ===
+                new Date().toISOString().split("T")[0];
 
-        <div className="min-w-0 space-y-2">
-          <p className="text-[10px] font-medium tabular-nums text-slate-400">
-            On leave ({onLeave.length})
-          </p>
-          <div className="no-scrollbar flex max-h-[80px] flex-wrap gap-1 overflow-y-auto">
-            {onLeave.map((name: string, i: number) => (
-              <span
-                key={i}
-                onClick={() => navigate("/admin/hr")}
-                className="cursor-pointer rounded border border-amber-100 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 transition-colors hover:bg-amber-100"
+            return (
+              <div
+                key={task.id}
+                onClick={() =>
+                  task.booking?.id
+                    ? navigate(`/admin/bookings?id=${task.booking.id}&tab=tasks`)
+                    : navigate("/admin/operations/booking-tasks")
+                }
+                className="-mx-1.5 flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-slate-100 hover:bg-[#F8FAFC]"
               >
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
+                <div className="flex min-w-0 items-start gap-2.5">
+                  <div className="mt-0.5 shrink-0">
+                    {isDone ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    ) : isDueToday ? (
+                      <AlertCircle className="h-4 w-4 text-[#FF5A1F]" />
+                    ) : (
+                      <Clock className="h-4 w-4 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p
+                      className={cn(
+                        "truncate font-semibold text-[#0B1528] leading-tight text-[12px]",
+                        isDone && "line-through text-slate-400"
+                      )}
+                    >
+                      {task.title}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+                      {task.booking?.bookingId && (
+                        <span className="font-bold text-[#FF5A1F] bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                          {task.booking.bookingId}
+                        </span>
+                      )}
+                      {task.booking?.fullName && (
+                        <span className="truncate max-w-[120px] text-slate-600 font-medium">
+                          {task.booking.fullName}
+                        </span>
+                      )}
+                      {task.assignedTo?.name && (
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <User className="h-3 w-3 text-slate-400" />
+                          {task.assignedTo.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span
+                    className={cn(
+                      "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                      isDone
+                        ? "bg-emerald-50 text-emerald-700"
+                        : isDueToday
+                        ? "bg-orange-50 text-[#FF5A1F]"
+                        : "bg-slate-100 text-slate-600"
+                    )}
+                  >
+                    {isDone
+                      ? "Done"
+                      : isDueToday
+                      ? "Due today"
+                      : task.dueDate
+                      ? format(new Date(task.dueDate), "dd MMM")
+                      : "Open"}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-[#FF5A1F] flex items-center gap-0.5">
+                    View <ArrowUpRight className="h-3 w-3" />
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
       </DashBody>
     </DashCard>
   );
 };
 
-// Employee Workload Widget
-export const EmployeeWorkloadWidget: React.FC<DashboardWidgetContextProps> = ({
-  stats,
-  navigate,
-}) => (
-  <DashCard>
-    <DashHead
-      title="Employee workload"
-      action={
-        <button
-          type="button"
-          onClick={() => navigate("/admin/hr")}
-          className={dashLink}
-        >
-          View all
-        </button>
-      }
-    />
-    <DashBody className="flex flex-col gap-2.5">
-      {(stats?.employeeWorkload || WORKLOAD_FALLBACK).map(
-        (emp: any, i: number) => (
-          <div
-            key={i}
-            onClick={() => navigate("/admin/hr")}
-            className="-mx-1.5 cursor-pointer space-y-1.5 rounded-md px-1.5 py-0.5 transition-colors hover:bg-[#F4F7FB]"
-          >
-            <div className="flex items-center justify-between gap-3 leading-none">
-              <span className="min-w-0 truncate text-[12px] font-medium text-[#0B1528]">
-                {emp.name}
-              </span>
-              <span className="shrink-0 text-[10px] font-medium tabular-nums text-slate-400">
-                {emp.state} · {emp.pct}%
-              </span>
-            </div>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-[#E8EEF4]">
-              <div
-                className={`h-full rounded-full ${emp.color}`}
-                style={{ width: `${emp.pct}%` }}
-              />
-            </div>
-          </div>
-        ),
-      )}
-    </DashBody>
-  </DashCard>
-);
-
-export const teamWidgets: DashboardWidget[] = [];
-
+export const teamWidgets: DashboardWidget[] = [
+  {
+    id: "booking-tasks",
+    title: "Booking Tasks",
+    category: "team",
+    permission: PERMISSIONS.BOOKINGS_VIEW,
+    order: 85,
+    colSpanDesktop: "col-span-12 lg:col-span-6",
+    component: BookingTasksWidget,
+  },
+];

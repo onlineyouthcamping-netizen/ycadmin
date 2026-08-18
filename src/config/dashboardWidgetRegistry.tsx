@@ -50,8 +50,8 @@ export const CATEGORY_LABELS: Record<
     subtitle: "Approvals, cash flow and announcements",
   },
   team: {
-    title: "Team & workforce",
-    subtitle: "Availability, workload and recent bookings",
+    title: "Tasks & bookings stream",
+    subtitle: "Active booking task assignments, daily checklist and recent bookings",
   },
 };
 
