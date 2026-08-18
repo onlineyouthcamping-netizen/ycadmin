@@ -557,7 +557,7 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
                   dayNum: selectedDayIdx !== null ? selectedDayIdx + 1 : 1,
                   dayLabel: selectedRow.dayLabel,
                   destination: selectedRow.destination,
-                  dateStr: selectedRow.date,
+                  dateStr: selectedRow.dateStr,
                   existingBooking: selectedRow.booking,
                 });
               }}

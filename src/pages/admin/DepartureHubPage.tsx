@@ -8303,7 +8303,7 @@ useEffect(() => {
                     dayNum: row?.dayNum,
                     dayLabel: row?.dayLabel || row?.day,
                     destination: row?.destination || row?.location || row?.sub,
-                    dateStr: row?.date,
+                    dateStr: row?.dateStr || row?.date,
                     existingBooking: row?.existingBooking || row?.booking || row,
                   },
                 );
