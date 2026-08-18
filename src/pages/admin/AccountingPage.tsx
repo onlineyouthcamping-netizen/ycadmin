@@ -60,6 +60,7 @@ import {
   financeApprovalsService,
   type FinanceAuditLogEntry,
 } from "@/services/financeApprovals.service";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import api from "@/services/api";
 import { cn, formatINR, safeFormatDate, safeFormatDateTime } from "@/lib/utils";
 
@@ -3273,37 +3274,34 @@ export default function AccountingPage() {
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSaveProofUpload} className="space-y-3.5 mt-2 text-xs">
+          <form onSubmit={handleSaveProofUpload} className="space-y-4 mt-2 text-xs">
             <p className="text-slate-600 font-medium">
               Attach the receipt screenshot or bank acknowledgment before submitting for Founder final approval.
             </p>
 
+            <div className="space-y-2">
+              <label className="font-medium text-slate-700 block">
+                Upload Screenshot File / Receipt (Click or Drag & Drop)
+              </label>
+              <ImageUpload
+                value={proofUrlInput}
+                onUpload={(url) => setProofUrlInput(url)}
+                compact={false}
+                label="Click or Drag screenshot here"
+              />
+            </div>
+
             <div>
-              <label className="font-medium text-slate-600 block mb-1">
-                Receipt Screenshot / Image URL *
+              <label className="font-medium text-slate-500 block mb-1">
+                Or Paste Direct Image / Receipt URL
               </label>
               <Input
-                required
                 placeholder="https://... (Payment screenshot / invoice link)"
                 value={proofUrlInput}
                 onChange={(e) => setProofUrlInput(e.target.value)}
                 className="h-9 text-xs font-medium"
               />
             </div>
-
-            {proofUrlInput.trim() && (
-              <div className="rounded-lg border border-[#E8EEF4] bg-slate-50 p-2 text-center">
-                <p className="text-[11px] font-semibold text-slate-500 mb-1.5">Image Preview</p>
-                <img
-                  src={proofUrlInput}
-                  alt="Proof preview"
-                  className="max-h-48 mx-auto rounded border border-slate-200 object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = "none";
-                  }}
-                />
-              </div>
-            )}
 
             <div className="pt-2 flex justify-end gap-2">
               <Button
