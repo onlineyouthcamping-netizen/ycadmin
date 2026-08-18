@@ -703,6 +703,22 @@ export function findHotelForDay(
     }
   }
 
+  // 3. Fallback: match by destination name if present in realBookings
+  if (dayLocation && dayLocation !== "—" && dayLocation !== "Night Journey") {
+    const normLoc = normalizeDestinationName(dayLocation);
+    if (normLoc) {
+      const locMatches = realBookings.filter((b) => {
+        const bLoc = normalizeDestinationName(b.location || "");
+        const bName = (b.hotelName || "").toLowerCase();
+        return (
+          (bLoc && (bLoc === normLoc || bLoc.includes(normLoc) || normLoc.includes(bLoc))) ||
+          (bName && (bName.includes(normLoc) || normLoc.includes(bName)))
+        );
+      });
+      if (locMatches.length > 0) return pickLatest(locMatches);
+    }
+  }
+
   return null;
 }
 

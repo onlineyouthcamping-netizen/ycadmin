@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { opsService, OpsDayItinerary } from "@/services/ops.service";
 import TripControlRowDrawer, { TripControlRowData } from "./TripControlRowDrawer";
+import { findHotelForDay } from "@/utils/accommodationCalculator";
 
 interface DepartureTripControlProps {
   tripId: string;
@@ -196,24 +197,47 @@ export default function DepartureTripControl({
       // Find DB saved row if present
       const dbRow = dbDayItineraries.find((d) => d.dayTitle === dayLabel || (d.date && d.date.includes(dateStr)));
 
-      // Match Hotel Assignment for this day using stayLocation & planTitle
+      // Match Hotel Assignment for this day using findHotelForDay, opsHotels, and tripVendors
       const stayNorm = stayLocation.toLowerCase().trim();
       const planNorm = planTitle.toLowerCase().trim();
 
+      const realOpsHotels = (opsHotels || []).filter((h: any) => {
+        const name = String(h?.hotelName || h?.name || "").trim().toUpperCase();
+        return name && name !== "NO_STAY" && name !== "NO STAY" && name !== "—";
+      });
+
       const hotelMatch = isNoStay
         ? null
-        : opsHotels.find((h: any) => {
+        : findHotelForDay(dateStr, stayLocation, opsHotels) ||
+          realOpsHotels.find((h: any) => {
             const loc = (h.location || h.city || "").toLowerCase().trim();
-            return (loc && (stayNorm.includes(loc) || loc.includes(stayNorm) || planNorm.includes(loc)));
-          }) || tripVendors.find((v: any) => v.vendorType === "hotel" && (
-            (v.location && stayNorm.includes(v.location.toLowerCase())) ||
-            (v.name && stayNorm.includes(v.name.toLowerCase()))
-          ));
+            const hName = (h.hotelName || h.name || "").toLowerCase().trim();
+            return (
+              (loc && (stayNorm.includes(loc) || loc.includes(stayNorm) || planNorm.includes(loc))) ||
+              (hName && (stayNorm.includes(hName) || hName.includes(stayNorm)))
+            );
+          }) ||
+          tripVendors.find((v: any) => {
+            if (v.vendorType !== "hotel") return false;
+            const vName = String(v.name || v.vendorName || "").trim().toUpperCase();
+            if (vName === "NO_STAY" || vName === "NO STAY" || vName === "—") return false;
+            const vLoc = (v.location || "").toLowerCase().trim();
+            const vNameLower = (v.name || v.vendorName || "").toLowerCase();
+            return (
+              (vLoc && (stayNorm.includes(vLoc) || vLoc.includes(stayNorm) || planNorm.includes(vLoc))) ||
+              (vNameLower && (stayNorm.includes(vNameLower) || vNameLower.includes(stayNorm)))
+            );
+          });
+
+      let rawHotelName = hotelMatch ? (hotelMatch.hotelName || hotelMatch.name || "") : "";
+      if (rawHotelName.toUpperCase() === "NO_STAY" || rawHotelName.toUpperCase() === "NO STAY") {
+        rawHotelName = "";
+      }
 
       let hotelName = isNoStay
         ? "— (Night Journey)"
-        : hotelMatch
-        ? (hotelMatch.hotelName || hotelMatch.name || "Hotel Booked")
+        : rawHotelName
+        ? rawHotelName
         : `Pending Hotel (${stayLocation})`;
 
       let hotelPhone = hotelMatch?.phone || hotelMatch?.hotelPhone || "";
@@ -221,7 +245,7 @@ export default function DepartureTripControl({
       // Derive hotel status strictly from existing hotel booking state
       let hotelStatus: "BOOKED" | "PENDING" | "CANCELLED" | "NOT REQUIRED" = isNoStay
         ? "NOT REQUIRED"
-        : hotelMatch?.confirmed === "CONFIRMED" || hotelMatch?.confirmed === "BOOKED" || hotelMatch
+        : rawHotelName
         ? "BOOKED"
         : "PENDING";
 
