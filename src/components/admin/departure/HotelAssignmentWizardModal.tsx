@@ -852,28 +852,6 @@ export default function HotelAssignmentWizardModal({
                     setSelectedDestination(newDest);
                     setCustomCityName(newDest);
 
-                    // Auto-snap Check-In Date to destination city itinerary date
-                    const matchedDay = computedItinerary.find((day) => {
-                      const city = resolveCityForItineraryDay(day);
-                      return normalizeDestinationName(city) === normalizeDestinationName(newDest);
-                    });
-                    if (matchedDay) {
-                      const dNum = matchedDay.day
-                        ? typeof matchedDay.day === "number"
-                          ? matchedDay.day
-                          : parseInt(String(matchedDay.day).replace(/\D/g, ""), 10) || 1
-                        : 1;
-                      const newCheckIn = formatDateForInput(
-                        matchedDay.dateStr || matchedDay.date,
-                        departureDateStr,
-                        dNum - 1
-                      );
-                      if (newCheckIn) {
-                        setCheckInDate(newCheckIn);
-                        setCheckOutDate(addNightsToDate(newCheckIn, nightsCount));
-                      }
-                    }
-
                     const norm = normalizeDestinationName(newDest);
                     const matched = combinedHotelProperties.find((h) => {
                       const normCity = normalizeDestinationName(h.city || "");
