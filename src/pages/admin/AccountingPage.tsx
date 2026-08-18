@@ -846,7 +846,7 @@ export default function AccountingPage() {
   const allClientReceipts = useMemo(() => {
     const list: any[] = [];
     bookings.forEach((b) => {
-      const payments = b.clientPayments || b.paymentHistory || [];
+      const payments = b.opsClientPayments || b.clientPayments || b.paymentHistory || [];
       if (Array.isArray(payments) && payments.length > 0) {
         payments.forEach((p: any) => {
           list.push({
@@ -863,6 +863,7 @@ export default function AccountingPage() {
               (p.paymentMode === "CASH" ? "Office Cash Desk" : "Primary Company Bank"),
             transactionId: p.transactionId || p.utrNumber || "—",
             status: p.status || "Verified",
+            approvalStatus: p.approvalStatus,
             proofUrl: p.proofUrl || p.proofImageUrl,
             date: p.paymentDate || p.createdAt || b.createdAt,
             remarks: p.remarks || p.notes || "—",
