@@ -105,84 +105,6 @@ export default function DepartureActivities({
     }
   }, [api]);
 
-  // Combined authentic activities for Step 2 (Master DB + Trip Itinerary + Generic Standard Meals)
-  const authenticActivitiesMasterList = useMemo(() => {
-    const list: any[] = [...masterActivities];
-    const seen = new Set(list.map((a) => a.name.toLowerCase()));
-
-    // Standard generic meal items
-    const standardMeals = [
-      {
-        id: "MEAL-BF",
-        name: "Breakfast (Partner Restaurant / En-Route)",
-        category: "MEAL",
-        defaultCapacity: 40,
-        defaultCost: 0,
-      },
-      {
-        id: "MEAL-LU",
-        name: "Lunch (Partner Restaurant / Buffet)",
-        category: "MEAL",
-        defaultCapacity: 40,
-        defaultCost: 0,
-      },
-      {
-        id: "MEAL-DI",
-        name: "Dinner (Partner Restaurant / Special Meal)",
-        category: "MEAL",
-        defaultCapacity: 40,
-        defaultCost: 0,
-      },
-      {
-        id: "MEAL-SN",
-        name: "Evening Snacks / Cafe Stop",
-        category: "MEAL",
-        defaultCapacity: 40,
-        defaultCost: 0,
-      },
-      {
-        id: "MEAL-PK",
-        name: "Packed Trail / Highway Meal",
-        category: "MEAL",
-        defaultCapacity: 40,
-        defaultCost: 0,
-      },
-    ];
-
-    standardMeals.forEach((m) => {
-      if (!seen.has(m.name.toLowerCase())) {
-        seen.add(m.name.toLowerCase());
-        list.push(m);
-      }
-    });
-
-    // Add trip's actual itinerary experiences if any
-    (computedItinerary || []).forEach((dayItem: any, idx: number) => {
-      const plan = dayItem.plan || dayItem.title || "";
-      if (plan && plan !== "—" && !seen.has(plan.toLowerCase())) {
-        seen.add(plan.toLowerCase());
-        const isMeal =
-          plan.toLowerCase().includes("dinner") ||
-          plan.toLowerCase().includes("lunch") ||
-          plan.toLowerCase().includes("breakfast");
-        const isAdv =
-          plan.toLowerCase().includes("trek") ||
-          plan.toLowerCase().includes("rafting") ||
-          plan.toLowerCase().includes("safari") ||
-          plan.toLowerCase().includes("ride");
-        list.push({
-          id: `itin-act-${idx + 1}`,
-          name: plan,
-          category: isMeal ? "MEAL" : isAdv ? "ADVENTURE" : "SIGHTSEEING",
-          defaultCapacity: totalPaxCount || 40,
-          defaultCost: 0,
-        });
-      }
-    });
-
-    return list;
-  }, [masterActivities, computedItinerary, totalPaxCount]);
-
   const mappedVendorsForWizard = useMemo<VendorOption[]>(() => {
     const list: VendorOption[] = [];
     const seen = new Set<string>();
@@ -256,6 +178,78 @@ export default function DepartureActivities({
 
     return list;
   }, [tripVendorsList, tripVendors]);
+
+  // Combined authentic activities for Step 2 — 100% feeded from Trip Vendor Directory & Master Database
+  const authenticActivitiesMasterList = useMemo(() => {
+    const list: any[] = [];
+    const seen = new Set<string>();
+
+    // 1. Primary: Every Vendor contracted for this Trip (Restaurants, Activity providers, Meal stops)
+    (mappedVendorsForWizard || []).forEach((vnd) => {
+      const isRest =
+        (vnd.category || "").toLowerCase().includes("restaurant") ||
+        (vnd.category || "").toLowerCase().includes("food") ||
+        vnd.vendorName.toLowerCase().includes("dhaba") ||
+        vnd.vendorName.toLowerCase().includes("restaurant") ||
+        vnd.vendorName.toLowerCase().includes("cottage") ||
+        vnd.vendorName.toLowerCase().includes("cafe");
+
+      const actName = `${vnd.vendorName}${vnd.location ? ` (${vnd.location})` : ""}`;
+
+      if (!seen.has(actName.toLowerCase())) {
+        seen.add(actName.toLowerCase());
+        list.push({
+          id: `VND-ACT-${vnd.vendorId}`,
+          name: actName,
+          category: isRest ? "MEAL" : "ADVENTURE",
+          defaultCapacity: totalPaxCount || 40,
+          defaultCost: vnd.netCost || 0,
+          vendorId: vnd.vendorId,
+          vendor: vnd,
+        });
+      }
+    });
+
+    // 2. Master Database Activities
+    (masterActivities || []).forEach((m) => {
+      if (!seen.has(m.name.toLowerCase())) {
+        seen.add(m.name.toLowerCase());
+        list.push({
+          id: m.id,
+          name: m.name,
+          category: m.category || "ADVENTURE",
+          defaultCapacity: m.defaultCapacity || totalPaxCount || 40,
+          defaultCost: m.defaultCost || 0,
+        });
+      }
+    });
+
+    // 3. Trip Itinerary planned items if any
+    (computedItinerary || []).forEach((dayItem: any, idx: number) => {
+      const plan = dayItem.plan || dayItem.title || "";
+      if (plan && plan !== "—" && !seen.has(plan.toLowerCase())) {
+        seen.add(plan.toLowerCase());
+        const isMeal =
+          plan.toLowerCase().includes("dinner") ||
+          plan.toLowerCase().includes("lunch") ||
+          plan.toLowerCase().includes("breakfast");
+        const isAdv =
+          plan.toLowerCase().includes("trek") ||
+          plan.toLowerCase().includes("rafting") ||
+          plan.toLowerCase().includes("safari") ||
+          plan.toLowerCase().includes("ride");
+        list.push({
+          id: `itin-act-${idx + 1}`,
+          name: plan,
+          category: isMeal ? "MEAL" : isAdv ? "ADVENTURE" : "SIGHTSEEING",
+          defaultCapacity: totalPaxCount || 40,
+          defaultCost: 0,
+        });
+      }
+    });
+
+    return list;
+  }, [mappedVendorsForWizard, masterActivities, computedItinerary, totalPaxCount]);
 
   const currentActivities: DepartureActivityItem[] = useMemo(() => {
     if (Array.isArray(activitiesList)) {

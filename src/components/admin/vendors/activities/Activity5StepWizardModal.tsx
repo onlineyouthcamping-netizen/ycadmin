@@ -60,44 +60,6 @@ const WIZARD_STEPS = [
   { step: 5, label: "Passengers", icon: Users },
 ];
 
-const STANDARD_MEAL_TEMPLATES = [
-  {
-    id: "MEAL-BF",
-    name: "Breakfast (Partner Restaurant / En-Route)",
-    category: "MEAL",
-    defaultCapacity: 40,
-    defaultCost: 0,
-  },
-  {
-    id: "MEAL-LU",
-    name: "Lunch (Partner Restaurant / Buffet)",
-    category: "MEAL",
-    defaultCapacity: 40,
-    defaultCost: 0,
-  },
-  {
-    id: "MEAL-DI",
-    name: "Dinner (Partner Restaurant / Special Meal)",
-    category: "MEAL",
-    defaultCapacity: 40,
-    defaultCost: 0,
-  },
-  {
-    id: "MEAL-SN",
-    name: "Evening Snacks / Cafe Stop",
-    category: "MEAL",
-    defaultCapacity: 40,
-    defaultCost: 0,
-  },
-  {
-    id: "MEAL-PK",
-    name: "Packed Trail / Highway Meal",
-    category: "MEAL",
-    defaultCapacity: 40,
-    defaultCost: 0,
-  },
-];
-
 export default function Activity5StepWizardModal({
   open,
   onOpenChange,
@@ -118,6 +80,8 @@ export default function Activity5StepWizardModal({
     category: string;
     defaultCapacity: number;
     defaultCost: number;
+    vendorId?: string;
+    vendor?: VendorOption;
   } | null>(null);
 
   const [selectedVendor, setSelectedVendor] = useState<VendorOption | null>(null);
@@ -157,15 +121,6 @@ export default function Activity5StepWizardModal({
   const [newActCapacity, setNewActCapacity] = useState(40);
   const [newActCost, setNewActCost] = useState(0);
 
-  const defaultActivities = useMemo(() => {
-    return [
-      ...customActivities,
-      ...(activitiesMasterList && activitiesMasterList.length > 0
-        ? activitiesMasterList
-        : STANDARD_MEAL_TEMPLATES),
-    ];
-  }, [customActivities, activitiesMasterList]);
-
   const [customVendors, setCustomVendors] = useState<VendorOption[]>([]);
   const [isCreatingVendor, setIsCreatingVendor] = useState(false);
   const [newVendorName, setNewVendorName] = useState("");
@@ -180,6 +135,52 @@ export default function Activity5StepWizardModal({
     }
     return list;
   }, [customVendors, vendorsList]);
+
+  // Step 2 Activities & Meals: 100% feeded from Trip Vendors Directory & Master Database
+  const defaultActivities = useMemo(() => {
+    const list: any[] = [...customActivities];
+    const seen = new Set<string>();
+
+    // 1. Items from activitiesMasterList (which includes trip vendor meals & master directory acts)
+    if (activitiesMasterList && activitiesMasterList.length > 0) {
+      activitiesMasterList.forEach((act) => {
+        if (!seen.has(act.name.toLowerCase())) {
+          seen.add(act.name.toLowerCase());
+          list.push(act);
+        }
+      });
+    }
+
+    // 2. Direct feed from vendorsList (Trip Vendors Directory)
+    if (vendorsList && vendorsList.length > 0) {
+      vendorsList.forEach((vnd) => {
+        const isRest =
+          (vnd.category || "").toLowerCase().includes("restaurant") ||
+          (vnd.category || "").toLowerCase().includes("food") ||
+          (vnd.category || "").toUpperCase() === "MEAL" ||
+          vnd.vendorName.toLowerCase().includes("dhaba") ||
+          vnd.vendorName.toLowerCase().includes("restaurant") ||
+          vnd.vendorName.toLowerCase().includes("cottage") ||
+          vnd.vendorName.toLowerCase().includes("cafe");
+
+        const actName = `${vnd.vendorName}${vnd.location ? ` (${vnd.location})` : ""}`;
+        if (!seen.has(actName.toLowerCase())) {
+          seen.add(actName.toLowerCase());
+          list.push({
+            id: `VND-ITEM-${vnd.vendorId}`,
+            name: actName,
+            category: isRest ? "MEAL" : "ADVENTURE",
+            defaultCapacity: 40,
+            defaultCost: vnd.netCost || 0,
+            vendorId: vnd.vendorId,
+            vendor: vnd,
+          });
+        }
+      });
+    }
+
+    return list;
+  }, [customActivities, activitiesMasterList, vendorsList]);
 
   const handleCreateNewVendor = () => {
     if (!newVendorName.trim()) {
@@ -209,7 +210,16 @@ export default function Activity5StepWizardModal({
 
   const handleSelectActivity = (act: any) => {
     setSelectedActivity(act);
-    setVendorCost(act.defaultCost);
+    setVendorCost(act.defaultCost || 0);
+
+    // Auto-select the matching vendor from Vendor Directory
+    if (act.vendor) {
+      setSelectedVendor(act.vendor);
+    } else if (act.vendorId) {
+      const match = defaultVendors.find((v) => v.vendorId === act.vendorId);
+      if (match) setSelectedVendor(match);
+    }
+
     if (act.category === "MEAL" || act.category === "RESTAURANT") {
       setVendorCategoryTab("RESTAURANTS");
     } else {
