@@ -188,16 +188,28 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
         setStayOverrides((prev) => ({ ...prev, [row.key]: false }));
         toast.success("Saved No Stay for " + row.date);
       } else {
-        // Removing explicit NO STAY (if it existed) so it defaults back
-        if (row.booking?.id && (row.booking.hotelName === "NO_STAY" || row.booking.hotelName === "NO STAY")) {
-          await opsService.deleteHotelBooking(row.booking.id);
-          toast.success("Removed No Stay override for " + row.date);
-        }
-        setStayOverrides((prev) => {
-          const updated = { ...prev };
-          delete updated[row.key];
-          return updated;
+        // Removing explicit NO STAY from database for this date
+        const cinNorm = normaliseDate(cinStr) || normaliseDate(row.date);
+        const existingNoStay = (opsHotelBookings || []).find((b: any) => {
+          const name = String(b?.hotelName || "").trim().toUpperCase();
+          return (
+            (name === "NO_STAY" || name === "NO STAY") &&
+            normaliseDate(b.checkIn) === cinNorm
+          );
         });
+
+        if (existingNoStay?.id) {
+          await opsService.deleteHotelBooking(existingNoStay.id);
+          toast.success("Enabled Stay for " + row.date);
+        } else if (
+          row.booking?.id &&
+          (row.booking.hotelName === "NO_STAY" ||
+            row.booking.hotelName === "NO STAY")
+        ) {
+          await opsService.deleteHotelBooking(row.booking.id);
+          toast.success("Enabled Stay for " + row.date);
+        }
+        setStayOverrides((prev) => ({ ...prev, [row.key]: true }));
       }
       if (onRefresh) {
         await onRefresh();
