@@ -147,8 +147,15 @@ export default function DepartureActivities({
         nameLower.includes("travels") ||
         nameLower.includes("transport");
 
-      if (isAccommodation || isTransport) {
-        return; // Skip hotels and transport from activities
+      // STRICT EXCLUSION: Skip Guides / Trek Leaders (managed in Guides workspace)
+      const isGuide =
+        rawCat.includes("guide") ||
+        rawCat.includes("leader") ||
+        nameLower.includes("guide") ||
+        nameLower.includes(" sir");
+
+      if (isAccommodation || isTransport || isGuide) {
+        return; // Skip hotels, transport, and guides from activities
       }
 
       // Check if it's a Restaurant / Food Partner
@@ -162,16 +169,18 @@ export default function DepartureActivities({
         nameLower.includes("cafe") ||
         nameLower.includes("canteen");
 
-      // Check if it's an Activity / Adventure / Sightseeing Partner
+      // Check if it's an Activity / Adventure Partner
       const isAct =
         rawCat.includes("activity") ||
         rawCat.includes("activities") ||
         rawCat.includes("adventure") ||
         rawCat.includes("sightseeing") ||
-        rawCat.includes("guide") ||
         rawCat.includes("trek") ||
         rawCat.includes("rafting") ||
         rawCat.includes("paragliding") ||
+        rawCat.includes("scooter") ||
+        rawCat.includes("zipline") ||
+        rawCat.includes("atv") ||
         rawCat.includes("safari");
 
       if (!isRest && !isAct) {
