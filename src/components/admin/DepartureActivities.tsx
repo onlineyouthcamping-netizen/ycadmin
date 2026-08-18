@@ -357,9 +357,23 @@ export default function DepartureActivities({
       localStorage.setItem(depKey, JSON.stringify(nextList));
     } catch (e) {}
     try {
-      await api.put(`/ops/activities/${tripId}/${id}`, updated);
+      await api.put(`/ops/activities/${tripId}/${id}?departureDate=${departureDateStr}`, {
+        ...updated,
+        name: updated.name,
+        type: updated.category || updated.type,
+        startTime: updated.scheduledTime || updated.startTime,
+        endTime: updated.endTime,
+        estimatedCost: updated.vendorCost !== undefined ? Number(updated.vendorCost) : updated.estimatedCost,
+        vendorName: updated.vendorName,
+        vendorId: updated.vendorId,
+        remarks: updated.notes !== undefined ? updated.notes : updated.remarks,
+        status: updated.status,
+      });
+      if (typeof fetchPageData === "function") {
+        fetchPageData();
+      }
     } catch (e) {
-      // Offline fallback still updates UI
+      console.warn("Backend update fallback:", e);
     }
   };
 
