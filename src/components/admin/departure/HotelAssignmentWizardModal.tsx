@@ -517,16 +517,23 @@ export default function HotelAssignmentWizardModal({
     setCustomCityName(destName);
     setIsCustomCity(false);
 
+    const targetDayDate = initialDayInfo?.dateStr || currentDayItineraryDate;
+    const isDirectCheckInDay = Boolean(
+      existingB?.checkIn &&
+      targetDayDate &&
+      normaliseDate(existingB.checkIn) === normaliseDate(targetDayDate)
+    );
+
     const initCheckIn = formatDateForInput(
-      existingB?.checkInDate || existingB?.checkIn || initialDayInfo?.dateStr || currentDayItineraryDate,
+      targetDayDate || existingB?.checkInDate || existingB?.checkIn,
       departureDateStr,
       dayOffset
     );
     setCheckInDate(initCheckIn);
 
-    // Default to 1 night for accurate day-wise allocation unless an existing booking has explicit nightsCount
+    // Default to 1 night unless this is the direct check-in day of an existing multi-night booking
     const n =
-      existingB?.nightsCount && existingB.nightsCount >= 1
+      isDirectCheckInDay && existingB?.nightsCount && existingB.nightsCount >= 1
         ? existingB.nightsCount
         : 1;
     setNightsCount(n);
