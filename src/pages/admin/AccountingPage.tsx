@@ -56,6 +56,10 @@ import {
 } from "@/services/collectionAccounts.service";
 import { tripsService } from "@/services/trips.service";
 import { bookingsService } from "@/services/bookings.service";
+import {
+  financeApprovalsService,
+  type FinanceAuditLogEntry,
+} from "@/services/financeApprovals.service";
 import api from "@/services/api";
 import { cn, formatINR, safeFormatDate, safeFormatDateTime } from "@/lib/utils";
 
@@ -252,6 +256,22 @@ export default function AccountingPage() {
     notes: "",
   });
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [proofModalState, setProofModalState] = useState<{
+    open: boolean;
+    paymentId: string;
+    title: string;
+    currentProof?: string;
+    type: "client" | "vendor";
+  } | null>(null);
+  const [proofUrlInput, setProofUrlInput] = useState("");
+  const [auditModalState, setAuditModalState] = useState<{
+    open: boolean;
+    paymentId: string;
+    title: string;
+    loading: boolean;
+    auditTrail: FinanceAuditLogEntry[];
+    chain?: any;
+  } | null>(null);
 
   // Load All Finance Data
   const loadData = useCallback(async () => {
@@ -599,6 +619,146 @@ export default function AccountingPage() {
     }
   };
 
+  // Approval Status Badges
+  const getApprovalBadge = (approvalStatus?: string, status?: string, requiresFounder?: boolean) => {
+    if (approvalStatus === "APPROVED_FOUNDER" || status === "Verified" || status === "Paid") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Approved & Verified
+        </span>
+      );
+    }
+    if (approvalStatus === "REVIEWED_FINANCE_CONTROLLER") {
+      if (requiresFounder) {
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 animate-pulse">
+            <ShieldCheck className="w-3 h-3 text-purple-600" /> Awaiting Founder (&gt;₹50K)
+          </span>
+        );
+      }
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <Clock className="w-3 h-3 text-blue-600" /> Awaiting Founder
+        </span>
+      );
+    }
+    if (approvalStatus === "REJECTED" || status === "Rejected") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+          <XCircle className="w-3 h-3 text-rose-600" /> Rejected
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+        <Clock className="w-3 h-3 text-amber-600" /> Pending FC Review
+      </span>
+    );
+  };
+
+  // 2-Tier Approval Workflow Actions
+  const handleFCReviewCollection = async (paymentId: string) => {
+    try {
+      await financeApprovalsService.reviewCollectionFC(paymentId, "Reviewed by Finance Controller");
+      toast.success("Payment marked as Reviewed by FC. Awaiting Founder approval.");
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to review collection payment");
+    }
+  };
+
+  const handleFounderApproveCollection = async (paymentId: string, proofUrl?: string) => {
+    if (!proofUrl) {
+      setProofModalState({
+        open: true,
+        paymentId,
+        title: "Upload Proof Before Founder Approval",
+        type: "client",
+      });
+      toast.info("Please attach receipt proof screenshot first.");
+      return;
+    }
+    try {
+      await financeApprovalsService.approveCollectionFounder(paymentId, { reason: "Founder final sign-off" });
+      toast.success("Payment approved by Founder & marked as VERIFIED!");
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to approve collection payment");
+    }
+  };
+
+  const handleFCReviewVendor = async (paymentId: string) => {
+    try {
+      const res = await financeApprovalsService.reviewVendorPaymentFC(paymentId, { reason: "FC invoice verification" });
+      if (res?.requiresFounderApproval) {
+        toast.info("Invoice reviewed. Remaining balance > ₹50,000 requires Founder approval.");
+      } else {
+        toast.success("Vendor payout verified & cleared by Finance Controller!");
+      }
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to review vendor payout");
+    }
+  };
+
+  const handleFounderApproveVendor = async (paymentId: string) => {
+    try {
+      await financeApprovalsService.approveVendorPaymentFounder(paymentId, { reason: "Founder approved vendor payout" });
+      toast.success("Vendor payout approved by Founder & marked as PAID!");
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to approve vendor payout");
+    }
+  };
+
+  const handleOpenAuditLog = async (paymentId: string, title: string) => {
+    setAuditModalState({
+      open: true,
+      paymentId,
+      title,
+      loading: true,
+      auditTrail: [],
+    });
+    try {
+      const data = await financeApprovalsService.getCollectionAuditTrail(paymentId);
+      setAuditModalState((prev) =>
+        prev
+          ? {
+              ...prev,
+              loading: false,
+              auditTrail: data.auditTrail || [],
+              chain: data.approvalChain,
+            }
+          : null
+      );
+    } catch {
+      toast.error("Failed to load audit history");
+      setAuditModalState((prev) => (prev ? { ...prev, loading: false } : null));
+    }
+  };
+
+  const handleSaveProofUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proofModalState || !proofUrlInput.trim()) {
+      return toast.error("Please enter a valid screenshot URL or link");
+    }
+    setSubmittingAction(true);
+    try {
+      await financeApprovalsService.uploadCollectionProof(proofModalState.paymentId, {
+        proofFileUrl: proofUrlInput.trim(),
+        proofFileName: "payment_receipt.jpg",
+      });
+      toast.success("Receipt proof uploaded successfully!");
+      setProofModalState(null);
+      setProofUrlInput("");
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to upload proof");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
   // Verification Actions
   const handleVerifyClientPayment = async (paymentId: string) => {
     try {
@@ -657,15 +817,9 @@ export default function AccountingPage() {
     setSubmittingAction(true);
     try {
       if (rejectModalState.type === "client") {
-        await api.patch(`/payments/client/verify/${rejectModalState.id}`, {
-          status: "Rejected",
-          remarks: rejectModalState.reason,
-        });
+        await financeApprovalsService.rejectCollection(rejectModalState.id, rejectModalState.reason.trim());
       } else if (rejectModalState.type === "vendor") {
-        await api.patch(`/payments/vendor/verify/${rejectModalState.id}`, {
-          status: "Rejected",
-          remarks: rejectModalState.reason,
-        });
+        await financeApprovalsService.rejectVendorPayment(rejectModalState.id, rejectModalState.reason.trim());
       } else if (rejectModalState.type === "station") {
         await api.post(`/station-payments/${rejectModalState.id}/verify-upi`, {
           action: "REJECT",
@@ -1272,95 +1426,151 @@ export default function AccountingPage() {
                 </div>
               ) : (
                 <div className="min-w-0 overflow-x-auto">
-                <table className="w-full min-w-[880px] text-left text-[12px]">
+                <table className="w-full min-w-[960px] text-left text-[12px]">
                   <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                     <tr>
                       <th className="py-2.5 px-4">Booking / customer</th>
                       <th className="py-2.5 px-4">Trip</th>
                       <th className="py-2.5 px-4 text-right">Amount</th>
                       <th className="py-2.5 px-4">Mode / account</th>
+                      <th className="py-2.5 px-4">Approval status</th>
                       <th className="py-2.5 px-4">Proof</th>
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {(verificationQueue.pendingClientPayments || []).map((p: any) => (
-                      <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
-                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                          {p.booking?.fullName || "Customer"}
-                          <div className="text-[10px] text-slate-400 font-normal">
-                            Ref: {p.booking?.bookingId || p.bookingId} · {p.booking?.phone}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-700">
-                          {p.booking?.tripName || "—"}
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
-                          {formatINR(p.amount)}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-medium">
-                            {p.paymentMode}
-                          </Badge>
-                          <div className="text-[10px] text-slate-500 mt-0.5">
-                            {p.collectionAccount?.accountName || "Default Account"}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          {p.proofUrl ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setProofPreviewModal({
-                                  open: true,
-                                  title: `Payment Proof - ${p.booking?.fullName}`,
-                                  subtitle: `Booking Ref: ${p.booking?.bookingId}`,
-                                  imageUrl: p.proofUrl,
-                                  amount: p.amount,
-                                  date: safeFormatDate(p.createdAt),
-                                })
-                              }
-                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5 mr-1" />
-                              View Proof
-                            </Button>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">No Proof</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              size="sm"
-                              onClick={() => handleVerifyClientPayment(p.id)}
-                              className="h-7 gap-1 rounded-md bg-[#0B1528] px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-[#152238] cursor-pointer"
-                            >
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Verify
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                setRejectModalState({
-                                  open: true,
-                                  type: "client",
-                                  id: p.id,
-                                  reason: "",
-                                  title: `Reject Client Payment - ${p.booking?.fullName} (${formatINR(p.amount)})`,
-                                })
-                              }
-                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
-                            >
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {(verificationQueue.pendingClientPayments || []).map((p: any) => {
+                      const proof = p.proofFileUrl || p.proofUrl;
+                      const isPending = !p.approvalStatus || p.approvalStatus === "PENDING";
+                      const isReviewedFC = p.approvalStatus === "REVIEWED_FINANCE_CONTROLLER";
+                      const isApproved = p.approvalStatus === "APPROVED_FOUNDER" || p.status === "Verified";
+
+                      return (
+                        <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
+                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
+                            {p.booking?.fullName || "Customer"}
+                            <div className="text-[10px] text-slate-400 font-normal">
+                              Ref: {p.booking?.bookingId || p.bookingId} · {p.booking?.phone}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-700">
+                            {p.booking?.tripName || "—"}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
+                            {formatINR(p.amount)}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <Badge variant="outline" className="text-[10px] font-medium">
+                              {p.paymentMode}
+                            </Badge>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                              {p.collectionAccount?.accountName || "Default Account"}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {getApprovalBadge(p.approvalStatus, p.status)}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {proof ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setProofPreviewModal({
+                                    open: true,
+                                    title: `Payment Proof - ${p.booking?.fullName}`,
+                                    subtitle: `Booking Ref: ${p.booking?.bookingId}`,
+                                    imageUrl: proof,
+                                    amount: p.amount,
+                                    date: safeFormatDate(p.createdAt),
+                                  })
+                                }
+                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                View
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setProofModalState({
+                                    open: true,
+                                    paymentId: p.id,
+                                    title: `Upload Proof - ${p.booking?.fullName} (${formatINR(p.amount)})`,
+                                    type: "client",
+                                  })
+                                }
+                                className="h-6 gap-1 rounded px-2 text-[10px] font-medium border-amber-300 bg-amber-50/50 text-amber-700 hover:bg-amber-100 cursor-pointer"
+                              >
+                                <Plus className="w-3 h-3" /> Upload Proof
+                              </Button>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isPending && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleFCReviewCollection(p.id)}
+                                  className="h-7 gap-1 rounded-md bg-blue-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-blue-700 cursor-pointer"
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Review (FC)
+                                </Button>
+                              )}
+
+                              {isReviewedFC && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleFounderApproveCollection(p.id, proof)}
+                                  className="h-7 gap-1 rounded-md bg-emerald-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-emerald-700 cursor-pointer"
+                                >
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Approve (Founder)
+                                </Button>
+                              )}
+
+                              {!isApproved && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    setRejectModalState({
+                                      open: true,
+                                      type: "client",
+                                      id: p.id,
+                                      reason: "",
+                                      title: `Reject Client Payment - ${p.booking?.fullName} (${formatINR(p.amount)})`,
+                                    })
+                                  }
+                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
+                                >
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  Reject
+                                </Button>
+                              )}
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleOpenAuditLog(
+                                    p.id,
+                                    `Audit Trail: ${p.booking?.fullName || "Payment"} (${formatINR(p.amount)})`
+                                  )
+                                }
+                                title="View full approval & audit timeline"
+                                className="h-7 px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
                 </div>
@@ -1506,91 +1716,139 @@ export default function AccountingPage() {
                       <th className="py-2.5 px-4">Trip</th>
                       <th className="py-2.5 px-4">Category</th>
                       <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">Paid from</th>
+                      <th className="py-2.5 px-4">Approval status</th>
                       <th className="py-2.5 px-4">Invoice</th>
                       <th className="py-2.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF4]">
-                    {(verificationQueue.pendingVendorPayments || []).map((v: any) => (
-                      <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
-                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                          {v.vendorName}
-                          <div className="text-[10px] text-slate-400 font-normal">
-                            {v.serviceDescription || "Service Payment"}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-700">
-                          {v.trip?.title || "—"}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-medium">
-                            {v.category}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
-                          {formatINR(v.advancePaid || v.agreedAmount)}
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-600 font-semibold">
-                          {v.collectionAccount?.accountName || "Primary Bank"}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          {v.invoiceProof ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setProofPreviewModal({
-                                  open: true,
-                                  title: `Vendor Invoice Proof - ${v.vendorName}`,
-                                  subtitle: `Trip: ${v.trip?.title}`,
-                                  imageUrl: v.invoiceProof,
-                                  amount: v.advancePaid,
-                                  date: safeFormatDate(v.createdAt),
-                                })
-                              }
-                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5 mr-1" />
-                              View Invoice
-                            </Button>
-                          ) : (
-                            <span className="text-[10px] font-medium text-amber-600">
-                              Missing Proof
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              size="sm"
-                              onClick={() => handleVerifyVendorPayment(v.id)}
-                              className="h-7 gap-1 rounded-md bg-[#0B1528] px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-[#152238] cursor-pointer"
-                            >
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                setRejectModalState({
-                                  open: true,
-                                  type: "vendor",
-                                  id: v.id,
-                                  reason: "",
-                                  title: `Reject Vendor Payment - ${v.vendorName} (${formatINR(v.advancePaid || v.agreedAmount)})`,
-                                })
-                              }
-                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
-                            >
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {(verificationQueue.pendingVendorPayments || []).map((v: any) => {
+                      const balanceDue = (v.agreedAmount || 0) - (v.advancePaid || 0);
+                      const requiresFounder = v.requiresFounderApproval || balanceDue > 50000;
+                      const isPending = !v.approvalStatus || v.approvalStatus === "PENDING";
+                      const isReviewedFC = v.approvalStatus === "REVIEWED_FINANCE_CONTROLLER";
+                      const isApproved = v.approvalStatus === "APPROVED_FOUNDER" || v.status === "Paid";
+
+                      return (
+                        <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
+                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
+                            {v.vendorName}
+                            <div className="text-[10px] text-slate-400 font-normal">
+                              {v.serviceDescription || "Service Payment"}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-700">
+                            {v.trip?.title || "—"}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <Badge variant="outline" className="text-[10px] font-medium">
+                              {v.category}
+                            </Badge>
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
+                            {formatINR(v.advancePaid || v.agreedAmount)}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {getApprovalBadge(v.approvalStatus, v.status, requiresFounder)}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {v.invoiceProof ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setProofPreviewModal({
+                                    open: true,
+                                    title: `Vendor Invoice Proof - ${v.vendorName}`,
+                                    subtitle: `Trip: ${v.trip?.title}`,
+                                    imageUrl: v.invoiceProof,
+                                    amount: v.advancePaid,
+                                    date: safeFormatDate(v.createdAt),
+                                  })
+                                }
+                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                View Invoice
+                              </Button>
+                            ) : (
+                              <span className="text-[10px] font-medium text-slate-400">
+                                No invoice
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isPending && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleFCReviewVendor(v.id)}
+                                  className="h-7 gap-1 rounded-md bg-blue-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-blue-700 cursor-pointer"
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Review (FC)
+                                </Button>
+                              )}
+
+                              {isReviewedFC && (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    requiresFounder
+                                      ? handleFounderApproveVendor(v.id)
+                                      : handleFCReviewVendor(v.id)
+                                  }
+                                  className={cn(
+                                    "h-7 gap-1 rounded-md px-2.5 text-[11px] font-medium text-white shadow-none cursor-pointer",
+                                    requiresFounder
+                                      ? "bg-purple-600 hover:bg-purple-700"
+                                      : "bg-emerald-600 hover:bg-emerald-700"
+                                  )}
+                                >
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  {requiresFounder ? "Approve (Founder)" : "Clear & Pay (FC)"}
+                                </Button>
+                              )}
+
+                              {!isApproved && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    setRejectModalState({
+                                      open: true,
+                                      type: "vendor",
+                                      id: v.id,
+                                      reason: "",
+                                      title: `Reject Vendor Payment - ${v.vendorName} (${formatINR(v.advancePaid || v.agreedAmount)})`,
+                                    })
+                                  }
+                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-rose-600 cursor-pointer"
+                                >
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  Reject
+                                </Button>
+                              )}
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleOpenAuditLog(
+                                    v.id,
+                                    `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`
+                                  )
+                                }
+                                title="View full approval & audit timeline"
+                                className="h-7 px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
                 </div>
@@ -1784,7 +2042,7 @@ export default function AccountingPage() {
               </div>
 
               <div className="min-w-0 overflow-x-auto">
-              <table className="w-full min-w-[980px] text-left text-[12px]">
+              <table className="w-full min-w-[1080px] text-left text-[12px]">
                 <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
                   <tr>
                     <th className="py-2.5 px-4">Date</th>
@@ -1793,85 +2051,108 @@ export default function AccountingPage() {
                     <th className="py-2.5 px-4 text-right">Amount</th>
                     <th className="py-2.5 px-4">Receiving account</th>
                     <th className="py-2.5 px-4">Mode / UTR</th>
-                    <th className="py-2.5 px-4 text-center">Status</th>
-                    <th className="py-2.5 px-4 text-right">Proof</th>
+                    <th className="py-2.5 px-4">Approval status</th>
+                    <th className="py-2.5 px-4">Proof</th>
+                    <th className="py-2.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E8EEF4]">
                   {filteredReceipts.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-slate-400">
+                      <td colSpan={9} className="p-8 text-center text-slate-400">
                         No client receipts match current search & filter.
                       </td>
                     </tr>
                   ) : (
-                    filteredReceipts.map((r) => (
-                      <tr key={r.id} className="transition-colors hover:bg-[#F8FAFC]">
-                        <td className="py-2.5 px-4 text-slate-500 text-[11px]">
-                          {safeFormatDate(r.date)}
-                        </td>
-                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                          {r.customerName}
-                          <div className="text-[10px] text-slate-400 font-normal">
-                            Ref: {r.bookingId} · {r.phone}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
-                          {r.tripName}
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
-                          {formatINR(r.amount)}
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-600">
-                          {r.accountName}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <span className="font-medium text-slate-600">{r.paymentMode}</span>
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            {r.transactionId}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4 text-center">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-medium",
-                              r.status?.toLowerCase() === "verified"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : r.status?.toLowerCase() === "rejected"
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                                  : "bg-orange-50 text-orange-700 border-orange-200",
+                    filteredReceipts.map((r) => {
+                      const proof = r.proofUrl;
+                      return (
+                        <tr key={r.id} className="transition-colors hover:bg-[#F8FAFC]">
+                          <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                            {safeFormatDate(r.date)}
+                          </td>
+                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
+                            {r.customerName}
+                            <div className="text-[10px] text-slate-400 font-normal">
+                              Ref: {r.bookingId} · {r.phone}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
+                            {r.tripName}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-semibold text-emerald-600">
+                            {formatINR(r.amount)}
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-600">
+                            {r.accountName}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="font-medium text-slate-600">{r.paymentMode}</span>
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              {r.transactionId || "—"}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {getApprovalBadge(r.approvalStatus, r.status)}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {proof ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setProofPreviewModal({
+                                    open: true,
+                                    title: `Payment Screenshot - ${r.customerName}`,
+                                    subtitle: `Booking Ref: ${r.bookingId}`,
+                                    imageUrl: proof,
+                                    amount: r.amount,
+                                    date: safeFormatDate(r.date),
+                                  })
+                                }
+                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                View
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setProofModalState({
+                                    open: true,
+                                    paymentId: r.id,
+                                    title: `Upload Proof - ${r.customerName} (${formatINR(r.amount)})`,
+                                    type: "client",
+                                  })
+                                }
+                                className="h-6 gap-1 rounded px-2 text-[10px] font-medium border-amber-300 bg-amber-50/50 text-amber-700 hover:bg-amber-100 cursor-pointer"
+                              >
+                                <Plus className="w-3 h-3" /> Upload
+                              </Button>
                             )}
-                          >
-                            {r.status}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          {r.proofUrl ? (
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() =>
-                                setProofPreviewModal({
-                                  open: true,
-                                  title: `Payment Screenshot - ${r.customerName}`,
-                                  subtitle: `Booking Ref: ${r.bookingId}`,
-                                  imageUrl: r.proofUrl,
-                                  amount: r.amount,
-                                  date: safeFormatDate(r.date),
-                                })
+                                handleOpenAuditLog(
+                                  r.id,
+                                  `Audit Trail: ${r.customerName} (${formatINR(r.amount)})`
+                                )
                               }
-                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                              title="View approval chain & audit trail"
+                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
                             >
-                              <Eye className="w-3.5 h-3.5 mr-1" />
-                              Proof
+                              <FileText className="w-3.5 h-3.5 mr-1" />
+                              Audit
                             </Button>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -1931,88 +2212,98 @@ export default function AccountingPage() {
                     <th className="py-2.5 px-4 text-right">Agreed cost</th>
                     <th className="py-2.5 px-4 text-right">Paid out</th>
                     <th className="py-2.5 px-4">Paid from</th>
-                    <th className="py-2.5 px-4 text-center">Status</th>
+                    <th className="py-2.5 px-4">Approval status</th>
                     <th className="py-2.5 px-4 text-right">Invoice</th>
+                    <th className="py-2.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E8EEF4]">
                   {filteredExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400">
+                      <td colSpan={10} className="p-8 text-center text-slate-400">
                         No vendor disbursements match current search & filter.
                       </td>
                     </tr>
                   ) : (
-                    filteredExpenses.map((v) => (
-                      <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
-                        <td className="py-2.5 px-4 text-slate-500 text-[11px]">
-                          {safeFormatDate(v.paymentDate || v.createdAt)}
-                        </td>
-                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                          {v.vendorName}
-                          <div className="text-[10px] text-slate-400 font-normal">
-                            {v.serviceDescription || "Vendor Service"}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
-                          {v.trip?.title || "—"}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-medium">
-                            {v.category}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-4 text-right text-slate-500 font-semibold">
-                          {formatINR(v.agreedAmount)}
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
-                          {formatINR(v.advancePaid)}
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-600">
-                          {v.collectionAccount?.accountName || "Primary bank"}
-                        </td>
-                        <td className="py-2.5 px-4 text-center">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-medium",
-                              v.status?.toLowerCase() === "paid" ||
-                                v.status?.toLowerCase() === "verified"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : v.status?.toLowerCase() === "rejected"
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                                  : "bg-orange-50 text-orange-700 border-orange-200",
+                    filteredExpenses.map((v) => {
+                      const balanceDue = (v.agreedAmount || 0) - (v.advancePaid || 0);
+                      const requiresFounder = v.requiresFounderApproval || balanceDue > 50000;
+
+                      return (
+                        <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
+                          <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                            {safeFormatDate(v.paymentDate || v.createdAt)}
+                          </td>
+                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
+                            {v.vendorName}
+                            <div className="text-[10px] text-slate-400 font-normal">
+                              {v.serviceDescription || "Vendor Service"}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-700 truncate max-w-[160px]">
+                            {v.trip?.title || "—"}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <Badge variant="outline" className="text-[10px] font-medium">
+                              {v.category}
+                            </Badge>
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-slate-500 font-semibold">
+                            {formatINR(v.agreedAmount)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-semibold text-rose-600">
+                            {formatINR(v.advancePaid)}
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-600">
+                            {v.collectionAccount?.accountName || "Primary bank"}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {getApprovalBadge(v.approvalStatus, v.status, requiresFounder)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            {v.invoiceProof ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setProofPreviewModal({
+                                    open: true,
+                                    title: `Vendor Invoice - ${v.vendorName}`,
+                                    subtitle: `Trip: ${v.trip?.title}`,
+                                    imageUrl: v.invoiceProof,
+                                    amount: v.advancePaid,
+                                    date: safeFormatDate(v.paymentDate || v.createdAt),
+                                  })
+                                }
+                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                View
+                              </Button>
+                            ) : (
+                              <span className="text-[10px] text-slate-400">—</span>
                             )}
-                          >
-                            {v.status}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          {v.invoiceProof ? (
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() =>
-                                setProofPreviewModal({
-                                  open: true,
-                                  title: `Vendor Invoice - ${v.vendorName}`,
-                                  subtitle: `Trip: ${v.trip?.title}`,
-                                  imageUrl: v.invoiceProof,
-                                  amount: v.advancePaid,
-                                  date: safeFormatDate(v.paymentDate || v.createdAt),
-                                })
+                                handleOpenAuditLog(
+                                  v.id,
+                                  `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`
+                                )
                               }
-                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
+                              title="View approval chain & audit trail"
+                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
                             >
-                              <Eye className="w-3.5 h-3.5 mr-1" />
-                              View
+                              <FileText className="w-3.5 h-3.5 mr-1" />
+                              Audit
                             </Button>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -2937,6 +3228,218 @@ export default function AccountingPage() {
                 ) : (
                   "Confirm rejection"
                 )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── DIALOG: UPLOAD PROOF MODAL ──────────────────────── */}
+      <Dialog
+        open={Boolean(proofModalState?.open)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setProofModalState(null);
+            setProofUrlInput("");
+          }
+        }}
+      >
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
+              <FileCheck className="w-4 h-4 text-[#FF4D00]" strokeWidth={1.75} />
+              {proofModalState?.title || "Upload Receipt / Proof"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveProofUpload} className="space-y-3.5 mt-2 text-xs">
+            <p className="text-slate-600 font-medium">
+              Attach the receipt screenshot or bank acknowledgment before submitting for Founder final approval.
+            </p>
+
+            <div>
+              <label className="font-medium text-slate-600 block mb-1">
+                Receipt Screenshot / Image URL *
+              </label>
+              <Input
+                required
+                placeholder="https://... (Payment screenshot / invoice link)"
+                value={proofUrlInput}
+                onChange={(e) => setProofUrlInput(e.target.value)}
+                className="h-9 text-xs font-medium"
+              />
+            </div>
+
+            {proofUrlInput.trim() && (
+              <div className="rounded-lg border border-[#E8EEF4] bg-slate-50 p-2 text-center">
+                <p className="text-[11px] font-semibold text-slate-500 mb-1.5">Image Preview</p>
+                <img
+                  src={proofUrlInput}
+                  alt="Proof preview"
+                  className="max-h-48 mx-auto rounded border border-slate-200 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setProofModalState(null);
+                  setProofUrlInput("");
+                }}
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingAction || !proofUrlInput.trim()}
+                className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] cursor-pointer"
+              >
+                {submittingAction ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  "Save & Attach Proof"
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────── DIALOG: AUDIT TRAIL TIMELINE ──────────────────────── */}
+      <Dialog
+        open={Boolean(auditModalState?.open)}
+        onOpenChange={(open) => {
+          if (!open) setAuditModalState(null);
+        }}
+      >
+        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-2xl flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#FF4D00]" strokeWidth={1.75} />
+                <span>{auditModalState?.title || "Audit Trail & Approval History"}</span>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Approval Chain Stepper */}
+            {auditModalState?.chain && (
+              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-[#E8EEF4] rounded-lg">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0B1528]">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">1</span>
+                    Step 1: FC Review
+                  </div>
+                  <div className="text-[11px] text-slate-500 pl-6.5">
+                    {auditModalState.chain.step1_financeController?.status === "DONE" ? (
+                      <span className="text-emerald-600 font-medium">✓ Reviewed & Verified</span>
+                    ) : auditModalState.chain.step1_financeController?.status === "REJECTED" ? (
+                      <span className="text-rose-600 font-medium">✕ Rejected</span>
+                    ) : (
+                      <span className="text-amber-600 font-medium">⏳ Pending FC Review</span>
+                    )}
+                    {auditModalState.chain.step1_financeController?.approvedAt && (
+                      <div className="text-[10px] text-slate-400">
+                        {safeFormatDateTime(auditModalState.chain.step1_financeController.approvedAt)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0B1528]">
+                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">2</span>
+                    Step 2: Founder Sign-off
+                  </div>
+                  <div className="text-[11px] text-slate-500 pl-6.5">
+                    {auditModalState.chain.step2_founder?.status === "DONE" ? (
+                      <span className="text-emerald-600 font-medium">✓ Founder Approved</span>
+                    ) : (
+                      <span className="text-slate-400 font-medium">⏳ Awaiting Sign-off</span>
+                    )}
+                    {auditModalState.chain.step2_founder?.approvedAt && (
+                      <div className="text-[10px] text-slate-400">
+                        {safeFormatDateTime(auditModalState.chain.step2_founder.approvedAt)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Timeline Entries */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Full Audit History Log
+              </h4>
+
+              {auditModalState?.loading ? (
+                <div className="py-8 text-center text-slate-400 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#FF4D00]" /> Loading audit history...
+                </div>
+              ) : !auditModalState?.auditTrail?.length ? (
+                <div className="py-6 text-center text-xs text-slate-400 bg-slate-50 rounded-lg">
+                  No previous audit actions recorded for this transaction yet.
+                </div>
+              ) : (
+                <div className="divide-y divide-[#E8EEF4] border border-[#E8EEF4] rounded-lg overflow-hidden bg-white">
+                  {auditModalState.auditTrail.map((log) => (
+                    <div key={log.id} className="p-3 text-xs space-y-1 hover:bg-[#F8FAFC]">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] font-semibold",
+                              log.action === "APPROVED_FOUNDER"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : log.action === "REVIEWED_FC"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : log.action === "REJECTED"
+                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    : "bg-slate-50 text-slate-700 border-slate-200"
+                            )}
+                          >
+                            {log.action}
+                          </Badge>
+                          <span className="font-semibold text-[#0B1528]">
+                            {log.performedByName || "Admin User"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          {safeFormatDateTime(log.performedAt)}
+                        </span>
+                      </div>
+
+                      <p className="text-slate-700">{log.changeDescription}</p>
+
+                      {log.reason && (
+                        <div className="text-[11px] text-rose-700 bg-rose-50 border border-rose-100 rounded px-2 py-1 mt-1 font-medium">
+                          <strong>Note / Reason:</strong> {log.reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAuditModalState(null)}
+                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
+              >
+                Close
               </Button>
             </div>
           </div>

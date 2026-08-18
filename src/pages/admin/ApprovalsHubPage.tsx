@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
+import { financeApprovalsService } from "@/services/financeApprovals.service";
 import IncomingPaymentsApprovalPage from "./IncomingPaymentsApprovalPage";
 import OutgoingPaymentsApprovalPage from "./OutgoingPaymentsApprovalPage";
 import RefundRequestsPage from "./RefundRequestsPage";
@@ -61,24 +62,24 @@ export default function ApprovalsHubPage() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const [incRes, cashRes, vendorRes, refundRes] = await Promise.all([
-          financeControllerService
-            .getIncomingQueue({ status: "PENDING_VERIFICATION", limit: 1 })
-            .catch(() => ({ data: [] })),
-          financeControllerService
-            .getCashQueue({ status: "PENDING_HANDOVER", limit: 1 })
-            .catch(() => ({ data: [] })),
-          financeControllerService
-            .getVendorQueue({ limit: 1 })
-            .catch(() => ({ data: [] })),
+        const [pendingApprovalsRes, refundRes] = await Promise.all([
+          financeApprovalsService
+            .getPendingApprovals()
+            .catch(() => ({ pendingApprovals: { breakdown: { collectionsPendingFC: 0, collectionsAwaitingFounder: 0, vendorPendingFC: 0, vendorAwaitingFounder: 0 } } })),
           financeControllerService.refunds
             .list({ status: "PENDING_APPROVAL", limit: 1 })
             .catch(() => ({ data: [] })),
         ]);
-        setIncomingPendingCount(
-          (incRes?.data?.length || 0) + (cashRes?.data?.length || 0),
-        );
-        setVendorPendingCount(vendorRes?.data?.length || 0);
+
+        const breakdown = pendingApprovalsRes?.pendingApprovals?.breakdown;
+        if (breakdown) {
+          setIncomingPendingCount(
+            (breakdown.collectionsPendingFC || 0) + (breakdown.collectionsAwaitingFounder || 0)
+          );
+          setVendorPendingCount(
+            (breakdown.vendorPendingFC || 0) + (breakdown.vendorAwaitingFounder || 0)
+          );
+        }
         setRefundPendingCount(refundRes?.data?.length || 0);
       } catch {
         // silent fail
