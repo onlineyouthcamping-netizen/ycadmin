@@ -753,9 +753,17 @@ export default function HotelAssignmentWizardModal({
       const existingB = initialDayInfo?.existingBooking;
       const finalDest = isCustomCity && customCityName.trim() ? customCityName.trim() : (selectedDestination || selectedHotel?.city || "Manali");
 
+      // DEFENSIVE: Always use the YYYY-MM-DD dateStr from the target day,
+      // never the potentially-mutated checkInDate state.
+      // This ensures the booking is ALWAYS saved on the correct day.
+      const lockedCheckIn = initialDayInfo?.dateStr || checkInDate;
+      const lockedCheckOut = addNightsToDate(lockedCheckIn, nightsCount);
+
+      console.log("[HotelWizard] SAVE → lockedCheckIn:", lockedCheckIn, "| checkInDate state:", checkInDate, "| initialDayInfo.dateStr:", initialDayInfo?.dateStr);
+
       const isSameDateBooking =
         existingB?.id &&
-        normaliseDate(existingB.checkIn || existingB.checkInDate) === normaliseDate(checkInDate);
+        normaliseDate(existingB.checkIn || existingB.checkInDate) === normaliseDate(lockedCheckIn);
 
       const payload: any = {
         ...(isSameDateBooking && !String(existingB.id).startsWith("stay") ? { id: existingB.id } : {}),
@@ -776,8 +784,8 @@ export default function HotelAssignmentWizardModal({
         tripleRate,
         quadRate,
         extraBedRate,
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
+        checkIn: lockedCheckIn,
+        checkOut: lockedCheckOut,
         vendorId: realVendorId,
         notes: remarks || "",
       };
