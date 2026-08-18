@@ -3672,20 +3672,46 @@ export default function DeparturePayments({
                 }
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-blue-500"
               >
-                {collectionAccounts.length === 0 ? (
-                  <option value="">YouthCamping Central Account</option>
-                ) : (
-                  collectionAccounts.map((acc) => (
+                {(() => {
+                  const normMode = (clientPaymentForm.paymentMode || "UPI").toUpperCase();
+                  const filtered = collectionAccounts.filter((acc) => {
+                    if (normMode.includes("CASH")) {
+                      return (
+                        acc.accountType === "CASH" ||
+                        acc.paymentMethods?.includes("CASH") ||
+                        acc.accountName.toLowerCase().includes("cash") ||
+                        acc.accountHolderName?.toLowerCase().includes("cash")
+                      );
+                    }
+                    if (normMode.includes("UPI")) {
+                      return (
+                        acc.accountType !== "CASH" &&
+                        (Boolean(acc.upiId) ||
+                          acc.paymentMethods?.includes("UPI") ||
+                          acc.accountType === "COMPANY" ||
+                          acc.accountType === "INDIVIDUAL")
+                      );
+                    }
+                    return acc.accountType !== "CASH";
+                  });
+
+                  if (filtered.length === 0) {
+                    return <option value="">YouthCamping Central Account</option>;
+                  }
+
+                  return filtered.map((acc) => (
                     <option key={acc.id} value={acc.id}>
                       {acc.accountName}{" "}
-                      {acc.bankName
-                        ? `(${acc.bankName}${acc.maskedAccountNumber || (acc.accountNumber ? ` ••••${acc.accountNumber.slice(-4)}` : "")})`
+                      {acc.accountType === "CASH"
+                        ? "(YouthCamping Cash Desk)"
                         : acc.upiId
-                          ? `(${acc.upiId})`
-                          : `(${acc.accountType})`}
+                        ? `(${acc.upiId})`
+                        : acc.bankName
+                        ? `(${acc.bankName}${acc.maskedAccountNumber || ""})`
+                        : `(${acc.accountType})`}
                     </option>
-                  ))
-                )}
+                  ));
+                })()}
               </select>
             </div>
 
@@ -3697,18 +3723,41 @@ export default function DeparturePayments({
                 </label>
                 <select
                   value={clientPaymentForm.paymentMode}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const newMode = e.target.value;
+                    const normMode = (newMode || "UPI").toUpperCase();
+                    let targetAccountId = clientPaymentForm.collectionAccountId;
+                    if (normMode.includes("CASH")) {
+                      const cashAcc = collectionAccounts.find(
+                        (a) =>
+                          a.accountType === "CASH" ||
+                          a.paymentMethods?.includes("CASH") ||
+                          a.accountName.toLowerCase().includes("cash") ||
+                          a.accountHolderName?.toLowerCase().includes("cash"),
+                      );
+                      if (cashAcc) targetAccountId = cashAcc.id;
+                    } else if (normMode.includes("UPI")) {
+                      const upiAcc = collectionAccounts.find(
+                        (a) =>
+                          a.accountType !== "CASH" &&
+                          (Boolean(a.upiId) ||
+                            a.paymentMethods?.includes("UPI") ||
+                            a.accountType === "COMPANY" ||
+                            a.accountType === "INDIVIDUAL"),
+                      );
+                      if (upiAcc) targetAccountId = upiAcc.id;
+                    }
                     setClientPaymentForm((prev) => ({
                       ...prev,
-                      paymentMode: e.target.value,
-                    }))
-                  }
+                      paymentMode: newMode,
+                      collectionAccountId: targetAccountId,
+                    }));
+                  }}
                   className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-blue-500"
                 >
                   <option value="UPI">UPI / PhonePe / GPay</option>
                   <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
                   <option value="CASH">Cash Desk</option>
-                  <option value="CARD">Debit / Credit Card</option>
                 </select>
               </div>
               <div>

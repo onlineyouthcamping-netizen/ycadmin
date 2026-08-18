@@ -370,13 +370,109 @@ export default function BookingDetailsView({
   const [newAccIfsc, setNewAccIfsc] = useState("");
   const [savingNewAccount, setSavingNewAccount] = useState(false);
 
+  const filteredCollectionAccounts = useMemo(() => {
+    if (!collectionAccounts || collectionAccounts.length === 0) return [];
+
+    const normMode = (payMode || "UPI").toUpperCase();
+
+    if (normMode.includes("CASH")) {
+      // 1st: in cash only show & collect in YouthCamping Cash Desk
+      const cashAccs = collectionAccounts.filter(
+        (acc) =>
+          acc.accountType === "CASH" ||
+          acc.paymentMethods?.includes("CASH") ||
+          acc.accountName.toLowerCase().includes("cash") ||
+          acc.accountHolderName?.toLowerCase().includes("cash"),
+      );
+      return cashAccs.length > 0 ? cashAccs : collectionAccounts;
+    }
+
+    if (normMode.includes("UPI")) {
+      // 2nd: in upi show only the upi accounts added in treasury (exclude CASH)
+      const upiAccs = collectionAccounts.filter((acc) => {
+        if (acc.accountType === "CASH") return false;
+        const methods = acc.paymentMethods || [];
+        return (
+          Boolean(acc.upiId) ||
+          methods.includes("UPI") ||
+          acc.accountType === "UPI" ||
+          acc.accountType === "COMPANY" ||
+          acc.accountType === "INDIVIDUAL"
+        );
+      });
+      return upiAccs.length > 0 ? upiAccs : collectionAccounts.filter((a) => a.accountType !== "CASH");
+    }
+
+    if (normMode.includes("BANK")) {
+      // Bank Transfer (exclude CASH)
+      const bankAccs = collectionAccounts.filter(
+        (acc) =>
+          acc.accountType !== "CASH" &&
+          (Boolean(acc.accountNumber) ||
+            Boolean(acc.bankName) ||
+            acc.paymentMethods?.includes("BANK_TRANSFER") ||
+            acc.accountType === "COMPANY" ||
+            acc.accountType === "BANK" ||
+            acc.accountType === "INDIVIDUAL" ||
+            acc.accountType === "OTHER"),
+      );
+      return bankAccs.length > 0 ? bankAccs : collectionAccounts.filter((a) => a.accountType !== "CASH");
+    }
+
+    return collectionAccounts.filter((a) => a.accountType !== "CASH");
+  }, [collectionAccounts, payMode]);
+
+  const handlePayModeChange = (newMode: string) => {
+    setPayMode(newMode);
+    const normMode = (newMode || "UPI").toUpperCase();
+    if (normMode.includes("CASH")) {
+      const cashAcc = collectionAccounts.find(
+        (acc) =>
+          acc.accountType === "CASH" ||
+          acc.paymentMethods?.includes("CASH") ||
+          acc.accountName.toLowerCase().includes("cash") ||
+          acc.accountHolderName?.toLowerCase().includes("cash"),
+      );
+      if (cashAcc) {
+        setPayCollectionAccountId(cashAcc.id);
+      }
+    } else if (normMode.includes("UPI")) {
+      const upiAcc = collectionAccounts.find(
+        (acc) =>
+          acc.accountType !== "CASH" &&
+          (Boolean(acc.upiId) ||
+            acc.paymentMethods?.includes("UPI") ||
+            acc.accountType === "COMPANY" ||
+            acc.accountType === "INDIVIDUAL"),
+      );
+      if (upiAcc) {
+        setPayCollectionAccountId(upiAcc.id);
+      }
+    } else if (normMode.includes("BANK")) {
+      const bankAcc = collectionAccounts.find(
+        (acc) =>
+          acc.accountType !== "CASH" &&
+          (Boolean(acc.accountNumber) ||
+            acc.paymentMethods?.includes("BANK_TRANSFER") ||
+            acc.accountType === "COMPANY" ||
+            acc.accountType === "INDIVIDUAL"),
+      );
+      if (bankAcc) {
+        setPayCollectionAccountId(bankAcc.id);
+      }
+    }
+  };
+
   const loadCollectionAccounts = useCallback(async () => {
     try {
       const res = await collectionAccountsService.getAccounts({ activeOnly: true });
       if (res.data && res.data.length > 0) {
         setCollectionAccounts(res.data);
         if (!payCollectionAccountId) {
-          setPayCollectionAccountId(res.data[0].id);
+          const defaultUpi = res.data.find(
+            (a) => a.accountType !== "CASH" && (Boolean(a.upiId) || a.paymentMethods?.includes("UPI"))
+          );
+          setPayCollectionAccountId(defaultUpi ? defaultUpi.id : res.data[0].id);
         }
       }
     } catch {}
@@ -7533,8 +7629,8 @@ export default function BookingDetailsView({
                           className="pl-9 h-8 text-xs font-mono"
                         />
                       </div>
-                      <div className="w-24">
-                        <Select value={payMode} onValueChange={setPayMode}>
+                      <div className="w-28">
+                        <Select value={payMode} onValueChange={handlePayModeChange}>
                           <SelectTrigger className="h-8 text-xs font-semibold">
                             <SelectValue placeholder="Mode" />
                           </SelectTrigger>
@@ -7544,7 +7640,6 @@ export default function BookingDetailsView({
                             <SelectItem value="Bank Transfer">
                               Bank Transfer
                             </SelectItem>
-                            <SelectItem value="Card">Card</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -7572,9 +7667,11 @@ export default function BookingDetailsView({
                         <SelectValue placeholder="Select Collection Account" />
                       </SelectTrigger>
                       <SelectContent>
-                        {collectionAccounts.map((acc) => (
+                        {filteredCollectionAccounts.map((acc) => (
                           <SelectItem key={acc.id} value={acc.id}>
-                            {acc.accountName} ({acc.accountType})
+                            {acc.accountType === "CASH"
+                              ? `${acc.accountName} (YouthCamping Cash Desk)`
+                              : `${acc.accountName} ${acc.upiId ? `(${acc.upiId})` : `(${acc.accountType})`}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -7683,8 +7780,7 @@ export default function BookingDetailsView({
                     <SelectItem value="INDIVIDUAL">Individual Account</SelectItem>
                     <SelectItem value="BANK">Bank Account</SelectItem>
                     <SelectItem value="UPI">UPI Account</SelectItem>
-                    <SelectItem value="CASH">Cash Desk</SelectItem>
-                    <SelectItem value="CARD">Card POS</SelectItem>
+                    <SelectItem value="CASH">YouthCamping Cash Desk</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
