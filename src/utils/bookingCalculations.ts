@@ -6,6 +6,41 @@ export function generatePerPersonBookingItems(
   const travOpts = resObj?.travelOptions || [];
   const roomOpts = resObj?.roomOptions || [];
   const gstRate = (resObj?.gstPercentage ?? 5) / 100;
+  
+  const tripPrice = Number(resObj?.price || 0);
+  const locationOptions: { name: string; price: number }[] = [];
+  const seenLocs = new Set<string>();
+
+  if (resObj?.variants && Array.isArray(resObj.variants)) {
+    resObj.variants.forEach((v: any) => {
+      const name = (v.location || v.cityName || v.name || v.variantName || v.city || "").trim();
+      if (name && !seenLocs.has(name.toLowerCase())) {
+        seenLocs.add(name.toLowerCase());
+        const price = Number(v.discountedPrice) || Number(v.originalPrice) || tripPrice;
+        locationOptions.push({ name, price });
+      }
+    });
+  }
+
+  if (resObj?.pickupCities && Array.isArray(resObj.pickupCities)) {
+    resObj.pickupCities.forEach((c: any) => {
+      const name = (c.cityName || c.location || c.name || "").trim();
+      if (name && !seenLocs.has(name.toLowerCase())) {
+        seenLocs.add(name.toLowerCase());
+        const deduction = Number(c.deductionAmount || 0);
+        const price = Math.max(0, tripPrice - deduction);
+        locationOptions.push({ name, price });
+      }
+    });
+  }
+
+  const getBaseLocPrice = (locName: string) => {
+    if (!locName) return tripPrice;
+    const match = locationOptions.find((l) => l.name.toLowerCase() === locName.toLowerCase().trim());
+    return match ? match.price : tripPrice;
+  };
+
+  const bookingLocPrice = getBaseLocPrice(bookingObj.pickupCity || bookingObj.trainClass || "");
 
   const matchTrainClass = (label: string, train: string) => {
     if (!label || !train) return false;
@@ -96,8 +131,10 @@ export function generatePerPersonBookingItems(
       const tMatch = travOpts.find((opt: any) =>
         matchTrainClass(opt.label, pTrain),
       );
-      const trainDelta = tMatch ? tMatch.priceDelta || 0 : 0;
-      const trainLabel = isDirectChandigarh ? "Base Package" : (tMatch?.label || pTrain);
+      const locPrice = getBaseLocPrice(pTrain);
+      const trainDelta = (tMatch ? tMatch.priceDelta || 0 : 0) + (locPrice - bookingLocPrice);
+      const isLocMatch = locationOptions.some(l => l.name.toLowerCase() === pTrain.toLowerCase().trim());
+      const trainLabel = isDirectChandigarh ? "Base Package" : (tMatch?.label || (isLocMatch ? pTrain : pTrain));
 
       const rMatch = roomOpts.find((opt: any) =>
         matchRoomType(opt.label, pRoom),
@@ -125,8 +162,10 @@ export function generatePerPersonBookingItems(
     const tMatch = travOpts.find((opt: any) =>
       matchTrainClass(opt.label, pTrain),
     );
-    const trainDelta = tMatch ? tMatch.priceDelta || 0 : 0;
-    const trainLabel = isDirectChandigarh ? "Base Package" : (tMatch?.label || pTrain);
+    const locPrice = getBaseLocPrice(pTrain);
+    const trainDelta = (tMatch ? tMatch.priceDelta || 0 : 0) + (locPrice - bookingLocPrice);
+    const isLocMatch = locationOptions.some(l => l.name.toLowerCase() === pTrain.toLowerCase().trim());
+    const trainLabel = isDirectChandigarh ? "Base Package" : (tMatch?.label || (isLocMatch ? pTrain : pTrain));
 
     const rMatch = roomOpts.find((opt: any) => matchRoomType(opt.label, pRoom));
     const roomDelta = rMatch ? rMatch.priceDelta || 0 : 0;

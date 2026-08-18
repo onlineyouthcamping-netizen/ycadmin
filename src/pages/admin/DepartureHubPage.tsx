@@ -6168,8 +6168,7 @@ useEffect(() => {
                     } else if (activeTab === "activities") {
                       setActivityModalOpen(true);
                     } else if (activeTab === "hotels") {
-                      setHotelWizardStep(1);
-                      setIsAddHotelWizardOpen(true);
+                      toast.info("Please use the '+ Assign' button on a specific day row below to assign a hotel.");
                     } else if (activeTab === "guides") {
                       setEditingGuideId(null);
                       setGuideForm(emptyGuideForm("PRIMARY_GUIDE"));

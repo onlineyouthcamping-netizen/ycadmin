@@ -75,6 +75,7 @@ import {
   Tent,
   Settings2,
 } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,6 +123,7 @@ const sidebarModules: SidebarModule[] = [
       { title: "Departures", url: "/admin/operations" },
       { title: "Station payments", url: "/admin/operations?tab=stationpayments" },
       { title: "Daily tasks", url: "/admin/operations/daily-tasks" },
+      { title: "Booking tasks", url: "/admin/operations/booking-tasks" },
       { title: "SOP & checklists", url: "/admin/operations/sops" },
       { title: "Vendors", url: "/admin/vendors" },
       { title: "Company docs", url: "/admin/company-documents" },
@@ -884,6 +886,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               >
                 <Search className="h-4 w-4" strokeWidth={1.75} />
               </button>
+
+              <NotificationBell />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

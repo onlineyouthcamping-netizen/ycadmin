@@ -260,6 +260,7 @@ export default function BookingDetailsView({
     email: "",
     foodPreference: "Normal Food",
     roomSharing: "Triple",
+    trainOption: "",
   });
 
   // Individual Passenger Cancellation State
@@ -653,6 +654,71 @@ export default function BookingDetailsView({
 
   // Trips service & full details
   const [fullTrip, setFullTrip] = useState<any>(null);
+
+  const locationOptions = useMemo(() => {
+    if (!fullTrip) return [];
+    const list: { name: string; price: number }[] = [];
+    const seen = new Set<string>();
+    const tripPrice = Number(fullTrip.price || 0);
+
+    if (Array.isArray(fullTrip.variants)) {
+      fullTrip.variants.forEach((v: any) => {
+        const name = (
+          v.location ||
+          v.cityName ||
+          v.name ||
+          v.variantName ||
+          v.city ||
+          ""
+        ).trim();
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          const price =
+            Number(v.discountedPrice) || Number(v.originalPrice) || tripPrice;
+          list.push({ name, price });
+        }
+      });
+    }
+
+    if (Array.isArray(fullTrip.pickupCities)) {
+      fullTrip.pickupCities.forEach((c: any) => {
+        const name = (c.cityName || c.location || c.name || "").trim();
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          const deduction = Number(c.deductionAmount || 0);
+          const price = Math.max(0, tripPrice - deduction);
+          list.push({ name, price });
+        }
+      });
+    }
+
+    return list;
+  }, [fullTrip]);
+
+  const combinedTravelOptions = useMemo(() => {
+    if (!fullTrip) return [];
+    const list: { name: string; priceDelta: number }[] = [];
+    const seen = new Set<string>();
+
+    if (Array.isArray(fullTrip.travelOptions)) {
+      fullTrip.travelOptions.forEach((opt: any) => {
+        const name = (opt.label || "").trim();
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          list.push({ name, priceDelta: Number(opt.priceDelta || 0) });
+        }
+      });
+    }
+
+    locationOptions.forEach((loc) => {
+      if (!seen.has(loc.name.toLowerCase())) {
+        seen.add(loc.name.toLowerCase());
+        list.push({ name: loc.name, priceDelta: 0 }); // Price delta calculated against booking base later
+      }
+    });
+
+    return list;
+  }, [fullTrip, locationOptions]);
 
   // Custom states matching screenshots
   const [bookingItems, setBookingItems] = useState<any[]>([]);
@@ -2050,6 +2116,7 @@ export default function BookingDetailsView({
       foodPreference: p.foodPreference || "Normal Food",
       roomSharing:
         p.roomSharing || booking.roomType || booking.roomSharing || "Triple",
+      trainOption: p.type || p.trainOption || booking.trainClass || "",
     });
     setShowAddPassenger(true);
   };
@@ -2089,6 +2156,8 @@ export default function BookingDetailsView({
               age: newPassenger.age || "N/A",
               foodPreference: newPassenger.foodPreference || "Normal Food",
               roomSharing: newPassenger.roomSharing || "Triple",
+              type: newPassenger.trainOption || p.type || `${booking.trainClass} Train`,
+              trainOption: newPassenger.trainOption || p.trainOption || booking.trainClass,
             }
           : p,
       );
@@ -2103,7 +2172,8 @@ export default function BookingDetailsView({
         email: newPassenger.email || "N/A",
         gender: newPassenger.gender,
         age: newPassenger.age || "N/A",
-        type: `${booking.trainClass} Train`,
+        type: newPassenger.trainOption || `${booking.trainClass} Train`,
+        trainOption: newPassenger.trainOption || booking.trainClass || "",
         status: "Form complete",
         foodPreference: newPassenger.foodPreference || "Normal Food",
         roomSharing: newPassenger.roomSharing || "Triple",
@@ -2141,6 +2211,7 @@ export default function BookingDetailsView({
       email: "",
       foodPreference: "Normal Food",
       roomSharing: "Triple",
+      trainOption: "",
     });
     setEditingPassenger(null);
     if (!keepOpen) setShowAddPassenger(false);
@@ -3464,6 +3535,7 @@ export default function BookingDetailsView({
                   foodPreference: "Normal Food",
                   salutation: "Mr.",
                   roomSharing: booking.roomType || "Triple",
+                  trainOption: "",
                 });
                 setShowAddPassenger(true);
               };
@@ -7045,17 +7117,42 @@ export default function BookingDetailsView({
           </div>
 
           <div className="p-5 space-y-3.5 text-xs text-slate-700">
-            <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] text-[10.5px]">
-              <span className="font-semibold text-slate-500 uppercase mr-1">
-                Passenger Option:
-              </span>
-              <span className="font-medium">
-                {(booking.pickupCity || "").toLowerCase().includes("chandigarh to chandigarh") || (booking.pickupCity || "").toLowerCase().trim() === "chandigarh"
-                  ? "Base Package"
-                  : `${booking.trainClass || "Standard"} Sleeper`}, Pickup/Drop:{" "}
-                {booking.pickupCity || "Direct Join / Main Pickup"}
-              </span>
-            </div>
+            {combinedTravelOptions && combinedTravelOptions.length > 0 ? (
+              <div className="space-y-1 bg-slate-50 p-2.5 rounded border border-[#E8EEF4]">
+                <label className="text-[9px] font-semibold uppercase text-slate-400">
+                  Passenger Option (Package)
+                </label>
+                <Select
+                  value={newPassenger.trainOption || booking.trainClass || booking.pickupCity || ""}
+                  onValueChange={(v) =>
+                    setNewPassenger({ ...newPassenger, trainOption: v })
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs rounded bg-white">
+                    <SelectValue placeholder="Select Option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {combinedTravelOptions.map((opt: any, idx: number) => (
+                      <SelectItem key={idx} value={opt.name} className="text-xs">
+                        {opt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="bg-slate-50 p-2.5 rounded border border-[#E8EEF4] text-[10.5px]">
+                <span className="font-semibold text-slate-500 uppercase mr-1">
+                  Passenger Option:
+                </span>
+                <span className="font-medium">
+                  {(booking.pickupCity || "").toLowerCase().includes("chandigarh to chandigarh") || (booking.pickupCity || "").toLowerCase().trim() === "chandigarh"
+                    ? "Base Package"
+                    : `${booking.trainClass || "Standard"} Sleeper`}, Pickup/Drop:{" "}
+                  {booking.pickupCity || "Direct Join / Main Pickup"}
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">

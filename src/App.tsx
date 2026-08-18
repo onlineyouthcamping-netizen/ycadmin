@@ -65,6 +65,9 @@ const SopBuilderPage = lazy(
 const DailyTaskConsolePage = lazy(
   () => import("./pages/admin/DailyTaskConsolePage.tsx"),
 );
+const GlobalBookingTasksPage = lazy(
+  () => import("./pages/admin/GlobalBookingTasksPage.tsx"),
+);
 const VendorDirectoryPage = lazy(
   () => import("./pages/admin/VendorDirectoryPage.tsx"),
 );
@@ -384,6 +387,14 @@ const App = () => (
                   element={
                     <AdminRoute requiredPermission="ops.view">
                       <DailyTaskConsolePage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/operations/booking-tasks"
+                  element={
+                    <AdminRoute requiredPermission="bookings.view">
+                      <GlobalBookingTasksPage />
                     </AdminRoute>
                   }
                 />

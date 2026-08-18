@@ -433,12 +433,6 @@ function formatDateToYMD(dateVal: any, fallbackDeparture?: string, dayOffset = 0
             Click a day to view hotel details, room allocation and per-pax cost
           </p>
         </div>
-        <button
-          onClick={() => onEditHotel({ id: "" })}
-          className="hidden md:inline-flex bg-[#FF4D00] hover:bg-[#E04500] text-white px-4 py-2 rounded text-xs font-bold transition-colors shadow-xs"
-        >
-          + Add / Change Hotel
-        </button>
       </div>
 
       {/* ── Accommodation Summary Bar ── */}

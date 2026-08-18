@@ -282,6 +282,11 @@ export const bookingsService = {
     return res.data.data;
   },
 
+  async getAllBookingTasks(params?: { status?: string; assignee?: string }): Promise<any[]> {
+    const res = await api.get(`/bookings/tasks/all`, { params });
+    return res.data;
+  },
+
   async getColleagues(): Promise<any[]> {
     const res = await api.get("/bookings/colleagues/list");
     return res.data.data;
