@@ -88,6 +88,7 @@ export interface DepartureTransportProps {
   computedRoomAllocations: any[];
   computedVehicleAllocations: any[];
   allPassengers: any[];
+  passengerAllocations?: Record<string, any>;
   setPassengerAllocations: React.Dispatch<
     React.SetStateAction<Record<string, { room: string; vehicle: string; seat: string }>>
   >;
@@ -140,6 +141,7 @@ export default function DepartureTransport({
   computedRoomAllocations,
   computedVehicleAllocations,
   allPassengers,
+  passengerAllocations = {},
   setPassengerAllocations,
   setManualRooms,
   setAddRoomModalOpen,

@@ -8616,6 +8616,7 @@ useEffect(() => {
               computedRoomAllocations={computedRoomAllocations}
               computedVehicleAllocations={computedVehicleAllocations}
               allPassengers={allPassengers}
+              passengerAllocations={passengerAllocations}
               setPassengerAllocations={setPassengerAllocations}
               setManualRooms={setManualRooms}
               setAddRoomModalOpen={setAddRoomModalOpen}
