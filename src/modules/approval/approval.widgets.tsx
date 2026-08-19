@@ -39,7 +39,7 @@ export const ApprovalQueueWidget: React.FC<DashboardWidgetContextProps> = ({
       label: "Train tickets",
       count: q?.missingTickets ?? 0,
       color: "text-blue-600 bg-blue-50 border-blue-200",
-      path: "/admin/approvals-hub?tab=ticket-approvals",
+      path: "/admin/ticket-approvals",
     },
   ];
 

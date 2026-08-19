@@ -49,7 +49,7 @@ const STATUS_STYLES: Record<
 > = {
   DRAFT: {
     bg: "bg-slate-50",
-    text: "text-slate-655",
+    text: "text-slate-600",
     dot: "bg-slate-400",
     label: "Draft",
   },
@@ -79,8 +79,8 @@ const STATUS_STYLES: Record<
   },
   REJECTED: {
     bg: "bg-red-50",
-    text: "text-red-650",
-    dot: "bg-red-550",
+    text: "text-red-600",
+    dot: "bg-red-500",
     label: "Rejected",
   },
   ISSUED: {
@@ -92,7 +92,7 @@ const STATUS_STYLES: Record<
   PENDING: {
     bg: "bg-amber-50",
     text: "text-amber-700",
-    dot: "bg-amber-550",
+    dot: "bg-amber-500",
     label: "Pending",
   },
   // Train Ticket mappings
@@ -519,9 +519,11 @@ export default function VerificationQueuePage({
         toast.error("Rejection reason is required");
         return;
       }
+      // Map UI actions to backend's accepted action values
+      const backendAction = action === "APPROVE" ? "VERIFY" : "RECORD_PAYMENT";
       await financeControllerService.performVendorAction(id, {
-        action,
-        reason: reason || undefined,
+        action: backendAction as any,
+        notes: reason || undefined,
       });
       toast.success(action === "APPROVE" ? "Payout approved" : "Payout rejected");
       loadSubQueues();
@@ -995,7 +997,7 @@ export default function VerificationQueuePage({
                           ₹{Number(item.paidAmount || 0).toLocaleString("en-IN")}
                         </td>
                         <td className="px-3.5 py-2">
-                          <span className={cn("font-black", item.outstandingAmount > 0 ? text-red-600" : "text-green-600")}>
+                          <span className={cn("font-black", item.outstandingAmount > 0 ? "text-red-600" : "text-green-600")}>
                             ₹{Number(item.outstandingAmount || 0).toLocaleString("en-IN")}
                           </span>
                         </td>
@@ -1406,11 +1408,11 @@ export default function VerificationQueuePage({
                               {/* PNR / Ticket State */}
                               <td className="px-3.5 py-2">
                                 {isTicketIncomplete ? (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border border-red-200 bg-red-50 text-red-650">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border border-red-200 bg-red-50 text-red-600">
                                     Incomplete Ticket Details
                                   </span>
                                 ) : item.isPseudo ? (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border border-red-200 bg-red-50 text-red-650">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border border-red-200 bg-red-50 text-red-600">
                                     PNR Not Generated
                                   </span>
                                 ) : !item.pnr || item.pnr === "PENDING" ? (
