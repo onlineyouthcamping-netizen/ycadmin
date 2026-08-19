@@ -3672,25 +3672,40 @@ useEffect(() => {
         (b: any) => (b.remainingAmount || 0) > 0,
       ).length;
 
-      // Vendor Payments (filtered from tripVendors state)
-      const hotelsCost = tripVendors
-        .filter((v) => v.vendorType === "hotel" || v.category === "Hotels")
-        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
-      const hotelsPaid = tripVendors
-        .filter((v) => v.vendorType === "hotel" || v.category === "Hotels")
-        .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
-      const transportsCost = tripVendors
-        .filter((v) => v.vendorType === "transport" || v.category === "Transport")
-        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
+      // Vendor Payments (filtered from opsHotels, allocFleet, dbGuides, and tripVendors)
+      const hotelsCost = Math.max(
+        (opsHotels || []).reduce((sum: number, h: any) => sum + (Number(h.totalAmount) || 0), 0),
+        tripVendors
+          .filter((v) => v.vendorType === "hotel" || v.category === "Hotels")
+          .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0)
+      );
+      const hotelsPaid = Math.max(
+        (opsHotels || []).reduce((sum: number, h: any) => sum + (Number(h.advancePaid) || 0), 0),
+        tripVendors
+          .filter((v) => v.vendorType === "hotel" || v.category === "Hotels")
+          .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0)
+      );
+      const transportsCost = Math.max(
+        (allocFleet || []).reduce((sum: number, f: any) => sum + (Number(f.cost) || 0), 0),
+        tripVendors
+          .filter((v) => v.vendorType === "transport" || v.category === "Transport")
+          .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0)
+      );
       const transportsPaid = tripVendors
         .filter((v) => v.vendorType === "transport" || v.category === "Transport")
         .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
-      const guidesCost = tripVendors
-        .filter((v) => v.vendorType === "guide" || v.category === "Guides")
-        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
-      const guidesPaid = tripVendors
-        .filter((v) => v.vendorType === "guide" || v.category === "Guides")
-        .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
+      const guidesCost = Math.max(
+        (dbGuides || []).reduce((sum: number, g: any) => sum + (Number(g.agreedAmount) || 0), 0),
+        tripVendors
+          .filter((v) => v.vendorType === "guide" || v.category === "Guides")
+          .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0)
+      );
+      const guidesPaid = Math.max(
+        (dbGuides || []).reduce((sum: number, g: any) => sum + (Number(g.advancePaid) || 0), 0),
+        tripVendors
+          .filter((v) => v.vendorType === "guide" || v.category === "Guides")
+          .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0)
+      );
       const activitiesCost = tripVendors
         .filter((v) => v.vendorType === "activity" || v.category === "Activities")
         .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
@@ -3735,7 +3750,9 @@ useEffect(() => {
         totalRevenue > 0 ? ((estProfit / totalRevenue) * 100).toFixed(1) : "0";
 
       const customerPaidPercent =
-        totalRevenue > 0 ? ((customerPaid / totalRevenue) * 100).toFixed(1) : "0";
+        totalRevenue > 0
+          ? Math.min(100, Number(((customerPaid / totalRevenue) * 100).toFixed(1)))
+          : 0;
       const customerOutstandingPercent =
         totalRevenue > 0
           ? ((customerOutstanding / totalRevenue) * 100).toFixed(1)
@@ -3769,7 +3786,7 @@ useEffect(() => {
         totalExpenses: totalVendorPaid,
       };
     },
-    [bookings, tripVendors],
+    [bookings, tripVendors, opsHotels, allocFleet, dbGuides],
   ) as {
     totalRevenue: number;
     customerPaid: number;
@@ -6546,21 +6563,22 @@ useEffect(() => {
           {activeTab === "overview" && (
             <div className="space-y-3 min-w-0">
               {(() => {
-                const hotelsTarget = computedHotels.length || 7;
+                const stayDays = (computedItinerary || []).filter((d: any) => {
+                  const dest = (d.destination || d.location || d.sub || "").toLowerCase();
+                  const day = (d.day || "").toLowerCase();
+                  return !d.isNoStay && !dest.includes("train") && !dest.includes("night journey") && !day.includes("no stay");
+                });
+                const hotelsTarget = stayDays.length > 0 ? stayDays.length : 5;
                 const realOpsHotels = (opsHotels || []).filter((h: any) => {
                   const name = String(h?.hotelName || h?.name || "").trim().toUpperCase();
                   return name && name !== "NO_STAY" && name !== "NO STAY" && name !== "—";
                 });
-                const isHotelsConfirmed = realOpsHotels.length > 0 || tripVendors.some((v: any) => v.vendorType === "hotel");
-                const confirmedHotelCount = realOpsHotels.length > 0
-                  ? realOpsHotels.length
-                  : isHotelsConfirmed
-                    ? hotelsTarget
-                    : 0;
+                const confirmedHotelCount = realOpsHotels.length;
+                const isHotelsConfirmed = confirmedHotelCount >= hotelsTarget && hotelsTarget > 0;
 
-                const isTransportConfirmed = allocFleet.length > 0 || tripVendors.some((v: any) => v.vendorType === "transport");
-                const transportAssignedCount = allocFleet.length > 0 ? allocFleet.length : (isTransportConfirmed ? 1 : 0);
+                const transportAssignedCount = allocFleet.length;
                 const transportRequiredCount = Math.max(1, Math.ceil((activeDeparturePassengers.length || 1) / 17));
+                const isTransportConfirmed = transportAssignedCount >= transportRequiredCount;
 
                 const guideRoles = new Set([
                   "PRIMARY_GUIDE",
@@ -6575,16 +6593,27 @@ useEffect(() => {
                 const actualDepartureGuides = dbGuides.filter((g: any) =>
                   g.assignmentType ? guideRoles.has(g.assignmentType) : true
                 );
-                const isGuideAssigned = actualDepartureGuides.length > 0 || tripVendors.some((v: any) => v.vendorType === "guide" || v.category === "Guides");
-                const guideCount = actualDepartureGuides.length > 0
-                  ? actualDepartureGuides.length
-                  : (isGuideAssigned ? 1 : 0);
+                const guideCount = actualDepartureGuides.length;
+                const isGuideAssigned = guideCount > 0;
 
-                const rScore = readinessData?.totalScore ?? 0;
-                const isReady = readinessData?.status === "READY";
-                const missingList = readinessData?.missingItems || [];
                 const tasksDone = computedTasks.filter((t) => t.status === "COMPLETED").length;
-                const tasksTotal = computedTasks.length || 15;
+                const tasksTotal = computedTasks.length || 8;
+
+                // Accurate dynamic readiness calculation
+                const hotelsScore = hotelsTarget > 0 ? (confirmedHotelCount / hotelsTarget) * 25 : 25;
+                const transportScore = (Math.min(1, transportAssignedCount / transportRequiredCount)) * 25;
+                const guidesScore = (guideCount > 0 ? 1 : 0) * 20;
+                const tasksScore = tasksTotal > 0 ? (tasksDone / tasksTotal) * 15 : 15;
+                const paymentsScore = (Math.min(100, stats.customerPaidPercent) / 100) * 15;
+                const rScore = Math.min(100, Math.round(hotelsScore + transportScore + guidesScore + tasksScore + paymentsScore));
+                const isReady = rScore >= 90;
+
+                const missingList: string[] = [];
+                if (!isHotelsConfirmed) missingList.push(`${hotelsTarget - confirmedHotelCount} hotel stay(s) pending assignment.`);
+                if (!isTransportConfirmed) missingList.push(`${transportRequiredCount - transportAssignedCount} vehicle(s) pending assignment.`);
+                if (!isGuideAssigned) missingList.push("Lead guide not yet assigned to departure.");
+                if (stats.customerOutstanding > 0) missingList.push(`₹${stats.customerOutstanding.toLocaleString("en-IN")} customer balance payment outstanding.`);
+                if (tasksTotal > tasksDone) missingList.push(`${tasksTotal - tasksDone} operational task(s) incomplete.`);
 
                 const readinessKpis = [
                   {
