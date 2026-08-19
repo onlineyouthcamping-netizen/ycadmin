@@ -48,7 +48,9 @@ export interface DepartureTransportProps {
   onSave: () => void;
   onSaveRooms?: () => void;
   onSaveVehicles?: () => void;
-  onAutoAllocate: () => void;
+  onAutoAllocate?: () => void;
+  onAutoAllocateRooms?: () => void;
+  onAutoAllocateTempos?: () => void;
   onAddVehicle: (e: React.FormEvent) => void;
   onDeleteVehicle: (id: string) => void;
   onCopyTempoList: () => void;
@@ -99,6 +101,8 @@ export default function DepartureTransport({
   onSaveRooms,
   onSaveVehicles,
   onAutoAllocate,
+  onAutoAllocateRooms,
+  onAutoAllocateTempos,
   onAddVehicle,
   onDeleteVehicle,
   onCopyTempoList,
@@ -137,13 +141,6 @@ export default function DepartureTransport({
   setShowClearAllocationsDialog,
   onClearAllocations,
 }: DepartureTransportProps) {
-  const costLocked =
-    selectedVehicleId !== "" &&
-    selectedVehicleId !== "custom" &&
-    newVehicleCost !== "";
-  const vendorLocked =
-    selectedVehicleId !== "" && selectedVehicleId !== "custom";
-
   return (
     <div className="space-y-3 min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 min-w-0">
@@ -166,11 +163,7 @@ export default function DepartureTransport({
             ) : (
               <Save className="w-3.5 h-3.5 shrink-0 text-slate-400" strokeWidth={1.75} />
             )}
-            {isSavingAllocations ? "Saving…" : "Save"}
-          </button>
-          <button type="button" onClick={onAutoAllocate} className={orangeBtn}>
-            <RefreshCw className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
-            Auto-allocate
+            {isSavingAllocations ? "Saving…" : "Save All"}
           </button>
         </div>
       </div>
@@ -188,176 +181,160 @@ export default function DepartureTransport({
 
         <form
           onSubmit={onAddVehicle}
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2 items-end min-w-0"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5 items-end min-w-0"
         >
-          <div className="min-w-0">
-            <label className={labelClass}>Vehicle type</label>
+          <div className="md:col-span-1 min-w-0">
+            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+              Vehicle type
+            </label>
             <select
               value={selectedVehicleId}
               onChange={(e) => {
                 const val = e.target.value;
                 setSelectedVehicleId(val);
-                if (val === "custom") {
-                  setNewVehicleType("17 Seater Tempo");
-                  setNewVehicleCapacity("17");
-                  setNewVehicleCost("");
-                  setNewVehicleVendor("");
-                  setSelectedVendorId("");
-                } else {
-                  const dirVeh = vendorDirectoryFleet.find((v) => v.id === val);
-                  if (dirVeh) {
-                    setNewVehicleType(dirVeh.vehicleType);
-                    setNewVehicleCapacity(String(dirVeh.capacity));
-                    setNewVehicleCost(dirVeh.cost ? String(dirVeh.cost) : "");
-                    setNewVehicleVendor(dirVeh.vendorName);
-                    setNewVehicleName(`${dirVeh.vendorName} ${dirVeh.vehicleType}`);
-                    setSelectedVendorId(dirVeh.vendorId || "");
-                    return;
-                  }
-                  const veh = fleetVehicles.find((v) => v.id === val);
-                  if (veh) {
-                    setNewVehicleType(veh.vehicleType);
-                    setNewVehicleCapacity(String(veh.capacity));
-                    setNewVehicleCost(
-                      String(veh.tariff?.amount ?? veh.totalAmount ?? ""),
+                if (val && val !== "custom") {
+                  const item =
+                    fleetVehicles.find((v) => v.id === val) ||
+                    vendorDirectoryFleet.find((f: any) => f.id === val);
+                  if (item) {
+                    setNewVehicleType(item.vehicleType || "Tempo");
+                    setNewVehicleCapacity(String(item.capacity || 17));
+                    setNewVehicleName(
+                      item.driverName || item.name || item.vehicleType || "",
                     );
-                    setNewVehicleVendor(veh.vendor?.name ?? veh.notes ?? "");
-                    setNewVehicleName(veh.driverName || veh.name || veh.vehicleType);
-                    setSelectedVendorId(veh.vendorId || veh.vendor?.id || "");
+                    setNewVehicleCost(
+                      item.tariff?.amount !== undefined
+                        ? String(item.tariff.amount)
+                        : item.totalAmount !== undefined
+                          ? String(item.totalAmount)
+                          : "",
+                    );
+                    setNewVehicleVendor(
+                      item.vendor?.name ?? item.notes ?? "Vendor",
+                    );
+                    setSelectedVendorId(
+                      item.vendor?.id ?? item.vendorId ?? "",
+                    );
                   }
                 }
               }}
-              className={fieldClass}
+              className={nativeSelect}
             >
-              <option value="">Select vendor vehicle / fleet</option>
-              {vendorDirectoryFleet.length > 0 && (
-                <optgroup label="Trip vendors (mapped fleet)">
-                  {vendorDirectoryFleet.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.label || `${v.vehicleType} – ${v.vendorName}`}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
+              <option value="">Select vendor vehicle</option>
               {fleetVehicles.length > 0 && (
-                <optgroup label="Assigned departure fleet">
+                <optgroup label="Available Vendor Fleet">
                   {fleetVehicles.map((v) => (
                     <option key={v.id} value={v.id}>
-                      {v.vehicleType} – {v.vendor?.name || v.notes || "Vendor"} (
-                      {v.capacity} seats) – ₹
-                      {Number(v.tariff?.amount ?? v.totalAmount ?? 0).toLocaleString(
-                        "en-IN",
-                      )}
+                      {v.vendor?.name ? `${v.vendor.name} — ` : ""}
+                      {v.vehicleType} ({v.capacity} seats)
                     </option>
                   ))}
                 </optgroup>
               )}
-              <option value="custom">Custom vehicle</option>
+              <option value="custom">+ Custom Entry</option>
             </select>
-            {vendorDirectoryFleet.length === 0 && (
-              <p className="mt-1 text-[11px] text-slate-500">
-                No priced transport vendor is mapped to this trip. Assign a trip
-                vendor or use a custom vehicle with an explicit cost.
-              </p>
-            )}
           </div>
-          <div className="min-w-0">
-            <label className={labelClass}>Capacity</label>
-            {selectedVehicleId && selectedVehicleId !== "custom" ? (
-              <input
-                type="text"
-                readOnly
-                value={`${newVehicleCapacity} seats`}
-                className={fieldReadonly}
-              />
-            ) : (
-              <select
-                value={newVehicleCapacity}
-                onChange={(e) => setNewVehicleCapacity(e.target.value)}
-                className={fieldClass}
-              >
-                {[...Array(60)].map((_, i) => (
-                  <option key={i + 1} value={String(i + 1)}>
-                    {i + 1} seats
-                  </option>
-                ))}
-              </select>
-            )}
+
+          <div className="md:col-span-1 min-w-0">
+            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+              Capacity
+            </label>
+            <select
+              value={newVehicleCapacity}
+              onChange={(e) => setNewVehicleCapacity(e.target.value)}
+              className={nativeSelect}
+            >
+              <option value="4">4 seats</option>
+              <option value="6">6 seats</option>
+              <option value="7">7 seats</option>
+              <option value="10">10 seats</option>
+              <option value="12">12 seats</option>
+              <option value="14">14 seats</option>
+              <option value="17">17 seats</option>
+              <option value="20">20 seats</option>
+              <option value="26">26 seats</option>
+            </select>
           </div>
-          <div className="min-w-0">
-            <label className={labelClass}>Name</label>
+
+          <div className="md:col-span-1 min-w-0">
+            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+              Name
+            </label>
             <input
               ref={nameInputRef}
               type="text"
-              required
               placeholder="Tempo 1"
               value={newVehicleName}
               onChange={(e) => setNewVehicleName(e.target.value)}
-              className={cn(fieldClass, "placeholder:text-slate-400")}
+              className={inputText}
             />
           </div>
-          <div className="min-w-0">
-            <label className={labelClass}>Cost (₹)</label>
+
+          <div className="md:col-span-1 min-w-0">
+            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+              Cost (₹)
+            </label>
             <input
               type="number"
-              required
-              readOnly={costLocked}
               placeholder="45000"
               value={newVehicleCost}
               onChange={(e) => setNewVehicleCost(e.target.value)}
-              className={cn(
-                costLocked ? fieldReadonly : fieldClass,
-                "placeholder:text-slate-400",
-              )}
+              className={inputText}
             />
           </div>
-          <div className="min-w-0">
-            <label className={labelClass}>Vendor</label>
+
+          <div className="md:col-span-1 min-w-0">
+            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+              Vendor
+            </label>
             <input
               type="text"
-              readOnly={vendorLocked}
               placeholder="ABC Travels"
               value={newVehicleVendor}
               onChange={(e) => setNewVehicleVendor(e.target.value)}
-              className={cn(
-                vendorLocked ? fieldReadonly : fieldClass,
-                "placeholder:text-slate-400",
-              )}
+              className={inputText}
             />
           </div>
-          <button type="submit" className={cn(outlineBtn, "w-full xl:w-auto")}>
-            <Plus className="w-3.5 h-3.5 shrink-0 text-slate-400" strokeWidth={1.75} />
-            Add
-          </button>
+
+          <div className="md:col-span-1 min-w-0">
+            <button
+              type="submit"
+              className={cn(outlineBtn, "w-full justify-center")}
+            >
+              <Plus className="w-3.5 h-3.5 shrink-0 text-slate-400" strokeWidth={1.75} />
+              Add
+            </button>
+          </div>
         </form>
 
         {allocFleet.length === 0 ? (
-          <p className="text-[12px] text-slate-400 py-4 text-center">
-            No vehicles in the fleet yet.
+          <p className="text-[12px] text-slate-400 py-3 text-center">
+            No vehicles assigned. Select a vendor vehicle above or create a custom one.
           </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 min-w-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
             {allocFleet.map((v) => (
               <div
                 key={v.id}
-                className="border border-[#E8EEF4] rounded-lg p-2.5 bg-white flex items-center justify-between gap-2 min-w-0"
+                className="border border-[#E8EEF4] rounded-lg p-3 bg-white flex items-start justify-between gap-2 min-w-0"
               >
                 <div className="min-w-0">
                   <p className="text-[12px] font-medium text-[#0B1528] truncate">
                     {v.name}
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-[11px] text-slate-500 truncate">
                     {v.vehicleType} · {v.capacity} seats
                   </p>
                   <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                    ₹{Number(v?.cost || 0).toLocaleString("en-IN")} · {v.vendor}
+                    {v.cost ? `₹${Number(v.cost).toLocaleString("en-IN")}` : "—"} ·{" "}
+                    {v.vendor || "Self-driven"}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => onDeleteVehicle(v.id)}
-                  className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-[#FF4D00] hover:bg-[#F4F7FB] rounded-md shrink-0"
-                  aria-label={`Remove ${v.name}`}
+                  className="text-slate-400 hover:text-[#FF4D00] transition-colors p-1 rounded-md hover:bg-[#F4F7FB] shrink-0"
+                  aria-label={`Remove vehicle ${v.name}`}
                 >
                   <Trash className="w-3.5 h-3.5" strokeWidth={1.75} />
                 </button>
@@ -368,65 +345,74 @@ export default function DepartureTransport({
       </div>
 
       <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 sm:p-4 shadow-none space-y-3 min-w-0">
-        <div className="flex items-center gap-2 border-b border-[#E8EEF4] pb-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b border-[#E8EEF4] pb-2.5 min-w-0">
           <StepHeading n={2}>Allocation rules</StepHeading>
+          <span className="text-[11px] text-slate-500">
+            Room sharing preferences
+          </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-center min-w-0">
-          <div className="min-w-0">
-            <label className={labelClass}>Room sharing</label>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-[11px] font-medium text-slate-700 mb-1">
+              Room sharing size
+            </label>
             <select
               value={sharingPref}
               onChange={(e) => setSharingPref(e.target.value)}
-              className={cn(fieldClass, "hover:bg-[#F4F7FB]")}
+              className={nativeSelect}
             >
-              <option value="2">2-sharing (double)</option>
-              <option value="3">3-sharing (triple)</option>
-              <option value="4">4-sharing (quad)</option>
+              <option value="2">Double (2 per room)</option>
+              <option value="3">Triple (3 per room)</option>
+              <option value="4">Quad (4 per room)</option>
             </select>
           </div>
-          <div className="flex items-center gap-2 min-w-0">
+
+          <div className="flex items-center gap-2 pt-6">
             <input
               type="checkbox"
-              id="rule-same-gender"
+              id="same-gender"
               checked={sameGenderEnforced}
               onChange={(e) => setSameGenderEnforced(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-[#E8EEF4] text-[#FF4D00] focus:ring-[#FF4D00] cursor-pointer shrink-0"
+              className={checkboxCls}
             />
             <label
-              htmlFor="rule-same-gender"
-              className="text-[12px] font-medium text-[#0B1528] cursor-pointer select-none"
+              htmlFor="same-gender"
+              className="text-[11px] font-medium text-slate-700 cursor-pointer"
             >
-              Same-gender rooms
+              Separate by gender
             </label>
           </div>
-          <div className="flex items-center gap-2 min-w-0">
+
+          <div className="flex items-center gap-2 pt-6">
             <input
               type="checkbox"
-              id="rule-prioritize-couples"
+              id="prioritize-couples"
               checked={prioritizeCouples}
               onChange={(e) => setPrioritizeCouples(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-[#E8EEF4] text-[#FF4D00] focus:ring-[#FF4D00] cursor-pointer shrink-0"
+              className={checkboxCls}
             />
             <label
-              htmlFor="rule-prioritize-couples"
-              className="text-[12px] font-medium text-[#0B1528] cursor-pointer select-none"
+              htmlFor="prioritize-couples"
+              className="text-[11px] font-medium text-slate-700 cursor-pointer"
             >
-              Keep booking groups together
+              Prioritize couples
             </label>
           </div>
-          <div className="flex items-center gap-2 min-w-0">
+
+          <div className="flex items-center gap-2 pt-6">
             <input
               type="checkbox"
-              id="rule-fallback-quad"
+              id="fallback-quad"
               checked={fallbackToQuad}
               onChange={(e) => setFallbackToQuad(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-[#E8EEF4] text-[#FF4D00] focus:ring-[#FF4D00] cursor-pointer shrink-0"
+              className={checkboxCls}
             />
             <label
-              htmlFor="rule-fallback-quad"
-              className="text-[12px] font-medium text-[#0B1528] cursor-pointer select-none"
+              htmlFor="fallback-quad"
+              className="text-[11px] font-medium text-slate-700 cursor-pointer"
             >
-              Put leftover pax in 4-sharing
+              Fallback to Quad
             </label>
           </div>
         </div>
@@ -457,14 +443,22 @@ export default function DepartureTransport({
             <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
               Hotel group assignments
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <button
                 type="button"
                 onClick={() => setAddRoomModalOpen(true)}
-                className={cn(outlineBtn, "h-7 px-2.5 text-[11px]")}
+                className={cn(outlineBtn, "h-7 px-2 text-[11px]")}
               >
                 <Plus className="w-3.5 h-3.5 shrink-0 text-slate-400" strokeWidth={1.75} />
                 Add room
+              </button>
+              <button
+                type="button"
+                onClick={onAutoAllocateRooms || onAutoAllocate}
+                className={cn(outlineBtn, "h-7 px-2 text-[11px] text-[#0B1528] hover:bg-[#F4F7FB]")}
+              >
+                <RefreshCw className="w-3 h-3 shrink-0 text-slate-400" strokeWidth={1.75} />
+                Auto-allocate Rooms
               </button>
               <button
                 type="button"
@@ -636,19 +630,29 @@ export default function DepartureTransport({
             <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
               Transport assignments
             </h3>
-            <button
-              type="button"
-              onClick={onSaveVehicles || onSave}
-              disabled={isSavingVehicles || isSavingAllocations}
-              className={cn(orangeBtn, "h-7 px-2.5 text-[11px] bg-[#FF4D00] hover:bg-[#E04500]")}
-            >
-              {isSavingVehicles ? (
-                <RefreshCw className="w-3 h-3 animate-spin shrink-0" strokeWidth={1.75} />
-              ) : (
-                <Save className="w-3 h-3 shrink-0" strokeWidth={1.75} />
-              )}
-              {isSavingVehicles ? "Saving…" : "Save Tempo List"}
-            </button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={onAutoAllocateTempos || onAutoAllocate}
+                className={cn(outlineBtn, "h-7 px-2 text-[11px] text-[#0B1528] hover:bg-[#F4F7FB]")}
+              >
+                <RefreshCw className="w-3 h-3 shrink-0 text-slate-400" strokeWidth={1.75} />
+                Auto-allocate Tempos
+              </button>
+              <button
+                type="button"
+                onClick={onSaveVehicles || onSave}
+                disabled={isSavingVehicles || isSavingAllocations}
+                className={cn(orangeBtn, "h-7 px-2.5 text-[11px] bg-[#FF4D00] hover:bg-[#E04500]")}
+              >
+                {isSavingVehicles ? (
+                  <RefreshCw className="w-3 h-3 animate-spin shrink-0" strokeWidth={1.75} />
+                ) : (
+                  <Save className="w-3 h-3 shrink-0" strokeWidth={1.75} />
+                )}
+                {isSavingVehicles ? "Saving…" : "Save Tempo List"}
+              </button>
+            </div>
           </div>
           {computedVehicleAllocations.length === 0 ? (
             <p className="text-[12px] text-slate-400 py-6 text-center">

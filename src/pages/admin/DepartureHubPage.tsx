@@ -2268,14 +2268,38 @@ export default function DepartureHubPage() {
       });
 
       // Fleet
-      const initialFleet = transports.map((t: any) => ({
-        id: t.id,
-        name: t.driverName || "Tempo 1",
-        vehicleType: t.vehicleType,
-        capacity: t.capacity,
-        cost: t.totalAmount,
-        vendor: t.notes || "Self-driven",
-      }));
+      const initialFleet = transports.map((t: any, idx: number, arr: any[]) => {
+        const rawName =
+          t.name ||
+          t.vehicleName ||
+          (t.vendor?.name
+            ? `${t.vendor.name} (${t.vehicleType || "Tempo Traveller"})`
+            : t.driverName || `Tempo ${idx + 1}`);
+        const sameNameCount = arr.filter(
+          (x: any) =>
+            (x.name || x.vehicleName || x.driverName || x.vendor?.name) ===
+            (t.name || t.vehicleName || t.driverName || t.vendor?.name),
+        ).length;
+        const occurIdx = arr
+          .slice(0, idx + 1)
+          .filter(
+            (x: any) =>
+              (x.name || x.vehicleName || x.driverName || x.vendor?.name) ===
+              (t.name || t.vehicleName || t.driverName || t.vendor?.name),
+          ).length;
+        const displayName =
+          sameNameCount > 1 && !rawName.includes("#")
+            ? `${rawName} #${occurIdx}`
+            : rawName;
+        return {
+          id: t.id || `tempo-${idx + 1}`,
+          name: displayName,
+          vehicleType: t.vehicleType || "14 Seater Tempo Traveller",
+          capacity: Number(t.capacity) || 14,
+          cost: Number(t.totalAmount) || 0,
+          vendor: t.vendor?.name || t.notes || "Self-driven",
+        };
+      });
       setAllocFleet(initialFleet);
 
       // Mapped tripVendors
@@ -5303,11 +5327,17 @@ useEffect(() => {
   const [prioritizeCouples, setPrioritizeCouples] = useState(true);
   const [fallbackToQuad, setFallbackToQuad] = useState(true);
 
-  const handleTriggerAutoAllocate = () => {
-    const newAllocs: Record<string, any> = { ...passengerAllocations };
+  const handleAutoAllocateRooms = () => {
     const activeTravelers = allPassengers.filter(
       (p) => !isPassengerCancelled(p),
     );
+
+    if (activeTravelers.length === 0) {
+      toast.error("No confirmed travelers available to allocate.");
+      return;
+    }
+
+    const newAllocs: Record<string, any> = { ...passengerAllocations };
     const allocated = new Set<string>();
 
     const roomsTracked: Array<{
@@ -5320,8 +5350,10 @@ useEffect(() => {
     }> = [];
 
     const assignToRoom = (p: any, rName: string, maxCap = 2, isCouple = false) => {
-      newAllocs[p.id] = { ...(newAllocs[p.id] || newAllocs[p.name] || {}), room: rName };
-      if (p.name) newAllocs[p.name] = { ...newAllocs[p.id] };
+      const existing = newAllocs[p.id] || newAllocs[p.name] || {};
+      const entry = { ...existing, room: rName };
+      newAllocs[p.id] = entry;
+      if (p.name) newAllocs[p.name] = entry;
       allocated.add(p.id);
       if (p.name) allocated.add(p.name);
       let r = roomsTracked.find((x) => x.roomName === rName);
@@ -5344,7 +5376,7 @@ useEffect(() => {
       }
     };
 
-    // ── STEP 0: PRESERVE ALREADY SAVED / ASSIGNED ROOMS ──
+    // ── PRESERVE ALREADY SAVED ROOMS ──
     activeTravelers.forEach((p) => {
       const existing = passengerAllocations[p.id] || passengerAllocations[p.name];
       if (existing?.room && existing.room !== "—" && existing.room !== "Unassigned") {
@@ -5357,10 +5389,9 @@ useEffect(() => {
       .filter((n) => !isNaN(n));
     let roomNum = existingRoomNums.length > 0 ? Math.max(...existingRoomNums) + 1 : 1;
 
-    // Step 1: Identify couples/groups — travelers sharing the same bookingId
+    // Step 1: Allocate Same-Booking Groups (Same booking co-travelers stay together!)
     const bookingGroups = groupPassengersByBooking(activeTravelers);
 
-    // Step 1: Allocate Same-Booking Groups (Same booking co-travelers stay together!)
     if (prioritizeCouples) {
       Object.values(bookingGroups).forEach((group) => {
         const unallocated = group.filter((p) => !allocated.has(p.id) && !allocated.has(p.name));
@@ -5451,8 +5482,21 @@ useEffect(() => {
       fillOrAllocatePool(remainingAll);
     }
 
-    // ── VEHICLE & TEMPO AUTO-ALLOCATION PASS ──
-    const fallbackCapacity = parseInt(newVehicleCapacity) || 17;
+    setPassengerAllocations(newAllocs);
+    toast.success("Hotel room auto-allocation completed");
+  };
+
+  const handleAutoAllocateTempos = () => {
+    const activeTravelers = allPassengers.filter(
+      (p) => !isPassengerCancelled(p),
+    );
+
+    if (activeTravelers.length === 0) {
+      toast.error("No confirmed travelers available to allocate.");
+      return;
+    }
+
+    const fallbackCapacity = parseInt(newVehicleCapacity) || 14;
     const fallbackName = newVehicleName || newVehicleType || "Tempo 1";
 
     interface FleetEntry {
@@ -5465,19 +5509,29 @@ useEffect(() => {
 
     const fleetStatus: FleetEntry[] =
       allocFleet.length > 0
-        ? allocFleet.map((f, idx) => ({
-            id: f.id || `tempo-${idx + 1}`,
-            name: f.name || `Tempo ${idx + 1}`,
-            capacity: Number(f.capacity) || 17,
-            vehicleType: f.vehicleType || "Tempo Traveller",
-            assignedPassengers: [],
-          }))
+        ? allocFleet.map((f, idx, arr) => {
+            const sameCount = arr.filter((x: any) => x.name === f.name).length;
+            const occurIdx = arr
+              .slice(0, idx + 1)
+              .filter((x: any) => x.name === f.name).length;
+            const vName =
+              sameCount > 1 && !f.name.includes("#")
+                ? `${f.name} #${occurIdx}`
+                : f.name || `Tempo ${idx + 1}`;
+            return {
+              id: f.id || `tempo-${idx + 1}`,
+              name: vName,
+              capacity: Number(f.capacity) || 14,
+              vehicleType: f.vehicleType || "14 Seater Tempo Traveller",
+              assignedPassengers: [],
+            };
+          })
         : [
             {
               id: "tempo-1",
               name: fallbackName,
               capacity: fallbackCapacity,
-              vehicleType: newVehicleType || "Tempo Traveller",
+              vehicleType: newVehicleType || "14 Seater Tempo Traveller",
               assignedPassengers: [],
             },
           ];
@@ -5488,93 +5542,32 @@ useEffect(() => {
           id: "tempo-1",
           name: fallbackName,
           capacity: fallbackCapacity,
-          vehicleType: newVehicleType || "Tempo Traveller",
+          vehicleType: newVehicleType || "14 Seater Tempo Traveller",
           cost: Number(newVehicleCost) || 0,
           vendor: "Lead Transport",
         },
       ]);
     }
 
-    // ── STEP 1: PRESERVE ALREADY ASSIGNED VEHICLES & SEATS ──
-    activeTravelers.forEach((p) => {
-      const existing =
-        passengerAllocations[p.id] || passengerAllocations[p.name];
-      if (
-        existing?.vehicle &&
-        existing.vehicle !== "—" &&
-        existing.vehicle !== "Unassigned"
-      ) {
-        const v = fleetStatus.find(
-          (f) =>
-            f.name.toLowerCase() === existing.vehicle.toLowerCase() ||
-            f.id === existing.vehicle ||
-            (f.vehicleType &&
-              f.vehicleType.toLowerCase() === existing.vehicle.toLowerCase()),
-        );
-        if (v) {
-          const seatNum =
-            existing.seat && existing.seat !== "—"
-              ? existing.seat
-              : String(v.assignedPassengers.length + 1);
-          v.assignedPassengers.push({ p, seat: seatNum });
-        }
-      }
-    });
+    const newAllocs: Record<string, any> = { ...passengerAllocations };
 
-    // ── STEP 2: ALLOCATE BOOKING GROUPS (KEEP SAME BOOKING TOGETHER) ──
-    // Sort booking groups by size (larger groups first) so they get full vehicle chunks together
+    // Group active travelers strictly by booking so groups/families/couples travel together
+    const bookingGroups = groupPassengersByBooking(activeTravelers);
+
+    // Sort booking groups: larger groups first
     const sortedGroupEntries = Object.entries(bookingGroups).sort(
       ([, aList], [, bList]) => bList.length - aList.length,
     );
 
     sortedGroupEntries.forEach(([groupKey, groupMembers]) => {
-      // Find unassigned members in this group
-      const unassignedInGroup = groupMembers.filter((p) => {
-        const existing =
-          passengerAllocations[p.id] || passengerAllocations[p.name];
-        return (
-          !existing?.vehicle ||
-          existing.vehicle === "—" ||
-          existing.vehicle === "Unassigned"
-        );
-      });
+      const gSize = groupMembers.length;
 
-      if (unassignedInGroup.length === 0) return;
+      // 1. Try finding a vehicle with enough remaining seats for the ENTIRE group
+      let targetVehicle = fleetStatus.find(
+        (f) => f.capacity - f.assignedPassengers.length >= gSize,
+      );
 
-      // Rule A: If ANY co-traveler from this same booking is ALREADY in a vehicle, try to put all unassigned members of this booking into that SAME vehicle!
-      const alreadyAssignedSibling = groupMembers.find((p) => {
-        const existing =
-          passengerAllocations[p.id] || passengerAllocations[p.name];
-        return (
-          existing?.vehicle &&
-          existing.vehicle !== "—" &&
-          existing.vehicle !== "Unassigned"
-        );
-      });
-
-      let targetVehicle: FleetEntry | undefined;
-      if (alreadyAssignedSibling) {
-        const sibAlloc =
-          passengerAllocations[alreadyAssignedSibling.id] ||
-          passengerAllocations[alreadyAssignedSibling.name];
-        targetVehicle = fleetStatus.find(
-          (f) =>
-            f.name.toLowerCase() === sibAlloc.vehicle.toLowerCase() ||
-            f.id === sibAlloc.vehicle ||
-            (f.vehicleType &&
-              f.vehicleType.toLowerCase() === sibAlloc.vehicle.toLowerCase()),
-        );
-      }
-
-      // Rule B: If no sibling assigned yet, find a vehicle that has enough available seats for the ENTIRE group
-      if (!targetVehicle) {
-        targetVehicle = fleetStatus.find(
-          (f) =>
-            f.capacity - f.assignedPassengers.length >= unassignedInGroup.length,
-        );
-      }
-
-      // Rule C: If no vehicle has enough remaining room for the entire group, pick the vehicle with the MOST remaining seats
+      // 2. If no single vehicle fits the full group, choose the vehicle with the most remaining seats
       if (!targetVehicle) {
         targetVehicle = fleetStatus.reduce((best, f) => {
           const availBest = best.capacity - best.assignedPassengers.length;
@@ -5583,14 +5576,15 @@ useEffect(() => {
         }, fleetStatus[0]);
       }
 
-      // Assign all unassigned group members to targetVehicle together!
+      // Assign all members of this group together into targetVehicle!
       if (targetVehicle) {
-        unassignedInGroup.forEach((p) => {
+        groupMembers.forEach((p) => {
           const seatNum = String(targetVehicle!.assignedPassengers.length + 1);
           targetVehicle!.assignedPassengers.push({ p, seat: seatNum });
 
+          const existing = newAllocs[p.id] || newAllocs[p.name] || {};
           const entry = {
-            ...(newAllocs[p.id] || newAllocs[p.name] || {}),
+            ...existing,
             vehicle: targetVehicle!.name,
             seat: seatNum,
           };
@@ -5601,7 +5595,12 @@ useEffect(() => {
     });
 
     setPassengerAllocations(newAllocs);
-    toast.success("Auto-allocation completed (groups kept together in vehicle)");
+    toast.success("Tempo seat auto-allocation completed (groups kept together)");
+  };
+
+  const handleTriggerAutoAllocate = () => {
+    handleAutoAllocateRooms();
+    handleAutoAllocateTempos();
   };
 
   const computedParticipants = useMemo(() => {
@@ -8585,6 +8584,8 @@ useEffect(() => {
               onSave={() => handleSaveAllocationsToDb(false, "all")}
               onSaveRooms={() => handleSaveAllocationsToDb(false, "rooms")}
               onSaveVehicles={() => handleSaveAllocationsToDb(false, "vehicles")}
+              onAutoAllocateRooms={handleAutoAllocateRooms}
+              onAutoAllocateTempos={handleAutoAllocateTempos}
               onAutoAllocate={handleTriggerAutoAllocate}
               onAddVehicle={handleAddVehicle}
               onDeleteVehicle={handleDeleteVehicle}
