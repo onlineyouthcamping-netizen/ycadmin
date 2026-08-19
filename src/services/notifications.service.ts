@@ -13,4 +13,13 @@ export const notificationsService = {
     const res = await api.put("/notifications/read-all");
     return res.data;
   },
+  sendTest: async () => {
+    const res = await api.post("/notifications/test");
+    return res.data;
+  },
+  clearAll: async () => {
+    const res = await api.delete("/notifications/clear-all");
+    return res.data;
+  },
 };
+
