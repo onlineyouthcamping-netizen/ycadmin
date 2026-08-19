@@ -77,6 +77,13 @@ export default function AccountingPage() {
   const { admin: user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const userRole = (user?.role || "").toLowerCase();
+  const isFounder =
+    ["founder", "superadmin"].includes(userRole) ||
+    Boolean((user as any)?.isSuperuser) ||
+    Boolean(user?.email && user.email.toLowerCase().includes("hemal")) ||
+    Boolean(user?.name && user.name.toLowerCase().includes("hemal"));
+
   // Tab Normalization
   const normalizeTab = (raw: string | null): TabId => {
     const t = (raw || "").toLowerCase().trim();
@@ -490,6 +497,9 @@ export default function AccountingPage() {
 
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFounder) {
+      return toast.error("Forbidden: Treasury account configuration is strictly restricted to Founder / Superadmin only.");
+    }
     if (!newAccForm.accountName.trim()) {
       return toast.error("Please enter account display name");
     }
@@ -528,6 +538,9 @@ export default function AccountingPage() {
   };
 
   const handleOpenEditAccount = (acc: CollectionAccount) => {
+    if (!isFounder) {
+      return toast.error("Forbidden: Treasury account editing is strictly restricted to Founder / Superadmin only.");
+    }
     setEditingAccount(acc);
     setEditAccForm({
       accountName: acc.accountName || "",
@@ -544,6 +557,9 @@ export default function AccountingPage() {
 
   const handleSaveEditAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFounder) {
+      return toast.error("Forbidden: Treasury account editing is strictly restricted to Founder / Superadmin only.");
+    }
     if (!editingAccount) return;
     if (!editAccForm.accountName.trim()) {
       return toast.error("Please enter account display name");
@@ -572,6 +588,9 @@ export default function AccountingPage() {
   };
 
   const handleDeleteAccount = async (acc: CollectionAccount) => {
+    if (!isFounder) {
+      return toast.error("Forbidden: Treasury account removal is strictly restricted to Founder / Superadmin only.");
+    }
     if (!window.confirm(`Are you sure you want to delete "${acc.accountName}"?`)) return;
     try {
       await collectionAccountsService.deleteAccount(acc.id);
@@ -2703,32 +2722,52 @@ export default function AccountingPage() {
           <div className="space-y-3">
             <div className="flex min-w-0 flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="text-[15px] font-semibold tracking-tight text-[#0B1528]">
-                  Treasury accounts and cash desks
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-[15px] font-semibold tracking-tight text-[#0B1528]">
+                    Treasury accounts and cash desks
+                  </h2>
+                  {isFounder ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                      <ShieldCheck className="w-3 h-3 text-purple-600" /> Founder Treasury Control
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                      <Lock className="w-3 h-3 text-slate-500" /> Staff Read-Only
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 text-[12px] text-slate-500">
-                  Every account with its reconciled balance and full money ledger.
+                  Every account with its reconciled balance, channel mappings and full money ledger.
                 </p>
               </div>
 
               <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSubmitFundsModal(true)}
-                  className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB]"
-                >
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
-                  Transfer funds
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setShowAddAccountModal(true)}
-                  className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400]"
-                >
-                  <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  Add account
-                </Button>
+                {isFounder ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSubmitFundsModal(true)}
+                      className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[12px] font-medium text-slate-700 shadow-none hover:bg-[#F4F7FB]"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
+                      Transfer funds
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowAddAccountModal(true)}
+                      className="h-8 gap-1.5 rounded-md bg-[#FF4D00] px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400]"
+                    >
+                      <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      Add account
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50/70 text-amber-900 text-[11px] font-semibold">
+                    <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                    <span>Founder-Managed Treasury</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2744,24 +2783,26 @@ export default function AccountingPage() {
                       <span className="shrink-0 rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                         {acc.accountType}
                       </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditAccount(acc)}
-                          title="Edit account & channel mappings"
-                          className="p-1 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded cursor-pointer transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAccount(acc)}
-                          title="Delete / Archive account"
-                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      {isFounder && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditAccount(acc)}
+                            title="Edit account & channel mappings (Founder Only)"
+                            className="p-1 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded cursor-pointer transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAccount(acc)}
+                            title="Delete / Archive account (Founder Only)"
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <h4 className="mt-2 truncate text-[13px] font-semibold text-[#0B1528]">

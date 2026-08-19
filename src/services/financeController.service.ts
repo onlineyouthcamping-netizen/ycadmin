@@ -38,6 +38,64 @@ export const financeControllerService = {
     return { data: res.data.data, pagination: res.data.pagination };
   },
 
+  getStationCashQueue: async (params?: {
+    departureDate?: string;
+    tripId?: string;
+    station?: string;
+    status?: string;
+    search?: string;
+  }): Promise<{
+    summary: {
+      totalCashCollected: number;
+      totalCashPending: number;
+      totalCashVerified: number;
+      totalDepartures: number;
+      totalStations: number;
+      totalPassengers: number;
+      pendingCount: number;
+      verifiedCount: number;
+    };
+    dateGroups: Array<{
+      departureDate: string;
+      totalAmount: number;
+      pendingAmount: number;
+      verifiedAmount: number;
+      passengersCount: number;
+      stationsCount: number;
+      stationGroups: Array<{
+        stationKey: string;
+        tripId: string;
+        tripName: string;
+        station: string;
+        departureDate: string;
+        totalAmount: number;
+        pendingAmount: number;
+        verifiedAmount: number;
+        pendingItems: number;
+        verifiedItems: number;
+        collectors: string[];
+        isFullyVerified: boolean;
+        items: any[];
+      }>;
+    }>;
+    allCollections: any[];
+  }> => {
+    const res = await api.get("/finance/control-center/station-cash-queue", { params });
+    return res.data.data;
+  },
+
+  batchVerifyStationCash: async (payload: {
+    collectionIds?: string[];
+    tripId?: string;
+    departureDate?: string;
+    station?: string;
+    action?: "APPROVE" | "REJECT";
+    notes?: string;
+  }): Promise<any> => {
+    const res = await api.post("/finance/control-center/station-cash/batch-verify", payload);
+    return res.data;
+  },
+
   getIncomingQueue: async (params?: {
     status?: string;
     paymentMode?: string;
