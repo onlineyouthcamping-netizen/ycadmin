@@ -6515,19 +6515,43 @@ useEffect(() => {
           {activeTab === "overview" && (
             <div className="space-y-3 min-w-0">
               {(() => {
-                const overviewHotels = tripVendors.filter((v: any) => v.vendorType === "hotel");
-                const isHotelsConfirmed = overviewHotels.length > 0;
+                const hotelsTarget = computedHotels.length || 7;
+                const realOpsHotels = (opsHotels || []).filter((h: any) => {
+                  const name = String(h?.hotelName || h?.name || "").trim().toUpperCase();
+                  return name && name !== "NO_STAY" && name !== "NO STAY" && name !== "—";
+                });
+                const isHotelsConfirmed = realOpsHotels.length > 0 || tripVendors.some((v: any) => v.vendorType === "hotel");
+                const confirmedHotelCount = realOpsHotels.length > 0
+                  ? realOpsHotels.length
+                  : isHotelsConfirmed
+                    ? hotelsTarget
+                    : 0;
 
-                const overviewTransport = tripVendors.filter((v: any) => v.vendorType === "transport");
-                const isTransportConfirmed = overviewTransport.length > 0 || allocFleet.length > 0;
+                const isTransportConfirmed = allocFleet.length > 0 || tripVendors.some((v: any) => v.vendorType === "transport");
+                const transportAssignedCount = allocFleet.length > 0 ? allocFleet.length : (isTransportConfirmed ? 1 : 0);
+                const transportRequiredCount = Math.max(1, Math.ceil((stats.totalPax || totalPax || 1) / 17));
 
-                const overviewGuide = tripVendors.filter((v: any) => v.vendorType === "guide");
-                const isGuideAssigned = overviewGuide.length > 0;
+                const guideRoles = new Set([
+                  "PRIMARY_GUIDE",
+                  "ASSISTANT_GUIDE",
+                  "CO_GUIDE",
+                  "LOCAL_GUIDE",
+                  "TRIP_LEADER",
+                  "DRIVER_GUIDE",
+                  "FREELANCER",
+                  "SUPPORT_STAFF",
+                ]);
+                const actualDepartureGuides = dbGuides.filter((g: any) =>
+                  g.assignmentType ? guideRoles.has(g.assignmentType) : true
+                );
+                const isGuideAssigned = actualDepartureGuides.length > 0 || tripVendors.some((v: any) => v.vendorType === "guide" || v.category === "Guides");
+                const guideCount = actualDepartureGuides.length > 0
+                  ? actualDepartureGuides.length
+                  : (isGuideAssigned ? 1 : 0);
 
                 const rScore = readinessData?.totalScore ?? 0;
                 const isReady = readinessData?.status === "READY";
                 const missingList = readinessData?.missingItems || [];
-                const hotelsTarget = computedHotels.length || 7;
                 const tasksDone = computedTasks.filter((t) => t.status === "COMPLETED").length;
                 const tasksTotal = computedTasks.length || 15;
 
@@ -6540,19 +6564,19 @@ useEffect(() => {
                   },
                   {
                     label: "Hotels",
-                    value: `${overviewHotels.length} / ${hotelsTarget}`,
+                    value: `${confirmedHotelCount} / ${hotelsTarget}`,
                     hint: isHotelsConfirmed ? "Confirmed" : "Pending",
                     tone: isHotelsConfirmed ? "text-[#0B1528]" : "text-[#FF4D00]",
                   },
                   {
                     label: "Transport",
-                    value: `${overviewTransport.length || allocFleet.length || 1} / 1`,
+                    value: `${transportAssignedCount} / ${transportRequiredCount}`,
                     hint: isTransportConfirmed ? "Assigned" : "Pending",
                     tone: isTransportConfirmed ? "text-[#0B1528]" : "text-[#FF4D00]",
                   },
                   {
                     label: "Guides",
-                    value: String(overviewGuide.length || dbGuides.length || 1),
+                    value: String(guideCount),
                     hint: isGuideAssigned ? "Assigned" : "Pending",
                     tone: isGuideAssigned ? "text-[#0B1528]" : "text-[#FF4D00]",
                   },
