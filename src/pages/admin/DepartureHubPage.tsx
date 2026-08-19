@@ -2535,7 +2535,7 @@ export default function DepartureHubPage() {
             vehicles.forEach((v: any) => {
               const nameKey = v.travelerName;
               const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
-              const vName = fleetNameMap[v.fleetId] || v.fleetId || "Tempo 1";
+              const vName = fleetNameMap[v.fleetId] || initialFleet.find((f: any) => f.id === v.fleetId)?.name || (initialFleet.length === 1 ? initialFleet[0].name : (v.fleetId || "Tempo 1"));
               const entry = {
                 ...(next[nameKey] || { room: "—" }),
                 vehicle: vName,

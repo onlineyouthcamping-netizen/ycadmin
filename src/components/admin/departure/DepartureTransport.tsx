@@ -718,11 +718,15 @@ export default function DepartureTransport({
                 const travelers = computedVehicleAllocations.filter((v) => {
                   return (
                     v.fleetId === fleetId ||
+                    v.vehicleName === fleetName ||
+                    v.vehicle === fleetName ||
                     (v.vehicleName &&
                       v.vehicleName.toLowerCase().trim() ===
                         fleetName.toLowerCase().trim()) ||
                     (v.vehicle &&
-                      (v.vehicle === fleetName || v.vehicle === fleetId))
+                      v.vehicle.toLowerCase().trim() ===
+                        fleetName.toLowerCase().trim()) ||
+                    (allocFleet.length === 1 && v.vehicle && v.vehicle !== "—" && v.vehicle !== "Unassigned")
                   );
                 });
                 const capacity = Number(fleetItem.capacity) || 14;
