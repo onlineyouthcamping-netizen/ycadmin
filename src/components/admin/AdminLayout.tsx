@@ -128,7 +128,6 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       { title: "Departures", url: "/admin/operations" },
-      { title: "Station payments", url: "/admin/operations?tab=stationpayments" },
       { title: "Daily tasks", url: "/admin/operations/daily-tasks" },
       { title: "SOP & checklists", url: "/admin/operations/sops" },
       { title: "Vendors", url: "/admin/vendors" },
