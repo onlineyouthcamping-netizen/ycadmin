@@ -55,8 +55,10 @@ export default function DeparturePayments({
   tripDetails,
   tripVendors,
 }: DeparturePaymentsProps) {
-  // Operational Sub Tabs (Vendor Payables, Activities, Misc, Reconciliation)
+  // Operational Sub Tabs (Clients, Dashboard, Vendor Payables, Activities, Misc, Reconciliation)
   const [subTab, setSubTab] = useState<
+    | "clients"
+    | "dashboard"
     | "vendors"
     | "activities"
     | "misc"
@@ -83,17 +85,18 @@ export default function DeparturePayments({
 
   // Auth and Approver Authority
   const { admin } = useAuthStore();
+  const roleStr = String(admin?.role || "").toUpperCase();
   const isApprover = Boolean(
     admin != null &&
     (
-      admin?.role === "SUPERADMIN" ||
-      admin?.role === "FOUNDER" ||
-      admin?.role === "ADMIN" ||
-      admin?.role === "FINANCE" ||
-      admin?.role?.toUpperCase().includes("FINANCE") ||
-      admin?.role?.toUpperCase().includes("ADMIN") ||
-      admin?.role?.toUpperCase().includes("FOUNDER") ||
-      admin?.role?.toUpperCase().includes("SUPER")
+      roleStr === "SUPERADMIN" ||
+      roleStr === "FOUNDER" ||
+      roleStr === "ADMIN" ||
+      roleStr === "FINANCE" ||
+      roleStr.includes("FINANCE") ||
+      roleStr.includes("ADMIN") ||
+      roleStr.includes("FOUNDER") ||
+      roleStr.includes("SUPER")
     )
   );
 
@@ -675,7 +678,9 @@ export default function DeparturePayments({
             if (Array.isArray(parsed) && parsed.length > 0) {
               return sum + parsed.length;
             }
-          } catch {}
+          } catch (_e) {
+            // Ignore parse errors
+          }
           return sum + 1;
         }, 0) || 1;
       }
@@ -1115,7 +1120,9 @@ export default function DeparturePayments({
       if (parsed && typeof parsed.details?.personsRoomDetails === "object") {
         return Object.keys(parsed.details.personsRoomDetails).map((name) => ({ name }));
       }
-    } catch {}
+    } catch (_e) {
+      // Ignore parse errors
+    }
     const fallbackName = booking.fullName || booking.name;
     return fallbackName ? [{ name: fallbackName }] : [];
   };
@@ -2817,6 +2824,8 @@ export default function DeparturePayments({
                                         v.collectionAccountId ||
                                         collectionAccounts[0]?.id ||
                                         "",
+                                      customPayerName: "",
+                                      needsReimbursement: false,
                                       transactionId: "",
                                       invoiceProof: v.invoiceProof || "",
                                       status: v.status,
@@ -3094,6 +3103,12 @@ export default function DeparturePayments({
                                                 .toISOString()
                                                 .substring(0, 10),
                                               paymentMode: "BANK_TRANSFER",
+                                              collectionAccountId:
+                                                v.collectionAccountId ||
+                                                collectionAccounts[0]?.id ||
+                                                "",
+                                              customPayerName: "",
+                                              needsReimbursement: false,
                                               transactionId: `NEFT-SETTLE-${Date.now()}`,
                                               invoiceProof: "",
                                               status: "Paid",
@@ -3401,7 +3416,9 @@ export default function DeparturePayments({
                                     remarks: `${m.payeeName || ""} | Status: APPROVED`,
                                   });
                                   await fetchData();
-                                } catch {}
+                                } catch (err) {
+                                  console.error("Expense approve error:", err);
+                                }
                                 toast.success("Expense approved & saved!");
                               }}
                               className="h-7 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
@@ -3427,7 +3444,9 @@ export default function DeparturePayments({
                                     remarks: `${m.payeeName || ""} | Status: REJECTED`,
                                   });
                                   await fetchData();
-                                } catch {}
+                                } catch (err) {
+                                  console.error("Expense reject error:", err);
+                                }
                                 toast.success("Expense rejected");
                               }}
                               className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50 cursor-pointer"
@@ -3559,7 +3578,9 @@ export default function DeparturePayments({
                                     remarks: `Reconciliation | Reason: ${a.reason} | Status: APPROVED`,
                                   });
                                   await fetchData();
-                                } catch {}
+                                } catch (err) {
+                                  console.error("Adjustment approve error:", err);
+                                }
                                 toast.success("Adjustment approved & saved!");
                               }}
                               className="h-7 bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
@@ -3586,7 +3607,9 @@ export default function DeparturePayments({
                                     remarks: `Reconciliation | Reason: ${a.reason} | Status: REJECTED`,
                                   });
                                   await fetchData();
-                                } catch {}
+                                } catch (err) {
+                                  console.error("Adjustment reject error:", err);
+                                }
                                 toast.success("Adjustment rejected");
                               }}
                               className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50 cursor-pointer"
