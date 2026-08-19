@@ -640,7 +640,7 @@ export default function IncomingPaymentsApprovalPage({
           </div>
 
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto no-scrollbar rounded-lg bg-[#EDF3F7] p-0.5">
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto no-scrollbar">
               {[
                 { key: "ALL", label: "ALL" },
                 { key: "PENDING_VERIFICATION", label: "PENDING" },
@@ -651,10 +651,10 @@ export default function IncomingPaymentsApprovalPage({
                   key={tab.key}
                   onClick={() => setStatusFilter(tab.key)}
                   className={cn(
-                    "rounded-md px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-all",
+                    "rounded-full px-3 h-7 text-[12px] font-medium uppercase tracking-wide transition-all",
                     statusFilter === tab.key
-                      ? "bg-white text-[#13283F] shadow-sm"
-                      : "text-[#74839A] hover:text-[#13283F]"
+                      ? "bg-[#0B1528] text-white"
+                      : "bg-white border border-[#E8EEF4] text-slate-600 hover:bg-[#F4F7FB]"
                   )}
                 >
                   {tab.label}
@@ -910,7 +910,7 @@ export default function IncomingPaymentsApprovalPage({
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/70 border-b border-[#E3EAF2] text-[9.5px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
+                    <tr className="bg-[#F8FAFC] border-b border-[#E8EEF4] text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                       <th className="px-4 py-2.5">Booking ID</th>
                       <th className="px-4 py-2.5">Customer / Group</th>
                       <th className="px-4 py-2.5">Payment Mode / Type</th>
@@ -930,8 +930,8 @@ export default function IncomingPaymentsApprovalPage({
                         item.paymentMode?.toUpperCase().includes("CASH");
 
                       return (
-                        <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors h-[44px]">
-                          <td className="px-4 py-2 font-bold font-mono text-[#FF4D00]">
+                        <tr key={item.id} className="hover:bg-[#F8FAFC] transition-colors h-[44px]">
+                          <td className="px-4 py-2 font-mono text-[12px] font-semibold text-[#FF4D00] hover:underline cursor-pointer">
                             {item.bookingId || "—"}
                           </td>
                           <td className="px-4 py-2 font-bold text-[#162B45]">
@@ -957,7 +957,7 @@ export default function IncomingPaymentsApprovalPage({
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="text-[9px] font-bold bg-blue-50 text-blue-800 border-blue-200 w-fit"
+                                className="text-[11px] font-medium bg-[#0B1528]/5 text-[#0B1528] border border-[#E8EEF4] rounded-md px-2 py-0.5 w-fit"
                               >
                                 {item.paymentMode?.replace(/_/g, " ")} (Online)
                               </Badge>
@@ -966,7 +966,10 @@ export default function IncomingPaymentsApprovalPage({
                           <td className="px-4 py-2 font-mono text-slate-700 text-[10.5px]">
                             {item.reference || "—"}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono font-bold text-green-600 text-[12px]">
+                          <td className={cn(
+                            "px-4 py-2 text-right font-mono font-bold text-[12px]",
+                            isVerifiedStatus(item.status) ? "text-green-600" : isPendingStatus(item.status) ? "text-amber-600" : "text-[#0B1528]"
+                          )}>
                             ₹{Number(item.amount || 0).toLocaleString("en-IN")}
                           </td>
                           <td className="px-4 py-2 text-slate-500 font-medium text-[10.5px]">
