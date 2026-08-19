@@ -1735,18 +1735,29 @@ export default function DepartureHubPage() {
             fleetNameMap[f.id] = f.name;
           });
 
+          // Also include fleet names directly from returned vehicles
+          (vehicles as any[]).forEach((v: any) => {
+            if (v.fleetId && (v.fleet?.driverName || v.fleet?.vehicleType)) {
+              fleetNameMap[v.fleetId] = v.fleet.driverName || v.fleet.vehicleType;
+            }
+          });
+
           // If no initial fleet is saved in transport records, auto-restore fleet from saved vehicles.
           // This handles the case where getTransportFleet failed or returned empty unexpectedly.
           const distinctFleetIds = [...new Set((vehicles as any[]).map((v: any) => v.fleetId).filter(Boolean))] as string[];
           if (distinctFleetIds.length > 0 && initialFleet.length === 0) {
-            const restoredFleet = distinctFleetIds.map((fId, idx) => ({
-              id: fId,
-              name: fId === "tempo-1" ? "Tempo 1" : (fId.startsWith("tempo") ? `Tempo ${idx + 1}` : `Tempo ${idx + 1}`),
-              vehicleType: "Tempo Traveller",
-              capacity: 17,
-              cost: 0,
-              vendor: "Lead Transport",
-            }));
+            const restoredFleet = distinctFleetIds.map((fId, idx) => {
+              const vMatch = (vehicles as any[]).find((v: any) => v.fleetId === fId);
+              const displayName = vMatch?.fleet?.driverName || fleetNameMap[fId] || (fId === "tempo-1" ? "Tempo 1" : (fId.startsWith("tempo") ? `Tempo ${idx + 1}` : `Tempo ${idx + 1}`));
+              return {
+                id: fId,
+                name: displayName,
+                vehicleType: vMatch?.fleet?.vehicleType || "Tempo Traveller",
+                capacity: vMatch?.fleet?.capacity || 17,
+                cost: 0,
+                vendor: "Lead Transport",
+              };
+            });
             setAllocFleet(restoredFleet);
             restoredFleet.forEach((f) => {
               fleetNameMap[f.id] = f.name;
@@ -1758,7 +1769,7 @@ export default function DepartureHubPage() {
                 if (freshFleet && freshFleet.length > 0) {
                   const correctedFleet = freshFleet.map((t: any, idx: number) => ({
                     id: t.id,
-                    name: t.driverName || t.vendor?.name ? `${t.vendor.name} (${t.vehicleType})` : `Tempo ${idx + 1}`,
+                    name: t.driverName || (t.vendor?.name ? `${t.vendor.name} (${t.vehicleType})` : `Tempo ${idx + 1}`),
                     vehicleType: t.vehicleType || "Tempo Traveller",
                     capacity: Number(t.capacity) || 17,
                     cost: Number(t.totalAmount) || 0,
@@ -1790,7 +1801,7 @@ export default function DepartureHubPage() {
             vehicles.forEach((v: any) => {
               const nameKey = v.travelerName;
               const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || (p.name && nameKey && p.name.toLowerCase().trim() === nameKey.toLowerCase().trim()));
-              const vName = fleetNameMap[v.fleetId] || initialFleet.find((f: any) => f.id === v.fleetId)?.name || (initialFleet.length === 1 ? initialFleet[0].name : (v.fleetId || "Tempo 1"));
+              const vName = v.fleet?.driverName || fleetNameMap[v.fleetId] || initialFleet.find((f: any) => f.id === v.fleetId)?.name || (initialFleet.length === 1 ? initialFleet[0].name : (v.fleetId || "Tempo 1"));
               const existing = (nameKey && next[nameKey]) || (pObj?.id && next[pObj.id]) || (pObj?.name && next[pObj.name]) || { room: "—" };
               const entry = {
                 ...existing,

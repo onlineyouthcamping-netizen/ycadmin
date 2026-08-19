@@ -742,9 +742,12 @@ export default function DepartureTransport({
                       cleanV === cleanId ||
                       alloc.vehicle === fleetName ||
                       alloc.vehicle === fleetId ||
+                      alloc.vehicle === fleetItem.id ||
+                      alloc.vehicle === fleetItem.name ||
                       cleanV.includes(cleanF) ||
                       cleanF.includes(cleanV) ||
                       (fleetId.startsWith("tempo") && cleanV.includes(`tempo ${fleetIdx + 1}`)) ||
+                      (cleanF.includes(`tempo ${fleetIdx + 1}`) && cleanV.includes(`tempo ${fleetIdx + 1}`)) ||
                       (fleetIdx === 0 && (cleanV === "tempo 1" || cleanV.startsWith("tempo 1")))
                     );
                   })
