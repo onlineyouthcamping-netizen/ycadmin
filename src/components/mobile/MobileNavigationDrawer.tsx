@@ -7,22 +7,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/auth.store";
-import {
-  BarChart3,
-  Ticket,
-  MapPin,
-  Compass,
-  Building2,
-  DollarSign,
-  Briefcase,
-  Settings,
-  LogOut,
-  X,
-  User,
-  ShieldCheck,
-  FileText,
-} from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  MOBILE_DRAWER_NAV,
+  isAdminNavActive,
+} from "@/config/adminNavigation";
 
 interface MobileNavigationDrawerProps {
   open: boolean;
@@ -42,25 +32,10 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
     admin?.role === "superadmin" ||
     admin?.role === "admin";
 
-  const modules = [
-    { title: "Dashboard", url: "/admin", icon: BarChart3 },
-    { title: "Bookings Ledger", url: "/admin/bookings", icon: Ticket },
-    { title: "Departure Hub", url: "/admin/operations", icon: Compass },
-    { title: "Expeditions & Trips", url: "/admin/trips", icon: MapPin },
-    { title: "Payments & Accounting", url: "/admin/accounting", icon: DollarSign },
-    {
-      title: "Vendors Directory",
-      url: "/admin/vendor-directory",
-      icon: Building2,
-    },
-    { title: "Staff & HR", url: "/admin/hr?tab=staff", icon: Briefcase },
-    {
-      title: "Company Documents",
-      url: "/admin/company-documents",
-      icon: FileText,
-    },
-    { title: "System Settings", url: "/admin/settings", icon: Settings },
-  ];
+  const visibleModules = MOBILE_DRAWER_NAV.filter((mod) => {
+    if (mod.founderOnly && !isFounder) return false;
+    return true;
+  });
 
   const handleNavigate = (url: string) => {
     onOpenChange(false);
@@ -71,60 +46,64 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="w-[85%] sm:w-[320px] p-0 bg-slate-900 text-white border-r-0"
+        className="w-[min(100vw-2rem,320px)] border-r-0 bg-[#0D1B2E] p-0 text-white"
       >
-        {/* Profile Header */}
-        <div className="p-4 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#FF5400] text-white flex items-center justify-center font-black text-sm">
+        <SheetHeader className="sr-only">
+          <SheetTitle>Admin navigation</SheetTitle>
+        </SheetHeader>
+
+        <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#0B1528]/80 p-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF4D00] to-[#ff7040] text-sm font-black text-white">
               {admin?.name?.charAt(0) || "A"}
             </div>
-            <div>
-              <h3 className="text-xs font-bold text-white truncate max-w-[150px]">
+            <div className="min-w-0">
+              <h3 className="truncate text-xs font-bold text-white">
                 {admin?.name || "Admin User"}
               </h3>
-              <span className="inline-block text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-[#FF4D00]/20 text-[#FF5400] border border-[#FF4D00]/30">
-                {isFounder ? "FOUNDER" : admin?.role || "Staff"}
+              <span className="mt-0.5 inline-block rounded border border-[#FF4D00]/30 bg-[#FF4D00]/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#FF4D00]">
+                {isFounder ? "Founder" : admin?.role || "Staff"}
               </span>
             </div>
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white/[0.08] hover:text-white"
+            aria-label="Close menu"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Navigation Items */}
-        <div className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-          {modules.map((mod) => {
+        <div className="max-h-[calc(100dvh-9rem)] space-y-0.5 overflow-y-auto p-3 pb-24">
+          {visibleModules.map((mod) => {
             const Icon = mod.icon;
-            const isActive =
-              location.pathname === mod.url ||
-              (mod.url !== "/admin" && location.pathname.startsWith(mod.url));
+            const isActive = isAdminNavActive(
+              location.pathname,
+              mod,
+              location.search,
+            );
             return (
               <button
-                key={mod.title}
+                key={mod.url}
                 type="button"
                 onClick={() => handleNavigate(mod.url)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold transition-all text-left active:scale-98",
+                  "flex w-full touch-manipulation items-center gap-3 rounded-xl px-3.5 py-3 text-left text-xs font-semibold transition-all active:scale-[0.98]",
                   isActive
-                    ? "bg-[#FF5400] text-white font-bold shadow-md shadow-orange-500/20"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/60",
+                    ? "bg-[#FF4D00] font-bold text-white shadow-md shadow-orange-500/20"
+                    : "text-slate-300 hover:bg-white/[0.06] hover:text-white",
                 )}
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon className="h-4 w-4 shrink-0" />
                 <span>{mod.title}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Footer Logout Action */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-slate-800 bg-slate-950">
+        <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.08] bg-[#0B1528] p-3 pb-safe">
           <button
             type="button"
             onClick={() => {
@@ -132,10 +111,10 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
               logout();
               navigate("/admin/login");
             }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 bg-red-600/10 hover:bg-red-600/20 transition-all border border-red-500/20"
+            className="flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-3 text-xs font-bold text-red-300 transition-all hover:bg-red-500/20"
           >
-            <LogOut className="w-4 h-4" />
-            <span>Logout Account</span>
+            <LogOut className="h-4 w-4" />
+            <span>Log out</span>
           </button>
         </div>
       </SheetContent>
@@ -144,5 +123,3 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
 };
 
 export default MobileNavigationDrawer;
-
-

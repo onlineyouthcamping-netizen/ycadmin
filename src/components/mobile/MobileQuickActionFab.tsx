@@ -7,7 +7,6 @@ import {
   FileText,
   CreditCard,
   DollarSign,
-  Search,
 } from "lucide-react";
 import {
   Sheet,
@@ -18,12 +17,10 @@ import {
 
 interface MobileQuickActionFabProps {
   onOpenNewBooking: () => void;
-  onOpenGlobalSearch: () => void;
 }
 
 export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
   onOpenNewBooking,
-  onOpenGlobalSearch,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -59,7 +56,7 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       color: "bg-green-50 text-green-600 border-green-100",
       onClick: () => {
         setIsOpen(false);
-        navigate("/admin/accounting");
+        navigate("/admin/finance?tab=incoming");
       },
     },
     {
@@ -70,63 +67,51 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       color: "bg-amber-50 text-amber-600 border-amber-100",
       onClick: () => {
         setIsOpen(false);
-        navigate("/admin/accounting?action=expense");
-      },
-    },
-    {
-      id: "search",
-      label: "Search Anything",
-      desc: "Instant booking or phone lookup",
-      icon: Search,
-      color: "bg-slate-50 text-slate-700 border-slate-200",
-      onClick: () => {
-        setIsOpen(false);
-        onOpenGlobalSearch();
+        navigate("/admin/finance?tab=expenses");
       },
     },
   ];
 
   return (
     <>
-      {/* Floating Action Button (FAB) */}
-      <div className="fixed bottom-16 right-4 z-40 md:hidden">
+      <div className="fixed bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] right-4 z-40 md:hidden">
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="w-13 h-13 rounded-full bg-[#FF5400] text-white shadow-lg shadow-orange-500/30 flex items-center justify-center active:scale-90 transition-all border-2 border-white"
-          aria-label="Quick Actions Menu"
+          className="flex h-14 w-14 touch-manipulation items-center justify-center rounded-full border-2 border-white bg-[#FF4D00] text-white shadow-lg shadow-orange-500/30 transition-transform active:scale-90"
+          aria-label="Quick actions"
         >
-          <Plus className="w-6 h-6 stroke-[2.5px]" />
+          <Plus className="h-6 w-6 stroke-[2.5px]" />
         </button>
       </div>
 
-      {/* Quick Action Bottom Sheet */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-2xl p-4 bg-white max-h-[85vh]"
+          className="max-h-[85dvh] rounded-t-2xl bg-white p-4 pb-safe md:hidden"
         >
-          <SheetHeader className="pb-3 border-b border-slate-100 text-left">
+          <SheetHeader className="border-b border-slate-100 pb-3 text-left">
             <div className="flex items-center justify-between">
               <div>
                 <SheetTitle className="text-base font-bold text-slate-900">
                   Quick Actions
                 </SheetTitle>
                 <p className="text-xs text-slate-500">
-                  1-tap operational shortcuts
+                  Operational shortcuts
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-100"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
+                aria-label="Close quick actions"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </SheetHeader>
 
-          <div className="grid grid-cols-2 gap-2.5 py-4 overflow-y-auto max-h-[60vh]">
+          <div className="mobile-grid-keep grid max-h-[60dvh] grid-cols-2 gap-2.5 overflow-y-auto py-4">
             {actions.map((act) => {
               const Icon = act.icon;
               return (
@@ -134,17 +119,17 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
                   key={act.id}
                   type="button"
                   onClick={act.onClick}
-                  className="flex flex-col text-left p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200 hover:shadow-2xs active:scale-98 transition-all"
+                  className="flex touch-manipulation flex-col rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-left transition-all hover:border-slate-200 hover:bg-white active:scale-[0.98]"
                 >
                   <div
-                    className={`w-9 h-9 rounded-lg border flex items-center justify-center mb-2.5 ${act.color}`}
+                    className={`mb-2.5 flex h-10 w-10 items-center justify-center rounded-lg border ${act.color}`}
                   >
-                    <Icon className="w-4 h-4 stroke-[2px]" />
+                    <Icon className="h-4 w-4 stroke-[2px]" />
                   </div>
-                  <span className="text-xs font-bold text-slate-900 leading-tight">
+                  <span className="text-xs font-bold leading-tight text-slate-900">
                     {act.label}
                   </span>
-                  <span className="text-[10px] text-slate-500 mt-0.5 leading-tight">
+                  <span className="mt-0.5 text-[10px] leading-tight text-slate-500">
                     {act.desc}
                   </span>
                 </button>
@@ -158,4 +143,3 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
 };
 
 export default MobileQuickActionFab;
-

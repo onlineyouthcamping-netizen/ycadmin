@@ -930,7 +930,7 @@ export default function FinanceControlCenterPage({
           </div>
         )}
 
-        <div className={cn("flex items-center gap-2 w-full sm:w-auto", embedded && "ml-auto")}>
+        <div className={cn("flex w-full flex-wrap items-center gap-2 sm:w-auto", embedded && "ml-auto sm:ml-auto")}>
           <Button
             variant="outline"
             size="sm"
@@ -1027,7 +1027,7 @@ export default function FinanceControlCenterPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2 md:gap-2.5">
+      <div className="mobile-grid-keep grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2 md:gap-2.5">
         {[
           {
             id: "incoming" as QueueTab,

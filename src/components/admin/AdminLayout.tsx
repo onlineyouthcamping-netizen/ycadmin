@@ -86,7 +86,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import NewBookingModal from "./NewBookingModal";
-import { MyProfileModal } from "./MyProfileModal";
 import { knowledgeService } from "@/services/knowledge.service";
 import { erpService } from "@/services/erp.service";
 
@@ -179,7 +178,7 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       { title: "Users", url: "/admin/users" },
-      { title: "Roles", url: "/admin/access-control" },
+      { title: "Roles", url: "/admin/roles" },
       { title: "Email templates", url: "/admin/email-templates" },
       { title: "Settings", url: "/admin/settings" },
       { title: "Profile", url: "/admin/my-profile" },
@@ -685,10 +684,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }, [location.key]);
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [profileModalTab, setProfileModalTab] = useState<
-    "profile" | "password"
-  >("profile");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const isMac =
     typeof navigator !== "undefined" &&
@@ -842,7 +837,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           {/* Top command strip — 56px */}
           <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-white/[0.06] bg-[#0D1B2E] px-2 sm:gap-4 sm:px-5">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              <SidebarTrigger className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-none bg-transparent text-slate-400 hover:bg-white/[0.07] hover:text-white transition-colors" />
+              <SidebarTrigger className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border-none bg-transparent text-slate-400 transition-colors hover:bg-white/[0.07] hover:text-white md:flex" />
               <h1 className="min-w-0 truncate text-[14px] font-semibold leading-none tracking-tight text-white">
                 <span className="md:hidden">
                   {resolveAdminPageTitle(
@@ -940,7 +935,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </div>
 
                   <DropdownMenuItem
-                    onClick={() => navigate("/admin/profile")}
+                    onClick={() => navigate("/admin/my-profile")}
                     className="text-[12px] font-medium text-slate-300 hover:bg-white/[0.07] hover:text-white cursor-pointer rounded-md py-1.5"
                   >
                     <User className="w-3.5 h-3.5 mr-2 text-slate-500" />
@@ -968,7 +963,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     <>
                       <DropdownMenuSeparator className="my-1 border-slate-100" />
                       <DropdownMenuItem
-                        onClick={() => navigate("/admin/people/staff")}
+                        onClick={() => navigate("/admin/staff-profiles")}
                         className="text-xs font-semibold text-[#C2410C] hover:bg-[#FF4D00]/5 cursor-pointer rounded-md py-1.5"
                       >
                         <Users className="w-4 h-4 mr-2 text-[#FF4D00]" />
@@ -979,7 +974,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         className="text-[12px] font-medium text-[#FF4D00] hover:bg-[#FF4D00]/10 cursor-pointer rounded-md py-1.5"
                       >
                         <ShieldCheck className="w-3.5 h-3.5 mr-2 text-[#FF4D00]" />
-                        Roles & Custom Roles
+                        Roles & Permissions
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => navigate("/admin/permission-matrix")}
@@ -1011,7 +1006,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => setBookingModalOpen(true)}
-                className="hidden h-8 items-center gap-1.5 rounded-lg bg-[#FF4D00] px-3 text-[12px] font-semibold text-white shadow-[0_0_12px_rgba(255,77,0,0.25)] transition-colors hover:bg-[#E04400] sm:inline-flex"
+                className="hidden h-8 items-center gap-1.5 rounded-lg bg-[#FF4D00] px-3 text-[12px] font-semibold text-white shadow-[0_0_12px_rgba(255,77,0,0.25)] transition-colors hover:bg-[#E04400] md:inline-flex"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 New Booking
@@ -1021,7 +1016,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
             {/* Main Content Area — single page scroller */}
-            <main ref={mainScrollRef} className="admin-main-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-3 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:p-5 md:pb-5">
+            <main ref={mainScrollRef} className="admin-main-scroll min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-3 pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] sm:p-5 md:pb-5">
               <div className="admin-content-host mx-auto min-h-0 w-full min-w-0 max-w-[1600px]">{children}</div>
             </main>
 
@@ -1052,7 +1047,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden bg-white border border-slate-100 rounded-xl shadow-xl">
+        <DialogContent className="max-h-[90dvh] max-w-lg overflow-hidden rounded-xl border border-slate-100 bg-white p-0 shadow-xl sm:max-h-[85vh]">
           <DialogTitle className="sr-only">Global Search</DialogTitle>
           <DialogDescription className="sr-only">
             Search modules, paths, and settings instantly.
@@ -1116,8 +1111,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   {[
                     { title: "Dashboard Overview", path: "/admin" },
                     { title: "Bookings Ledger", path: "/admin/bookings" },
-                    { title: "Payments & Accounting", path: "/admin/accounting" },
-                    { title: "Staff Directory", path: "/admin/hr?tab=staff" },
+                    { title: "Finance Control Center", path: "/admin/finance" },
+                    { title: "Staff Directory", path: "/admin/staff-profiles" },
                     {
                       title: "Company Legal Documents",
                       path: "/admin/company-documents",
@@ -1156,18 +1151,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         }}
       />
 
-      <MyProfileModal
-        open={profileModalOpen}
-        onOpenChange={setProfileModalOpen}
-        defaultTab={profileModalTab}
-      />
-
-      {/* ─── Mobile Navigation & Quick Actions ─── */}
+      {/* Mobile: bottom nav + quick actions (desktop uses sidebar + header only) */}
       <MobileBottomNav onOpenDrawer={() => setIsMobileDrawerOpen(true)} />
-      <MobileQuickActionFab
-        onOpenNewBooking={() => setBookingModalOpen(true)}
-        onOpenGlobalSearch={() => setIsSearchOpen(true)}
-      />
+      <MobileQuickActionFab onOpenNewBooking={() => setBookingModalOpen(true)} />
       <MobileNavigationDrawer
         open={isMobileDrawerOpen}
         onOpenChange={setIsMobileDrawerOpen}

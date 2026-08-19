@@ -81,7 +81,7 @@ export const TotalRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     value={`₹ ${(stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
     trend
     caption="Gross all-time"
-    onClick={() => navigate("/admin/accounting")}
+    onClick={() => navigate("/admin/finance")}
   />
 );
 
@@ -97,7 +97,7 @@ export const MonthlyRevenueCard: React.FC<DashboardWidgetContextProps> = ({
     value={`₹ ${(stats?.monthlyRevenue?.[stats.monthlyRevenue.length - 1]?.revenue || stats?.totalRevenue || 0).toLocaleString("en-IN")}`}
     trend
     caption="Active this month"
-    onClick={() => navigate("/admin/accounting")}
+    onClick={() => navigate("/admin/finance")}
   />
 );
 
@@ -112,7 +112,7 @@ export const PendingCustomersCard: React.FC<DashboardWidgetContextProps> = ({
     loading={loading}
     value={`₹ ${(stats?.pendingPayments || 0).toLocaleString("en-IN")}`}
     caption={`${loading ? "…" : stats?.totalBookings || 0} bookings`}
-    onClick={() => navigate("/admin/accounting?tab=payments")}
+    onClick={() => navigate("/admin/finance?tab=payments")}
   />
 );
 
@@ -127,7 +127,7 @@ export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({
     loading={loading}
     value={`₹ ${(stats?.pendingVendorsCost || 0).toLocaleString("en-IN")}`}
     caption={`${loading ? "…" : stats?.pendingVendorsCount || 0} vendors`}
-    onClick={() => navigate("/admin/accounting?tab=vendor-payments")}
+    onClick={() => navigate("/admin/finance?tab=vendor-payments")}
   />
 );
 

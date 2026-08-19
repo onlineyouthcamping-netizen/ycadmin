@@ -370,6 +370,10 @@
     @apply flex min-w-0 flex-wrap items-center gap-2;
   }
 
+  .admin-toolbar-row {
+    @apply flex min-w-0 flex-wrap items-center gap-2;
+  }
+
   .admin-tabs {
     @apply flex min-w-0 max-w-full flex-nowrap gap-1 overflow-x-auto;
     scrollbar-width: none;
@@ -555,16 +559,44 @@
 }
 
 @media (max-width: 639.98px) {
-  .admin-main-scroll :where([class*="grid-cols-2"], [class*="grid-cols-3"], [class*="grid-cols-4"], [class*="grid-cols-5"], [class*="grid-cols-6"]) {
+  /* Only collapse legacy grids that lack responsive breakpoints */
+  .admin-main-scroll
+    :where([class*="grid-cols-3"], [class*="grid-cols-4"], [class*="grid-cols-5"], [class*="grid-cols-6"]):not(
+      .mobile-grid-keep
+    ) {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .admin-main-scroll :where([class*="w-["], [class*="min-w-["]) {
+  .admin-main-scroll
+    :where([class*="grid-cols-2"]):not(.mobile-grid-keep):not([class*="sm:grid-cols"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-main-scroll :where([class*="w-["], [class*="min-w-["]):not(table):not(.mobile-minw-keep) {
     max-width: 100%;
   }
 
   .admin-main-scroll :where(button, [role="button"], a)[class*="h-8"] {
     min-height: 2.5rem;
+  }
+
+  /* Row actions must stay tappable — not hover-only on touch devices */
+  .hover-actions .action-btn-group,
+  .hover-actions:hover .action-btn-group {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .admin-main-scroll :where(.flex.items-center.gap-2, .flex.items-center.gap-3) {
+    flex-wrap: wrap;
+  }
+
+  .admin-fixed-above-nav {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .admin-mobile-bottom-clear {
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

@@ -5,8 +5,6 @@ import {
   Ticket,
   Wallet,
   Calendar,
-  Plus,
-  Search,
   ChevronRight,
   Compass,
   AlertTriangle,
@@ -25,8 +23,6 @@ interface MobileDashboardViewProps {
   onDateFilterChange: (value: string) => void;
   userPerms: unknown;
   userRole?: string;
-  onOpenNewBooking: () => void;
-  onOpenSearch: () => void;
 }
 
 const PERIOD_OPTIONS: { value: string; label: string }[] = [
@@ -115,8 +111,6 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   onDateFilterChange,
   userPerms,
   userRole,
-  onOpenNewBooking,
-  onOpenSearch,
 }) => {
   const navigate = useNavigate();
   const { admin } = useAuthStore();
@@ -172,51 +166,42 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
             YouthCamping OS Mobile Command Center
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={onOpenSearch}
-          aria-label="Search"
-          className="w-10 h-10 shrink-0 rounded-xl bg-white/10 text-white flex items-center justify-center active:scale-95 transition-all border border-white/10"
-        >
-          <Search className="w-5 h-5" />
-        </button>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* Quick shortcuts — no duplicate New Booking (use FAB / header on desktop) */}
+      <div className="mobile-grid-keep grid grid-cols-2 gap-2.5">
         <button
           type="button"
-          onClick={onOpenNewBooking}
-          className="p-3 rounded-2xl bg-[#FF5400] text-white shadow-md shadow-orange-500/20 text-left flex flex-col justify-between h-[88px] active:scale-95 transition-all"
+          onClick={() => navigate("/admin/operations")}
+          className="flex h-[88px] touch-manipulation flex-col justify-between rounded-2xl bg-[#0B1329] p-3 text-left text-white shadow-md transition-all active:scale-95"
         >
-          <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-            <Plus className="w-5 h-5 stroke-[2.5px]" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10">
+            <Compass className="h-5 w-5 text-[#FF5400]" />
           </div>
           <div className="min-w-0">
-            <span className="text-xs font-black block leading-tight truncate">
-              New Booking
+            <span className="block truncate text-xs font-black leading-tight">
+              Departure Hub
             </span>
-            <span className="text-[10px] text-white/80 font-medium block truncate">
-              1-Tap Reservation
+            <span className="block truncate text-[10px] font-medium text-slate-400">
+              Station Operations
             </span>
           </div>
         </button>
 
         <button
           type="button"
-          onClick={() => navigate("/admin/departures")}
-          className="p-3 rounded-2xl bg-[#0B1329] text-white shadow-md text-left flex flex-col justify-between h-[88px] active:scale-95 transition-all"
+          onClick={() => navigate("/admin/finance")}
+          className="flex h-[88px] touch-manipulation flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-3 text-left shadow-sm transition-all active:scale-95"
         >
-          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-            <Compass className="w-5 h-5 text-[#FF5400]" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-green-50">
+            <Wallet className="h-5 w-5 text-green-600" />
           </div>
           <div className="min-w-0">
-            <span className="text-xs font-black block leading-tight truncate">
-              Departure Hub
+            <span className="block truncate text-xs font-black leading-tight text-slate-900">
+              Finance
             </span>
-            <span className="text-[10px] text-slate-400 font-medium block truncate">
-              Station Operations
+            <span className="block truncate text-[10px] font-medium text-slate-500">
+              Payments & approvals
             </span>
           </div>
         </button>
@@ -247,7 +232,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           <MetricCard
             label={`${periodPrefix} payments`}
             icon={<TrendingUp className="h-3.5 w-3.5" strokeWidth={1.75} />}
-            onClick={() => navigate("/admin/accounting")}
+            onClick={() => navigate("/admin/finance")}
             loading={loading}
             value={stats?.totalRevenue}
             format={formatInr}

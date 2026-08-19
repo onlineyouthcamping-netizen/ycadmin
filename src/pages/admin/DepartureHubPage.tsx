@@ -4,6 +4,10 @@ import {
   normalizeGenderCode,
 } from "@/utils/passengerUtils";
 import { calculateReadinessScore } from "@/utils/readinessUtils";
+import {
+  isSameDepartureDate,
+  toDepartureDateKey,
+} from "@/utils/departureDate";
 import { isPassengerCancelled, filterActivePassengers } from "@/utils/departure/passengerStatus";
 import { getBookingGroupKey, groupPassengersByBooking } from "@/utils/departure/passengerAllocation";
 import { calculateBookingFinancialStatus, safeNumber } from "@/utils/departure/paymentCalculator";
@@ -421,7 +425,7 @@ export default function DepartureHubPage() {
           bookingId: b.id,
           bookingRef: b.bookingId || b.id,
           bookingDate: b.createdAt?.substring(0, 10) || "2027-06-15",
-          departureDate: b.departureDate?.substring(0, 10) || departureDateStr,
+          departureDate: toDepartureDateKey(b.departureDate) || departureDateStr,
           batchGroup: "Batch 1",
           gender: normalizeGenderFull(b.gender || passengersObj?.details?.gender, leadName),
           age: b.age || 24,
@@ -1245,7 +1249,7 @@ export default function DepartureHubPage() {
         const filtered = allBookings.filter(
           (b: any) =>
             b.tripId === tripId &&
-            b.departureDate?.substring(0, 10) === departureDateStr,
+            isSameDepartureDate(b.departureDate, departureDateStr),
         );
         setBookings(filtered);
       }
@@ -1577,7 +1581,16 @@ export default function DepartureHubPage() {
         if (rooms.length > 0 || vehicles.length > 0) {
           // Extract passengers directly from allBookings for immediate synchronous resolution
           const currentPassengersList: any[] = [];
-          (bookingsRes.status === "fulfilled" && bookingsRes.value?.data?.data ? bookingsRes.value.data.data : []).forEach((b: any) => {
+          const hydrateBookings = (
+            bookingsRes.status === "fulfilled" && bookingsRes.value?.data?.data
+              ? bookingsRes.value.data.data
+              : []
+          ).filter(
+            (b: any) =>
+              b.tripId === tripId &&
+              isSameDepartureDate(b.departureDate, departureDateStr),
+          );
+          hydrateBookings.forEach((b: any) => {
             let rawPax: any[] = [];
             try {
               if (Array.isArray(b.passengers)) {

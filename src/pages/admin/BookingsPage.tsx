@@ -905,10 +905,10 @@ export default function BookingsPage() {
             {/* BULK ACTIONS DRAWER */}
             <div
               className={cn(
-                "fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white py-3 px-6 rounded-lg shadow-xl z-55 flex items-center gap-3 transition-all duration-350 ease-out border border-slate-700/50",
+                "admin-fixed-above-nav fixed bottom-6 left-1/2 z-[60] flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-lg border border-slate-700/50 bg-[#0F172A] px-3 py-3 text-white shadow-xl transition-all duration-350 ease-out md:max-w-none md:flex-nowrap md:gap-3 md:px-6",
                 selectedIds.length > 0
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-10 pointer-events-none",
+                  ? "translate-y-0 opacity-100"
+                  : "pointer-events-none translate-y-10 opacity-0",
               )}
             >
               <span className="font-bold text-xs mr-2">
@@ -964,7 +964,7 @@ export default function BookingsPage() {
           />
           <div
             className={cn(
-              "fixed top-0 right-0 h-screen w-[400px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out font-sans",
+              "fixed top-0 right-0 z-50 flex h-[100dvh] w-full max-w-full flex-col border-l border-slate-200 bg-white font-sans shadow-2xl transition-transform duration-300 ease-out sm:w-[400px]",
               previewTarget ? "translate-x-0" : "translate-x-full",
             )}
           >

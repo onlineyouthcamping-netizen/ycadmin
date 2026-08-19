@@ -157,12 +157,6 @@ export default function DashboardPage() {
           onDateFilterChange={setDateFilter}
           userPerms={userPerms}
           userRole={userRole}
-          onOpenNewBooking={() =>
-            window.dispatchEvent(new Event("yc:open-new-booking"))
-          }
-          onOpenSearch={() =>
-            window.dispatchEvent(new Event("yc:open-global-search"))
-          }
         />
       </div>
 

@@ -72,7 +72,7 @@ export function BookingsToolbar({
 }: BookingsToolbarProps) {
   return (
     <div className="flex flex-col shrink-0 border-b border-[#E8EEF4]">
-      <div className="flex items-center gap-3 px-4 md:px-5 h-12">
+      <div className="admin-toolbar-row items-center gap-3 px-4 md:px-5 h-12">
         <div className="hidden md:block relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" strokeWidth={1.75} />
           <Input
@@ -83,25 +83,39 @@ export function BookingsToolbar({
             onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
-        <div className="md:hidden font-semibold text-[#0B1528] text-sm">Bookings</div>
 
-        <div className="ml-auto flex items-center gap-1 shrink-0">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           {hasActiveFilters && onClearFilters && (
             <button
               type="button"
               onClick={onClearFilters}
-              className="hidden sm:inline-flex h-8 px-2.5 text-[11px] font-semibold text-[#FF4D00] hover:bg-[#FF4D00]/5 rounded-md"
+              className="inline-flex h-9 min-w-[44px] px-2.5 text-[11px] font-semibold text-[#FF4D00] hover:bg-[#FF4D00]/5 rounded-md touch-manipulation"
             >
               Clear
             </button>
           )}
           <button
             type="button"
-            className="h-8 w-8 rounded-md text-slate-500 hover:text-[#0B1528] hover:bg-slate-50 flex items-center justify-center"
+            className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-md text-slate-500 hover:bg-slate-50 hover:text-[#0B1528]"
             onClick={fetchAll}
             title="Refresh"
+            aria-label="Refresh bookings"
           >
             <RotateCw className="w-3.5 h-3.5" strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "flex h-9 w-9 touch-manipulation items-center justify-center rounded-md md:hidden",
+              showSidebar
+                ? "text-[#FF4D00] bg-[#FF4D00]/5"
+                : "text-slate-500 hover:text-[#0B1528] hover:bg-slate-50",
+            )}
+            onClick={() => setShowSidebar(!showSidebar)}
+            title="Filters"
+            aria-label="Toggle filters"
+          >
+            <Filter className="w-3.5 h-3.5" strokeWidth={1.75} />
           </button>
           <button
             type="button"
@@ -118,15 +132,25 @@ export function BookingsToolbar({
           </button>
           <button
             type="button"
-            className="hidden md:flex h-8 w-8 rounded-md text-slate-500 hover:text-[#0B1528] hover:bg-slate-50 items-center justify-center"
+            className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-md text-slate-500 hover:bg-slate-50 hover:text-[#0B1528] md:h-8 md:w-8"
             onClick={handleExportCSV}
             title="Export CSV"
+            aria-label="Export CSV"
           >
             <FileDown className="w-3.5 h-3.5" strokeWidth={1.75} />
           </button>
           <button
             type="button"
-            className="hidden sm:flex h-8 px-2.5 rounded-md text-[12px] font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-slate-50 items-center gap-1.5"
+            className="flex h-9 w-9 touch-manipulation items-center justify-center rounded-md text-slate-500 hover:bg-slate-50 hover:text-[#0B1528] sm:hidden"
+            onClick={() => setShowTrips(true)}
+            title="Trip Manager"
+            aria-label="Trip Manager"
+          >
+            <Link2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            className="hidden h-8 px-2.5 rounded-md text-[12px] font-semibold text-slate-600 hover:text-[#0B1528] hover:bg-slate-50 sm:flex items-center gap-1.5 touch-manipulation"
             onClick={() => setShowTrips(true)}
             title="Trip Manager"
           >
