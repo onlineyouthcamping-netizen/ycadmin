@@ -727,10 +727,96 @@ export default function DeparturePayments({
         }
       });
 
-      const manualActivities = (expensesRes || []).filter((e: any) => e.category === "ACTIVITIES");
+      const manualActivities = (expensesRes || []).filter(
+        (e: any) =>
+          (e.category || "").toUpperCase() === "ACTIVITIES" ||
+          (e.remarks || "").toUpperCase().includes("CATEGORY: ACTIVITIES"),
+      );
       const combinedActivities = [...fetchedActivities, ...manualActivities];
-      const misc = (expensesRes || []).filter((e: any) => e.category === "MISCELLANEOUS" || e.category === "OTHER");
-      const recons = (expensesRes || []).filter((e: any) => e.category === "ADJUSTMENT");
+
+      const misc = (expensesRes || [])
+        .filter((e: any) => {
+          const rem = (e.remarks || "").toUpperCase();
+          const act = (e.activity || "").toUpperCase();
+          const cat = (e.category || "").toUpperCase();
+          return (
+            cat === "MISCELLANEOUS" ||
+            cat === "OTHER" ||
+            cat === "MISC" ||
+            rem.includes("MISCELLANEOUS") ||
+            rem.includes("MISC") ||
+            act.startsWith("MISC:") ||
+            (!rem.includes("RECONCILIATION") &&
+              !act.startsWith("ADJUSTMENT:") &&
+              cat !== "ACTIVITIES")
+          );
+        })
+        .map((e: any) => {
+          const rem = e.remarks || "";
+          const isApproved =
+            e.paymentStatus === "Paid" ||
+            rem.includes("Status: APPROVED") ||
+            e.status === "APPROVED";
+          const isRejected =
+            rem.includes("Status: REJECTED") || e.status === "REJECTED";
+          return {
+            id: e.id,
+            description: e.activity,
+            category: "misc",
+            amount: Number(e.totalAmount || 0),
+            payeeName: rem.split("|")[0]?.trim() || "Vendor / Staff",
+            approvedBy: isApproved ? "Finance Admin" : "Operations",
+            status: isApproved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING",
+            paymentDate: e.paymentDate
+              ? e.paymentDate.substring(0, 10)
+              : new Date().toISOString().substring(0, 10),
+            paymentMethod: rem.includes("Method:")
+              ? rem.split("Method:")[1]?.split("|")[0]?.trim()
+              : "Cash",
+          };
+        });
+
+      const recons = (expensesRes || [])
+        .filter((e: any) => {
+          const rem = (e.remarks || "").toUpperCase();
+          const act = (e.activity || "").toUpperCase();
+          const cat = (e.category || "").toUpperCase();
+          return (
+            cat === "ADJUSTMENT" ||
+            cat === "RECONCILIATION" ||
+            rem.includes("RECONCILIATION") ||
+            act.startsWith("ADJUSTMENT:")
+          );
+        })
+        .map((e: any) => {
+          const rem = e.remarks || "";
+          const isApproved =
+            e.paymentStatus === "Paid" ||
+            rem.includes("Status: APPROVED") ||
+            e.status === "APPROVED";
+          const isRejected =
+            rem.includes("Status: REJECTED") || e.status === "REJECTED";
+          return {
+            id: e.id,
+            type:
+              (e.activity || "")
+                .replace("Adjustment:", "")
+                .split("-")[0]
+                ?.trim() || "Rate Difference",
+            category: "reconciliation",
+            originalPaymentRef:
+              (e.activity || "").split("-")[1]?.trim() ||
+              "Booking/Vendor Payment",
+            amount: Number(e.totalAmount || 0),
+            reason:
+              rem.replace("Reconciliation |", "").split("|")[0]?.trim() ||
+              "Adjustment",
+            status: isApproved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING",
+            createdAt: e.createdAt
+              ? e.createdAt.substring(0, 10)
+              : new Date().toISOString().substring(0, 10),
+          };
+        });
 
       setBookings(mergedBookings);
       setReceipts(clientRes.receipts || []);
@@ -738,9 +824,9 @@ export default function DeparturePayments({
       setDbVendors(vendorsDirRes.data?.data || []);
       setTrainTickets(trainSummaryRes?.tickets || []);
 
-      if (combinedActivities.length > 0) setActivityPayments(combinedActivities);
-      if (misc.length > 0) setMiscPayments(misc);
-      if (recons.length > 0) setAdjustments(recons);
+      setActivityPayments(combinedActivities);
+      setMiscPayments(misc);
+      setAdjustments(recons);
 
     } catch (err) {
       console.error("fetchData error in DeparturePayments:", err);
