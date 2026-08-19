@@ -570,7 +570,22 @@ export default function DeparturePayments({
         const vName = tv.name || tv.vendorName || tv.hotelName || (typeof tv.vendorId === "object" ? tv.vendorId?.name : tv.vendorId) || tv.vendor?.name;
         if (!vName || vName === "NO_STAY" || vName === "—" || vName.toLowerCase().includes("night journey")) return;
         
-        const existingIdx = mergedVendors.findIndex((v) => v.vendorName?.toLowerCase().trim() === vName.toLowerCase().trim());
+        const vCat =
+          tv.vendorType === "hotel" || tv.category === "Hotels"
+            ? "Hotels"
+            : tv.vendorType === "guide" || tv.category === "Guides"
+              ? "Guides"
+              : tv.vendorType === "activity" || tv.category === "Activities"
+                ? "Activities"
+                : tv.vendorType === "transport" || tv.category === "Transport"
+                  ? "Transport"
+                  : tv.category || "Other";
+
+        const existingIdx = mergedVendors.findIndex((v) => {
+          if (tv.id && v.id && tv.id === v.id) return true;
+          if (tv.rawAssignment?.id && v.rawAssignment?.id && tv.rawAssignment.id === v.rawAssignment.id) return true;
+          return v.vendorName?.toLowerCase().trim() === vName.toLowerCase().trim() && v.category === vCat && !tv.id?.startsWith("transport-") && !v.id?.startsWith("transport-");
+        });
         const agreed = Number(tv.agreedCost || tv.totalAmount || 0);
         const paid = Number(tv.paidAmount || tv.advancePaid || 0);
 
@@ -605,17 +620,6 @@ export default function DeparturePayments({
               : paid > 0
               ? "Advance Paid"
               : "Pending";
-
-          const vCat =
-            tv.vendorType === "hotel" || tv.category === "Hotels"
-              ? "Hotels"
-              : tv.vendorType === "guide" || tv.category === "Guides"
-                ? "Guides"
-                : tv.vendorType === "activity" || tv.category === "Activities"
-                  ? "Activities"
-                  : tv.vendorType === "transport" || tv.category === "Transport"
-                    ? "Transport"
-                    : tv.category || "Other";
 
           mergedVendors.push({
             id: tv.id || `auto-${vName}`,

@@ -2293,21 +2293,41 @@ export default function DepartureHubPage() {
           confirmed: h.confirmed || "CONFIRMED",
           rawAssignment: h,
         })),
-        ...transports.map((t: any) => ({
-          id: t.id,
-          name: t.vendor?.name || t.notes || t.driverName || "Transport Partner",
-          vendorType: "transport",
-          category: "Transport",
-          vendorId: {
-            name: t.vendor?.name || t.notes || t.driverName || "Transport Partner",
-            location: t.notes || "Local",
-          },
-          paymentStatus: (t.advancePaid >= t.totalAmount && t.totalAmount > 0) ? "paid" : (t.advancePaid > 0 ? "advance_paid" : "pending"),
-          agreedCost: t.totalAmount,
-          paidAmount: t.advancePaid || 0,
-          balanceDue: (t.totalAmount || 0) - (t.advancePaid || 0),
-          rawAssignment: t,
-        })),
+        ...transports.map((t: any, idx: number) => {
+          const vTitle =
+            t.vendor?.name || t.notes || t.driverName || "Transport Partner";
+          const sameVendorCount = transports.filter(
+            (o: any) =>
+              (o.vendor?.name || o.notes || o.driverName) === vTitle,
+          ).length;
+          const displayName =
+            sameVendorCount > 1
+              ? `${vTitle} (${t.vehicleType || "Vehicle"} #${idx + 1})`
+              : vTitle;
+          return {
+            id: t.id || `transport-${idx + 1}`,
+            name: displayName,
+            vendorType: "transport",
+            category: "Transport",
+            vendorId: {
+              name: displayName,
+              location: t.notes || "Local",
+            },
+            paymentStatus:
+              t.advancePaid >= t.totalAmount && t.totalAmount > 0
+                ? "paid"
+                : t.advancePaid > 0
+                  ? "advance_paid"
+                  : "pending",
+            agreedCost: Number(t.totalAmount || 0),
+            paidAmount: Number(t.advancePaid || 0),
+            balanceDue: Math.max(
+              0,
+              Number(t.totalAmount || 0) - Number(t.advancePaid || 0),
+            ),
+            rawAssignment: t,
+          };
+        }),
         ...guides.map((g: any) => ({
           id: g.id,
           name: g.guideName || g.guide?.name || "Lead Guide",
@@ -3625,27 +3645,61 @@ useEffect(() => {
 
       // Vendor Payments (filtered from tripVendors state)
       const hotelsCost = tripVendors
-        .filter((v) => v.vendorType === "hotel")
-        .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
+        .filter((v) => v.vendorType === "hotel" || v.category === "Hotels")
+        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
       const hotelsPaid = tripVendors
-        .filter((v) => v.vendorType === "hotel")
-        .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+        .filter((v) => v.vendorType === "hotel" || v.category === "Hotels")
+        .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
       const transportsCost = tripVendors
-        .filter((v) => v.vendorType === "transport")
-        .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
+        .filter((v) => v.vendorType === "transport" || v.category === "Transport")
+        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
       const transportsPaid = tripVendors
-        .filter((v) => v.vendorType === "transport")
-        .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+        .filter((v) => v.vendorType === "transport" || v.category === "Transport")
+        .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
       const guidesCost = tripVendors
-        .filter((v) => v.vendorType === "guide")
-        .reduce((sum, v) => sum + (v.agreedCost || 0), 0);
+        .filter((v) => v.vendorType === "guide" || v.category === "Guides")
+        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
       const guidesPaid = tripVendors
-        .filter((v) => v.vendorType === "guide")
-        .reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+        .filter((v) => v.vendorType === "guide" || v.category === "Guides")
+        .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
+      const activitiesCost = tripVendors
+        .filter((v) => v.vendorType === "activity" || v.category === "Activities")
+        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
+      const activitiesPaid = tripVendors
+        .filter((v) => v.vendorType === "activity" || v.category === "Activities")
+        .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
+      const otherCost = tripVendors
+        .filter(
+          (v) =>
+            v.vendorType !== "hotel" &&
+            v.vendorType !== "transport" &&
+            v.vendorType !== "guide" &&
+            v.vendorType !== "activity" &&
+            v.category !== "Hotels" &&
+            v.category !== "Transport" &&
+            v.category !== "Guides" &&
+            v.category !== "Activities",
+        )
+        .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0);
+      const otherPaid = tripVendors
+        .filter(
+          (v) =>
+            v.vendorType !== "hotel" &&
+            v.vendorType !== "transport" &&
+            v.vendorType !== "guide" &&
+            v.vendorType !== "activity" &&
+            v.category !== "Hotels" &&
+            v.category !== "Transport" &&
+            v.category !== "Guides" &&
+            v.category !== "Activities",
+        )
+        .reduce((sum, v) => sum + (Number(v.paidAmount ?? v.advancePaid) || 0), 0);
 
-      const totalVendorCost = hotelsCost + transportsCost + guidesCost;
-      const totalVendorPaid = hotelsPaid + transportsPaid + guidesPaid;
-      const totalVendorPayables = totalVendorCost - totalVendorPaid;
+      const totalVendorCost =
+        hotelsCost + transportsCost + guidesCost + activitiesCost + otherCost;
+      const totalVendorPaid =
+        hotelsPaid + transportsPaid + guidesPaid + activitiesPaid + otherPaid;
+      const totalVendorPayables = Math.max(0, totalVendorCost - totalVendorPaid);
 
       const estProfit = totalRevenue - totalVendorCost;
       const profitPercent =
