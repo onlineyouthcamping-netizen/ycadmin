@@ -1698,6 +1698,7 @@ export default function DepartureHubPage() {
             `Saved: ${result.data?.rooms?.length || 0} room + ${result.data?.vehicles?.length || 0} vehicle allocations`,
           );
         }
+        await fetchPageData();
       } else {
         toast.error(result?.message || "Failed to save allocations");
       }
