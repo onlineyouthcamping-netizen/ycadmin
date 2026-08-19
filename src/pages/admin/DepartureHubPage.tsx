@@ -829,6 +829,33 @@ export default function DepartureHubPage() {
         }
       });
 
+      // If saving vehicles and none were explicitly set, fallback-assign to fleet
+      if ((target === "all" || target === "vehicles") && vehicleAllocations.length === 0 && !clearExisting && allocFleet.length > 0) {
+        let seatCounter = 1;
+        let fleetIdx = 0;
+        allPassengers.forEach((p: any) => {
+          if (isPassengerCancelled(p)) return;
+          const currentFleet = allocFleet[fleetIdx] || allocFleet[0];
+          const bookingId =
+            p.bookingId ||
+            p.rawBooking?.bookingId ||
+            p.bookingRef ||
+            p.rawBooking?.id ||
+            `BK-${(p.name || "PAX").replace(/\s+/g, "").toUpperCase()}`;
+          vehicleAllocations.push({
+            fleetId: currentFleet.id || `tempo-${fleetIdx + 1}`,
+            bookingId,
+            travelerName: p.name,
+            seatNumber: seatCounter,
+          });
+          seatCounter++;
+          if (seatCounter > (Number(currentFleet.capacity) || 14) && fleetIdx < allocFleet.length - 1) {
+            fleetIdx++;
+            seatCounter = 1;
+          }
+        });
+      }
+
       if (
         clearExisting &&
         roomAllocations.length === 0 &&
