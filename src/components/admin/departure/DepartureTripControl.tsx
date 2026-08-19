@@ -851,6 +851,84 @@ export default function DepartureTripControl({
     }
   };
 
+  // Direct Hotel Status Switcher Handler
+  const handleUpdateHotelStatus = async (row: TripControlRowData, newStatus: string) => {
+    try {
+      const isNotRequired = newStatus === "NOT REQUIRED";
+      const isCheckedIn = newStatus === "CHECKED-IN";
+      const isCancelled = newStatus === "CANCELLED";
+      const hotelVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : row.hotelName !== "—" ? row.hotelName : "Contracted Stay";
+
+      await opsService.upsertDayItinerary(
+        tripId,
+        {
+          dayTitle: row.dayLabel,
+          hotelName: hotelVal,
+          hotelVerified: newStatus === "BOOKED" || newStatus === "CONFIRMED" || isCheckedIn,
+          checkInDone: isCheckedIn ? true : isNotRequired || isCancelled ? false : row.checkInStatus === "CHECKED-IN",
+          paxCount: row.paxCount,
+          remarks: row.remark,
+        },
+        departureDateStr
+      );
+      toast.success(`Hotel status for ${row.dayLabel} set to "${formatOpsLabel(newStatus)}"`);
+      await loadDbItinerary();
+    } catch (err: any) {
+      toast.error("Failed to update hotel status in database");
+    }
+  };
+
+  // Direct Transport Status Switcher Handler
+  const handleUpdateTransportStatus = async (row: TripControlRowData, newStatus: string) => {
+    try {
+      const isNotRequired = newStatus === "NOT REQUIRED";
+      const isCancelled = newStatus === "CANCELLED";
+      const defaultTrans = leadTransport.name !== "—" ? leadTransport.name : "17 Seater Tempo";
+      const vehicleVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : (row.transportName !== "—" ? row.transportName : defaultTrans);
+
+      await opsService.upsertDayItinerary(
+        tripId,
+        {
+          dayTitle: row.dayLabel,
+          vehicleType: vehicleVal,
+          vehicleVerified: newStatus === "BOOKED" || newStatus === "CONFIRMED" || newStatus === "CHECKED-IN",
+          paxCount: row.paxCount,
+          hotelName: row.hotelName,
+        },
+        departureDateStr
+      );
+      toast.success(`Transport status for ${row.dayLabel} set to "${formatOpsLabel(newStatus)}"`);
+      await loadDbItinerary();
+    } catch (err: any) {
+      toast.error("Failed to update transport status in database");
+    }
+  };
+
+  // Direct Guide Status Switcher Handler
+  const handleUpdateGuideStatus = async (row: TripControlRowData, newStatus: string) => {
+    try {
+      const isNotRequired = newStatus === "NOT REQUIRED";
+      const defaultG = leadGuide.name !== "—" ? leadGuide.name : "Lead Guide";
+      const guideVal = isNotRequired ? "— (Not Required)" : (row.guideName !== "—" ? row.guideName : defaultG);
+
+      await opsService.upsertDayItinerary(
+        tripId,
+        {
+          dayTitle: row.dayLabel,
+          guideDriverDetails: guideVal,
+          guideVerified: newStatus === "CHECKED-IN" || newStatus === "BOOKED" || newStatus === "CONFIRMED",
+          paxCount: row.paxCount,
+          hotelName: row.hotelName,
+        },
+        departureDateStr
+      );
+      toast.success(`Guide status for ${row.dayLabel} set to "${formatOpsLabel(newStatus)}"`);
+      await loadDbItinerary();
+    } catch (err: any) {
+      toast.error("Failed to update guide status in database");
+    }
+  };
+
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "HOTEL_PENDING" | "CHECKIN_PENDING" | "CHECKED_IN">("ALL");
@@ -1144,30 +1222,100 @@ export default function DepartureTripControl({
                       )}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-center">
-                      <span
-                        className={cn(
-                          "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]",
-                          statusTone(row.hotelStatus),
-                        )}
-                      >
-                        {formatOpsLabel(row.hotelStatus)}
-                      </span>
+                    <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer hover:shadow-xs",
+                              statusTone(row.hotelStatus),
+                              row.hotelStatus === "BOOKED" || row.hotelStatus === "CONFIRMED"
+                                ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                                : row.hotelStatus === "CANCELLED"
+                                  ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                  : row.hotelStatus === "NOT REQUIRED"
+                                    ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                            )}
+                          >
+                            <span>{formatOpsLabel(row.hotelStatus)}</span>
+                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-36 text-xs bg-white shadow-lg border border-slate-200 rounded-lg p-1 z-50">
+                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">Hotel Status</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "BOOKED")} className="text-green-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-green-50 text-xs">
+                            🟢 Booked
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "CONFIRMED")} className="text-blue-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-blue-50 text-xs">
+                            🔵 Confirmed
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "CHECKED-IN")} className="text-purple-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-purple-50 text-xs">
+                            🟣 Checked in
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "PENDING")} className="text-amber-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-amber-50 text-xs">
+                            🟡 Pending
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "NOT REQUIRED")} className="text-slate-600 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-slate-100 text-xs">
+                            ⚪ Not required
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateHotelStatus(row, "CANCELLED")} className="text-red-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-red-50 text-xs">
+                            🔴 Cancelled
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
 
                     <td className="py-2.5 px-3.5 font-medium text-[#0B1528] truncate max-w-[150px]">
                       {row.transportName}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-center">
-                      <span
-                        className={cn(
-                          "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]",
-                          statusTone(row.transportStatus),
-                        )}
-                      >
-                        {formatOpsLabel(row.transportStatus)}
-                      </span>
+                    <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer hover:shadow-xs",
+                              statusTone(row.transportStatus),
+                              row.transportStatus === "BOOKED" || row.transportStatus === "CONFIRMED"
+                                ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                                : row.transportStatus === "CANCELLED"
+                                  ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                  : row.transportStatus === "NOT REQUIRED"
+                                    ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                            )}
+                          >
+                            <span>{formatOpsLabel(row.transportStatus)}</span>
+                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-36 text-xs bg-white shadow-lg border border-slate-200 rounded-lg p-1 z-50">
+                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">Tempo / Vehicle</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "BOOKED")} className="text-green-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-green-50 text-xs">
+                            🟢 Booked
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "CONFIRMED")} className="text-blue-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-blue-50 text-xs">
+                            🔵 Confirmed
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "CHECKED-IN")} className="text-purple-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-purple-50 text-xs">
+                            🟣 Checked in
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "PENDING")} className="text-amber-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-amber-50 text-xs">
+                            🟡 Pending
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "NOT REQUIRED")} className="text-slate-600 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-slate-100 text-xs">
+                            ⚪ Not required
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUpdateTransportStatus(row, "CANCELLED")} className="text-red-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-red-50 text-xs">
+                            🔴 Cancelled
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
 
                     <td className="py-2.5 px-3.5">
@@ -1179,15 +1327,39 @@ export default function DepartureTripControl({
                       )}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-center">
-                      <span
-                        className={cn(
-                          "inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-[#E8EEF4]",
-                          statusTone(row.checkInStatus),
-                        )}
-                      >
-                        {formatOpsLabel(row.checkInStatus)}
-                      </span>
+                    <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer hover:shadow-xs",
+                              statusTone(row.checkInStatus),
+                              row.checkInStatus === "CHECKED-IN"
+                                ? "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                                : row.checkInStatus === "NOT REQUIRED"
+                                  ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                            )}
+                          >
+                            <span>{formatOpsLabel(row.checkInStatus)}</span>
+                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="w-36 text-xs bg-white shadow-lg border border-slate-200 rounded-lg p-1 z-50">
+                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">Check-in Status</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleToggleCheckIn(row, "CHECKED-IN")} className="text-purple-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-purple-50 text-xs">
+                            🟣 Checked in
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleCheckIn(row, "PENDING")} className="text-amber-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-amber-50 text-xs">
+                            🟡 Pending
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleCheckIn(row, "NOT REQUIRED")} className="text-slate-600 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-slate-100 text-xs">
+                            ⚪ Not required
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
 
                     <td className="py-2.5 px-3.5">
