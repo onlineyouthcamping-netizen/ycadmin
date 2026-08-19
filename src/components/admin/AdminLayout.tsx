@@ -165,7 +165,6 @@ const sidebarModules: SidebarModule[] = [
     hasSubItems: true,
     subItems: [
       { title: "Trips", url: "/admin/trips" },
-      { title: "Master data", url: "/admin/master-database" },
       { title: "Website", url: "/admin/website" },
       { title: "Pages", url: "/admin/pages" },
       { title: "Blogs", url: "/admin/blogs" },
