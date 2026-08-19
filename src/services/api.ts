@@ -32,13 +32,18 @@ api.interceptors.request.use((config) => {
     if (cleanToken.startsWith("Bearer ")) {
       cleanToken = cleanToken.slice(7).trim();
     }
-    const bearerValue = `Bearer ${cleanToken}`;
-    if (config.headers && typeof (config.headers as any).set === "function") {
-      (config.headers as any).set("Authorization", bearerValue);
-    } else if (config.headers) {
-      (config.headers as any)["Authorization"] = bearerValue;
+    // Only attach if token is a structurally valid 3-part JWT
+    if (cleanToken && cleanToken.split(".").length === 3) {
+      const bearerValue = `Bearer ${cleanToken}`;
+      if (config.headers && typeof (config.headers as any).set === "function") {
+        (config.headers as any).set("Authorization", bearerValue);
+      } else if (config.headers) {
+        (config.headers as any)["Authorization"] = bearerValue;
+      }
+      adminRedirectInProgress = false;
+    } else {
+      localStorage.removeItem("token");
     }
-    adminRedirectInProgress = false;
   }
 
   if (TRACE_REQUESTS) {
