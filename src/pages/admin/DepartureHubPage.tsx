@@ -913,7 +913,7 @@ export default function DepartureHubPage() {
             `Saved: ${result.data?.rooms?.length || 0} room + ${result.data?.vehicles?.length || 0} vehicle allocations`,
           );
         }
-        await fetchPageData();
+        await fetchPageData(false, true);
       } else {
         toast.error(result?.message || "Failed to save allocations");
       }
@@ -1289,7 +1289,7 @@ export default function DepartureHubPage() {
   const loadGenerationRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchPageData = async (resetFleet = false) => {
+  const fetchPageData = async (resetFleet = false, skipAllocReset = false) => {
     if (!tripId || !departureDateStr) {
       setLoading(false);
       return;
@@ -1316,7 +1316,7 @@ export default function DepartureHubPage() {
     setReadinessData(null);
     setEngineStats(null);
     setOpsHotels([]);
-    setPassengerAllocations({});
+    if (!skipAllocReset) setPassengerAllocations({});
     setActivitiesList([]);
     setDbGuides([]);
     if (resetFleet) setAllocFleet([]);
