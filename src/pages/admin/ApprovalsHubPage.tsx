@@ -105,38 +105,24 @@ export default function ApprovalsHubPage() {
 
   return (
     <div className="min-h-0 space-y-3 font-sans text-[#13283F] antialiased">
-      <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-[#E8EEF4] rounded-xl px-4 py-4 md:px-5 md:py-4 shadow-none border-l-4 border-l-[#FF4D00]">
-        <div className="min-w-0 flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FF4D00]/10">
-            <ShieldCheck className="h-4 w-4 text-[#FF4D00]" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-0.5">
-              Finance Control Desk
-            </p>
-            <h1 className="text-[20px] font-bold text-[#0B1528] tracking-tight leading-tight">
-              Approvals
-            </h1>
-            <p className="text-[12px] text-slate-500 mt-0.5">
-              Review money moving into and out of YouthCamping.
-            </p>
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#FF4D00] shadow-sm">
+              <ShieldCheck className="h-3.5 w-3.5 text-white" />
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Finance Control Desk</span>
           </div>
+          <h1 className="text-[24px] font-bold text-[#0B1528] tracking-tight">Approvals</h1>
+          <p className="text-[13px] text-slate-500 mt-0.5">Review money moving into and out of YouthCamping.</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-2.5 bg-[#F8FAFC] border border-[#E8EEF4] rounded-lg px-3.5 py-2">
-            <div className="text-right">
-              <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                Open Actions
-              </div>
-              <div className="text-[20px] font-bold text-[#0B1528] tabular-nums leading-tight">
-                {totalOpen}
-              </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {totalOpen > 0 && (
+            <div className="flex items-center gap-1.5 bg-[#FF4D00] text-white rounded-lg px-3.5 py-2 shadow-sm">
+              <span className="text-[22px] font-bold tabular-nums leading-none">{totalOpen}</span>
+              <div className="text-[10px] leading-snug opacity-90">open<br />actions</div>
             </div>
-            <div className="h-7 w-px bg-[#E8EEF4]" />
-            <div className="text-[10px] leading-4 text-slate-500">
-              Across all<br />finance queues
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
