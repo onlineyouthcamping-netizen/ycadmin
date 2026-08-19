@@ -35,6 +35,7 @@ import { bookingVerificationService } from "@/services/bookingVerification.servi
 import { trainTicketService } from "@/services/trainTicket.service";
 import { bookingsService } from "@/services/bookings.service";
 import { financeControllerService } from "@/services/financeController.service";
+import { financeApprovalsService } from "@/services/financeApprovals.service";
 import type { IncomingPaymentItem, VendorPaymentRequestItem } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
@@ -519,12 +520,14 @@ export default function VerificationQueuePage({
         toast.error("Rejection reason is required");
         return;
       }
-      // Map UI actions to backend's accepted action values
-      const backendAction = action === "APPROVE" ? "VERIFY" : "RECORD_PAYMENT";
-      await financeControllerService.performVendorAction(id, {
-        action: backendAction as any,
-        notes: reason || undefined,
-      });
+      if (action === "REJECT") {
+        await financeApprovalsService.rejectVendorPayment(id, reason!);
+      } else {
+        await financeControllerService.performVendorAction(id, {
+          action: "VERIFY",
+          notes: undefined,
+        });
+      }
       toast.success(action === "APPROVE" ? "Payout approved" : "Payout rejected");
       loadSubQueues();
     } catch {
