@@ -86,6 +86,7 @@ export default function IncomingPaymentsApprovalPage({
 
   // Actions
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [previewProofItem, setPreviewProofItem] = useState<any>(null);
   const [actionModalType, setActionModalType] = useState<"verify" | "reject" | "station_batch" | null>(null);
   const [selectedStationBatch, setSelectedStationBatch] = useState<any>(null);
   const [actionNotes, setActionNotes] = useState("");
@@ -219,7 +220,7 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: cp.actionedById || null,
       assigneeName: cp.actionedBy?.name || null,
       notes: cp.notes || cp.remarks,
-      proofUrl: cp.proofFileUrl || cp.paymentProof,
+      proofUrl: cp.proofFileUrl || cp.proofUrl || cp.paymentProof || (cp as any).receiptUrl || null,
       raw: cp,
     })),
     ...incomingPayments.map((p) => ({
@@ -236,7 +237,7 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: (p as any).actionedById || (p.raw as any)?.actionedById || null,
       assigneeName: (p as any).actionedBy || (p.raw as any)?.actionedBy?.name || null,
       notes: p.notes,
-      proofUrl: (p as any).receiptUrl || null,
+      proofUrl: (p as any).receiptUrl || (p as any).proofUrl || null,
       raw: p,
     })),
     ...cashSubmissions.map((c) => ({
@@ -253,7 +254,7 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: (c as any).actionedById || (c.raw as any)?.actionedById || null,
       assigneeName: (c as any).actionedBy?.name || (c.raw as any)?.actionedBy?.name || null,
       notes: c.notes,
-      proofUrl: (c as any).receiptUrl || null,
+      proofUrl: (c as any).receiptUrl || (c as any).proofUrl || null,
       raw: c,
     })),
     ...((stationCashData?.allCollections || []).map((sc: any) => ({
@@ -270,7 +271,7 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: sc.verifiedByAdminId || null,
       assigneeName: sc.verifiedBy?.name || null,
       notes: `Station: ${sc.station} · Trip: ${sc.tripName || sc.tripId}`,
-      proofUrl: null,
+      proofUrl: sc.proofImageUrl || sc.receiptUrl || null,
       raw: sc,
     }))),
   ];
@@ -802,6 +803,7 @@ export default function IncomingPaymentsApprovalPage({
                                       <th className="px-3.5 py-2">Booking ID</th>
                                       <th className="px-3.5 py-2">Passenger / Contact</th>
                                       <th className="px-3.5 py-2 text-right">Cash Collected</th>
+                                      <th className="px-3.5 py-2">Proof / Slip</th>
                                       <th className="px-3.5 py-2">Receipt Number</th>
                                       <th className="px-3.5 py-2">Collected By</th>
                                       <th className="px-3.5 py-2">Time</th>
@@ -823,6 +825,29 @@ export default function IncomingPaymentsApprovalPage({
                                         </td>
                                         <td className="px-3.5 py-2 text-right font-mono font-bold text-green-600 text-[11px]">
                                           ₹{Number(item.amount).toLocaleString("en-IN")}
+                                        </td>
+                                        <td className="px-3.5 py-2">
+                                          {item.proofImageUrl || item.receiptUrl ? (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setPreviewProofItem({
+                                                  ...item,
+                                                  proofUrl: item.proofImageUrl || item.receiptUrl,
+                                                  customerName: item.collectedFrom,
+                                                  reference: item.receiptNumber,
+                                                  collectedBy: item.collectorName,
+                                                  paymentMode: "STATION_CASH",
+                                                })
+                                              }
+                                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[9px] font-bold"
+                                            >
+                                              <Eye className="w-2.5 h-2.5 text-blue-600" />
+                                              <span>View Proof</span>
+                                            </button>
+                                          ) : (
+                                            <span className="text-[9px] text-slate-400 italic">No proof</span>
+                                          )}
                                         </td>
                                         <td className="px-3.5 py-2 font-mono text-slate-600 text-[10px]">
                                           {item.receiptNumber}
@@ -916,6 +941,7 @@ export default function IncomingPaymentsApprovalPage({
                       <th className="px-4 py-2.5">Payment Mode / Type</th>
                       <th className="px-4 py-2.5">UTR / Reference</th>
                       <th className="px-4 py-2.5 text-right">Amount</th>
+                      <th className="px-4 py-2.5">Proof / Slip</th>
                       <th className="px-4 py-2.5">Collected By</th>
                       <th className="px-4 py-2.5">Approval Assignee</th>
                       <th className="px-4 py-2.5">Date</th>
@@ -971,6 +997,21 @@ export default function IncomingPaymentsApprovalPage({
                             isVerifiedStatus(item.status) ? "text-green-600" : isPendingStatus(item.status) ? "text-amber-600" : "text-[#0B1528]"
                           )}>
                             ₹{Number(item.amount || 0).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {item.proofUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewProofItem(item)}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[9.5px] font-bold transition-all shadow-2xs group"
+                                title="Click to view payment proof / UTR receipt"
+                              >
+                                <Eye className="w-3 h-3 text-blue-600 group-hover:scale-110 transition-transform" />
+                                <span>View Proof</span>
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">No proof</span>
+                            )}
                           </td>
                           <td className="px-4 py-2 text-slate-500 font-medium text-[10.5px]">
                             {item.collectedBy}
@@ -1324,6 +1365,27 @@ export default function IncomingPaymentsApprovalPage({
                 </div>
               </div>
 
+              {selectedPayment.proofUrl && (
+                <div className="border border-blue-200 bg-blue-50/60 p-2.5 rounded-lg flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-[10.5px] font-bold text-blue-900">Payment Proof / Slip Attached</p>
+                      <p className="text-[9.5px] text-blue-700">Bank receipt / UPI screenshot available</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setPreviewProofItem(selectedPayment)}
+                    className="h-6.5 text-[10px] font-bold bg-white text-blue-700 border-blue-300 shadow-2xs hover:bg-blue-50"
+                  >
+                    <Eye className="w-3 h-3 mr-1" /> View Full Slip
+                  </Button>
+                </div>
+              )}
+
               <div>
                 <label className="text-[10px] font-bold uppercase text-slate-500">
                   {isSuperuserFounder ? "Founder Clearance Notes (Optional)" : "Verification Notes (Optional)"}
@@ -1355,6 +1417,100 @@ export default function IncomingPaymentsApprovalPage({
             >
               {isSuperuserFounder ? "Confirm Founder Approved" : "Confirm Verified"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─────────────────────────────────────────────────────────────
+          PAYMENT PROOF PREVIEW MODAL
+         ───────────────────────────────────────────────────────────── */}
+      <Dialog open={Boolean(previewProofItem)} onOpenChange={() => setPreviewProofItem(null)}>
+        <DialogContent className="max-w-2xl bg-white p-0 overflow-hidden border border-[#DCE5ED] rounded-xl shadow-xl">
+          <DialogHeader className="p-4 bg-slate-900 text-white flex flex-row items-center justify-between">
+            <div>
+              <DialogTitle className="text-sm font-bold flex items-center gap-2 text-white font-montserrat">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                Payment Proof / Transaction Slip
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-300 mt-0.5">
+                Booking: <span className="font-mono text-amber-300 font-bold">{previewProofItem?.bookingId}</span> · {previewProofItem?.customerName} · <span className="text-emerald-400 font-bold">₹{Number(previewProofItem?.amount || 0).toLocaleString("en-IN")}</span>
+              </DialogDescription>
+            </div>
+            {previewProofItem?.proofUrl && (
+              <a
+                href={previewProofItem.proofUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-blue-300 hover:text-white underline mr-6 flex items-center gap-1"
+              >
+                Open Original ↗
+              </a>
+            )}
+          </DialogHeader>
+
+          <div className="p-4 space-y-3 bg-slate-50 max-h-[72vh] overflow-y-auto">
+            {previewProofItem?.proofUrl ? (
+              <div className="bg-white rounded-lg border border-slate-200 p-2 shadow-inner flex items-center justify-center min-h-[220px]">
+                <img
+                  src={previewProofItem.proofUrl}
+                  alt="Payment Proof"
+                  className="max-h-[460px] w-auto max-w-full object-contain rounded"
+                  onError={(e) => {
+                    (e.target as any).src = "https://placehold.co/600x400/f8fafc/64748b?text=Payment+Proof+Attachment";
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="py-12 text-center text-slate-400 text-xs bg-white rounded-lg border">
+                No preview image available for this transaction.
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white p-3 rounded-lg border border-slate-200">
+              <div>
+                <span className="text-[10px] text-slate-500 font-medium block">UTR / Ref:</span>
+                <span className="font-mono font-bold text-slate-900">{previewProofItem?.reference || "—"}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 font-medium block">Payment Mode:</span>
+                <span className="font-bold text-slate-900">{previewProofItem?.paymentMode || "—"}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 font-medium block">Amount:</span>
+                <span className="font-mono font-bold text-emerald-600">₹{Number(previewProofItem?.amount || 0).toLocaleString("en-IN")}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 font-medium block">Collected By:</span>
+                <span className="font-medium text-slate-800">{previewProofItem?.collectedBy || "—"}</span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="p-3 bg-white border-t border-slate-200 flex justify-between items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPreviewProofItem(null)}
+              className="h-8 text-xs"
+            >
+              Close
+            </Button>
+            {isPendingStatus(previewProofItem?.status) && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setSelectedPayment(previewProofItem);
+                  setPreviewProofItem(null);
+                  setActionModalType("verify");
+                }}
+                className={cn(
+                  "h-8 text-xs font-bold text-white shadow-none",
+                  isSuperuserFounder ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"
+                )}
+              >
+                {isSuperuserFounder ? "👑 Founder Approve This Payment" : "Verify Payment"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
