@@ -718,6 +718,11 @@ export default function DepartureTransport({
               {allocFleet.map((fleetItem: any, fleetIdx: number) => {
                 const fleetId = fleetItem.id || `tempo-${fleetIdx + 1}`;
                 const fleetName = fleetItem.name || `Tempo ${fleetIdx + 1}`;
+                const cleanName = (s: string) =>
+                  String(s || "").replace(/\s*#\d+$/, "").toLowerCase().trim();
+                const cleanF = cleanName(fleetName);
+                const cleanId = cleanName(fleetId);
+
                 const travelers = allPassengers
                   .filter((p: any) => {
                     if (isPassengerCancelled(p)) return false;
@@ -731,18 +736,16 @@ export default function DepartureTransport({
                     if (allocFleet.length === 1) {
                       return true;
                     }
-                    const vName = (alloc.vehicle || "").toLowerCase().trim();
-                    const fName = (fleetName || "").toLowerCase().trim();
-                    const fId = (fleetId || "").toLowerCase().trim();
+                    const cleanV = cleanName(alloc.vehicle);
                     return (
-                      vName === fName ||
-                      vName === fId ||
+                      cleanV === cleanF ||
+                      cleanV === cleanId ||
                       alloc.vehicle === fleetName ||
                       alloc.vehicle === fleetId ||
-                      vName.includes(fName) ||
-                      fName.includes(vName) ||
-                      (fId.startsWith("tempo") && vName.includes(`tempo ${fleetIdx + 1}`)) ||
-                      (fleetIdx === 0 && (vName === "tempo 1" || vName.startsWith("tempo 1") || vName.includes("tempo 1")))
+                      cleanV.includes(cleanF) ||
+                      cleanF.includes(cleanV) ||
+                      (fleetId.startsWith("tempo") && cleanV.includes(`tempo ${fleetIdx + 1}`)) ||
+                      (fleetIdx === 0 && (cleanV === "tempo 1" || cleanV.startsWith("tempo 1")))
                     );
                   })
                   .map((p: any) => {
