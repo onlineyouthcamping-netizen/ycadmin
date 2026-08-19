@@ -840,10 +840,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
           )}
           {/* Top command strip — 56px */}
-          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-[#E8EEF4] bg-gradient-to-r from-white via-[#FFFCF9] to-[#F4F7FB] px-2 shadow-[inset_0_-2px_0_0_rgba(255,77,0,0.12)] sm:gap-4 sm:px-5">
+          <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-white/[0.06] bg-[#0D1B2E] px-2 sm:gap-4 sm:px-5">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              <SidebarTrigger className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-none bg-transparent text-[#0B1528] hover:bg-[#FFF1E8] md:h-8 md:w-8" />
-              <h1 className="min-w-0 truncate text-[15px] font-semibold leading-none tracking-tight text-[#0B1528]">
+              <SidebarTrigger className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-none bg-transparent text-slate-400 hover:bg-white/[0.07] hover:text-white transition-colors" />
+              <h1 className="min-w-0 truncate text-[14px] font-semibold leading-none tracking-tight text-white">
                 <span className="md:hidden">
                   {resolveAdminPageTitle(
                     location.pathname,
@@ -866,31 +866,28 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setIsSearchOpen(true)}
               aria-label={isMac ? "Search (Command K)" : "Search (Control K)"}
-              className="hidden h-8 w-[14.5rem] shrink-0 items-center gap-2 rounded-md border border-[#E8EEF4] bg-white px-2.5 text-left shadow-xs transition-colors hover:border-[#FFD4BF] hover:bg-[#FFF7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30 md:flex"
+              className="hidden h-8 w-52 shrink-0 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.05] px-2.5 text-left transition-colors hover:bg-white/[0.09] hover:border-white/[0.14] focus:outline-none md:flex"
             >
-              <Search
-                className="h-3.5 w-3.5 shrink-0 text-[#FF4D00]/70"
-                strokeWidth={1.75}
-              />
-              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-400">
+              <Search className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={1.75} />
+              <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-slate-500">
                 Search
               </span>
               <kbd className="inline-flex shrink-0 items-center gap-0.5">
-                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-[#F4F7FB] px-1 text-[10px] font-medium leading-none text-slate-400">
+                <span className="inline-flex h-[17px] min-w-[17px] items-center justify-center rounded-[3px] border border-white/[0.1] bg-white/[0.06] px-1 text-[9px] font-medium leading-none text-slate-500">
                   {isMac ? "⌘" : "Ctrl"}
                 </span>
-                <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[3px] border border-[#E2E8F0] bg-[#F4F7FB] px-1 text-[10px] font-medium leading-none text-slate-400">
+                <span className="inline-flex h-[17px] min-w-[17px] items-center justify-center rounded-[3px] border border-white/[0.1] bg-white/[0.06] px-1 text-[9px] font-medium leading-none text-slate-500">
                   K
                 </span>
               </kbd>
             </button>
 
-            <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+            <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(true)}
                 aria-label="Search"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-[#F4F7FB] hover:text-[#0B1528] md:hidden"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-white/[0.07] hover:text-slate-300 md:hidden"
               >
                 <Search className="h-4 w-4" strokeWidth={1.75} />
               </button>
@@ -901,64 +898,68 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-8 items-center gap-2 rounded-md px-1 text-left outline-none transition-colors hover:bg-[#F4F7FB] focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30"
+                    className="flex h-8 items-center gap-2 rounded-lg px-2 text-left outline-none transition-colors hover:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-[#FF4D00]/30"
                   >
-                    <img
-                      src={
-                        admin?.avatarUrl ||
-                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
-                      }
-                      className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-[#E2E8F0]"
-                      alt={admin?.name || "User"}
-                    />
+                    {admin?.avatarUrl ? (
+                      <img
+                        src={admin.avatarUrl}
+                        className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-[#FF4D00]/30"
+                        alt={admin?.name || "User"}
+                      />
+                    ) : (
+                      <div className="h-6 w-6 shrink-0 rounded-full bg-gradient-to-br from-[#FF4D00] to-[#ff7040] flex items-center justify-center text-[10px] font-bold text-white">
+                        {admin?.name ? admin.name.charAt(0).toUpperCase() : "A"}
+                      </div>
+                    )}
                     <span className="hidden items-baseline gap-1.5 lg:inline-flex">
-                      <span className="text-[13px] font-medium leading-none text-[#0B1528]">
+                      <span className="text-[12.5px] font-semibold leading-none text-white">
                         {admin?.name || (admin as any)?.fullName || "User"}
                       </span>
-                      <span className="text-[12px] font-medium leading-none text-slate-400">
+                      <span className="text-[11px] font-medium leading-none text-slate-500">
                         {resolveAdminDisplayRole(admin)}
                       </span>
                     </span>
-                    <ChevronDown className="hidden h-3 w-3 text-slate-400 lg:block" />
+                    <ChevronDown className="hidden h-3 w-3 text-slate-600 lg:block" strokeWidth={2} />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-56 p-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50"
+                  className="w-56 p-1.5 rounded-xl shadow-2xl z-50 border border-white/[0.08]"
+                  style={{ background: "linear-gradient(180deg, #0D1B2E 0%, #0B1528 100%)" }}
                 >
-                  <div className="px-2.5 py-2 border-b border-slate-100 mb-1 bg-slate-50/60 rounded-lg">
-                    <p className="text-xs font-bold text-slate-800 truncate">
+                  <div className="px-2.5 py-2 border-b border-white/[0.07] mb-1 rounded-lg">
+                    <p className="text-[12px] font-bold text-white truncate">
                       {admin?.name || "User"}
                     </p>
                     <p className="text-[10px] font-medium text-slate-500 truncate">
                       {admin?.email}
                     </p>
-                    <span className="mt-1 inline-block text-[11px] font-medium capitalize text-slate-500">
+                    <span className="mt-1 inline-block text-[10px] font-semibold capitalize text-[#FF4D00] bg-[#FF4D00]/10 px-1.5 py-0.5 rounded">
                       {resolveAdminDisplayRole(admin)}
                     </span>
                   </div>
 
                   <DropdownMenuItem
                     onClick={() => navigate("/admin/profile")}
-                    className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                    className="text-[12px] font-medium text-slate-300 hover:bg-white/[0.07] hover:text-white cursor-pointer rounded-md py-1.5"
                   >
-                    <User className="w-4 h-4 mr-2 text-slate-500" />
+                    <User className="w-3.5 h-3.5 mr-2 text-slate-500" />
                     My Profile
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
                     onClick={() => navigate("/admin/settings")}
-                    className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                    className="text-[12px] font-medium text-slate-300 hover:bg-white/[0.07] hover:text-white cursor-pointer rounded-md py-1.5"
                   >
-                    <Settings className="w-4 h-4 mr-2 text-slate-500" />
+                    <Settings className="w-3.5 h-3.5 mr-2 text-slate-500" />
                     Settings
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
                     onClick={() => navigate("/admin/change-password")}
-                    className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer rounded-md py-1.5"
+                    className="text-[12px] font-medium text-slate-300 hover:bg-white/[0.07] hover:text-white cursor-pointer rounded-md py-1.5"
                   >
-                    <Key className="w-4 h-4 mr-2 text-slate-500" />
+                    <Key className="w-3.5 h-3.5 mr-2 text-slate-500" />
                     Change Password
                   </DropdownMenuItem>
 
@@ -975,47 +976,44 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => navigate("/admin/roles")}
-                        className="text-xs font-semibold text-[#C2410C] hover:bg-[#FF4D00]/5 cursor-pointer rounded-md py-1.5"
+                        className="text-[12px] font-medium text-[#FF4D00] hover:bg-[#FF4D00]/10 cursor-pointer rounded-md py-1.5"
                       >
-                        <ShieldCheck className="w-4 h-4 mr-2 text-[#FF4D00]" />
+                        <ShieldCheck className="w-3.5 h-3.5 mr-2 text-[#FF4D00]" />
                         Roles & Custom Roles
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => navigate("/admin/permission-matrix")}
-                        className="text-xs font-semibold text-[#C2410C] hover:bg-[#FF4D00]/5 cursor-pointer rounded-md py-1.5"
+                        className="text-[12px] font-medium text-[#FF4D00] hover:bg-[#FF4D00]/10 cursor-pointer rounded-md py-1.5"
                       >
-                        <Sliders className="w-4 h-4 mr-2 text-[#FF4D00]" />
+                        <Sliders className="w-3.5 h-3.5 mr-2 text-[#FF4D00]" />
                         Permission Matrix
                       </DropdownMenuItem>
                     </>
                   )}
 
-                  <DropdownMenuSeparator className="my-1 border-slate-100" />
+                  <DropdownMenuSeparator className="my-1 border-white/[0.07]" />
 
                   <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
                       logout();
                     }}
-                    className="text-xs font-semibold text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-700 cursor-pointer rounded-md py-2 px-3 mt-1 flex items-center"
+                    className="text-[12px] font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 focus:bg-red-500/10 cursor-pointer rounded-md py-1.5"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
+                    <LogOut className="w-3.5 h-3.5 mr-2" />
                     Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <span
-                aria-hidden
-                className="hidden h-4 w-px bg-[#E8EEF4] sm:block"
-              />
+              <span aria-hidden className="hidden h-4 w-px bg-white/[0.08] sm:block" />
 
               <button
                 type="button"
                 onClick={() => setBookingModalOpen(true)}
-                className="hidden h-8 items-center gap-1.5 rounded-md bg-[#FF4D00] px-2.5 text-[12px] font-semibold text-white shadow-[0_1px_2px_rgba(255,77,0,0.28)] transition-colors hover:bg-[#E04400] sm:inline-flex"
+                className="hidden h-8 items-center gap-1.5 rounded-lg bg-[#FF4D00] px-3 text-[12px] font-semibold text-white shadow-[0_0_12px_rgba(255,77,0,0.25)] transition-colors hover:bg-[#E04400] sm:inline-flex"
               >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 New Booking
               </button>
             </div>
