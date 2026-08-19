@@ -1571,6 +1571,12 @@ export default function DepartureHubPage() {
   const [allocFleet, setAllocFleet] = useState<any[]>([]);
   const [fleetVehicles, setFleetVehicles] = useState<any[]>([]);
   const [vendorDirectoryFleet, setVendorDirectoryFleet] = useState<any[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("");
+  const [newVehicleType, setNewVehicleType] = useState("17 Seater Tempo");
+  const [newVehicleCapacity, setNewVehicleCapacity] = useState("17");
+  const [newVehicleName, setNewVehicleName] = useState("");
+  const [newVehicleCost, setNewVehicleCost] = useState("");
   const [newVehicleVendor, setNewVehicleVendor] = useState("");
   const [manualRooms, setManualRooms] = useState<string[]>([]);
   const [isSavingAllocations, setIsSavingAllocations] = useState(false);
