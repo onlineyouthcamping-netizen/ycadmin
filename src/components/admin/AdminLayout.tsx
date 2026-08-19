@@ -88,6 +88,7 @@ import {
 import NewBookingModal from "./NewBookingModal";
 import { knowledgeService } from "@/services/knowledge.service";
 import { erpService } from "@/services/erp.service";
+import { resolveAdminRoute } from "@/lib/adminRouteAliases";
 
 // Reconfigured hierarchical modules config for accordion logic:
 interface SidebarModule {
@@ -134,12 +135,13 @@ const sidebarModules: SidebarModule[] = [
     ],
   },
   {
-    title: "Approval Center",
-    icon: BadgeCheck,
+    title: "Finance",
+    icon: Wallet,
     hasSubItems: true,
     subItems: [
+      { title: "Ledger & overview", url: "/admin/finance" },
       {
-        title: "Incoming payments",
+        title: "Incoming approvals",
         url: "/admin/approvals-hub?tab=payment-approvals",
       },
       {
@@ -151,12 +153,6 @@ const sidebarModules: SidebarModule[] = [
         url: "/admin/approvals-hub?tab=refund-requests",
       },
     ],
-  },
-  {
-    title: "Finance",
-    url: "/admin/finance",
-    icon: Wallet,
-    hasSubItems: false,
   },
   {
     title: "Business",
@@ -177,7 +173,7 @@ const sidebarModules: SidebarModule[] = [
     icon: Settings2,
     hasSubItems: true,
     subItems: [
-      { title: "Users", url: "/admin/users" },
+      { title: "Staff profiles", url: "/admin/staff-profiles" },
       { title: "Roles", url: "/admin/roles" },
       { title: "Email templates", url: "/admin/email-templates" },
       { title: "Settings", url: "/admin/settings" },
@@ -355,9 +351,9 @@ function AdminSidebar() {
                 "/admin/vendors": ["vendors.view", "vendors.manage", "ops.view"],
                 "/admin/company-documents": ["company_documents.view", "operations.view", "ops.view"],
                 "/admin/approvals-hub": [
-                  "bookings.verify",
-                  "tickets.approve",
                   "accounting.view",
+                  "finance.view",
+                  "bookings.verify",
                 ],
                 "/admin/accounting": ["accounting.view", "finance.view", "payments.view"],
                 "/admin/finance": ["accounting.view", "finance.view"],
@@ -637,7 +633,8 @@ function resolveAdminPageTitle(
   }
   if (
     pathname.startsWith("/admin/accounting") ||
-    pathname.startsWith("/admin/finance")
+    pathname.startsWith("/admin/finance") ||
+    pathname.startsWith("/admin/approvals-hub")
   ) {
     if ((role || "").toLowerCase() === "sales") {
       return "Payments";
@@ -1082,7 +1079,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       <div
                         key={idx}
                         onClick={() => {
-                          navigate(item.path);
+                          navigate(resolveAdminRoute(item.path));
                           setIsSearchOpen(false);
                           setSearchQuery("");
                           setSearchResults({});
@@ -1121,7 +1118,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     <div
                       key={idx}
                       onClick={() => {
-                        navigate(item.path);
+                        navigate(resolveAdminRoute(item.path));
                         setIsSearchOpen(false);
                         setSearchQuery("");
                       }}

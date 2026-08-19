@@ -19,6 +19,13 @@ export type ApprovalTab =
   | "vendor-bills"
   | "refund-requests";
 
+const TAB_ALIASES: Record<string, ApprovalTab> = {
+  "booking-verification": "payment-approvals",
+  "ticket-approvals": "payment-approvals",
+  verification: "payment-approvals",
+  queue: "payment-approvals",
+};
+
 const TABS: {
   key: ApprovalTab;
   label: string;
@@ -50,9 +57,13 @@ const TABS: {
 export default function ApprovalsHubPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as ApprovalTab | string | null;
+  const normalizedTab =
+    tabParam && TAB_ALIASES[tabParam]
+      ? TAB_ALIASES[tabParam]
+      : tabParam;
   const activeTab: ApprovalTab =
-    tabParam && TABS.some((t) => t.key === tabParam)
-      ? (tabParam as ApprovalTab)
+    normalizedTab && TABS.some((t) => t.key === normalizedTab)
+      ? (normalizedTab as ApprovalTab)
       : "payment-approvals";
 
   const [incomingPendingCount, setIncomingPendingCount] = useState<number>(0);
@@ -111,10 +122,10 @@ export default function ApprovalsHubPage() {
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#FF4D00] shadow-sm">
               <ShieldCheck className="h-3.5 w-3.5 text-white" />
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Finance Control Desk</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Approval Center</span>
           </div>
           <h1 className="text-[24px] font-bold text-[#0B1528] tracking-tight">Approvals</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Review money moving into and out of YouthCamping.</p>
+          <p className="text-[13px] text-slate-500 mt-0.5">Review and approve money in, vendor payouts, and refunds. Recording new payments belongs in Finance → Record income.</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {totalOpen > 0 && (

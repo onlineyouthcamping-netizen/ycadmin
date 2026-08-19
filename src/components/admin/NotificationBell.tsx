@@ -25,6 +25,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { resolveAdminRoute } from "@/lib/adminRouteAliases";
 
 // Play subtle notification chime
 function playNotificationChime() {
@@ -99,7 +100,7 @@ export function NotificationBell() {
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
       if (link) {
         setIsOpen(false);
-        navigate(link);
+        navigate(resolveAdminRoute(link));
       }
     } catch (error) {
       console.error("Failed to mark notification as read", error);

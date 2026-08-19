@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Banknote,
   Search,
@@ -61,13 +61,13 @@ import {
   financeApprovalsService,
   type FinanceAuditLogEntry,
 } from "@/services/financeApprovals.service";
+import { financeControllerService } from "@/services/financeController.service";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import api from "@/services/api";
 import { cn, formatINR, safeFormatDate, safeFormatDateTime } from "@/lib/utils";
 
 type TabId =
   | "overview"
-  | "verification"
   | "payments"
   | "expenses"
   | "riya"
@@ -83,17 +83,24 @@ export default function AccountingPage() {
     ["founder", "superadmin"].includes(userRole) ||
     Boolean((user as any)?.isSuperuser);
 
+  const navigate = useNavigate();
+  const APPROVAL_TAB_ALIASES = new Set([
+    "verification",
+    "queue",
+    "approvals",
+    "pending",
+  ]);
+
   // Tab Normalization
   const normalizeTab = (raw: string | null): TabId => {
     const t = (raw || "").toLowerCase().trim();
-    if (["verification", "queue", "approvals", "pending"].includes(t))
-      return "verification";
     if (["payments", "incoming", "collections", "sales_payments", "sales"].includes(t))
       return "payments";
     if (
       [
         "expenses",
         "vendor_payments",
+        "vendor-payments",
         "office_expenses",
         "vendors",
         "disbursements",
@@ -118,6 +125,13 @@ export default function AccountingPage() {
     setActiveTab((prev) => (prev !== nextTab ? nextTab : prev));
   }, [searchParams]);
 
+
+  useEffect(() => {
+    const raw = (searchParams.get("tab") || "").toLowerCase().trim();
+    if (!APPROVAL_TAB_ALIASES.has(raw)) return;
+    navigate("/admin/approvals-hub?tab=payment-approvals", { replace: true });
+  }, [searchParams, navigate]);
+
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
     const nextParams = new URLSearchParams(searchParams);
@@ -131,18 +145,11 @@ export default function AccountingPage() {
   const [trips, setTrips] = useState<any[]>([]);
   const [vendorPayments, setVendorPayments] = useState<any[]>([]);
   const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
-  const [verificationQueue, setVerificationQueue] = useState<{
-    pendingClientPayments: any[];
-    pendingStationPayments: any[];
-    pendingVendorPayments: any[];
-    pendingTrainTickets: any[];
-    totalPendingCount: number;
-  }>({
-    pendingClientPayments: [],
-    pendingStationPayments: [],
-    pendingVendorPayments: [],
-    pendingTrainTickets: [],
-    totalPendingCount: 0,
+  const [pendingApprovals, setPendingApprovals] = useState({
+    total: 0,
+    incoming: 0,
+    vendor: 0,
+    refunds: 0,
   });
   const [riyaData, setRiyaData] = useState<{
     account: any;
@@ -185,13 +192,6 @@ export default function AccountingPage() {
   const [showRecordExpenseModal, setShowRecordExpenseModal] = useState(false);
   const [showRecordIncomeModal, setShowRecordIncomeModal] = useState(false);
   const [showRechargeRiyaModal, setShowRechargeRiyaModal] = useState(false);
-  const [rejectModalState, setRejectModalState] = useState<{
-    open: boolean;
-    type: "client" | "vendor" | "station";
-    id: string;
-    reason: string;
-    title: string;
-  } | null>(null);
 
   // In-App Proof Preview Modal
   const [proofPreviewModal, setProofPreviewModal] = useState<{
@@ -285,12 +285,13 @@ export default function AccountingPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [bRes, tRes, aRes, vRes, qRes, rRes] = await Promise.all([
+      const [bRes, tRes, aRes, vRes, pendingRes, refundPendingRes, rRes] = await Promise.all([
         bookingsService.getAll({ page: 1, limit: 1000 }).catch(() => ({ data: [] })),
         tripsService.getAll().catch(() => []),
         collectionAccountsService.getAccounts({ activeOnly: true }).catch(() => ({ data: [] })),
         api.get("/payments/vendor-payments").catch(() => ({ data: { data: [] } })),
-        api.get("/payments/verification-queue").catch(() => ({ data: { data: {} } })),
+        financeApprovalsService.getPendingApprovals().catch(() => null),
+        financeControllerService.refunds.list({ status: "PENDING_APPROVAL", limit: 1 }).catch(() => ({ data: [] })),
         api.get("/payments/riya-summary").catch(() => ({ data: { data: {} } })),
       ]);
 
@@ -312,13 +313,21 @@ export default function AccountingPage() {
           : [];
       setVendorPayments(vList);
 
-      if (qRes?.data?.data) {
-        setVerificationQueue({
-          pendingClientPayments: qRes.data.data.pendingClientPayments || [],
-          pendingStationPayments: qRes.data.data.pendingStationPayments || [],
-          pendingVendorPayments: qRes.data.data.pendingVendorPayments || [],
-          pendingTrainTickets: qRes.data.data.pendingTrainTickets || [],
-          totalPendingCount: qRes.data.data.totalPendingCount || 0,
+      if (pendingRes?.pendingApprovals) {
+        const breakdown = pendingRes.pendingApprovals.breakdown || {};
+        const incoming =
+          (breakdown.collectionsPendingFC || 0) +
+          (breakdown.collectionsAwaitingFounder || 0);
+        const vendor =
+          (breakdown.vendorPendingFC || 0) + (breakdown.vendorAwaitingFounder || 0);
+        const refunds = Array.isArray(refundPendingRes?.data)
+          ? refundPendingRes.data.length
+          : 0;
+        setPendingApprovals({
+          total: pendingRes.pendingApprovals.total || incoming + vendor + refunds,
+          incoming,
+          vendor,
+          refunds,
         });
       }
 
@@ -676,62 +685,6 @@ export default function AccountingPage() {
     );
   };
 
-  // 2-Tier Approval Workflow Actions
-  const handleFCReviewCollection = async (paymentId: string) => {
-    try {
-      await financeApprovalsService.reviewCollectionFC(paymentId, "Reviewed by Finance Controller");
-      toast.success("Payment marked as Reviewed by FC. Awaiting Founder approval.");
-      loadData();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to review collection payment");
-    }
-  };
-
-  const handleFounderApproveCollection = async (paymentId: string, proofUrl?: string, paymentMode?: string) => {
-    const isCash = paymentMode?.toUpperCase().includes("CASH");
-    if (!proofUrl && !isCash) {
-      setProofModalState({
-        open: true,
-        paymentId,
-        title: "Upload Proof Before Founder Approval",
-        type: "client",
-      });
-      toast.info("Please attach receipt proof screenshot first.");
-      return;
-    }
-    try {
-      await financeApprovalsService.approveCollectionFounder(paymentId, { reason: "Founder final sign-off" });
-      toast.success("Payment approved by Founder & marked as VERIFIED!");
-      loadData();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to approve collection payment");
-    }
-  };
-
-  const handleFCReviewVendor = async (paymentId: string) => {
-    try {
-      const res = await financeApprovalsService.reviewVendorPaymentFC(paymentId, { reason: "FC invoice verification" });
-      if (res?.requiresFounderApproval) {
-        toast.info("Invoice reviewed. Remaining balance > ₹50,000 requires Founder approval.");
-      } else {
-        toast.success("Vendor payout verified & cleared by Finance Controller!");
-      }
-      loadData();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to review vendor payout");
-    }
-  };
-
-  const handleFounderApproveVendor = async (paymentId: string) => {
-    try {
-      await financeApprovalsService.approveVendorPaymentFounder(paymentId, { reason: "Founder approved vendor payout" });
-      toast.success("Vendor payout approved by Founder & marked as PAID!");
-      loadData();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to approve vendor payout");
-    }
-  };
-
   const handleOpenAuditLog = async (paymentId: string, title: string, isVendor = false) => {
     setAuditModalState({
       open: true,
@@ -752,7 +705,7 @@ export default function AccountingPage() {
               auditTrail: data.auditTrail || [],
               chain: data.approvalChain,
             }
-          : null
+          : null,
       );
     } catch {
       toast.error("Failed to load audit history");
@@ -777,88 +730,6 @@ export default function AccountingPage() {
       loadData();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to upload proof");
-    } finally {
-      setSubmittingAction(false);
-    }
-  };
-
-  // Verification Actions
-  const handleVerifyClientPayment = async (paymentId: string) => {
-    try {
-      await api.patch(`/payments/client/verify/${paymentId}`, {
-        status: "Verified",
-      });
-      toast.success("Payment verified & reconciled!");
-      loadData();
-    } catch {
-      toast.error("Failed to verify payment");
-    }
-  };
-
-  const handleVerifyVendorPayment = async (paymentId: string) => {
-    try {
-      await api.patch(`/payments/vendor/verify/${paymentId}`, {
-        status: "Paid",
-      });
-      toast.success("Vendor payment verified & approved!");
-      loadData();
-    } catch {
-      toast.error("Failed to verify vendor payment");
-    }
-  };
-
-  const handleVerifyStationPayment = async (paymentId: string) => {
-    try {
-      await api.post(`/station-payments/${paymentId}/verify-upi`, {
-        action: "VERIFY",
-      });
-      toast.success("Station UPI payment verified & reconciled!");
-      loadData();
-    } catch {
-      toast.error("Failed to verify station payment");
-    }
-  };
-
-  const handleVerifyTrainTicket = async (ticketId: string) => {
-    try {
-      await api.patch(`/train-tickets/${ticketId}/finance-verify`, {
-        status: "VERIFIED",
-      });
-      toast.success("Train ticket cost verified & reconciled with Riya Wallet!");
-      loadData();
-    } catch {
-      toast.error("Failed to verify train ticket in finance");
-    }
-  };
-
-  const handleConfirmReject = async () => {
-    if (!rejectModalState) return;
-    if (!rejectModalState.reason.trim()) {
-      toast.error("Please provide a rejection reason");
-      return;
-    }
-    setSubmittingAction(true);
-    try {
-      if (rejectModalState.type === "client") {
-        await financeApprovalsService.rejectCollection(rejectModalState.id, rejectModalState.reason.trim());
-      } else if (rejectModalState.type === "vendor") {
-        await financeApprovalsService.rejectVendorPayment(rejectModalState.id, rejectModalState.reason.trim());
-      } else if (rejectModalState.type === "station") {
-        await api.post(`/station-payments/${rejectModalState.id}/verify-upi`, {
-          action: "REJECT",
-          rejectionReason: rejectModalState.reason,
-        });
-      } else if (rejectModalState.type === "ticket") {
-        await api.patch(`/train-tickets/${rejectModalState.id}/finance-verify`, {
-          status: "REJECTED",
-          rejectionReason: rejectModalState.reason,
-        });
-      }
-      toast.success("Transaction marked as rejected and sent for correction");
-      setRejectModalState(null);
-      loadData();
-    } catch {
-      toast.error("Failed to reject transaction");
     } finally {
       setSubmittingAction(false);
     }
@@ -896,8 +767,6 @@ export default function AccountingPage() {
   // Compute all client receipts across bookings
   const allClientReceipts = useMemo(() => {
     const list: any[] = [];
-    const pendingClientPayments = verificationQueue?.pendingClientPayments || [];
-
     const resolveAccount = (collectionAccountId?: string, collectionAccount?: any, paymentMode?: string) => {
       if (collectionAccount?.accountName) return { id: collectionAccount.id, name: collectionAccount.accountName };
       if (collectionAccountId && collectionAccounts.length > 0) {
@@ -937,20 +806,6 @@ export default function AccountingPage() {
 
     bookings.forEach((b) => {
       let payments = b.opsClientPayments || b.clientPayments || b.paymentHistory || [];
-      if (!Array.isArray(payments) || payments.length === 0) {
-        // Cross-reference with loaded verification queue if backend hasn't joined yet
-        const matchedPending = pendingClientPayments.filter(
-          (p: any) =>
-            p.bookingId === b.bookingId ||
-            p.bookingId === b.id ||
-            p.booking?.bookingId === b.bookingId ||
-            p.booking?.id === b.id,
-        );
-        if (matchedPending.length > 0) {
-          payments = matchedPending;
-        }
-      }
-
       if (Array.isArray(payments) && payments.length > 0) {
         payments.forEach((p: any) => {
           const acc = resolveAccount(p.collectionAccountId, p.collectionAccount, p.paymentMode);
@@ -999,7 +854,7 @@ export default function AccountingPage() {
     return list.sort(
       (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
     );
-  }, [bookings, verificationQueue, collectionAccounts]);
+  }, [bookings, collectionAccounts]);
 
   // Aggregate Treasury Metrics
   const treasurySummary = useMemo(() => {
@@ -1222,15 +1077,6 @@ export default function AccountingPage() {
     alert?: boolean;
   }[] = [
     { id: "overview", label: "Overview" },
-    {
-      id: "verification",
-      label: "Verification",
-      meta:
-        verificationQueue.totalPendingCount > 0
-          ? String(verificationQueue.totalPendingCount)
-          : undefined,
-      alert: verificationQueue.totalPendingCount > 0,
-    },
     { id: "payments", label: "Collections in", meta: String(allClientReceipts.length) },
     { id: "expenses", label: "Payouts out", meta: String(vendorPayments.length) },
     { id: "accounts", label: "Treasury", meta: String(collectionAccounts.length) },
@@ -1252,7 +1098,7 @@ export default function AccountingPage() {
               </span>
             </div>
             <p className="mt-0.5 text-[12px] text-slate-500">
-              Money ledger, verification queue, treasury and trip margins.
+              Money ledger, treasury accounts, and trip margins. Pending approvals live under Finance → Incoming / Vendor / Refunds.
             </p>
           </div>
 
@@ -1387,33 +1233,36 @@ export default function AccountingPage() {
               </div>
             </div>
 
-            {/* Quick Verification Alert if pending */}
-            {verificationQueue.totalPendingCount > 0 && (
-              <div className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-[#FFD9C7] bg-[#FFF7F3] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between md:px-4">
+            {pendingApprovals.total > 0 && (
+              <div className="rounded-xl border border-[#FFD9C7] bg-[#FFF7F3] px-3 py-3 md:px-4 space-y-2.5">
                 <div className="flex min-w-0 items-start gap-2.5">
-                  <AlertTriangle
-                    className="mt-0.5 h-4 w-4 shrink-0 text-[#FF4D00]"
-                    strokeWidth={1.75}
-                  />
-                  <div className="min-w-0">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#FF4D00]" strokeWidth={1.75} />
+                  <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-semibold text-[#0B1528]">
-                      {verificationQueue.totalPendingCount} transactions awaiting your
-                      sign-off
+                      {pendingApprovals.total} items waiting in Approval Center
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      Client payments, station collections and vendor payouts stay
-                      unreconciled until verified.
+                      Approve incoming payments, vendor payouts, and refunds in one place — not on this ledger.
                     </p>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => handleTabChange("verification")}
-                  className="h-8 shrink-0 gap-1.5 self-start rounded-md bg-[#FF4D00] px-3 text-[12px] font-medium text-white shadow-none hover:bg-[#E04400] sm:self-auto"
-                >
-                  Open queue
-                  <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.75} />
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  {pendingApprovals.incoming > 0 && (
+                    <Button size="sm" variant="outline" className="h-8 text-[11px]" onClick={() => navigate("/admin/approvals-hub?tab=payment-approvals")}>
+                      Incoming ({pendingApprovals.incoming})
+                    </Button>
+                  )}
+                  {pendingApprovals.vendor > 0 && (
+                    <Button size="sm" variant="outline" className="h-8 text-[11px]" onClick={() => navigate("/admin/approvals-hub?tab=vendor-bills")}>
+                      Vendors ({pendingApprovals.vendor})
+                    </Button>
+                  )}
+                  {pendingApprovals.refunds > 0 && (
+                    <Button size="sm" variant="outline" className="h-8 text-[11px]" onClick={() => navigate("/admin/approvals-hub?tab=refund-requests")}>
+                      Refunds ({pendingApprovals.refunds})
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1530,624 +1379,6 @@ export default function AccountingPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ──────────────────────── TAB 2: VERIFICATION QUEUE ──────────────────────── */}
-        {activeTab === "verification" && (
-          <div className="space-y-3">
-            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <h2 className="text-[15px] font-semibold tracking-tight text-[#0B1528]">
-                  Verification queue
-                </h2>
-                <p className="mt-0.5 text-[12px] text-slate-500">
-                  Check the proof, then verify or reject with a reason. Nothing
-                  reconciles until you sign off.
-                </p>
-              </div>
-              <span className="shrink-0 self-start rounded-md border border-[#FFD9C7] bg-[#FFF7F3] px-2 py-1 text-[11px] font-medium text-[#FF4D00]">
-                {verificationQueue.totalPendingCount} pending
-              </span>
-            </div>
-
-            {/* Sub-Queue: Pending Client Receipts */}
-            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
-              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
-                <span className="truncate text-[12px] font-semibold text-[#0B1528]">
-                  Client and booking receipts
-                </span>
-                <span className="shrink-0 rounded bg-[#F4F7FB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500">
-                  {verificationQueue.pendingClientPayments?.length || 0}
-                </span>
-              </div>
-
-              {verificationQueue.pendingClientPayments?.length === 0 ? (
-                <div className="px-4 py-10 text-center text-[12px] text-slate-400">
-                  Nothing waiting here. All client receipts are verified.
-                </div>
-              ) : (
-                <div className="min-w-0 overflow-x-auto">
-                <table className="w-full min-w-[960px] text-left text-[12px]">
-                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
-                    <tr>
-                      <th className="py-2.5 px-4">Booking / customer</th>
-                      <th className="py-2.5 px-4">Trip</th>
-                      <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">Mode / account</th>
-                      <th className="py-2.5 px-4">Approval status</th>
-                      <th className="py-2.5 px-4">Proof</th>
-                      <th className="py-2.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E8EEF4]">
-                    {(verificationQueue.pendingClientPayments || []).map((p: any) => {
-                      const proof = p.proofFileUrl || p.proofUrl;
-                      const isPending = !p.approvalStatus || p.approvalStatus === "PENDING";
-                      const isReviewedFC = p.approvalStatus === "REVIEWED_FINANCE_CONTROLLER";
-                      const isApproved = p.approvalStatus === "APPROVED_FOUNDER" || p.status === "Verified";
-
-                      return (
-                        <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
-                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                            {p.booking?.fullName || "Customer"}
-                            <div className="text-[10px] text-slate-400 font-normal">
-                              Ref: {p.booking?.bookingId || p.bookingId} · {p.booking?.phone}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-700">
-                            {p.booking?.tripName || "—"}
-                          </td>
-                          <td className="py-2.5 px-4 text-right font-semibold text-green-600">
-                            {formatINR(p.amount)}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            <Badge variant="outline" className="text-[10px] font-medium">
-                              {p.paymentMode}
-                            </Badge>
-                            <div className="text-[10px] text-slate-500 mt-0.5">
-                              {p.collectionAccount?.accountName || "Default Account"}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-4">
-                            {getApprovalBadge(p.approvalStatus, p.status)}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            {proof ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  setProofPreviewModal({
-                                    open: true,
-                                    title: `Payment Proof - ${p.booking?.fullName}`,
-                                    subtitle: `Booking Ref: ${p.booking?.bookingId}`,
-                                    imageUrl: proof,
-                                    amount: p.amount,
-                                    date: safeFormatDate(p.createdAt),
-                                  })
-                                }
-                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
-                              >
-                                <Eye className="w-3.5 h-3.5 mr-1" />
-                                View
-                              </Button>
-                            ) : p.paymentMode?.toUpperCase().includes("CASH") ? (
-                              <span className="text-[10px] text-slate-400 font-medium">No Proof Required</span>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  setProofModalState({
-                                    open: true,
-                                    paymentId: p.id,
-                                    title: `Upload Proof - ${p.booking?.fullName} (${formatINR(p.amount)})`,
-                                    type: "client",
-                                  })
-                                }
-                                className="h-6 gap-1 rounded px-2 text-[10px] font-medium border-amber-300 bg-amber-50/50 text-amber-700 hover:bg-amber-100 cursor-pointer"
-                              >
-                                <Plus className="w-3 h-3" /> Upload Proof
-                              </Button>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {isPending && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleFCReviewCollection(p.id)}
-                                  className="h-7 gap-1 rounded-md bg-blue-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-blue-700 cursor-pointer"
-                                >
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  Review (FC)
-                                </Button>
-                              )}
-
-                              {isReviewedFC && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleFounderApproveCollection(p.id, proof, p.paymentMode)}
-                                  className="h-7 gap-1 rounded-md bg-green-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-green-700 cursor-pointer"
-                                >
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  Approve (Founder)
-                                </Button>
-                              )}
-
-                              {!isApproved && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setRejectModalState({
-                                      open: true,
-                                      type: "client",
-                                      id: p.id,
-                                      reason: "",
-                                      title: `Reject Client Payment - ${p.booking?.fullName} (${formatINR(p.amount)})`,
-                                    })
-                                  }
-                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
-                                >
-                                  <XCircle className="w-3 h-3 mr-1" />
-                                  Reject
-                                </Button>
-                              )}
-
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleOpenAuditLog(
-                                    p.id,
-                                    `Audit Trail: ${p.booking?.fullName || "Payment"} (${formatINR(p.amount)})`
-                                  )
-                                }
-                                title="View full approval & audit timeline"
-                                className="h-7 px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
-                              >
-                                <FileText className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                </div>
-              )}
-            </div>
-
-            {/* Sub-Queue: Pending Station Collections (UPI & Cash) */}
-            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
-              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
-                <span className="truncate text-[12px] font-semibold text-[#0B1528]">
-                  Station collections (UPI & Cash)
-                </span>
-                <span className="shrink-0 rounded bg-[#F4F7FB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500">
-                  {verificationQueue.pendingStationPayments?.length || 0}
-                </span>
-              </div>
-
-              {verificationQueue.pendingStationPayments?.length === 0 ? (
-                <div className="px-4 py-10 text-center text-[12px] text-slate-400">
-                  Nothing waiting here. All station collections are verified.
-                </div>
-              ) : (
-                <div className="min-w-0 overflow-x-auto">
-                <table className="w-full min-w-[880px] text-left text-[12px]">
-                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
-                    <tr>
-                      <th className="py-2.5 px-4">Booking / passenger</th>
-                      <th className="py-2.5 px-4">Station / collector</th>
-                      <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">Mode / Account</th>
-                      <th className="py-2.5 px-4">Proof</th>
-                      <th className="py-2.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E8EEF4]">
-                    {(verificationQueue.pendingStationPayments || []).map((p: any) => (
-                      <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
-                        <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                          {p.booking?.fullName || p.collectedFrom || "Passenger"}
-                          <div className="text-[10px] text-slate-400 font-normal">
-                            Ref: {p.booking?.bookingId || p.bookingId} · Receipt: {p.receiptNumber}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-600">
-                          <span className="font-medium text-[#0B1528]">{p.station}</span>
-                          <div className="text-[10px] text-slate-400">
-                            By: {p.collectedBy?.name || "Station staff"}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-medium tabular-nums text-[#0B1528]">
-                          {formatINR(p.amount)}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <div className="flex items-center gap-1.5">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-semibold uppercase",
-                                p.paymentMode === "CASH"
-                                  ? "border-green-200 bg-green-50 text-green-700"
-                                  : "border-blue-200 bg-blue-50 text-blue-700"
-                              )}
-                            >
-                              {p.paymentMode || "UPI"}
-                            </Badge>
-                            {p.utrNumber && (
-                              <span className="inline-flex rounded border border-[#E8EEF4] bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                                UTR: {p.utrNumber}
-                              </span>
-                            )}
-                          </div>
-                          <div className="mt-0.5 text-[10px] text-slate-400">
-                            {p.receivingAccount?.accountName || (p.paymentMode === "CASH" ? "Cash Collection Account" : "Nikulbhai Patel Account")}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          {p.proofImageUrl ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                setProofPreviewModal({
-                                  open: true,
-                                  title: `Station Payment Proof - ${p.booking?.fullName || p.collectedFrom}`,
-                                  subtitle: `Station: ${p.station} · ${p.utrNumber ? `UTR: ${p.utrNumber}` : 'Cash Receipt'}`,
-                                  imageUrl: p.proofImageUrl,
-                                  amount: p.amount,
-                                  date: safeFormatDate(p.createdAt),
-                                })
-                              }
-                              className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5 mr-1" />
-                              View proof
-                            </Button>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">No proof</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              size="sm"
-                              onClick={() => handleVerifyStationPayment(p.id)}
-                              className="h-7 gap-1 rounded-md bg-[#0B1528] px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-[#152238] cursor-pointer"
-                            >
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Verify
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                setRejectModalState({
-                                  open: true,
-                                  type: "station",
-                                  id: p.id,
-                                  reason: "",
-                                  title: `Reject Station Payment - ${p.booking?.fullName || p.collectedFrom} (${formatINR(p.amount)})`,
-                                })
-                              }
-                              className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
-                            >
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
-              )}
-            </div>
-
-            {/* Sub-Queue: Pending Vendor Outgoing Payouts */}
-            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
-              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] px-3 py-2.5 md:px-4">
-                <span className="truncate text-[12px] font-semibold text-[#0B1528]">
-                  Vendor and operational payouts
-                </span>
-                <span className="shrink-0 rounded bg-[#F4F7FB] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500">
-                  {verificationQueue.pendingVendorPayments?.length || 0}
-                </span>
-              </div>
-
-              {verificationQueue.pendingVendorPayments?.length === 0 ? (
-                <div className="px-4 py-10 text-center text-[12px] text-slate-400">
-                  Nothing waiting here. All vendor payouts are approved.
-                </div>
-              ) : (
-                <div className="min-w-0 overflow-x-auto">
-                <table className="w-full min-w-[980px] text-left text-[12px]">
-                  <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
-                    <tr>
-                      <th className="py-2.5 px-4">Vendor / payee</th>
-                      <th className="py-2.5 px-4">Trip</th>
-                      <th className="py-2.5 px-4">Category</th>
-                      <th className="py-2.5 px-4 text-right">Amount</th>
-                      <th className="py-2.5 px-4">Approval status</th>
-                      <th className="py-2.5 px-4">Invoice</th>
-                      <th className="py-2.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E8EEF4]">
-                    {(verificationQueue.pendingVendorPayments || []).map((v: any) => {
-                      const balanceDue = (v.agreedAmount || 0) - (v.advancePaid || 0);
-                      const requiresFounder = v.requiresFounderApproval || balanceDue > 50000;
-                      const isPending = !v.approvalStatus || v.approvalStatus === "PENDING";
-                      const isReviewedFC = v.approvalStatus === "REVIEWED_FINANCE_CONTROLLER";
-                      const isApproved = v.approvalStatus === "APPROVED_FOUNDER" || v.status === "Paid";
-
-                      return (
-                        <tr key={v.id} className="transition-colors hover:bg-[#F8FAFC]">
-                          <td className="py-2.5 px-4 font-medium text-[#0B1528]">
-                            {v.vendorName}
-                            <div className="text-[10px] text-slate-400 font-normal">
-                              {v.serviceDescription || "Service Payment"}
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-700">
-                            {v.trip?.title || "—"}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            <Badge variant="outline" className="text-[10px] font-medium">
-                              {v.category}
-                            </Badge>
-                          </td>
-                          <td className="py-2.5 px-4 text-right font-semibold text-red-600">
-                            {formatINR(v.advancePaid || v.agreedAmount)}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            {getApprovalBadge(v.approvalStatus, v.status, requiresFounder)}
-                          </td>
-                          <td className="py-2.5 px-4">
-                            {v.invoiceProof ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  setProofPreviewModal({
-                                    open: true,
-                                    title: `Vendor Invoice Proof - ${v.vendorName}`,
-                                    subtitle: `Trip: ${v.trip?.title}`,
-                                    imageUrl: v.invoiceProof,
-                                    amount: v.advancePaid,
-                                    date: safeFormatDate(v.createdAt),
-                                  })
-                                }
-                                className="h-7 gap-1 rounded-md px-2 text-[11px] font-medium text-slate-600 hover:bg-[#F4F7FB] hover:text-[#0B1528] cursor-pointer"
-                              >
-                                <Eye className="w-3.5 h-3.5 mr-1" />
-                                View Invoice
-                              </Button>
-                            ) : (
-                              <span className="text-[10px] font-medium text-slate-400">
-                                No invoice
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {isPending && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleFCReviewVendor(v.id)}
-                                  className="h-7 gap-1 rounded-md bg-blue-600 px-2.5 text-[11px] font-medium text-white shadow-none hover:bg-blue-700 cursor-pointer"
-                                >
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  Review (FC)
-                                </Button>
-                              )}
-
-                              {isReviewedFC && (
-                                <Button
-                                  size="sm"
-                                  onClick={() =>
-                                    requiresFounder
-                                      ? handleFounderApproveVendor(v.id)
-                                      : handleFCReviewVendor(v.id)
-                                  }
-                                  className={cn(
-                                    "h-7 gap-1 rounded-md px-2.5 text-[11px] font-medium text-white shadow-none cursor-pointer",
-                                    requiresFounder
-                                      ? "bg-[#0B1528] hover:bg-[#152238]"
-                                      : "bg-green-600 hover:bg-green-700"
-                                  )}
-                                >
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  {requiresFounder ? "Approve (Founder)" : "Clear & Pay (FC)"}
-                                </Button>
-                              )}
-
-                              {!isApproved && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setRejectModalState({
-                                      open: true,
-                                      type: "vendor",
-                                      id: v.id,
-                                      reason: "",
-                                      title: `Reject Vendor Payment - ${v.vendorName} (${formatINR(v.advancePaid || v.agreedAmount)})`,
-                                    })
-                                  }
-                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
-                                >
-                                  <XCircle className="w-3 h-3 mr-1" />
-                                  Reject
-                                </Button>
-                              )}
-
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleOpenAuditLog(
-                                    v.id,
-                                    `Audit Trail: ${v.vendorName} (${formatINR(v.agreedAmount)})`,
-                                    true
-                                  )
-                                }
-                                title="View full approval & audit timeline"
-                                className="h-7 px-2 text-[11px] font-medium text-slate-500 hover:text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
-                              >
-                                <FileText className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                </div>
-              )}
-            </div>
-
-            {/* Sub-Queue: Pending Train Ticket Deductions (Riya Train Portal Account) */}
-            <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
-              <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] bg-[#F8FAFC] px-3 py-2.5 md:px-4">
-                <span className="truncate text-[12px] font-semibold text-[#0B1528] flex items-center gap-2">
-                  <Ticket className="w-4 h-4 text-[#FF4D00]" />
-                  Pending Train Ticket Deductions (Riya Train Account) (
-                  {verificationQueue.pendingTrainTickets?.length || 0})
-                </span>
-                <Badge
-                  variant="outline"
-                  className="bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30 text-[10px] font-black uppercase"
-                >
-                  Auto-Deducted from Riya Wallet
-                </Badge>
-              </div>
-
-              {verificationQueue.pendingTrainTickets?.length === 0 ? (
-                <div className="p-6 text-center text-[12px] text-slate-400 font-medium">
-                  No pending train ticket deductions in verification queue. All reconciled!
-                </div>
-              ) : (
-                <div className="min-w-0 overflow-x-auto">
-                  <table className="w-full min-w-[960px] text-left text-[12px]">
-                    <thead className="border-b border-[#E8EEF4] bg-[#F8FAFC] text-[11px] font-medium text-slate-500">
-                      <tr>
-                        <th className="px-3 py-2 md:px-4">Passenger / Booking</th>
-                        <th className="px-3 py-2 md:px-4">Trip & Route</th>
-                        <th className="px-3 py-2 text-right md:px-4">Expected Cost (Template)</th>
-                        <th className="px-3 py-2 text-right md:px-4">Actual Ticket Cost</th>
-                        <th className="px-3 py-2 text-center md:px-4">Variance</th>
-                        <th className="px-3 py-2 md:px-4">Wallet Source</th>
-                        <th className="px-3 py-2 text-right md:px-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E8EEF4]">
-                      {(verificationQueue.pendingTrainTickets || []).map((t: any) => {
-                        const exp = Number(t.expectedTicketAmount) || 0;
-                        const act = Number(t.ticketAmount) || 0;
-                        const variance = act - exp;
-
-                        return (
-                          <tr
-                            key={t.id}
-                            className="transition-colors hover:bg-[#F8FAFC]"
-                          >
-                            <td className="min-w-0 px-3 py-2.5 md:px-4">
-                              <p className="truncate font-bold text-[#0B1528]">
-                                {t.travelerName || t.booking?.fullName || "Passenger"}
-                              </p>
-                              <div className="text-[11px] text-slate-400">
-                                Booking: {t.booking?.bookingId || t.bookingId} · PNR:{" "}
-                                <span className="font-mono font-bold text-slate-700">
-                                  {t.pnr || "N/A"}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="min-w-0 px-3 py-2.5 md:px-4">
-                              <p className="truncate font-semibold text-slate-800">
-                                {t.booking?.tripRef?.title || t.booking?.tripName || "—"}
-                              </p>
-                              <div className="text-[11px] text-slate-500">
-                                {t.sourceStation || "—"} → {t.destinationStation || "—"}
-                                {t.trainName && ` (${t.trainName})`}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2.5 text-right font-medium tabular-nums text-slate-600 md:px-4">
-                              {formatINR(exp)}
-                            </td>
-                            <td className="px-3 py-2.5 text-right font-black tabular-nums text-[#C2410C] md:px-4">
-                              {formatINR(act)}
-                            </td>
-                            <td className="px-3 py-2.5 text-center md:px-4">
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "text-[10px] font-bold",
-                                  variance > 0
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : variance < 0
-                                      ? "bg-green-50 text-green-700 border-green-200"
-                                      : "bg-slate-50 text-slate-600 border-slate-200",
-                                )}
-                              >
-                                {variance > 0
-                                  ? `+${formatINR(variance)}`
-                                  : variance < 0
-                                    ? `-${formatINR(Math.abs(variance))}`
-                                    : "Exact Match"}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2.5 md:px-4 text-xs font-semibold text-[#0B1528]">
-                              <div className="flex items-center gap-1.5">
-                                <Wallet className="w-3.5 h-3.5 text-[#FF4D00] shrink-0" />
-                                Riya Train Portal Account
-                              </div>
-                            </td>
-                            <td className="px-3 py-2.5 text-right md:px-4">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleVerifyTrainTicket(t.id)}
-                                  className="h-7 gap-1 rounded-md bg-green-600 px-2.5 text-[11px] font-bold text-white shadow-none hover:bg-green-700 cursor-pointer"
-                                >
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  Verify
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setRejectModalState({
-                                      open: true,
-                                      type: "ticket",
-                                      id: t.id,
-                                      reason: "",
-                                      title: `Reject Train Ticket Cost - ${t.travelerName} (PNR: ${t.pnr || "N/A"}) - ${formatINR(act)}`,
-                                    })
-                                  }
-                                  className="h-7 gap-1 rounded-md border-[#E8EEF4] px-2.5 text-[11px] font-medium text-slate-600 shadow-none hover:bg-[#F4F7FB] hover:text-red-600 cursor-pointer"
-                                >
-                                  <XCircle className="w-3 h-3 mr-1" />
-                                  Reject
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -2355,6 +1586,12 @@ export default function AccountingPage() {
         {/* ──────────────────────── TAB 4: OUTGOING DISBURSEMENTS ──────────────────────── */}
         {activeTab === "expenses" && (
           <div className="space-y-4">
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2">
+              <span>Pending vendor approvals are actioned in Approval Center, not here.</span>
+              <Button size="sm" variant="outline" className="h-7 text-[11px] bg-white" onClick={() => navigate("/admin/approvals-hub?tab=vendor-bills")}>
+                Open vendor approvals
+              </Button>
+            </div>
             {/* Search & Filter Toolbar */}
             <div className="flex min-w-0 flex-col gap-2 rounded-xl border border-[#E8EEF4] bg-white p-3 lg:flex-row lg:items-center">
               <div className="relative w-full min-w-0 lg:w-72">
@@ -3544,66 +2781,6 @@ export default function AccountingPage() {
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* ──────────────────────── DIALOG: REJECT MODAL WITH REASON ──────────────────────── */}
-      <Dialog
-        open={Boolean(rejectModalState)}
-        onOpenChange={(open) => {
-          if (!open) setRejectModalState(null);
-        }}
-      >
-        <DialogContent className="flex max-h-[calc(100dvh-1.5rem)] max-w-md flex-col overflow-y-auto rounded-xl border border-[#E8EEF4] bg-white p-4 text-[#0B1528] shadow-xl sm:max-h-[90vh] sm:p-5">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-[#0B1528] flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-red-600" strokeWidth={1.75} />
-              {rejectModalState?.title || "Reject Payment"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3 mt-2 text-xs">
-            <p className="text-slate-600 font-medium">
-              Please enter the mandatory rejection reason. The payment will return to pending /
-              correction state with this audit trail note.
-            </p>
-
-            <div>
-              <label className="font-medium text-slate-600 block mb-1">Rejection Reason *</label>
-              <Input
-                required
-                placeholder="e.g. Screenshot blurry, UTR mismatch with bank statement..."
-                value={rejectModalState?.reason || ""}
-                onChange={(e) =>
-                  setRejectModalState((prev) => (prev ? { ...prev, reason: e.target.value } : null))
-                }
-                className="h-9 text-xs font-medium"
-              />
-            </div>
-
-            <div className="pt-2 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setRejectModalState(null)}
-                className="h-8 rounded-md border-[#E8EEF4] px-3 text-[12px] font-medium text-[#0B1528] shadow-none hover:bg-[#F4F7FB] cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={submittingAction}
-                onClick={handleConfirmReject}
-                className="h-8 gap-1.5 rounded-md bg-red-600 px-3.5 text-[12px] font-medium text-white shadow-none hover:bg-red-700 cursor-pointer"
-              >
-                {submittingAction ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  "Confirm rejection"
-                )}
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

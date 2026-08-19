@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { hasPermission, PERMISSIONS } from "@/lib/permissions";
 import type { DashboardStats } from "@/types";
 import { cn } from "@/lib/utils";
+import { resolveAdminRoute } from "@/lib/adminRouteAliases";
 
 interface MobileDashboardViewProps {
   stats: DashboardStats | null;
@@ -263,7 +264,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           <MetricCard
             label="Departures · next 7 days"
             icon={<Calendar className="h-3.5 w-3.5" strokeWidth={1.75} />}
-            onClick={() => navigate("/admin/departures")}
+            onClick={() => navigate("/admin/operations")}
             loading={loading}
             value={stats?.tripsDepartingNext7Days?.length}
             caption={
@@ -302,7 +303,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
                 <button
                   key={`${departure.name}-${departure.date}-${index}`}
                   type="button"
-                  onClick={() => navigate("/admin/departures")}
+                  onClick={() => navigate("/admin/operations")}
                   className="w-full flex items-center justify-between gap-2 p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl text-left active:bg-slate-100 transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -326,7 +327,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
               <button
                 key={item.label}
                 type="button"
-                onClick={() => navigate(item.path)}
+                onClick={() => navigate(resolveAdminRoute(item.path))}
                 className="w-full flex items-center justify-between gap-2 p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl text-left active:bg-slate-100 transition-colors"
               >
                 <div className="flex items-center gap-2.5 min-w-0">

@@ -1,5 +1,11 @@
 ﻿import React, { useEffect, Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+} from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -85,9 +91,6 @@ const ApprovalsHubPage = lazy(
 
 // ── Finance ──
 const AccountingPage = lazy(() => import("./pages/admin/AccountingPage.tsx"));
-const FinanceControlCenterPage = lazy(
-  () => import("./pages/admin/FinanceControlCenterPage.tsx"),
-);
 
 // ── Travel Desk ──
 const TravelDeskPage = lazy(() => import("./pages/admin/TravelDeskPage.tsx"));
@@ -145,6 +148,13 @@ const queryClient = new QueryClient({
 });
 
 import { isFounder } from "@/config/permissions.config";
+
+function LegacyStaffUserRedirect() {
+  const { id } = useParams();
+  return (
+    <Navigate to={id ? `/admin/staff-profiles/${id}` : "/admin/staff-profiles"} replace />
+  );
+}
 
 function AdminRoute({
   children,
@@ -351,6 +361,60 @@ const App = () => (
                   element={<Navigate to="/admin/operations" replace />}
                 />
                 <Route
+                  path="/admin/dashboard"
+                  element={<Navigate to="/admin" replace />}
+                />
+                <Route
+                  path="/admin/staff-directory"
+                  element={<Navigate to="/admin/staff-profiles" replace />}
+                />
+                <Route
+                  path="/admin/approval-center/incoming"
+                  element={
+                    <Navigate
+                      to="/admin/approvals-hub?tab=payment-approvals"
+                      replace
+                    />
+                  }
+                />
+                <Route
+                  path="/admin/approval-center/*"
+                  element={
+                    <Navigate
+                      to="/admin/approvals-hub?tab=payment-approvals"
+                      replace
+                    />
+                  }
+                />
+                <Route
+                  path="/admin/travel-desk/train-tickets"
+                  element={<Navigate to="/admin/travel-desk" replace />}
+                />
+                <Route
+                  path="/admin/settings/users/:id"
+                  element={<LegacyStaffUserRedirect />}
+                />
+                <Route
+                  path="/admin/bookings/:id"
+                  element={<Navigate to="/admin/bookings" replace />}
+                />
+                <Route
+                  path="/admin/inquiries/:id"
+                  element={<Navigate to="/admin/inquiries" replace />}
+                />
+                <Route
+                  path="/admin/trips/:id"
+                  element={<Navigate to="/admin/trips" replace />}
+                />
+                <Route
+                  path="/admin/vendors/:id"
+                  element={<Navigate to="/admin/vendors" replace />}
+                />
+                <Route
+                  path="/admin/company-documents/:id"
+                  element={<Navigate to="/admin/company-documents" replace />}
+                />
+                <Route
                   path="/admin/operations"
                   element={
                     <AdminRoute requiredPermission="ops.view">
@@ -447,7 +511,7 @@ const App = () => (
                 <Route
                   path="/admin/approvals-hub"
                   element={
-                    <AdminRoute requiredPermission="bookings.view">
+                    <AdminRoute requiredPermission="accounting.view">
                       <ApprovalsHubPage />
                     </AdminRoute>
                   }
@@ -476,18 +540,12 @@ const App = () => (
                 />
                 <Route
                   path="/admin/finance-control-center"
-                  element={
-                    <AdminRoute requiredPermission="accounting.view">
-                      <AccountingPage />
-                    </AdminRoute>
-                  }
+                  element={<Navigate to="/admin/finance" replace />}
                 />
                 <Route
                   path="/admin/finance-verification"
                   element={
-                    <AdminRoute requiredPermission="accounting.view">
-                      <AccountingPage />
-                    </AdminRoute>
+                    <Navigate to="/admin/approvals-hub?tab=payment-approvals" replace />
                   }
                 />
 

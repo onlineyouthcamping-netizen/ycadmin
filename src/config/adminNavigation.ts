@@ -5,7 +5,6 @@ import {
   ListTodo,
   Compass,
   Wallet,
-  BadgeCheck,
   MapPin,
   Building2,
   FileText,
@@ -16,6 +15,7 @@ import {
   FilePlus,
   Globe,
   Mail,
+  BarChart3,
 } from "lucide-react";
 
 export type AdminNavItem = {
@@ -54,11 +54,15 @@ export const MOBILE_BOTTOM_NAV: AdminNavItem[] = [
     title: "Finance",
     url: "/admin/finance",
     icon: Wallet,
-    matchPaths: ["/admin/finance", "/admin/accounting"],
+    matchPaths: [
+      "/admin/finance",
+      "/admin/accounting",
+      "/admin/approvals-hub",
+    ],
   },
 ];
 
-/** Full module list in the “More” drawer — mirrors desktop sidebar */
+/** Full module list in the “More” drawer */
 export const MOBILE_DRAWER_NAV: AdminNavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Bookings", url: "/admin/bookings", icon: Ticket },
@@ -68,21 +72,21 @@ export const MOBILE_DRAWER_NAV: AdminNavItem[] = [
   { title: "Departures", url: "/admin/operations", icon: Compass },
   { title: "Daily Tasks", url: "/admin/operations/daily-tasks", icon: ListTodo },
   { title: "SOP & Checklists", url: "/admin/operations/sops", icon: FileText },
-  { title: "Finance", url: "/admin/finance", icon: Wallet },
+  { title: "Finance ledger", url: "/admin/finance", icon: Wallet },
   {
-    title: "Incoming Payments",
+    title: "Incoming approvals",
     url: "/admin/approvals-hub?tab=payment-approvals",
-    icon: BadgeCheck,
+    icon: BarChart3,
   },
   {
-    title: "Vendor Payouts",
+    title: "Vendor payouts",
     url: "/admin/approvals-hub?tab=vendor-bills",
-    icon: BadgeCheck,
+    icon: Building2,
   },
   {
-    title: "Refund Requests",
+    title: "Refund requests",
     url: "/admin/approvals-hub?tab=refund-requests",
-    icon: BadgeCheck,
+    icon: FileText,
   },
   { title: "Trips", url: "/admin/trips", icon: MapPin },
   { title: "Vendors", url: "/admin/vendors", icon: Building2 },
@@ -140,15 +144,8 @@ export function isAdminNavActive(
     return true;
   }
 
-  if (search.includes("tab=")) {
-    const currentTab = new URLSearchParams(search).get("tab");
-    const siblingWithTab = MOBILE_DRAWER_NAV.some((other) => {
-      if (other.url === item.url) return false;
-      const [otherPath, otherSearch] = other.url.split("?");
-      if (otherPath !== urlPath || !otherSearch) return false;
-      return new URLSearchParams(otherSearch).get("tab") === currentTab;
-    });
-    if (siblingWithTab) return false;
+  if (search.includes("tab=") && urlPath === "/admin/approvals-hub") {
+    return false;
   }
 
   return true;
