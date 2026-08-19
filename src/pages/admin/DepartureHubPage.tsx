@@ -1614,7 +1614,11 @@ export default function DepartureHubPage() {
 
       // Map passengerAllocations to proper DB format
       allPassengers.forEach((p: any) => {
-        const alloc = passengerAllocations[p.id] || passengerAllocations[p.name];
+        const norm = (p.name || "").trim().toLowerCase();
+        const alloc =
+          (p.id && passengerAllocations[p.id]) ||
+          (p.name && passengerAllocations[p.name]) ||
+          (norm ? passengerAllocations[Object.keys(passengerAllocations).find((k) => k.trim().toLowerCase() === norm) || ""] : null);
         if (!alloc) return;
         const bookingId =
           p.bookingId ||
@@ -1649,6 +1653,7 @@ export default function DepartureHubPage() {
               f.name === alloc.vehicle ||
               f.id === alloc.vehicle ||
               f.vehicleType === alloc.vehicle ||
+              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()) ||
               (f.name && alloc.vehicle && f.name.toLowerCase().includes(alloc.vehicle.toLowerCase())),
           ) || allocFleet[0];
           vehicleAllocations.push({
@@ -5275,11 +5280,16 @@ useEffect(() => {
 
     // Iterate allPassengers as the canonical source (one entry per person)
     allPassengers.forEach((pObj: any) => {
-      const allocById = passengerAllocations[pObj.id];
-      const allocByName = passengerAllocations[pObj.name];
+      const norm = (pObj.name || "").trim().toLowerCase();
+      const allocById = pObj.id ? passengerAllocations[pObj.id] : null;
+      const allocByName = pObj.name ? passengerAllocations[pObj.name] : null;
+      const allocByNorm = norm ? passengerAllocations[Object.keys(passengerAllocations).find((k) => k.trim().toLowerCase() === norm) || ""] : null;
       const alloc = (allocById && allocById.room && allocById.room !== "—")
         ? allocById
-        : (allocByName || allocById);
+        : (allocByName && allocByName.room && allocByName.room !== "—")
+          ? allocByName
+          : (allocByNorm || allocById || allocByName);
+
       if (!alloc || !alloc.room || alloc.room === "Unassigned" || alloc.room === "—") return;
       if (isPassengerCancelled(pObj)) return;
 
@@ -5316,11 +5326,16 @@ useEffect(() => {
   const computedVehicleAllocations = useMemo(() => {
     const list: any[] = [];
     allPassengers.forEach((pObj: any) => {
-      const allocById = passengerAllocations[pObj.id];
-      const allocByName = passengerAllocations[pObj.name];
+      const norm = (pObj.name || "").trim().toLowerCase();
+      const allocById = pObj.id ? passengerAllocations[pObj.id] : null;
+      const allocByName = pObj.name ? passengerAllocations[pObj.name] : null;
+      const allocByNorm = norm ? passengerAllocations[Object.keys(passengerAllocations).find((k) => k.trim().toLowerCase() === norm) || ""] : null;
       const alloc = (allocById && allocById.vehicle && allocById.vehicle !== "—")
         ? allocById
-        : (allocByName || allocById);
+        : (allocByName && allocByName.vehicle && allocByName.vehicle !== "—")
+          ? allocByName
+          : (allocByNorm || allocById || allocByName);
+
       if (
         alloc?.vehicle &&
         alloc.vehicle !== "Unassigned" &&
@@ -5332,6 +5347,7 @@ useEffect(() => {
               f.name === alloc.vehicle ||
               f.id === alloc.vehicle ||
               f.vehicleType === alloc.vehicle ||
+              (f.name && alloc.vehicle && f.name.toLowerCase().trim() === alloc.vehicle.toLowerCase().trim()) ||
               (f.name && alloc.vehicle && f.name.toLowerCase().includes(alloc.vehicle.toLowerCase())),
           ) || allocFleet[0];
         const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
