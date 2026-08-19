@@ -1119,6 +1119,8 @@ export default function FinanceControlCenterPage({
                   { label: "Amount", align: "right" },
                   { label: "Mode" },
                   { label: "Account" },
+                  { label: "Booking Date" },
+                  { label: "Trip Departure" },
                   { label: "Submitted by" },
                   { label: "Status" },
                   { label: "Action", align: "right" },
@@ -1138,6 +1140,27 @@ export default function FinanceControlCenterPage({
                       <div className="font-mono text-[10px] text-slate-400">{item.referenceNumber || "—"}</div>
                     </td>
                     <td className={cn(financeTd, "text-slate-600")}>{item.collectionAccountName || item.bankName || "Primary"}</td>
+                    <td className={cn(financeTd, "text-slate-500 whitespace-nowrap")}>
+                      {item.bookingDate
+                        ? new Date(item.bookingDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                        : "—"}
+                    </td>
+                    <td className={cn(financeTd, "whitespace-nowrap")}>
+                      {item.tripDepartureDate ? (
+                        <span className={cn(
+                          "font-semibold",
+                          new Date(item.tripDepartureDate) < new Date()
+                            ? "text-red-500"
+                            : new Date(item.tripDepartureDate).getTime() - Date.now() < 7 * 86400000
+                              ? "text-amber-600"
+                              : "text-slate-700",
+                        )}>
+                          {new Date(item.tripDepartureDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                     <td className={cn(financeTd, "text-slate-500")}>{item.submittedBy}</td>
                     <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
                     <td className={cn(financeTd, "text-right")}>

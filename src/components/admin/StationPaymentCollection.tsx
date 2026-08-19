@@ -25,6 +25,11 @@ import {
   Check,
   ArrowRight,
   Loader2,
+  Plus,
+  ShieldCheck,
+  Building2,
+  User2,
+  CreditCard,
 } from "lucide-react";
 
 const INR = (v: number) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
@@ -90,6 +95,99 @@ export default function StationPaymentCollection({
     null,
   );
 
+  // Add Account modal state
+  const [showAccountsPanel, setShowAccountsPanel] = useState(false);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [addingAccount, setAddingAccount] = useState(false);
+  const [allAccounts, setAllAccounts] = useState<PaymentReceivingAccount[]>([]);
+  const [newAcct, setNewAcct] = useState({
+    accountName: "",
+    accountHolderName: "",
+    accountType: "UPI" as "BANK" | "UPI",
+    ownershipType: "COMPANY" as "COMPANY" | "STAFF" | "PARTNER",
+    bankName: "",
+    accountNumber: "",
+    upiId: "",
+    description: "",
+  });
+
+  const loadAllAccounts = useCallback(async () => {
+    try {
+      const r = await stationPaymentService.getAccounts();
+      setAllAccounts(r);
+    } catch {
+      toast.error("Failed to load accounts");
+    }
+  }, []);
+
+  const handleAddAccount = async () => {
+    if (!newAcct.accountName.trim() || !newAcct.accountHolderName.trim()) {
+      toast.error("Account name and holder name are required");
+      return;
+    }
+    if (newAcct.accountType === "UPI" && !newAcct.upiId.trim()) {
+      toast.error("UPI ID is required for UPI accounts");
+      return;
+    }
+    if (
+      newAcct.accountType === "BANK" &&
+      (!newAcct.bankName.trim() || !newAcct.accountNumber.trim())
+    ) {
+      toast.error("Bank name and account number are required for bank accounts");
+      return;
+    }
+    setAddingAccount(true);
+    try {
+      await stationPaymentService.createAccount({
+        accountName: newAcct.accountName,
+        accountHolderName: newAcct.accountHolderName,
+        accountType: newAcct.accountType,
+        ownershipType: newAcct.ownershipType,
+        bankName: newAcct.bankName || undefined,
+        maskedAccountNumber: newAcct.accountNumber
+          ? `XXXX${newAcct.accountNumber.slice(-4)}`
+          : undefined,
+        upiId: newAcct.upiId || undefined,
+        description: newAcct.description || undefined,
+      });
+      toast.success("Account added — awaiting Finance Controller approval");
+      setAddAccountOpen(false);
+      setNewAcct({
+        accountName: "",
+        accountHolderName: "",
+        accountType: "UPI",
+        ownershipType: "COMPANY",
+        bankName: "",
+        accountNumber: "",
+        upiId: "",
+        description: "",
+      });
+      await loadAllAccounts();
+      await load();
+    } catch {
+      toast.error("Failed to add account");
+    } finally {
+      setAddingAccount(false);
+    }
+  };
+
+  const handleApproveAccount = async (
+    id: string,
+    isApproved: boolean,
+    isActive: boolean,
+  ) => {
+    try {
+      await stationPaymentService.approveAccount(id, { isApproved, isActive });
+      toast.success(
+        isApproved ? "Account approved by Finance Controller" : "Account unapproved",
+      );
+      await loadAllAccounts();
+      await load();
+    } catch {
+      toast.error("Failed to update account");
+    }
+  };
+
   const [expandedBookings, setExpandedBookings] = useState<string[]>([]);
   const toggleExpand = (id: string) => {
     setExpandedBookings((prev) =>
@@ -129,11 +227,11 @@ export default function StationPaymentCollection({
       setStats(dashRes.stats);
       setBookings(dashRes.bookings);
       setHandovers(dashRes.handovers);
-      setAccounts(
-        acctRes.filter(
-          (a: PaymentReceivingAccount) => a.isActive && a.isApproved,
-        ),
+      const active = acctRes.filter(
+        (a: PaymentReceivingAccount) => a.isActive && a.isApproved,
       );
+      setAccounts(active);
+      setAllAccounts(acctRes);
     } catch {
       toast.error("Failed to load station payment data");
     } finally {
@@ -156,7 +254,7 @@ export default function StationPaymentCollection({
     setCollectedAt(new Date().toISOString().slice(0, 16));
     setRemarks("");
     setUtrNumber("");
-    setReceivingAccountId(accounts[0]?.id || "");
+    setReceivingAccountId("");
     setCustomAccountName("");
     setDrawerStep("form");
     setDrawerOpen(true);
@@ -208,7 +306,6 @@ export default function StationPaymentCollection({
       return;
     }
     if (
-      paymentMode === "UPI" &&
       receivingAccountId === "OTHER" &&
       !customAccountName.trim()
     ) {
@@ -236,13 +333,11 @@ export default function StationPaymentCollection({
         remarks,
         utrNumber: paymentMode === "UPI" ? utrNumber : undefined,
         receivingAccountId:
-          paymentMode === "UPI" && receivingAccountId !== "OTHER"
+          receivingAccountId && receivingAccountId !== "OTHER"
             ? receivingAccountId
             : undefined,
         customAccountName:
-          paymentMode === "UPI" && receivingAccountId === "OTHER"
-            ? customAccountName
-            : undefined,
+          receivingAccountId === "OTHER" ? customAccountName : undefined,
       });
       setLastCollection(result.data);
       setDrawerStep("success");
@@ -1102,11 +1197,14 @@ export default function StationPaymentCollection({
                     ...(paymentMode === "UPI"
                       ? [{ label: "UTR / Transaction ID", v: utrNumber }]
                       : []),
-                    ...(paymentMode === "UPI"
+                    ...(activeAccount
                       ? [
                           {
-                            label: "Received In",
-                            v: activeAccount?.accountName || "—",
+                            label:
+                              paymentMode === "CASH"
+                                ? "Cash Collection Account"
+                                : "Received In",
+                            v: activeAccount.accountName || "—",
                           },
                         ]
                       : []),
@@ -1309,6 +1407,50 @@ export default function StationPaymentCollection({
                     )}
                   </div>
 
+                  {/* Cash collection account */}
+                  {paymentMode === "CASH" && (
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">
+                        Cash Collection Account
+                      </label>
+                      <select
+                        value={receivingAccountId}
+                        onChange={(e) => setReceivingAccountId(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none bg-white"
+                      >
+                        <option value="">-- Select Account (optional) --</option>
+                        {accounts.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.accountName} (
+                            {a.ownershipType === "COMPANY"
+                              ? "Company"
+                              : a.ownershipType === "STAFF"
+                                ? `Staff – ${a.accountHolderName}`
+                                : "Partner"}
+                            )
+                          </option>
+                        ))}
+                        <option value="OTHER">Other (Custom Name)</option>
+                      </select>
+                      {receivingAccountId === "OTHER" && (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={customAccountName}
+                            onChange={(e) =>
+                              setCustomAccountName(e.target.value)
+                            }
+                            placeholder="Enter account name"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs focus:outline-none focus:border-[#F97316]"
+                          />
+                        </div>
+                      )}
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Select the account where this cash will be deposited.
+                      </p>
+                    </div>
+                  )}
+
                   {/* UPI-specific fields */}
                   {paymentMode === "UPI" && (
                     <>
@@ -1446,10 +1588,8 @@ export default function StationPaymentCollection({
                     !station.trim() ||
                     !collectedFrom.trim() ||
                     (paymentMode === "UPI" &&
-                      (!utrNumber.trim() ||
-                        !receivingAccountId ||
-                        (receivingAccountId === "OTHER" &&
-                          !customAccountName.trim())))
+                      (!utrNumber.trim() || !receivingAccountId)) ||
+                    (receivingAccountId === "OTHER" && !customAccountName.trim())
                   }
                   className="w-full py-3 bg-[#F97316] hover:bg-[#E05E00] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[4px] text-sm font-black transition-colors flex items-center justify-center gap-2"
                 >

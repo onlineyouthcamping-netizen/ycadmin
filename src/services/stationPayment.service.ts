@@ -13,6 +13,11 @@ export interface PaymentReceivingAccount {
   linkedAdmin?: { id: string; name: string };
   isApproved: boolean;
   isActive: boolean;
+  approvedByAdminId?: string;
+  approvedBy?: { id: string; name: string };
+  createdByAdminId?: string;
+  createdBy?: { id: string; name: string };
+  description?: string;
 }
 
 export interface StationPaymentCollection {

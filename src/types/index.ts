@@ -778,6 +778,8 @@ export interface IncomingPaymentItem {
   submittedBy: string;
   actionedBy?: string | null;
   createdAt: string;
+  bookingDate?: string | null;
+  tripDepartureDate?: string | null;
 }
 
 export interface VendorPaymentRequestItem {

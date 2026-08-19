@@ -4,14 +4,21 @@ import { Button } from "@/components/ui/button";
 import {
   Calendar,
   Compass,
+  Building2,
   DollarSign,
   Users,
   Check,
   ChevronRight,
   ChevronLeft,
+  Star,
+  CheckCircle2,
   Plus,
+  PlusCircle,
   Utensils,
+  MapPin,
+  Phone,
   Search,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -48,8 +55,124 @@ interface WizardProps {
 const WIZARD_STEPS = [
   { step: 1, label: "Select Day", icon: Calendar },
   { step: 2, label: "Select Activity / Meal", icon: Compass },
-  { step: 3, label: "Pricing & Commercials", icon: DollarSign },
-  { step: 4, label: "Passengers", icon: Users },
+  { step: 3, label: "Select Vendor / Partner", icon: Building2 },
+  { step: 4, label: "Pricing", icon: DollarSign },
+  { step: 5, label: "Passengers", icon: Users },
+];
+
+const BUILT_IN_ACTIVITIES = [
+  {
+    id: "MEAL-1",
+    name: "Breakfast at Partner Restaurant / Dhaba",
+    category: "MEAL",
+    defaultCapacity: 50,
+    defaultCost: 150,
+  },
+  {
+    id: "MEAL-2",
+    name: "En-Route Buffet Lunch",
+    category: "MEAL",
+    defaultCapacity: 50,
+    defaultCost: 250,
+  },
+  {
+    id: "MEAL-3",
+    name: "Special Local / Himachali Dinner",
+    category: "MEAL",
+    defaultCapacity: 50,
+    defaultCost: 350,
+  },
+  {
+    id: "MEAL-4",
+    name: "Trail Cafe & Evening Snacks Stop",
+    category: "MEAL",
+    defaultCapacity: 50,
+    defaultCost: 120,
+  },
+  {
+    id: "MEAL-5",
+    name: "Packed Highway / Trek Lunch",
+    category: "MEAL",
+    defaultCapacity: 50,
+    defaultCost: 200,
+  },
+  {
+    id: "ACT-1",
+    name: "River Rafting",
+    category: "ADVENTURE",
+    defaultCapacity: 40,
+    defaultCost: 700,
+  },
+  {
+    id: "ACT-2",
+    name: "Paragliding",
+    category: "ADVENTURE",
+    defaultCapacity: 30,
+    defaultCost: 2000,
+  },
+  {
+    id: "ACT-3",
+    name: "ATV Ride",
+    category: "ADVENTURE",
+    defaultCapacity: 20,
+    defaultCost: 900,
+  },
+  {
+    id: "ACT-4",
+    name: "Solang Valley Visit",
+    category: "SIGHTSEEING",
+    defaultCapacity: 50,
+    defaultCost: 400,
+  },
+  {
+    id: "ACT-5",
+    name: "DJ Night & Bonfire",
+    category: "ENTERTAINMENT",
+    defaultCapacity: 60,
+    defaultCost: 500,
+  },
+  {
+    id: "ACT-6",
+    name: "Golden Temple Visit",
+    category: "SIGHTSEEING",
+    defaultCapacity: 50,
+    defaultCost: 0,
+  },
+  {
+    id: "ACT-7",
+    name: "Wagah Border Excursion",
+    category: "SIGHTSEEING",
+    defaultCapacity: 50,
+    defaultCost: 300,
+  },
+  {
+    id: "ACT-8",
+    name: "Manikaran Sahib Visit",
+    category: "SIGHTSEEING",
+    defaultCapacity: 50,
+    defaultCost: 200,
+  },
+  {
+    id: "ACT-9",
+    name: "Chalal Trek & Cafe Walk",
+    category: "ADVENTURE",
+    defaultCapacity: 40,
+    defaultCost: 400,
+  },
+  {
+    id: "ACT-10",
+    name: "Bijli Mahadev Day Trek",
+    category: "ADVENTURE",
+    defaultCapacity: 40,
+    defaultCost: 600,
+  },
+  {
+    id: "ACT-11",
+    name: "Jogini Waterfall Trek",
+    category: "ADVENTURE",
+    defaultCapacity: 40,
+    defaultCost: 350,
+  },
 ];
 
 export default function Activity5StepWizardModal({
@@ -72,15 +195,13 @@ export default function Activity5StepWizardModal({
     category: string;
     defaultCapacity: number;
     defaultCost: number;
-    vendorId?: string;
-    vendor?: VendorOption;
   } | null>(null);
 
   const [selectedVendor, setSelectedVendor] = useState<VendorOption | null>(null);
 
-  const [adultPrice, setAdultPrice] = useState(0);
-  const [childPrice, setChildPrice] = useState(0);
-  const [vendorCost, setVendorCost] = useState(0);
+  const [adultPrice, setAdultPrice] = useState(1200);
+  const [childPrice, setChildPrice] = useState(800);
+  const [vendorCost, setVendorCost] = useState(250);
   const [gstPercent, setGstPercent] = useState(5);
   const [isIncluded, setIsIncluded] = useState(true);
   const [scheduledTime, setScheduledTime] = useState("09:30 AM");
@@ -88,19 +209,18 @@ export default function Activity5StepWizardModal({
 
   const [selectedPaxIds, setSelectedPaxIds] = useState<string[]>([]);
 
-  const [actCategoryTab, setActCategoryTab] = useState<string>("MEAL");
+  const [actCategoryTab, setActCategoryTab] = useState<string>("ALL");
   const [actSearch, setActSearch] = useState<string>("");
+  const [vendorCategoryTab, setVendorCategoryTab] = useState<string>("ALL");
+  const [vendorSearch, setVendorSearch] = useState<string>("");
 
   useEffect(() => {
     if (open) {
-      setCurrentStep(1);
       if (initialDay && daysList.includes(initialDay)) {
         setSelectedDay(initialDay);
       }
       if (manifestPassengers && manifestPassengers.length > 0) {
         setSelectedPaxIds(manifestPassengers.map((p) => p.id));
-      } else {
-        setSelectedPaxIds([]);
       }
     }
   }, [open, initialDay, daysList, manifestPassengers]);
@@ -110,108 +230,127 @@ export default function Activity5StepWizardModal({
   const [newActName, setNewActName] = useState("");
   const [newActCategory, setNewActCategory] = useState("MEAL");
   const [newActCapacity, setNewActCapacity] = useState(40);
-  const [newActCost, setNewActCost] = useState(0);
+  const [newActCost, setNewActCost] = useState(250);
 
-  // Step 2 Activities & Meals: 100% feeded from Trip Vendors Directory & Master Database
   const defaultActivities = useMemo(() => {
-    const list: any[] = [...customActivities];
-    const seen = new Set<string>();
+    return [
+      ...customActivities,
+      ...(activitiesMasterList && activitiesMasterList.length > 0
+        ? activitiesMasterList
+        : BUILT_IN_ACTIVITIES),
+    ];
+  }, [customActivities, activitiesMasterList]);
 
-    // 1. Items from activitiesMasterList (which includes trip vendor meals & master directory acts)
-    if (activitiesMasterList && activitiesMasterList.length > 0) {
-      activitiesMasterList.forEach((act) => {
-        if (!seen.has(act.name.toLowerCase())) {
-          seen.add(act.name.toLowerCase());
-          list.push(act);
-        }
-      });
-    }
+  const [customVendors, setCustomVendors] = useState<VendorOption[]>([]);
+  const [isCreatingVendor, setIsCreatingVendor] = useState(false);
+  const [newVendorName, setNewVendorName] = useState("");
+  const [newVendorLocation, setNewVendorLocation] = useState("");
+  const [newVendorCategory, setNewVendorCategory] = useState("restaurants");
+  const [newVendorCost, setNewVendorCost] = useState("");
 
-    // 2. Direct feed from vendorsList (Trip Vendors Directory) — Strictly Restaurants & Activities only
+  const defaultVendors = useMemo(() => {
+    const list = [...customVendors];
     if (vendorsList && vendorsList.length > 0) {
-      vendorsList.forEach((vnd) => {
-        const rawCat = (vnd.category || "").toLowerCase();
-        const nameLower = (vnd.vendorName || "").toLowerCase();
-
-        // Strict Exclusion: Skip Accommodation, Transport, and Guides
-        const isAccommodation =
-          rawCat.includes("hotel") ||
-          rawCat.includes("resort") ||
-          rawCat.includes("homestay") ||
-          rawCat.includes("stay") ||
-          rawCat.includes("lodge") ||
-          rawCat.includes("camp") ||
-          nameLower.includes("hotel") ||
-          nameLower.includes("resort") ||
-          nameLower.includes("homestay") ||
-          nameLower.includes("camp") ||
-          (nameLower.includes("cottage") && !nameLower.includes("restaurant"));
-
-        const isTransport =
-          rawCat.includes("transport") ||
-          rawCat.includes("cab") ||
-          rawCat.includes("taxi") ||
-          rawCat.includes("vehicle") ||
-          nameLower.includes("cab") ||
-          nameLower.includes("taxi") ||
-          nameLower.includes("travels") ||
-          nameLower.includes("transport");
-
-        const isGuide =
-          rawCat.includes("guide") ||
-          rawCat.includes("leader") ||
-          nameLower.includes("guide") ||
-          nameLower.includes(" sir");
-
-        if (isAccommodation || isTransport || isGuide) return;
-
-        const isRest =
-          rawCat.includes("restaurant") ||
-          rawCat.includes("food") ||
-          rawCat.includes("meal") ||
-          nameLower.includes("dhaba") ||
-          nameLower.includes("restaurant") ||
-          nameLower.includes("bhojnalaya") ||
-          nameLower.includes("cafe") ||
-          nameLower.includes("canteen");
-
-        const actName = `${vnd.vendorName}${vnd.location ? ` (${vnd.location})` : ""}`;
-        if (!seen.has(actName.toLowerCase())) {
-          seen.add(actName.toLowerCase());
-          list.push({
-            id: `VND-ITEM-${vnd.vendorId}`,
-            name: actName,
-            category: isRest ? "MEAL" : "ADVENTURE",
-            defaultCapacity: 40,
-            defaultCost: vnd.netCost || 0,
-            vendorId: vnd.vendorId,
-            vendor: vnd,
-          });
-        }
-      });
+      list.push(...vendorsList);
+    } else {
+      list.push(
+        {
+          vendorId: "VND-BG",
+          vendorName: "Bal Gopal Restaurant",
+          category: "restaurants",
+          location: "Kasol",
+          contactPerson: "Rahul Sir",
+          contactPhone: "+91 8448269176",
+          rating: 4.8,
+          netCost: 250,
+          seasonType: "REGULAR",
+        },
+        {
+          vendorId: "VND-MD",
+          vendorName: "Musafir Dhaba",
+          category: "restaurants",
+          location: "Kullu",
+          contactPerson: "Chetan Sir",
+          contactPhone: "+91 9857362977",
+          rating: 4.6,
+          netCost: 200,
+          seasonType: "REGULAR",
+        },
+        {
+          vendorId: "VND-BC",
+          vendorName: "Barpa Cottage Restaurant",
+          category: "restaurants",
+          location: "Manali",
+          contactPerson: "Rajendra Kumar",
+          contactPhone: "+91 9418776426",
+          rating: 4.9,
+          netCost: 350,
+          seasonType: "REGULAR",
+        },
+        {
+          vendorId: "VND-ABC",
+          vendorName: "ABC Adventures",
+          category: "activities",
+          location: "Manali",
+          contactPerson: "Activity Lead",
+          contactPhone: "+91 9816000000",
+          rating: 4.8,
+          netCost: 700,
+          seasonType: "PEAK",
+        },
+      );
     }
-
     return list;
-  }, [customActivities, activitiesMasterList, vendorsList]);
+  }, [customVendors, vendorsList]);
 
-  const defaultPax = manifestPassengers || [];
+  const handleCreateNewVendor = () => {
+    if (!newVendorName.trim()) {
+      toast.error("Please enter vendor or restaurant name");
+      return;
+    }
+    const newVnd: VendorOption = {
+      vendorId: `VND-CUSTOM-${Date.now()}`,
+      vendorName: newVendorName.trim(),
+      category: newVendorCategory,
+      location: newVendorLocation.trim() || "Local",
+      rating: 5.0,
+      netCost: Number(newVendorCost) || 0,
+      seasonType: "CUSTOM",
+    };
+    setCustomVendors((prev) => [newVnd, ...prev]);
+    setSelectedVendor(newVnd);
+    setVendorCost(newVnd.netCost || 0);
+    setNewVendorName("");
+    setNewVendorLocation("");
+    setNewVendorCost("");
+    setIsCreatingVendor(false);
+    toast.success(`Selected partner/cost: ${newVnd.vendorName}`);
+  };
+
+  const defaultPax = manifestPassengers || [
+    { id: "pax-1", name: "Rahul Sharma" },
+    { id: "pax-2", name: "Meet Patel" },
+    { id: "pax-3", name: "Krunal Shah" },
+    { id: "pax-4", name: "Yash Mehta" },
+    { id: "pax-5", name: "Vipul Joshi" },
+    { id: "pax-6", name: "Ananya Desai" },
+    { id: "pax-7", name: "Rohan Verma" },
+    { id: "pax-8", name: "Priya Nair" },
+  ];
 
   const handleSelectActivity = (act: any) => {
     setSelectedActivity(act);
-    setVendorCost(act.defaultCost || 0);
-
-    // Auto-select the matching vendor from Vendor Directory
-    if (act.vendor) {
-      setSelectedVendor(act.vendor);
-    } else if (act.vendorId) {
-      const match = vendorsList?.find((v) => v.vendorId === act.vendorId);
-      if (match) setSelectedVendor(match);
+    setVendorCost(act.defaultCost);
+    if (act.category === "MEAL" || act.category === "RESTAURANT") {
+      setVendorCategoryTab("RESTAURANTS");
+    } else {
+      setVendorCategoryTab("ACTIVITIES");
     }
   };
 
   const handleCreateNewActivity = () => {
     if (!newActName.trim()) {
-      toast.error("Please enter name");
+      toast.error("Please enter activity / meal name");
       return;
     }
     const createdAct = {
@@ -224,10 +363,20 @@ export default function Activity5StepWizardModal({
     setCustomActivities((prev) => [createdAct, ...prev]);
     setSelectedActivity(createdAct);
     setVendorCost(createdAct.defaultCost);
+    if (createdAct.category === "MEAL" || createdAct.category === "RESTAURANT") {
+      setVendorCategoryTab("RESTAURANTS");
+    }
     setIsCreatingNew(false);
     setNewActName("");
-    toast.success(`"${createdAct.name}" created & selected!`);
-    setCurrentStep(3); // Advance directly to Pricing step
+    toast.success(
+      `"${createdAct.name}" created & selected!`,
+    );
+    setCurrentStep(3);
+  };
+
+  const handleSelectVendor = (vnd: VendorOption) => {
+    setSelectedVendor(vnd);
+    setVendorCost(vnd.netCost || 0);
   };
 
   const handleTogglePax = (id: string) => {
@@ -251,31 +400,36 @@ export default function Activity5StepWizardModal({
         dayNumber: selectedDay,
         scheduledTime,
         endTime,
+        location: selectedVendor?.location || "",
         status: "CONFIRMED",
-        vendorId: selectedVendor?.vendorId || selectedActivity?.vendorId || undefined,
-        vendorName: selectedVendor?.vendorName || (selectedActivity?.category === "MEAL" ? "Restaurant Partner" : "Direct Supplier"),
+        vendorId: selectedVendor?.vendorId || "VND-DEFAULT",
+        vendorName: selectedVendor?.vendorName || "Direct Supplier",
+        vendorRating: selectedVendor?.rating || 4.5,
+        maxCapacity: selectedActivity.defaultCapacity,
+        maxParticipants: selectedActivity.defaultCapacity,
+        bookedCount: selectedPaxIds.length,
         adultPrice: isIncluded ? 0 : adultPrice,
-        childPrice: isIncluded ? 0 : childPrice,
-        vendorCost,
-        gstPercent,
+        customerPrice: isIncluded ? 0 : adultPrice,
         isIncluded,
-        passengers: selectedPaxIds.map((pId) => ({
-          passengerId: pId,
-          name: manifestPassengers?.find((p) => p.id === pId)?.name || "Pax",
-          status: "CONFIRMED",
+        childPrice,
+        vendorCost,
+        estimatedCost: vendorCost,
+        gstPercent,
+        mealIncluded: selectedActivity.category === "MEAL" ? "Included Meal" : "Included",
+        remarks: selectedActivity.category === "MEAL" ? `Partner Meal at ${selectedVendor?.vendorName || "Restaurant"}` : "",
+        passengers: defaultPax.map((p) => ({
+          id: p.id,
+          name: p.name,
+          isOpted: selectedPaxIds.includes(p.id),
         })),
       };
 
-      if (onAddActivity) {
-        await onAddActivity(newAct);
-      }
-      toast.success(
-        `Added "${selectedActivity.name}" to Day ${selectedDay}`,
-      );
+      await onAddActivity(newAct);
+      toast.success(`Added ${selectedActivity.name} to Day ${selectedDay}`);
       onOpenChange(false);
       setCurrentStep(1);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to schedule item");
+    } catch (err) {
+      toast.error("Failed to add activity");
     } finally {
       setSaving(false);
     }
@@ -283,34 +437,62 @@ export default function Activity5StepWizardModal({
 
   const profitPerPax = adultPrice - vendorCost;
 
-  // Filtered Activities: ONLY 2 TABS (MEAL vs ACTIVITY)
+  // Filtered Activities
   const filteredActivities = useMemo(() => {
     return defaultActivities.filter((act) => {
-      const isMeal = act.category === "MEAL" || act.category === "RESTAURANT";
-      if (actCategoryTab === "MEAL" && !isMeal) return false;
-      if (actCategoryTab === "ACTIVITY" && isMeal) return false;
+      if (actCategoryTab === "MEAL" && act.category !== "MEAL" && act.category !== "RESTAURANT") return false;
+      if (actCategoryTab === "ADVENTURE" && act.category !== "ADVENTURE") return false;
+      if (actCategoryTab === "SIGHTSEEING" && act.category !== "SIGHTSEEING") return false;
+      if (actCategoryTab === "OTHER" && (act.category === "MEAL" || act.category === "RESTAURANT" || act.category === "ADVENTURE" || act.category === "SIGHTSEEING")) return false;
       if (actSearch.trim()) {
         const q = actSearch.toLowerCase();
-        return (
-          act.name.toLowerCase().includes(q) ||
-          act.category.toLowerCase().includes(q)
-        );
+        return act.name.toLowerCase().includes(q) || act.category.toLowerCase().includes(q);
       }
       return true;
     });
   }, [defaultActivities, actCategoryTab, actSearch]);
 
+  // Filtered Vendors
+  const filteredVendors = useMemo(() => {
+    return defaultVendors.filter((vnd) => {
+      const isRest =
+        (vnd.category || "").toLowerCase().includes("restaurant") ||
+        (vnd.category || "").toLowerCase().includes("food") ||
+        vnd.category === "MEAL" ||
+        (vnd.vendorName && (
+          vnd.vendorName.toLowerCase().includes("dhaba") ||
+          vnd.vendorName.toLowerCase().includes("restaurant") ||
+          vnd.vendorName.toLowerCase().includes("cottage") ||
+          vnd.vendorName.toLowerCase().includes("cafe") ||
+          vnd.vendorName.toLowerCase().includes("bhojnalaya")
+        ));
+
+      if (vendorCategoryTab === "RESTAURANTS" && !isRest) return false;
+      if (vendorCategoryTab === "ACTIVITIES" && isRest) return false;
+
+      if (vendorSearch.trim()) {
+        const q = vendorSearch.toLowerCase();
+        return (
+          vnd.vendorName.toLowerCase().includes(q) ||
+          (vnd.location && vnd.location.toLowerCase().includes(q)) ||
+          (vnd.contactPerson && vnd.contactPerson.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    });
+  }, [defaultVendors, vendorCategoryTab, vendorSearch]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden bg-white rounded-2xl">
-        {/* WIZARD TOP STEP PROGRESS BAR */}
-        <div className="bg-slate-900 text-white p-5">
-          <h3 className="font-bold text-lg">Add Activity / Meal to Departure</h3>
+      <DialogContent className="max-w-3xl p-0 bg-white rounded-2xl flex flex-col max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden">
+        {/* WIZARD TOP STEP PROGRESS BAR — fixed height, never scrolls */}
+        <div className="bg-slate-900 text-white p-4 sm:p-5 shrink-0">
+          <h3 className="font-bold text-base sm:text-lg">Add Activity / Meal to Departure</h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Step {currentStep} of 4: {WIZARD_STEPS[currentStep - 1]?.label}
+            Step {currentStep} of 5: {WIZARD_STEPS[currentStep - 1].label}
           </p>
 
-          <div className="grid grid-cols-4 gap-2 mt-4">
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-2 mt-3 sm:mt-4">
             {WIZARD_STEPS.map((s) => {
               const Icon = s.icon;
               const isCurrent = s.step === currentStep;
@@ -321,7 +503,7 @@ export default function Activity5StepWizardModal({
                   key={s.step}
                   onClick={() => s.step < currentStep && setCurrentStep(s.step)}
                   className={cn(
-                    "flex flex-col items-center p-2 rounded-xl border text-center transition-all cursor-pointer",
+                    "flex flex-col items-center p-1.5 sm:p-2 rounded-xl border text-center transition-all cursor-pointer",
                     isCurrent
                       ? "bg-orange-600 border-orange-500 text-white font-bold shadow-md"
                       : isCompleted
@@ -329,15 +511,15 @@ export default function Activity5StepWizardModal({
                         : "bg-slate-800/50 border-slate-700/50 text-slate-500 opacity-60",
                   )}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1">
                     {isCompleted ? (
-                      <Check className="w-4 h-4 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
                     ) : (
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     )}
-                    <span className="text-xs">Step {s.step}</span>
+                    <span className="text-[10px] sm:text-xs">Step {s.step}</span>
                   </div>
-                  <span className="text-[11px] mt-1 line-clamp-1">
+                  <span className="text-[9px] sm:text-[11px] mt-0.5 sm:mt-1 line-clamp-1 hidden sm:block">
                     {s.label}
                   </span>
                 </div>
@@ -346,21 +528,21 @@ export default function Activity5StepWizardModal({
           </div>
         </div>
 
-        {/* WIZARD STEP CONTENTS */}
-        <div className="p-6 min-h-[320px]">
+        {/* WIZARD STEP CONTENTS — scrollable, takes remaining space */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 min-h-0">
           {/* STEP 1: SELECT DAY */}
           {currentStep === 1 && (
             <div className="space-y-4">
               <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
                 Which day of the itinerary is this activity or meal scheduled for?
               </h4>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
                 {daysList.map((day) => (
                   <div
                     key={day}
                     onClick={() => setSelectedDay(day)}
                     className={cn(
-                      "p-5 rounded-xl border text-center cursor-pointer transition-all",
+                      "p-3 sm:p-5 rounded-xl border text-center cursor-pointer transition-all",
                       selectedDay === day
                         ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20 text-orange-950 font-bold"
                         : "bg-white border-slate-200 hover:border-slate-300 text-slate-700",
@@ -401,7 +583,7 @@ export default function Activity5StepWizardModal({
             </div>
           )}
 
-          {/* STEP 2: SELECT ACTIVITY OR MEAL (WITH AUTO PARTNER MAPPING) */}
+          {/* STEP 2: SELECT ACTIVITY OR MEAL */}
           {currentStep === 2 && (
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -420,19 +602,22 @@ export default function Activity5StepWizardModal({
                 )}
               </div>
 
-              {/* Category Tabs & Search Bar — ONLY 2 TABS: RESTAURANT MEALS & ACTIVITIES */}
+              {/* Category Tabs & Search Bar */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                   {[
+                    { id: "ALL", label: "All Items" },
                     { id: "MEAL", label: "🍽️ Restaurant Meals" },
-                    { id: "ACTIVITY", label: "🎯 Activities" },
+                    { id: "ADVENTURE", label: "🏔️ Adventure" },
+                    { id: "SIGHTSEEING", label: "🏛️ Sightseeing" },
+                    { id: "OTHER", label: "🎉 Others" },
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => setActCategoryTab(tab.id)}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all border",
+                        "px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border",
                         actCategoryTab === tab.id
                           ? "bg-slate-900 text-white border-slate-900 shadow-xs"
                           : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50",
@@ -443,13 +628,13 @@ export default function Activity5StepWizardModal({
                   ))}
                 </div>
 
-                <div className="relative shrink-0 sm:w-48">
+                <div className="relative shrink-0 sm:w-44">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
                   <input
                     type="text"
                     value={actSearch}
                     onChange={(e) => setActSearch(e.target.value)}
-                    placeholder="Search restaurant meals / activities..."
+                    placeholder="Search meals / acts..."
                     className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
@@ -459,7 +644,7 @@ export default function Activity5StepWizardModal({
                 <div className="p-4 bg-orange-50/50 border-2 border-orange-200 rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-orange-900 uppercase">
-                      Create Custom Meal / Activity
+                      Create Custom Activity / Meal in Master Directory
                     </span>
                     <button
                       type="button"
@@ -472,7 +657,7 @@ export default function Activity5StepWizardModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Name
+                        Activity / Meal Name
                       </label>
                       <input
                         type="text"
@@ -492,7 +677,10 @@ export default function Activity5StepWizardModal({
                         className="w-full text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
                       >
                         <option value="MEAL">🍽️ RESTAURANT MEAL</option>
-                        <option value="ACTIVITY">🎯 ACTIVITY</option>
+                        <option value="ADVENTURE">🏔️ ADVENTURE</option>
+                        <option value="SIGHTSEEING">🏛️ SIGHTSEEING</option>
+                        <option value="ENTERTAINMENT">🎉 ENTERTAINMENT</option>
+                        <option value="TRANSIT">🚌 TRANSIT</option>
                       </select>
                     </div>
                     <div>
@@ -510,7 +698,7 @@ export default function Activity5StepWizardModal({
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Default Net Cost (₹)
+                        Default Vendor / Meal Cost (₹)
                       </label>
                       <input
                         type="number"
@@ -552,7 +740,7 @@ export default function Activity5StepWizardModal({
                       )}
                     >
                       <div className="flex items-start gap-2.5 min-w-0">
-                        <div className={cn("p-2 rounded-lg shrink-0 mt-0.5", isMeal ? "bg-amber-50 text-amber-700" : "bg-orange-50 text-orange-700")}>
+                        <div className={cn("p-2 rounded-lg shrink-0 mt-0.5", isMeal ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-700")}>
                           {isMeal ? <Utensils className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
                         </div>
                         <div className="min-w-0">
@@ -562,9 +750,9 @@ export default function Activity5StepWizardModal({
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className={cn(
                               "text-[10px] font-semibold px-1.5 py-0.5 rounded",
-                              isMeal ? "bg-amber-100 text-amber-800" : "bg-orange-100 text-orange-800",
+                              isMeal ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700",
                             )}>
-                              {isMeal ? "Restaurant Meal" : "Activity"}
+                              {act.category}
                             </span>
                             <span className="text-[11px] text-slate-400">
                               {act.defaultCapacity} pax
@@ -574,7 +762,7 @@ export default function Activity5StepWizardModal({
                       </div>
                       <div className="text-right shrink-0 pl-2">
                         <span className="text-[10px] text-slate-400 block">
-                          Net Rate
+                          Cost
                         </span>
                         <div className="font-black text-slate-900 text-sm">
                           ₹{act.defaultCost}
@@ -586,20 +774,243 @@ export default function Activity5StepWizardModal({
 
                 {filteredActivities.length === 0 && (
                   <div className="col-span-2 py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    <p className="text-xs text-slate-500">
-                      No {actCategoryTab === "MEAL" ? "restaurants/meals" : "activities"} configured in the Trip Vendor Directory.
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Use the "+ Create Custom Item" button above to add one.
-                    </p>
+                    <p className="text-xs text-slate-500">No items found matching filter</p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* STEP 3: PRICING & COMMERCIALS */}
+          {/* STEP 3: SELECT VENDOR (FILTER RESTAURANTS VS ACTIVITIES) */}
           {currentStep === 3 && (
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                    Select Partner / Vendor
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Feeded directly from this trip's Vendor Directory
+                  </p>
+                </div>
+
+                {/* Vendor Category Filter */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                  {[
+                    { id: "RESTAURANTS", label: "🍽️ Restaurants & Food Partners" },
+                    { id: "ACTIVITIES", label: "🎯 Activity Providers" },
+                    { id: "ALL", label: "All Vendors" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setVendorCategoryTab(tab.id)}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border",
+                        vendorCategoryTab === tab.id
+                          ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50",
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vendor Search Bar */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={vendorSearch}
+                  onChange={(e) => setVendorSearch(e.target.value)}
+                  placeholder="Search restaurant or vendor partner by name, location, contact..."
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                {filteredVendors.map((vnd) => {
+                  const isSelected = selectedVendor?.vendorId === vnd.vendorId;
+                  const isRest =
+                    (vnd.category || "").toLowerCase().includes("restaurant") ||
+                    (vnd.category || "").toLowerCase().includes("food");
+
+                  return (
+                    <div
+                      key={vnd.vendorId}
+                      onClick={() => handleSelectVendor(vnd)}
+                      className={cn(
+                        "p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between",
+                        isSelected
+                          ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20 shadow-xs"
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs",
+                      )}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={cn(
+                          "p-2.5 rounded-xl shrink-0",
+                          isRest ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700",
+                        )}>
+                          {isRest ? <Utensils className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h5 className="font-bold text-slate-900 text-sm">
+                              {vnd.vendorName}
+                            </h5>
+                            <span className={cn(
+                              "text-[10px] font-bold px-2 py-0.5 rounded",
+                              isRest ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700",
+                            )}>
+                              {isRest ? "Restaurant" : vnd.seasonType || "Partner"}
+                            </span>
+                            {vnd.location && (
+                              <span className="text-[10px] text-slate-500 flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
+                                <MapPin className="w-2.5 h-2.5 text-slate-400" />
+                                {vnd.location}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                            {vnd.contactPerson && (
+                              <span className="text-slate-600 font-medium truncate max-w-[150px]">
+                                {vnd.contactPerson}
+                              </span>
+                            )}
+                            {vnd.contactPhone && (
+                              <span className="text-slate-400 tabular-nums flex items-center gap-0.5">
+                                <Phone className="w-2.5 h-2.5 text-slate-400" />
+                                {vnd.contactPhone}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-0.5 text-amber-500 font-semibold">
+                              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                              <span>{vnd.rating || 4.8}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0 pl-3">
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block">
+                            Net Rate
+                          </span>
+                          <div className="text-sm font-black text-slate-900">
+                            ₹{vnd.netCost || 0}/pax
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          className={cn(
+                            "h-8 px-3 text-xs font-bold",
+                            isSelected &&
+                              "bg-orange-600 hover:bg-orange-700 text-white",
+                          )}
+                        >
+                          {isSelected ? "Selected" : "Assign"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredVendors.length === 0 && (
+                  <div className="py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <p className="text-xs text-slate-500">
+                      No {vendorCategoryTab === "RESTAURANTS" ? "restaurants" : "vendors"} found in this category.
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Add from the Trip Vendors Directory or create a custom partner below.
+                    </p>
+                  </div>
+                )}
+
+                {/* + ADD NEW OR MISCELLANEOUS VENDOR / COST */}
+                {!isCreatingVendor ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingVendor(true)}
+                    className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 hover:border-orange-400 bg-slate-50/50 hover:bg-orange-50/30 text-xs font-bold text-slate-700 hover:text-orange-600 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />+ Add Custom Restaurant / Vendor Partner
+                  </button>
+                ) : (
+                  <div className="p-4 rounded-xl border border-orange-300 bg-orange-50/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-orange-900 uppercase tracking-wider">
+                        Add Custom Partner & Net Cost
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatingVendor(false)}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Partner / Restaurant Name
+                        </label>
+                        <input
+                          type="text"
+                          value={newVendorName}
+                          onChange={(e) => setNewVendorName(e.target.value)}
+                          placeholder="e.g. Bal Gopal, Musafir Dhaba"
+                          className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Location / City
+                        </label>
+                        <input
+                          type="text"
+                          value={newVendorLocation}
+                          onChange={(e) => setNewVendorLocation(e.target.value)}
+                          placeholder="e.g. Kasol, Kullu, Manali"
+                          className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Net Meal / Cost (₹/pax)
+                        </label>
+                        <input
+                          type="number"
+                          value={newVendorCost}
+                          onChange={(e) => setNewVendorCost(e.target.value)}
+                          placeholder="250"
+                          className="w-full px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleCreateNewVendor}
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
+                      >
+                        Save & Select Partner
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: PRICING (EDITABLE ADULT, CHILD, VENDOR COST, PROFIT) */}
+          {currentStep === 4 && (
             <div className="space-y-5">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div>
@@ -607,7 +1018,8 @@ export default function Activity5StepWizardModal({
                     Configure Activity Type & Pricing
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Select if company pays (included in trip) or customer pays (optional add-on)
+                    Select if company pays (included) or customer pays (optional
+                    add-on)
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -735,8 +1147,8 @@ export default function Activity5StepWizardModal({
             </div>
           )}
 
-          {/* STEP 4: PASSENGERS ALLOCATION CHECKLIST */}
-          {currentStep === 4 && (
+          {/* STEP 5: PASSENGERS ALLOCATION CHECKLIST */}
+          {currentStep === 5 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
@@ -766,38 +1178,31 @@ export default function Activity5StepWizardModal({
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-[240px] overflow-y-auto">
-                {defaultPax.length > 0 ? (
-                  defaultPax.map((pax) => {
-                    const isChecked = selectedPaxIds.includes(pax.id);
-                    return (
-                      <div
-                        key={pax.id}
-                        onClick={() => handleTogglePax(pax.id)}
-                        className={cn(
-                          "p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 select-none",
-                          isChecked
-                            ? "bg-orange-50 border-orange-300 text-orange-950 font-bold"
-                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
-                        )}
-                      >
-                        <span className="text-base">{isChecked ? "☑" : "☐"}</span>
-                        <span className="text-xs line-clamp-1">{pax.name}</span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="col-span-2 sm:col-span-4 py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    <p className="text-xs font-semibold text-slate-700">No passengers booked on this departure yet</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">All passengers who book this departure will automatically be included in this activity.</p>
-                  </div>
-                )}
+                {defaultPax.map((pax) => {
+                  const isChecked = selectedPaxIds.includes(pax.id);
+                  return (
+                    <div
+                      key={pax.id}
+                      onClick={() => handleTogglePax(pax.id)}
+                      className={cn(
+                        "p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 select-none",
+                        isChecked
+                          ? "bg-orange-50 border-orange-300 text-orange-950 font-bold"
+                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
+                      )}
+                    >
+                      <span className="text-base">{isChecked ? "☑" : "☐"}</span>
+                      <span className="text-xs line-clamp-1">{pax.name}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
 
-        {/* WIZARD BOTTOM ACTIONS BAR */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        {/* WIZARD BOTTOM ACTIONS BAR — always visible, never scrolls */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <div>
             {currentStep > 1 && (
               <Button
@@ -822,7 +1227,7 @@ export default function Activity5StepWizardModal({
               Cancel
             </Button>
 
-            {currentStep < 4 ? (
+            {currentStep < 5 ? (
               <Button
                 type="button"
                 onClick={() => setCurrentStep((prev) => prev + 1)}

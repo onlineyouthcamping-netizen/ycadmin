@@ -23,12 +23,19 @@ import {
   MessageSquare,
   HelpCircle,
   Activity,
+  Banknote,
+  ArrowUpRight,
+  Smartphone,
+  Building2,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { bookingVerificationService } from "@/services/bookingVerification.service";
 import { trainTicketService } from "@/services/trainTicket.service";
 import { bookingsService } from "@/services/bookings.service";
+import { financeControllerService } from "@/services/financeController.service";
+import type { IncomingPaymentItem, VendorPaymentRequestItem } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
 import { hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
@@ -167,6 +174,17 @@ export default function VerificationQueuePage({
   const [bookingPendingCount, setBookingPendingCount] = useState(0);
   const [trainPendingCount, setTrainPendingCount] = useState(0);
 
+  // Quick-filter view mode
+  type ViewMode = "booking" | "station" | "outgoing";
+  const [viewMode, setViewMode] = useState<ViewMode>("booking");
+  const [stationItems, setStationItems] = useState<IncomingPaymentItem[]>([]);
+  const [outgoingItems, setOutgoingItems] = useState<VendorPaymentRequestItem[]>([]);
+  const [stationPendingCount, setStationPendingCount] = useState(0);
+  const [outgoingPendingCount, setOutgoingPendingCount] = useState(0);
+  const [subLoading, setSubLoading] = useState(false);
+  const [stationStatusFilter, setStationStatusFilter] = useState("");
+  const [outgoingStatusFilter, setOutgoingStatusFilter] = useState("");
+
   // Panel state
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
     null,
@@ -283,9 +301,27 @@ export default function VerificationQueuePage({
     setLoading(false);
   }, [page, activeTab, activeQueue]);
 
+  const loadSubQueues = useCallback(async () => {
+    try {
+      const [inRes, outRes] = await Promise.all([
+        financeControllerService.getIncomingQueue({ limit: 200 }).catch(() => ({ data: [], pagination: {} })),
+        financeControllerService.getVendorQueue({ limit: 200 }).catch(() => ({ data: [], pagination: {} })),
+      ]);
+      const incoming: IncomingPaymentItem[] = inRes.data || [];
+      const vendor: VendorPaymentRequestItem[] = outRes.data || [];
+      setStationItems(incoming);
+      setOutgoingItems(vendor);
+      setStationPendingCount(incoming.filter((i) => i.status === "PENDING" || i.status === "PENDING_VERIFICATION").length);
+      setOutgoingPendingCount(vendor.filter((v) => v.paymentStatus === "pending").length);
+    } catch {
+      // silent — sub-queue errors don't break main queue
+    }
+  }, []);
+
   useEffect(() => {
     loadQueue();
-  }, [loadQueue]);
+    loadSubQueues();
+  }, [loadQueue, loadSubQueues]);
 
   useEffect(() => {
     setPage(1);
@@ -453,6 +489,73 @@ export default function VerificationQueuePage({
     }
   };
 
+  const handleStationAction = async (id: string, action: "VERIFY" | "REJECT") => {
+    try {
+      const reason = action === "REJECT" ? prompt("Enter rejection reason (mandatory):") : undefined;
+      if (action === "REJECT" && (!reason || !reason.trim())) {
+        toast.error("Rejection reason is required");
+        return;
+      }
+      await financeControllerService.performIncomingAction(id, {
+        action,
+        reason: reason || undefined,
+      });
+      toast.success(action === "VERIFY" ? "Payment verified" : "Payment rejected");
+      loadSubQueues();
+    } catch {
+      toast.error("Action failed");
+    }
+  };
+
+  const handleOutgoingAction = async (id: string, action: "APPROVE" | "REJECT") => {
+    try {
+      const reason = action === "REJECT" ? prompt("Enter rejection reason (mandatory):") : undefined;
+      if (action === "REJECT" && (!reason || !reason.trim())) {
+        toast.error("Rejection reason is required");
+        return;
+      }
+      await financeControllerService.performVendorAction(id, {
+        action,
+        reason: reason || undefined,
+      });
+      toast.success(action === "APPROVE" ? "Payout approved" : "Payout rejected");
+      loadSubQueues();
+    } catch {
+      toast.error("Action failed");
+    }
+  };
+
+  // Filtered station & outgoing items
+  const filteredStationItems = useMemo(() => {
+    let list = stationItems;
+    if (stationStatusFilter) list = list.filter((i) => i.status === stationStatusFilter);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (i) =>
+          i.bookingId?.toLowerCase().includes(q) ||
+          i.customerName?.toLowerCase().includes(q) ||
+          i.referenceNumber?.toLowerCase().includes(q) ||
+          i.tripName?.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [stationItems, stationStatusFilter, search]);
+
+  const filteredOutgoingItems = useMemo(() => {
+    let list = outgoingItems;
+    if (outgoingStatusFilter) list = list.filter((i) => i.paymentStatus === outgoingStatusFilter);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (i) =>
+          i.vendorName?.toLowerCase().includes(q) ||
+          i.tripTitle?.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [outgoingItems, outgoingStatusFilter, search]);
+
   return (
     <div
       className={cn(
@@ -534,6 +637,60 @@ export default function VerificationQueuePage({
         </div>
       )}
 
+      {/* QUICK FILTER TOGGLE BAR */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {(
+          [
+            {
+              key: "booking" as ViewMode,
+              label: "Booking Verification",
+              icon: <ShieldCheck className="w-3.5 h-3.5" />,
+              count: bookingPendingCount,
+              countColor: "bg-orange-100 text-[#F97316]",
+              activeColor: "bg-white border-[#F97316] text-[#F97316] shadow-sm",
+              inactiveColor: "text-[#74839A] hover:text-[#162B45] hover:bg-white/70",
+            },
+            {
+              key: "station" as ViewMode,
+              label: "Station Payments",
+              icon: <Banknote className="w-3.5 h-3.5" />,
+              count: stationPendingCount,
+              countColor: "bg-amber-100 text-amber-700",
+              activeColor: "bg-white border-amber-400 text-amber-700 shadow-sm",
+              inactiveColor: "text-[#74839A] hover:text-[#162B45] hover:bg-white/70",
+            },
+            {
+              key: "outgoing" as ViewMode,
+              label: "Outgoing Payments",
+              icon: <ArrowUpRight className="w-3.5 h-3.5" />,
+              count: outgoingPendingCount,
+              countColor: "bg-violet-100 text-violet-700",
+              activeColor: "bg-white border-violet-500 text-violet-700 shadow-sm",
+              inactiveColor: "text-[#74839A] hover:text-[#162B45] hover:bg-white/70",
+            },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setViewMode(tab.key)}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-2 rounded-[6px] border text-[11px] font-bold transition-all",
+              viewMode === tab.key
+                ? tab.activeColor + " border"
+                : "border-[#E3EAF2] bg-white/50 " + tab.inactiveColor,
+            )}
+          >
+            {tab.icon}
+            {tab.label}
+            {tab.count > 0 && (
+              <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded", tab.countColor)}>
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* 2. APPROVAL SUMMARY KPI ROW */}
       <div className="grid grid-cols-4 gap-4">
         {/* KPI 1: Pending Review */}
@@ -609,7 +766,280 @@ export default function VerificationQueuePage({
         </div>
       </div>
 
+      {/* ── STATION PAYMENTS TABLE ── */}
+      {viewMode === "station" && (
+        <div className="bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden">
+          <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <Banknote className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-[13px] font-bold text-[#162B45] uppercase tracking-wide font-montserrat">
+                  Station Payment Verification
+                </h2>
+                <p className="text-[10.5px] text-[#74839A] font-semibold mt-0.5">
+                  UPI & cash collections pending Finance Controller review
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded">
+                {[
+                  { key: "", label: "All" },
+                  { key: "PENDING", label: "Pending" },
+                  { key: "PENDING_VERIFICATION", label: "FC Review" },
+                  { key: "APPROVED", label: "Approved" },
+                  { key: "REJECTED", label: "Rejected" },
+                ].map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setStationStatusFilter(t.key)}
+                    className={cn(
+                      "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
+                      stationStatusFilter === t.key
+                        ? "bg-white text-[#162B45] shadow-xs"
+                        : "text-[#74839A] hover:text-[#162B45]",
+                    )}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            {filteredStationItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 h-[180px]">
+                <Banknote className="w-8 h-8 text-slate-300 mb-2" />
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">No station payments found</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-[#E3EAF2] text-[9.5px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
+                    <th className="px-3.5 py-2.5">Booking / Customer</th>
+                    <th className="px-3.5 py-2.5">Trip</th>
+                    <th className="px-3.5 py-2.5">Amount</th>
+                    <th className="px-3.5 py-2.5">Mode / Account</th>
+                    <th className="px-3.5 py-2.5">Ref / UTR</th>
+                    <th className="px-3.5 py-2.5">Approval Status</th>
+                    <th className="px-3.5 py-2.5">Submitted</th>
+                    <th className="px-3.5 py-2.5 text-right pr-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E3EAF2]">
+                  {filteredStationItems.map((item) => {
+                    const isPending = item.status === "PENDING" || item.status === "PENDING_VERIFICATION";
+                    const isApproved = item.status === "APPROVED" || item.status === "VERIFIED";
+                    const isUpi = item.paymentMode === "UPI";
+                    return (
+                      <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors text-[11px] font-semibold text-[#162B45] group h-[46px]">
+                        <td className="px-3.5 py-2">
+                          <div className="font-bold text-[#F97316] font-mono text-[10px]">{item.bookingId}</div>
+                          <div className="text-[11px] font-semibold text-[#162B45] truncate max-w-[130px]">{item.customerName}</div>
+                          {item.customerPhone && (
+                            <div className="text-[9px] text-[#74839A]">{item.customerPhone}</div>
+                          )}
+                        </td>
+                        <td className="px-3.5 py-2 truncate max-w-[120px] text-[11px]">{item.tripName}</td>
+                        <td className="px-3.5 py-2 font-black text-[#162B45]">
+                          ₹{Number(item.amount || 0).toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-3.5 py-2">
+                          <div className="flex items-center gap-1">
+                            {isUpi ? (
+                              <Smartphone className="w-3 h-3 text-teal-500 shrink-0" />
+                            ) : (
+                              <Banknote className="w-3 h-3 text-emerald-500 shrink-0" />
+                            )}
+                            <span className="text-[10px] font-bold uppercase">{item.paymentMode}</span>
+                          </div>
+                          <div className="text-[9px] text-[#74839A] mt-0.5 truncate max-w-[110px]">
+                            {item.collectionAccountName || item.bankName || "—"}
+                          </div>
+                        </td>
+                        <td className="px-3.5 py-2 font-mono text-[10px] text-[#74839A]">
+                          {item.referenceNumber || "—"}
+                        </td>
+                        <td className="px-3.5 py-2">
+                          <span className={cn(
+                            "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border",
+                            isApproved
+                              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                              : item.status === "REJECTED"
+                                ? "bg-red-50 border-red-200 text-red-600"
+                                : "bg-amber-50 border-amber-200 text-amber-700",
+                          )}>
+                            <span className={cn("w-1 h-1 rounded-full", isApproved ? "bg-emerald-500" : item.status === "REJECTED" ? "bg-red-500" : "bg-amber-500")} />
+                            {isApproved ? "Verified" : item.status === "REJECTED" ? "Rejected" : "Pending FC Review"}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2 text-[9px] text-[#74839A] font-mono">
+                          {safeFormatDate(item.createdAt, { day: "2-digit", month: "short" })}
+                          <div className="text-[8px]">{item.submittedBy}</div>
+                        </td>
+                        <td className="px-3.5 py-2 text-right pr-4">
+                          {isPending && canVerify && (
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleStationAction(item.id, "VERIFY")}
+                                className="flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded text-[9px] font-bold transition-colors"
+                              >
+                                <Check className="w-3 h-3" /> Verify
+                              </button>
+                              <button
+                                onClick={() => handleStationAction(item.id, "REJECT")}
+                                className="flex items-center gap-1 px-2 py-1 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded text-[9px] font-bold transition-colors"
+                              >
+                                <X className="w-3 h-3" /> Reject
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── OUTGOING PAYMENTS TABLE ── */}
+      {viewMode === "outgoing" && (
+        <div className="bg-white border border-[#E3EAF2] rounded-[8px] shadow-[0_1px_2px_rgba(15,23,42,0.02)] overflow-hidden">
+          <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shrink-0">
+                <ArrowUpRight className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-[13px] font-bold text-[#162B45] uppercase tracking-wide font-montserrat">
+                  Outgoing Payments
+                </h2>
+                <p className="text-[10.5px] text-[#74839A] font-semibold mt-0.5">
+                  Vendor & partner payouts pending Finance Controller approval
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded">
+                {[
+                  { key: "", label: "All" },
+                  { key: "pending", label: "Pending" },
+                  { key: "partial", label: "Partial" },
+                  { key: "verified", label: "Approved" },
+                  { key: "paid", label: "Paid" },
+                ].map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setOutgoingStatusFilter(t.key)}
+                    className={cn(
+                      "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
+                      outgoingStatusFilter === t.key
+                        ? "bg-white text-[#162B45] shadow-xs"
+                        : "text-[#74839A] hover:text-[#162B45]",
+                    )}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            {filteredOutgoingItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 h-[180px]">
+                <ArrowUpRight className="w-8 h-8 text-slate-300 mb-2" />
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">No outgoing payments found</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-[#E3EAF2] text-[9.5px] font-bold text-[#74839A] uppercase tracking-wider font-montserrat">
+                    <th className="px-3.5 py-2.5">Vendor</th>
+                    <th className="px-3.5 py-2.5">Trip</th>
+                    <th className="px-3.5 py-2.5">Agreed</th>
+                    <th className="px-3.5 py-2.5">Paid</th>
+                    <th className="px-3.5 py-2.5">Outstanding</th>
+                    <th className="px-3.5 py-2.5">Mode</th>
+                    <th className="px-3.5 py-2.5">Status</th>
+                    <th className="px-3.5 py-2.5 text-right pr-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E3EAF2]">
+                  {filteredOutgoingItems.map((item) => {
+                    const isPending = item.paymentStatus === "pending";
+                    const isApproved = item.paymentStatus === "verified" || item.paymentStatus === "paid";
+                    return (
+                      <tr key={item.id} className="hover:bg-[#F8FAFD] transition-colors text-[11px] font-semibold text-[#162B45] group h-[46px]">
+                        <td className="px-3.5 py-2">
+                          <div className="font-bold text-[#162B45]">{item.vendorName}</div>
+                          <div className="text-[9px] text-[#74839A]">{item.vendorType}{item.vendorPhone ? ` · ${item.vendorPhone}` : ""}</div>
+                        </td>
+                        <td className="px-3.5 py-2 truncate max-w-[130px]">
+                          <div className="text-[11px] font-semibold truncate">{item.tripTitle}</div>
+                          <div className="text-[9px] text-[#74839A]">{item.tripLocation}</div>
+                        </td>
+                        <td className="px-3.5 py-2 font-bold text-[#162B45]">
+                          ₹{Number(item.agreedTariff || 0).toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-3.5 py-2 text-emerald-600 font-semibold">
+                          ₹{Number(item.paidAmount || 0).toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-3.5 py-2">
+                          <span className={cn("font-black", item.outstandingAmount > 0 ? "text-red-500" : "text-emerald-600")}>
+                            ₹{Number(item.outstandingAmount || 0).toLocaleString("en-IN")}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2 text-[10px] text-[#74839A]">
+                          {item.outgoingPaymentMode || "—"}
+                        </td>
+                        <td className="px-3.5 py-2">
+                          <span className={cn(
+                            "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border",
+                            isApproved
+                              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                              : item.paymentStatus === "partial"
+                                ? "bg-amber-50 border-amber-200 text-amber-700"
+                                : "bg-violet-50 border-violet-200 text-violet-700",
+                          )}>
+                            <span className={cn("w-1 h-1 rounded-full", isApproved ? "bg-emerald-500" : item.paymentStatus === "partial" ? "bg-amber-500" : "bg-violet-500")} />
+                            {isApproved ? "Approved" : item.paymentStatus === "partial" ? "Partial" : "Pending Approval"}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2 text-right pr-4">
+                          {isPending && canVerify && (
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleOutgoingAction(item.id, "APPROVE")}
+                                className="flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded text-[9px] font-bold transition-colors"
+                              >
+                                <Check className="w-3 h-3" /> Approve
+                              </button>
+                              <button
+                                onClick={() => handleOutgoingAction(item.id, "REJECT")}
+                                className="flex items-center gap-1 px-2 py-1 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded text-[9px] font-bold transition-colors"
+                              >
+                                <X className="w-3 h-3" /> Reject
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 3. APPROVAL WORKSPACE */}
+      {viewMode === "booking" && (
       <div className="flex items-start gap-4">
         {/* LEFT PANEL: Approval Type Navigation (if sideNav not hidden) */}
         {!hideSideNav && (
@@ -1128,6 +1558,7 @@ export default function VerificationQueuePage({
           )}
         </div>
       </div>
+      )} {/* end viewMode === "booking" */}
 
       {/* 8. SUPPORTING DETAILS CARDS (Balanced spacing, 130px - 150px height) */}
       <div className="grid grid-cols-2 gap-4">
