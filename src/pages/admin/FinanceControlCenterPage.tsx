@@ -205,14 +205,13 @@ export default function FinanceControlCenterPage({
   const [ticketNotes, setTicketNotes] = useState("");
   const [confirmTicketVerifyId, setConfirmTicketVerifyId] = useState<string | null>(null);
 
-  // ── Departure / Expense confirm ──
-  const [pendingQueueAction, setPendingQueueAction] = useState<{
+  // ── Unified Departure / Expense Review Modal ──
+  const [selectedQueueItem, setSelectedQueueItem] = useState<{
     kind: "departure" | "expense";
-    id: string;
-    action: "APPROVE" | "REJECT" | "PAID";
-    title: string;
+    item: DeparturePayoutItem | MiscellaneousExpenseItem;
   } | null>(null);
-  const [queueActionReason, setQueueActionReason] = useState("");
+  const [queueReviewAction, setQueueReviewAction] = useState<"APPROVE" | "REJECT">("APPROVE");
+  const [queueActionNotes, setQueueActionNotes] = useState("");
 
   // ── Refunds & Credit Notes Modals ──
   const [refundSubTab, setRefundSubTab] = useState<"ALL" | "PENDING_APPROVAL" | "COMPLETED" | "REJECTED">("ALL");
@@ -495,29 +494,38 @@ export default function FinanceControlCenterPage({
     }
   };
 
+  const handleOpenQueueReview = (
+    kind: "departure" | "expense",
+    item: DeparturePayoutItem | MiscellaneousExpenseItem
+  ) => {
+    setSelectedQueueItem({ kind, item });
+    setQueueReviewAction("APPROVE");
+    setQueueActionNotes("");
+  };
+
   const handleQueueActionConfirm = async () => {
-    if (!pendingQueueAction) return;
-    if (pendingQueueAction.action === "REJECT" && !queueActionReason.trim()) {
+    if (!selectedQueueItem) return;
+    if (queueReviewAction === "REJECT" && !queueActionNotes.trim()) {
       toast.error("Rejection requires an explicit reason");
       return;
     }
     setIsSubmittingAction(true);
     try {
-      if (pendingQueueAction.kind === "departure") {
-        await financeControllerService.performDepartureAction(pendingQueueAction.id, {
-          action: pendingQueueAction.action,
-          notes: queueActionReason.trim() || undefined,
+      if (selectedQueueItem.kind === "departure") {
+        await financeControllerService.performDepartureAction(selectedQueueItem.item.id, {
+          action: queueReviewAction,
+          notes: queueActionNotes.trim() || undefined,
         });
       } else {
-        await financeControllerService.performExpenseAction(pendingQueueAction.id, {
-          action: pendingQueueAction.action === "PAID" ? "APPROVE" : pendingQueueAction.action,
-          notes: queueActionReason.trim() || undefined,
-          reason: queueActionReason.trim() || undefined,
+        await financeControllerService.performExpenseAction(selectedQueueItem.item.id, {
+          action: queueReviewAction,
+          notes: queueActionNotes.trim() || undefined,
+          reason: queueReviewAction === "REJECT" ? queueActionNotes.trim() || undefined : undefined,
         });
       }
-      toast.success("Decision recorded");
-      setPendingQueueAction(null);
-      setQueueActionReason("");
+      toast.success(queueReviewAction === "APPROVE" ? "Payment approved" : "Payment rejected");
+      setSelectedQueueItem(null);
+      setQueueActionNotes("");
       fetchAllData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to record decision");
@@ -1352,18 +1360,14 @@ export default function FinanceControlCenterPage({
                     <td className={cn(financeTd, "text-[11px] text-slate-500")}>{item.submittedBy} · {safeFormatDate(item.submittedAt)}</td>
                     <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
                     <td className={cn(financeTd, "text-right")}>
-                      <div className="flex justify-end gap-1.5">
-                        <FinanceApproveButton
-                          onClick={() => setPendingQueueAction({ kind: "departure", id: item.id, action: "APPROVE", title: item.title })}
-                        >
-                          Approve
-                        </FinanceApproveButton>
-                        <FinanceRejectButton
-                          onClick={() => setPendingQueueAction({ kind: "departure", id: item.id, action: "REJECT", title: item.title })}
-                        >
-                          Reject
-                        </FinanceRejectButton>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenQueueReview("departure", item)}
+                        className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
+                      >
+                        Review
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -1402,18 +1406,14 @@ export default function FinanceControlCenterPage({
                     <td className={cn(financeTd, "text-[11px] text-slate-500")}>{item.submittedBy} · {safeFormatDate(item.submittedAt)}</td>
                     <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
                     <td className={cn(financeTd, "text-right")}>
-                      <div className="flex justify-end gap-1.5">
-                        <FinanceApproveButton
-                          onClick={() => setPendingQueueAction({ kind: "expense", id: item.id, action: "APPROVE", title: item.title })}
-                        >
-                          Approve
-                        </FinanceApproveButton>
-                        <FinanceRejectButton
-                          onClick={() => setPendingQueueAction({ kind: "expense", id: item.id, action: "REJECT", title: item.title })}
-                        >
-                          Reject
-                        </FinanceRejectButton>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenQueueReview("expense", item)}
+                        className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
+                      >
+                        Review
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -2971,31 +2971,95 @@ export default function FinanceControlCenterPage({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(pendingQueueAction)} onOpenChange={(open) => !open && setPendingQueueAction(null)}>
-        <DialogContent className="max-w-md bg-white">
+      {/* ── Unified Departure / Expense Review Modal ── */}
+      <Dialog open={Boolean(selectedQueueItem)} onOpenChange={(open) => !open && setSelectedQueueItem(null)}>
+        <DialogContent className="max-w-lg bg-white">
           <DialogHeader>
-            <DialogTitle className={cn("text-base font-bold", pendingQueueAction?.action === "REJECT" ? "text-rose-700" : "text-[#0B1528]")}>
-              {pendingQueueAction?.action === "REJECT" ? "Reject" : "Approve"} {pendingQueueAction?.kind === "expense" ? "expense" : "payout"}
+            <DialogTitle className="text-base font-bold text-[#0B1528]">
+              Review {selectedQueueItem?.kind === "expense" ? "Expense" : "Departure Payout"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              {pendingQueueAction?.title}. This is recorded in the finance audit trail.
+              {selectedQueueItem?.item.title}. Decision is recorded in the finance audit trail.
             </DialogDescription>
           </DialogHeader>
-          {pendingQueueAction?.action === "REJECT" && (
-            <div className="space-y-1 text-xs">
-              <label className="text-[10px] font-bold uppercase text-rose-600">Reason</label>
-              <Textarea value={queueActionReason} onChange={(e) => setQueueActionReason(e.target.value)} className="text-xs resize-none h-20 border-rose-300" />
+
+          {selectedQueueItem && (
+            <div className="space-y-3 py-1 text-xs">
+              {/* Summary row */}
+              {selectedQueueItem.kind === "departure" ? (
+                <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border">
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">Recipient</div>
+                    <div className="font-semibold text-slate-800">{(selectedQueueItem.item as DeparturePayoutItem).recipient}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">Trip</div>
+                    <div className="font-mono text-slate-600">{(selectedQueueItem.item as DeparturePayoutItem).tripCode}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">Amount</div>
+                    <MoneyAmount value={selectedQueueItem.item.amount} />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border">
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">Category</div>
+                    <div className="font-semibold text-slate-800">{(selectedQueueItem.item as MiscellaneousExpenseItem).category}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">Mode</div>
+                    <div className="text-slate-600">{(selectedQueueItem.item as MiscellaneousExpenseItem).paymentMode}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">Amount</div>
+                    <MoneyAmount value={selectedQueueItem.item.amount} tone="debit" />
+                  </div>
+                </div>
+              )}
+
+              {/* Submitted by */}
+              <div className="text-[11px] text-slate-500">
+                Submitted by <span className="font-semibold text-slate-700">{selectedQueueItem.item.submittedBy}</span>
+                {" · "}{safeFormatDate(selectedQueueItem.item.submittedAt)}
+              </div>
+
+              {/* Action selector */}
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Decision</label>
+                <Select value={queueReviewAction} onValueChange={(v: any) => setQueueReviewAction(v)}>
+                  <SelectTrigger className="h-8 text-xs bg-white mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="APPROVE">Approve</SelectItem>
+                    <SelectItem value="REJECT">Reject</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Notes — required on reject */}
+              <div>
+                <label className={cn("text-[10px] font-bold uppercase", queueReviewAction === "REJECT" ? "text-rose-600" : "text-slate-500")}>
+                  {queueReviewAction === "REJECT" ? "Reason (required)" : "Notes (optional)"}
+                </label>
+                <Textarea
+                  value={queueActionNotes}
+                  onChange={(e) => setQueueActionNotes(e.target.value)}
+                  placeholder={queueReviewAction === "REJECT" ? "Explain why this is being rejected…" : "Internal notes for the audit trail…"}
+                  className={cn("text-xs resize-none h-16 mt-1", queueReviewAction === "REJECT" && "border-rose-300")}
+                />
+              </div>
             </div>
           )}
+
           <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPendingQueueAction(null)} className="h-8 text-xs">Cancel</Button>
+            <Button variant="outline" size="sm" onClick={() => setSelectedQueueItem(null)} className="h-8 text-xs">Cancel</Button>
             <Button
               size="sm"
               onClick={handleQueueActionConfirm}
               disabled={isSubmittingAction}
-              className={cn("h-8 text-xs font-bold text-white", pendingQueueAction?.action === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700")}
+              className={cn("h-8 text-xs font-bold text-white", queueReviewAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700")}
             >
-              {isSubmittingAction ? "Saving…" : "Confirm"}
+              {isSubmittingAction ? "Saving…" : queueReviewAction === "APPROVE" ? "Confirm Approval" : "Confirm Rejection"}
             </Button>
           </DialogFooter>
         </DialogContent>
