@@ -2098,6 +2098,7 @@ export default function DepartureHubPage() {
     setPassengerAllocations({});
     setActivitiesList([]);
     setDbGuides([]);
+    setAllocFleet([]);
     setChecklistTasks([]);
     setItineraryList([]);
     try {
@@ -2182,8 +2183,8 @@ export default function DepartureHubPage() {
       setOpsHotels(hotels);
 
       // 8. Ops Transports & Guides
-      const transports =
-        transportRes.status === "fulfilled" ? transportRes.value?.data?.data || [] : [];
+      const transportFetched = transportRes.status === "fulfilled";
+      const transports = transportFetched ? transportRes.value?.data?.data || [] : [];
       const guides =
         guidesRes.status === "fulfilled" ? guidesRes.value?.data?.data || [] : [];
       setDbGuides(guides);
@@ -2243,7 +2244,7 @@ export default function DepartureHubPage() {
         };
       });
 
-      // Fleet
+      // Fleet — only update state when transport API actually responded (don't wipe on error)
       const initialFleet = transports.map((t: any, idx: number, arr: any[]) => {
         const rawName =
           t.name ||
@@ -2276,7 +2277,9 @@ export default function DepartureHubPage() {
           vendor: t.vendor?.name || t.notes || "Self-driven",
         };
       });
-      setAllocFleet(initialFleet);
+      if (transportFetched) {
+        setAllocFleet(initialFleet);
+      }
 
       // Mapped tripVendors
       const mappedVendors = [
@@ -2498,12 +2501,13 @@ export default function DepartureHubPage() {
             fleetNameMap[f.id] = f.name;
           });
 
-          // If no initial fleet is saved in transport records, auto-restore fleet from saved vehicles
+          // If no initial fleet is saved in transport records, auto-restore fleet from saved vehicles.
+          // This handles the case where getTransportFleet failed or returned empty unexpectedly.
           const distinctFleetIds = [...new Set((vehicles as any[]).map((v: any) => v.fleetId).filter(Boolean))] as string[];
           if (distinctFleetIds.length > 0 && initialFleet.length === 0) {
             const restoredFleet = distinctFleetIds.map((fId, idx) => ({
               id: fId,
-              name: fId === "tempo-1" ? "Tempo 1" : (fId.startsWith("tempo") ? `Tempo ${idx + 1}` : fId),
+              name: fId === "tempo-1" ? "Tempo 1" : (fId.startsWith("tempo") ? `Tempo ${idx + 1}` : `Tempo ${idx + 1}`),
               vehicleType: "Tempo Traveller",
               capacity: 17,
               cost: 0,
@@ -2513,6 +2517,23 @@ export default function DepartureHubPage() {
             restoredFleet.forEach((f) => {
               fleetNameMap[f.id] = f.name;
             });
+
+            // Re-fetch actual fleet details in background to get proper names/capacity
+            opsService.getTransportFleet(tripId, { departureDate: departureDateStr })
+              .then((freshFleet: any[]) => {
+                if (freshFleet && freshFleet.length > 0) {
+                  const correctedFleet = freshFleet.map((t: any, idx: number) => ({
+                    id: t.id,
+                    name: t.driverName || t.vendor?.name ? `${t.vendor.name} (${t.vehicleType})` : `Tempo ${idx + 1}`,
+                    vehicleType: t.vehicleType || "Tempo Traveller",
+                    capacity: Number(t.capacity) || 17,
+                    cost: Number(t.totalAmount) || 0,
+                    vendor: t.vendor?.name || t.notes || "Lead Transport",
+                  }));
+                  setAllocFleet(correctedFleet);
+                }
+              })
+              .catch(() => { /* keep synthetic fleet on error */ });
           }
 
           setPassengerAllocations((prev: any) => {
