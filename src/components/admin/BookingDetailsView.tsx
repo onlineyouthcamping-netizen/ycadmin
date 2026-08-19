@@ -1990,17 +1990,22 @@ export default function BookingDetailsView({
 
   const handleSaveDates = async () => {
     if (!newDepartureDate) return toast.error("Please select a valid date");
+    if (!changeReason.trim()) {
+      return toast.error("Please enter a reason for the date change");
+    }
     try {
-      await bookingsService.update(booking.id, {
+      await bookingsService.transferDepartureDate(booking.id, {
         departureDate: newDepartureDate,
-        reason: changeReason,
+        reason: changeReason.trim(),
       });
       toast.success("Departure date updated successfully!");
       setShowChangeDates(false);
       setChangeReason("");
       onRefresh();
-    } catch (e) {
-      toast.error("Failed to update departure date");
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message || "Failed to update departure date";
+      toast.error(msg);
     }
   };
 

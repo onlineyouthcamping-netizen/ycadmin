@@ -147,6 +147,14 @@ export const bookingsService = {
     return normalizeBooking(res.data.data);
   },
 
+  async transferDepartureDate(
+    id: string,
+    data: { departureDate: string; reason: string },
+  ): Promise<Booking> {
+    const res = await api.put(`/bookings/${id}/departure-date`, data);
+    return normalizeBooking(res.data.data);
+  },
+
   async confirm(
     id: string,
     data: {
