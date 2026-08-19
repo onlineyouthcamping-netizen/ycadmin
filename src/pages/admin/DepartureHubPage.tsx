@@ -6791,46 +6791,6 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className="bg-white border border-[#E8EEF4] rounded-xl px-3 py-2 flex flex-wrap items-center gap-1 min-w-0">
-                <span className="text-[11px] font-medium text-slate-500 px-1.5 py-1">
-                  Quick actions
-                </span>
-                {[
-                  {
-                    label: "Add expense",
-                    icon: Sliders,
-                    action: () => setActiveTab("finance"),
-                  },
-                  {
-                    label: "Add payment",
-                    icon: CreditCard,
-                    action: () => setActiveTab("finance"),
-                  },
-                  {
-                    label: "Add task",
-                    icon: CheckSquare,
-                    action: () => {
-                      setOpsSubTab("tasks");
-                      setActiveTab("operations");
-                    },
-                  },
-                  {
-                    label: "Download report",
-                    icon: Download,
-                    action: () => setActiveTab("reports"),
-                  },
-                ].map((act) => (
-                  <button
-                    key={act.label}
-                    type="button"
-                    onClick={act.action}
-                    className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[11px] font-medium text-[#0B1528] hover:bg-[#F4F7FB] transition-colors min-w-0"
-                  >
-                    <act.icon className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.75} />
-                    <span className="truncate">{act.label}</span>
-                  </button>
-                ))}
-              </div>
 
             </div>
           )}
