@@ -734,17 +734,19 @@ export default function DepartureTransport({
                 ).filter((v: any) => {
                   if (!v.vehicle || v.vehicle === "—" || v.vehicle === "Unassigned") return false;
                   if (allocFleet.length === 1) return true;
+                  const vName = (v.vehicleName || v.vehicle || "").toLowerCase().trim();
+                  const fName = (fleetName || "").toLowerCase().trim();
+                  const fId = (fleetId || "").toLowerCase().trim();
+                  const vId = (v.fleetId || "").toLowerCase().trim();
                   return (
-                    v.fleetId === fleetId ||
-                    v.vehicleName === fleetName ||
+                    vId === fId ||
+                    vName === fName ||
                     v.vehicle === fleetName ||
                     v.vehicle === fleetId ||
-                    (v.vehicleName &&
-                      v.vehicleName.toLowerCase().trim() ===
-                        fleetName.toLowerCase().trim()) ||
-                    (v.vehicle &&
-                      v.vehicle.toLowerCase().trim() ===
-                        fleetName.toLowerCase().trim())
+                    (vName && fName && (vName.includes(fName) || fName.includes(vName))) ||
+                    (fId.startsWith("tempo") && vName.includes(`tempo ${fleetIdx + 1}`)) ||
+                    (fId.startsWith("tempo") && vId.includes(`tempo-${fleetIdx + 1}`)) ||
+                    (fleetIdx === 0 && (vName === "tempo 1" || vName.startsWith("tempo 1") || vId === "tempo-1" || vName.includes("tempo 1")))
                   );
                 });
                 const capacity = Number(fleetItem.capacity) || 14;
