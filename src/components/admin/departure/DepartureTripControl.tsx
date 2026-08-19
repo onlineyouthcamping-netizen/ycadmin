@@ -97,6 +97,27 @@ export default function DepartureTripControl({
   // Live database day itinerary items (persisted check-ins, remarks, pax)
   const [dbDayItineraries, setDbDayItineraries] = useState<OpsDayItinerary[]>([]);
 
+  // User-selected status overrides for each day (persisted in DB and LocalStorage)
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, { hotelStatus?: string; transportStatus?: string; checkInStatus?: string }>
+  >(() => {
+    try {
+      const saved = localStorage.getItem(`trip_control_status_${tripId}_${departureDateStr}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`trip_control_status_${tripId}_${departureDateStr}`);
+      if (saved) {
+        setStatusOverrides(JSON.parse(saved));
+      }
+    } catch {}
+  }, [tripId, departureDateStr]);
+
   // Fetch DB day itinerary records on mount/change
   const loadDbItinerary = async () => {
     try {
@@ -242,12 +263,20 @@ export default function DepartureTripControl({
 
       let hotelPhone = hotelMatch?.phone || hotelMatch?.hotelPhone || "";
 
-      // Derive hotel status strictly from existing hotel booking state
-      let hotelStatus: "BOOKED" | "PENDING" | "CANCELLED" | "NOT REQUIRED" = isNoStay
-        ? "NOT REQUIRED"
-        : rawHotelName
-        ? "BOOKED"
-        : "PENDING";
+      // Check status overrides (local + DB sync)
+      const overrideKey = `${tripId}_${departureDateStr}_day_${dayNum}`;
+      const rowOverride = statusOverrides[overrideKey] || statusOverrides[`day_${dayNum}`];
+
+      // Derive hotel status
+      let hotelStatus: "BOOKED" | "CONFIRMED" | "CHECKED-IN" | "PENDING" | "CANCELLED" | "NOT REQUIRED" =
+        (rowOverride?.hotelStatus as any) ||
+        (isNoStay
+          ? "NOT REQUIRED"
+          : dbRow?.hotelVerified
+            ? "CONFIRMED"
+            : rawHotelName
+              ? "BOOKED"
+              : "PENDING");
 
       // Check if this day is a train transit day where transport & guide are not required by default
       const isTrainTransitDay =
@@ -256,30 +285,31 @@ export default function DepartureTripControl({
 
       // Match Transport
       let transportName = "—";
-      let transportStatus: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED" = "NOT REQUIRED";
+      let transportStatus: "BOOKED" | "CONFIRMED" | "CHECKED-IN" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED" | "CANCELLED" =
+        (rowOverride?.transportStatus as any) || "NOT REQUIRED";
 
       if (dbRow?.vehicleType) {
         if (dbRow.vehicleType === "—" || dbRow.vehicleType.toLowerCase().includes("not required") || dbRow.vehicleType.toLowerCase().includes("none")) {
           transportName = "—";
-          transportStatus = "NOT REQUIRED";
+          if (!rowOverride?.transportStatus) transportStatus = "NOT REQUIRED";
         } else {
           transportName = dbRow.vehicleType;
-          transportStatus = "BOOKED";
+          if (!rowOverride?.transportStatus) transportStatus = dbRow.vehicleVerified ? "CONFIRMED" : "BOOKED";
         }
       } else {
         if (isTrainTransitDay) {
           transportName = "—";
-          transportStatus = "NOT REQUIRED";
+          if (!rowOverride?.transportStatus) transportStatus = "NOT REQUIRED";
         } else {
           transportName = leadTransport.name !== "—" ? leadTransport.name : "17 Seater Tempo";
-          transportStatus = "BOOKED";
+          if (!rowOverride?.transportStatus) transportStatus = "BOOKED";
         }
       }
 
       // Match Guide
       let guideName = "—";
       let guidePhone = "";
-      let guideStatus: "BOOKED" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED" = "NOT REQUIRED";
+      let guideStatus: "BOOKED" | "CONFIRMED" | "CHECKED-IN" | "PENDING" | "NOT REQUIRED" | "NOT ASSIGNED" = "NOT REQUIRED";
 
       if (dbRow?.guideDriverDetails) {
         if (dbRow.guideDriverDetails === "—" || dbRow.guideDriverDetails.toLowerCase().includes("not required") || dbRow.guideDriverDetails.toLowerCase().includes("none")) {
@@ -289,7 +319,7 @@ export default function DepartureTripControl({
         } else {
           guideName = dbRow.guideDriverDetails;
           guidePhone = leadGuide.name && leadGuide.name.toLowerCase().includes(dbRow.guideDriverDetails.toLowerCase()) ? leadGuide.phone : "";
-          guideStatus = "BOOKED";
+          guideStatus = dbRow.guideVerified ? "CONFIRMED" : "BOOKED";
         }
       } else {
         if (isTrainTransitDay) {
@@ -310,9 +340,11 @@ export default function DepartureTripControl({
         ? "CHECKED-IN"
         : "PENDING";
 
-      const currentCheckIn = dbRow?.checkInDone !== undefined
-        ? (dbRow.checkInDone ? "CHECKED-IN" : "PENDING")
-        : defaultCheckIn;
+      const currentCheckIn: "CHECKED-IN" | "PENDING" | "NOT REQUIRED" =
+        (rowOverride?.checkInStatus as any) ||
+        (dbRow?.checkInDone !== undefined
+          ? (dbRow.checkInDone ? "CHECKED-IN" : "PENDING")
+          : defaultCheckIn);
 
       const currentRemark = dbRow?.remarks !== undefined ? dbRow.remarks : (day.sub || "");
 
@@ -337,7 +369,7 @@ export default function DepartureTripControl({
         remark: currentRemark,
       };
     });
-  }, [computedItinerary, opsHotels, tripVendors, totalPax, leadTransport, leadGuide, dbDayItineraries, departureDateStr]);
+  }, [computedItinerary, opsHotels, tripVendors, totalPax, leadTransport, leadGuide, dbDayItineraries, statusOverrides, departureDateStr]);
 
   // Unified Payment Rows Extractor for all Export Formats (Excel, PDF, CSV, Google Sheets)
   const getPaymentRowsForExport = () => {
@@ -853,10 +885,28 @@ export default function DepartureTripControl({
 
   // Direct Hotel Status Switcher Handler
   const handleUpdateHotelStatus = async (row: TripControlRowData, newStatus: string) => {
+    const overrideKey = `${tripId}_${departureDateStr}_day_${row.dayNum}`;
+    setStatusOverrides((prev) => {
+      const updated = {
+        ...prev,
+        [overrideKey]: { ...(prev[overrideKey] || {}), hotelStatus: newStatus },
+        [`day_${row.dayNum}`]: { ...(prev[`day_${row.dayNum}`] || {}), hotelStatus: newStatus },
+      };
+      try {
+        localStorage.setItem(`trip_control_status_${tripId}_${departureDateStr}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (selectedRow && selectedRow.dayNum === row.dayNum) {
+      setSelectedRow((prev) => prev ? { ...prev, hotelStatus: newStatus as any } : null);
+    }
+
     try {
       const isNotRequired = newStatus === "NOT REQUIRED";
       const isCheckedIn = newStatus === "CHECKED-IN";
       const isCancelled = newStatus === "CANCELLED";
+      const isConfirmed = newStatus === "CONFIRMED" || newStatus === "BOOKED";
       const hotelVal = isNotRequired ? "— (Not Required)" : isCancelled ? "— (Cancelled)" : row.hotelName !== "—" ? row.hotelName : "Contracted Stay";
 
       await opsService.upsertDayItinerary(
@@ -864,7 +914,7 @@ export default function DepartureTripControl({
         {
           dayTitle: row.dayLabel,
           hotelName: hotelVal,
-          hotelVerified: newStatus === "BOOKED" || newStatus === "CONFIRMED" || isCheckedIn,
+          hotelVerified: isConfirmed || isCheckedIn,
           checkInDone: isCheckedIn ? true : isNotRequired || isCancelled ? false : row.checkInStatus === "CHECKED-IN",
           paxCount: row.paxCount,
           remarks: row.remark,
@@ -880,6 +930,23 @@ export default function DepartureTripControl({
 
   // Direct Transport Status Switcher Handler
   const handleUpdateTransportStatus = async (row: TripControlRowData, newStatus: string) => {
+    const overrideKey = `${tripId}_${departureDateStr}_day_${row.dayNum}`;
+    setStatusOverrides((prev) => {
+      const updated = {
+        ...prev,
+        [overrideKey]: { ...(prev[overrideKey] || {}), transportStatus: newStatus },
+        [`day_${row.dayNum}`]: { ...(prev[`day_${row.dayNum}`] || {}), transportStatus: newStatus },
+      };
+      try {
+        localStorage.setItem(`trip_control_status_${tripId}_${departureDateStr}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (selectedRow && selectedRow.dayNum === row.dayNum) {
+      setSelectedRow((prev) => prev ? { ...prev, transportStatus: newStatus as any } : null);
+    }
+
     try {
       const isNotRequired = newStatus === "NOT REQUIRED";
       const isCancelled = newStatus === "CANCELLED";
@@ -906,6 +973,23 @@ export default function DepartureTripControl({
 
   // Direct Guide Status Switcher Handler
   const handleUpdateGuideStatus = async (row: TripControlRowData, newStatus: string) => {
+    const overrideKey = `${tripId}_${departureDateStr}_day_${row.dayNum}`;
+    setStatusOverrides((prev) => {
+      const updated = {
+        ...prev,
+        [overrideKey]: { ...(prev[overrideKey] || {}), checkInStatus: newStatus },
+        [`day_${row.dayNum}`]: { ...(prev[`day_${row.dayNum}`] || {}), checkInStatus: newStatus },
+      };
+      try {
+        localStorage.setItem(`trip_control_status_${tripId}_${departureDateStr}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (selectedRow && selectedRow.dayNum === row.dayNum) {
+      setSelectedRow((prev) => prev ? { ...prev, checkInStatus: newStatus as any } : null);
+    }
+
     try {
       const isNotRequired = newStatus === "NOT REQUIRED";
       const defaultG = leadGuide.name !== "—" ? leadGuide.name : "Lead Guide";
