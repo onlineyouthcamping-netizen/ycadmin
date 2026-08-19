@@ -116,6 +116,64 @@ export const financeControllerService = {
     return { data: res.data.data, pagination: res.data.pagination };
   },
 
+  getTripWiseVendorAccounts: async (params?: {
+    tripId?: string;
+    category?: string;
+    search?: string;
+  }): Promise<{
+    success: boolean;
+    summary: {
+      totalAgreed: number;
+      totalPaid: number;
+      totalDue: number;
+      totalTrips: number;
+      totalVendors: number;
+      pendingBillsCount: number;
+    };
+    tripGroups: Array<{
+      tripId: string;
+      tripCode: string;
+      tripTitle: string;
+      tripLocation: string;
+      totalAgreed: number;
+      totalPaid: number;
+      totalDue: number;
+      pendingApprovals: number;
+      categories: {
+        hotels: { count: number; agreed: number; paid: number; due: number };
+        transport: { count: number; agreed: number; paid: number; due: number };
+        activities: { count: number; agreed: number; paid: number; due: number };
+        guides: { count: number; agreed: number; paid: number; due: number };
+        meals_other: { count: number; agreed: number; paid: number; due: number };
+      };
+      items: Array<{
+        id: string;
+        sourceType: string;
+        tripId: string;
+        tripCode: string;
+        tripTitle: string;
+        tripLocation: string;
+        vendorName: string;
+        category: "HOTELS" | "TRANSPORT" | "ACTIVITIES" | "GUIDES" | "MEALS_OTHER";
+        categoryLabel: string;
+        serviceDescription: string;
+        departureDate: string | null;
+        agreedAmount: number;
+        advancePaid: number;
+        remainingPayable: number;
+        status: string;
+        approvalStatus: string;
+        requiresFounderApproval: boolean;
+        invoiceFileUrl: string | null;
+        createdAt: string;
+      }>;
+    }>;
+    items: any[];
+  }> => {
+    const res = await api.get("/finance/control-center/tripwise-vendor-accounts", { params });
+    return res.data;
+  },
+
   getTicketingQueue: async (params?: {
     status?: string;
     page?: number;
