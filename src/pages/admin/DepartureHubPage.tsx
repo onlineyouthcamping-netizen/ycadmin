@@ -2071,7 +2071,7 @@ export default function DepartureHubPage() {
   const loadGenerationRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchPageData = async () => {
+  const fetchPageData = async (resetFleet = false) => {
     if (!tripId || !departureDateStr) {
       setLoading(false);
       return;
@@ -2089,7 +2089,10 @@ export default function DepartureHubPage() {
     const currentGen = loadGenerationRef.current;
 
     setLoading(true);
-    // Explicit state reset when changing departure to prevent stale data flashing
+    // Reset stale departure data. allocFleet is only wiped when switching departures
+    // (resetFleet=true) — not during same-departure refreshes after save operations —
+    // to avoid the "No vehicles in fleet" flash while the transport API request is in
+    // flight (or if it fails and transportFetched ends up false).
     setBookings([]);
     setDepartureRecord(null);
     setReadinessData(null);
@@ -2098,7 +2101,7 @@ export default function DepartureHubPage() {
     setPassengerAllocations({});
     setActivitiesList([]);
     setDbGuides([]);
-    setAllocFleet([]);
+    if (resetFleet) setAllocFleet([]);
     setChecklistTasks([]);
     setItineraryList([]);
     try {
@@ -2586,7 +2589,7 @@ export default function DepartureHubPage() {
   };
 
   useEffect(() => {
-    fetchPageData();
+    fetchPageData(true); // reset fleet when switching departures
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId, departureDateStr]);
 useEffect(() => {
