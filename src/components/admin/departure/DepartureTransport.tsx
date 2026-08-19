@@ -26,6 +26,12 @@ const fieldClass =
 const fieldReadonly =
   "h-8 w-full min-w-0 text-[12px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-[#F8FAFC] text-slate-600 cursor-not-allowed";
 const labelClass = "text-[11px] font-medium text-slate-500 block mb-1";
+const nativeSelect =
+  "h-8 w-full min-w-0 text-[12px] font-medium border border-[#E8EEF4] rounded-md px-2 bg-white text-[#0B1528] outline-none focus:ring-1 focus:ring-[#FF4D00]/30";
+const inputText =
+  "h-8 w-full min-w-0 text-[12px] font-medium border border-[#E8EEF4] rounded-md px-2.5 bg-white text-[#0B1528] outline-none focus:ring-1 focus:ring-[#FF4D00]/30 placeholder:text-slate-400";
+const checkboxCls =
+  "h-3.5 w-3.5 rounded border-[#E8EEF4] text-[#FF4D00] focus:ring-[#FF4D00] cursor-pointer shrink-0";
 
 function StepHeading({ n, children }: { n: number; children: React.ReactNode }) {
   return (
