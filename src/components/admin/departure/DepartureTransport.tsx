@@ -147,6 +147,56 @@ export default function DepartureTransport({
   setShowClearAllocationsDialog,
   onClearAllocations,
 }: DepartureTransportProps) {
+  const [activeSubTab, setActiveSubTab] = useState<"fleet" | "passengers" | "matrix">("fleet");
+
+  // Merge all vendor fleet items from Vendor Directory & Departure Fleet
+  const allVendorOptions = React.useMemo(() => {
+    const list: any[] = [];
+    const seen = new Set<string>();
+
+    (vendorDirectoryFleet || []).forEach((vf: any) => {
+      const key = `${vf.vendorId || vf.id}-${vf.vehicleType}-${vf.capacity}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        const vName = vf.vendorName || "Vendor";
+        const vType = vf.vehicleType || "Tempo";
+        const cap = vf.capacity || 17;
+        const cost = vf.cost || 0;
+        list.push({
+          id: vf.id,
+          vendorId: vf.vendorId,
+          vendorName: vName,
+          vehicleType: vType,
+          capacity: cap,
+          cost: cost,
+          label: vf.label || `${vName} — ${vType} (${cap} seats)${cost > 0 ? ` — ₹${Number(cost).toLocaleString("en-IN")}` : ""}`,
+        });
+      }
+    });
+
+    (fleetVehicles || []).forEach((fv: any) => {
+      const key = `${fv.vendor?.id || fv.id}-${fv.vehicleType}-${fv.capacity}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        const vName = fv.vendor?.name || fv.notes || "Vendor";
+        const vType = fv.vehicleType || "Tempo";
+        const cap = fv.capacity || 17;
+        const cost = fv.tariff?.amount ?? fv.totalAmount;
+        list.push({
+          id: fv.id,
+          vendorId: fv.vendor?.id || fv.vendorId,
+          vendorName: vName,
+          vehicleType: vType,
+          capacity: cap,
+          cost: cost,
+          label: `${vName} — ${vType} (${cap} seats)${cost > 0 ? ` — ₹${Number(cost).toLocaleString("en-IN")}` : ""}`,
+        });
+      }
+    });
+
+    return list;
+  }, [vendorDirectoryFleet, fleetVehicles]);
+
   return (
     <div className="space-y-3 min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 min-w-0">
@@ -199,60 +249,39 @@ export default function DepartureTransport({
                 const val = e.target.value;
                 setSelectedVehicleId(val);
                 if (val && val !== "custom") {
-                  const item =
-                    fleetVehicles.find((v) => v.id === val) ||
-                    vendorDirectoryFleet.find((f: any) => f.id === val);
+                  const item = allVendorOptions.find((v) => v.id === val);
                   if (item) {
                     setNewVehicleType(item.vehicleType || "Tempo");
                     setNewVehicleCapacity(String(item.capacity || 17));
                     setNewVehicleName(
-                      item.driverName || item.name || item.vehicleType || "",
+                      `${item.vendorName || "Vendor"} ${item.vehicleType || "Tempo"}`,
                     );
                     setNewVehicleCost(
-                      item.tariff?.amount !== undefined
-                        ? String(item.tariff.amount)
-                        : item.totalAmount !== undefined
-                          ? String(item.totalAmount)
-                          : "",
+                      item.cost !== undefined && item.cost !== null && Number(item.cost) > 0
+                        ? String(item.cost)
+                        : "",
                     );
                     setNewVehicleVendor(
-                      item.vendor?.name ?? item.notes ?? "Vendor",
+                      item.vendorName || "Vendor",
                     );
                     setSelectedVendorId(
-                      item.vendor?.id ?? item.vendorId ?? "",
+                      item.vendorId || "",
                     );
-                  } else {
-                    const std = STANDARD_VEHICLE_TYPES.find((s) => s.id === val);
-                    if (std) {
-                      setNewVehicleType(std.type);
-                      setNewVehicleCapacity(std.capacity);
-                      const sameTypeCount = allocFleet.filter((f) => f.vehicleType === std.type || f.name?.includes(std.type.split(" ")[0])).length;
-                      setNewVehicleName(`${std.type} #${sameTypeCount + 1}`);
-                      setNewVehicleVendor(newVehicleVendor || "Transport Partner");
-                    }
                   }
                 }
               }}
               className={nativeSelect}
             >
-              <option value="">Select vehicle type</option>
-              {fleetVehicles.length > 0 && (
-                <optgroup label="Contracted Vendor Fleet">
-                  {fleetVehicles.map((v) => (
+              <option value="">Select vendor vehicle...</option>
+              {allVendorOptions.length > 0 ? (
+                <optgroup label="Available Vendor Fleet (from Vendor Directory)">
+                  {allVendorOptions.map((v) => (
                     <option key={v.id} value={v.id}>
-                      {v.vendor?.name ? `${v.vendor.name} — ` : ""}
-                      {v.vehicleType} ({v.capacity} seats)
+                      {v.label}
                     </option>
                   ))}
                 </optgroup>
-              )}
-              <optgroup label="Standard Vehicle Options">
-                {STANDARD_VEHICLE_TYPES.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </optgroup>
+              ) : null}
               <option value="custom">+ Custom Entry</option>
             </select>
           </div>

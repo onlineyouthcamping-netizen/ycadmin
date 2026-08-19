@@ -92,6 +92,7 @@ import VendorImportWizard from "@/components/admin/VendorImportWizard";
 import HotelCalculator from "@/components/admin/hotels/HotelCalculator";
 import AccommodationWorkspace from "@/components/admin/departure/AccommodationWorkspace";
 import DepartureTransport from "@/components/admin/departure/DepartureTransport";
+import { findHotelForDay, calculateAccommodationCost } from "@/utils/accommodationCalculator";
 import HotelAssignmentWizardModal from "@/components/admin/departure/HotelAssignmentWizardModal";
 import DepartureTripControl from "@/components/admin/departure/DepartureTripControl";
 import DepartureMoneySummary from "@/components/admin/departure/DepartureMoneySummary";
@@ -3673,8 +3674,17 @@ useEffect(() => {
       ).length;
 
       // Vendor Payments (filtered from opsHotels, allocFleet, dbGuides, and tripVendors)
+      const calculateHotelCost = (h: any) => {
+        if (Number(h?.totalAmount) > 0) return Number(h.totalAmount);
+        const rooms = Number(h?.numberOfRooms || h?.roomsCount || 0);
+        const rate = Number(h?.doubleRate || h?.roomRate || h?.baseRate || h?.quadRate || 0);
+        const nights = Number(h?.nightsCount || 1);
+        if (rooms > 0 && rate > 0) return rooms * rate * nights;
+        return 0;
+      };
+
       const hotelsCost = Math.max(
-        (opsHotels || []).reduce((sum: number, h: any) => sum + (Number(h.totalAmount) || 0), 0),
+        (opsHotels || []).reduce((sum: number, h: any) => sum + calculateHotelCost(h), 0),
         tripVendors
           .filter((v) => v.vendorType === "hotel" || v.category === "Hotels")
           .reduce((sum, v) => sum + (Number(v.agreedCost ?? v.totalAmount) || 0), 0)
