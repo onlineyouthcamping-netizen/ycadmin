@@ -715,18 +715,34 @@ export default function DepartureTransport({
               {allocFleet.map((fleetItem: any, fleetIdx: number) => {
                 const fleetId = fleetItem.id || `tempo-${fleetIdx + 1}`;
                 const fleetName = fleetItem.name || `Tempo ${fleetIdx + 1}`;
-                const travelers = computedVehicleAllocations.filter((v) => {
+                const travelers = (computedVehicleAllocations && computedVehicleAllocations.length > 0
+                  ? computedVehicleAllocations
+                  : allPassengers.map((p: any) => {
+                      const alloc = passengerAllocations[p.id] || passengerAllocations[p.name];
+                      return {
+                        fleetId: alloc?.vehicle || fleetId,
+                        vehicleName: alloc?.vehicle || fleetName,
+                        vehicle: alloc?.vehicle || fleetName,
+                        seatNumber: alloc?.seat || "—",
+                        travelerName: p.name,
+                        passengerId: p.id,
+                        rawGender: p.gender,
+                      };
+                    })
+                ).filter((v: any) => {
+                  if (!v.vehicle || v.vehicle === "—" || v.vehicle === "Unassigned") return false;
+                  if (allocFleet.length === 1) return true;
                   return (
                     v.fleetId === fleetId ||
                     v.vehicleName === fleetName ||
                     v.vehicle === fleetName ||
+                    v.vehicle === fleetId ||
                     (v.vehicleName &&
                       v.vehicleName.toLowerCase().trim() ===
                         fleetName.toLowerCase().trim()) ||
                     (v.vehicle &&
                       v.vehicle.toLowerCase().trim() ===
-                        fleetName.toLowerCase().trim()) ||
-                    (allocFleet.length === 1 && v.vehicle && v.vehicle !== "—" && v.vehicle !== "Unassigned")
+                        fleetName.toLowerCase().trim())
                   );
                 });
                 const capacity = Number(fleetItem.capacity) || 14;
