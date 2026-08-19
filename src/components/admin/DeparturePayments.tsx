@@ -22,6 +22,11 @@ import {
   Clock,
   Receipt,
   Filter,
+  Truck,
+  Zap,
+  User,
+  UtensilsCrossed,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -1743,7 +1748,12 @@ export default function DeparturePayments({
               >
                 <span>{tab.label}</span>
                 {tab.badge && (
-                  <span className="text-[10px] font-medium text-slate-400 tabular-nums">
+                  <span className={cn(
+                    "text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full",
+                    subTab === tab.key
+                      ? "bg-[#FF4D00]/10 text-[#FF4D00]"
+                      : "bg-slate-100 text-slate-500"
+                  )}>
                     {tab.badge}
                   </span>
                 )}
@@ -2562,66 +2572,28 @@ export default function DeparturePayments({
       {subTab === "vendors" && (
         <div className="space-y-4">
           <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col gap-3">
-            {/* Quick Filter Category Pills & Status Switcher */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[#F0F4F8] pb-2.5">
-              <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#74839A] mr-1">Quick Filters:</span>
-                {[
-                  { key: "All Categories", label: "All Categories", count: vendorPayments.length },
-                  { key: "Hotels", label: "🏨 Hotels", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("hotel")).length },
-                  { key: "Transport", label: "🚐 Transport", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("trans")).length },
-                  { key: "Activities", label: "🎯 Activities", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("act")).length },
-                  { key: "Guides", label: "🧭 Guides", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("guide")).length },
-                  { key: "Meals", label: "🍽️ Meals", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("meal")).length },
-                  { key: "Other", label: "📦 Other", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("other")).length },
-                ].map((pill) => (
-                  <button
-                    key={pill.key}
-                    type="button"
-                    onClick={() => setVendorCategoryFilter(pill.key)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all flex items-center gap-1 border shadow-2xs",
-                      vendorCategoryFilter === pill.key
-                        ? "bg-[#FF4D00] text-white border-[#FF4D00] shadow-sm"
-                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
-                    )}
-                  >
-                    <span>{pill.label}</span>
-                    <span
-                      className={cn(
-                        "text-[9px] px-1 rounded-full",
-                        vendorCategoryFilter === pill.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
-                      )}
-                    >
-                      {pill.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Status Quick Pills */}
-              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/70 shrink-0">
-                {[
-                  { key: "All Status", label: "ALL" },
-                  { key: "Not Paid", label: "⏳ UNPAID / DUE" },
-                  { key: "Advance Paid", label: "🟡 ADVANCE" },
-                  { key: "Paid", label: "🟢 PAID" },
-                ].map((s) => (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => setVendorStatusFilter(s.key)}
-                    className={cn(
-                      "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
-                      vendorStatusFilter === s.key
-                        ? "bg-white text-[#162B45] shadow-xs"
-                        : "text-[#74839A] hover:text-[#162B45]"
-                    )}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
+            {/* Status Quick Pills */}
+            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/70 self-start">
+              {[
+                { key: "All Status", label: "All" },
+                { key: "Not Paid", label: "Unpaid" },
+                { key: "Advance Paid", label: "Advance" },
+                { key: "Paid", label: "Paid" },
+              ].map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setVendorStatusFilter(s.key)}
+                  className={cn(
+                    "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
+                    vendorStatusFilter === s.key
+                      ? "bg-white text-[#162B45] shadow-xs"
+                      : "text-[#74839A] hover:text-[#162B45]"
+                  )}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center gap-2">
@@ -2795,10 +2767,10 @@ export default function DeparturePayments({
                             <td className="p-3 border-r border-slate-100 text-right font-black text-slate-900">
                               {formatCurrency(v.agreedAmount)}
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-black text-blue-600">
+                            <td className="p-3 border-r border-slate-100 text-right font-black text-green-700">
                               {formatCurrency(v.advancePaid)}
                             </td>
-                            <td className="p-3 border-r border-slate-100 text-right font-black text-red-600">
+                            <td className={cn("p-3 border-r border-slate-100 text-right font-black", balance > 0 ? "text-red-600" : "text-slate-400")}>
                               {formatCurrency(balance)}
                             </td>
                             <td className="p-3 border-r border-slate-100 text-center">
@@ -2847,7 +2819,7 @@ export default function DeparturePayments({
                                   }}
                                   className="bg-[#FF4D00] text-white hover:bg-[#E04400] text-[10px] font-bold px-2.5 py-1 rounded shadow-xs"
                                 >
-                                  Record Pay
+                                  Record Payment
                                 </button>
                                 <button
                                   type="button"
@@ -3301,7 +3273,7 @@ export default function DeparturePayments({
                             }}
                             className="h-7 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-[10px] px-2.5"
                           >
-                            Record Pay
+                            Record Payment
                           </Button>
                         ) : (
                           <span className="text-[11px] text-green-600 font-bold">
