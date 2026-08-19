@@ -1718,34 +1718,9 @@ export default function DepartureHubPage() {
     e.preventDefault();
     const cap = parseInt(newVehicleCapacity) || 17;
     const vName = newVehicleName || `${newVehicleType || 'Tempo'} ${allocFleet.length + 1}`;
-    const enteredCost = Number(newVehicleCost);
+    const enteredCost = Number(newVehicleCost) || 0;
 
     try {
-      // 1. If an existing departure vehicle is selected
-      if (selectedVehicleId && selectedVehicleId !== 'custom') {
-        const existing = fleetVehicles.find((v) => v.id === selectedVehicleId);
-        if (existing) {
-          const newV = {
-            id: existing.id,
-            name: existing.driverName || existing.name || vName,
-            vehicleType: existing.vehicleType,
-            capacity: existing.capacity,
-            cost: existing.tariff?.amount ?? existing.totalAmount,
-            vendor: existing.vendor?.name ?? existing.notes ?? 'Vendor',
-          };
-          setAllocFleet((prev) => [...prev, newV]);
-          toast.success(`Added ${newV.name} (${newV.vehicleType})`);
-          setSelectedVehicleId('');
-          setSelectedVendorId('');
-          return;
-        }
-      }
-
-      // 2. Save new transport fleet record to backend database linked to vendorId if selected
-      if (!Number.isFinite(enteredCost) || enteredCost < 0) {
-        toast.error("Enter the agreed vehicle cost; no default transport price is applied.");
-        return;
-      }
       const savedVehicle = await opsService.createTransportFleet(
         tripId,
         {
@@ -1760,13 +1735,13 @@ export default function DepartureHubPage() {
       );
 
       const newV = {
-        id: savedVehicle.id,
-        name: savedVehicle.driverName || vName,
-        vehicleType: savedVehicle.vehicleType,
-        capacity: savedVehicle.capacity,
-        cost: savedVehicle.totalAmount,
-        vendor: savedVehicle.notes || newVehicleVendor || "General Vendor",
-        vendorId: savedVehicle.vendorId || selectedVendorId,
+        id: savedVehicle?.id || `tempo-${Date.now()}`,
+        name: savedVehicle?.driverName || vName,
+        vehicleType: savedVehicle?.vehicleType || newVehicleType || "Tempo",
+        capacity: savedVehicle?.capacity || cap,
+        cost: savedVehicle?.totalAmount ?? enteredCost,
+        vendor: savedVehicle?.notes || newVehicleVendor || "General Vendor",
+        vendorId: savedVehicle?.vendorId || selectedVendorId,
       };
 
       setAllocFleet((prev) => [...prev, newV]);
@@ -1776,10 +1751,11 @@ export default function DepartureHubPage() {
       setSelectedVehicleId("");
       setSelectedVendorId("");
       toast.success(
-        `Added ${newV.name} (${newV.vehicleType}) and linked to Vendor Directory!`,
+        `Added ${newV.name} (${newV.vehicleType}) and saved to departure!`,
       );
-      fetchPageData();
-    } catch {
+      await fetchPageData();
+    } catch (err: any) {
+      console.error("handleAddVehicle error:", err);
       toast.error("Failed to save vehicle details to database");
     }
   };
