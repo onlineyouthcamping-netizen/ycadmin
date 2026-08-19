@@ -177,6 +177,25 @@ export const financeControllerService = {
     return res.data;
   },
 
+  createExpense: async (payload: {
+    type: "MISCELLANEOUS" | "ACTIVITY";
+    tripId: string;
+    departureDate: string;
+    category?: string;
+    description?: string;
+    amount?: number;
+    activity?: string;
+    paymentDate?: string;
+    totalAmount?: number;
+    amountPaid?: number;
+    remarks?: string;
+    receiptUrl?: string;
+    paymentMode?: string;
+  }): Promise<any> => {
+    const res = await api.post("/finance/control-center/expenses", payload);
+    return res.data;
+  },
+
   // ── 1. Refunds & Credits API ──
   refunds: {
     list: async (params?: {

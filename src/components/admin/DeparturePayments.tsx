@@ -189,6 +189,7 @@ export default function DeparturePayments({
     paymentDate: new Date().toISOString().substring(0, 10),
     paymentMethod: "CASH",
     transactionId: "",
+    collectionAccountId: "",
     status: "PENDING",
     remarks: "",
   });
@@ -828,8 +829,24 @@ export default function DeparturePayments({
       setDbVendors(vendorsDirRes.data?.data || []);
       setTrainTickets(trainSummaryRes?.tickets || []);
 
+      // Include vendor-payment-based misc entries (stored via createVendorPayment with category "Miscellaneous")
+      const vpMisc = (mergedVendors || [])
+        .filter((v: any) => (v.category || "").toUpperCase() === "MISCELLANEOUS")
+        .map((v: any) => ({
+          id: v.id,
+          description: v.serviceDescription || v.vendorName,
+          category: "misc",
+          amount: Number(v.agreedAmount || 0),
+          payeeName: v.vendorName,
+          approvedBy: v.paidBy || "Operations",
+          status: v.paymentStatus === "Paid" ? "APPROVED" : v.paymentStatus === "Advance Paid" ? "APPROVED" : "PENDING",
+          paymentDate: v.paymentDate ? v.paymentDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
+          paymentMethod: v.paymentMode || "CASH",
+        }));
+      const allMisc = [...misc, ...vpMisc];
+
       setActivityPayments(combinedActivities);
-      setMiscPayments(misc);
+      setMiscPayments(allMisc);
       setAdjustments(recons);
 
     } catch (err) {
@@ -1599,34 +1616,38 @@ export default function DeparturePayments({
       toast.error("Please provide a description and amount");
       return;
     }
-    const newMisc = {
-      id: `MISC-${Date.now()}`,
-      description: miscPaymentForm.description,
-      category: "misc",
-      amount: amountNum,
-      payeeName: miscPaymentForm.payeeName || "Vendor / Staff",
-      approvedBy: "Finance Admin",
-      status: miscPaymentForm.status || "PENDING",
-      paymentDate: miscPaymentForm.paymentDate || new Date().toISOString().substring(0, 10),
-      paymentMethod: miscPaymentForm.paymentMethod,
-    };
+    const staffName = admin?.name || admin?.email || "Operations Staff";
+    const selectedAcc = collectionAccounts.find(
+      (acc) => acc.id === miscPaymentForm.collectionAccountId,
+    );
+    const accountNameTag = selectedAcc
+      ? `${selectedAcc.accountName}${selectedAcc.bankName ? ` (${selectedAcc.bankName})` : selectedAcc.accountType === "CASH" ? " (Cash Desk)" : ""}`
+      : miscPaymentForm.paymentMethod === "CASH" ? "Cash Desk" : "YouthCamping Company Account";
 
     try {
-      await opsService.upsertTripExpense(tripId, {
+      await opsService.createVendorPayment(tripId, {
         departureDate: departureDateStr,
-        activity: newMisc.description,
-        totalAmount: amountNum,
-        amountPaid: newMisc.status === "APPROVED" || newMisc.status === "PAID" ? amountNum : 0,
-        remarks: `${newMisc.payeeName} | Category: MISCELLANEOUS | Status: ${newMisc.status}`,
-        paymentDate: newMisc.paymentDate,
+        vendorName: miscPaymentForm.payeeName || "Ad-Hoc Expense",
+        category: "Miscellaneous",
+        serviceDescription: `${miscPaymentForm.category}: ${miscPaymentForm.description}`,
+        agreedAmount: amountNum,
+        advancePaid: amountNum,
+        remainingPayable: 0,
+        paymentDate: miscPaymentForm.paymentDate,
+        paymentMode: miscPaymentForm.paymentMethod,
+        collectionAccountId: miscPaymentForm.collectionAccountId || null,
+        transactionId: miscPaymentForm.transactionId || `MISC-${Date.now()}`,
+        invoiceProof: "",
+        status: "Paid",
+        paidBy: staffName,
+        remarks: `Category: ${miscPaymentForm.category} | ${miscPaymentForm.remarks || ""}`.trim(),
       });
+      toast.success(`Logged miscellaneous expense: ${miscPaymentForm.description} (Paid from ${accountNameTag})`);
       await fetchData();
-    } catch (err) {
-      console.warn("upsertTripExpense warning:", err);
+    } catch (err: any) {
+      console.error("Error recording misc expense:", err);
+      toast.error(err?.response?.data?.message || "Failed to record expense");
     }
-
-    setMiscPayments((prev) => [newMisc, ...prev]);
-    toast.success(`Logged miscellaneous expense: ${newMisc.description}`);
     setAddMiscPaymentOpen(false);
   };
 
@@ -1697,17 +1718,23 @@ export default function DeparturePayments({
               {
                 key: "activities",
                 label: "Activity Payments",
-                badge: `${activityPayments.length}`,
+                badge: calculatedStats.activityPending > 0
+                  ? `₹${(calculatedStats.activityPending / 1000).toFixed(1)}k pending`
+                  : `${activityPayments.length}`,
               },
               {
                 key: "misc",
                 label: "Miscellaneous",
-                badge: `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`,
+                badge: calculatedStats.totalMiscExpenses > 0
+                  ? `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`
+                  : "0",
               },
               {
                 key: "reconciliation",
                 label: "Reconciliation",
-                badge: `${adjustments.length}`,
+                badge: adjustments.filter((a) => a.status === "PENDING").length > 0
+                  ? `${adjustments.filter((a) => a.status === "PENDING").length} pending`
+                  : `${adjustments.length}`,
               },
             ].map((tab) => (
               <button
@@ -3725,10 +3752,9 @@ export default function DeparturePayments({
                             <Button
                               size="sm"
                               onClick={async () => {
-                                const updated = { ...m, status: "APPROVED" };
                                 setMiscPayments((prev) =>
                                   prev.map((item) =>
-                                    item.id === m.id ? updated : item,
+                                    item.id === m.id ? { ...item, status: "APPROVED" } : item,
                                   ),
                                 );
                                 try {
@@ -3740,6 +3766,7 @@ export default function DeparturePayments({
                                     amountPaid: m.amount,
                                     remarks: `${m.payeeName || ""} | Status: APPROVED`,
                                   });
+                                  await fetchData();
                                 } catch {}
                                 toast.success("Expense approved & saved!");
                               }}
@@ -3751,10 +3778,9 @@ export default function DeparturePayments({
                               size="sm"
                               variant="outline"
                               onClick={async () => {
-                                const updated = { ...m, status: "REJECTED" };
                                 setMiscPayments((prev) =>
                                   prev.map((item) =>
-                                    item.id === m.id ? updated : item,
+                                    item.id === m.id ? { ...item, status: "REJECTED" } : item,
                                   ),
                                 );
                                 try {
@@ -3766,6 +3792,7 @@ export default function DeparturePayments({
                                     amountPaid: 0,
                                     remarks: `${m.payeeName || ""} | Status: REJECTED`,
                                   });
+                                  await fetchData();
                                 } catch {}
                                 toast.success("Expense rejected");
                               }}
@@ -3885,7 +3912,7 @@ export default function DeparturePayments({
                                 const updated = { ...a, status: "APPROVED" };
                                 setAdjustments((prev) =>
                                   prev.map((item) =>
-                                    item.id === a.id ? updated : item,
+                                    item.id === a.id ? { ...item, status: "APPROVED" } : item,
                                   ),
                                 );
                                 try {
@@ -3897,6 +3924,7 @@ export default function DeparturePayments({
                                     amountPaid: a.amount,
                                     remarks: `Reconciliation | Reason: ${a.reason} | Status: APPROVED`,
                                   });
+                                  await fetchData();
                                 } catch {}
                                 toast.success("Adjustment approved & saved!");
                               }}
@@ -3911,7 +3939,7 @@ export default function DeparturePayments({
                                 const updated = { ...a, status: "REJECTED" };
                                 setAdjustments((prev) =>
                                   prev.map((item) =>
-                                    item.id === a.id ? updated : item,
+                                    item.id === a.id ? { ...item, status: "REJECTED" } : item,
                                   ),
                                 );
                                 try {
@@ -3923,6 +3951,7 @@ export default function DeparturePayments({
                                     amountPaid: 0,
                                     remarks: `Reconciliation | Reason: ${a.reason} | Status: REJECTED`,
                                   });
+                                  await fetchData();
                                 } catch {}
                                 toast.success("Adjustment rejected");
                               }}
@@ -5229,6 +5258,60 @@ export default function DeparturePayments({
                 className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Payment Mode</label>
+                <select
+                  value={miscPaymentForm.paymentMethod}
+                  onChange={(e) => setMiscPaymentForm((prev) => ({ ...prev, paymentMethod: e.target.value }))}
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
+                >
+                  <option value="CASH">Cash</option>
+                  <option value="UPI">UPI</option>
+                  <option value="BANK_TRANSFER">Bank Transfer</option>
+                  <option value="CARD">Card</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Payment Date</label>
+                <input
+                  type="date"
+                  value={miscPaymentForm.paymentDate}
+                  onChange={(e) => setMiscPaymentForm((prev) => ({ ...prev, paymentDate: e.target.value }))}
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">Paid From Account</label>
+              <select
+                value={miscPaymentForm.collectionAccountId}
+                onChange={(e) => setMiscPaymentForm((prev) => ({ ...prev, collectionAccountId: e.target.value }))}
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none"
+              >
+                <option value="">— Company Default —</option>
+                {collectionAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.accountName}{acc.bankName ? ` (${acc.bankName})` : acc.accountType === "CASH" ? " (Cash Desk)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {miscPaymentForm.paymentMethod !== "CASH" && (
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Transaction ID / Ref</label>
+                <input
+                  type="text"
+                  placeholder="UPI/Bank reference number"
+                  value={miscPaymentForm.transactionId}
+                  onChange={(e) => setMiscPaymentForm((prev) => ({ ...prev, transactionId: e.target.value }))}
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none"
+                />
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end pt-2">
               <Button

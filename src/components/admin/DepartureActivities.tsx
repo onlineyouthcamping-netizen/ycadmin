@@ -190,13 +190,14 @@ export default function DepartureActivities({
       seen.add(nameLower);
 
       const rate =
+        tv.rates?.[0]?.amount ||
         tv.rates?.[0]?.negotiatedRate ||
         tv.rates?.[0]?.costPerPerson ||
         tv.rates?.[0]?.mealPrice ||
         tv.rates?.[0]?.baseRate ||
         tv.agreedCost ||
         tv.vendorCost ||
-        (isRest ? 250 : 500);
+        null;
 
       list.push({
         vendorId: vId,
@@ -206,7 +207,7 @@ export default function DepartureActivities({
         contactPerson: v.contactPerson || tv.contactPerson || "",
         contactPhone: v.contactNumber || v.phone || tv.phone || "",
         rating: v.rating || tv.rating || (isRest ? 4.8 : 4.6),
-        netCost: Number(rate) || (isRest ? 250 : 500),
+        netCost: rate != null ? Number(rate) : 0,
         seasonType: tv.rates?.[0]?.seasonType || "REGULAR",
       });
     };

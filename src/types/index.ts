@@ -874,11 +874,13 @@ export interface MiscellaneousExpenseItem {
   amount: number;
   paymentMode: string;
   receiptNumber: string;
+  receiptUrl?: string;
   submittedBy: string;
   submittedById?: string;
   submittedAt: string;
   status: string;
   notes?: string;
+  type?: "MISCELLANEOUS" | "ACTIVITY";
 }
 
 export interface RefundTransactionItem {

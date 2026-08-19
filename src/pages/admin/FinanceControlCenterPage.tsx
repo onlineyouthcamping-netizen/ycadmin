@@ -213,6 +213,28 @@ export default function FinanceControlCenterPage({
   const [queueReviewAction, setQueueReviewAction] = useState<"APPROVE" | "REJECT">("APPROVE");
   const [queueActionNotes, setQueueActionNotes] = useState("");
 
+  // ── Expenses sub-tab ──
+  const [expenseSubTab, setExpenseSubTab] = useState<"MISCELLANEOUS" | "ACTIVITY">("MISCELLANEOUS");
+
+  // ── Add Expense Modal ──
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [addExpenseForm, setAddExpenseForm] = useState({
+    type: "MISCELLANEOUS" as "MISCELLANEOUS" | "ACTIVITY",
+    tripId: "",
+    departureDate: new Date().toISOString().split("T")[0],
+    category: "MISCELLANEOUS",
+    description: "",
+    amount: 0,
+    activity: "",
+    totalAmount: 0,
+    amountPaid: 0,
+    paymentDate: "",
+    paymentMode: "BANK_TRANSFER",
+    remarks: "",
+    receiptUrl: "",
+  });
+  const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
+
   // ── Refunds & Credit Notes Modals ──
   const [refundSubTab, setRefundSubTab] = useState<"ALL" | "PENDING_APPROVAL" | "COMPLETED" | "REJECTED">("ALL");
   const [showCreateRefundModal, setShowCreateRefundModal] = useState(false);
@@ -902,6 +924,32 @@ export default function FinanceControlCenterPage({
             </FinancePrimaryButton>
           )}
 
+          {activeTab === "expenses" && (
+            <FinancePrimaryButton
+              onClick={() => {
+                setAddExpenseForm({
+                  type: expenseSubTab,
+                  tripId: "",
+                  departureDate: new Date().toISOString().split("T")[0],
+                  category: "MISCELLANEOUS",
+                  description: "",
+                  amount: 0,
+                  activity: "",
+                  totalAmount: 0,
+                  amountPaid: 0,
+                  paymentDate: "",
+                  paymentMode: "BANK_TRANSFER",
+                  remarks: "",
+                  receiptUrl: "",
+                });
+                setShowAddExpenseModal(true);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Add Payment
+            </FinancePrimaryButton>
+          )}
+
           {activeTab === "tasks" && (
             <FinancePrimaryButton onClick={() => setShowCreateTaskModal(true)}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -1378,48 +1426,136 @@ export default function FinanceControlCenterPage({
       )}
 
       {activeTab === "expenses" && !isLoading && (
-        <FinanceQueueCard title="Miscellaneous Expenses" description="Office and field expense claims awaiting controller sign-off.">
-          {expensesQueue.length === 0 ? (
-            <FinanceEmptyState title="No expense claims" />
-          ) : (
-            <FinanceTable>
-              <FinanceTableHead
-                columns={[
-                  { label: "Expense" },
-                  { label: "Category" },
-                  { label: "Amount", align: "right" },
-                  { label: "Mode" },
-                  { label: "Receipt" },
-                  { label: "Submitted" },
-                  { label: "Status" },
-                  { label: "Action", align: "right" },
-                ]}
-              />
-              <tbody className="divide-y divide-slate-100">
-                {expensesQueue.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/70">
-                    <td className={cn(financeTd, "font-semibold text-slate-800")}>{item.title}</td>
-                    <td className={cn(financeTd, "text-slate-600")}>{item.category}</td>
-                    <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.amount} tone="debit" /></td>
-                    <td className={financeTd}>{item.paymentMode}</td>
-                    <td className={cn(financeTd, "font-mono text-[11px]")}>{item.receiptNumber || "—"}</td>
-                    <td className={cn(financeTd, "text-[11px] text-slate-500")}>{item.submittedBy} · {safeFormatDate(item.submittedAt)}</td>
-                    <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
-                    <td className={cn(financeTd, "text-right")}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenQueueReview("expense", item)}
-                        className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
-                      >
-                        Review
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </FinanceTable>
-          )}
+        <FinanceQueueCard
+          title={expenseSubTab === "MISCELLANEOUS" ? "Miscellaneous Expenses" : "Activity Payments"}
+          description={
+            expenseSubTab === "MISCELLANEOUS"
+              ? "Office and field miscellaneous expense claims awaiting controller sign-off."
+              : "Trip activity and operational payment claims awaiting controller sign-off."
+          }
+        >
+          {/* Sub-tab switcher */}
+          <div className="flex items-center gap-1 border-b border-slate-100 px-4 pt-1 pb-0 -mt-1">
+            {(["MISCELLANEOUS", "ACTIVITY"] as const).map((sub) => (
+              <button
+                key={sub}
+                onClick={() => setExpenseSubTab(sub)}
+                className={cn(
+                  "px-3 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap",
+                  expenseSubTab === sub
+                    ? "border-[#FF4D00] text-[#FF4D00]"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                )}
+              >
+                {sub === "MISCELLANEOUS" ? "Miscellaneous" : "Activity Payments"}
+                {(() => {
+                  const cnt = expensesQueue.filter(
+                    (e) => (e.type || "MISCELLANEOUS") === sub && e.status === "PENDING"
+                  ).length;
+                  return cnt > 0 ? (
+                    <span className={cn(
+                      "ml-1.5 inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full text-[10px] font-bold",
+                      expenseSubTab === sub ? "bg-[#FF4D00] text-white" : "bg-amber-100 text-amber-800"
+                    )}>
+                      {cnt}
+                    </span>
+                  ) : null;
+                })()}
+              </button>
+            ))}
+          </div>
+
+          {(() => {
+            const filtered = expensesQueue.filter(
+              (e) => (e.type || "MISCELLANEOUS") === expenseSubTab
+            );
+            if (filtered.length === 0) {
+              return (
+                <FinanceEmptyState
+                  title={`No ${expenseSubTab === "MISCELLANEOUS" ? "miscellaneous" : "activity"} expense claims`}
+                  description="Use 'Add Payment' to log a new expense for controller review."
+                />
+              );
+            }
+            return (
+              <FinanceTable>
+                <FinanceTableHead
+                  columns={[
+                    { label: expenseSubTab === "MISCELLANEOUS" ? "Expense" : "Activity" },
+                    { label: "Category" },
+                    { label: "Amount", align: "right" },
+                    { label: "Mode" },
+                    { label: "Receipt / Proof" },
+                    { label: "Submitted" },
+                    { label: "Status" },
+                    { label: "Actions", align: "right" },
+                  ]}
+                />
+                <tbody className="divide-y divide-slate-100">
+                  {filtered.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/70">
+                      <td className={cn(financeTd, "font-semibold text-slate-800")}>{item.title}</td>
+                      <td className={cn(financeTd, "text-slate-600")}>{item.category}</td>
+                      <td className={cn(financeTd, "text-right")}><MoneyAmount value={item.amount} tone="debit" /></td>
+                      <td className={financeTd}>{item.paymentMode}</td>
+                      <td className={cn(financeTd, "text-[11px]")}>
+                        {item.receiptUrl ? (
+                          <a
+                            href={item.receiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:underline font-mono"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            View Proof
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 font-mono">{item.receiptNumber || "—"}</span>
+                        )}
+                      </td>
+                      <td className={cn(financeTd, "text-[11px] text-slate-500")}>{item.submittedBy} · {safeFormatDate(item.submittedAt)}</td>
+                      <td className={financeTd}><FinanceStatusBadge status={item.status} /></td>
+                      <td className={cn(financeTd, "text-right")}>
+                        <div className="flex justify-end gap-1.5">
+                          {item.status === "PENDING" || item.status === "Due" ? (
+                            <>
+                              <FinanceApproveButton
+                                onClick={() => {
+                                  setSelectedQueueItem({ kind: "expense", item });
+                                  setQueueReviewAction("APPROVE");
+                                  setQueueActionNotes("");
+                                }}
+                              >
+                                Approve
+                              </FinanceApproveButton>
+                              <FinanceRejectButton
+                                onClick={() => {
+                                  setSelectedQueueItem({ kind: "expense", item });
+                                  setQueueReviewAction("REJECT");
+                                  setQueueActionNotes("");
+                                }}
+                              >
+                                Reject
+                              </FinanceRejectButton>
+                            </>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenQueueReview("expense", item)}
+                              className="h-7 text-xs font-semibold border-slate-200 hover:bg-slate-100 text-slate-700"
+                            >
+                              Details
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </FinanceTable>
+            );
+          })()}
         </FinanceQueueCard>
       )}
 
