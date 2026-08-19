@@ -53,11 +53,11 @@ export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
                 <span
                   className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.urgent ? "bg-red-400" : "bg-amber-500"}`}
                 />
-                <span className="truncate text-[12px] font-medium text-slate-300">{item.label}</span>
+                <span className="truncate text-[12px] font-medium text-[#0B1528]">{item.label}</span>
               </span>
               <span
                 className={`shrink-0 text-[11px] font-bold tabular-nums ${
-                  item.urgent && item.count > 0 ? "text-red-400" : "text-slate-600"
+                  item.urgent && item.count > 0 ? "text-[#E23D4D]" : "text-slate-500"
                 }`}
               >
                   {item.count}
@@ -101,16 +101,16 @@ export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({
               className="py-2"
             >
               <span className="min-w-0">
-                <span className="block truncate text-[12px] font-semibold leading-tight text-slate-200">
+                <span className="block truncate text-[12px] font-semibold leading-tight text-[#0B1528]">
                   {trip.code}
                 </span>
-                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-500">
+                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-400">
                   {trip.name}
                 </span>
               </span>
               <span className="shrink-0 text-right">
-                <span className="flex items-center justify-end gap-1 text-[11px] font-semibold leading-tight text-slate-300">
-                  <User className="h-3 w-3 text-slate-500" strokeWidth={1.75} />
+                <span className="flex items-center justify-end gap-1 text-[11px] font-semibold leading-tight text-[#0B1528]">
+                  <User className="h-3 w-3 text-slate-400" strokeWidth={1.75} />
                   {trip.size}
                 </span>
                 <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium leading-none text-green-400">
@@ -157,10 +157,10 @@ export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({
               className="py-2"
             >
               <span className="min-w-0">
-                <span className="block truncate text-[12px] font-semibold leading-tight text-slate-200">
+                <span className="block truncate text-[12px] font-semibold leading-tight text-[#0B1528]">
                   {trip.name}
                 </span>
-                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-500">
+                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-400">
                   {trip.date}
                 </span>
               </span>
@@ -214,7 +214,7 @@ export const TodaysScheduleWidget: React.FC<DashboardWidgetContextProps> = ({
                 {sched.time}
               </span>
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF4D00]" />
-              <span className="min-w-0 truncate text-[12px] font-medium text-slate-300">{sched.label}</span>
+              <span className="min-w-0 truncate text-[12px] font-medium text-[#0B1528]">{sched.label}</span>
             </DashRow>
           ))}
         </DashList>
