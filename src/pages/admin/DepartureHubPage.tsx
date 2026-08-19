@@ -2473,17 +2473,24 @@ export default function DepartureHubPage() {
           (bookingsRes.status === "fulfilled" && bookingsRes.value?.data?.data ? bookingsRes.value.data.data : []).forEach((b: any) => {
             let rawPax: any[] = [];
             try {
-              if (Array.isArray(b.passengers)) rawPax = b.passengers;
-              else if (typeof b.passengers === "string") rawPax = JSON.parse(b.passengers || "[]");
+              if (Array.isArray(b.passengers)) {
+                rawPax = b.passengers;
+              } else if (typeof b.passengers === "string") {
+                const parsed = JSON.parse(b.passengers || "[]");
+                rawPax = Array.isArray(parsed?.persons) ? parsed.persons : (Array.isArray(parsed) ? parsed : []);
+              } else if (b.passengers?.persons && Array.isArray(b.passengers.persons)) {
+                rawPax = b.passengers.persons;
+              }
             } catch {
               rawPax = [];
             }
             if (rawPax.length > 0) {
               rawPax.forEach((p: any, idx: number) => {
+                const pName = typeof p === "string" ? p : (p?.name || p?.fullName || p?.travelerName || b.name || b.fullName);
                 currentPassengersList.push({
-                  id: p.id || `${b.id}-${idx}`,
-                  name: p.name || p.travelerName || b.name || b.fullName,
-                  gender: p.gender || b.gender,
+                  id: (typeof p === "object" && p?.id) ? p.id : `${b.id}-${idx}`,
+                  name: pName,
+                  gender: (typeof p === "object" && p?.gender) ? p.gender : b.gender,
                 });
               });
             } else {
