@@ -84,15 +84,17 @@ export default function DeparturePayments({
   // Auth and Approver Authority
   const { admin } = useAuthStore();
   const isApprover = Boolean(
-    !admin?.role ||
-    admin?.role === "SUPERADMIN" ||
-    admin?.role === "FOUNDER" ||
-    admin?.role === "ADMIN" ||
-    admin?.role === "FINANCE" ||
-    admin?.role?.toUpperCase().includes("FINANCE") ||
-    admin?.role?.toUpperCase().includes("ADMIN") ||
-    admin?.role?.toUpperCase().includes("FOUNDER") ||
-    admin?.role?.toUpperCase().includes("SUPER")
+    admin != null &&
+    (
+      admin?.role === "SUPERADMIN" ||
+      admin?.role === "FOUNDER" ||
+      admin?.role === "ADMIN" ||
+      admin?.role === "FINANCE" ||
+      admin?.role?.toUpperCase().includes("FINANCE") ||
+      admin?.role?.toUpperCase().includes("ADMIN") ||
+      admin?.role?.toUpperCase().includes("FOUNDER") ||
+      admin?.role?.toUpperCase().includes("SUPER")
+    )
   );
 
   // Filters & Search
@@ -114,7 +116,7 @@ export default function DeparturePayments({
     paymentDate: new Date().toISOString().substring(0, 10),
     proofUrl: "",
     remarks: "",
-    status: "Verified",
+    status: "PENDING_VERIFICATION",
   });
 
   const [addVendorPaymentOpen, setAddVendorPaymentOpen] = useState(false);

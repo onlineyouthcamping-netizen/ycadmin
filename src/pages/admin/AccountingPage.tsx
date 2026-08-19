@@ -80,9 +80,7 @@ export default function AccountingPage() {
   const userRole = (user?.role || "").toLowerCase();
   const isFounder =
     ["founder", "superadmin"].includes(userRole) ||
-    Boolean((user as any)?.isSuperuser) ||
-    Boolean(user?.email && user.email.toLowerCase().includes("hemal")) ||
-    Boolean(user?.name && user.name.toLowerCase().includes("hemal"));
+    Boolean((user as any)?.isSuperuser);
 
   // Tab Normalization
   const normalizeTab = (raw: string | null): TabId => {

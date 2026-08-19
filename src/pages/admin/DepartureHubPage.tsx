@@ -97,6 +97,7 @@ import HotelAssignmentWizardModal from "@/components/admin/departure/HotelAssign
 import DepartureTripControl from "@/components/admin/departure/DepartureTripControl";
 import DepartureMoneySummary from "@/components/admin/departure/DepartureMoneySummary";
 import { MobileDepartureWorkspace } from "@/components/mobile/MobileDepartureWorkspace";
+import { useAuthStore } from "@/store/auth.store";
 import {
   Dialog,
   DialogContent,
@@ -1175,6 +1176,7 @@ const generateMockBookings = (tripId: string, departureDateStr: string) => {
 };
 
 export default function DepartureHubPage() {
+  const { admin } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -1486,7 +1488,7 @@ export default function DepartureHubPage() {
   const [tripDetails, setTripDetails] = useState<any | null>(null);
   const [tripVendors, setTripVendors] = useState<any[]>([]);
   const [vendorSummary, setVendorSummary] = useState<any | null>(null);
-  const [chatMessages, setChatMessages] = useState<any[]>(MOCK_MESSAGES);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [dbTasks, setDbTasks] = useState<any[]>([]);
   const [checklistTasks, setChecklistTasks] = useState<any[]>([]);
   const [dbVendors, setDbVendors] = useState<any[]>([]);
@@ -1507,7 +1509,7 @@ export default function DepartureHubPage() {
   const handleStatusChange = async (targetStatus: string) => {
     setUpdatingStatus(true);
     try {
-      const res = await api.put("/api/departures/status", {
+      const res = await api.put("/departures/status", {
         tripId,
         date: departureDateStr,
         status: targetStatus,
@@ -2843,7 +2845,7 @@ useEffect(() => {
     const newMsg = {
       id: `msg-sent-${Date.now()}`,
       convId: activeConv,
-      sender: "Suresh Kumar",
+      sender: admin?.name || admin?.email || "Admin",
       avatar: "SK",
       role: "Operations Manager",
       text: chatInput,
@@ -6273,10 +6275,10 @@ useEffect(() => {
     [computedTasks, taskStatusFilter, taskCategoryFilter],
   );
 
-  // Docs
+  // Docs — no API endpoint yet; empty until real fetch is wired
   const filteredDocs = useMemo(
     () =>
-      MOCK_DOCUMENTS.filter(
+      ([] as any[]).filter(
         (d) =>
           (docCategory === "all" ||
             d.category.toLowerCase().includes(docCategory)) &&
@@ -6286,10 +6288,10 @@ useEffect(() => {
     [docCategory, docSearch],
   );
 
-  // Activities
+  // Activities — no API endpoint yet; empty until real fetch is wired
   const filteredActivities = useMemo(
     () =>
-      MOCK_ACTIVITIES.filter(
+      ([] as any[]).filter(
         (a) =>
           (actDayFilter === "All Days" || a.day === actDayFilter) &&
           (actTypeFilter === "All Activity Type" || a.type === actTypeFilter) &&
