@@ -400,8 +400,45 @@ export default function StationPaymentCollection({
       </div>
     );
 
+  const formattedDepDate = departureDateStr
+    ? new Date(departureDateStr).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "Active Departure";
+
   return (
     <div className="space-y-4 relative">
+      {/* ── Active Departure Scoping Banner ────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-[6px] px-4 py-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-orange-50 border border-orange-100 flex items-center justify-center font-bold text-[#FF4D00] text-xs">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-800">
+                Station Collections (Cash & UPI)
+              </span>
+              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                Trip Scoped
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              Trip: <span className="font-bold text-slate-700">{tripId}</span> • Departure Date: <span className="font-bold text-slate-700">{formattedDepDate} ({departureDateStr})</span>
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => load()}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" /> Refresh Station Collections
+        </button>
+      </div>
+
       {/* ── KPI Strip ───────────────────────────────────────────────────────── */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
