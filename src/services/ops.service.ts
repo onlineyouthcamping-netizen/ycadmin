@@ -373,7 +373,7 @@ export const opsService = {
     const q = departureDate
       ? `?departureDate=${encodeURIComponent(departureDate)}`
       : "";
-    const res = await api.get(`/ops/auto-allocate/${tripId}${q}`);
+    const res = await api.post(`/ops/auto-allocate/${tripId}${q}`);
     return res.data?.data;
   },
 

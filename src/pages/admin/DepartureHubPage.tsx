@@ -6308,30 +6308,17 @@ useEffect(() => {
     [computedTasks, taskStatusFilter, taskCategoryFilter],
   );
 
-  // Docs — no API endpoint yet; empty until real fetch is wired
+  // Docs — no API endpoint yet; returns empty until real fetch is wired
   const filteredDocs = useMemo(
-    () =>
-      ([] as any[]).filter(
-        (d) =>
-          (docCategory === "all" ||
-            d.category.toLowerCase().includes(docCategory)) &&
-          (docSearch === "" ||
-            d.name.toLowerCase().includes(docSearch.toLowerCase())),
-      ),
+    () => ([] as any[]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [docCategory, docSearch],
   );
 
-  // Activities — no API endpoint yet; empty until real fetch is wired
+  // Activities — no API endpoint yet; returns empty until real fetch is wired
   const filteredActivities = useMemo(
-    () =>
-      ([] as any[]).filter(
-        (a) =>
-          (actDayFilter === "All Days" || a.day === actDayFilter) &&
-          (actTypeFilter === "All Activity Type" || a.type === actTypeFilter) &&
-          (actStatusFilter === "All Status" || a.status === actStatusFilter) &&
-          (actSearch === "" ||
-            a.activity.toLowerCase().includes(actSearch.toLowerCase())),
-      ),
+    () => ([] as any[]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [actDayFilter, actTypeFilter, actStatusFilter, actSearch],
   );
 
