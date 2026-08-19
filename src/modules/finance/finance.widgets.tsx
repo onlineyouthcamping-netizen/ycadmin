@@ -24,40 +24,40 @@ export const CashFlowOverviewWidget: React.FC<DashboardWidgetContextProps> = ({
     <DashBody className="flex flex-col justify-between gap-2">
       <div
         onClick={() => navigate("/admin/finance")}
-        className="flex cursor-pointer items-center justify-between rounded-lg bg-green-50/70 px-2.5 py-2 hover:bg-green-50"
+        className="flex cursor-pointer items-center justify-between rounded-xl border border-green-900/30 bg-green-950/30 px-2.5 py-2 transition-colors hover:bg-green-950/50"
       >
         <div className="min-w-0">
-          <p className="text-[10px] font-medium text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
             Collection today
           </p>
-          <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-[#16A34A]">
-            ₹ {(stats?.cashFlow?.collectionToday || 0).toLocaleString("en-IN")}
+          <p className="mt-0.5 text-[14px] font-bold tabular-nums text-green-400">
+            &#8377; {(stats?.cashFlow?.collectionToday || 0).toLocaleString("en-IN")}
           </p>
         </div>
-        <TrendingUp className="h-3.5 w-3.5 shrink-0 text-[#16A34A]" strokeWidth={1.75} />
+        <TrendingUp className="h-4 w-4 shrink-0 text-green-500" strokeWidth={1.75} />
       </div>
 
       <div
         onClick={() => navigate("/admin/finance")}
-        className="flex cursor-pointer items-center justify-between rounded-lg bg-red-50/70 px-2.5 py-2 hover:bg-red-50"
+        className="flex cursor-pointer items-center justify-between rounded-xl border border-red-900/30 bg-red-950/30 px-2.5 py-2 transition-colors hover:bg-red-950/50"
       >
         <div className="min-w-0">
-          <p className="text-[10px] font-medium text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
             Payments today
           </p>
-          <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-[#E23D4D]">
-            ₹ {(stats?.cashFlow?.paymentsToday || 0).toLocaleString("en-IN")}
+          <p className="mt-0.5 text-[14px] font-bold tabular-nums text-red-400">
+            &#8377; {(stats?.cashFlow?.paymentsToday || 0).toLocaleString("en-IN")}
           </p>
         </div>
-        <TrendingDown className="h-3.5 w-3.5 shrink-0 text-[#E23D4D]" strokeWidth={1.75} />
+        <TrendingDown className="h-4 w-4 shrink-0 text-red-400" strokeWidth={1.75} />
       </div>
 
-      <div className="mt-1 flex items-center justify-between border-t border-[#E8EEF4] pt-2">
-        <span className="text-[11px] font-medium text-slate-400">Net inflow</span>
+      <div className="mt-1 flex items-center justify-between border-t border-[#1E2D45] pt-2">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Net inflow</span>
         <span
-          className={`text-[12px] font-semibold tabular-nums ${(stats?.cashFlow?.netCashInflow || 0) >= 0 ? "text-[#16A34A]" : "text-[#E23D4D]"}`}
+          className={`text-[12px] font-bold tabular-nums ${(stats?.cashFlow?.netCashInflow || 0) >= 0 ? "text-green-400" : "text-red-400"}`}
         >
-          ₹ {(stats?.cashFlow?.netCashInflow || 0).toLocaleString("en-IN")}
+          &#8377; {(stats?.cashFlow?.netCashInflow || 0).toLocaleString("en-IN")}
         </span>
       </div>
     </DashBody>

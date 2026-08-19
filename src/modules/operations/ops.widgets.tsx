@@ -55,11 +55,11 @@ export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
                   />
                   <span className={dashRowLabel}>{item.label}</span>
                 </span>
-                <span
-                  className={`shrink-0 text-[11px] font-semibold tabular-nums ${
-                    item.urgent && item.count > 0 ? "text-[#E23D4D]" : "text-slate-400"
-                  }`}
-                >
+              <span
+                className={`shrink-0 text-[11px] font-bold tabular-nums ${
+                  item.urgent && item.count > 0 ? "text-red-400" : "text-slate-600"
+                }`}
+              >
                   {item.count}
                 </span>
               </DashRow>

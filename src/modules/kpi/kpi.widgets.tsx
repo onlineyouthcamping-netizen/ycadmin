@@ -17,7 +17,7 @@ import type {
 
 function KpiIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#F4F7FB] text-slate-400">
+    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-[#1E2D45] bg-[#060E1A] text-slate-500">
       <Icon className="h-3 w-3" strokeWidth={1.75} />
     </div>
   );
@@ -43,22 +43,22 @@ function KpiCard({
   return (
     <div
       onClick={onClick}
-      className="flex h-full min-h-[92px] min-w-0 cursor-pointer flex-col justify-between gap-3 rounded-xl border border-[#E8EEF4] bg-white p-3 shadow-none transition-colors hover:border-slate-300"
+      className="flex h-full min-h-[92px] min-w-0 cursor-pointer flex-col justify-between gap-3 rounded-2xl border border-[#1E2D45] bg-[#0D1B2E] p-3.5 shadow-[0_2px_12px_0_rgba(0,0,0,0.3)] transition-all duration-200 hover:border-[#FF4D00]/40 hover:shadow-[0_4px_20px_0_rgba(255,77,0,0.08)]"
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="min-w-0 text-[11px] font-medium leading-tight text-slate-500">
+        <span className="min-w-0 text-[10px] font-bold uppercase leading-tight tracking-widest text-slate-500">
           {label}
         </span>
         <KpiIcon icon={icon} />
       </div>
       <div className="min-w-0">
-        <h3 className="truncate text-[17px] font-semibold leading-none tracking-tight text-[#0B1528]">
-          {loading ? "…" : value}
+        <h3 className="truncate text-[18px] font-bold leading-none tracking-tight text-slate-100">
+          {loading ? <span className="animate-pulse text-slate-600">...</span> : value}
         </h3>
-        <p className="mt-1.5 flex items-center gap-1 truncate text-[10px] font-medium leading-none text-slate-400">
+        <p className="mt-1.5 flex items-center gap-1 truncate text-[10px] font-medium leading-none text-slate-600">
           {trend ? (
             <TrendingUp
-              className="h-2.5 w-2.5 shrink-0 text-green-600"
+              className="h-2.5 w-2.5 shrink-0 text-[#FF4D00]"
               strokeWidth={2}
             />
           ) : null}
