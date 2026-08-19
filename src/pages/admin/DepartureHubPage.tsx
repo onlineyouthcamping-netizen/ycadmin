@@ -1730,7 +1730,24 @@ useEffect(() => {
   // 1. Fetch departure fleet
   opsService
     .getTransportFleet(tripId, { departureDate: departureDateStr, includeRates: true })
-    .then(setFleetVehicles)
+    .then((fresh) => {
+      setFleetVehicles(fresh || []);
+      if (Array.isArray(fresh) && fresh.length > 0) {
+        const mapped = fresh.map((t: any, idx: number) => ({
+          id: t.id || `tempo-${idx + 1}`,
+          name:
+            t.driverName ||
+            (t.vendor?.name
+              ? `${t.vendor.name} (${t.vehicleType || "Tempo"})`
+              : `Tempo ${idx + 1}`),
+          vehicleType: t.vehicleType || "14 Seater Tempo Traveller",
+          capacity: Number(t.capacity) || 14,
+          cost: Number(t.totalAmount) || 0,
+          vendor: t.vendor?.name || t.notes || "Self-driven",
+        }));
+        setAllocFleet((prev) => (prev.length === 0 ? mapped : prev));
+      }
+    })
     .catch(() => setFleetVehicles([]));
 
   // 2. Fetch TRIP-SPECIFIC transport vendors & rates from Vendor Directory

@@ -200,14 +200,33 @@ export default function DepartureTransport({
     return list;
   }, [vendorDirectoryFleet, fleetVehicles]);
 
+  const effectiveFleet = useMemo(() => {
+    if (allocFleet && allocFleet.length > 0) return allocFleet;
+    if (fleetVehicles && fleetVehicles.length > 0) {
+      return fleetVehicles.map((t: any, idx: number) => ({
+        id: t.id || `tempo-${idx + 1}`,
+        name:
+          t.driverName ||
+          (t.vendor?.name
+            ? `${t.vendor.name} (${t.vehicleType || "Tempo"})`
+            : `Tempo ${idx + 1}`),
+        vehicleType: t.vehicleType || "14 Seater Tempo Traveller",
+        capacity: Number(t.capacity) || 14,
+        cost: Number(t.totalAmount) || 0,
+        vendor: t.vendor?.name || t.notes || "Self-driven",
+      }));
+    }
+    return [];
+  }, [allocFleet, fleetVehicles]);
+
   return (
     <div className="space-y-3 min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 min-w-0">
         <p className="text-[11px] text-slate-500 min-w-0">
           <span className="font-medium text-[#0B1528] tabular-nums">
-            {allocFleet.length}
+            {effectiveFleet.length}
           </span>{" "}
-          {allocFleet.length === 1 ? "vehicle" : "vehicles"} · room groups and
+          {effectiveFleet.length === 1 ? "vehicle" : "vehicles"} · room groups and
           seat allotments
         </p>
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto min-w-0">
@@ -361,13 +380,13 @@ export default function DepartureTransport({
           </div>
         </form>
 
-        {allocFleet.length === 0 ? (
+        {effectiveFleet.length === 0 ? (
           <p className="text-[12px] text-slate-400 py-3 text-center">
             No vehicles assigned. Select a vendor vehicle above or create a custom one.
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
-            {allocFleet.map((v) => (
+            {effectiveFleet.map((v) => (
               <div
                 key={v.id}
                 className="border border-[#E8EEF4] rounded-lg p-3 bg-white flex items-start justify-between gap-2 min-w-0"
@@ -709,13 +728,13 @@ export default function DepartureTransport({
             </div>
           </div>
 
-          {allocFleet.length === 0 ? (
+          {effectiveFleet.length === 0 ? (
             <p className="text-[12px] text-slate-400 py-6 text-center">
               No vehicles in fleet. Add a vehicle above, then auto-allocate.
             </p>
           ) : (
             <div className="space-y-3">
-              {allocFleet.map((fleetItem: any, fleetIdx: number) => {
+              {effectiveFleet.map((fleetItem: any, fleetIdx: number) => {
                 const fleetId = fleetItem.id || `tempo-${fleetIdx + 1}`;
                 const fleetName = fleetItem.name || `Tempo ${fleetIdx + 1}`;
                 const cleanName = (s: string) =>
@@ -733,7 +752,7 @@ export default function DepartureTransport({
                     if (!alloc || !alloc.vehicle || alloc.vehicle === "—" || alloc.vehicle === "Unassigned") {
                       return false;
                     }
-                    if (allocFleet.length === 1) {
+                    if (effectiveFleet.length === 1) {
                       return true;
                     }
                     const cleanV = cleanName(alloc.vehicle);
