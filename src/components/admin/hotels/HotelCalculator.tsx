@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calculator, Save, AlertCircle, Hotel, CalendarDays, Users, Bed, CreditCard } from "lucide-react";
@@ -123,7 +123,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
       <div className="flex-1 p-6 border-b md:border-b-0 md:border-r border-slate-200 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-orange-500" />
+            <Calculator className="w-5 h-5 text-[#FF4D00]" />
             Hotel Cost Calculator
           </h3>
           <p className="text-sm text-slate-500 mt-1">Configure group size, dates, and sharing to compute exact hotel costs based on seasonal rates.</p>
@@ -137,7 +137,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
               <input
                 type="number"
                 placeholder="Enter Hotel ID (e.g. 1)"
-                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00] transition-all"
                 value={formData.hotelId}
                 onChange={(e) => handleChange("hotelId", e.target.value)}
               />
@@ -149,7 +149,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
               <label className="text-xs font-semibold text-slate-600 uppercase flex items-center gap-1.5"><CalendarDays className="w-3 h-3" /> Check-in</label>
               <input
                 type="date"
-                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-all"
+                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00] transition-all"
                 value={formData.checkInDate}
                 onChange={(e) => handleChange("checkInDate", e.target.value)}
               />
@@ -158,7 +158,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
               <label className="text-xs font-semibold text-slate-600 uppercase flex items-center gap-1.5"><CalendarDays className="w-3 h-3" /> Check-out</label>
               <input
                 type="date"
-                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-all"
+                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00] transition-all"
                 value={formData.checkOutDate}
                 onChange={(e) => handleChange("checkOutDate", e.target.value)}
               />
@@ -171,7 +171,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
               <input
                 type="number"
                 min="0"
-                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-all"
+                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00] transition-all"
                 value={formData.adultsCount}
                 onChange={(e) => handleChange("adultsCount", parseInt(e.target.value) || 0)}
               />
@@ -181,7 +181,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
               <input
                 type="number"
                 min="0"
-                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-all"
+                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00] transition-all"
                 value={formData.childrenCount}
                 onChange={(e) => handleChange("childrenCount", parseInt(e.target.value) || 0)}
               />
@@ -192,7 +192,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase flex items-center gap-1.5"><Bed className="w-3 h-3" /> Sharing</label>
               <select
-                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-all bg-white"
+                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00] transition-all bg-white"
                 value={formData.sharingType}
                 onChange={(e) => handleChange("sharingType", e.target.value)}
               >
@@ -204,7 +204,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase flex items-center gap-1.5"><CreditCard className="w-3 h-3" /> Pricing Mode</label>
               <select
-                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-orange-500 transition-all bg-white"
+                className="w-full h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-[#FF4D00] transition-all bg-white"
                 value={formData.pricingMode}
                 onChange={(e) => handleChange("pricingMode", e.target.value)}
               >
@@ -215,7 +215,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
           </div>
 
           <Button 
-            className="w-full mt-4 bg-orange-600 hover:bg-orange-700 text-white" 
+            className="w-full mt-4 bg-[#FF4D00] hover:bg-[#E04400] text-white" 
             onClick={handleCompute}
             disabled={calculating}
           >
@@ -286,12 +286,12 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
               {result.sharing_wise_per_person && (
                 <div className="mt-4 pt-4 border-t border-slate-700/50 space-y-2">
                   <div className="flex justify-between items-center">
-                    <p className="text-xs font-bold text-orange-400 uppercase tracking-wider">Per-Person Sharing Breakdown</p>
+                    <p className="text-xs font-bold text-[#FF4D00] uppercase tracking-wider">Per-Person Sharing Breakdown</p>
                     <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">By Room Allotment</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {Object.entries(result.sharing_wise_per_person).map(([key, item]: [string, any]) => (
-                      <div key={key} className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700 text-center hover:border-orange-500/50 transition-all">
+                      <div key={key} className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700 text-center hover:border-[#FF4D00]/50 transition-all">
                         <p className="text-[11px] font-bold text-slate-300 truncate">{item.sharing}</p>
                         <p className="text-sm font-extrabold text-green-500 mt-1">₹{item.cost_per_pax_per_night.toLocaleString('en-IN')}</p>
                         <p className="text-[10px] text-slate-400 font-semibold">/ pax / night</p>
@@ -307,7 +307,7 @@ export default function HotelCalculator({ tripId, departureDateStr, api, onSaved
               <div className="flex justify-between items-end mb-4">
                 <div>
                   <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Grand Total</p>
-                  <p className="text-xs text-orange-400/80">Cost Per Pax: ₹{result.cost_breakdown.cost_per_pax.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-[#FF4D00]/80">Cost Per Pax: ₹{result.cost_breakdown.cost_per_pax.toLocaleString('en-IN')}</p>
                 </div>
                 <div className="text-3xl font-bold text-green-500">
                   {result.summary.display_total}

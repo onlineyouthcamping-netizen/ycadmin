@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * AllocationPreviewModal — YouthCamping Admin
  * Renders proposed room/vehicle auto-allocations, sharing groups, capacity metrics,
@@ -60,7 +60,7 @@ export default function AllocationPreviewModal({
       <DialogContent className="max-w-2xl bg-white p-6 rounded-[12px] shadow-2xl border border-slate-200 overflow-hidden">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <Bed className="w-5 h-5 text-orange-600" />
+            <Bed className="w-5 h-5 text-[#FF4D00]" />
             <DialogTitle className="text-lg font-black text-slate-800">
               Proposed Allocation Preview
             </DialogTitle>
@@ -131,7 +131,7 @@ export default function AllocationPreviewModal({
             size="sm"
             onClick={onConfirmSave}
             disabled={isSaving}
-            className="bg-orange-600 hover:bg-orange-700 text-white font-bold"
+            className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold"
           >
             {isSaving ? "Saving to Database..." : "Confirm & Save Allocation"}
           </Button>

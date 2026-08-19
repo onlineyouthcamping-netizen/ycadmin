@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Search,
@@ -1809,13 +1809,13 @@ export default function DeparturePayments({
             </div>
 
             {/* 2. Vendor Payables (Orange) */}
-            <div className="bg-white border border-orange-200 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-orange-500" />
+            <div className="bg-white border border-[#FF4D00]/30 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-[#FF4D00]" />
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-orange-900 uppercase tracking-wider">
+                <span className="text-[11px] font-extrabold text-[#0B1528] uppercase tracking-wider">
                   Vendor Payables
                 </span>
-                <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+                <span className="text-xs font-bold bg-[#FF4D00]/10 text-[#C2410C] px-2 py-0.5 rounded">
                   {calculatedStats.vendorPaidPercent}% Paid
                 </span>
               </div>
@@ -1847,20 +1847,20 @@ export default function DeparturePayments({
               </div>
               <button
                 onClick={() => setSubTab("vendors")}
-                className="w-full text-center text-xs font-bold text-orange-700 hover:text-orange-800 hover:bg-orange-50 py-1.5 rounded-lg border border-orange-200 transition-all flex items-center justify-center gap-1"
+                className="w-full text-center text-xs font-bold text-[#C2410C] hover:text-[#C2410C] hover:bg-[#FF4D00]/5 py-1.5 rounded-lg border border-[#FF4D00]/30 transition-all flex items-center justify-center gap-1"
               >
                 View Payables <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {/* 3. Activity Payments (Purple) */}
-            <div className="bg-white border border-orange-200 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-orange-500" />
+            <div className="bg-white border border-[#FF4D00]/30 rounded-xl p-4 shadow-2xs space-y-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-[#FF4D00]" />
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-orange-900 uppercase tracking-wider">
+                <span className="text-[11px] font-extrabold text-[#0B1528] uppercase tracking-wider">
                   Activity Payments
                 </span>
-                <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+                <span className="text-xs font-bold bg-[#FF4D00]/10 text-[#C2410C] px-2 py-0.5 rounded">
                   {calculatedStats.activityPercent}% Complete
                 </span>
               </div>
@@ -1883,14 +1883,14 @@ export default function DeparturePayments({
                 </div>
                 <div className="flex justify-between text-xs pt-1.5 border-t border-slate-100">
                   <span className="text-slate-500 font-medium">Pending:</span>
-                  <span className="font-extrabold text-orange-700">
+                  <span className="font-extrabold text-[#C2410C]">
                     {formatCurrency(calculatedStats.activityPending)}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setSubTab("activities")}
-                className="w-full text-center text-xs font-bold text-orange-700 hover:text-orange-800 hover:bg-orange-50 py-1.5 rounded-lg border border-orange-200 transition-all flex items-center justify-center gap-1"
+                className="w-full text-center text-xs font-bold text-[#C2410C] hover:text-[#C2410C] hover:bg-[#FF4D00]/5 py-1.5 rounded-lg border border-[#FF4D00]/30 transition-all flex items-center justify-center gap-1"
               >
                 View Activities <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -2006,7 +2006,7 @@ export default function DeparturePayments({
                 <span className="text-xs font-black uppercase tracking-wider text-slate-100">
                   Unit Economics & Cost Center Matrix
                 </span>
-                <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                <span className="bg-[#FF4D00] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
                   Per-Person Accounting
                 </span>
               </div>
@@ -2026,7 +2026,7 @@ export default function DeparturePayments({
                     <th className="py-2.5 px-4 text-right">Agreed / Total (₹)</th>
                     <th className="py-2.5 px-4 text-right">Paid / Received (₹)</th>
                     <th className="py-2.5 px-4 text-right">Balance Due (₹)</th>
-                    <th className="py-2.5 px-4 text-right font-mono bg-orange-50/60 text-orange-950 font-black">
+                    <th className="py-2.5 px-4 text-right font-mono bg-[#FF4D00]/5 text-[#0B1528] font-black">
                       Per Person (₹/Pax)
                     </th>
                     <th className="py-2.5 px-4 text-center">% of Revenue</th>
@@ -2055,7 +2055,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-amber-600 font-mono">
                       {formatCurrency(calculatedStats.clientOutstandingBalance)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-blue-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-blue-700 bg-[#FF4D00]/5 font-mono">
                       ₹{calculatedStats.revenuePerPax.toLocaleString("en-IN")}/pax
                     </td>
                     <td className="py-2.5 px-4 text-center font-bold text-slate-600">
@@ -2067,7 +2067,7 @@ export default function DeparturePayments({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span className="w-2 h-2 rounded-full bg-[#FF4D00]" />
                         <span className="font-bold text-slate-800">
                           Hotel & Accommodation Stays
                         </span>
@@ -2085,7 +2085,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.totalHotelsDue)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-orange-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-[#C2410C] bg-[#FF4D00]/5 font-mono">
                       ₹{calculatedStats.hotelsCostPerPax.toLocaleString("en-IN")}/pax
                     </td>
                     <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
@@ -2122,7 +2122,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.totalTransportsDue)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-amber-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-amber-700 bg-[#FF4D00]/5 font-mono">
                       ₹
                       {calculatedStats.transportsCostPerPax.toLocaleString(
                         "en-IN",
@@ -2163,7 +2163,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.totalGuidesDue)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-green-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-green-700 bg-[#FF4D00]/5 font-mono">
                       ₹{calculatedStats.guidesCostPerPax.toLocaleString("en-IN")}/pax
                     </td>
                     <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
@@ -2179,10 +2179,10 @@ export default function DeparturePayments({
                   </tr>
 
                   {/* 5. TRAIN TICKETS (PACKAGE INCLUDED) */}
-                  <tr className="hover:bg-slate-50/60 transition-colors bg-orange-50/30">
+                  <tr className="hover:bg-slate-50/60 transition-colors bg-[#FF4D00]/5/30">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span className="w-2 h-2 rounded-full bg-[#FF4D00]" />
                         <span className="font-bold text-slate-800">
                           Train Tickets (Package Included)
                         </span>
@@ -2200,7 +2200,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.totalTrainDue)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-orange-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-[#C2410C] bg-[#FF4D00]/5 font-mono">
                       ₹{calculatedStats.trainCostPerPax.toLocaleString("en-IN")}/pax
                     </td>
                     <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
@@ -2219,7 +2219,7 @@ export default function DeparturePayments({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span className="w-2 h-2 rounded-full bg-[#FF4D00]" />
                         <span className="font-bold text-slate-800">
                           Adventure & Paid Activities
                         </span>
@@ -2237,7 +2237,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-red-600 font-mono">
                       {formatCurrency(calculatedStats.activityPending)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-orange-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-[#C2410C] bg-[#FF4D00]/5 font-mono">
                       ₹
                       {calculatedStats.activitiesCostPerPax.toLocaleString(
                         "en-IN",
@@ -2278,7 +2278,7 @@ export default function DeparturePayments({
                     <td className="py-2.5 px-4 text-right font-bold text-amber-600 font-mono">
                       {formatCurrency(calculatedStats.miscPendingApproval)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-slate-700 bg-orange-50/60 font-mono">
+                    <td className="py-2.5 px-4 text-right font-black text-slate-700 bg-[#FF4D00]/5 font-mono">
                       ₹{calculatedStats.miscCostPerPax.toLocaleString("en-IN")}/pax
                     </td>
                     <td className="py-2.5 px-4 text-center font-semibold text-slate-600">
@@ -2331,7 +2331,7 @@ export default function DeparturePayments({
                     </td>
                     <td
                       className={cn(
-                        "py-3 px-4 text-right font-black bg-orange-100/70 font-mono text-sm",
+                        "py-3 px-4 text-right font-black bg-[#FF4D00]/10/70 font-mono text-sm",
                         calculatedStats.profitPerPax >= 0
                           ? "text-green-700"
                           : "text-red-700",
@@ -2376,7 +2376,7 @@ export default function DeparturePayments({
                   setEditingVendorPayment(null);
                   setAddVendorPaymentOpen(true);
                 }}
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs"
               >
                 + Add Vendor Payment
               </Button>
@@ -2403,7 +2403,7 @@ export default function DeparturePayments({
                   });
                   setAddActivityPaymentOpen(true);
                 }}
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs"
               >
                 + Add Activity Payment
               </Button>
@@ -2445,7 +2445,7 @@ export default function DeparturePayments({
                 </h4>
                 <button
                   onClick={() => setSubTab("clients")}
-                  className="text-xs font-semibold text-orange-600 hover:underline"
+                  className="text-xs font-semibold text-[#FF4D00] hover:underline"
                 >
                   View All ({bookings.length})
                 </button>
@@ -2510,7 +2510,7 @@ export default function DeparturePayments({
                 </h4>
                 <button
                   onClick={() => setSubTab("vendors")}
-                  className="text-xs font-semibold text-orange-600 hover:underline"
+                  className="text-xs font-semibold text-[#FF4D00] hover:underline"
                 >
                   View All ({vendorPayments.length})
                 </button>
@@ -2683,13 +2683,13 @@ export default function DeparturePayments({
                             }
                             className={cn(
                               "hover:bg-slate-50/70 transition-colors cursor-pointer",
-                              isExpanded && "bg-orange-50/40",
+                              isExpanded && "bg-[#FF4D00]/5/40",
                             )}
                           >
                             <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
                               <div className="flex items-center gap-1.5">
                                 {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-orange-600" />
+                                  <ChevronUp className="w-4 h-4 text-[#FF4D00]" />
                                 ) : (
                                   <ChevronDown className="w-4 h-4 text-slate-400" />
                                 )}
@@ -3113,13 +3113,13 @@ export default function DeparturePayments({
                             }
                             className={cn(
                               "hover:bg-slate-50/70 transition-colors cursor-pointer",
-                              isExpanded && "bg-orange-50/40",
+                              isExpanded && "bg-[#FF4D00]/5/40",
                             )}
                           >
                             <td className="p-3 border-r border-slate-100 font-extrabold text-slate-900">
                               <div className="flex items-center gap-1.5">
                                 {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-orange-600" />
+                                  <ChevronUp className="w-4 h-4 text-[#FF4D00]" />
                                 ) : (
                                   <ChevronDown className="w-4 h-4 text-slate-400" />
                                 )}
@@ -3190,7 +3190,7 @@ export default function DeparturePayments({
                                     });
                                     setAddVendorPaymentOpen(true);
                                   }}
-                                  className="bg-orange-600 text-white hover:bg-orange-700 text-[10px] font-bold px-2.5 py-1 rounded shadow-xs"
+                                  className="bg-[#FF4D00] text-white hover:bg-[#E04400] text-[10px] font-bold px-2.5 py-1 rounded shadow-xs"
                                 >
                                   Record Pay
                                 </button>
@@ -3216,7 +3216,7 @@ export default function DeparturePayments({
                                 <div className="space-y-3 max-w-4xl">
                                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                      <Building2 className="w-4 h-4 text-orange-600" />
+                                      <Building2 className="w-4 h-4 text-[#FF4D00]" />
                                       {v.vendorName} ({v.category}) — Invoice{" "}
                                       {v.invoiceNumber} Details
                                     </span>
@@ -3278,7 +3278,7 @@ export default function DeparturePayments({
                                                           h.accountName?.includes("Personal") ||
                                                           h.accountName?.includes("Driver") ||
                                                           h.accountName?.includes("Reimbursement")
-                                                          ? "bg-orange-50 text-orange-700 border-orange-200"
+                                                          ? "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30"
                                                           : "bg-blue-50 text-blue-700 border-blue-100",
                                                       )}
                                                     >
@@ -3416,7 +3416,7 @@ export default function DeparturePayments({
                                                 onClick={() =>
                                                   generateVendorInvoicePDF(v, h)
                                                 }
-                                                className="h-7 text-[11px] font-bold bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
+                                                className="h-7 text-[11px] font-bold bg-[#FF4D00]/5 hover:bg-[#FF4D00]/10 text-[#C2410C] border-[#FF4D00]/30"
                                               >
                                                 Download Invoice PDF
                                               </Button>
@@ -3468,7 +3468,7 @@ export default function DeparturePayments({
                                             });
                                             setAddVendorPaymentOpen(true);
                                           }}
-                                          className="h-7 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                                          className="h-7 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs"
                                         >
                                           Record Final Settlement
                                         </Button>
@@ -3644,7 +3644,7 @@ export default function DeparturePayments({
                               });
                               setAddActivityPaymentOpen(true);
                             }}
-                            className="h-7 bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px] px-2.5"
+                            className="h-7 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-[10px] px-2.5"
                           >
                             Record Pay
                           </Button>
@@ -4325,7 +4325,7 @@ export default function DeparturePayments({
           </h3>
 
           {editingVendorPayment && (
-            <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 text-xs space-y-1 my-2">
+            <div className="bg-[#FF4D00]/5/80 border border-[#FF4D00]/30 rounded-lg p-3 text-xs space-y-1 my-2">
               <div className="flex justify-between font-bold text-slate-800">
                 <span>Agreed Total:</span>
                 <span className="font-mono">
@@ -4338,7 +4338,7 @@ export default function DeparturePayments({
                   ₹{(editingVendorPayment.advancePaid || 0).toLocaleString("en-IN")}
                 </span>
               </div>
-              <div className="flex justify-between font-black text-red-600 pt-1 border-t border-orange-200">
+              <div className="flex justify-between font-black text-red-600 pt-1 border-t border-[#FF4D00]/30">
                 <span>Remaining Settlement Due:</span>
                 <span className="font-mono">
                   ₹{Math.max(0, (editingVendorPayment.agreedAmount || 0) - (editingVendorPayment.advancePaid || 0)).toLocaleString("en-IN")}
@@ -4497,7 +4497,7 @@ export default function DeparturePayments({
                       advancePaid: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 />
               </div>
               <div>
@@ -4530,7 +4530,7 @@ export default function DeparturePayments({
                       collectionAccountId: targetAccId,
                     }));
                   }}
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
                   <option value="UPI">UPI / GPay</option>
@@ -4577,7 +4577,7 @@ export default function DeparturePayments({
                               : "",
                   }));
                 }}
-                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
               >
                 <optgroup label="Company Finance Accounts (Bank & Cash)">
                   {collectionAccounts.map((acc) => (
@@ -4616,9 +4616,9 @@ export default function DeparturePayments({
               vendorPaymentForm.collectionAccountId === "__trek_leader__" ||
               vendorPaymentForm.collectionAccountId === "__driver__" ||
               vendorPaymentForm.collectionAccountId === "__founder_personal__") && (
-              <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
+              <div className="bg-[#FF4D00]/5/80 border border-[#FF4D00]/30 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
                 <div>
-                  <label className="text-[11px] font-bold text-orange-950 block mb-1">
+                  <label className="text-[11px] font-bold text-[#0B1528] block mb-1">
                     Payer Name / Personal Account Details <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -4632,10 +4632,10 @@ export default function DeparturePayments({
                         customPayerName: e.target.value,
                       }))
                     }
-                    className="w-full h-8 text-xs font-bold border border-orange-300 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-orange-600"
+                    className="w-full h-8 text-xs font-bold border border-[#FF4D00]/40 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-[#FF4D00]"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-[11px] font-bold text-orange-900 cursor-pointer pt-1">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-[#0B1528] cursor-pointer pt-1">
                   <input
                     type="checkbox"
                     checked={vendorPaymentForm.needsReimbursement}
@@ -4645,7 +4645,7 @@ export default function DeparturePayments({
                         needsReimbursement: e.target.checked,
                       }))
                     }
-                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-orange-300"
+                    className="w-4 h-4 rounded text-[#FF4D00] focus:ring-[#FF4D00] border-[#FF4D00]/40"
                   />
                   <span>Mark as "Pending Reimbursement from Company"</span>
                 </label>
@@ -4714,7 +4714,7 @@ export default function DeparturePayments({
               </Button>
               <Button
                 type="submit"
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs px-4"
               >
                 {editingVendorPayment ? "Save & Record Payment" : "Save & Record Payable"}
               </Button>
@@ -4773,7 +4773,7 @@ export default function DeparturePayments({
               type="button"
               onClick={handleSaveQuickProof}
               disabled={!quickProofTarget?.proofUrl}
-              className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
+              className="h-8 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs px-4"
             >
               Save & Attach Proof
             </Button>
@@ -4805,7 +4805,7 @@ export default function DeparturePayments({
             const remainingDue = Math.max(0, computedTotal - alreadyPaid);
 
             return (
-              <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 text-xs space-y-1 my-2">
+              <div className="bg-[#FF4D00]/5/80 border border-[#FF4D00]/30 rounded-lg p-3 text-xs space-y-1 my-2">
                 <div className="flex justify-between font-bold text-slate-800">
                   <span>Agreed Total:</span>
                   <span className="font-mono">
@@ -4818,7 +4818,7 @@ export default function DeparturePayments({
                     ₹{alreadyPaid.toLocaleString("en-IN")}
                   </span>
                 </div>
-                <div className="flex justify-between font-black text-red-600 pt-1 border-t border-orange-200">
+                <div className="flex justify-between font-black text-red-600 pt-1 border-t border-[#FF4D00]/30">
                   <span>Remaining Settlement Due:</span>
                   <span className="font-mono">
                     ₹{remainingDue.toLocaleString("en-IN")}
@@ -4847,7 +4847,7 @@ export default function DeparturePayments({
                     activityName: e.target.value,
                   }))
                 }
-                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
               />
             </div>
 
@@ -4864,7 +4864,7 @@ export default function DeparturePayments({
                       activityType: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 >
                   <option value="Activities">Activities</option>
                   <option value="Meals">Meals</option>
@@ -4888,7 +4888,7 @@ export default function DeparturePayments({
                       vendorName: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 />
               </div>
             </div>
@@ -4909,7 +4909,7 @@ export default function DeparturePayments({
                       costPerPerson: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 />
               </div>
               <div>
@@ -4927,7 +4927,7 @@ export default function DeparturePayments({
                       participantCount: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 />
               </div>
             </div>
@@ -4948,7 +4948,7 @@ export default function DeparturePayments({
                       amountPaid: e.target.value,
                     }))
                   }
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 />
               </div>
               <div>
@@ -4981,7 +4981,7 @@ export default function DeparturePayments({
                       collectionAccountId: targetAccId,
                     }));
                   }}
-                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-orange-500"
+                  className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-2 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
                   <option value="UPI">UPI / GPay</option>
@@ -5028,7 +5028,7 @@ export default function DeparturePayments({
                               : "",
                   }));
                 }}
-                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-orange-500"
+                className="w-full h-9 text-xs font-bold border border-slate-300 rounded-lg px-3 bg-white text-slate-800 outline-none focus:border-[#FF4D00]"
               >
                 <optgroup label="Company Finance Accounts (Bank & Cash)">
                   {collectionAccounts.map((acc) => (
@@ -5067,9 +5067,9 @@ export default function DeparturePayments({
               activityPaymentForm.collectionAccountId === "__trek_leader__" ||
               activityPaymentForm.collectionAccountId === "__driver__" ||
               activityPaymentForm.collectionAccountId === "__founder_personal__") && (
-              <div className="bg-orange-50/80 border border-orange-200 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
+              <div className="bg-[#FF4D00]/5/80 border border-[#FF4D00]/30 rounded-lg p-3 space-y-2 text-xs animate-in fade-in duration-200">
                 <div>
-                  <label className="text-[11px] font-bold text-orange-950 block mb-1">
+                  <label className="text-[11px] font-bold text-[#0B1528] block mb-1">
                     Payer Name / Personal Account Details <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -5083,10 +5083,10 @@ export default function DeparturePayments({
                         customPayerName: e.target.value,
                       }))
                     }
-                    className="w-full h-8 text-xs font-bold border border-orange-300 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-orange-600"
+                    className="w-full h-8 text-xs font-bold border border-[#FF4D00]/40 rounded-md px-3 bg-white text-slate-900 outline-none focus:border-[#FF4D00]"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-[11px] font-bold text-orange-900 cursor-pointer pt-1">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-[#0B1528] cursor-pointer pt-1">
                   <input
                     type="checkbox"
                     checked={activityPaymentForm.needsReimbursement}
@@ -5096,7 +5096,7 @@ export default function DeparturePayments({
                         needsReimbursement: e.target.checked,
                       }))
                     }
-                    className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-orange-300"
+                    className="w-4 h-4 rounded text-[#FF4D00] focus:ring-[#FF4D00] border-[#FF4D00]/40"
                   />
                   <span>Mark as "Pending Reimbursement from Company"</span>
                 </label>
@@ -5165,7 +5165,7 @@ export default function DeparturePayments({
               </Button>
               <Button
                 type="submit"
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs px-4"
               >
                 Save & Record Payment
               </Button>
@@ -5427,7 +5427,7 @@ export default function DeparturePayments({
               </Button>
               <Button
                 type="submit"
-                className="h-8 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+                className="h-8 bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs"
               >
                 Save Adjustment
               </Button>
@@ -5448,7 +5448,7 @@ export default function DeparturePayments({
           <div className="flex items-center justify-between px-5 py-3.5 bg-slate-900 text-white">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="p-2 bg-slate-800 rounded-lg shrink-0">
-                <Eye className="w-4 h-4 text-orange-400" />
+                <Eye className="w-4 h-4 text-[#FF4D00]" />
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-black text-white truncate">

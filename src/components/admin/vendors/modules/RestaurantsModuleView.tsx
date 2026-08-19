@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { UtensilsCrossed, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDisplayVendorCode } from "@/utils/vendorUtils";
@@ -71,7 +71,7 @@ export function RestaurantsModuleView({
               <tr>
                 <td colSpan={5} className="p-12 text-center bg-slate-50/50">
                   <div className="space-y-2 max-w-sm mx-auto">
-                    <div className="w-12 h-12 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 mx-auto">
+                    <div className="w-12 h-12 rounded-full bg-[#FF4D00]/5 border border-[#FF4D00]/30 flex items-center justify-center text-[#FF4D00] mx-auto">
                       <UtensilsCrossed className="w-6 h-6" />
                     </div>
                     <p className="text-sm font-bold text-slate-800">
@@ -97,7 +97,7 @@ export function RestaurantsModuleView({
                 >
                   <td className="py-2.5 px-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-md bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF4D00] font-bold shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-[#FF4D00]/5 border border-[#FF4D00]/30 flex items-center justify-center text-[#FF4D00] font-bold shrink-0">
                         <UtensilsCrossed className="w-3.5 h-3.5" />
                       </div>
                       <div>

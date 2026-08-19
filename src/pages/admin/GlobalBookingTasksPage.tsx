@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { 
@@ -211,7 +211,7 @@ export default function GlobalBookingTasksPage() {
           className={cn(
             "px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5",
             typeFilter === "BOOKING"
-              ? "bg-purple-600 text-white shadow-xs"
+              ? "bg-[#0B1528] text-white shadow-xs"
               : "text-slate-600 hover:bg-slate-100"
           )}
         >
@@ -236,7 +236,7 @@ export default function GlobalBookingTasksPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 px-3 text-xs font-semibold rounded-md border border-slate-200 bg-white focus:outline-none focus:border-[#FF5A1F]"
+            className="h-8 px-3 text-xs font-semibold rounded-md border border-slate-200 bg-white focus:outline-none focus:border-[#FF5A1F]"
           >
             <option value="ALL">All Statuses</option>
             <option value="PENDING">Pending</option>
@@ -246,7 +246,7 @@ export default function GlobalBookingTasksPage() {
           <select
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="h-9 px-3 text-xs font-semibold rounded-md border border-slate-200 bg-white focus:outline-none focus:border-[#FF5A1F] max-w-[150px]"
+            className="h-8 px-3 text-xs font-semibold rounded-md border border-slate-200 bg-white focus:outline-none focus:border-[#FF5A1F] max-w-[150px]"
           >
             <option value="ALL">All Assignees</option>
             {staffUsers.map((u) => (
@@ -314,13 +314,13 @@ export default function GlobalBookingTasksPage() {
                       <td className="px-4 py-3">
                         {isBooking ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-50 text-purple-700 border border-purple-200">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-slate-50 text-slate-700 border border-slate-200">
                               Booking Task
                             </span>
                             {t.booking?.bookingId && (
                               <Link
                                 to={`/admin/bookings?id=${t.booking?.id}&tab=tasks`}
-                                className="font-bold text-purple-700 hover:underline inline-flex items-center gap-0.5"
+                                className="font-bold text-slate-700 hover:underline inline-flex items-center gap-0.5"
                               >
                                 {t.booking.bookingId} <ArrowUpRight className="w-3 h-3" />
                               </Link>
@@ -328,7 +328,7 @@ export default function GlobalBookingTasksPage() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-orange-50 text-[#FF5A1F] border border-orange-200">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-[#FF4D00]/5 text-[#FF5A1F] border border-[#FF4D00]/30">
                               Universal Task
                             </span>
                             <span className="text-[10px] font-medium text-slate-500">
@@ -374,7 +374,7 @@ export default function GlobalBookingTasksPage() {
                         {isBooking && t.booking?.id ? (
                           <Link
                             to={`/admin/bookings?id=${t.booking.id}&tab=tasks`}
-                            className="inline-flex items-center justify-center h-7 px-3 text-[10px] font-bold uppercase bg-purple-50 hover:bg-purple-100 text-purple-700 rounded border border-purple-200 transition-colors"
+                            className="inline-flex items-center justify-center h-7 px-3 text-[10px] font-bold uppercase bg-slate-50 hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
                           >
                             View Booking <ArrowUpRight className="w-3 h-3 ml-1" />
                           </Link>
@@ -425,7 +425,7 @@ export default function GlobalBookingTasksPage() {
                   className={cn(
                     "flex items-center justify-center gap-2 py-2 px-3 rounded-lg border text-xs font-bold transition-all",
                     taskCategory === "UNIVERSAL"
-                      ? "border-[#FF5A1F] bg-orange-50/60 text-[#FF5A1F]"
+                      ? "border-[#FF5A1F] bg-[#FF4D00]/5/60 text-[#FF5A1F]"
                       : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   )}
                 >
@@ -437,7 +437,7 @@ export default function GlobalBookingTasksPage() {
                   className={cn(
                     "flex items-center justify-center gap-2 py-2 px-3 rounded-lg border text-xs font-bold transition-all",
                     taskCategory === "BOOKING"
-                      ? "border-purple-500 bg-purple-50/60 text-purple-700"
+                      ? "border-purple-500 bg-slate-50/60 text-slate-700"
                       : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   )}
                 >

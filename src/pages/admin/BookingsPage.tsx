@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+﻿import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Plus,
@@ -945,7 +945,7 @@ export default function BookingsPage() {
                 Mark Complete
               </button>
               <button
-                className="h-8 px-3 rounded border border-orange-400/40 bg-orange-650 hover:bg-orange-600 text-white font-bold text-xs transition-colors cursor-pointer"
+                className="h-8 px-3 rounded border border-[#FF4D00]/40 bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-bold text-xs transition-colors cursor-pointer"
                 onClick={() => setIsBulkEmailOpen(true)}
               >
                 Send Email

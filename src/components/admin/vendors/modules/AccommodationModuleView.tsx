@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Hotel, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDisplayVendorCode } from "@/utils/vendorUtils";
@@ -132,7 +132,7 @@ export function AccommodationModuleView({
                   sType === "CAMP" || sType === "TENT"
                     ? "bg-green-50 text-green-700 border-green-200/80"
                     : sType === "RESORT"
-                    ? "bg-orange-50 text-orange-800 border-orange-200/80"
+                    ? "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30/80"
                     : sType === "HOMESTAY"
                     ? "bg-[#F4F7FB] text-[#0B1528] border-[#E8EEF4]"
                     : "bg-[#F4F7FB] text-[#0B1528] border-[#E8EEF4]";

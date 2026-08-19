@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CheckCircle2, Clock, User, ArrowUpRight, AlertCircle, ListTodo } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -54,7 +54,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
           <div className="flex items-center gap-2">
             <span>Tasks & allotments</span>
             {openTasksCount > 0 && (
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-[#FF5A1F]">
+              <span className="rounded-full bg-[#FF4D00]/10 px-2 py-0.5 text-[10px] font-bold text-[#FF5A1F]">
                 {openTasksCount} open
               </span>
             )}
@@ -120,7 +120,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
                       {isBooking ? (
                         <>
                           {task.booking?.bookingId && (
-                            <span className="font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                            <span className="font-bold text-slate-700 bg-slate-50 px-1.5 py-0.5 rounded border border-purple-100">
                               {task.booking.bookingId}
                             </span>
                           )}
@@ -131,7 +131,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
                           )}
                         </>
                       ) : (
-                        <span className="font-bold text-[#FF5A1F] bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                        <span className="font-bold text-[#FF5A1F] bg-[#FF4D00]/5 px-1.5 py-0.5 rounded border border-[#FF4D00]/20">
                           Universal
                         </span>
                       )}
@@ -152,7 +152,7 @@ export const BookingTasksWidget: React.FC<DashboardWidgetContextProps> = ({
                       isDone
                         ? "bg-green-50 text-green-700"
                         : isDueToday
-                        ? "bg-orange-50 text-[#FF5A1F]"
+                        ? "bg-[#FF4D00]/5 text-[#FF5A1F]"
                         : "bg-slate-100 text-slate-600"
                     )}
                   >

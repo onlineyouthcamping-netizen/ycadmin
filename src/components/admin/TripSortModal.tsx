@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   DragDropContext,
   Droppable,
@@ -167,7 +167,7 @@ export default function TripSortModal({
         <DialogFooter className="gap-2 sm:gap-0 pt-4 border-t border-slate-100 flex items-center justify-end shrink-0">
           <Button
             variant="ghost"
-            className="h-9 px-4 text-xs font-semibold text-slate-555 hover:text-slate-700 hover:bg-slate-50 rounded-[4px]"
+            className="h-8 px-4 text-xs font-semibold text-slate-555 hover:text-slate-700 hover:bg-slate-50 rounded-[4px]"
             onClick={() => onOpenChange(false)}
           >
             Cancel

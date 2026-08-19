@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   Activity,
   DollarSign,
@@ -73,8 +73,8 @@ export default function ActivityKPIHeader({ stats }: ActivityKPIProps) {
       value: data.passengersBooked.toString(),
       subtext: "Total activity seat-slots",
       icon: Users,
-      color: "text-orange-600 bg-orange-50 border-orange-200",
-      iconColor: "text-orange-600",
+      color: "text-[#FF4D00] bg-[#FF4D00]/5 border-[#FF4D00]/30",
+      iconColor: "text-[#FF4D00]",
     },
     {
       label: "Vendor Cost",

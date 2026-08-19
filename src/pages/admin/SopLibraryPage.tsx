@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   FileText,
   Plus,
@@ -101,7 +101,7 @@ export default function SopLibraryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-orange-100 rounded-lg text-[#FF4D00]">
+            <span className="p-2 bg-[#FF4D00]/10 rounded-lg text-[#FF4D00]">
               <FileText className="w-5 h-5" />
             </span>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -169,11 +169,11 @@ export default function SopLibraryPage() {
             return (
               <div
                 key={tmpl.id}
-                className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-orange-300 transition-all flex flex-col justify-between"
+                className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#FF4D00]/40 transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-orange-50 text-[#FF4D00] border border-orange-200 uppercase tracking-wider">
+                    <span className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-[#FF4D00]/5 text-[#FF4D00] border border-[#FF4D00]/30 uppercase tracking-wider">
                       {tmpl.trip?.title || tmpl.name}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
@@ -219,7 +219,7 @@ export default function SopLibraryPage() {
                       navigate(`/admin/operations/sops/builder?templateId=${tmpl.id}`)
                     }
                     variant="outline"
-                    className="h-8 text-xs font-bold text-[#FF4D00] border-orange-200 hover:bg-orange-50 hover:text-[#EA580C]"
+                    className="h-8 text-xs font-bold text-[#FF4D00] border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 hover:text-[#EA580C]"
                   >
                     Open SOP
                     <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -257,7 +257,7 @@ export default function SopLibraryPage() {
                     setSopName(`${found.title} Master SOP`);
                   }
                 }}
-                className="w-full h-9 text-xs border border-slate-200 rounded-lg px-2.5 bg-white text-slate-800 focus:outline-none focus:border-orange-500"
+                className="w-full h-9 text-xs border border-slate-200 rounded-lg px-2.5 bg-white text-slate-800 focus:outline-none focus:border-[#FF4D00]"
                 required
               >
                 <option value="">-- Choose a Trip --</option>
@@ -290,7 +290,7 @@ export default function SopLibraryPage() {
                 placeholder="Operational rules, room sharing policies, high-altitude advisories..."
                 value={sopDesc}
                 onChange={(e) => setSopDesc(e.target.value)}
-                className="w-full text-xs border border-slate-200 rounded-lg p-2.5 h-20 text-slate-800 focus:outline-none focus:border-orange-500"
+                className="w-full text-xs border border-slate-200 rounded-lg p-2.5 h-20 text-slate-800 focus:outline-none focus:border-[#FF4D00]"
               />
             </div>
 

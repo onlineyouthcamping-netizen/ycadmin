@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+﻿import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Banknote,
@@ -652,8 +652,8 @@ export default function AccountingPage() {
     if (approvalStatus === "REVIEWED_FINANCE_CONTROLLER") {
       if (requiresFounder) {
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 animate-pulse">
-            <ShieldCheck className="w-3 h-3 text-purple-600" /> Awaiting Founder (&gt;₹50K)
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-50 text-slate-700 border border-slate-200 animate-pulse">
+            <ShieldCheck className="w-3 h-3 text-slate-600" /> Awaiting Founder (&gt;₹50K)
           </span>
         );
       }
@@ -1894,7 +1894,7 @@ export default function AccountingPage() {
                                   className={cn(
                                     "h-7 gap-1 rounded-md px-2.5 text-[11px] font-medium text-white shadow-none cursor-pointer",
                                     requiresFounder
-                                      ? "bg-purple-600 hover:bg-purple-700"
+                                      ? "bg-[#0B1528] hover:bg-[#152238]"
                                       : "bg-green-600 hover:bg-green-700"
                                   )}
                                 >
@@ -1953,13 +1953,13 @@ export default function AccountingPage() {
             <div className="min-w-0 overflow-hidden rounded-xl border border-[#E8EEF4] bg-white">
               <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[#E8EEF4] bg-[#F8FAFC] px-3 py-2.5 md:px-4">
                 <span className="truncate text-[12px] font-semibold text-[#0B1528] flex items-center gap-2">
-                  <Ticket className="w-4 h-4 text-orange-600" />
+                  <Ticket className="w-4 h-4 text-[#FF4D00]" />
                   Pending Train Ticket Deductions (Riya Train Account) (
                   {verificationQueue.pendingTrainTickets?.length || 0})
                 </span>
                 <Badge
                   variant="outline"
-                  className="bg-orange-50 text-orange-700 border-orange-200 text-[10px] font-black uppercase"
+                  className="bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30 text-[10px] font-black uppercase"
                 >
                   Auto-Deducted from Riya Wallet
                 </Badge>
@@ -2017,7 +2017,7 @@ export default function AccountingPage() {
                             <td className="px-3 py-2.5 text-right font-medium tabular-nums text-slate-600 md:px-4">
                               {formatINR(exp)}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-black tabular-nums text-orange-700 md:px-4">
+                            <td className="px-3 py-2.5 text-right font-black tabular-nums text-[#C2410C] md:px-4">
                               {formatINR(act)}
                             </td>
                             <td className="px-3 py-2.5 text-center md:px-4">
@@ -2039,9 +2039,9 @@ export default function AccountingPage() {
                                     : "Exact Match"}
                               </Badge>
                             </td>
-                            <td className="px-3 py-2.5 md:px-4 text-xs font-semibold text-orange-900">
+                            <td className="px-3 py-2.5 md:px-4 text-xs font-semibold text-[#0B1528]">
                               <div className="flex items-center gap-1.5">
-                                <Wallet className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                                <Wallet className="w-3.5 h-3.5 text-[#FF4D00] shrink-0" />
                                 Riya Train Portal Account
                               </div>
                             </td>
@@ -2727,8 +2727,8 @@ export default function AccountingPage() {
                     Treasury accounts and cash desks
                   </h2>
                   {isFounder ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                      <ShieldCheck className="w-3 h-3 text-purple-600" /> Founder Treasury Control
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-200">
+                      <ShieldCheck className="w-3 h-3 text-slate-600" /> Founder Treasury Control
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
@@ -2789,7 +2789,7 @@ export default function AccountingPage() {
                             type="button"
                             onClick={() => handleOpenEditAccount(acc)}
                             title="Edit account & channel mappings (Founder Only)"
-                            className="p-1 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded cursor-pointer transition-colors"
+                            className="p-1 text-slate-400 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 rounded cursor-pointer transition-colors"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -2831,7 +2831,7 @@ export default function AccountingPage() {
                         </span>
                       )}
                       {(acc.paymentMethods?.includes("UPI") || acc.upiId) && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-200">
                           <Smartphone className="w-2.5 h-2.5" /> UPI Linked
                         </span>
                       )}
@@ -2991,7 +2991,7 @@ export default function AccountingPage() {
                           <td className="px-3 py-2.5 text-right tabular-nums text-slate-500 md:px-4">
                             {formatINR(t.expectedTrainCost)}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-orange-700 md:px-4">
+                          <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-[#C2410C] md:px-4">
                             {formatINR(t.actualTrainCost)}
                           </td>
                           <td className="px-3 py-2.5 text-center md:px-4">
@@ -3095,7 +3095,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewIncomeForm((prev) => ({ ...prev, amount: e.target.value }))
                   }
-                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                  className="h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                 />
               </div>
 
@@ -3265,7 +3265,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setNewExpenseForm((prev) => ({ ...prev, amount: e.target.value }))
                   }
-                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                  className="h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                 />
               </div>
 
@@ -3404,7 +3404,7 @@ export default function AccountingPage() {
                 onChange={(e) =>
                   setRechargeRiyaForm((prev) => ({ ...prev, amount: e.target.value }))
                 }
-                className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                className="h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
               />
             </div>
 
@@ -3629,7 +3629,7 @@ export default function AccountingPage() {
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0B1528]">
-                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">2</span>
+                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-[10px] font-bold">2</span>
                     Step 2: Founder Sign-off
                   </div>
                   <div className="text-[11px] text-slate-500 pl-6.5">
@@ -3830,7 +3830,7 @@ export default function AccountingPage() {
                       onChange={(e) =>
                         setNewAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
                       }
-                      className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase font-mono shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                      className="h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase font-mono shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                     />
                   </div>
 
@@ -3865,7 +3865,7 @@ export default function AccountingPage() {
                       className={cn(
                         "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
                         newAccForm.paymentMethods.includes("UPI")
-                          ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
+                          ? "bg-slate-50 border-slate-300 text-slate-700 shadow-2xs"
                           : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
                       )}
                     >
@@ -4033,7 +4033,7 @@ export default function AccountingPage() {
                       onChange={(e) =>
                         setEditAccForm((prev) => ({ ...prev, ifsc: e.target.value }))
                       }
-                      className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase font-mono shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                      className="h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium uppercase font-mono shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                     />
                   </div>
 
@@ -4068,7 +4068,7 @@ export default function AccountingPage() {
                       className={cn(
                         "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer",
                         editAccForm.paymentMethods.includes("UPI")
-                          ? "bg-purple-50 border-purple-300 text-purple-700 shadow-2xs"
+                          ? "bg-slate-50 border-slate-300 text-slate-700 shadow-2xs"
                           : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
                       )}
                     >
@@ -4166,7 +4166,7 @@ export default function AccountingPage() {
                   onChange={(e) =>
                     setSubmitFundsForm((prev) => ({ ...prev, amount: e.target.value }))
                   }
-                  className="h-9 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
+                  className="h-8 rounded-md border-[#E8EEF4] text-[12px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-[#FF4D00]/40"
                 />
               </div>
 

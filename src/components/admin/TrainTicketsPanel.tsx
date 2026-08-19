@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TrainTicketsPanel.tsx
  * Comprehensive Two-Way Train Ticketing Module (Departure + Return Journeys)
  * Includes Group Ticket Summary, Independent Journey Sections, and Passenger Matrix.
@@ -110,8 +110,8 @@ function ApprovalPill({ status }: { status?: string }) {
   }
   if (s === "REOPENED") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
-        <RefreshCw className="w-2.5 h-2.5 text-orange-600" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-[#FF4D00]/5 text-[#C2410C] border border-[#FF4D00]/30">
+        <RefreshCw className="w-2.5 h-2.5 text-[#FF4D00]" />
         Reopened
       </span>
     );
@@ -1012,7 +1012,7 @@ export default function TrainTicketsPanel({
                 variant="outline"
                 size="sm"
                 onClick={() => handleFillFromTemplate()}
-                className="h-6 text-[10px] font-semibold text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100 gap-1 cursor-pointer"
+                className="h-6 text-[10px] font-semibold text-[#FF4D00] border-[#FF4D00]/30 bg-[#FF4D00]/5 hover:bg-[#FF4D00]/10 gap-1 cursor-pointer"
               >
                 <RefreshCw className="w-2.5 h-2.5" />
                 Fill from Trip Template
@@ -1294,7 +1294,7 @@ export default function TrainTicketsPanel({
                           return (
                             <a
                               href={`tel:${phone}`}
-                              className="text-[10px] font-normal font-mono text-slate-500 hover:text-orange-600 hover:underline flex items-center gap-1 mt-0.5"
+                              className="text-[10px] font-normal font-mono text-slate-500 hover:text-[#FF4D00] hover:underline flex items-center gap-1 mt-0.5"
                             >
                               <Phone className="w-3 h-3 text-slate-400 shrink-0 inline" />
                               <span>{phone}</span>
@@ -1309,7 +1309,7 @@ export default function TrainTicketsPanel({
                             className={cn(
                               "px-1.5 py-0.5 rounded text-[8px] font-semibold border",
                               t.paidBy === "CUSTOMER"
-                                ? "bg-purple-50 text-purple-700 border-purple-200"
+                                ? "bg-slate-50 text-slate-700 border-slate-200"
                                 : "bg-slate-100 text-slate-700 border-[#E8EEF4]",
                             )}
                           >
@@ -1344,7 +1344,7 @@ export default function TrainTicketsPanel({
                           </div>
                         )}
                         {t.supersedesTicketId && (
-                          <div className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">
+                          <div className="text-[9px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded w-fit">
                             ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
                           </div>
                         )}
@@ -1437,7 +1437,7 @@ export default function TrainTicketsPanel({
                                 </button>
                                 <button
                                   onClick={() => handleOpenReticket(t)}
-                                  className="text-indigo-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
+                                  className="text-slate-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                   title="Reticket to different date/train"
                                 >
                                   Reticket
@@ -1527,7 +1527,7 @@ export default function TrainTicketsPanel({
                           return (
                             <a
                               href={`tel:${phone}`}
-                              className="text-[10px] font-normal font-mono text-slate-500 hover:text-orange-600 hover:underline flex items-center gap-1 mt-0.5"
+                              className="text-[10px] font-normal font-mono text-slate-500 hover:text-[#FF4D00] hover:underline flex items-center gap-1 mt-0.5"
                             >
                               <Phone className="w-3 h-3 text-slate-400 shrink-0 inline" />
                               <span>{phone}</span>
@@ -1542,7 +1542,7 @@ export default function TrainTicketsPanel({
                             className={cn(
                               "px-1.5 py-0.5 rounded text-[8px] font-semibold border",
                               t.paidBy === "CUSTOMER"
-                                ? "bg-purple-50 text-purple-700 border-purple-200"
+                                ? "bg-slate-50 text-slate-700 border-slate-200"
                                 : "bg-slate-100 text-slate-700 border-[#E8EEF4]",
                             )}
                           >
@@ -1577,7 +1577,7 @@ export default function TrainTicketsPanel({
                           </div>
                         )}
                         {t.supersedesTicketId && (
-                          <div className="text-[9px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">
+                          <div className="text-[9px] font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded w-fit">
                             ↳ Reticketed from #{t.supersedesTicketId.slice(-6)}
                           </div>
                         )}
@@ -1670,7 +1670,7 @@ export default function TrainTicketsPanel({
                                 </button>
                                 <button
                                   onClick={() => handleOpenReticket(t)}
-                                  className="text-indigo-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
+                                  className="text-slate-600 hover:underline font-semibold text-[10px] px-1 py-0.5"
                                   title="Reticket to different date/train"
                                 >
                                   Reticket
@@ -1829,7 +1829,7 @@ export default function TrainTicketsPanel({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-              <RotateCcw className="w-4 h-4 text-indigo-600" /> Reticket Passenger
+              <RotateCcw className="w-4 h-4 text-slate-600" /> Reticket Passenger
             </DialogTitle>
           </DialogHeader>
           {ticketToReticket && (
@@ -1879,14 +1879,14 @@ export default function TrainTicketsPanel({
                 const newCost = parseFloat(reticketNewCost) || 0;
                 const netDiff = newCost - oldRefund;
                 return (
-                  <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded flex justify-between items-center">
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded flex justify-between items-center">
                     <div>
-                      <div className="font-semibold text-indigo-900 text-[11px]">Net Financial Adjustment:</div>
-                      <div className="text-[9px] text-indigo-700">
+                      <div className="font-semibold text-[#0B1528] text-[11px]">Net Financial Adjustment:</div>
+                      <div className="text-[9px] text-slate-700">
                         New Fare (₹{newCost}) - Old Refund Due (₹{oldRefund})
                       </div>
                     </div>
-                    <span className="font-semibold text-sm text-indigo-900 font-mono">
+                    <span className="font-semibold text-sm text-[#0B1528] font-mono">
                       {netDiff >= 0 ? `+₹${netDiff.toLocaleString("en-IN")}` : `-₹${Math.abs(netDiff).toLocaleString("en-IN")}`}
                     </span>
                   </div>
@@ -1979,7 +1979,7 @@ export default function TrainTicketsPanel({
               disabled={actionBusy}
               onClick={handleSubmitReticket}
               size="sm"
-              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold"
+              className="h-8 text-xs bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-semibold"
             >
               {actionBusy ? "Rebooking..." : "Create Rebooked Ticket"}
             </Button>

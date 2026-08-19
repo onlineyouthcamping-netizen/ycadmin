@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -50,7 +50,7 @@ const COL_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   },
   UPI_VERIFIED: {
     label: "UPI Verified",
-    cls: "bg-teal-50 text-teal-700 border border-teal-200",
+    cls: "bg-green-50 text-green-700 border border-green-200",
   },
   CANCELLED: {
     label: "Cancelled",
@@ -413,7 +413,7 @@ export default function StationPaymentCollection({
       {/* ── Active Departure Scoping Banner ────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-[6px] px-4 py-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-orange-50 border border-orange-100 flex items-center justify-center font-bold text-[#FF4D00] text-xs">
+          <div className="w-8 h-8 rounded bg-[#FF4D00]/5 border border-[#FF4D00]/20 flex items-center justify-center font-bold text-[#FF4D00] text-xs">
             <Building2 className="w-4 h-4" />
           </div>
           <div>
@@ -469,7 +469,7 @@ export default function StationPaymentCollection({
               value: INR(stats.totalUpiCollected),
               sub: `Verified: ${INR(stats.totalVerifiedUpi)}`,
               icon: "📱",
-              cls: "text-teal-600",
+              cls: "text-green-600",
             },
             {
               label: "UPI Unverified",
@@ -535,9 +535,9 @@ export default function StationPaymentCollection({
                   key={c.id}
                   className="flex items-center gap-2 border border-slate-200 rounded-[4px] px-3 py-1.5 bg-slate-50 text-xs"
                 >
-                  <Smartphone className="w-3 h-3 text-teal-500" />
+                  <Smartphone className="w-3 h-3 text-green-600" />
                   <span className="font-semibold text-slate-700">{c.name}</span>
-                  <span className="text-teal-600 font-bold">
+                  <span className="text-green-600 font-bold">
                     {INR(c.upi)} UPI
                   </span>
                   {c.verified < c.upi && (
@@ -736,7 +736,7 @@ export default function StationPaymentCollection({
                         <td className="px-3 py-2.5">
                           {bk.upiCollected > 0 ? (
                             <div>
-                              <span className="text-teal-600 font-semibold">
+                              <span className="text-green-600 font-semibold">
                                 {INR(bk.upiCollected)}
                               </span>
                               {upiPending.length > 0 && (
@@ -859,7 +859,7 @@ export default function StationPaymentCollection({
                                   </div>
                                   <div className="bg-slate-50 p-2 rounded border border-slate-100">
                                     <span className="text-[10px] text-slate-500 block">Station UPI Received</span>
-                                    <span className="font-bold text-teal-700">{INR(bk.upiCollected)}</span>
+                                    <span className="font-bold text-green-700">{INR(bk.upiCollected)}</span>
                                     <span className="text-[10px] text-slate-600 block mt-0.5">
                                       {bk.verifiedUpi > 0 ? `Verified: ${INR(bk.verifiedUpi)}` : "None verified"}
                                     </span>
@@ -1071,7 +1071,7 @@ export default function StationPaymentCollection({
                                 </span>
                               )}
                               {bk.upiCollected > 0 && (
-                                <span className="text-teal-600">
+                                <span className="text-green-600">
                                   {INR(bk.upiCollected)} U
                                 </span>
                               )}
@@ -1526,7 +1526,7 @@ export default function StationPaymentCollection({
                           className={cn(
                             "flex items-center justify-center gap-2 py-3 rounded-[6px] border-2 text-sm font-black transition-all",
                             paymentMode === m
-                              ? "border-[#FF4D00] bg-orange-50 text-[#FF4D00]"
+                              ? "border-[#FF4D00] bg-[#FF4D00]/5 text-[#FF4D00]"
                               : "border-slate-200 text-slate-500 hover:border-slate-300",
                           )}
                         >

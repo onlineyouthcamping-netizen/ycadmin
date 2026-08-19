@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import api from "../../services/api";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
@@ -96,7 +96,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {/* ─── Header ─── */}
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 bg-orange-100 text-[#FF4D00] rounded-lg shrink-0">
+            <div className="p-2 bg-[#FF4D00]/10 text-[#FF4D00] rounded-lg shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div className="min-w-0">

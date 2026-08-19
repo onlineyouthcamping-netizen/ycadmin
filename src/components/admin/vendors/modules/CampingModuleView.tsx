@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   MapPin,
   Phone,
@@ -73,7 +73,7 @@ export function CampingModuleView({
       title: "Bonfire & Music Permitted",
       count: "100%",
       icon: MapPin,
-      color: "text-orange-600 bg-orange-50 border-orange-200",
+      color: "text-[#FF4D00] bg-[#FF4D00]/5 border-[#FF4D00]/30",
     },
   ];
 

@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
+﻿import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -87,10 +87,10 @@ export function formatDate(dateVal: any, fallback: string = "N/A"): string {
 export const TRAIN_TICKET_STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-amber-100 text-amber-700",
   BOOKED: "bg-green-100 text-green-700",
-  WAITLISTED: "bg-orange-100 text-orange-700",
-  CONFIRMED: "bg-teal-100 text-teal-700",
+  WAITLISTED: "bg-[#FF4D00]/10 text-[#C2410C]",
+  CONFIRMED: "bg-green-100 text-green-700",
   RAC: "bg-pink-100 text-pink-700",
-  SELF_BOOKED: "bg-orange-100 text-orange-700",
+  SELF_BOOKED: "bg-[#FF4D00]/10 text-[#C2410C]",
   CANCELLED: "bg-red-100 text-red-700",
 };
 
@@ -99,7 +99,7 @@ export const TRAIN_TICKET_APPROVAL_COLORS: Record<string, string> = {
   SUBMITTED: "bg-blue-100 text-blue-700",
   APPROVED: "bg-green-100 text-green-700",
   REJECTED: "bg-red-100 text-red-700",
-  REOPENED: "bg-orange-100 text-orange-700",
+  REOPENED: "bg-[#FF4D00]/10 text-[#C2410C]",
 };
 
 export function getUpcomingDefaultDates(

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Search,
   RotateCw,
   Filter,
@@ -90,7 +90,7 @@ export function BookingsToolbar({
             <button
               type="button"
               onClick={onClearFilters}
-              className="hidden sm:inline-flex h-8 px-2.5 text-[11px] font-semibold text-[#FF4D00] hover:bg-orange-50 rounded-md"
+              className="hidden sm:inline-flex h-8 px-2.5 text-[11px] font-semibold text-[#FF4D00] hover:bg-[#FF4D00]/5 rounded-md"
             >
               Clear
             </button>
@@ -108,7 +108,7 @@ export function BookingsToolbar({
             className={cn(
               "hidden md:flex h-8 w-8 rounded-md items-center justify-center",
               showSidebar
-                ? "text-[#FF4D00] bg-orange-50"
+                ? "text-[#FF4D00] bg-[#FF4D00]/5"
                 : "text-slate-500 hover:text-[#0B1528] hover:bg-slate-50",
             )}
             onClick={() => setShowSidebar(!showSidebar)}

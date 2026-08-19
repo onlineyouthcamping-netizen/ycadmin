@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+﻿import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { tripsService } from "@/services/trips.service";
 import { DataTable } from "@/components/admin/DataTable";
@@ -417,7 +417,7 @@ export default function TripsPage() {
               "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors",
               isPub
                 ? "bg-green-50 text-green-600 border-green-100 hover:bg-green-100"
-                : "bg-orange-50 text-[#FF5400] border-orange-100 hover:bg-orange-100",
+                : "bg-[#FF4D00]/5 text-[#FF5400] border-[#FF4D00]/20 hover:bg-[#FF4D00]/10",
             )}
             title="Click to toggle status"
           >
@@ -462,7 +462,7 @@ export default function TripsPage() {
               size="icon"
               onClick={() => handleDuplicateTrip(t)}
               title="Duplicate Trip (Copy Itinerary & SOP)"
-              className="h-7 w-7 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-md"
+              className="h-7 w-7 text-slate-400 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 rounded-md"
             >
               <Copy className="h-3.5 w-3.5" />
             </Button>
@@ -500,7 +500,7 @@ export default function TripsPage() {
             <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">
               Expeditions
             </h1>
-            <span className="bg-orange-50 text-[#FF4D00] text-[9px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider shrink-0">
+            <span className="bg-[#FF4D00]/5 text-[#FF4D00] text-[9px] md:text-[10px] font-bold px-1.5 md:px-2 py-0.5 rounded-full border border-[#FF4D00]/20 uppercase tracking-wider shrink-0">
               Catalog OS
             </span>
           </div>
@@ -568,7 +568,7 @@ export default function TripsPage() {
             value: metrics.categories,
             valueClass: "text-[#FF5400]",
             badge: "CAT",
-            badgeClass: "bg-orange-50 border-orange-100 text-[#FF5400]",
+            badgeClass: "bg-[#FF4D00]/5 border-[#FF4D00]/20 text-[#FF5400]",
           },
         ].map((card) => (
           <div
@@ -719,7 +719,7 @@ export default function TripsPage() {
                               "shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
                               isPub
                                 ? "bg-green-50 text-green-600 border-green-100"
-                                : "bg-orange-50 text-[#FF5400] border-orange-100",
+                                : "bg-[#FF4D00]/5 text-[#FF5400] border-[#FF4D00]/20",
                             )}
                           >
                             <span
@@ -772,7 +772,7 @@ export default function TripsPage() {
                               size="icon"
                               onClick={() => handleDuplicateTrip(t)}
                               aria-label="Duplicate expedition"
-                              className="h-8 w-8 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
+                              className="h-8 w-8 text-slate-400 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 rounded-lg"
                             >
                               <Copy className="h-4 w-4" />
                             </Button>

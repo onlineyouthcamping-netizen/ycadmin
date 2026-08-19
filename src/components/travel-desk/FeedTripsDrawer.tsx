@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   Search,
   X,
@@ -159,7 +159,7 @@ export const FeedTripsDrawer: React.FC<FeedTripsDrawerProps> = ({
                     isAlreadyActive
                       ? "bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed"
                       : isSelected
-                        ? "bg-orange-50 border-orange-200"
+                        ? "bg-[#FF4D00]/5 border-[#FF4D00]/30"
                         : "bg-white border-slate-200 hover:border-slate-300",
                   )}
                 >

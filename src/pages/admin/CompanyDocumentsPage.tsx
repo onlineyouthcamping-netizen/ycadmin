@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   FileText,
   Search,
@@ -362,7 +362,7 @@ export default function CompanyDocumentsPage() {
                       >
                         <td className="py-3.5 pl-6 font-bold text-xs text-slate-800">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 bg-orange-50 border border-orange-100 rounded flex items-center justify-center">
+                            <div className="w-7 h-7 bg-[#FF4D00]/5 border border-[#FF4D00]/20 rounded flex items-center justify-center">
                               <File className="w-3.5 h-3.5 text-[#FF4D00]" />
                             </div>
                             <div className="flex flex-col">

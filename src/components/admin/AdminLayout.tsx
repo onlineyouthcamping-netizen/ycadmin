@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 import { ROLE_PERMISSIONS } from "@/lib/permissions";
@@ -970,23 +970,23 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       <DropdownMenuSeparator className="my-1 border-slate-100" />
                       <DropdownMenuItem
                         onClick={() => navigate("/admin/people/staff")}
-                        className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                        className="text-xs font-semibold text-[#C2410C] hover:bg-[#FF4D00]/5 cursor-pointer rounded-md py-1.5"
                       >
-                        <Users className="w-4 h-4 mr-2 text-orange-600" />
+                        <Users className="w-4 h-4 mr-2 text-[#FF4D00]" />
                         Manage Staff Profiles
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => navigate("/admin/roles")}
-                        className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                        className="text-xs font-semibold text-[#C2410C] hover:bg-[#FF4D00]/5 cursor-pointer rounded-md py-1.5"
                       >
-                        <ShieldCheck className="w-4 h-4 mr-2 text-orange-600" />
+                        <ShieldCheck className="w-4 h-4 mr-2 text-[#FF4D00]" />
                         Roles & Custom Roles
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => navigate("/admin/permission-matrix")}
-                        className="text-xs font-semibold text-orange-700 hover:bg-orange-50 cursor-pointer rounded-md py-1.5"
+                        className="text-xs font-semibold text-[#C2410C] hover:bg-[#FF4D00]/5 cursor-pointer rounded-md py-1.5"
                       >
-                        <Sliders className="w-4 h-4 mr-2 text-orange-600" />
+                        <Sliders className="w-4 h-4 mr-2 text-[#FF4D00]" />
                         Permission Matrix
                       </DropdownMenuItem>
                     </>

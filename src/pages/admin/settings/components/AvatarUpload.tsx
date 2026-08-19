@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+﻿import React, { useRef } from "react";
 import { Upload, User, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +49,7 @@ export function AvatarUpload({
   return (
     <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
       <div className="relative group shrink-0">
-        <div className="w-20 h-20 rounded-full border-2 border-orange-500 bg-orange-100 flex items-center justify-center text-orange-600 text-2xl font-bold uppercase overflow-hidden shadow-xs">
+        <div className="w-20 h-20 rounded-full border-2 border-[#FF4D00] bg-[#FF4D00]/10 flex items-center justify-center text-[#FF4D00] text-2xl font-bold uppercase overflow-hidden shadow-xs">
           {currentAvatarUrl ? (
             <img
               src={currentAvatarUrl}

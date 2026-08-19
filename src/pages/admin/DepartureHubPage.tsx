@@ -1,4 +1,4 @@
-import {
+﻿import {
   normalizePassenger,
   normalizeGenderFull,
   normalizeGenderCode,
@@ -973,7 +973,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     CONFIRMED: "bg-green-50 text-green-700 border-green-200",
     PENDING: "bg-amber-50 text-amber-700 border-amber-200",
     CANCELLED: "bg-slate-100 text-slate-500 border-slate-200",
-    OPTIONAL: "bg-orange-50 text-orange-700 border-orange-200",
+    OPTIONAL: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
     PAID: "bg-green-50 text-green-700 border-green-200",
     "PARTIALLY PAID": "bg-amber-50 text-amber-700 border-amber-200",
     UNPAID: "bg-red-50 text-red-600 border-red-200",
@@ -1000,14 +1000,14 @@ const StatusBadge = ({ status }: { status: string }) => {
 const TypeBadge = ({ type }: { type: string }) => {
   const map: Record<string, string> = {
     TRAVEL: "bg-blue-100 text-blue-700",
-    SIGHTSEEING: "bg-orange-100 text-orange-700",
-    ADVENTURE: "bg-orange-100 text-orange-700",
+    SIGHTSEEING: "bg-[#FF4D00]/10 text-[#C2410C]",
+    ADVENTURE: "bg-[#FF4D00]/10 text-[#C2410C]",
     COMMUNICATION: "bg-pink-100 text-pink-700",
     PAYMENTS: "bg-green-100 text-green-700",
-    DOCUMENTS: "bg-orange-100 text-orange-700",
+    DOCUMENTS: "bg-[#FF4D00]/10 text-[#C2410C]",
     HOTELS: "bg-amber-100 text-amber-700",
-    TRANSPORT: "bg-cyan-100 text-cyan-700",
-    GUIDES: "bg-teal-100 text-teal-700",
+    TRANSPORT: "bg-blue-100 text-blue-700",
+    GUIDES: "bg-green-100 text-green-700",
     OPERATIONS: "bg-slate-200 text-slate-700",
   };
   return (
@@ -8997,7 +8997,7 @@ useEffect(() => {
                             >
                               <td className="p-3 border-r border-slate-100">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px] uppercase">
+                                  <div className="w-6 h-6 rounded-full bg-[#FF4D00]/10 text-[#C2410C] flex items-center justify-center font-bold text-[10px] uppercase">
                                     {initials}
                                   </div>
                                   <span className="font-bold text-slate-800">
@@ -10344,7 +10344,7 @@ useEffect(() => {
                       </button>
                       <button
                         onClick={handleSaveRoomAllocations}
-                        className="px-3 py-1.5 bg-orange-500 text-white rounded text-xs hover:bg-orange-600 font-bold transition-colors"
+                        className="px-3 py-1.5 bg-[#FF4D00] text-white rounded text-xs hover:bg-[#FF4D00] font-bold transition-colors"
                       >
                         Save Allocations
                       </button>

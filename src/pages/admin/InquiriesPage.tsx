@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+﻿import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { inquiriesService } from "@/services/inquiries.service";
 import type { Inquiry } from "@/types";
@@ -179,7 +179,7 @@ export default function InquiriesPage() {
         label: "Contacted",
         count: counts.contacted || 28,
         color: "text-[#FF6B00]",
-        bg: "bg-orange-50",
+        bg: "bg-[#FF4D00]/5",
       },
       {
         label: "Follow-up",
@@ -190,14 +190,14 @@ export default function InquiriesPage() {
       {
         label: "Interested",
         count: counts.interested || 17,
-        color: "text-orange-600",
-        bg: "bg-orange-50",
+        color: "text-[#FF4D00]",
+        bg: "bg-[#FF4D00]/5",
       },
       {
         label: "Payment Pending",
         count: counts.paymentPending || 10,
-        color: "text-orange-600",
-        bg: "bg-orange-50",
+        color: "text-[#FF4D00]",
+        bg: "bg-[#FF4D00]/5",
       },
       {
         label: "Booked",
@@ -295,7 +295,7 @@ export default function InquiriesPage() {
             <div>
               <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                 Inquiries &amp; Leads
-                <span className="text-[10px] font-extrabold bg-orange-100 text-[#FF6B00] px-2 py-0.5 rounded-full border border-orange-200/60 uppercase tracking-wider">
+                <span className="text-[10px] font-extrabold bg-[#FF4D00]/10 text-[#FF6B00] px-2 py-0.5 rounded-full border border-[#FF4D00]/30/60 uppercase tracking-wider">
                   Live CRM
                 </span>
               </h1>
@@ -408,7 +408,7 @@ export default function InquiriesPage() {
                 <Button
                   size="sm"
                   onClick={handleBulkEmailClick}
-                  className="h-7 px-3 text-[11px] font-bold rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 gap-1.5 transition-all"
+                  className="h-7 px-3 text-[11px] font-bold rounded-lg bg-[#FF4D00]/5 hover:bg-[#FF4D00]/10 text-[#C2410C] border border-[#FF4D00]/30 gap-1.5 transition-all"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   Email Selected ({selectedRows.length})
@@ -515,7 +515,7 @@ export default function InquiriesPage() {
                           className={cn(
                             "hover:bg-slate-50/80 transition-colors h-14 cursor-pointer text-xs group",
                             isSelected &&
-                              "bg-orange-50/20 border-l-3 border-[#FF6B00]",
+                              "bg-[#FF4D00]/5/20 border-l-3 border-[#FF6B00]",
                           )}
                         >
                           {/* Checkbox */}
@@ -652,7 +652,7 @@ export default function InquiriesPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => handleRowEmailClick(inq)}
-                                    className="cursor-pointer text-orange-700"
+                                    className="cursor-pointer text-[#C2410C]"
                                   >
                                     Send Email
                                   </DropdownMenuItem>
@@ -937,9 +937,9 @@ function InquiryDetailsDrawer({
                 )}
                 <button
                   onClick={() => onSendEmail(selected)}
-                  className="p-2.5 rounded-xl border border-orange-200 bg-orange-50/50 hover:bg-orange-100 text-orange-700 flex flex-col items-center gap-1 transition-all"
+                  className="p-2.5 rounded-xl border border-[#FF4D00]/30 bg-[#FF4D00]/5/50 hover:bg-[#FF4D00]/10 text-[#C2410C] flex flex-col items-center gap-1 transition-all"
                 >
-                  <Mail className="w-4 h-4 text-orange-600" />
+                  <Mail className="w-4 h-4 text-[#FF4D00]" />
                   <span>Email</span>
                 </button>
                 <button

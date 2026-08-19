@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { vendorsService } from "@/services/vendors.service";
 import type { Vendor, TripVendor, TripVendorSummary } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,8 @@ const TYPE_COLORS: Record<string, string> = {
   hotel: "bg-blue-100 text-blue-700",
   transport: "bg-amber-100 text-amber-700",
   guide: "bg-green-100 text-green-700",
-  meals: "bg-orange-100 text-orange-700",
-  equipment: "bg-orange-100 text-orange-700",
+  meals: "bg-[#FF4D00]/10 text-[#C2410C]",
+  equipment: "bg-[#FF4D00]/10 text-[#C2410C]",
   other: "bg-gray-100 text-gray-700",
 };
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+﻿import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Megaphone } from "lucide-react";
 import { toast } from "sonner";
@@ -167,7 +167,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ─── DESKTOP DASHBOARD VIEW (>=768px) ─── */}
+      {/* â”€â”€â”€ DESKTOP DASHBOARD VIEW (>=768px) â”€â”€â”€ */}
       <div className="hidden md:block space-y-4">
         <div className="flex min-h-7 items-center justify-between gap-3">
           <div className="text-[12px] font-medium text-slate-500">
@@ -198,7 +198,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ─── DYNAMIC CATEGORIZED WIDGET SECTIONS ─── */}
+        {/* â”€â”€â”€ DYNAMIC CATEGORIZED WIDGET SECTIONS â”€â”€â”€ */}
         {categoryOrder.map((cat) => {
           const catWidgets = widgetsByCategory[cat];
           // If no widgets in this category have permission, the ENTIRE SECTION DISAPPEARS!
@@ -253,7 +253,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* ─── DIALOG: CREATE ANNOUNCEMENT ─── */}
+      {/* â”€â”€â”€ DIALOG: CREATE ANNOUNCEMENT â”€â”€â”€ */}
       <Dialog open={showAddAnnouncement} onOpenChange={setShowAddAnnouncement}>
         <DialogContent className="sm:max-w-[425px] bg-white p-5 rounded-xl shadow-lg border border-[#E8EEF4]">
           <DialogHeader className="space-y-1">
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                 value={announcementTitle}
                 onChange={(e) => setAnnouncementTitle(e.target.value)}
                 placeholder="e.g. Office closed tomorrow due to weather"
-                className="h-9 rounded-lg border border-[#E8EEF4] bg-white text-xs"
+                className="h-8 rounded-md border border-[#E8EEF4] bg-white text-xs"
               />
             </div>
             <DialogFooter className="flex justify-end gap-2 pt-1">
@@ -284,23 +284,23 @@ export default function DashboardPage() {
                 type="button"
                 variant="ghost"
                 onClick={() => setShowAddAnnouncement(false)}
-                className="h-9 rounded-lg text-xs font-semibold text-slate-500 hover:bg-[#F4F7FB] hover:text-slate-700"
+                className="h-8 rounded-md text-xs font-semibold text-slate-500 hover:bg-[#F4F7FB] hover:text-slate-700"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={creatingAnnouncement}
-                className="h-9 rounded-lg bg-[#FF4D00] px-4 text-xs font-semibold text-white hover:bg-[#E04400]"
+                className="h-8 rounded-md bg-[#FF4D00] px-4 text-xs font-semibold text-white hover:bg-[#E04400]"
               >
-                {creatingAnnouncement ? "Publishing…" : "Publish"}
+                {creatingAnnouncement ? "Publishingâ€¦" : "Publish"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* ─── DIALOG: ALL ANNOUNCEMENTS ─── */}
+      {/* â”€â”€â”€ DIALOG: ALL ANNOUNCEMENTS â”€â”€â”€ */}
       <Dialog
         open={showAllAnnouncements}
         onOpenChange={setShowAllAnnouncements}
@@ -331,7 +331,7 @@ export default function DashboardPage() {
                     {ann.title}
                   </p>
                   <p className="mt-1 text-[10px] font-medium text-slate-400">
-                    {ann.author} ·{" "}
+                    {ann.author} Â·{" "}
                     {new Date(ann.createdAt).toLocaleString("en-IN", {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -346,7 +346,7 @@ export default function DashboardPage() {
             <Button
               type="button"
               onClick={() => setShowAllAnnouncements(false)}
-              className="h-9 rounded-lg bg-[#F4F7FB] px-4 text-xs font-semibold text-slate-600 hover:bg-[#E8EEF4]"
+              className="h-8 rounded-md bg-[#F4F7FB] px-4 text-xs font-semibold text-slate-600 hover:bg-[#E8EEF4]"
             >
               Close
             </Button>

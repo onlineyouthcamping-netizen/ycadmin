@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   ChevronDown,
   Undo2,
@@ -59,7 +59,7 @@ export function PageBuilderHeader({
     <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans">
       {/* Left: Page Title & Page Selector Dropdown */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 text-[#D4541A] flex items-center justify-center font-bold shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-[#FF4D00]/5 border border-[#FF4D00]/20 text-[#D4541A] flex items-center justify-center font-bold shrink-0">
           <Layers className="w-5 h-5 text-[#D4541A]" />
         </div>
 
@@ -108,7 +108,7 @@ export function PageBuilderHeader({
                   onClick={() => onSelectPage(p.id)}
                   className={`rounded-lg text-xs font-bold px-3 py-2 cursor-pointer flex items-center justify-between ${
                     p.id === currentPage
-                      ? "bg-orange-50 text-[#D4541A]"
+                      ? "bg-[#FF4D00]/5 text-[#D4541A]"
                       : "text-slate-700 hover:bg-slate-50"
                   }`}
                 >
@@ -156,7 +156,7 @@ export function PageBuilderHeader({
           type="button"
           variant="outline"
           onClick={onPreview}
-          className="h-9 px-3.5 text-xs font-bold text-slate-700 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer shadow-xs hover:border-slate-300"
+          className="h-8 px-3.5 text-xs font-bold text-slate-700 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer shadow-xs hover:border-slate-300"
         >
           <Eye className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> Live Website
         </Button>
@@ -167,7 +167,7 @@ export function PageBuilderHeader({
           variant="outline"
           disabled={isSaving}
           onClick={onSave}
-          className="h-9 px-3.5 text-xs font-bold text-slate-700 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer shadow-xs hover:border-slate-300"
+          className="h-8 px-3.5 text-xs font-bold text-slate-700 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer shadow-xs hover:border-slate-300"
         >
           {isSaving ? (
             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#D4541A]" />
@@ -182,7 +182,7 @@ export function PageBuilderHeader({
           type="button"
           disabled={isPublishing}
           onClick={onPublish}
-          className="h-9 px-4 text-xs font-extrabold bg-[#D4541A] hover:bg-[#c24610] text-white rounded-xl shadow-xs cursor-pointer transition-all active:scale-[0.98]"
+          className="h-8 px-4 text-xs font-extrabold bg-[#D4541A] hover:bg-[#c24610] text-white rounded-xl shadow-xs cursor-pointer transition-all active:scale-[0.98]"
         >
           {isPublishing ? (
             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-white" />

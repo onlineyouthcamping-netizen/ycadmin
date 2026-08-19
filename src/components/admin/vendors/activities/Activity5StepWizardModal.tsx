@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -505,7 +505,7 @@ export default function Activity5StepWizardModal({
                   className={cn(
                     "flex flex-col items-center p-1.5 sm:p-2 rounded-xl border text-center transition-all cursor-pointer",
                     isCurrent
-                      ? "bg-orange-600 border-orange-500 text-white font-bold shadow-md"
+                      ? "bg-[#FF4D00] border-[#FF4D00] text-white font-bold shadow-md"
                       : isCompleted
                         ? "bg-slate-800 border-slate-700 text-green-500 font-medium"
                         : "bg-slate-800/50 border-slate-700/50 text-slate-500 opacity-60",
@@ -544,7 +544,7 @@ export default function Activity5StepWizardModal({
                     className={cn(
                       "p-3 sm:p-5 rounded-xl border text-center cursor-pointer transition-all",
                       selectedDay === day
-                        ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20 text-orange-950 font-bold"
+                        ? "bg-[#FF4D00]/5 border-[#FF4D00]/60 ring-2 ring-[#FF4D00]/20 text-[#0B1528] font-bold"
                         : "bg-white border-slate-200 hover:border-slate-300 text-slate-700",
                     )}
                   >
@@ -595,7 +595,7 @@ export default function Activity5StepWizardModal({
                     type="button"
                     size="sm"
                     onClick={() => setIsCreatingNew(true)}
-                    className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8"
+                    className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs h-8"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />+ Create Custom Item
                   </Button>
@@ -635,15 +635,15 @@ export default function Activity5StepWizardModal({
                     value={actSearch}
                     onChange={(e) => setActSearch(e.target.value)}
                     placeholder="Search meals / acts..."
-                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-orange-500"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
               </div>
 
               {isCreatingNew ? (
-                <div className="p-4 bg-orange-50/50 border-2 border-orange-200 rounded-xl space-y-3">
+                <div className="p-4 bg-[#FF4D00]/5/50 border-2 border-[#FF4D00]/30 rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-orange-900 uppercase">
+                    <span className="text-xs font-bold text-[#0B1528] uppercase">
                       Create Custom Activity / Meal in Master Directory
                     </span>
                     <button
@@ -715,7 +715,7 @@ export default function Activity5StepWizardModal({
                       type="button"
                       size="sm"
                       onClick={handleCreateNewActivity}
-                      className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-8 px-4"
+                      className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs h-8 px-4"
                     >
                       <Check className="w-3.5 h-3.5 mr-1" />
                       Create & Select Item
@@ -735,7 +735,7 @@ export default function Activity5StepWizardModal({
                       className={cn(
                         "p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between",
                         isSelected
-                          ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20 shadow-xs"
+                          ? "bg-[#FF4D00]/5 border-[#FF4D00]/60 ring-2 ring-[#FF4D00]/20 shadow-xs"
                           : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs",
                       )}
                     >
@@ -826,7 +826,7 @@ export default function Activity5StepWizardModal({
                   value={vendorSearch}
                   onChange={(e) => setVendorSearch(e.target.value)}
                   placeholder="Search restaurant or vendor partner by name, location, contact..."
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-orange-500"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#FF4D00]"
                 />
               </div>
 
@@ -844,7 +844,7 @@ export default function Activity5StepWizardModal({
                       className={cn(
                         "p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between",
                         isSelected
-                          ? "bg-orange-50 border-orange-400 ring-2 ring-orange-500/20 shadow-xs"
+                          ? "bg-[#FF4D00]/5 border-[#FF4D00]/60 ring-2 ring-[#FF4D00]/20 shadow-xs"
                           : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs",
                       )}
                     >
@@ -911,7 +911,7 @@ export default function Activity5StepWizardModal({
                           className={cn(
                             "h-8 px-3 text-xs font-bold",
                             isSelected &&
-                              "bg-orange-600 hover:bg-orange-700 text-white",
+                              "bg-[#FF4D00] hover:bg-[#E04400] text-white",
                           )}
                         >
                           {isSelected ? "Selected" : "Assign"}
@@ -937,14 +937,14 @@ export default function Activity5StepWizardModal({
                   <button
                     type="button"
                     onClick={() => setIsCreatingVendor(true)}
-                    className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 hover:border-orange-400 bg-slate-50/50 hover:bg-orange-50/30 text-xs font-bold text-slate-700 hover:text-orange-600 transition-all flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 hover:border-[#FF4D00]/60 bg-slate-50/50 hover:bg-[#FF4D00]/5/30 text-xs font-bold text-slate-700 hover:text-[#FF4D00] transition-all flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />+ Add Custom Restaurant / Vendor Partner
                   </button>
                 ) : (
-                  <div className="p-4 rounded-xl border border-orange-300 bg-orange-50/40 space-y-3">
+                  <div className="p-4 rounded-xl border border-[#FF4D00]/40 bg-[#FF4D00]/5/40 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-orange-900 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-[#0B1528] uppercase tracking-wider">
                         Add Custom Partner & Net Cost
                       </span>
                       <button
@@ -965,7 +965,7 @@ export default function Activity5StepWizardModal({
                           value={newVendorName}
                           onChange={(e) => setNewVendorName(e.target.value)}
                           placeholder="e.g. Bal Gopal, Musafir Dhaba"
-                          className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                          className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-[#FF4D00]"
                         />
                       </div>
                       <div>
@@ -977,7 +977,7 @@ export default function Activity5StepWizardModal({
                           value={newVendorLocation}
                           onChange={(e) => setNewVendorLocation(e.target.value)}
                           placeholder="e.g. Kasol, Kullu, Manali"
-                          className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                          className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-[#FF4D00]"
                         />
                       </div>
                       <div>
@@ -989,7 +989,7 @@ export default function Activity5StepWizardModal({
                           value={newVendorCost}
                           onChange={(e) => setNewVendorCost(e.target.value)}
                           placeholder="250"
-                          className="w-full px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-orange-500"
+                          className="w-full px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-300 bg-white focus:outline-none focus:border-[#FF4D00]"
                         />
                       </div>
                     </div>
@@ -998,7 +998,7 @@ export default function Activity5StepWizardModal({
                         type="button"
                         size="sm"
                         onClick={handleCreateNewVendor}
-                        className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-4"
+                        className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs px-4"
                       >
                         Save & Select Partner
                       </Button>
@@ -1041,7 +1041,7 @@ export default function Activity5StepWizardModal({
                     className={cn(
                       "px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all",
                       !isIncluded
-                        ? "bg-orange-600 text-white border-orange-700 shadow-sm"
+                        ? "bg-[#FF4D00] text-white border-[#E04400] shadow-sm"
                         : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                     )}
                   >
@@ -1085,13 +1085,13 @@ export default function Activity5StepWizardModal({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-orange-50/70 p-4 rounded-xl border border-orange-200">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#FF4D00]/5/70 p-4 rounded-xl border border-[#FF4D00]/30">
                     <div>
-                      <label className="block text-xs font-bold text-orange-900 mb-1">
+                      <label className="block text-xs font-bold text-[#0B1528] mb-1">
                         Adult Selling Price
                       </label>
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-orange-600 font-bold">
+                        <span className="absolute left-2.5 top-1.5 text-[#FF4D00] font-bold">
                           ₹
                         </span>
                         <input
@@ -1100,13 +1100,13 @@ export default function Activity5StepWizardModal({
                           onChange={(e) =>
                             setAdultPrice(Number(e.target.value) || 0)
                           }
-                          className="w-full pl-6 pr-2 py-1.5 font-bold text-orange-950 rounded-lg border border-orange-300 bg-white"
+                          className="w-full pl-6 pr-2 py-1.5 font-bold text-[#0B1528] rounded-lg border border-[#FF4D00]/40 bg-white"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-orange-900 mb-1">
+                      <label className="block text-xs font-bold text-[#0B1528] mb-1">
                         Vendor Net Cost
                       </label>
                       <div className="relative">
@@ -1119,13 +1119,13 @@ export default function Activity5StepWizardModal({
                           onChange={(e) =>
                             setVendorCost(Number(e.target.value) || 0)
                           }
-                          className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-700 rounded-lg border border-orange-300 bg-white"
+                          className="w-full pl-6 pr-2 py-1.5 font-bold text-slate-700 rounded-lg border border-[#FF4D00]/40 bg-white"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-orange-900 mb-1">
+                      <label className="block text-xs font-bold text-[#0B1528] mb-1">
                         Profit / Pax
                       </label>
                       <div className="text-lg font-black text-green-600 mt-1">
@@ -1134,10 +1134,10 @@ export default function Activity5StepWizardModal({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-orange-900 mb-1">
+                      <label className="block text-xs font-bold text-[#0B1528] mb-1">
                         Total Revenue
                       </label>
-                      <div className="text-lg font-black text-orange-950 mt-1">
+                      <div className="text-lg font-black text-[#0B1528] mt-1">
                         ₹{(selectedPaxIds.length * adultPrice).toLocaleString()}
                       </div>
                     </div>
@@ -1187,7 +1187,7 @@ export default function Activity5StepWizardModal({
                       className={cn(
                         "p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 select-none",
                         isChecked
-                          ? "bg-orange-50 border-orange-300 text-orange-950 font-bold"
+                          ? "bg-[#FF4D00]/5 border-[#FF4D00]/40 text-[#0B1528] font-bold"
                           : "bg-white border-slate-200 text-slate-500 hover:border-slate-300",
                       )}
                     >
@@ -1232,7 +1232,7 @@ export default function Activity5StepWizardModal({
                 type="button"
                 onClick={() => setCurrentStep((prev) => prev + 1)}
                 disabled={currentStep === 2 && !selectedActivity}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold h-9 px-6 text-xs"
+                className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold h-9 px-6 text-xs"
               >
                 Next
                 <ChevronRight className="w-4 h-4 ml-1" />

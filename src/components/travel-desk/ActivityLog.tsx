@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../services/api";
 import { formatDistanceToNow } from "date-fns";
@@ -77,7 +77,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
       case "edit":
         return {
           label: "Edit",
-          badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
+          badgeClass: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
           icon: Edit3,
           iconColor: "text-[#FF4D00]",
         };
@@ -98,9 +98,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
       case "upload":
         return {
           label: "Upload",
-          badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
+          badgeClass: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
           icon: UploadCloud,
-          iconColor: "text-orange-600",
+          iconColor: "text-[#FF4D00]",
         };
       default:
         return {
@@ -162,7 +162,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ tripId }) => {
       {/* ─── Top Filter Header ─── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2.5 bg-orange-50 text-[#FF4D00] rounded-xl">
+          <div className="p-2.5 bg-[#FF4D00]/5 text-[#FF4D00] rounded-xl">
             <History className="w-5 h-5" />
           </div>
           <div>

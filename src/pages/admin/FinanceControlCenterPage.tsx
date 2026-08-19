@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ShieldCheck,
@@ -1726,7 +1726,7 @@ export default function FinanceControlCenterPage({
                         <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
                           {Number(ref.refundAmount || 0) > 0 ? `₹${Number(ref.refundAmount || 0).toLocaleString("en-IN")}` : "—"}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-orange-600">
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[#FF4D00]">
                           {Number(ref.creditNoteAmount || 0) > 0 ? `₹${Number(ref.creditNoteAmount || 0).toLocaleString("en-IN")}` : "—"}
                         </td>
                         <td className="py-3 px-4">
@@ -2088,7 +2088,7 @@ export default function FinanceControlCenterPage({
                                 t.priority === "URGENT"
                                   ? "bg-red-50 text-red-700 border-red-200"
                                   : t.priority === "HIGH"
-                                  ? "bg-orange-50 text-orange-700 border-orange-200"
+                                  ? "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30"
                                   : "bg-slate-50 text-slate-600 border-slate-200"
                               )}
                             >
@@ -2636,7 +2636,7 @@ export default function FinanceControlCenterPage({
               <div className="bg-slate-50 p-3 rounded-lg border space-y-1">
                 <div>Booking: <span className="font-mono font-bold text-slate-900">{selectedRefundForAction.bookingId}</span></div>
                 <div>Cash Portion: <span className="font-mono font-bold text-slate-900">₹{Number(selectedRefundForAction.refundAmount || 0).toLocaleString("en-IN")}</span></div>
-                <div>Credit Portion: <span className="font-mono font-bold text-orange-600">₹{Number(selectedRefundForAction.creditNoteAmount || 0).toLocaleString("en-IN")}</span></div>
+                <div>Credit Portion: <span className="font-mono font-bold text-[#FF4D00]">₹{Number(selectedRefundForAction.creditNoteAmount || 0).toLocaleString("en-IN")}</span></div>
               </div>
 
               <div>

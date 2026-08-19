@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import {
   RefreshCw,
   Clock,
@@ -359,7 +359,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                           ? `₹${Number(ref.refundAmount || 0).toLocaleString("en-IN")}`
                           : "—"}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-orange-600">
+                      <td className="px-4 py-2 text-right font-mono font-bold text-[#FF4D00]">
                         {Number(ref.creditNoteAmount || 0) > 0
                           ? `₹${Number(ref.creditNoteAmount || 0).toLocaleString("en-IN")}`
                           : "—"}
@@ -516,7 +516,7 @@ export default function RefundRequestsPage({ hideHeader = false }: RefundRequest
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Store Credit:</span>
-                  <span className="font-mono font-bold text-orange-600">
+                  <span className="font-mono font-bold text-[#FF4D00]">
                     ₹{Number(selectedRefund.creditNoteAmount || 0).toLocaleString("en-IN")}
                   </span>
                 </div>

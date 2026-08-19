@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+﻿import { useEffect, useState, useCallback, useMemo } from "react";
 import { reviewsService } from "@/services/reviews.service";
 import { tripsService } from "@/services/trips.service";
 import { Button } from "@/components/ui/button";
@@ -207,7 +207,7 @@ export default function ReviewsPage() {
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-11 h-11 rounded-xl bg-[#FF4D00]/5 border border-[#FF4D00]/30/80 flex items-center justify-center shrink-0 shadow-2xs">
             <MessageSquare className="w-5 h-5 text-[#FF5400]" />
           </div>
           <div>
@@ -286,11 +286,11 @@ export default function ReviewsPage() {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
               Trips Covered
             </p>
-            <p className="text-2xl font-black text-orange-600 mt-1">
+            <p className="text-2xl font-black text-[#FF4D00] mt-1">
               {stats.uniqueTrips}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-[#FF4D00]/5 text-[#FF4D00] flex items-center justify-center font-bold">
             <Sparkles className="w-5 h-5" />
           </div>
         </div>
@@ -400,7 +400,7 @@ export default function ReviewsPage() {
                         </h4>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {r.city && (
-                            <span className="text-[10px] font-bold text-[#FF5400] bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                            <span className="text-[10px] font-bold text-[#FF5400] bg-[#FF4D00]/5 border border-[#FF4D00]/20 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                               <MapPin className="w-2.5 h-2.5" /> {r.city}
                             </span>
                           )}
@@ -649,7 +649,7 @@ export default function ReviewsPage() {
                       Upload multiple photos taken by customer during the trip
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold bg-orange-50 border border-orange-200/80 text-[#FF5400] px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold bg-[#FF4D00]/5 border border-[#FF4D00]/30/80 text-[#FF5400] px-2.5 py-0.5 rounded-full">
                     {formData.photos?.length || 0} Photos Uploaded
                   </span>
                 </div>

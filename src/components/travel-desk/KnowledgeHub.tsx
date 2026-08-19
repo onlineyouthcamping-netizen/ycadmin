@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../services/api";
 import { toast } from "sonner";
@@ -469,7 +469,7 @@ export const KnowledgeHub: React.FC<KnowledgeHubProps> = ({
                 key={item.id}
                 className={`bg-white border rounded-xl p-4 flex flex-col justify-between transition-all duration-300 shadow-xs hover:shadow-md ${
                   isHighlighted
-                    ? "border-[#FF4D00] ring-2 ring-[#FF4D00]/20 bg-orange-50/20"
+                    ? "border-[#FF4D00] ring-2 ring-[#FF4D00]/20 bg-[#FF4D00]/5/20"
                     : "border-slate-200 hover:border-slate-300"
                 }`}
               >

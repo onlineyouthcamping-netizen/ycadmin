@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * AccommodationWorkspace — YouthCamping Admin
  *
@@ -580,10 +580,10 @@ function SummaryPill({
     <div
       className={cn(
         "flex items-center gap-1.5 text-xs font-bold",
-        highlight ? "text-orange-600" : "text-slate-700"
+        highlight ? "text-[#FF4D00]" : "text-slate-700"
       )}
     >
-      <span className={highlight ? "text-orange-400" : "text-slate-400"}>{icon}</span>
+      <span className={highlight ? "text-[#FF4D00]" : "text-slate-400"}>{icon}</span>
       {label}
     </div>
   );
@@ -623,7 +623,7 @@ function AccommodationTableRow({
       <td className="px-4 py-3.5">
         {row.hasStay ? (
           <div className="flex items-center gap-1.5 font-bold text-slate-900">
-            <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+            <MapPin className="w-3.5 h-3.5 text-[#FF4D00] shrink-0" />
             <span className="truncate max-w-[140px]">{row.destination}</span>
           </div>
         ) : (
@@ -703,7 +703,7 @@ function AccommodationTableRow({
               <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
                 <span>{formatINR(row.costPerPaxStay)} / pax</span>
                 {row.booking && (row.booking.nightsCount || 1) > 1 && (
-                  <span className="text-orange-600 font-bold ml-1.5">
+                  <span className="text-[#FF4D00] font-bold ml-1.5">
                     (Stay Total: {formatINR(row.booking.totalAmount || (row.totalAmount * (row.booking.nightsCount || 1)))})
                   </span>
                 )}
@@ -723,7 +723,7 @@ function AccommodationTableRow({
             size="xs"
             variant="outline"
             onClick={onAssignClick}
-            className="h-6 text-[10px] font-bold text-orange-600 border-orange-200 hover:bg-orange-50"
+            className="h-6 text-[10px] font-bold text-[#FF4D00] border-[#FF4D00]/30 hover:bg-[#FF4D00]/5"
           >
             {row.booking ? "Edit" : "+ Assign"}
           </Button>
@@ -732,7 +732,7 @@ function AccommodationTableRow({
 
       {/* Chevron */}
       <td className="px-4 py-3.5">
-        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-400 transition-colors" />
+        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#FF4D00] transition-colors" />
       </td>
     </tr>
   );
@@ -762,7 +762,7 @@ function AccommodationMobileCard({
             <StatusBadge status={row.status} />
           </div>
           <div className="flex items-center gap-1 mt-1">
-            {row.hasStay && <MapPin className="w-3 h-3 text-orange-400 shrink-0" />}
+            {row.hasStay && <MapPin className="w-3 h-3 text-[#FF4D00] shrink-0" />}
             <span className={cn(
               "text-xs font-bold truncate",
               row.hasStay ? "text-slate-800" : "text-slate-400"
@@ -1001,7 +1001,7 @@ function DayDetailDrawer({
       {/* Fixed Header */}
       <div className="flex items-start justify-between p-4 sm:p-5 border-b border-slate-100 bg-white shrink-0">
         <div>
-          <span className="text-[10px] font-black uppercase text-orange-500 tracking-wider block">
+          <span className="text-[10px] font-black uppercase text-[#FF4D00] tracking-wider block">
             {row.dayLabel} · {row.destination}
           </span>
           <h3 className="text-base font-black text-slate-800 mt-0.5">
@@ -1083,8 +1083,8 @@ function DayDetailDrawer({
 
         {!booking ? (
           /* ── Unassigned State: Single Clean Actionable Card ── */
-          <div className="bg-orange-50/50 border border-orange-200/70 rounded-xl p-6 text-center flex flex-col items-center justify-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-orange-100/80 text-orange-600 flex items-center justify-center shadow-xs">
+          <div className="bg-[#FF4D00]/5/50 border border-[#FF4D00]/30/70 rounded-xl p-6 text-center flex flex-col items-center justify-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-[#FF4D00]/10/80 text-[#FF4D00] flex items-center justify-center shadow-xs">
               <Hotel className="w-6 h-6" />
             </div>
             <div>
@@ -1097,7 +1097,7 @@ function DayDetailDrawer({
             </div>
             <Button
               onClick={onEditHotel}
-              className="bg-orange-500 hover:bg-orange-600 text-white font-black text-xs h-9 px-4 rounded-lg shadow-sm flex items-center gap-1.5 transition-all mt-1"
+              className="bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-black text-xs h-9 px-4 rounded-lg shadow-sm flex items-center gap-1.5 transition-all mt-1"
             >
               <Plus className="w-4 h-4" />
               Assign Hotel
@@ -1124,7 +1124,7 @@ function DayDetailDrawer({
               </div>
               {(row.destination || booking.location) && (
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                  <MapPin className="w-3.5 h-3.5 text-[#FF4D00] shrink-0" />
                   <span>{row.destination || booking.location}</span>
                   {booking.location &&
                     row.destination &&
@@ -1171,7 +1171,7 @@ function DayDetailDrawer({
                   <SharingDisplay
                     type="Triple"
                     pax={daySharing.triplePax}
-                    color="bg-orange-50 border-orange-200 text-orange-700"
+                    color="bg-[#FF4D00]/5 border-[#FF4D00]/30 text-[#C2410C]"
                   />
                 )}
                 {daySharing.quadPax > 0 && (
@@ -1275,7 +1275,7 @@ function DayDetailDrawer({
                   {row.nights > 1 && (
                     <div className="flex justify-between items-baseline">
                       <span className="text-[10px] text-slate-500 font-semibold uppercase">Cost / Pax / Stay ({row.nights} nights)</span>
-                      <span className="text-sm font-extrabold text-orange-600">
+                      <span className="text-sm font-extrabold text-[#FF4D00]">
                         {formatINR(costResult.costPerPaxStay, 2)}
                       </span>
                     </div>
@@ -1316,7 +1316,7 @@ function DayDetailDrawer({
             ) : (
               <div className="text-xs text-slate-400 font-medium py-1 flex items-center justify-between">
                 <span>No rates configured.</span>
-                <button onClick={onEditHotel} className="text-orange-500 hover:text-orange-600 font-bold underline">
+                <button onClick={onEditHotel} className="text-[#FF4D00] hover:text-[#FF4D00] font-bold underline">
                   Add hotel rates
                 </button>
               </div>

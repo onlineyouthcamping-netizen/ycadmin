@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+﻿import React, { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -586,7 +586,7 @@ export default function DepartureActivities({
 
         {Object.keys(groupedByDay).length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-            <Sparkles className="w-10 h-10 text-orange-400 mx-auto mb-3" />
+            <Sparkles className="w-10 h-10 text-[#FF4D00] mx-auto mb-3" />
             <h4 className="font-bold text-slate-800 text-base">
               No activities or meals match your filters
             </h4>

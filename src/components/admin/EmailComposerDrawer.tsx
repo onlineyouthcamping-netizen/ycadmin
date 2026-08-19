@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import {
   Sheet,
   SheetContent,
@@ -406,7 +406,7 @@ export default function EmailComposerDrawer({
             </div>
 
             {!bulkProgress.isCompleted ? (
-              <div className="flex items-center gap-2 text-orange-600 text-xs font-bold">
+              <div className="flex items-center gap-2 text-[#FF4D00] text-xs font-bold">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Sending emails...
               </div>
@@ -417,7 +417,7 @@ export default function EmailComposerDrawer({
                   setShowProgressOverlay(false);
                   onClose();
                 }}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs px-6 py-2"
+                className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs px-6 py-2"
               >
                 Done
               </Button>
@@ -427,7 +427,7 @@ export default function EmailComposerDrawer({
 
         <SheetHeader className="mb-6">
           <SheetTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-orange-600" />
+            <FileText className="h-5 w-5 text-[#FF4D00]" />
             {isBulkMode
               ? `Send Bulk Email (${selectedIds.length} Recips)`
               : "Send Email"}
@@ -442,7 +442,7 @@ export default function EmailComposerDrawer({
                 To
               </label>
               {isBulkMode ? (
-                <div className="bg-white border border-slate-200 rounded px-3 py-2 text-xs font-extrabold text-orange-600">
+                <div className="bg-white border border-slate-200 rounded px-3 py-2 text-xs font-extrabold text-[#FF4D00]">
                   Multiple Recipients ({selectedIds.length} Selected)
                 </div>
               ) : (
@@ -450,7 +450,7 @@ export default function EmailComposerDrawer({
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
                   placeholder="recipient@example.com"
-                  className="bg-white border-slate-200 focus:border-orange-500 text-sm font-semibold"
+                  className="bg-white border-slate-200 focus:border-[#FF4D00] text-sm font-semibold"
                 />
               )}
             </div>
@@ -517,7 +517,7 @@ export default function EmailComposerDrawer({
               <select
                 value={selectedTemplateId}
                 onChange={handleTemplateChange}
-                className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold focus:border-orange-500 outline-none transition-colors"
+                className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold focus:border-[#FF4D00] outline-none transition-colors"
               >
                 <option value="">-- Choose an Email Template --</option>
                 {templates.map((t) => (
@@ -537,7 +537,7 @@ export default function EmailComposerDrawer({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Enter email subject"
-                className="border-slate-200 focus:border-orange-500 text-sm font-semibold"
+                className="border-slate-200 focus:border-[#FF4D00] text-sm font-semibold"
               />
             </div>
           </div>
@@ -561,10 +561,10 @@ export default function EmailComposerDrawer({
                     key={t.tag}
                     type="button"
                     onClick={() => insertTag(t.tag)}
-                    className="text-left text-[11px] font-semibold text-slate-700 hover:text-orange-600 bg-slate-50 hover:bg-orange-50/50 p-1.5 rounded border border-slate-100 hover:border-orange-100 transition-all truncate"
+                    className="text-left text-[11px] font-semibold text-slate-700 hover:text-[#FF4D00] bg-slate-50 hover:bg-[#FF4D00]/5/50 p-1.5 rounded border border-slate-100 hover:border-[#FF4D00]/20 transition-all truncate"
                     title={t.tag}
                   >
-                    <span className="font-mono text-orange-600 mr-1">
+                    <span className="font-mono text-[#FF4D00] mr-1">
                       {t.tag}
                     </span>
                     <span className="text-slate-400 font-normal">
@@ -712,7 +712,7 @@ export default function EmailComposerDrawer({
               type="button"
               onClick={() => executeSend(false)}
               disabled={isLoading}
-              className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm"
+              className="bg-[#FF4D00] hover:bg-[#E04400] text-white text-xs font-bold shadow-sm"
             >
               <Send className="h-3.5 w-3.5 mr-1.5" />
               {isLoading

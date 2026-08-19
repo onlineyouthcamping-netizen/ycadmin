@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+﻿import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   bookingLinksService,
   type BookingLinkRecord,
@@ -1212,10 +1212,10 @@ export default function BookingLinksPage() {
                 <Input
                   value={shareUrl}
                   readOnly
-                  className="h-10 rounded-md text-xs bg-slate-50 flex-1 font-mono"
+                  className="h-8 rounded-md text-xs bg-slate-50 flex-1 font-mono"
                 />
                 <Button
-                  className="h-10 rounded-md px-3 bg-[#FF4D00] hover:bg-[#EA580C] text-white font-bold"
+                  className="h-8 rounded-md px-3 bg-[#FF4D00] hover:bg-[#EA580C] text-white font-bold"
                   onClick={() => copyToClipboard(shareUrl, "Booking link")}
                 >
                   Copy
@@ -1279,7 +1279,7 @@ export default function BookingLinksPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex items-center justify-end gap-2 mt-4">
-            <AlertDialogCancel className="h-9 rounded-md text-xs font-semibold">
+            <AlertDialogCancel className="h-8 rounded-md text-xs font-semibold">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

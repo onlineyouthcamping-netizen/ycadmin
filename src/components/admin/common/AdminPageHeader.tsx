@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { cn } from "@/lib/utils";
 
 interface AdminPageHeaderProps {
@@ -14,7 +14,7 @@ export function AdminPageHeader({
   title,
   subtitle,
   badgeText,
-  badgeColor = "bg-orange-100 text-[#FF6B00] border-orange-200/60",
+  badgeColor = "bg-[#FF4D00]/10 text-[#FF6B00] border-[#FF4D00]/30/60",
   actions,
   className,
 }: AdminPageHeaderProps) {

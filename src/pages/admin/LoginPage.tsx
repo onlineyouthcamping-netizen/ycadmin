@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 import { Input } from "@/components/ui/input";
@@ -129,7 +129,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="inline-block">
-              <span className="text-[10px] font-extrabold tracking-widest text-[#FF5400] bg-orange-50/80 uppercase px-3.5 py-1 rounded-full border border-orange-200/50">
+              <span className="text-[10px] font-extrabold tracking-widest text-[#FF5400] bg-[#FF4D00]/5/80 uppercase px-3.5 py-1 rounded-full border border-[#FF4D00]/30/50">
                 ADMIN PORTAL
               </span>
             </div>
@@ -329,7 +329,7 @@ export default function LoginPage() {
             </div>
 
             <div className="flex justify-center">
-              <div className="w-8 h-8 rounded-full bg-orange-50 border border-orange-100 text-[#FF5400] flex items-center justify-center shadow-2xs">
+              <div className="w-8 h-8 rounded-full bg-[#FF4D00]/5 border border-[#FF4D00]/20 text-[#FF5400] flex items-center justify-center shadow-2xs">
                 <Lock className="w-3.5 h-3.5" />
               </div>
             </div>

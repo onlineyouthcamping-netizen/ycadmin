@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -306,7 +306,7 @@ export function HeroSectionEditor({
             {/* Pill Tagline Badge */}
             {tagline && (
               <div>
-                <span className="inline-block px-3 py-1 rounded-full bg-orange-50 text-[#D4541A] font-extrabold text-[10.5px] uppercase tracking-widest border border-orange-100/80 shadow-2xs">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#FF4D00]/5 text-[#D4541A] font-extrabold text-[10.5px] uppercase tracking-widest border border-[#FF4D00]/20/80 shadow-2xs">
                   {tagline}
                 </span>
               </div>
@@ -702,7 +702,7 @@ export function HeroSectionEditor({
                   className="w-full accent-[#D97854] cursor-pointer"
                 />
                 <div
-                  className="h-10 rounded-lg border text-center text-xs font-bold flex items-center justify-center"
+                  className="h-8 rounded-md border text-center text-xs font-bold flex items-center justify-center"
                   style={getGradientStyle()}
                 >
                   Fade Preview ({fadeOpacity}%)
@@ -746,7 +746,7 @@ export function HeroSectionEditor({
                   variant="outline"
                   size="sm"
                   onClick={() => applyPreset("light")}
-                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-orange-50 cursor-pointer"
+                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-[#FF4D00]/5 cursor-pointer"
                 >
                   Light Fade
                 </Button>
@@ -755,7 +755,7 @@ export function HeroSectionEditor({
                   variant="outline"
                   size="sm"
                   onClick={() => applyPreset("medium")}
-                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-orange-50 cursor-pointer"
+                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-[#FF4D00]/5 cursor-pointer"
                 >
                   Medium Fade
                 </Button>
@@ -764,7 +764,7 @@ export function HeroSectionEditor({
                   variant="outline"
                   size="sm"
                   onClick={() => applyPreset("dark")}
-                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-orange-50 cursor-pointer"
+                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-[#FF4D00]/5 cursor-pointer"
                 >
                   Dark Fade
                 </Button>
@@ -773,7 +773,7 @@ export function HeroSectionEditor({
                   variant="outline"
                   size="sm"
                   onClick={() => applyPreset("none")}
-                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-orange-50 cursor-pointer"
+                  className="h-9 text-xs font-bold rounded-xl border-slate-200 bg-white hover:bg-[#FF4D00]/5 cursor-pointer"
                 >
                   No Fade
                 </Button>
@@ -924,7 +924,7 @@ export function HeroSectionEditor({
           type="button"
           variant="outline"
           onClick={onReset}
-          className="h-9 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
+          className="h-8 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to
           Default

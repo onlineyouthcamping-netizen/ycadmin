@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+﻿import React, { useState, useMemo, useEffect } from "react";
 import {
   Ticket,
   Search,
@@ -325,7 +325,7 @@ export default function DepartureTicketing({
               placeholder="Search passenger, PNR, booking ref..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-8 pl-9 pr-3 text-xs border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-orange-500"
+              className="w-full h-8 pl-9 pr-3 text-xs border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-[#FF4D00]"
             />
           </div>
 
@@ -368,7 +368,7 @@ export default function DepartureTicketing({
       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-2xs">
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
           <div className="flex items-center gap-2">
-            <Ticket className="w-4 h-4 text-orange-500" />
+            <Ticket className="w-4 h-4 text-[#FF4D00]" />
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
               Train Passenger Ticket Status Queue
             </h3>
@@ -471,7 +471,7 @@ export default function DepartureTicketing({
                           t.status === "RAC" &&
                             "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
                           t.status === "WAITLISTED" &&
-                            "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100",
+                            "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30 hover:bg-[#FF4D00]/10",
                           t.status === "PENDING" &&
                             "bg-red-50 text-red-700 border-red-200 hover:bg-red-100",
                           t.status === "SELF_BOOKED" &&
@@ -492,7 +492,7 @@ export default function DepartureTicketing({
                         onClick={() => handleOpenEdit(t)}
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-slate-600 hover:text-orange-600 hover:bg-orange-50"
+                        className="h-7 text-xs text-slate-600 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5"
                       >
                         <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
                       </Button>
@@ -529,7 +529,7 @@ export default function DepartureTicketing({
                     placeholder="e.g. 8219502931"
                     value={formState.pnrNumber || ""}
                     onChange={(e) => setFormState({ ...formState, pnrNumber: e.target.value })}
-                    className="w-full font-mono text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-orange-500"
+                    className="w-full font-mono text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
 
@@ -563,7 +563,7 @@ export default function DepartureTicketing({
                     placeholder="e.g. Paschim Express"
                     value={formState.trainName || ""}
                     onChange={(e) => setFormState({ ...formState, trainName: e.target.value })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-orange-500"
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
 
@@ -576,7 +576,7 @@ export default function DepartureTicketing({
                     placeholder="e.g. 12925"
                     value={formState.trainNumber || ""}
                     onChange={(e) => setFormState({ ...formState, trainNumber: e.target.value })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-orange-500"
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
               </div>
@@ -591,7 +591,7 @@ export default function DepartureTicketing({
                     placeholder="e.g. B3"
                     value={formState.coach || ""}
                     onChange={(e) => setFormState({ ...formState, coach: e.target.value })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-orange-500"
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
 
@@ -604,7 +604,7 @@ export default function DepartureTicketing({
                     placeholder="e.g. 24 (Lower)"
                     value={formState.seatBerth || ""}
                     onChange={(e) => setFormState({ ...formState, seatBerth: e.target.value })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-orange-500"
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
               </div>
@@ -618,7 +618,7 @@ export default function DepartureTicketing({
                   placeholder="e.g. 3 TIER AC TRAIN"
                   value={formState.trainRoute || ""}
                   onChange={(e) => setFormState({ ...formState, trainRoute: e.target.value })}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-orange-500"
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded focus:outline-none focus:border-[#FF4D00]"
                 />
               </div>
 

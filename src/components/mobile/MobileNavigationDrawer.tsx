@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sheet,
@@ -83,7 +83,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
               <h3 className="text-xs font-bold text-white truncate max-w-[150px]">
                 {admin?.name || "Admin User"}
               </h3>
-              <span className="inline-block text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-orange-500/20 text-[#FF5400] border border-orange-500/30">
+              <span className="inline-block text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-[#FF4D00]/20 text-[#FF5400] border border-[#FF4D00]/30">
                 {isFounder ? "FOUNDER" : admin?.role || "Staff"}
               </span>
             </div>

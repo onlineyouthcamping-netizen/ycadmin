@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AdminPageContainer } from "@/components/admin/layout/AdminPageContainer";
 import { MyAccountTab } from "./settings/MyAccountTab";
@@ -93,7 +93,7 @@ export default function SettingsPage() {
             type="button"
             variant="outline"
             onClick={handleGlobalReset}
-            className="h-9 px-4 text-xs font-semibold text-slate-600 border-slate-200 rounded-lg hover:bg-slate-50"
+            className="h-8 px-4 text-xs font-semibold text-slate-600 border-slate-200 rounded-lg hover:bg-slate-50"
           >
             <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
             Reset
@@ -133,7 +133,7 @@ export default function SettingsPage() {
                 onClick={() => handleTabChange(tab.id as SettingsTabId)}
                 className={`flex items-center gap-2 px-4 py-3.5 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
                   isActive
-                    ? "border-[#FF4D00] text-[#FF4D00] bg-orange-50/50"
+                    ? "border-[#FF4D00] text-[#FF4D00] bg-[#FF4D00]/5/50"
                     : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50/60"
                 }`}
               >

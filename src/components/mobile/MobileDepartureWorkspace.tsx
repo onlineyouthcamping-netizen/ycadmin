@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   CheckCircle2,
   Phone,
@@ -128,7 +128,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
               {departureName || "Departure Group"}{departureDate ? ` (${departureDate})` : ""}
             </h2>
           </div>
-          <div className="bg-orange-500/20 text-[#FF5400] border border-orange-500/30 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+          <div className="bg-[#FF4D00]/20 text-[#FF5400] border border-[#FF4D00]/30 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
             Railway Station
           </div>
         </div>
@@ -302,7 +302,7 @@ export const MobileDepartureWorkspace: React.FC<MobileDepartureWorkspaceProps> =
                   type="button"
                   onClick={() => toggleCollection(p.id)}
                   className={cn(
-                    "h-10 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs touch-manipulation",
+                    "h-8 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs touch-manipulation",
                     p.collected
                       ? "bg-green-600 text-white hover:bg-green-700"
                       : "bg-[#FF5400] text-white hover:bg-[#e04a00]",

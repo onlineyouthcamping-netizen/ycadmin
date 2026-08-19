@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -645,7 +645,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
           {(!isSalesGuide || activeTab === "articles") && !isEditingArticle && (
             <button
               onClick={handleOpenAddArticle}
-              className="flex items-center gap-1 px-3 py-1.5 bg-[#FF6B00] hover:bg-orange-600 text-white rounded-lg text-xs font-black shadow-2xs transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1.5 bg-[#FF6B00] hover:bg-[#FF4D00] text-white rounded-lg text-xs font-black shadow-2xs transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Article</span>
@@ -874,7 +874,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
             <button
               onClick={handleSavePdfMeta}
               disabled={pdfFormSubmitting}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-black shadow-2xs hover:bg-orange-600 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-black shadow-2xs hover:bg-[#FF4D00] cursor-pointer disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
               Save Document Info
@@ -925,7 +925,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                   </p>
                   <button
                     onClick={handleOpenAddArticle}
-                    className="mt-4 inline-flex items-center gap-1 px-3 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-black shadow-2xs hover:bg-orange-600 transition-colors cursor-pointer"
+                    className="mt-4 inline-flex items-center gap-1 px-3 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-black shadow-2xs hover:bg-[#FF4D00] transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add First Article
@@ -1139,7 +1139,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
               className={cn(
                 "m-4 border-2 border-dashed rounded-xl p-6 text-center transition-all flex flex-col items-center justify-center shrink-0 cursor-pointer",
                 dragOver
-                  ? "border-[#FF6B00] bg-orange-50/30 scale-98"
+                  ? "border-[#FF6B00] bg-[#FF4D00]/5/30 scale-98"
                   : "border-slate-350 hover:border-[#FF6B00] bg-white",
               )}
               onClick={() => fileInputRef.current?.click()}
@@ -1270,7 +1270,7 @@ export const CategoryArticlesView: React.FC<CategoryArticlesViewProps> = ({
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-black shadow-2xs hover:bg-orange-600 transition-colors cursor-pointer"
+                    className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-black shadow-2xs hover:bg-[#FF4D00] transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add First PDF</span>

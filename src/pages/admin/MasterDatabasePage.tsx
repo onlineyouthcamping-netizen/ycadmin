@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -624,7 +624,7 @@ const CATEGORY_META: {
     id: "destinations",
     label: "Destinations",
     icon: MapPin,
-    color: "bg-orange-50 text-orange-700 border-orange-200",
+    color: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
   },
   {
     id: "hotels",
@@ -654,13 +654,13 @@ const CATEGORY_META: {
     id: "meals",
     label: "Meals & Add-ons",
     icon: UtensilsCrossed,
-    color: "bg-orange-50 text-orange-700 border-orange-200",
+    color: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
   },
   {
     id: "vendors",
     label: "Vendors",
     icon: UserCheck,
-    color: "bg-orange-50 text-orange-700 border-orange-200",
+    color: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
   },
 ];
 
@@ -956,7 +956,7 @@ export default function MasterDatabasePage() {
           <Button
             variant="outline"
             onClick={clearFilters}
-            className="h-9 px-3 text-xs font-semibold text-slate-600 border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5"
+            className="h-8 px-3 text-xs font-semibold text-slate-600 border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5"
           >
             <RotateCw className="w-3.5 h-3.5" /> Reset Filters
           </Button>
@@ -1000,7 +1000,7 @@ export default function MasterDatabasePage() {
               className={cn(
                 "rounded-[16px] border bg-white p-3.5 shadow-xs cursor-pointer transition-all text-left flex flex-col justify-between space-y-2",
                 isActive
-                  ? "border-[#FF4D00] ring-2 ring-[#FF4D00]/20 bg-orange-50/30"
+                  ? "border-[#FF4D00] ring-2 ring-[#FF4D00]/20 bg-[#FF4D00]/5/30"
                   : "border-slate-200/80 hover:border-slate-300",
               )}
             >
@@ -1045,7 +1045,7 @@ export default function MasterDatabasePage() {
             <select
               value={stateFilter}
               onChange={(e) => setStateFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
+              className="h-8 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="">All States</option>
               {STATES.map((s) => (
@@ -1058,7 +1058,7 @@ export default function MasterDatabasePage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
+              className="h-8 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="Active">Active</option>
@@ -1080,7 +1080,7 @@ export default function MasterDatabasePage() {
             className={cn(
               "px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 border",
               activeCategory === "all"
-                ? "bg-orange-50/70 text-[#FF4D00] border-orange-200"
+                ? "bg-[#FF4D00]/5/70 text-[#FF4D00] border-[#FF4D00]/30"
                 : "bg-white text-slate-600 border-transparent hover:bg-slate-50",
             )}
           >
@@ -1104,7 +1104,7 @@ export default function MasterDatabasePage() {
                 className={cn(
                   "px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 border",
                   isActive
-                    ? "bg-orange-50/70 text-[#FF4D00] border-orange-200"
+                    ? "bg-[#FF4D00]/5/70 text-[#FF4D00] border-[#FF4D00]/30"
                     : "bg-white text-slate-600 border-transparent hover:bg-slate-50",
                 )}
               >

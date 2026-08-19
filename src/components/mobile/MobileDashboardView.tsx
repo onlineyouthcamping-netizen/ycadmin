@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TrendingUp,
@@ -296,7 +296,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           <h3 className="truncate text-[11px] font-semibold tracking-wide text-[#0B1528]">
             Live operations
           </h3>
-          <span className="text-[9px] font-black bg-orange-50 text-[#FF5400] px-2 py-0.5 rounded border border-orange-100 uppercase shrink-0">
+          <span className="text-[9px] font-black bg-[#FF4D00]/5 text-[#FF5400] px-2 py-0.5 rounded border border-[#FF4D00]/20 uppercase shrink-0">
             {loading ? "Syncing" : "Live"}
           </span>
         </div>
@@ -321,7 +321,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
                   className="w-full flex items-center justify-between gap-2 p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl text-left active:bg-slate-100 transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 shrink-0 rounded-lg bg-orange-100 text-[#FF5400] flex items-center justify-center">
+                    <div className="w-8 h-8 shrink-0 rounded-lg bg-[#FF4D00]/10 text-[#FF5400] flex items-center justify-center">
                       <Compass className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">

@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   Building2,
   Hotel,
@@ -78,8 +78,8 @@ export function VendorDashboardView({
       value: guides.length,
       sub: "Expedition Leaders",
       icon: Compass,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
+      color: "text-[#FF4D00]",
+      bg: "bg-[#FF4D00]/5",
     },
     {
       title: "Preferred Partners",
@@ -123,7 +123,7 @@ export function VendorDashboardView({
       count: vendors.filter((v) => v.type === "ACTIVITIES").length,
       icon: Compass,
       desc: "Rafting, Paragliding, Trekking Operators",
-      color: "border-orange-200 hover:border-orange-400 bg-orange-50/20",
+      color: "border-[#FF4D00]/30 hover:border-[#FF4D00]/60 bg-[#FF4D00]/5/20",
     },
     {
       id: "restaurants",
@@ -142,7 +142,7 @@ export function VendorDashboardView({
       count: guides.length,
       icon: CheckCircle2,
       desc: "Mountain Guides, Tour Leaders & Experts",
-      color: "border-orange-200 hover:border-orange-400 bg-orange-50/20",
+      color: "border-[#FF4D00]/30 hover:border-[#FF4D00]/60 bg-[#FF4D00]/5/20",
     },
     {
       id: "other",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+﻿import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { calculateReadinessScore } from "@/utils/readinessUtils";
 import ReportsConsole from "@/components/admin/ReportsConsole";
 import { useAuthStore } from "@/store/auth.store";
@@ -2913,7 +2913,7 @@ export default function OperationsHubPage() {
                                             : rData.gender === "GIRLS"
                                               ? "bg-pink-100 text-pink-800"
                                               : rData.gender === "COUPLE"
-                                                ? "bg-orange-100 text-orange-800"
+                                                ? "bg-[#FF4D00]/10 text-[#C2410C]"
                                                 : "bg-amber-100 text-amber-800"
                                         }`}
                                       >
@@ -3109,7 +3109,7 @@ export default function OperationsHubPage() {
                                         : row.genderGroup === "GIRLS"
                                           ? "bg-pink-50 text-pink-800 border-pink-100"
                                           : row.genderGroup === "COUPLE"
-                                            ? "bg-orange-50 text-orange-800 border-orange-100"
+                                            ? "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/20"
                                             : "bg-amber-50 text-amber-800 border-amber-100"
                                     }`}
                                   >
@@ -3157,7 +3157,7 @@ export default function OperationsHubPage() {
                     <Button
                       size="sm"
                       onClick={handleInitializeChecklist}
-                      className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold h-9"
+                      className="bg-[#FF4D00] hover:bg-[#E04400] text-white text-xs font-bold h-9"
                     >
                       Initialize Checklist
                     </Button>
@@ -3189,7 +3189,7 @@ export default function OperationsHubPage() {
                             key={stage}
                             className="space-y-2 pb-4 border-b border-slate-100 last:border-0 last:pb-0"
                           >
-                            <p className="text-[11px] font-black text-orange-700 uppercase tracking-wider">
+                            <p className="text-[11px] font-black text-[#C2410C] uppercase tracking-wider">
                               {stageLabels[stage]}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
@@ -3208,7 +3208,7 @@ export default function OperationsHubPage() {
                                           item.isCompleted,
                                         )
                                       }
-                                      className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500 mt-0.5 cursor-pointer"
+                                      className="w-4 h-4 text-[#FF4D00] rounded border-slate-300 focus:ring-[#FF4D00] mt-0.5 cursor-pointer"
                                     />
                                     <div className="flex-1">
                                       <p
@@ -3312,7 +3312,7 @@ export default function OperationsHubPage() {
                           });
                           setShowAddSop(true);
                         }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold h-9"
+                        className="bg-[#FF4D00] hover:bg-[#E04400] text-white text-xs font-bold h-9"
                       >
                         + Create SOP
                       </Button>
@@ -3345,7 +3345,7 @@ export default function OperationsHubPage() {
                               sops.map((item) => (
                                 <tr
                                   key={item.id}
-                                  className={`border-b border-slate-200 hover:bg-slate-50 cursor-pointer ${selectedSop?.id === item.id ? "bg-orange-50/30" : ""}`}
+                                  className={`border-b border-slate-200 hover:bg-slate-50 cursor-pointer ${selectedSop?.id === item.id ? "bg-[#FF4D00]/5/30" : ""}`}
                                   onClick={() => setSelectedSop(item)}
                                 >
                                   <td className="p-3 font-bold text-slate-900">
@@ -3369,7 +3369,7 @@ export default function OperationsHubPage() {
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => handleStartEditSop(item)}
-                                      className="h-7 text-orange-600 font-bold hover:bg-orange-50"
+                                      className="h-7 text-[#FF4D00] font-bold hover:bg-[#FF4D00]/5"
                                     >
                                       Edit
                                     </Button>
@@ -3412,7 +3412,7 @@ export default function OperationsHubPage() {
                       {selectedSop ? (
                         <div className="space-y-4">
                           <div className="pb-3 border-b border-slate-100">
-                            <h4 className="text-sm font-black text-orange-800">
+                            <h4 className="text-sm font-black text-[#C2410C]">
                               {selectedSop.title}
                             </h4>
                             <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
@@ -3464,7 +3464,7 @@ export default function OperationsHubPage() {
                           });
                           setShowAssignLeader(true);
                         }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold h-8"
+                        className="bg-[#FF4D00] hover:bg-[#E04400] text-white text-xs font-bold h-8"
                       >
                         Assign Trip Leader
                       </Button>
@@ -3488,7 +3488,7 @@ export default function OperationsHubPage() {
                                   </span>
                                 )}
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${ld.leaderType === "INTERNAL" ? "bg-orange-100 text-orange-800" : "bg-amber-100 text-amber-800"}`}
+                                  className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${ld.leaderType === "INTERNAL" ? "bg-[#FF4D00]/10 text-[#C2410C]" : "bg-amber-100 text-amber-800"}`}
                                 >
                                   {ld.leaderType}
                                 </span>
@@ -3562,7 +3562,7 @@ export default function OperationsHubPage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-5 px-1 ml-2 text-orange-600 text-[10px]"
+                                  className="h-5 px-1 ml-2 text-[#FF4D00] text-[10px]"
                                   onClick={() => {
                                     navigator.clipboard.writeText(
                                       ld.leaderPhone,
@@ -3891,7 +3891,7 @@ export default function OperationsHubPage() {
                   <DialogHeader className="pb-3 border-b border-slate-100">
                     <DialogTitle className="text-base font-black text-slate-900 flex items-center justify-between pr-8">
                       <span className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-orange-600" />{" "}
+                        <Sparkles className="w-4 h-4 text-[#FF4D00]" />{" "}
                         Allocation Proposal (Version{" "}
                         {allocModal.data?.version || 1} — DRAFT)
                       </span>
@@ -3927,15 +3927,15 @@ export default function OperationsHubPage() {
 
                       {/* ── 🚌 VEHICLE SHUFFLE TABLE ── */}
                       {allocModal.data.vehicleAllocations?.length > 0 && (
-                        <div className="border border-orange-200 rounded-xl overflow-hidden bg-orange-50/30 p-3.5 space-y-2">
+                        <div className="border border-[#FF4D00]/30 rounded-xl overflow-hidden bg-[#FF4D00]/5/30 p-3.5 space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                              <ArrowUpDown className="w-3.5 h-3.5 text-orange-600" />{" "}
+                              <ArrowUpDown className="w-3.5 h-3.5 text-[#FF4D00]" />{" "}
                               Shuffle Vehicle Assignment (
                               {allocModal.data.vehicleAllocations.length}{" "}
                               Travelers)
                             </p>
-                            <span className="text-[10px] font-bold text-orange-500">
+                            <span className="text-[10px] font-bold text-[#FF4D00]">
                               Change vehicle or seat # to shuffle
                             </span>
                           </div>
@@ -3958,7 +3958,7 @@ export default function OperationsHubPage() {
                                   (va, idx) => (
                                     <tr
                                       key={idx}
-                                      className="border-b border-slate-100 hover:bg-orange-50/40 transition-colors"
+                                      className="border-b border-slate-100 hover:bg-[#FF4D00]/5/40 transition-colors"
                                     >
                                       <td className="p-2 text-center">
                                         <GripVertical className="w-3 h-3 text-slate-300" />
@@ -3976,7 +3976,7 @@ export default function OperationsHubPage() {
                                               e.target.value,
                                             )
                                           }
-                                          className="w-full h-7 text-xs font-semibold text-orange-800 bg-white border border-orange-200 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-orange-500/30 cursor-pointer"
+                                          className="w-full h-7 text-xs font-semibold text-[#C2410C] bg-white border border-[#FF4D00]/30 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/30 cursor-pointer"
                                         >
                                           {fleet.map((f) => (
                                             <option key={f.id} value={f.id}>
@@ -4005,7 +4005,7 @@ export default function OperationsHubPage() {
                                               e.target.value,
                                             )
                                           }
-                                          className="w-14 h-7 text-center font-mono font-bold text-orange-700 bg-orange-50/50 border border-orange-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                                          className="w-14 h-7 text-center font-mono font-bold text-[#C2410C] bg-[#FF4D00]/5/50 border border-[#FF4D00]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/30"
                                         />
                                       </td>
                                     </tr>
@@ -4026,7 +4026,7 @@ export default function OperationsHubPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 text-[11px] text-orange-600 font-bold hover:bg-orange-50"
+                            className="h-7 text-[11px] text-[#FF4D00] font-bold hover:bg-[#FF4D00]/5"
                             onClick={() => {
                               navigator.clipboard.writeText(
                                 allocModal.data!.whatsappTempoText,
@@ -4040,7 +4040,7 @@ export default function OperationsHubPage() {
                         <textarea
                           readOnly
                           value={allocModal.data.whatsappTempoText}
-                          className="w-full h-40 font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                          className="w-full h-40 font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20"
                         />
                       </div>
 
@@ -4197,7 +4197,7 @@ export default function OperationsHubPage() {
                       size="sm"
                       onClick={handleConfirmAllocation}
                       disabled={allocModal.confirming}
-                      className="text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 h-9 shadow-sm"
+                      className="text-xs bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold px-4 h-9 shadow-sm"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />{" "}
                       {allocModal.confirming
@@ -4809,7 +4809,7 @@ export default function OperationsHubPage() {
                             isPrimary: e.target.checked,
                           })
                         }
-                        className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                        className="h-4 w-4 rounded border-slate-300 text-[#FF4D00] focus:ring-[#FF4D00]"
                       />
                       <label
                         htmlFor="isPrimary"
@@ -4831,7 +4831,7 @@ export default function OperationsHubPage() {
                     <Button
                       size="sm"
                       onClick={handleSaveLeader}
-                      className="text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 h-9"
+                      className="text-xs bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold px-4 h-9"
                     >
                       Assign Leader
                     </Button>
@@ -4901,7 +4901,7 @@ export default function OperationsHubPage() {
                           })
                         }
                         placeholder="Explain what happened, including names or locations if applicable..."
-                        className="w-full h-24 text-xs rounded border border-slate-200 mt-1 p-2 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="w-full h-24 text-xs rounded border border-slate-200 mt-1 p-2 focus:outline-none focus:ring-1 focus:ring-[#FF4D00]"
                       />
                     </div>
                     <div>
@@ -4917,7 +4917,7 @@ export default function OperationsHubPage() {
                           })
                         }
                         placeholder="How was it resolved? (Leave blank if still ongoing)"
-                        className="w-full h-20 text-xs rounded border border-slate-200 mt-1 p-2 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="w-full h-20 text-xs rounded border border-slate-200 mt-1 p-2 focus:outline-none focus:ring-1 focus:ring-[#FF4D00]"
                       />
                     </div>
                   </div>
@@ -4993,7 +4993,7 @@ export default function OperationsHubPage() {
                           setSopForm({ ...sopForm, content: e.target.value })
                         }
                         placeholder="Detail step-by-step guidelines for this destination..."
-                        className="w-full h-32 text-xs rounded border border-slate-200 mt-1 p-2 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono"
+                        className="w-full h-32 text-xs rounded border border-slate-200 mt-1 p-2 focus:outline-none focus:ring-1 focus:ring-[#FF4D00] font-mono"
                       />
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+﻿import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
   Filter,
@@ -614,7 +614,7 @@ export default function VerificationQueuePage({
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Bookings
                 {bookingPendingCount > 0 && (
-                  <span className="ml-1 text-[9px] bg-orange-100 text-[#FF4D00] px-1.5 py-0.2 rounded font-black">
+                  <span className="ml-1 text-[9px] bg-[#FF4D00]/10 text-[#FF4D00] px-1.5 py-0.2 rounded font-black">
                     {bookingPendingCount}
                   </span>
                 )}
@@ -651,7 +651,7 @@ export default function VerificationQueuePage({
               label: "Booking Verification",
               icon: <ShieldCheck className="w-3.5 h-3.5" />,
               count: bookingPendingCount,
-              countColor: "bg-orange-100 text-[#FF4D00]",
+              countColor: "bg-[#FF4D00]/10 text-[#FF4D00]",
               activeColor: "bg-white border-[#FF4D00] text-[#FF4D00] shadow-sm",
               inactiveColor: "text-[#74839A] hover:text-[#162B45] hover:bg-white/70",
             },
@@ -854,7 +854,7 @@ export default function VerificationQueuePage({
                         <td className="px-3.5 py-2">
                           <div className="flex items-center gap-1">
                             {isUpi ? (
-                              <Smartphone className="w-3 h-3 text-teal-500 shrink-0" />
+                              <Smartphone className="w-3 h-3 text-green-600 shrink-0" />
                             ) : (
                               <Banknote className="w-3 h-3 text-green-600 shrink-0" />
                             )}
@@ -1098,7 +1098,7 @@ export default function VerificationQueuePage({
           {/* 4. REDESIGN THE QUEUE HEADER */}
           <div className="p-3.5 border-b border-[#E3EAF2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2.5 shrink-0">
-              <div className="w-7 h-7 rounded bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF4D00] shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded bg-[#FF4D00]/5 border border-[#FF4D00]/20 flex items-center justify-center text-[#FF4D00] shrink-0 mt-0.5">
                 {activeQueue === "booking" ? (
                   <ShieldCheck className="w-4 h-4" />
                 ) : (

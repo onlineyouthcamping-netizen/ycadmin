@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -270,7 +270,7 @@ export default function BlogFormModal({
               value={form.intro}
               onChange={(e) => setForm({ ...form, intro: e.target.value })}
               placeholder="From the serene banks of the Parvati River to the hidden high-altitude trails..."
-              className="rounded-2xl min-h-[90px] border-slate-200 p-4 text-xs font-medium leading-relaxed bg-orange-50/20"
+              className="rounded-2xl min-h-[90px] border-slate-200 p-4 text-xs font-medium leading-relaxed bg-[#FF4D00]/5/20"
             />
           </div>
 

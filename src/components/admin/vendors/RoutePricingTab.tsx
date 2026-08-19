@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import api from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -384,7 +384,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-[#FF4D00] flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-lg bg-[#FF4D00]/10 text-[#FF4D00] flex items-center justify-center font-bold">
                     <Car className="w-4 h-4" />
                   </div>
                   <div>
@@ -528,7 +528,7 @@ export const RoutePricingTab: React.FC<RoutePricingTabProps> = ({
                       <span className="text-xs font-bold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
                         {group.pickupLocation} → {group.dropLocation}
                       </span>
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#FF4D00]/5 text-[#C2410C] border border-[#FF4D00]/30">
                         {group.durationDays} Days / {group.durationNights} Nights
                       </span>
                       {group.season && (

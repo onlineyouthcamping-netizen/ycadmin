@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { X, Save, Loader2, AlertCircle } from "lucide-react";
 import { Trip } from "@/types";
 import api from "@/services/api";
@@ -100,7 +100,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
               Edit details for{" "}
-              <span className="text-orange-500 font-bold">{trip.title}</span>
+              <span className="text-[#FF4D00] font-bold">{trip.title}</span>
             </p>
           </div>
           <button
@@ -130,7 +130,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 type="text"
                 value={form.title}
                 onChange={(e) => handleChange("title", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition"
                 placeholder="e.g. Bali Adventure"
               />
             </div>
@@ -144,7 +144,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 type="text"
                 value={form.code}
                 onChange={(e) => handleChange("code", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition"
                 placeholder="e.g. MKA-1"
               />
             </div>
@@ -158,7 +158,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 type="text"
                 value={form.slug}
                 onChange={(e) => handleChange("slug", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition"
                 placeholder="e.g. bali-adventure"
               />
             </div>
@@ -172,7 +172,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 type="text"
                 value={form.duration}
                 onChange={(e) => handleChange("duration", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition"
                 placeholder="e.g. 5 Days / 4 Nights"
               />
             </div>
@@ -186,7 +186,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 type="text"
                 value={form.location}
                 onChange={(e) => handleChange("location", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition"
                 placeholder="e.g. Bali, Indonesia"
               />
             </div>
@@ -199,7 +199,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
               <select
                 value={form.difficulty}
                 onChange={(e) => handleChange("difficulty", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition bg-white"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition bg-white"
               >
                 <option value="">Select difficulty</option>
                 {DIFFICULTY_OPTIONS.map((d) => (
@@ -218,7 +218,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
               <select
                 value={form.category}
                 onChange={(e) => handleChange("category", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition bg-white"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition bg-white"
               >
                 <option value="">Select category</option>
                 {CATEGORY_OPTIONS.map((c) => (
@@ -238,7 +238,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 type="number"
                 value={form.maxGroupSize}
                 onChange={(e) => handleChange("maxGroupSize", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition"
                 placeholder="e.g. 45"
                 min={1}
               />
@@ -253,7 +253,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 type="url"
                 value={form.heroImage}
                 onChange={(e) => handleChange("heroImage", e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition"
                 placeholder="https://..."
               />
               {form.heroImage && (
@@ -277,7 +277,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                 value={form.description}
                 onChange={(e) => handleChange("description", e.target.value)}
                 rows={3}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400 transition resize-none"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/60 transition resize-none"
                 placeholder="Short description of the trip..."
               />
             </div>
@@ -295,7 +295,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
           <button
             onClick={handleSave}
             disabled={saving || !form.title.trim()}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#FF4D00] hover:bg-[#FF4D00] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

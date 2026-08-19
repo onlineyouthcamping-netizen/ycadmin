@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   Plus,
   Trash2,
@@ -350,7 +350,7 @@ export default function TripSopEditorTab({
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF4D00]">
+            <div className="w-10 h-10 rounded-xl bg-[#FF4D00]/5 border border-[#FF4D00]/30 flex items-center justify-center text-[#FF4D00]">
               <Zap className="w-5 h-5" />
             </div>
             <div>
@@ -358,7 +358,7 @@ export default function TripSopEditorTab({
                 <h3 className="text-base font-black text-slate-900">
                   Operations SOP & Master Checklist
                 </h3>
-                <span className="bg-orange-100 text-orange-800 font-extrabold text-[10px] uppercase px-2 py-0.5 rounded border border-orange-200">
+                <span className="bg-[#FF4D00]/10 text-[#C2410C] font-extrabold text-[10px] uppercase px-2 py-0.5 rounded border border-[#FF4D00]/30">
                   Trip SOP Owner
                 </span>
               </div>
@@ -439,13 +439,13 @@ export default function TripSopEditorTab({
                           <span className="text-xs font-black text-slate-900">
                             {t.taskName}
                           </span>
-                          <span className="text-[9.5px] font-black px-2 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200">
+                          <span className="text-[9.5px] font-black px-2 py-0.5 rounded bg-[#FF4D00]/5 text-[#C2410C] border border-[#FF4D00]/30">
                             {RELATIVE_OFFSETS.find((r) => r.value === t.relativeOffset)?.label || `Offset: ${t.relativeOffset} Days`}
                           </span>
                           <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                             {t.category || "General"}
                           </span>
-                          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200">
+                          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-[#FF4D00]/5 text-[#C2410C] border border-[#FF4D00]/30">
                             {t.taskType || "CHECKLIST"}
                           </span>
                           {t.isRequired && (
@@ -489,7 +489,7 @@ export default function TripSopEditorTab({
                               setForm({ ...t });
                               setIsTaskModalOpen(true);
                             }}
-                            className="h-8 w-8 text-slate-500 hover:text-orange-600 hover:bg-orange-50"
+                            className="h-8 w-8 text-slate-500 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
@@ -533,7 +533,7 @@ export default function TripSopEditorTab({
                 value={form.taskName}
                 onChange={(e) => setForm({ ...form, taskName: e.target.value })}
                 placeholder="e.g. Confirm all hotels & homestay rooming"
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-orange-500"
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-[#FF4D00]"
               />
             </div>
 
@@ -546,7 +546,7 @@ export default function TripSopEditorTab({
                 onChange={(e) => setForm({ ...form, instructions: e.target.value })}
                 rows={2}
                 placeholder="Detailed steps, voucher reconfirmation rules, or advisory notes..."
-                className="w-full p-2.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-orange-500"
+                className="w-full p-2.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#FF4D00]"
               />
             </div>
 
@@ -567,7 +567,7 @@ export default function TripSopEditorTab({
 
                     setForm({ ...form, relativeOffset: offset, stage });
                   }}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   {RELATIVE_OFFSETS.map((r) => (
                     <option key={r.value} value={r.value}>
@@ -584,7 +584,7 @@ export default function TripSopEditorTab({
                 <select
                   value={form.category || "Accommodation"}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   {TASK_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
@@ -603,7 +603,7 @@ export default function TripSopEditorTab({
                 <select
                   value={form.taskType || "VERIFICATION"}
                   onChange={(e) => setForm({ ...form, taskType: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   {TASK_TYPES.map((t) => (
                     <option key={t} value={t}>
@@ -620,7 +620,7 @@ export default function TripSopEditorTab({
                 <select
                   value={form.defaultAssignee || "Hemal Patel"}
                   onChange={(e) => setForm({ ...form, defaultAssignee: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   {staffUsers.map((user) => (
                     <option key={user.id || user.email} value={user.name}>
@@ -639,7 +639,7 @@ export default function TripSopEditorTab({
                 <select
                   value={form.priority || "HIGH"}
                   onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   <option value="CRITICAL">CRITICAL</option>
                   <option value="HIGH">HIGH</option>
@@ -654,7 +654,7 @@ export default function TripSopEditorTab({
                     type="checkbox"
                     checked={form.isRequired !== false}
                     onChange={(e) => setForm({ ...form, isRequired: e.target.checked })}
-                    className="w-4 h-4 text-orange-500 rounded border-slate-300 focus:ring-orange-500"
+                    className="w-4 h-4 text-[#FF4D00] rounded border-slate-300 focus:ring-[#FF4D00]"
                   />
                   <span className="font-bold text-slate-800">
                     Required for Departure Readiness

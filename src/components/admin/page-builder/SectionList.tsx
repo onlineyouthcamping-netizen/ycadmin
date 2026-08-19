@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   GripVertical,
   Eye,
@@ -157,7 +157,7 @@ export function SectionList({
                         onClick={() => onSelectSection(item.id)}
                         className={`group relative flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none ${
                           isSelected
-                            ? "bg-orange-50/60 border-[#D4541A] shadow-xs"
+                            ? "bg-[#FF4D00]/5/60 border-[#D4541A] shadow-xs"
                             : "bg-slate-50/50 hover:bg-white border-slate-200/80 hover:border-slate-300"
                         } ${!isVisible ? "opacity-60 bg-slate-100/50" : ""} ${
                           snapshot.isDragging
@@ -259,7 +259,7 @@ export function SectionList({
         <Button
           type="button"
           onClick={onOpenAddModal}
-          className="w-full h-10 border-2 border-dashed border-[#D4541A]/40 hover:border-[#D4541A] bg-orange-50/30 hover:bg-orange-50 text-[#D4541A] text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+          className="w-full h-10 border-2 border-dashed border-[#D4541A]/40 hover:border-[#D4541A] bg-[#FF4D00]/5/30 hover:bg-[#FF4D00]/5 text-[#D4541A] text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
         >
           <Plus className="w-4 h-4 text-[#D4541A]" /> Add New Section
         </Button>

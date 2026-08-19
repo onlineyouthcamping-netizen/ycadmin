@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   Upload,
   AlertTriangle,
@@ -331,7 +331,7 @@ export default function VendorImportWizard({
                         {c.chargeName}
                       </td>
                       <td className="p-2.5 border-r border-slate-100">
-                        <span className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 font-bold text-[9px] border border-orange-100">
+                        <span className="px-1.5 py-0.5 rounded bg-[#FF4D00]/5 text-[#C2410C] font-bold text-[9px] border border-[#FF4D00]/20">
                           {c.rateBasis}
                         </span>
                       </td>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   Eye,
   Download,
@@ -148,7 +148,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                   >
                     <td className="p-4 pl-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-orange-50 text-[#FF4D00] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded bg-[#FF4D00]/5 text-[#FF4D00] flex items-center justify-center shrink-0">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>

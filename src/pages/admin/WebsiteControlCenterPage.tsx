@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { settingsService } from "@/services/settings.service";
 import { useWebsitePages } from "@/hooks/admin/useWebsitePages";
@@ -73,7 +73,7 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     description:
       "Portrait photo cards & inquiry popup modal for top locations.",
     icon: Compass,
-    color: "bg-orange-50 text-[#D4541A] border-orange-100",
+    color: "bg-[#FF4D00]/5 text-[#D4541A] border-[#FF4D00]/20",
   },
   {
     id: "cta_slider",
@@ -89,7 +89,7 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     badge: "REVIEWS",
     description: "Customer review cards with 5-star ratings & trip links.",
     icon: MessageSquare,
-    color: "bg-orange-50 text-orange-600 border-orange-100",
+    color: "bg-[#FF4D00]/5 text-[#FF4D00] border-[#FF4D00]/20",
   },
   {
     id: "stories",
@@ -98,7 +98,7 @@ const SECTION_SHORTCUTS: SectionShortcut[] = [
     description:
       "Blog & travel journal story cards with author avatars & read time.",
     icon: BookOpen,
-    color: "bg-orange-50 text-orange-600 border-orange-100",
+    color: "bg-[#FF4D00]/5 text-[#FF4D00] border-[#FF4D00]/20",
   },
   {
     id: "recent_photos",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import {
   X,
   CheckCircle2,
@@ -69,8 +69,8 @@ const STATUS_STYLES: Record<
     label: "Pending Verification",
   },
   CHANGES_REQUESTED: {
-    bg: "bg-orange-50",
-    text: "text-orange-700",
+    bg: "bg-[#FF4D00]/5",
+    text: "text-[#C2410C]",
     label: "Changes Requested",
   },
   VERIFIED: {
@@ -88,15 +88,15 @@ const STATUS_STYLES: Record<
   PENDING: { bg: "bg-amber-50", text: "text-amber-700", label: "Pending" },
   BOOKED: { bg: "bg-green-50", text: "text-green-700", label: "Booked" },
   WAITLISTED: {
-    bg: "bg-orange-50",
-    text: "text-orange-700",
+    bg: "bg-[#FF4D00]/5",
+    text: "text-[#C2410C]",
     label: "Waitlisted",
   },
-  CONFIRMED: { bg: "bg-teal-50", text: "text-teal-700", label: "Confirmed" },
+  CONFIRMED: { bg: "bg-green-50", text: "text-green-700", label: "Confirmed" },
   RAC: { bg: "bg-pink-50", text: "text-pink-700", label: "RAC" },
   SELF_BOOKED: {
-    bg: "bg-orange-50",
-    text: "text-orange-700",
+    bg: "bg-[#FF4D00]/5",
+    text: "text-[#C2410C]",
     label: "Self Booked",
   },
   CANCELLED: { bg: "bg-red-50", text: "text-red-700", label: "Cancelled" },
@@ -124,7 +124,7 @@ function TimelineItem({ log, isLast }: { log: any; isLast: boolean }) {
     VERIFIED: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />,
     APPROVED: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />,
     REJECTED: <XCircle className="w-3.5 h-3.5 text-red-600" />,
-    CHANGES_REQUESTED: <AlertCircle className="w-3.5 h-3.5 text-orange-500" />,
+    CHANGES_REQUESTED: <AlertCircle className="w-3.5 h-3.5 text-[#FF4D00]" />,
     ISSUED: <Train className="w-3.5 h-3.5 text-blue-500" />,
   };
 
@@ -779,7 +779,7 @@ export default function VerificationDetailsPanel({
                                       className="flex items-center justify-between bg-white border border-slate-200/60 rounded-lg px-2.5 py-2"
                                     >
                                       <div className="flex items-center gap-2 min-w-0">
-                                        <div className="w-6 h-6 rounded bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                                        <div className="w-6 h-6 rounded bg-[#FF4D00]/5 border border-[#FF4D00]/20 flex items-center justify-center shrink-0">
                                           <FileText className="w-3 h-3 text-[#FF4D00]" />
                                         </div>
                                         <div className="min-w-0">
@@ -824,7 +824,7 @@ export default function VerificationDetailsPanel({
                             className="flex items-center justify-between bg-white border border-slate-200/60 rounded-lg px-2.5 py-2"
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-6 h-6 rounded bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                              <div className="w-6 h-6 rounded bg-[#FF4D00]/5 border border-[#FF4D00]/20 flex items-center justify-center shrink-0">
                                 <FileText className="w-3 h-3 text-[#FF4D00]" />
                               </div>
                               <div className="min-w-0">
@@ -870,7 +870,7 @@ export default function VerificationDetailsPanel({
                     size="sm"
                     variant="outline"
                     onClick={openCreateForm}
-                    className="h-6.5 text-[9px] font-bold text-[#FF4D00] bg-orange-50/70 hover:bg-orange-100 border-orange-200"
+                    className="h-6.5 text-[9px] font-bold text-[#FF4D00] bg-[#FF4D00]/5/70 hover:bg-[#FF4D00]/10 border-[#FF4D00]/30"
                   >
                     <Plus className="w-3 h-3 mr-1" /> Add Ticket
                   </Button>
@@ -1003,7 +1003,7 @@ export default function VerificationDetailsPanel({
                         type="submit"
                         size="sm"
                         disabled={actionLoading}
-                        className="h-7 text-xs bg-[#FF4D00] hover:bg-orange-600 text-white font-bold"
+                        className="h-7 text-xs bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-bold"
                       >
                         {isEditing ? "Save Changes" : "Create Ticket"}
                       </Button>
@@ -1288,7 +1288,7 @@ export default function VerificationDetailsPanel({
                  ───────────────────────────────────────────────────────────── */}
               <div className="space-y-2.5">
                 <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 font-montserrat">
-                  <Building2 className="w-4 h-4 text-orange-600" />
+                  <Building2 className="w-4 h-4 text-[#FF4D00]" />
                   4. Vendor Payments & Trip Operations
                 </h3>
 
@@ -1299,7 +1299,7 @@ export default function VerificationDetailsPanel({
                     <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
-                          <Bed className="w-3 h-3 text-orange-500" /> Hotels / Stays
+                          <Bed className="w-3 h-3 text-[#FF4D00]" /> Hotels / Stays
                         </span>
                         <span className="font-mono font-bold text-slate-900 text-[11px]">
                           ₹{(opsSummary?.hotelCost || 2400).toLocaleString("en-IN")}
@@ -1353,7 +1353,7 @@ export default function VerificationDetailsPanel({
                     <div className="bg-white p-2.5 rounded-lg border border-slate-200/60 space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
-                          <User className="w-3 h-3 text-teal-500" /> Trek Leaders
+                          <User className="w-3 h-3 text-green-600" /> Trek Leaders
                         </span>
                         <span className="font-mono font-bold text-slate-900 text-[11px]">
                           ₹{(opsSummary?.guideCost || 600).toLocaleString("en-IN")}
@@ -1362,7 +1362,7 @@ export default function VerificationDetailsPanel({
                       <p className="text-[9.5px] text-slate-500">
                         Guide & team allowances
                       </p>
-                      <div className="text-[8.5px] font-bold text-teal-600 uppercase bg-teal-50 px-1.5 py-0.5 rounded inline-block">
+                      <div className="text-[8.5px] font-bold text-green-600 uppercase bg-green-50 px-1.5 py-0.5 rounded inline-block">
                         Active
                       </div>
                     </div>
@@ -1391,16 +1391,16 @@ export default function VerificationDetailsPanel({
                   )}
 
                   {/* Operations Profitability Margin Summary Bar */}
-                  <div className="bg-orange-50/60 border border-orange-100 rounded-lg p-2.5 flex items-center justify-between text-xs">
+                  <div className="bg-[#FF4D00]/5/60 border border-[#FF4D00]/20 rounded-lg p-2.5 flex items-center justify-between text-xs">
                     <div>
-                      <p className="text-[8px] font-bold text-orange-700 uppercase tracking-wider">
+                      <p className="text-[8px] font-bold text-[#C2410C] uppercase tracking-wider">
                         Net Operating Margin
                       </p>
-                      <p className="text-[10px] text-orange-900 font-medium mt-0.5">
+                      <p className="text-[10px] text-[#0B1528] font-medium mt-0.5">
                         Booking revenue minus ticketing & vendor liabilities
                       </p>
                     </div>
-                    <div className="text-right font-mono font-extrabold text-orange-900 text-[13px]">
+                    <div className="text-right font-mono font-extrabold text-[#0B1528] text-[13px]">
                       ₹
                       {Math.max(
                         0,

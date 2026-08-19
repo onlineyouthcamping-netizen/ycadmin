@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+﻿import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../services/api";
 import { toast } from "sonner";
@@ -242,7 +242,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
             isDragging
-              ? "border-[#FF4D00] bg-orange-50/40 scale-[0.99]"
+              ? "border-[#FF4D00] bg-[#FF4D00]/5/40 scale-[0.99]"
               : selectedFile
                 ? "border-green-300 bg-green-50/20"
                 : "border-slate-300 bg-slate-50/50 hover:bg-slate-100/50 hover:border-slate-400"
@@ -261,7 +261,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
           />
 
           <div
-            className={`p-3 rounded-full ${selectedFile ? "bg-green-100 text-green-600" : "bg-orange-100 text-[#FF4D00]"}`}
+            className={`p-3 rounded-full ${selectedFile ? "bg-green-100 text-green-600" : "bg-[#FF4D00]/10 text-[#FF4D00]"}`}
           >
             <UploadCloud className="w-6 h-6" />
           </div>
@@ -403,7 +403,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   className="p-4 bg-white hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 bg-orange-50 text-[#FF4D00] rounded-lg shrink-0">
+                    <div className="p-2.5 bg-[#FF4D00]/5 text-[#FF4D00] rounded-lg shrink-0">
                       <File className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">

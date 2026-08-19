@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Sparkles, SlidersHorizontal, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroSectionEditor } from "./editors/HeroSectionEditor";
@@ -35,7 +35,7 @@ export function SectionEditor({
   if (!section) {
     return (
       <div className="bg-white rounded-2xl border border-slate-200/90 p-8 shadow-sm text-center flex flex-col items-center justify-center min-h-[460px] space-y-3 font-sans">
-        <div className="w-12 h-12 rounded-2xl bg-orange-50 text-[#D4541A] border border-orange-100 flex items-center justify-center font-bold">
+        <div className="w-12 h-12 rounded-2xl bg-[#FF4D00]/5 text-[#D4541A] border border-[#FF4D00]/20 flex items-center justify-center font-bold">
           <Sparkles className="w-6 h-6" />
         </div>
         <div className="space-y-1 max-w-sm">
@@ -185,7 +185,7 @@ export function SectionEditor({
             <h2 className="text-base font-extrabold text-[#0B1528]">
               Configure: {getSectionTitle(section)}
             </h2>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-50 text-[#D4541A] border border-orange-100 uppercase tracking-wider">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#FF4D00]/5 text-[#D4541A] border border-[#FF4D00]/20 uppercase tracking-wider">
               {getSectionBadge(section.type)}
             </span>
           </div>

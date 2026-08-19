@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   FileText,
   Plus,
@@ -406,7 +406,7 @@ export default function SopBuilderPage() {
 
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-orange-100 rounded-lg text-[#FF4D00]">
+            <span className="p-2 bg-[#FF4D00]/10 rounded-lg text-[#FF4D00]">
               <FileText className="w-5 h-5" />
             </span>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -441,7 +441,7 @@ export default function SopBuilderPage() {
                 {v.status !== "ACTIVE" && (
                   <button
                     onClick={() => handleActivateVersion(v.id)}
-                    className="text-[9px] bg-orange-500 text-white px-1.5 py-0.2 rounded hover:bg-orange-600 ml-1"
+                    className="text-[9px] bg-[#FF4D00] text-white px-1.5 py-0.2 rounded hover:bg-[#FF4D00] ml-1"
                     title="Make Active Version"
                   >
                     Activate
@@ -481,7 +481,7 @@ export default function SopBuilderPage() {
                       isSelected
                         ? "bg-white/20 text-white"
                         : count > 0
-                        ? "bg-orange-100 text-orange-800 font-extrabold"
+                        ? "bg-[#FF4D00]/10 text-[#C2410C] font-extrabold"
                         : "bg-slate-200/60 text-slate-400"
                     }`}
                   >
@@ -512,7 +512,7 @@ export default function SopBuilderPage() {
           <button
             type="button"
             onClick={() => setAddStageModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border border-dashed border-orange-400 text-orange-600 hover:bg-orange-50 transition-colors flex items-center gap-1 cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border border-dashed border-[#FF4D00]/60 text-[#FF4D00] hover:bg-[#FF4D00]/5 transition-colors flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Stage
@@ -610,7 +610,7 @@ export default function SopBuilderPage() {
                       </span>
                     </td>
                     <td className="p-3 border-r border-slate-100 text-center whitespace-nowrap font-bold text-slate-700">
-                      <span className="inline-flex items-center whitespace-nowrap text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded border border-orange-100">
+                      <span className="inline-flex items-center whitespace-nowrap text-[10px] bg-[#FF4D00]/5 text-[#C2410C] px-1.5 py-0.5 rounded border border-[#FF4D00]/20">
                         {offsetText}
                       </span>
                     </td>
@@ -649,7 +649,7 @@ export default function SopBuilderPage() {
                           variant="ghost"
                           size="xs"
                           onClick={() => handleOpenEditTask(t)}
-                          className="h-7 w-7 text-slate-500 hover:text-orange-600"
+                          className="h-7 w-7 text-slate-500 hover:text-[#FF4D00]"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </Button>
@@ -811,7 +811,7 @@ export default function SopBuilderPage() {
         <DialogContent className="max-w-2xl bg-white p-6 rounded-xl border border-slate-200 max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-orange-500" />
+              <Zap className="w-5 h-5 text-[#FF4D00]" />
               Dynamic Date Engine Preview Schedule
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -819,7 +819,7 @@ export default function SopBuilderPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-center gap-3 my-3 bg-orange-50 p-3 rounded-lg border border-orange-200">
+          <div className="flex items-center gap-3 my-3 bg-[#FF4D00]/5 p-3 rounded-lg border border-[#FF4D00]/30">
             <span className="text-xs font-bold text-slate-700">Sample Departure Date (T0):</span>
             <Input
               type="date"
@@ -871,7 +871,7 @@ export default function SopBuilderPage() {
         <DialogContent className="max-w-sm bg-white p-6 rounded-xl border border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Plus className="w-4 h-4 text-orange-500" />
+              <Plus className="w-4 h-4 text-[#FF4D00]" />
               Generate Custom Stage
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">

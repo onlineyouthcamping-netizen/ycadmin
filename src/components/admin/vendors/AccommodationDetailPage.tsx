@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+﻿import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Building2,
   Phone,
@@ -2266,7 +2266,7 @@ export function AccommodationDetailPage({
                 ) : isRestaurant ? (
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
-                      <Utensils className="w-4 h-4 text-orange-600" /> Restaurant & Dining Profile
+                      <Utensils className="w-4 h-4 text-[#FF4D00]" /> Restaurant & Dining Profile
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -2342,7 +2342,7 @@ export function AccommodationDetailPage({
                 ) : isActivity ? (
                   <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs space-y-4">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 border-slate-200 flex items-center gap-1.5">
-                      <Activity className="w-4 h-4 text-orange-600" /> Adventure & Activity Profile
+                      <Activity className="w-4 h-4 text-[#FF4D00]" /> Adventure & Activity Profile
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -2904,8 +2904,8 @@ export function AccommodationDetailPage({
                             <span className="font-black text-green-600">₹{r.doubleRate || r.base || 0}</span>
                             <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
-                          <div className="bg-[#FFF7ED] p-1.5 rounded border border-orange-100">
-                            <span className="text-orange-600 block text-[8.5px] font-bold">TRIPLE</span>
+                          <div className="bg-[#FFF7ED] p-1.5 rounded border border-[#FF4D00]/20">
+                            <span className="text-[#FF4D00] block text-[8.5px] font-bold">TRIPLE</span>
                             <span className="font-black text-green-600">₹{r.tripleRate || 0}</span>
                             <span className="text-[8px] text-slate-400 font-medium"> / person</span>
                           </div>
@@ -3144,7 +3144,7 @@ export function AccommodationDetailPage({
                           <span className="font-extrabold text-slate-900 text-sm leading-snug">
                             {rate.name}
                           </span>
-                          <span className="shrink-0 bg-orange-50 text-orange-700 font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide border border-orange-200">
+                          <span className="shrink-0 bg-[#FF4D00]/5 text-[#C2410C] font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide border border-[#FF4D00]/30">
                             {rate.category || "ACTIVITY"}
                           </span>
                         </div>
@@ -3165,7 +3165,7 @@ export function AccommodationDetailPage({
                           onClick={() => handleOpenEditActivityRate(rate)}
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-[11px] font-bold text-slate-600 hover:text-orange-600 hover:bg-orange-50 cursor-pointer"
+                          className="h-7 px-2 text-[11px] font-bold text-slate-600 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 cursor-pointer"
                         >
                           <Pencil className="w-3 h-3 mr-1" /> Edit Rate
                         </Button>
@@ -3226,7 +3226,7 @@ export function AccommodationDetailPage({
                     return (
                       <div
                         key={t.id}
-                        className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5 text-xs relative group hover:border-orange-300 transition-colors flex flex-col justify-between"
+                        className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2.5 text-xs relative group hover:border-[#FF4D00]/40 transition-colors flex flex-col justify-between"
                       >
                         <div className="space-y-2">
                           <div className="flex items-start justify-between gap-2">
@@ -3265,7 +3265,7 @@ export function AccommodationDetailPage({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleOpenEditMealTariff(t)}
-                            className="h-7 px-2 text-[11px] font-bold text-slate-700 hover:text-orange-600 hover:bg-orange-50 gap-1"
+                            className="h-7 px-2 text-[11px] font-bold text-slate-700 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 gap-1"
                           >
                             <Pencil className="w-3 h-3" />
                             Edit Rate
@@ -3360,7 +3360,7 @@ export function AccommodationDetailPage({
                           onClick={() => handleOpenEditOtherRate(rate)}
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-[11px] font-bold text-slate-600 hover:text-orange-600 hover:bg-orange-50 cursor-pointer"
+                          className="h-7 px-2 text-[11px] font-bold text-slate-600 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 cursor-pointer"
                         >
                           <Pencil className="w-3 h-3 mr-1" /> Edit Tariff
                         </Button>
@@ -3768,7 +3768,7 @@ export function AccommodationDetailPage({
                       : isFleet
                         ? "bg-blue-100 text-blue-800 border-blue-200"
                         : isContact
-                          ? "bg-orange-100 text-orange-800 border-orange-200"
+                          ? "bg-[#FF4D00]/10 text-[#C2410C] border-[#FF4D00]/30"
                           : isPayment
                             ? "bg-green-100 text-green-700 border-green-200"
                             : isProfile
@@ -4778,7 +4778,7 @@ export function AccommodationDetailPage({
                 <select
                   value={mealTariffForm.type}
                   onChange={(e) => setMealTariffForm({ ...mealTariffForm, type: e.target.value })}
-                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   <option value="BREAKFAST">Breakfast</option>
                   <option value="LUNCH">Lunch</option>
@@ -4795,7 +4795,7 @@ export function AccommodationDetailPage({
                 <select
                   value={mealTariffForm.isVeg ? "veg" : "non-veg"}
                   onChange={(e) => setMealTariffForm({ ...mealTariffForm, isVeg: e.target.value === "veg" })}
-                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   <option value="veg">Pure Veg 🥬</option>
                   <option value="non-veg">Veg + Non-Veg 🍗</option>
@@ -4878,7 +4878,7 @@ export function AccommodationDetailPage({
                 <select
                   value={activityRateForm.category}
                   onChange={(e) => setActivityRateForm({ ...activityRateForm, category: e.target.value })}
-                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   <option value="PARAGLIDING">Paragliding 🪂</option>
                   <option value="RAFTING">River Rafting 🚣</option>
@@ -4944,12 +4944,12 @@ export function AccommodationDetailPage({
           <DialogHeader>
             <DialogTitle className="text-sm font-black text-slate-800 flex items-center justify-between border-b pb-2 border-slate-100">
               <span className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-orange-500" />
+                <Building2 className="w-4 h-4 text-[#FF4D00]" />
                 {editingOtherRate
                   ? "Edit Service Tariff"
                   : "Add New Service Tariff"}
               </span>
-              <span className="text-[10px] font-extrabold uppercase bg-orange-50 text-orange-700 px-2 py-0.5 rounded border border-orange-200">
+              <span className="text-[10px] font-extrabold uppercase bg-[#FF4D00]/5 text-[#C2410C] px-2 py-0.5 rounded border border-[#FF4D00]/30">
                 Other Vendor
               </span>
             </DialogTitle>
@@ -4983,7 +4983,7 @@ export function AccommodationDetailPage({
                       category: e.target.value,
                     })
                   }
-                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   <option value="EQUIPMENT">Equipment Rental 🎒</option>
                   <option value="PERMITS">Permits & Clearances 📜</option>

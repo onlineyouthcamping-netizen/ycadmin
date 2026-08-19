@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import {
   Train,
   ArrowRight,
@@ -408,7 +408,7 @@ export default function TripTrainTicketTemplateTab({
   if (loading) {
     return (
       <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400">
-        <RefreshCw className="w-6 h-6 animate-spin text-orange-500" />
+        <RefreshCw className="w-6 h-6 animate-spin text-[#FF4D00]" />
         <span className="text-xs font-semibold">
           Loading Trip Train Ticket Template...
         </span>
@@ -423,10 +423,10 @@ export default function TripTrainTicketTemplateTab({
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-8">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent border border-orange-200/80 rounded-2xl p-5 shadow-xs">
+      <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent border border-[#FF4D00]/30/80 rounded-2xl p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="p-2.5 bg-orange-600 text-white rounded-xl shadow-xs shrink-0">
+            <div className="p-2.5 bg-[#FF4D00] text-white rounded-xl shadow-xs shrink-0">
               <Train className="w-5 h-5" />
             </div>
             <div>
@@ -436,7 +436,7 @@ export default function TripTrainTicketTemplateTab({
                 </h2>
                 <Badge
                   variant="outline"
-                  className="bg-orange-50 text-orange-700 border-orange-300 text-[10px] font-black uppercase"
+                  className="bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/40 text-[10px] font-black uppercase"
                 >
                   Multi-Class Supported
                 </Badge>
@@ -455,7 +455,7 @@ export default function TripTrainTicketTemplateTab({
           </div>
 
           {/* Quick Active Expected Cost Badge */}
-          <div className="bg-white border border-orange-200 rounded-xl px-4 py-2.5 flex items-center gap-3 shrink-0 shadow-xs">
+          <div className="bg-white border border-[#FF4D00]/30 rounded-xl px-4 py-2.5 flex items-center gap-3 shrink-0 shadow-xs">
             <div className="p-2 bg-green-50 text-green-600 rounded-lg">
               <Coins className="w-4 h-4" />
             </div>
@@ -478,7 +478,7 @@ export default function TripTrainTicketTemplateTab({
       <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-orange-600" />
+            <Layers className="w-4 h-4 text-[#FF4D00]" />
             <span className="text-xs font-black uppercase tracking-wider text-slate-900">
               Configured Travel Classes ({tiers.length})
             </span>
@@ -489,7 +489,7 @@ export default function TripTrainTicketTemplateTab({
               variant="ghost"
               size="sm"
               onClick={handleCopyStationsFromFirst}
-              className="h-7 text-[11px] font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50 gap-1.5 cursor-pointer"
+              className="h-7 text-[11px] font-semibold text-slate-600 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 gap-1.5 cursor-pointer"
             >
               <Copy className="w-3 h-3" />
               Copy Stations & Trains to Active Class
@@ -514,14 +514,14 @@ export default function TripTrainTicketTemplateTab({
                 onClick={() => setActiveTierId(tier.id)}
                 className={`group relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl border transition-all cursor-pointer select-none ${
                   isActive
-                    ? "bg-orange-50/80 border-orange-500 shadow-2xs ring-2 ring-orange-500/20"
+                    ? "bg-[#FF4D00]/5/80 border-[#FF4D00] shadow-2xs ring-2 ring-[#FF4D00]/20"
                     : "bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-white"
                 }`}
               >
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs ${
                     isActive
-                      ? "bg-orange-600 text-white"
+                      ? "bg-[#FF4D00] text-white"
                       : "bg-slate-200 text-slate-700 group-hover:bg-slate-300"
                   }`}
                 >
@@ -530,7 +530,7 @@ export default function TripTrainTicketTemplateTab({
                 <div className="text-left">
                   <div
                     className={`text-xs font-black ${
-                      isActive ? "text-orange-950" : "text-slate-800"
+                      isActive ? "text-[#0B1528]" : "text-slate-800"
                     }`}
                   >
                     {tier.name}
@@ -569,7 +569,7 @@ export default function TripTrainTicketTemplateTab({
                 }
               }}
               defaultValue=""
-              className="h-9 px-3 rounded-xl border border-dashed border-orange-300 bg-orange-50/40 hover:bg-orange-50 text-xs font-bold text-orange-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+              className="h-8 px-3 rounded-xl border border-dashed border-[#FF4D00]/40 bg-[#FF4D00]/5/40 hover:bg-[#FF4D00]/5 text-xs font-bold text-[#C2410C] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/30"
             >
               <option value="" disabled>
                 + Add Travel Class Tier...
@@ -859,7 +859,7 @@ export default function TripTrainTicketTemplateTab({
         <Card className="border border-slate-200 rounded-2xl shadow-xs overflow-hidden bg-white">
           <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-orange-600 text-white rounded-lg">
+              <div className="p-1.5 bg-[#FF4D00] text-white rounded-lg">
                 <ArrowLeft className="w-4 h-4" />
               </div>
               <div>
@@ -1147,7 +1147,7 @@ export default function TripTrainTicketTemplateTab({
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-9 px-5 shadow-xs cursor-pointer"
+          className="w-full sm:w-auto bg-[#FF4D00] hover:bg-[#E04400] text-white font-bold text-xs h-9 px-5 shadow-xs cursor-pointer"
         >
           {saving ? (
             <RefreshCw className="w-3.5 h-3.5 mr-2 animate-spin" />

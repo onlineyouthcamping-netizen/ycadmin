@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { adminUsersService } from "@/services/adminUsers.service";
 import { Admin, AdminRole } from "@/types";
 import {
@@ -92,7 +92,7 @@ const ROLES: {
     value: "operations",
     label: "Operations",
     desc: "View rosters, assign guides & rooms",
-    color: "bg-orange-50 text-orange-700 border-orange-200",
+    color: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
   },
   {
     value: "finance",
@@ -104,13 +104,13 @@ const ROLES: {
     value: "finance_controller",
     label: "Finance Controller",
     desc: "Verify & approve cash, incoming & outgoing payouts, price audits",
-    color: "bg-orange-50 text-orange-700 border-orange-200",
+    color: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
   },
   {
     value: "guide",
     label: "Guide",
     desc: "Read assigned trips & operations",
-    color: "bg-orange-50 text-orange-700 border-orange-200",
+    color: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
   },
   {
     value: "viewer",
@@ -901,7 +901,7 @@ export default function UserManagementPage() {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
+              className="h-8 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="all">All Roles</option>
               {ROLES.map((r) => (
@@ -914,7 +914,7 @@ export default function UserManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
+              className="h-8 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="active">Active Accounts</option>
@@ -924,7 +924,7 @@ export default function UserManagementPage() {
             <select
               value={loginFilter}
               onChange={(e) => setLoginFilter(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
+              className="h-8 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 px-3 bg-white focus:outline-none focus:ring-1 focus:ring-[#FF4D00] cursor-pointer"
             >
               <option value="all">All Login Times</option>
               <option value="recent">Logged In Recently</option>
@@ -938,7 +938,7 @@ export default function UserManagementPage() {
               <Button
                 variant="ghost"
                 onClick={clearFilters}
-                className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg flex items-center gap-1"
+                className="h-8 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg flex items-center gap-1"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Clear Filters
               </Button>
@@ -1021,7 +1021,7 @@ export default function UserManagementPage() {
                               className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
                                 user.role === "superadmin"
                                   ? "bg-red-100 text-red-700"
-                                  : "bg-orange-100 text-[#FF4D00]"
+                                  : "bg-[#FF4D00]/10 text-[#FF4D00]"
                               }`}
                             >
                               {user.avatarUrl ? (
@@ -1090,7 +1090,7 @@ export default function UserManagementPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => openPermissionDrawer(user)}
-                              className="h-8 px-2.5 text-xs font-semibold text-slate-700 border-slate-200 hover:bg-orange-50 hover:text-[#FF4D00] hover:border-orange-200 rounded-lg flex items-center gap-1"
+                              className="h-8 px-2.5 text-xs font-semibold text-slate-700 border-slate-200 hover:bg-[#FF4D00]/5 hover:text-[#FF4D00] hover:border-[#FF4D00]/30 rounded-lg flex items-center gap-1"
                             >
                               <ShieldCheck className="w-3.5 h-3.5" /> Manage
                               Access
@@ -1193,7 +1193,7 @@ export default function UserManagementPage() {
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
                           user.role === "superadmin"
                             ? "bg-red-100 text-red-700"
-                            : "bg-orange-100 text-[#FF4D00]"
+                            : "bg-[#FF4D00]/10 text-[#FF4D00]"
                         }`}
                       >
                         {user.avatarUrl ? (
@@ -1314,7 +1314,7 @@ export default function UserManagementPage() {
                     <Button
                       variant="outline"
                       onClick={() => openPermissionDrawer(user)}
-                      className="w-full h-8 text-xs font-semibold text-[#FF4D00] border-orange-200 bg-orange-50/50 hover:bg-orange-100/50 rounded-lg flex items-center justify-center gap-1.5"
+                      className="w-full h-8 text-xs font-semibold text-[#FF4D00] border-[#FF4D00]/30 bg-[#FF4D00]/5/50 hover:bg-[#FF4D00]/10/50 rounded-lg flex items-center justify-center gap-1.5"
                     >
                       <ShieldCheck className="w-4 h-4" /> Manage Access
                     </Button>
@@ -1445,7 +1445,7 @@ export default function UserManagementPage() {
                               onClick={() => toggleSinglePermission(item.key)}
                               className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center justify-between cursor-pointer transition-all ${
                                 isChecked
-                                  ? "border-orange-300 bg-orange-50/40 text-slate-900"
+                                  ? "border-[#FF4D00]/40 bg-[#FF4D00]/5/40 text-slate-900"
                                   : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                               }`}
                             >
@@ -1478,7 +1478,7 @@ export default function UserManagementPage() {
               type="button"
               variant="outline"
               onClick={() => setPermOpen(false)}
-              className="h-9 px-4 text-xs font-semibold border-slate-200 rounded-lg"
+              className="h-8 px-4 text-xs font-semibold border-slate-200 rounded-lg"
             >
               Cancel
             </Button>
@@ -1520,7 +1520,7 @@ export default function UserManagementPage() {
                 placeholder="e.g. Rahul Sharma"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="h-9 text-xs border-slate-300"
+                className="h-8 text-xs border-slate-300"
               />
             </div>
 
@@ -1533,7 +1533,7 @@ export default function UserManagementPage() {
                 placeholder="rahul@youthcamping.online"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="h-9 text-xs border-slate-300"
+                className="h-8 text-xs border-slate-300"
               />
             </div>
 
@@ -1546,7 +1546,7 @@ export default function UserManagementPage() {
                 placeholder="••••••••"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="h-9 text-xs border-slate-300"
+                className="h-8 text-xs border-slate-300"
               />
             </div>
 
@@ -1615,7 +1615,7 @@ export default function UserManagementPage() {
                 placeholder="••••••••"
                 value={resetPasswordVal}
                 onChange={(e) => setResetPasswordVal(e.target.value)}
-                className="h-9 text-xs border-slate-300"
+                className="h-8 text-xs border-slate-300"
               />
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   Users,
   ShieldCheck,
@@ -195,7 +195,7 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-2xs space-y-4">
         <div className="flex justify-between items-center border-b pb-2">
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-orange-500" />
+            <Sparkles className="w-4 h-4 text-[#FF4D00]" />
             "About This Trip" CMS Editor
           </h3>
           <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase">
@@ -248,7 +248,7 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
             type="button"
             size="sm"
             onClick={handleAddCard}
-            className="h-8 text-[11px] font-bold bg-orange-600 hover:bg-orange-500 text-white gap-1.5 shadow-xs"
+            className="h-8 text-[11px] font-bold bg-[#FF4D00] hover:bg-[#FF4D00] text-white gap-1.5 shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" /> Add Highlight Card
           </Button>
@@ -267,7 +267,7 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
                   card.isVisible
                     ? "bg-white border-slate-200"
                     : "bg-slate-50 border-slate-200/60 opacity-60",
-                  isEditing && "ring-2 ring-orange-500/20 border-orange-500",
+                  isEditing && "ring-2 ring-[#FF4D00]/20 border-[#FF4D00]",
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -413,7 +413,7 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
                               className={cn(
                                 "p-1.5 rounded-lg border text-xs flex items-center gap-1 transition-all",
                                 isSel
-                                  ? "bg-orange-50 border-orange-500 text-orange-600 font-bold"
+                                  ? "bg-[#FF4D00]/5 border-[#FF4D00] text-[#FF4D00] font-bold"
                                   : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50",
                               )}
                             >
@@ -490,7 +490,7 @@ export const AboutTripCmsEditor: React.FC<AboutTripCmsEditorProps> = ({
       {/* ─── LIVE PREVIEW SECTION (REQUIREMENT 9) ─── */}
       <div className="bg-slate-900 text-white rounded-xl p-5 shadow-md space-y-4">
         <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-          <h4 className="font-bold text-xs uppercase tracking-wider text-orange-400 flex items-center gap-1.5">
+          <h4 className="font-bold text-xs uppercase tracking-wider text-[#FF4D00] flex items-center gap-1.5">
             <Eye className="w-4 h-4" /> Live Frontend Preview
           </h4>
           <span className="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">

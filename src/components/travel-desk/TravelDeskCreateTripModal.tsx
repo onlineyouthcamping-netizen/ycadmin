@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { X, Plus, Compass, MapPin, Calendar, Sparkles } from "lucide-react";
 import {
   Dialog,
@@ -140,7 +140,7 @@ export const TravelDeskCreateTripModal: React.FC<
                 placeholder="e.g. Spiti Valley Circuit"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="h-9 text-xs border-[#E2E8F0] text-[#0A192F] placeholder:text-[#64748B]"
+                className="h-8 text-xs border-[#E2E8F0] text-[#0A192F] placeholder:text-[#64748B]"
               />
             </div>
 
@@ -152,7 +152,7 @@ export const TravelDeskCreateTripModal: React.FC<
                 placeholder="e.g. SPT-1"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="h-9 text-xs border-[#E2E8F0] font-mono text-[#0A192F] placeholder:text-[#64748B]"
+                className="h-8 text-xs border-[#E2E8F0] font-mono text-[#0A192F] placeholder:text-[#64748B]"
               />
             </div>
           </div>
@@ -185,7 +185,7 @@ export const TravelDeskCreateTripModal: React.FC<
                 placeholder="e.g. Himachal Pradesh & Ladakh"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="h-9 text-xs border-[#E2E8F0] text-[#0A192F] placeholder:text-[#64748B]"
+                className="h-8 text-xs border-[#E2E8F0] text-[#0A192F] placeholder:text-[#64748B]"
               />
             </div>
           </div>
@@ -216,7 +216,7 @@ export const TravelDeskCreateTripModal: React.FC<
                 placeholder="e.g. May - October"
                 value={startEnd}
                 onChange={(e) => setStartEnd(e.target.value)}
-                className="h-9 text-xs border-[#E2E8F0] text-[#0A192F]"
+                className="h-8 text-xs border-[#E2E8F0] text-[#0A192F]"
               />
             </div>
           </div>

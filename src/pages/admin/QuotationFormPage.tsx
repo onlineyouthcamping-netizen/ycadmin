@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { GlassCard } from "@/components/admin/GlassCard";
@@ -502,7 +502,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
               <Button
                 variant="outline"
                 onClick={copyLink}
-                className="h-10 px-3.5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
+                className="h-8 px-3.5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
               >
                 <Copy size={14} className="text-green-600" /> Copy Link
               </Button>
@@ -511,7 +511,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                 onClick={() => {
                   window.open(getPublicQuoteUrl(), "_blank");
                 }}
-                className="h-10 px-3.5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
+                className="h-8 px-3.5 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
               >
                 <Eye size={14} className="text-[#D4541A]" /> Preview
               </Button>
@@ -522,7 +522,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
             variant="outline"
             onClick={() => handleSave("Draft")}
             disabled={isSaving}
-            className="h-10 px-4 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-2 cursor-pointer"
+            className="h-8 px-4 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-xs flex items-center gap-2 cursor-pointer"
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -549,7 +549,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
           {/* Section 1: Guest & Client Details */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-5">
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <div className="w-9 h-9 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+              <div className="w-9 h-9 rounded-xl bg-[#FF4D00]/5 text-[#D4541A] flex items-center justify-center font-bold">
                 <Users size={18} />
               </div>
               <div>
@@ -979,7 +979,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#D4541A] flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-[#FF4D00]/5 text-[#D4541A] flex items-center justify-center font-bold">
                   <HotelIcon size={16} />
                 </div>
                 <div>
@@ -998,7 +998,7 @@ ${formData.expert?.designation || "Destination Expert"}`;
                   variant="outline"
                   size="sm"
                   onClick={autoPopulateHotelsFromItinerary}
-                  className="h-8 px-3 rounded-lg border-orange-200 bg-orange-50/50 text-[#D4541A] font-extrabold text-xs hover:bg-orange-100 cursor-pointer"
+                  className="h-8 px-3 rounded-lg border-[#FF4D00]/30 bg-[#FF4D00]/5/50 text-[#D4541A] font-extrabold text-xs hover:bg-[#FF4D00]/10 cursor-pointer"
                   title="Extract unique hotel names from itinerary days"
                 >
                   <Sparkles size={13} className="mr-1.5" /> Auto-Sync from Itinerary

@@ -1,4 +1,4 @@
-import AboutTripCmsEditor from "@/components/admin/trips/AboutTripCmsEditor";
+﻿import AboutTripCmsEditor from "@/components/admin/trips/AboutTripCmsEditor";
 import VariantsManager from "@/components/admin/trips/VariantsManager";
 import ModernTripCalendar from "@/components/admin/trips/ModernTripCalendar";
 import TripSopEditorTab from "@/components/admin/trips/TripSopEditorTab";
@@ -900,7 +900,7 @@ export default function TripFormEditor({
             className="mt-0 space-y-6 animate-fade-in"
           >
             {/* Minimal Banner */}
-            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-transparent rounded-xl border border-orange-100">
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-transparent rounded-xl border border-[#FF4D00]/20">
               <div className="bg-[#FF5400] text-white font-black px-2 py-1 rounded text-[8px] uppercase tracking-widest shrink-0 shadow-sm">
                 Tip
               </div>
@@ -974,7 +974,7 @@ export default function TripFormEditor({
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                     Departure Calendar Overview
                   </h4>
-                  <span className="text-[10px] font-bold text-[#FF5400] bg-orange-50 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-bold text-[#FF5400] bg-[#FF4D00]/5 px-2 py-0.5 rounded">
                     {form.availableDates?.length || 0} Scheduled
                   </span>
                 </div>
@@ -1558,7 +1558,7 @@ export default function TripFormEditor({
                           <div>
                             <Label
                               htmlFor={`cover-upload-details-${slot}`}
-                              className="flex flex-col items-center justify-center aspect-video rounded-md border-2 border-dashed border-zinc-300 bg-zinc-50 cursor-pointer hover:bg-orange-50/50 hover:border-[#FF5400]/50 transition-all"
+                              className="flex flex-col items-center justify-center aspect-video rounded-md border-2 border-dashed border-zinc-300 bg-zinc-50 cursor-pointer hover:bg-[#FF4D00]/5/50 hover:border-[#FF5400]/50 transition-all"
                             >
                               <Upload className="w-5 h-5 text-zinc-400 group-hover:text-[#FF5400] mb-1" />
                               <span className="text-[10px] text-zinc-500 font-bold uppercase">
@@ -3492,7 +3492,7 @@ export default function TripFormEditor({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-orange-50 text-[#FF6B00] border border-orange-200 text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="bg-[#FF4D00]/5 text-[#FF6B00] border border-[#FF4D00]/30 text-xs font-bold px-3 py-1 rounded-full">
                     {(form.gallery || []).length} Photos Uploaded
                   </span>
                 </div>

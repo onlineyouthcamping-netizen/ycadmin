@@ -1,4 +1,4 @@
-import DocumentManager from "@/components/admin/DocumentManager";
+﻿import DocumentManager from "@/components/admin/DocumentManager";
 import { PassengerDrawer } from "./PassengerDrawer";
 import { PassengerTimeline } from "./PassengerTimeline";
 import api from "@/services/api";
@@ -129,8 +129,8 @@ const TAB_BADGE_TONES: Record<string, { active: string; idle: string }> = {
     idle: "bg-[#FF4D00]/[0.07] text-[#C2410C] border border-[#FF4D00]/15",
   },
   indigo: {
-    active: "bg-indigo-100 text-indigo-800 border border-indigo-200",
-    idle: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+    active: "bg-slate-100 text-[#0B1528] border border-slate-200",
+    idle: "bg-slate-50 text-slate-700 border border-slate-100",
   },
   violet: {
     active: "bg-violet-100 text-violet-800 border border-violet-200",
@@ -141,8 +141,8 @@ const TAB_BADGE_TONES: Record<string, { active: string; idle: string }> = {
     idle: "bg-sky-50 text-sky-700 border border-sky-100",
   },
   teal: {
-    active: "bg-teal-100 text-teal-800 border border-teal-200",
-    idle: "bg-teal-50 text-teal-700 border border-teal-100",
+    active: "bg-green-100 text-green-800 border border-green-200",
+    idle: "bg-green-50 text-green-700 border border-green-100",
   },
 };
 
@@ -2701,9 +2701,9 @@ export default function BookingDetailsView({
           </button>
           <button
             onClick={() => setShowCreateTask(true)}
-            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E8EEF4] bg-white px-3 text-xs font-semibold text-[#0B1528] transition-colors hover:border-indigo-200 hover:bg-indigo-50/70 cursor-pointer"
+            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E8EEF4] bg-white px-3 text-xs font-semibold text-[#0B1528] transition-colors hover:border-slate-200 hover:bg-slate-50/70 cursor-pointer"
           >
-            <UserCheck className="h-3.5 w-3.5 text-indigo-500" />
+            <UserCheck className="h-3.5 w-3.5 text-slate-500" />
             Assign task
           </button>
           <button
@@ -3162,7 +3162,7 @@ export default function BookingDetailsView({
             <span className="text-[15px] font-semibold text-[#0B1528]">
               {passengers.length || qty}/{qty}
             </span>
-            <span className="text-[11px] font-semibold text-teal-700 truncate">
+            <span className="text-[11px] font-semibold text-green-700 truncate">
               Booked
             </span>
           </span>
@@ -3435,13 +3435,13 @@ export default function BookingDetailsView({
                         </div>
                       )}
                       {passengers.length < (booking.numberOfTravelers || 1) && (
-                        <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5 bg-indigo-50/40">
-                          <span className="h-5 w-5 rounded-md bg-indigo-100 text-indigo-700 inline-flex items-center justify-center shrink-0">
+                        <div className="px-4 py-3 text-xs text-slate-600 flex items-center gap-2.5 bg-slate-50/40">
+                          <span className="h-5 w-5 rounded-md bg-slate-100 text-slate-700 inline-flex items-center justify-center shrink-0">
                             <Users className="w-3 h-3" />
                           </span>
                           <span>
                             Passenger details incomplete —{" "}
-                            <span className="font-semibold text-indigo-800">
+                            <span className="font-semibold text-[#0B1528]">
                               {passengers.length} of{" "}
                               {booking.numberOfTravelers || 1}
                             </span>{" "}
@@ -3704,7 +3704,7 @@ export default function BookingDetailsView({
                     return {
                       label: "Self booked",
                       colorClass:
-                        "bg-purple-50 text-purple-700 border-purple-200",
+                        "bg-slate-50 text-slate-700 border-slate-200",
                     };
                   }
                   if (ticket.ticketStatus === "PENDING") {
@@ -6510,11 +6510,11 @@ export default function BookingDetailsView({
                         const actionColors: Record<string, string> = {
                           CREATE: "bg-green-600",
                           STATUS_CHANGE: "bg-blue-500",
-                          TRAIN_TICKET: "bg-purple-500",
+                          TRAIN_TICKET: "bg-slate-500",
                           PAYMENT_SUBMITTED: "bg-amber-500",
                           PAYMENT_APPROVED: "bg-green-600",
                           PAYMENT_REJECTED: "bg-red-500",
-                          TASK_ASSIGNED: "bg-indigo-500",
+                          TASK_ASSIGNED: "bg-[#FF4D00]",
                           TASK_UPDATED: "bg-sky-500",
                           DETAILS_UPDATE: "bg-slate-500",
                         };
@@ -6580,7 +6580,7 @@ export default function BookingDetailsView({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
                   <div>
                     <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-orange-600" /> Auxiliary Services Registry
+                      <Layers className="w-4 h-4 text-[#FF4D00]" /> Auxiliary Services Registry
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Contracted auxiliary services (Train, Flight, Visa, Hotel, Insurance, Transport, Other) for this booking
@@ -6589,7 +6589,7 @@ export default function BookingDetailsView({
                   <Button
                     size="sm"
                     onClick={() => setShowAddServiceModal(true)}
-                    className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5"
+                    className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Auxiliary Service
                   </Button>
@@ -6597,7 +6597,7 @@ export default function BookingDetailsView({
 
                 {loadingFinanceData ? (
                   <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
-                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                    <Loader2 className="w-6 h-6 animate-spin text-[#FF4D00]" />
                     <span className="text-xs font-semibold">Loading auxiliary services...</span>
                   </div>
                 ) : bookingServices.length === 0 ? (
@@ -6702,7 +6702,7 @@ export default function BookingDetailsView({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
                     <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-orange-600" /> Refunds & Store Credits
+                      <CreditCard className="w-4 h-4 text-[#FF4D00]" /> Refunds & Store Credits
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Customer refund requests, manual bank UTR confirmations, and reusable credit notes
@@ -6711,7 +6711,7 @@ export default function BookingDetailsView({
                   <Button
                     size="sm"
                     onClick={() => setShowBookingRefundModal(true)}
-                    className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5"
+                    className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs h-8 px-3 rounded-lg flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" /> Request Refund
                   </Button>
@@ -6747,7 +6747,7 @@ export default function BookingDetailsView({
 
                 {loadingFinanceData ? (
                   <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
-                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                    <Loader2 className="w-6 h-6 animate-spin text-[#FF4D00]" />
                     <span className="text-xs font-semibold">Loading refunds history...</span>
                   </div>
                 ) : bookingRefunds.length === 0 ? (
@@ -6768,7 +6768,7 @@ export default function BookingDetailsView({
                               {ref.refundNumber}
                             </span>
                             <span className="text-xs font-semibold text-[#0B1528]">
-                              Mode: <span className="text-orange-600">{ref.refundMode}</span>
+                              Mode: <span className="text-[#FF4D00]">{ref.refundMode}</span>
                             </span>
                           </div>
                           <span
@@ -6838,7 +6838,7 @@ export default function BookingDetailsView({
               <div className="bg-white border border-[#E8EEF4] rounded-xl p-5 space-y-4">
                 <div className="border-b border-slate-100 pb-3">
                   <h3 className="text-sm font-semibold text-[#0B1528] flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-orange-600" /> Immutable Financial Audit Trail
+                    <ShieldCheck className="w-4 h-4 text-[#FF4D00]" /> Immutable Financial Audit Trail
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Read-only audit history of every financial modification, verification, and approval on this booking
@@ -6847,7 +6847,7 @@ export default function BookingDetailsView({
 
                 {loadingFinanceData ? (
                   <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
-                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                    <Loader2 className="w-6 h-6 animate-spin text-[#FF4D00]" />
                     <span className="text-xs font-semibold">Loading audit trail...</span>
                   </div>
                 ) : bookingAuditLogs.length === 0 ? (
@@ -7067,8 +7067,8 @@ export default function BookingDetailsView({
                   {booking.leadSource || booking.source || "Website Booking"}
                 </div>
               </div>
-              <div className="rounded-lg bg-indigo-50/50 border border-indigo-100 px-3 py-2.5 min-w-0">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500/80">
+              <div className="rounded-lg bg-slate-50/50 border border-slate-100 px-3 py-2.5 min-w-0">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500/80">
                   Booking executive
                 </div>
                 <div className="font-semibold text-[#0B1528] mt-0.5 break-words min-w-0">
@@ -7077,8 +7077,8 @@ export default function BookingDetailsView({
                     "Web Direct"}
                 </div>
               </div>
-              <div className="rounded-lg bg-teal-50/50 border border-teal-100 px-3 py-2.5 min-w-0 md:col-span-2 lg:col-span-1">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-teal-600/80">
+              <div className="rounded-lg bg-green-50/50 border border-green-100 px-3 py-2.5 min-w-0 md:col-span-2 lg:col-span-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-green-600/80">
                   Pickup city
                 </div>
                 <div className="font-semibold text-[#0B1528] mt-0.5 break-words min-w-0">
@@ -7634,7 +7634,7 @@ export default function BookingDetailsView({
                       <button
                         type="button"
                         onClick={() => setShowAddAccountModal(true)}
-                        className="text-[9px] font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-0.5"
+                        className="text-[9px] font-semibold text-[#FF4D00] hover:text-[#C2410C] flex items-center gap-0.5"
                       >
                         <Plus className="w-2.5 h-2.5" /> Add Account
                       </button>
@@ -7714,7 +7714,7 @@ export default function BookingDetailsView({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-orange-500" /> Add Collection Account
+              <CreditCard className="w-4 h-4 text-[#FF4D00]" /> Add Collection Account
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               Create a new financial receiving account (Company, Individual, Bank, UPI, or Cash).
@@ -7831,7 +7831,7 @@ export default function BookingDetailsView({
                 size="sm"
                 onClick={handleQuickCreateAccount}
                 disabled={savingNewAccount || !newAccName.trim()}
-                className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                className="h-8 text-xs bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold"
               >
                 {savingNewAccount ? "Creating..." : "Create & Select"}
               </Button>
@@ -7879,7 +7879,7 @@ export default function BookingDetailsView({
                     Sales: "bg-[#FF4D00]",
                     Finance: "bg-green-500",
                     Operations: "bg-blue-500",
-                    Marketing: "bg-purple-500",
+                    Marketing: "bg-slate-500",
                   };
                   const color = colors[item.type] || "bg-slate-400";
                   return (
@@ -8289,7 +8289,7 @@ export default function BookingDetailsView({
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-[#E8EEF4]">
             <div className="p-4 border-b border-[#E8EEF4] flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-2.5">
-                <FileText className="w-5 h-5 text-orange-600" />
+                <FileText className="w-5 h-5 text-[#FF4D00]" />
                 <div>
                   <h3 className="font-semibold text-slate-900 text-sm">{docPreviewModal.title}</h3>
                   {docPreviewModal.passengerName && (
@@ -8339,7 +8339,7 @@ export default function BookingDetailsView({
         <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-[#E8EEF4]">
           <DialogHeader className="border-b border-slate-100 pb-3">
             <DialogTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-orange-600" /> Add Auxiliary Service
+              <Layers className="w-4 h-4 text-[#FF4D00]" /> Add Auxiliary Service
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               Record a 3rd-party vendor service (Train, Flight, Hotel, Visa, Insurance, Transport) for {booking.bookingId}
@@ -8426,7 +8426,7 @@ export default function BookingDetailsView({
               size="sm"
               onClick={handleCreateService}
               disabled={savingService}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8.5 px-4 rounded-lg"
+              className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs h-8.5 px-4 rounded-lg"
             >
               {savingService ? "Saving..." : "Save Service"}
             </Button>
@@ -8439,7 +8439,7 @@ export default function BookingDetailsView({
         <DialogContent className="max-w-md bg-white rounded-xl p-5 shadow-lg border border-[#E8EEF4]">
           <DialogHeader className="border-b border-slate-100 pb-3">
             <DialogTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-orange-600" /> Request Booking Refund
+              <CreditCard className="w-4 h-4 text-[#FF4D00]" /> Request Booking Refund
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
               Submit refund request for booking {booking.bookingId} to the Finance Controller approval queue.
@@ -8525,7 +8525,7 @@ export default function BookingDetailsView({
               size="sm"
               onClick={handleCreateBookingRefund}
               disabled={submittingRefund}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-8.5 px-4 rounded-lg"
+              className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold text-xs h-8.5 px-4 rounded-lg"
             >
               {submittingRefund ? "Submitting..." : "Submit Refund Request"}
             </Button>

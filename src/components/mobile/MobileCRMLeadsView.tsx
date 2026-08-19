@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   Phone,
   MessageSquare,
@@ -135,7 +135,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
           <div
             key={l.id}
             onClick={() => onSelectInquiry && onSelectInquiry(l.rawInquiry || l)}
-            className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-2xs space-y-3 cursor-pointer hover:border-orange-300 transition-colors"
+            className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-2xs space-y-3 cursor-pointer hover:border-[#FF4D00]/40 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -159,7 +159,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
                 className={cn(
                   "text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider",
                   l.status === "INTERESTED"
-                    ? "bg-orange-100 text-[#FF5400]"
+                    ? "bg-[#FF4D00]/10 text-[#FF5400]"
                     : l.status === "FOLLOWUP"
                       ? "bg-amber-100 text-amber-700"
                       : "bg-slate-100 text-slate-600",
@@ -197,7 +197,7 @@ export const MobileCRMLeadsView: React.FC<MobileCRMLeadsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onUpdateStatus && onUpdateStatus(l.id, "converted")}
-                  className="h-9 px-3 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-2xs"
+                  className="h-8 px-3 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shadow-2xs"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
                   Convert

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+﻿import React, { useEffect, useState, useMemo } from "react";
 import {
   Users,
   Calendar,
@@ -119,10 +119,10 @@ const colorMap: Record<
   { bg: string; text: string; border: string; lightBg: string }
 > = {
   indigo: {
-    bg: "bg-orange-600",
-    text: "text-orange-600",
-    border: "border-orange-100",
-    lightBg: "bg-orange-50",
+    bg: "bg-[#FF4D00]",
+    text: "text-[#FF4D00]",
+    border: "border-[#FF4D00]/20",
+    lightBg: "bg-[#FF4D00]/5",
   },
   emerald: {
     bg: "bg-green-600",
@@ -137,10 +137,10 @@ const colorMap: Record<
     lightBg: "bg-blue-50",
   },
   teal: {
-    bg: "bg-teal-600",
-    text: "text-teal-600",
-    border: "border-teal-100",
-    lightBg: "bg-teal-50",
+    bg: "bg-green-600",
+    text: "text-green-600",
+    border: "border-green-100",
+    lightBg: "bg-green-50",
   },
   amber: {
     bg: "bg-amber-600",
@@ -161,10 +161,10 @@ const colorMap: Record<
     lightBg: "bg-red-50",
   },
   orange: {
-    bg: "bg-orange-600",
-    text: "text-orange-600",
-    border: "border-orange-100",
-    lightBg: "bg-orange-50",
+    bg: "bg-[#FF4D00]",
+    text: "text-[#FF4D00]",
+    border: "border-[#FF4D00]/20",
+    lightBg: "bg-[#FF4D00]/5",
   },
   sky: {
     bg: "bg-sky-600",

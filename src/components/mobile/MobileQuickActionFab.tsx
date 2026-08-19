@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -34,7 +34,7 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       label: "New Booking",
       desc: "Record customer reservation",
       icon: Ticket,
-      color: "bg-orange-50 text-[#FF5400] border-orange-100",
+      color: "bg-[#FF4D00]/5 text-[#FF5400] border-[#FF4D00]/20",
       onClick: () => {
         setIsOpen(false);
         onOpenNewBooking();
@@ -45,7 +45,7 @@ export const MobileQuickActionFab: React.FC<MobileQuickActionFabProps> = ({
       label: "Create Quotation",
       desc: "Generate trip itinerary PDF",
       icon: FileText,
-      color: "bg-orange-50 text-orange-600 border-orange-100",
+      color: "bg-[#FF4D00]/5 text-[#FF4D00] border-[#FF4D00]/20",
       onClick: () => {
         setIsOpen(false);
         navigate("/admin/quotations/new");

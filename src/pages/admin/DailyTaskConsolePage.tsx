@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   CheckCircle2,
   Clock,
@@ -416,7 +416,7 @@ export default function DailyTaskConsolePage() {
       {/* ── STICKY HEADER & WORKSTATION TITLE ── */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#FF4D00] shrink-0">
+          <div className="w-11 h-11 rounded-xl bg-[#FF4D00]/5 border border-[#FF4D00]/30 flex items-center justify-center text-[#FF4D00] shrink-0">
             <Zap className="w-6 h-6" />
           </div>
           <div>
@@ -424,7 +424,7 @@ export default function DailyTaskConsolePage() {
               <h1 className="text-lg font-black text-slate-900 tracking-tight">
                 DAILY OPERATIONS TASK CONSOLE
               </h1>
-              <span className="bg-orange-100 text-orange-800 border border-orange-200 text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-wider">
+              <span className="bg-[#FF4D00]/10 text-[#C2410C] border border-[#FF4D00]/30 text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-wider">
                 Live Workstation
               </span>
             </div>
@@ -473,15 +473,15 @@ export default function DailyTaskConsolePage() {
         <div
           onClick={() => setViewMode("TODAY")}
           className={cn(
-            "bg-white border rounded-xl p-4 shadow-2xs space-y-1 cursor-pointer transition-all hover:border-orange-300",
-            viewMode === "TODAY" ? "border-orange-500 ring-2 ring-orange-500/10 bg-orange-50/20" : "border-slate-200",
+            "bg-white border rounded-xl p-4 shadow-2xs space-y-1 cursor-pointer transition-all hover:border-[#FF4D00]/40",
+            viewMode === "TODAY" ? "border-[#FF4D00] ring-2 ring-[#FF4D00]/10 bg-[#FF4D00]/5/20" : "border-slate-200",
           )}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold text-orange-700 uppercase tracking-wider">
+            <span className="text-[10px] font-extrabold text-[#C2410C] uppercase tracking-wider">
               Today's Due Tasks
             </span>
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#FF4D00] animate-pulse" />
           </div>
           <p className="text-2xl font-black text-slate-900">{todayDueCount}</p>
           <p className="text-[9.5px] text-slate-400 font-medium">Due {formatDateDisplay(todayStr, false)}</p>
@@ -553,7 +553,7 @@ export default function DailyTaskConsolePage() {
             )}
           >
             <span>TODAY'S TASKS</span>
-            <span className={cn("px-1.5 py-0.2 rounded text-[10px]", viewMode === "TODAY" ? "bg-orange-100 text-orange-800" : "bg-slate-200 text-slate-700")}>
+            <span className={cn("px-1.5 py-0.2 rounded text-[10px]", viewMode === "TODAY" ? "bg-[#FF4D00]/10 text-[#C2410C]" : "bg-slate-200 text-slate-700")}>
               {todayDueCount}
             </span>
           </button>
@@ -610,7 +610,7 @@ export default function DailyTaskConsolePage() {
             variant="ghost"
             size="xs"
             onClick={fetchTasks}
-            className="h-8 text-xs font-bold text-slate-600 hover:text-orange-600 gap-1"
+            className="h-8 text-xs font-bold text-slate-600 hover:text-[#FF4D00] gap-1"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Refresh List
           </Button>
@@ -663,7 +663,7 @@ export default function DailyTaskConsolePage() {
             placeholder="Search task name, trip code, notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 w-full pl-9 pr-3 text-xs rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500"
+            className="h-8 w-full pl-9 pr-3 text-xs rounded-lg border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00]"
           />
         </div>
       </div>
@@ -714,7 +714,7 @@ export default function DailyTaskConsolePage() {
                     className={cn(
                       "hover:bg-slate-50/80 transition-colors",
                       isDone && "bg-slate-50/50 opacity-75",
-                      isDueToday && !isDone && "bg-orange-50/20",
+                      isDueToday && !isDone && "bg-[#FF4D00]/5/20",
                     )}
                   >
                     {/* DONE Checkbox */}
@@ -736,7 +736,7 @@ export default function DailyTaskConsolePage() {
                     <td className="p-3.5 border-r border-slate-100 font-bold">
                       <a
                         href={`/admin/departure-workspace?tab=operations&departureId=${t.tripId}_${depDateClean}`}
-                        className="group flex items-center gap-1.5 text-slate-900 hover:text-orange-600 font-black text-xs"
+                        className="group flex items-center gap-1.5 text-slate-900 hover:text-[#FF4D00] font-black text-xs"
                       >
                         <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 border border-slate-200 text-[10px] font-mono">
                           {t.tripId || "SPT-1"}
@@ -744,7 +744,7 @@ export default function DailyTaskConsolePage() {
                         <span className="text-[10px] text-slate-400 font-medium">
                           ({depDateFormatted})
                         </span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-600 transition-colors" />
+                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#FF4D00] transition-colors" />
                       </a>
                     </td>
 
@@ -803,9 +803,9 @@ export default function DailyTaskConsolePage() {
                         className={cn(
                           "text-[9px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider inline-block",
                           t.source === "BOOKING"
-                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            ? "bg-slate-50 text-slate-700 border-slate-200"
                             : t.source === "MANUAL"
-                              ? "bg-orange-50 text-orange-700 border-orange-200"
+                              ? "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30"
                               : "bg-blue-50 text-blue-700 border-blue-200",
                         )}
                       >
@@ -823,7 +823,7 @@ export default function DailyTaskConsolePage() {
                             : isOverdue
                               ? "bg-red-50 text-red-700 border-red-200"
                               : isDueToday
-                                ? "bg-orange-100 text-orange-800 border-orange-300"
+                                ? "bg-[#FF4D00]/10 text-[#C2410C] border-[#FF4D00]/40"
                                 : t.status === "In Progress"
                                   ? "bg-blue-50 text-blue-700 border-blue-200"
                                   : "bg-amber-50 text-amber-700 border-amber-200",
@@ -839,7 +839,7 @@ export default function DailyTaskConsolePage() {
                         {t.bookingId && (
                           <a
                             href={`/admin/bookings?id=${t.bookingId}&tab=tasks`}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded border border-purple-200 transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 transition-colors"
                           >
                             Booking <ArrowUpRight className="w-3 h-3" />
                           </a>
@@ -863,7 +863,7 @@ export default function DailyTaskConsolePage() {
                           }}
                           variant="ghost"
                           size="xs"
-                          className="text-xs font-bold text-slate-600 hover:text-orange-600 hover:bg-orange-50"
+                          className="text-xs font-bold text-slate-600 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5"
                         >
                           Edit
                         </Button>
@@ -897,7 +897,7 @@ export default function DailyTaskConsolePage() {
                 value={taskForm.taskName}
                 onChange={(e) => setTaskForm({ ...taskForm, taskName: e.target.value })}
                 placeholder="e.g. Verify Tempo Traveller commercial permit"
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-orange-500"
+                className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-[#FF4D00]"
               />
             </div>
 
@@ -910,7 +910,7 @@ export default function DailyTaskConsolePage() {
                   type="text"
                   value={taskForm.tripId}
                   onChange={(e) => setTaskForm({ ...taskForm, tripId: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-[#FF4D00]"
                 />
               </div>
               <div>
@@ -921,7 +921,7 @@ export default function DailyTaskConsolePage() {
                   type="date"
                   value={taskForm.departureDate}
                   onChange={(e) => setTaskForm({ ...taskForm, departureDate: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 />
               </div>
             </div>
@@ -934,7 +934,7 @@ export default function DailyTaskConsolePage() {
                 <select
                   value={taskForm.assignedTo}
                   onChange={(e) => setTaskForm({ ...taskForm, assignedTo: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   {staffUsers.map((u) => (
                     <option key={u.id || u.email} value={u.name}>
@@ -951,7 +951,7 @@ export default function DailyTaskConsolePage() {
                 <select
                   value={taskForm.priority}
                   onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   <option value="CRITICAL">CRITICAL</option>
                   <option value="HIGH">HIGH</option>
@@ -970,7 +970,7 @@ export default function DailyTaskConsolePage() {
                   type="date"
                   value={taskForm.dueDate}
                   onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 />
               </div>
 
@@ -981,7 +981,7 @@ export default function DailyTaskConsolePage() {
                 <select
                   value={taskForm.status}
                   onChange={(e) => setTaskForm({ ...taskForm, status: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-orange-500"
+                  className="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs font-bold bg-white outline-none focus:border-[#FF4D00]"
                 >
                   <option value="Pending">Pending</option>
                   <option value="In Progress">In Progress</option>
@@ -999,7 +999,7 @@ export default function DailyTaskConsolePage() {
                 onChange={(e) => setTaskForm({ ...taskForm, notes: e.target.value })}
                 rows={2}
                 placeholder="Operational notes or specific requirements..."
-                className="w-full p-2.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-orange-500"
+                className="w-full p-2.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#FF4D00]"
               />
             </div>
           </div>

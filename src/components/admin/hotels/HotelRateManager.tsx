@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Table, Upload, Plus, Copy, Save, AlertCircle } from "lucide-react";
@@ -182,8 +182,8 @@ export default function HotelRateManager({ api }: HotelRateManagerProps) {
               <tr>
                 <th className="px-4 py-3 min-w-[120px]">Month</th>
                 <th className="px-4 py-3 bg-blue-50/50">Double ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
-                <th className="px-4 py-3 bg-orange-50/50">Triple ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
-                <th className="px-4 py-3 bg-orange-50/50">Quad ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
+                <th className="px-4 py-3 bg-[#FF4D00]/5/50">Triple ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
+                <th className="px-4 py-3 bg-[#FF4D00]/5/50">Quad ({pricingToggle === 'per_room' ? 'Room' : 'Pax'})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -193,7 +193,7 @@ export default function HotelRateManager({ api }: HotelRateManagerProps) {
                   <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-700 flex items-center gap-2">
                       {rate.month_name}
-                      {isPeak && <span className="w-2 h-2 rounded-full bg-orange-500" title="Peak Season" />}
+                      {isPeak && <span className="w-2 h-2 rounded-full bg-[#FF4D00]" title="Peak Season" />}
                     </td>
                     
                     <td className="px-4 py-3 bg-blue-50/10">
@@ -208,24 +208,24 @@ export default function HotelRateManager({ api }: HotelRateManagerProps) {
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 bg-orange-50/10">
+                    <td className="px-4 py-3 bg-[#FF4D00]/5/10">
                       <div className="relative">
                         <span className="absolute left-2.5 top-2 text-slate-400 text-xs">₹</span>
                         <input
                           type="number"
-                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-[#FF4D00] focus:ring-1 focus:ring-[#FF4D00] transition-all"
                           value={pricingToggle === 'per_room' ? rate.triple_sharing_per_room : rate.triple_sharing_per_pax}
                           onChange={(e) => handleRateChange(idx, pricingToggle === 'per_room' ? 'triple_sharing_per_room' : 'triple_sharing_per_pax', Number(e.target.value))}
                         />
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 bg-orange-50/10">
+                    <td className="px-4 py-3 bg-[#FF4D00]/5/10">
                       <div className="relative">
                         <span className="absolute left-2.5 top-2 text-slate-400 text-xs">₹</span>
                         <input
                           type="number"
-                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                          className="w-full h-8 pl-6 pr-2 text-sm border border-slate-200 rounded focus:border-[#FF4D00] focus:ring-1 focus:ring-[#FF4D00] transition-all"
                           value={pricingToggle === 'per_room' ? rate.quad_sharing_per_room : rate.quad_sharing_per_pax}
                           onChange={(e) => handleRateChange(idx, pricingToggle === 'per_room' ? 'quad_sharing_per_room' : 'quad_sharing_per_pax', Number(e.target.value))}
                         />

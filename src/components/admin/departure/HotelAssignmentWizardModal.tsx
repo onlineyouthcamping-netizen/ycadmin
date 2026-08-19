@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * HotelAssignmentWizardModal — YouthCamping Admin
  *
@@ -1203,7 +1203,7 @@ export default function HotelAssignmentWizardModal({
           </div>
 
           {/* SECTION 4: COST SUMMARY */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-orange-50/70 border border-orange-200 p-3 rounded-lg mb-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-[#FF4D00]/5/70 border border-[#FF4D00]/30 p-3 rounded-lg mb-1">
             <div className="min-w-0">
               <span className="text-[10px] font-black uppercase text-slate-500 block">Total Stay Cost</span>
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">

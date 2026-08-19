@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -288,7 +288,7 @@ export function CTASliderEditor({
           type="button"
           variant="outline"
           onClick={onReset}
-          className="h-9 px-4 text-xs font-bold text-slate-600 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer"
+          className="h-8 px-4 text-xs font-bold text-slate-600 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset
           Section

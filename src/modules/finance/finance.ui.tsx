@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Inbox, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,8 @@ const STATUS_TONE: Record<string, string> = {
   VERIFIED: "bg-green-50 text-green-700 border-green-200",
   PAID: "bg-green-50 text-green-700 border-green-200",
   REJECTED: "bg-red-50 text-red-700 border-red-200",
-  DISCREPANCY: "bg-orange-50 text-orange-800 border-orange-200",
-  FLAG_DISCREPANCY: "bg-orange-50 text-orange-800 border-orange-200",
+  DISCREPANCY: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
+  FLAG_DISCREPANCY: "bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30",
   PARTIAL: "bg-sky-50 text-sky-800 border-sky-200",
   PARTIALLY_USED: "bg-sky-50 text-sky-800 border-sky-200",
   ACTIVE: "bg-green-50 text-green-700 border-green-200",
@@ -190,7 +190,7 @@ export function FinanceKpiCard({
       className={cn(
         "text-left p-3 rounded-xl border transition-colors cursor-pointer flex flex-col justify-between min-h-[84px] min-w-0",
         active
-          ? "bg-orange-50 border-[#FF4D00] shadow-xs"
+          ? "bg-[#FF4D00]/5 border-[#FF4D00] shadow-xs"
           : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/70",
       )}
     >

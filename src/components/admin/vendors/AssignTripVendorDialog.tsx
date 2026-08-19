@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * AssignTripVendorDialog — YouthCamping Admin
  *
@@ -125,7 +125,7 @@ export function AssignTripVendorDialog({
               placeholder="Search by name, city, GST, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-8 pr-3 text-xs font-medium border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:border-orange-400 transition-colors"
+              className="w-full h-9 pl-8 pr-3 text-xs font-medium border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:border-[#FF4D00]/60 transition-colors"
             />
           </div>
         </div>

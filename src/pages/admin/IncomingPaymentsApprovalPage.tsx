@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import {
   CreditCard,
   Clock,
@@ -526,7 +526,7 @@ export default function IncomingPaymentsApprovalPage({
           <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
             Verified inflow
           </p>
-          <div className="absolute right-3.5 top-3.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-orange-100 bg-orange-50 text-orange-600">
+          <div className="absolute right-3.5 top-3.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#FF4D00]/20 bg-[#FF4D00]/5 text-[#FF4D00]">
             <ArrowDownRight className="w-3.5 h-3.5" />
           </div>
         </div>
@@ -745,7 +745,7 @@ export default function IncomingPaymentsApprovalPage({
                             {/* Station Group Banner */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-[#FBFCFE] px-3.5 py-2.5 border-b border-[#E8EEF4]">
                               <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-orange-100 text-orange-700 font-bold text-[10px]">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#FF4D00]/10 text-[#C2410C] font-bold text-[10px]">
                                   <MapPin className="w-3.5 h-3.5" />
                                 </span>
                                 <div className="min-w-0">

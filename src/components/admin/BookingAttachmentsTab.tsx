@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import {
   Paperclip,
   Upload,
@@ -505,11 +505,11 @@ export default function BookingAttachmentsTab({
           className={cn(
             "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2",
             isDragOver
-              ? "border-primary-orange bg-orange-50/50 scale-[1.01]"
+              ? "border-primary-orange bg-[#FF4D00]/5/50 scale-[1.01]"
               : "border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300",
           )}
         >
-          <div className="w-10 h-10 rounded-full bg-orange-100 text-primary-orange flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-[#FF4D00]/10 text-primary-orange flex items-center justify-center">
             <Upload className="w-5 h-5" />
           </div>
           <div>
@@ -615,7 +615,7 @@ export default function BookingAttachmentsTab({
                   key={att.id}
                   className={cn(
                     "p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors",
-                    isSelected && "bg-orange-50/30",
+                    isSelected && "bg-[#FF4D00]/5/30",
                   )}
                 >
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
@@ -747,7 +747,7 @@ export default function BookingAttachmentsTab({
                                 setVersionHistoryModalOpen(true);
                               }}
                               title="Version History"
-                              className="p-1.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-[#FF4D00] hover:bg-[#FF4D00]/5 rounded-lg transition-colors"
                             >
                               <History className="w-4 h-4" />
                             </button>
@@ -877,7 +877,7 @@ export default function BookingAttachmentsTab({
                 <input
                   type="file"
                   onChange={(e) => setReplaceFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-orange-50 file:text-primary-orange"
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#FF4D00]/5 file:text-primary-orange"
                 />
               </div>
 
@@ -1115,7 +1115,7 @@ export default function BookingAttachmentsTab({
                     className={cn(
                       "p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all",
                       sendChannel === "BOTH"
-                        ? "bg-orange-50 border-orange-500 text-orange-700 shadow-xs"
+                        ? "bg-[#FF4D00]/5 border-[#FF4D00] text-[#C2410C] shadow-xs"
                         : "bg-white border-slate-200 text-slate-600",
                     )}
                   >
@@ -1207,7 +1207,7 @@ export default function BookingAttachmentsTab({
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {/* Current Version */}
-              <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-200 flex items-center justify-between">
+              <div className="bg-[#FF4D00]/5/50 p-3 rounded-xl border border-[#FF4D00]/30 flex items-center justify-between">
                 <div>
                   <span className="bg-primary-orange text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">
                     Current (v{targetAttachment.version})

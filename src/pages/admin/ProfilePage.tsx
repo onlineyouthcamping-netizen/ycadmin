@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -197,14 +197,14 @@ export default function ProfilePage() {
             <TabsList className="bg-transparent h-12 p-0 space-x-6">
               <TabsTrigger
                 value="profile"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-slate-900 rounded-none font-bold text-xs text-slate-500 px-1 py-3 h-full"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-[#FF4D00] data-[state=active]:text-slate-900 rounded-none font-bold text-xs text-slate-500 px-1 py-3 h-full"
               >
                 <User className="w-4 h-4 mr-2" />
                 My Account Profile
               </TabsTrigger>
               <TabsTrigger
                 value="password"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-slate-900 rounded-none font-bold text-xs text-slate-500 px-1 py-3 h-full"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-[#FF4D00] data-[state=active]:text-slate-900 rounded-none font-bold text-xs text-slate-500 px-1 py-3 h-full"
               >
                 <Lock className="w-4 h-4 mr-2" />
                 Security & Password
@@ -251,7 +251,7 @@ export default function ProfilePage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 9876543210"
-                    className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-orange-500"
+                    className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-[#FF4D00]"
                   />
                 </div>
 
@@ -263,7 +263,7 @@ export default function ProfilePage() {
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="https://..."
-                    className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-orange-500"
+                    className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-[#FF4D00]"
                   />
                 </div>
               </div>
@@ -321,7 +321,7 @@ export default function ProfilePage() {
                 <Button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs px-6 h-9"
+                  className="bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-bold text-xs px-6 h-9"
                 >
                   {isSaving && (
                     <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
@@ -346,7 +346,7 @@ export default function ProfilePage() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
-                  className="border-slate-200 text-xs focus-visible:ring-orange-500"
+                  className="border-slate-200 text-xs focus-visible:ring-[#FF4D00]"
                 />
               </div>
 
@@ -359,7 +359,7 @@ export default function ProfilePage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter at least 4 characters"
-                  className="border-slate-200 text-xs focus-visible:ring-orange-500"
+                  className="border-slate-200 text-xs focus-visible:ring-[#FF4D00]"
                 />
               </div>
 
@@ -372,7 +372,7 @@ export default function ProfilePage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter new password"
-                  className="border-slate-200 text-xs focus-visible:ring-orange-500"
+                  className="border-slate-200 text-xs focus-visible:ring-[#FF4D00]"
                 />
               </div>
 

@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { PERMISSIONS } from "@/lib/permissions";
 import type {
   DashboardWidget,
@@ -36,7 +36,7 @@ const APPROVAL_QUEUE = [
   {
     label: "Expense claims",
     count: 3,
-    color: "text-teal-600 bg-teal-50 border-teal-200",
+    color: "text-green-600 bg-green-50 border-green-200",
     path: "/admin/approvals-hub",
   },
 ];

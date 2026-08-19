@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../services/api";
 import { formatDistanceToNow } from "date-fns";
@@ -43,7 +43,7 @@ export default function CustomerProfilePage() {
                     <div className="font-bold text-slate-900">
                       {event.title}
                     </div>
-                    <time className="font-caveat font-medium text-orange-500">
+                    <time className="font-caveat font-medium text-[#FF4D00]">
                       {event.date} {event.time}
                     </time>
                   </div>

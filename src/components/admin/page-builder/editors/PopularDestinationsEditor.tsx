@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -171,7 +171,7 @@ export function PopularDestinationsEditor({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                  <div className="w-6 h-6 rounded-lg bg-orange-100 text-[#D4541A] font-bold text-xs flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-[#FF4D00]/10 text-[#D4541A] font-bold text-xs flex items-center justify-center shrink-0">
                     {idx + 1}
                   </div>
                   <Input
@@ -230,7 +230,7 @@ export function PopularDestinationsEditor({
       </div>
 
       {/* Add Custom Destination Card */}
-      <div className="p-4 rounded-2xl border border-dashed border-orange-200 bg-orange-50/40 space-y-3">
+      <div className="p-4 rounded-2xl border border-dashed border-[#FF4D00]/30 bg-[#FF4D00]/5/40 space-y-3">
         <Label className="text-xs font-bold text-[#D4541A] uppercase tracking-wider block flex items-center gap-1.5">
           <Plus className="w-4 h-4 text-[#D4541A]" /> Add New Destination Card
         </Label>
@@ -274,7 +274,7 @@ export function PopularDestinationsEditor({
           type="button"
           variant="outline"
           onClick={onReset}
-          className="h-9 px-4 text-xs font-bold text-slate-600 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer"
+          className="h-8 px-4 text-xs font-bold text-slate-600 hover:text-[#0B1528] border-slate-200 rounded-xl cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Reset to
           Default

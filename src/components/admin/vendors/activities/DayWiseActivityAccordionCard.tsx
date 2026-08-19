@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -363,7 +363,7 @@ export default function DayWiseActivityAccordionCard({
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Booked</span>
-                <strong className="text-orange-900 font-bold text-sm">
+                <strong className="text-[#0B1528] font-bold text-sm">
                   {optedCount} Pax
                 </strong>
               </div>
@@ -371,14 +371,14 @@ export default function DayWiseActivityAccordionCard({
                 <span className="text-slate-400 block text-[11px]">
                   Revenue
                 </span>
-                <strong className="text-orange-900 font-bold text-sm">
+                <strong className="text-[#0B1528] font-bold text-sm">
                   ₹{(optedCount * sellingPrice).toLocaleString()}
                 </strong>
               </div>
             </>
           ) : (
             <div className="flex items-center gap-4">
-              <span className="px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-xs font-semibold">
+              <span className="px-2.5 py-1 bg-[#FF4D00]/5 text-[#C2410C] border border-[#FF4D00]/30 rounded-md text-xs font-semibold">
                 Optional Activity • Price Not Set
               </span>
               <div className="pl-2 border-l border-slate-200">
@@ -453,7 +453,7 @@ export default function DayWiseActivityAccordionCard({
                     status === s.value
                       ? cn(
                           s.bg,
-                          "ring-2 ring-orange-500/30 border-orange-400 shadow-sm font-bold",
+                          "ring-2 ring-[#FF4D00]/30 border-[#FF4D00]/60 shadow-sm font-bold",
                         )
                       : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100",
                   )}
@@ -474,7 +474,7 @@ export default function DayWiseActivityAccordionCard({
                 type="text"
                 value={activityName}
                 onChange={(e) => setActivityName(e.target.value)}
-                className="w-full text-sm font-bold text-slate-900 px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                className="w-full text-sm font-bold text-slate-900 px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
               />
             </div>
             <div>
@@ -484,7 +484,7 @@ export default function DayWiseActivityAccordionCard({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
               >
                 <option value="Adventure">Adventure</option>
                 <option value="Sightseeing">Sightseeing</option>
@@ -502,7 +502,7 @@ export default function DayWiseActivityAccordionCard({
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
                 placeholder="e.g. 2 Hours"
-                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
               />
             </div>
             <div>
@@ -534,7 +534,7 @@ export default function DayWiseActivityAccordionCard({
                 value={guideName}
                 onChange={(e) => setGuideName(e.target.value)}
                 placeholder="e.g. Lead Guide / Trek Leader"
-                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
               />
             </div>
             <div>
@@ -546,7 +546,7 @@ export default function DayWiseActivityAccordionCard({
                 value={vehicleName}
                 onChange={(e) => setVehicleName(e.target.value)}
                 placeholder="e.g. Tempo Traveller / Bus / Taxi"
-                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
               />
             </div>
             <div className="sm:col-span-2">
@@ -556,7 +556,7 @@ export default function DayWiseActivityAccordionCard({
               <select
                 value={mealIncluded}
                 onChange={(e) => setMealIncluded(e.target.value)}
-                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                className="w-full text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
               >
                 <option value="Included">Included</option>
                 <option value="Not Included">Not Included</option>
@@ -598,7 +598,7 @@ export default function DayWiseActivityAccordionCard({
                   className={cn(
                     "px-4 py-2 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5",
                     !isIncluded
-                      ? "bg-orange-600 text-white border-orange-700 shadow-sm"
+                      ? "bg-[#FF4D00] text-white border-[#E04400] shadow-sm"
                       : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
                   )}
                 >
@@ -660,13 +660,13 @@ export default function DayWiseActivityAccordionCard({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-orange-50/60 p-4 rounded-xl border border-orange-200">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-[#FF4D00]/5/60 p-4 rounded-xl border border-[#FF4D00]/30">
                 <div>
-                  <label className="block text-xs font-bold text-orange-900 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-[#0B1528] uppercase tracking-wider mb-1">
                     Selling Price
                   </label>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-orange-700 font-bold text-xs">
+                    <span className="absolute left-2.5 top-1.5 text-[#C2410C] font-bold text-xs">
                       ₹
                     </span>
                     <input
@@ -675,17 +675,17 @@ export default function DayWiseActivityAccordionCard({
                       onChange={(e) =>
                         setSellingPrice(Number(e.target.value) || 0)
                       }
-                      className="w-full pl-6 pr-2 py-1.5 text-sm font-black text-orange-950 rounded-lg border border-orange-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                      className="w-full pl-6 pr-2 py-1.5 text-sm font-black text-[#0B1528] rounded-lg border border-[#FF4D00]/40 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-orange-900 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-[#0B1528] uppercase tracking-wider mb-1">
                     Vendor Cost
                   </label>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-orange-700 font-bold text-xs">
+                    <span className="absolute left-2.5 top-1.5 text-[#C2410C] font-bold text-xs">
                       ₹
                     </span>
                     <input
@@ -694,13 +694,13 @@ export default function DayWiseActivityAccordionCard({
                       onChange={(e) =>
                         setVendorCost(Number(e.target.value) || 0)
                       }
-                      className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-700 rounded-lg border border-orange-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                      className="w-full pl-6 pr-2 py-1.5 text-sm font-bold text-slate-700 rounded-lg border border-[#FF4D00]/40 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
                     />
                   </div>
                 </div>
 
-                <div className="bg-white/80 p-2 rounded-lg border border-orange-200">
-                  <span className="text-[11px] font-bold text-orange-800 uppercase block">
+                <div className="bg-white/80 p-2 rounded-lg border border-[#FF4D00]/30">
+                  <span className="text-[11px] font-bold text-[#C2410C] uppercase block">
                     Profit / Pax
                   </span>
                   <span className="text-base font-black text-green-600 mt-0.5 block">
@@ -708,8 +708,8 @@ export default function DayWiseActivityAccordionCard({
                   </span>
                 </div>
 
-                <div className="bg-white/80 p-2 rounded-lg border border-orange-200">
-                  <label className="text-[11px] font-bold text-orange-800 uppercase block mb-1">
+                <div className="bg-white/80 p-2 rounded-lg border border-[#FF4D00]/30">
+                  <label className="text-[11px] font-bold text-[#C2410C] uppercase block mb-1">
                     Booked Count (Pax)
                   </label>
                   <div className="relative">
@@ -721,16 +721,16 @@ export default function DayWiseActivityAccordionCard({
                           Math.max(0, Number(e.target.value) || 0),
                         )
                       }
-                      className="w-full pl-2.5 pr-8 py-1 text-sm font-black text-orange-950 rounded border border-orange-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                      className="w-full pl-2.5 pr-8 py-1 text-sm font-black text-[#0B1528] rounded border border-[#FF4D00]/40 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/20 focus:border-[#FF4D00]"
                     />
-                    <span className="absolute right-2 top-1.5 text-orange-700 font-bold text-xs">
+                    <span className="absolute right-2 top-1.5 text-[#C2410C] font-bold text-xs">
                       Pax
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-orange-900 text-white p-2 rounded-lg flex flex-col justify-center">
-                  <span className="text-[11px] font-semibold text-orange-200 uppercase">
+                <div className="bg-[#0B1528] text-white p-2 rounded-lg flex flex-col justify-center">
+                  <span className="text-[11px] font-semibold text-[#FF4D00]/70 uppercase">
                     Total Revenue
                   </span>
                   <span className="text-base font-black text-white">
@@ -757,7 +757,7 @@ export default function DayWiseActivityAccordionCard({
                     className={cn(
                       "p-3 rounded-xl border transition-all flex items-center justify-between",
                       isCurrent
-                        ? "bg-orange-50/70 border-orange-300 ring-1 ring-orange-500/20"
+                        ? "bg-[#FF4D00]/5/70 border-[#FF4D00]/40 ring-1 ring-[#FF4D00]/20"
                         : "bg-white border-slate-200 hover:border-slate-300",
                     )}
                   >
@@ -767,7 +767,7 @@ export default function DayWiseActivityAccordionCard({
                           {vnd.vendorName}
                         </span>
                         {isCurrent && (
-                          <span className="text-[10px] bg-orange-600 text-white font-bold px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] bg-[#FF4D00] text-white font-bold px-1.5 py-0.5 rounded">
                             ACTIVE
                           </span>
                         )}
@@ -790,7 +790,7 @@ export default function DayWiseActivityAccordionCard({
                       className={cn(
                         "h-8 px-3 text-xs font-semibold",
                         isCurrent &&
-                          "bg-orange-600 hover:bg-orange-700 text-white",
+                          "bg-[#FF4D00] hover:bg-[#E04400] text-white",
                       )}
                     >
                       {isCurrent ? "Assigned" : "Assign"}
@@ -823,7 +823,7 @@ export default function DayWiseActivityAccordionCard({
                     `Assigned custom vendor "${name}" at ₹${cost}/pax`,
                   );
                 }}
-                className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg border border-orange-200 transition-all flex items-center gap-1.5"
+                className="text-xs font-bold text-[#FF4D00] hover:text-[#C2410C] bg-[#FF4D00]/5 hover:bg-[#FF4D00]/10 px-3 py-1.5 rounded-lg border border-[#FF4D00]/30 transition-all flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />+ Add Custom Vendor / Misc Cost
               </button>
@@ -852,7 +852,7 @@ export default function DayWiseActivityAccordionCard({
                     className={cn(
                       "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5",
                       p.isOpted
-                        ? "bg-orange-600 text-white border-orange-600 shadow-sm font-bold"
+                        ? "bg-[#FF4D00] text-white border-[#FF4D00] shadow-sm font-bold"
                         : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200",
                     )}
                   >
@@ -888,7 +888,7 @@ export default function DayWiseActivityAccordionCard({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. Life jackets required; VIP guest seating in front raft"
-                className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-orange-500"
+                className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#FF4D00]"
               />
             </div>
 
@@ -907,7 +907,7 @@ export default function DayWiseActivityAccordionCard({
               <Button
                 onClick={handleSaveInline}
                 disabled={saving}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 h-10"
+                className="bg-[#FF4D00] hover:bg-[#E04400] text-white font-semibold px-6 h-10"
               >
                 {saving ? (
                   <>

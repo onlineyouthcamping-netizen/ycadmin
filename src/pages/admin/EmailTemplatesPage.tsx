@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { emailsService, EmailTemplate } from "@/services/emails.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -229,7 +229,7 @@ export default function EmailTemplatesPage() {
               >
                 <div className="space-y-2">
                   <div className="flex justify-between items-center gap-2">
-                    <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-orange-700">
+                    <span className="rounded-full bg-[#FF4D00]/5 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#C2410C]">
                       {template.category}
                     </span>
                     <span
@@ -345,7 +345,7 @@ export default function EmailTemplatesPage() {
                       }))
                     }
                     placeholder="e.g. Booking Confirmation"
-                    className="border-slate-200 text-sm font-semibold focus:border-orange-500"
+                    className="border-slate-200 text-sm font-semibold focus:border-[#FF4D00]"
                   />
                 </div>
                 <div>
@@ -360,7 +360,7 @@ export default function EmailTemplatesPage() {
                         category: e.target.value,
                       }))
                     }
-                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold outline-none focus:border-orange-500 transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold outline-none focus:border-[#FF4D00] transition-colors"
                   >
                     <option value="Booking">Booking</option>
                     <option value="Inquiry">Inquiry</option>
@@ -383,7 +383,7 @@ export default function EmailTemplatesPage() {
                     }))
                   }
                   placeholder="e.g. Your booking is confirmed! {{booking.reference}}"
-                  className="border-slate-200 text-sm font-semibold focus:border-orange-500"
+                  className="border-slate-200 text-sm font-semibold focus:border-[#FF4D00]"
                 />
               </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -141,7 +141,7 @@ export function MyProfileModal({
         {/* Header */}
         <div className="bg-slate-900 px-6 py-5 text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 font-extrabold text-sm">
+            <div className="h-10 w-10 rounded-full bg-[#FF4D00]/20 border border-[#FF4D00]/30 flex items-center justify-center text-[#FF4D00] font-extrabold text-sm">
               {profile?.name?.charAt(0)?.toUpperCase() || "Y"}
             </div>
             <div>
@@ -175,14 +175,14 @@ export function MyProfileModal({
               <TabsList className="bg-transparent h-11 p-0 space-x-6">
                 <TabsTrigger
                   value="profile"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-slate-900 data-[state=active]:shadow-none rounded-none font-bold text-xs text-slate-500 px-1 py-2.5 h-full"
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-[#FF4D00] data-[state=active]:text-slate-900 data-[state=active]:shadow-none rounded-none font-bold text-xs text-slate-500 px-1 py-2.5 h-full"
                 >
                   <User className="w-3.5 h-3.5 mr-1.5" />
                   My Personal Profile
                 </TabsTrigger>
                 <TabsTrigger
                   value="password"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-slate-900 data-[state=active]:shadow-none rounded-none font-bold text-xs text-slate-500 px-1 py-2.5 h-full"
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-[#FF4D00] data-[state=active]:text-slate-900 data-[state=active]:shadow-none rounded-none font-bold text-xs text-slate-500 px-1 py-2.5 h-full"
                 >
                   <Lock className="w-3.5 h-3.5 mr-1.5" />
                   Change Password
@@ -200,7 +200,7 @@ export function MyProfileModal({
                       Assigned Role
                     </span>
                     <span className="text-xs font-bold text-slate-800 capitalize flex items-center gap-1.5 mt-0.5">
-                      <Shield className="w-3.5 h-3.5 text-orange-500" />
+                      <Shield className="w-3.5 h-3.5 text-[#FF4D00]" />
                       {profile?.role === "superadmin"
                         ? "Founder (Full System Owner)"
                         : profile?.role}
@@ -254,7 +254,7 @@ export function MyProfileModal({
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91 9876543210"
-                      className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-orange-500"
+                      className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-[#FF4D00]"
                     />
                   </div>
 
@@ -266,7 +266,7 @@ export function MyProfileModal({
                       value={avatarUrl}
                       onChange={(e) => setAvatarUrl(e.target.value)}
                       placeholder="https://..."
-                      className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-orange-500"
+                      className="border-slate-200 text-xs font-medium text-slate-800 focus-visible:ring-[#FF4D00]"
                     />
                   </div>
                 </div>
@@ -334,7 +334,7 @@ export function MyProfileModal({
                     type="submit"
                     size="sm"
                     disabled={isSaving}
-                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs"
+                    className="bg-[#FF4D00] hover:bg-[#FF4D00] text-white font-bold text-xs"
                   >
                     {isSaving && (
                       <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -357,7 +357,7 @@ export function MyProfileModal({
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Enter current password"
-                    className="border-slate-200 text-xs focus-visible:ring-orange-500"
+                    className="border-slate-200 text-xs focus-visible:ring-[#FF4D00]"
                   />
                 </div>
 
@@ -370,7 +370,7 @@ export function MyProfileModal({
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter at least 4 characters"
-                    className="border-slate-200 text-xs focus-visible:ring-orange-500"
+                    className="border-slate-200 text-xs focus-visible:ring-[#FF4D00]"
                   />
                 </div>
 
@@ -383,7 +383,7 @@ export function MyProfileModal({
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
-                    className="border-slate-200 text-xs focus-visible:ring-orange-500"
+                    className="border-slate-200 text-xs focus-visible:ring-[#FF4D00]"
                   />
                 </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -189,7 +189,7 @@ export function ConfirmModal({
                   rem <= 0
                     ? "text-green-600"
                     : parseFloat(advance) > 0
-                      ? "text-orange-500"
+                      ? "text-[#FF4D00]"
                       : "text-amber-500",
                 )}
               >

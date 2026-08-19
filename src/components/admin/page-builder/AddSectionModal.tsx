@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
   Layout,
   Megaphone,
@@ -234,9 +234,9 @@ export function AddSectionModal({
               <button
                 key={type.id}
                 onClick={() => onSelectSectionType(type)}
-                className="p-4 rounded-xl border border-[#e5e7eb] bg-white hover:bg-orange-50/30 hover:border-[#D97854] transition-all text-left group cursor-pointer flex items-start gap-3.5 space-y-0 shadow-xs"
+                className="p-4 rounded-xl border border-[#e5e7eb] bg-white hover:bg-[#FF4D00]/5/30 hover:border-[#D97854] transition-all text-left group cursor-pointer flex items-start gap-3.5 space-y-0 shadow-xs"
               >
-                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 text-[#D97854] group-hover:bg-[#D97854] group-hover:text-white transition-colors flex items-center justify-center shrink-0 shadow-2xs">
+                <div className="w-10 h-10 rounded-xl bg-[#FF4D00]/5 border border-[#FF4D00]/20 text-[#D97854] group-hover:bg-[#D97854] group-hover:text-white transition-colors flex items-center justify-center shrink-0 shadow-2xs">
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="space-y-1 min-w-0">

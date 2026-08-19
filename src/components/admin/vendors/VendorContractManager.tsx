@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import api from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +81,7 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
       <div className="flex justify-between items-center pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-orange-500" />
+            <FileText className="w-5 h-5 text-[#FF4D00]" />
             Vendor Contracts ERP
           </h2>
           <p className="text-xs text-slate-500 font-semibold mt-0.5">
@@ -89,7 +89,7 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
           </p>
         </div>
         {selectedVendor && (
-          <Button onClick={() => setContractModalOpen(true)} className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold h-8.5 rounded">
+          <Button onClick={() => setContractModalOpen(true)} className="bg-[#FF4D00] hover:bg-[#E04400] text-white text-xs font-bold h-8.5 rounded">
             <Plus className="w-4 h-4 mr-1.5" />
             New Contract
           </Button>
@@ -109,12 +109,12 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
                 className={cn(
                   "w-full text-left p-2.5 text-xs font-semibold rounded transition-all cursor-pointer flex justify-between items-center",
                   selectedVendor?.id === v.id
-                    ? "bg-orange-50 text-orange-900 border-l-4 border-orange-500"
+                    ? "bg-[#FF4D00]/5 text-[#0B1528] border-l-4 border-[#FF4D00]"
                     : "text-slate-650 hover:bg-slate-50"
                 )}
               >
                 <span className="truncate">{v.name}</span>
-                <ChevronRight className={cn("w-3.5 h-3.5", selectedVendor?.id === v.id ? "text-orange-500" : "text-transparent")} />
+                <ChevronRight className={cn("w-3.5 h-3.5", selectedVendor?.id === v.id ? "text-[#FF4D00]" : "text-transparent")} />
               </button>
             ))}
           </div>
@@ -144,7 +144,7 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
                     {contracts.map((c) => (
                       <tr key={c.id}>
                         <td className="p-3 font-bold text-slate-800">{c.roomCategory} <span className="text-[9px] font-normal text-slate-400 block">{c.season} Season</span></td>
-                        <td className="p-3 text-right text-orange-600">₹{c.twinRate || "-"}</td>
+                        <td className="p-3 text-right text-[#FF4D00]">₹{c.twinRate || "-"}</td>
                         <td className="p-3 text-right">₹{c.tripleRate || "-"}</td>
                         <td className="p-3 text-right">₹{c.quadRate || "-"}</td>
                         <td className="p-3 text-right text-slate-400">₹{c.extraBedRate || "-"}</td>
@@ -240,7 +240,7 @@ export function VendorContractManager({ vendors, loadData }: { vendors: any[]; l
             </div>
           </div>
           <div className="pt-4 flex justify-end">
-            <Button onClick={handleSaveContract} disabled={loading} className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-6 h-8.5 rounded">
+            <Button onClick={handleSaveContract} disabled={loading} className="bg-[#FF4D00] hover:bg-[#E04400] text-white text-xs font-bold px-6 h-8.5 rounded">
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Save Contract"}
             </Button>
           </div>

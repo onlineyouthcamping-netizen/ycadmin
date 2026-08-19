@@ -1,4 +1,4 @@
-import {
+﻿import {
   RotateCw,
   Users,
   CreditCard,
@@ -148,7 +148,7 @@ export function BookingsTable({
                       key={b.id}
                       className={cn(
                         "hover:bg-[#F8FAFC] border-b border-[#F1F5F9] cursor-pointer",
-                        isSelected && "bg-orange-50/40",
+                        isSelected && "bg-[#FF4D00]/5/40",
                       )}
                       onClick={() => onPreview(b)}
                     >
@@ -222,7 +222,7 @@ export function BookingsTable({
                             flowStatus === "Confirmed"
                               ? "bg-green-50 text-green-700"
                               : flowStatus === "Completed"
-                                ? "bg-teal-50 text-teal-700"
+                                ? "bg-green-50 text-green-700"
                                 : flowStatus === "Cancelled"
                                   ? "bg-red-50 text-red-700"
                                   : "bg-amber-50 text-amber-700",

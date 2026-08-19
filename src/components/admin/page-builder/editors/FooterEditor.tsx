@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -119,7 +119,7 @@ export function FooterEditor({ draft, onChange, onReset }: FooterEditorProps) {
             type="button"
             variant="ghost"
             onClick={addQuickLink}
-            className="h-7 px-2.5 text-xs font-bold text-[#D97854] hover:bg-orange-50 cursor-pointer"
+            className="h-7 px-2.5 text-xs font-bold text-[#D97854] hover:bg-[#FF4D00]/5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 mr-1" /> Add Link
           </Button>
@@ -164,7 +164,7 @@ export function FooterEditor({ draft, onChange, onReset }: FooterEditorProps) {
             type="button"
             variant="ghost"
             onClick={addUsefulLink}
-            className="h-7 px-2.5 text-xs font-bold text-[#D97854] hover:bg-orange-50 cursor-pointer"
+            className="h-7 px-2.5 text-xs font-bold text-[#D97854] hover:bg-[#FF4D00]/5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 mr-1" /> Add Link
           </Button>
@@ -297,7 +297,7 @@ export function FooterEditor({ draft, onChange, onReset }: FooterEditorProps) {
           type="button"
           variant="outline"
           onClick={onReset}
-          className="h-9 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
+          className="h-8 px-4 text-xs font-bold text-[#6b7280] hover:text-[#1A2332] border-[#e5e7eb] rounded-xl cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[#6b7280]" /> Reset to
           Default

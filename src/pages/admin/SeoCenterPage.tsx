@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,7 +117,7 @@ export default function SeoCenterPage() {
               Target Page
             </Label>
             <Select value={currentPage} onValueChange={setCurrentPage}>
-              <SelectTrigger className="h-9 rounded-md border border-slate-200 text-sm font-medium px-3">
+              <SelectTrigger className="h-8 rounded-md border border-slate-200 text-sm font-medium px-3">
                 <SelectValue placeholder="Select Page" />
               </SelectTrigger>
               <SelectContent className="rounded-md border border-slate-200">
@@ -145,7 +145,7 @@ export default function SeoCenterPage() {
                   setSeoData({ ...seoData, metaTitle: e.target.value })
                 }
                 placeholder="Page title for search engines"
-                className="h-9 rounded-md border border-slate-200 text-sm font-medium px-3"
+                className="h-8 rounded-md border border-slate-200 text-sm font-medium px-3"
               />
             </div>
 
@@ -183,7 +183,7 @@ export default function SeoCenterPage() {
                     setSeoData({ ...seoData, ogImage: e.target.value })
                   }
                   placeholder="https://example.com/banner.jpg"
-                  className="h-9 rounded-md border border-slate-200 text-sm font-medium px-3 flex-1"
+                  className="h-8 rounded-md border border-slate-200 text-sm font-medium px-3 flex-1"
                 />
                 {seoData.ogImage && (
                   <div className="h-9 w-20 rounded-md overflow-hidden border border-slate-200 bg-slate-50 shadow-sm">
