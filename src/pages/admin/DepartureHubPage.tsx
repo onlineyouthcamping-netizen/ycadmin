@@ -2557,7 +2557,7 @@ export default function DepartureHubPage() {
             // Write room allocations by BOTH travelerName and passenger.id
             rooms.forEach((r: any) => {
               const nameKey = r.travelerName;
-              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
+              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase()) || (allPassengers as any[]).find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
               const entry = {
                 ...(next[nameKey] || { vehicle: "—", seat: "—" }),
                 room: r.roomNumber,
@@ -2570,7 +2570,7 @@ export default function DepartureHubPage() {
 
             vehicles.forEach((v: any) => {
               const nameKey = v.travelerName;
-              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
+              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase()) || (allPassengers as any[]).find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
               const vName = fleetNameMap[v.fleetId] || initialFleet.find((f: any) => f.id === v.fleetId)?.name || (initialFleet.length === 1 ? initialFleet[0].name : (v.fleetId || "Tempo 1"));
               const entry = {
                 ...(next[nameKey] || { room: "—" }),
@@ -5245,27 +5245,41 @@ useEffect(() => {
       allPassengers.forEach((p) => {
         if (isPassengerCancelled(p)) return;
         const key = p.id;
+        const nameKey = p.name;
+        const existingByName = nameKey ? next[nameKey] : null;
         if (key && !next[key]) {
-          next[key] = {
+          next[key] = existingByName || {
             room: p.roomNo && p.roomNo !== "—" ? p.roomNo : "—",
             vehicle: "—",
             seat: "—",
           };
           hasChanges = true;
+        } else if (key && next[key] && existingByName) {
+          if (next[key].vehicle === "—" && existingByName.vehicle && existingByName.vehicle !== "—") {
+            next[key].vehicle = existingByName.vehicle;
+            next[key].seat = existingByName.seat || next[key].seat;
+            hasChanges = true;
+          }
+          if (next[key].room === "—" && existingByName.room && existingByName.room !== "—") {
+            next[key].room = existingByName.room;
+            hasChanges = true;
+          }
         }
       });
       return hasChanges ? next : prev;
     });
-  }, [bookings.length]);
+  }, [bookings.length, allPassengers]);
 
   const computedRoomAllocations = useMemo(() => {
     const list: any[] = [];
 
-    // Iterate allPassengers as the canonical source (one entry per person),
-    // not Object.entries(passengerAllocations) which now has dual id+name keys
-    // and would produce duplicates.
+    // Iterate allPassengers as the canonical source (one entry per person)
     allPassengers.forEach((pObj: any) => {
-      const alloc = passengerAllocations[pObj.id] || passengerAllocations[pObj.name];
+      const allocById = passengerAllocations[pObj.id];
+      const allocByName = passengerAllocations[pObj.name];
+      const alloc = (allocById && allocById.room && allocById.room !== "—")
+        ? allocById
+        : (allocByName || allocById);
       if (!alloc || !alloc.room || alloc.room === "Unassigned" || alloc.room === "—") return;
       if (isPassengerCancelled(pObj)) return;
 
@@ -5283,7 +5297,6 @@ useEffect(() => {
     });
 
     // Add empty placeholder rooms for manually added room values
-
     manualRooms.forEach((rNum) => {
       const hasMembers = list.some((x) => x.roomNumber === rNum);
       if (!hasMembers) {
@@ -5303,7 +5316,11 @@ useEffect(() => {
   const computedVehicleAllocations = useMemo(() => {
     const list: any[] = [];
     allPassengers.forEach((pObj: any) => {
-      const alloc = passengerAllocations[pObj.id] || passengerAllocations[pObj.name];
+      const allocById = passengerAllocations[pObj.id];
+      const allocByName = passengerAllocations[pObj.name];
+      const alloc = (allocById && allocById.vehicle && allocById.vehicle !== "—")
+        ? allocById
+        : (allocByName || allocById);
       if (
         alloc?.vehicle &&
         alloc.vehicle !== "Unassigned" &&
