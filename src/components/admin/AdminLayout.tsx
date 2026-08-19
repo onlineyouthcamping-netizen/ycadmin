@@ -371,10 +371,6 @@ function AdminSidebar() {
                   "tickets.approve",
                 ],
                 "/admin/trips": ["trips.view"],
-                "/admin/master-database": [
-                  "masterdatabase.view",
-                  "settings.view",
-                ],
                 "/admin/website": [
                   "design.view",
                   "pagebuilder.view",
