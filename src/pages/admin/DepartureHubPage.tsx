@@ -3671,9 +3671,28 @@ useEffect(() => {
           }
           return sum + count;
         }, 0) || (confirmedBookings.length > 0 ? confirmedBookings.length : 0);
-      const outstandingParticipantsCount = confirmedBookings.filter(
-        (b: any) => (b.remainingAmount || 0) > 0,
-      ).length;
+      const outstandingParticipantsCount = confirmedBookings
+        .filter((b: any) => (b.remainingAmount || 0) > 0)
+        .reduce((sum: number, b: any) => {
+          let count = 0;
+          if (b.numberOfTravelers && Number(b.numberOfTravelers) > 0) {
+            count = Number(b.numberOfTravelers);
+          } else if (b.numberOfPersons && Number(b.numberOfPersons) > 0) {
+            count = Number(b.numberOfPersons);
+          } else if (Array.isArray(b.passengers) && b.passengers.length > 0) {
+            count = b.passengers.length;
+          } else if (typeof b.passengers === "string") {
+            try {
+              const p = JSON.parse(b.passengers);
+              count = Array.isArray(p) && p.length > 0 ? p.length : 1;
+            } catch {
+              count = 1;
+            }
+          } else {
+            count = 1;
+          }
+          return sum + count;
+        }, 0);
 
       // Vendor Payments (filtered from opsHotels, allocFleet, dbGuides, and tripVendors)
       const calculateHotelCost = (h: any) => {
@@ -5073,7 +5092,7 @@ useEffect(() => {
 
   const computedTasks = useMemo(() => {
     if (checklistTasks.length === 0) {
-      return MOCK_TASKS;
+      return [];
     }
     return checklistTasks.map((t: any) => {
       let category = "OPERATIONS";
@@ -6586,7 +6605,7 @@ useEffect(() => {
                   const day = (d.day || "").toLowerCase();
                   return !d.isNoStay && !dest.includes("train") && !dest.includes("night journey") && !day.includes("no stay");
                 });
-                const hotelsTarget = stayDays.length > 0 ? stayDays.length : 5;
+                const hotelsTarget = stayDays.length;
                 const realOpsHotels = (opsHotels || []).filter((h: any) => {
                   const name = String(h?.hotelName || h?.name || "").trim().toUpperCase();
                   return name && name !== "NO_STAY" && name !== "NO STAY" && name !== "—";
@@ -6615,7 +6634,7 @@ useEffect(() => {
                 const isGuideAssigned = guideCount > 0;
 
                 const tasksDone = computedTasks.filter((t) => t.status === "COMPLETED").length;
-                const tasksTotal = computedTasks.length || 8;
+                const tasksTotal = computedTasks.length;
 
                 // Accurate dynamic readiness calculation
                 const hotelsScore = hotelsTarget > 0 ? (confirmedHotelCount / hotelsTarget) * 25 : 25;
@@ -6627,7 +6646,7 @@ useEffect(() => {
                 const isReady = rScore >= 90;
 
                 const missingList: string[] = [];
-                if (!isHotelsConfirmed) missingList.push(`${hotelsTarget - confirmedHotelCount} hotel stay(s) pending assignment.`);
+                if (!isHotelsConfirmed && hotelsTarget > 0) missingList.push(`${hotelsTarget - confirmedHotelCount} hotel stay(s) pending assignment.`);
                 if (!isTransportConfirmed) missingList.push(`${transportRequiredCount - transportAssignedCount} vehicle(s) pending assignment.`);
                 if (!isGuideAssigned) missingList.push("Lead guide not yet assigned to departure.");
                 if (stats.customerOutstanding > 0) missingList.push(`₹${stats.customerOutstanding.toLocaleString("en-IN")} customer balance payment outstanding.`);
