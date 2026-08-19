@@ -105,42 +105,36 @@ export default function ApprovalsHubPage() {
 
   return (
     <div className="min-h-0 space-y-3 font-sans text-[#13283F] antialiased">
-      <section className="relative overflow-hidden rounded-2xl bg-[#10263D] px-4 py-4 text-white shadow-[0_12px_32px_rgba(16,38,61,0.16)] md:px-6 md:py-5">
-        <div
-          aria-hidden="true"
-          className="absolute -right-16 -top-20 h-52 w-52 rounded-full border-[28px] border-white/[0.04]"
-        />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-[#E8EEF4] rounded-xl px-4 py-4 md:px-5 md:py-4 shadow-none border-l-4 border-l-[#FF4D00]">
+        <div className="min-w-0 flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FF4D00]/10">
+            <ShieldCheck className="h-4 w-4 text-[#FF4D00]" />
+          </span>
           <div className="min-w-0">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FF5A1F] shadow-[0_6px_16px_rgba(255,90,31,0.35)]">
-                <ShieldCheck className="h-4 w-4" />
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-300">
-                Finance control desk
-              </span>
-            </div>
-            <h1 className="text-[22px] font-bold tracking-[-0.03em] md:text-[26px]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-0.5">
+              Finance Control Desk
+            </p>
+            <h1 className="text-[20px] font-bold text-[#0B1528] tracking-tight leading-tight">
               Approvals
             </h1>
-            <p className="mt-1 max-w-xl text-[12px] leading-relaxed text-slate-300 md:text-[13px]">
+            <p className="text-[12px] text-slate-500 mt-0.5">
               Review money moving into and out of YouthCamping.
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.07] px-3.5 py-2.5 backdrop-blur-sm">
-            <div>
-              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                Open actions
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 bg-[#F8FAFC] border border-[#E8EEF4] rounded-lg px-3.5 py-2">
+            <div className="text-right">
+              <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Open Actions
               </div>
-              <div className="mt-0.5 text-xl font-bold tabular-nums">
+              <div className="text-[20px] font-bold text-[#0B1528] tabular-nums leading-tight">
                 {totalOpen}
               </div>
             </div>
-            <div className="h-8 w-px bg-white/10" />
-            <div className="text-[10px] leading-4 text-slate-300">
-              Across all
-              <br />
-              finance queues
+            <div className="h-7 w-px bg-[#E8EEF4]" />
+            <div className="text-[10px] leading-4 text-slate-500">
+              Across all<br />finance queues
             </div>
           </div>
         </div>
