@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ShieldCheck,
@@ -168,6 +168,7 @@ export default function FinanceControlCenterPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
   // ── Cash Verification Modal ──
@@ -321,8 +322,8 @@ export default function FinanceControlCenterPage({
         auditData,
       ] = await Promise.all([
         financeControllerService.getStats().catch(() => null),
-        financeControllerService.getCashQueue({ status: statusFilter !== "ALL" ? statusFilter : undefined, search: searchQuery || undefined }).catch(() => ({ data: [], pagination: {} })),
-        financeControllerService.getIncomingQueue({ status: statusFilter !== "ALL" ? statusFilter : undefined, search: searchQuery || undefined }).catch(() => ({ data: [], pagination: {} })),
+        financeControllerService.getCashQueue({ status: statusFilter !== "ALL" ? statusFilter : undefined, search: debouncedSearch || undefined }).catch(() => ({ data: [], pagination: {} })),
+        financeControllerService.getIncomingQueue({ status: statusFilter !== "ALL" ? statusFilter : undefined, search: debouncedSearch || undefined }).catch(() => ({ data: [], pagination: {} })),
         financeControllerService.getVendorQueue().catch(() => ({ data: [], pagination: {} })),
         financeControllerService.getTicketingQueue().catch(() => ({ data: [], pagination: {} })),
         financeControllerService.getDeparturesQueue().catch(() => []),
@@ -373,7 +374,13 @@ export default function FinanceControlCenterPage({
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [activeTab, statusFilter, searchQuery, refundSubTab, auditEntityFilter]);
+  }, [activeTab, statusFilter, debouncedSearch, refundSubTab, auditEntityFilter]);
+
+  // Debounce search input — wait 400ms after typing stops before firing API calls
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchAllData();

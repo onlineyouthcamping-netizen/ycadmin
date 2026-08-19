@@ -211,7 +211,7 @@ export default function VerificationQueuePage({
           .catch(() => ({ data: [] })),
         trainTicketService.getApprovalsQueue().catch(() => ({ data: [] })),
         bookingsService
-          .getAll({ status: "all", limit: 1000 })
+          .getAll({ status: "confirmed", limit: 200 })
           .catch(() => ({ data: [] })),
       ]);
       const vItems: any = verifRes.data || verifRes;
@@ -425,6 +425,11 @@ export default function VerificationQueuePage({
     action: string,
   ) => {
     e.stopPropagation();
+    // Synthetic IDs (pseudo-* entries) are display-only — they have no real ticket record
+    if (bookingId.startsWith("pseudo-")) {
+      toast.error("This booking has no generated train ticket yet. Please create a ticket first.");
+      return;
+    }
     try {
       if (activeQueue === "train") {
         if (action === "VERIFY") {
