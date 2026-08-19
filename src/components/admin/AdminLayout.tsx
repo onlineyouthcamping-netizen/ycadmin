@@ -279,28 +279,29 @@ function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-[#152238] shadow-none">
-      <SidebarContent className="scrollbar-hide flex flex-col h-full bg-[#0B1528] text-slate-400">
+      <SidebarContent className="scrollbar-hide flex flex-col h-full text-slate-400" style={{ background: "linear-gradient(180deg, #0D1B2E 0%, #0B1528 60%, #0A1220 100%)" }}>
         {/* Brand / Logo Header */}
         <div
           className={cn(
-            "flex items-center justify-start border-b border-[#152238] shrink-0 h-14 px-3 bg-[#0B1528] overflow-hidden",
+            "flex items-center justify-start shrink-0 h-14 px-4 overflow-hidden",
             collapsed && "justify-center px-0",
           )}
         >
           {!collapsed ? (
-            <div className="flex w-full min-w-0 items-center gap-2.5">
-              <span className="truncate text-[14px] leading-none tracking-[-0.01em] text-white">
-                <span className="font-bold">Youth</span>
-                <span className="font-normal opacity-80">Camping</span>
+            <div className="flex w-full min-w-0 items-center gap-0">
+              <span className="truncate text-[15px] leading-none tracking-tight">
+                <span className="font-bold text-white">Youth</span>
+                <span className="font-light text-[#FF4D00]">Camping</span>
               </span>
+              <span className="ml-2 text-[9px] font-bold uppercase tracking-widest text-slate-600 border border-slate-700 rounded px-1 py-0.5 leading-none">ERP</span>
             </div>
           ) : (
-            <span className="text-[11px] font-bold text-white">YC</span>
+            <span className="text-[12px] font-black text-white tracking-tight">YC</span>
           )}
         </div>
 
         {/* Navigation Items List */}
-        <div className="flex-1 overflow-y-auto no-scrollbar py-4 px-3 space-y-0.5">
+        <div className="flex-1 overflow-y-auto no-scrollbar py-3 px-2.5 space-y-0.5">
           {sidebarModules.map((mod) => {
             const hasSub = mod.hasSubItems;
 
@@ -488,32 +489,32 @@ function AdminSidebar() {
                 <button
                   onClick={() => handleModuleClick(mod)}
                   className={cn(
-                    "group/nav flex items-center w-full h-10 rounded-md px-1.5 transition-colors relative text-left cursor-pointer",
+                    "group/nav flex items-center w-full h-9 rounded-lg px-2 transition-all duration-150 relative text-left cursor-pointer",
                     collapsed && "justify-center px-0",
                     isModuleActive
-                      ? "text-white"
-                      : "text-slate-400 hover:text-slate-100",
+                      ? "bg-white/[0.07] text-white"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]",
                   )}
                 >
                   {isModuleActive && !collapsed && (
-                    <span className="absolute left-0 top-2.5 bottom-2.5 w-[2px] rounded-full bg-[#FF4D00]" />
+                    <span className="absolute left-0 top-2 bottom-2 w-[2.5px] rounded-full bg-[#FF4D00] shadow-[0_0_6px_rgba(255,77,0,0.6)]" />
                   )}
                   <span
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-md shrink-0 transition-colors",
+                      "flex h-6 w-6 items-center justify-center rounded-md shrink-0 transition-colors",
                       collapsed ? "" : "mr-2.5",
                       isModuleActive
-                        ? "bg-[#FF4D00]/12 text-[#FF4D00]"
-                        : "text-slate-400 group-hover/nav:text-slate-200 group-hover/nav:bg-white/[0.04]",
+                        ? "text-[#FF4D00]"
+                        : "text-slate-500 group-hover/nav:text-slate-300",
                     )}
                   >
-                    <mod.icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                    <mod.icon className="h-[14px] w-[14px]" strokeWidth={2} />
                   </span>
                   {!collapsed && (
                     <span
                       className={cn(
-                        "flex-1 truncate text-[13px] tracking-[-0.01em]",
-                        isModuleActive ? "font-semibold" : "font-medium",
+                        "flex-1 truncate text-[12.5px] tracking-[-0.01em]",
+                        isModuleActive ? "font-semibold text-white" : "font-medium",
                       )}
                     >
                       {mod.title}
@@ -523,14 +524,14 @@ function AdminSidebar() {
                   {!collapsed &&
                     hasSub &&
                     (isExpanded ? (
-                      <ChevronDown className="h-3.5 w-3.5 text-slate-500 ml-auto shrink-0" strokeWidth={1.75} />
+                      <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" strokeWidth={2} />
                     ) : (
-                      <ChevronRight className="h-3.5 w-3.5 text-slate-600 ml-auto shrink-0" strokeWidth={1.75} />
+                      <ChevronRight className="h-3 w-3 text-slate-600 ml-auto shrink-0" strokeWidth={2} />
                     ))}
                 </button>
 
                 {!collapsed && hasSub && isExpanded && (
-                  <div className="ml-[22px] pl-3 pr-1 py-1 mb-1.5 flex flex-col gap-0.5 border-l border-white/10">
+                  <div className="ml-5 pl-3 pr-1 py-0.5 mb-1 flex flex-col gap-px border-l border-white/[0.07]">
                     {visibleSubItems.map((sub) => {
                       const active = isSubActive(sub.url);
                       return (
@@ -541,13 +542,14 @@ function AdminSidebar() {
                             if (isMobile) setOpenMobile(false);
                           }}
                           className={cn(
-                            "text-[12px] py-1.5 px-2 rounded-md transition-colors flex items-center cursor-pointer leading-snug",
+                            "text-[12px] py-1.5 px-2.5 rounded-md transition-all duration-100 flex items-center gap-1.5 cursor-pointer leading-snug",
                             active
-                              ? "text-white font-semibold bg-white/[0.06]"
-                              : "text-slate-400 font-medium hover:text-slate-200 hover:bg-white/[0.04]",
+                              ? "text-white font-semibold bg-[#FF4D00]/10"
+                              : "text-slate-500 font-medium hover:text-slate-200 hover:bg-white/[0.04]",
                           )}
                           activeClassName=""
                         >
+                          {active && <span className="h-1 w-1 rounded-full bg-[#FF4D00] shrink-0" />}
                           <span>{sub.title}</span>
                         </NavLink>
                       );
@@ -559,11 +561,11 @@ function AdminSidebar() {
           })}
         </div>
 
-        <div className="p-2.5 border-t border-[#152238]">
+        <div className="p-2.5 border-t border-white/[0.06]">
           {collapsed ? (
             <div className="flex flex-col items-center gap-2">
               {admin && (
-                <div className="h-8 w-8 rounded-full bg-[#FF4D00]/15 text-[#FF4D00] flex items-center justify-center text-[11px] font-semibold">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#FF4D00] to-[#ff7040] text-white flex items-center justify-center text-[11px] font-bold shadow-sm">
                   {admin.name ? admin.name.charAt(0).toUpperCase() : "A"}
                 </div>
               )}
@@ -571,23 +573,23 @@ function AdminSidebar() {
                 type="button"
                 onClick={handleLogout}
                 title="Log out"
-                className="h-8 w-8 rounded-md text-slate-500 hover:text-red-300 hover:bg-red-600/10 flex items-center justify-center"
+                className="h-8 w-8 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center transition-colors"
               >
                 <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2.5 px-1">
+            <div className="flex items-center gap-2.5 bg-white/[0.04] rounded-lg px-2.5 py-2 border border-white/[0.05]">
               {admin && (
                 <>
                   {admin.avatarUrl ? (
                     <img
                       src={admin.avatarUrl}
                       alt=""
-                      className="h-8 w-8 rounded-full object-cover ring-1 ring-white/10 shrink-0"
+                      className="h-7 w-7 rounded-full object-cover ring-1 ring-[#FF4D00]/30 shrink-0"
                     />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-[#FF4D00]/15 text-[#FF4D00] flex items-center justify-center text-[11px] font-semibold shrink-0">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#FF4D00] to-[#ff7040] text-white flex items-center justify-center text-[10px] font-bold shrink-0 shadow-sm">
                       {admin.name ? admin.name.charAt(0).toUpperCase() : "A"}
                     </div>
                   )}
@@ -595,7 +597,7 @@ function AdminSidebar() {
                     <p className="text-[12px] font-semibold text-white truncate leading-tight">
                       {admin.name || "Admin"}
                     </p>
-                    <p className="text-[10px] text-slate-500 truncate mt-0.5 capitalize">
+                    <p className="text-[10px] text-slate-500 truncate capitalize">
                       {(admin.role || "operator").replace(/_/g, " ")}
                     </p>
                   </div>
@@ -605,7 +607,7 @@ function AdminSidebar() {
                 type="button"
                 onClick={handleLogout}
                 title="Log out"
-                className="h-8 w-8 rounded-md text-slate-500 hover:text-red-300 hover:bg-red-600/10 flex items-center justify-center shrink-0"
+                className="h-7 w-7 rounded-md text-slate-600 hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center shrink-0 transition-colors"
               >
                 <LogOut className="h-3.5 w-3.5" strokeWidth={1.75} />
               </button>
