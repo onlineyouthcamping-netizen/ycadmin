@@ -55,8 +55,8 @@ export const AnnouncementsWidget: React.FC<DashboardWidgetContextProps> = ({
         <p className={dashEmpty}>No announcements yet.</p>
       ) : (
         announcements.slice(0, 5).map((ann: any) => (
-          <div key={ann.id} className="border-b border-[#1E2D45]/60 pb-2.5 last:border-0 last:pb-0">
-            <p className="font-medium leading-snug text-slate-200">{ann.title}</p>
+          <div key={ann.id} className="border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
+            <p className="font-medium leading-snug text-[#0B1528]">{ann.title}</p>
             <p className="mt-1 text-[10px] font-medium text-slate-500">
               {ann.author} &middot; {relativeTime(ann.createdAt)}
             </p>
@@ -108,7 +108,7 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
               cx="30"
               cy="30"
               r="26"
-              className="stroke-[#1E2D45]"
+              className="stroke-slate-200"
               strokeWidth="4"
               fill="transparent"
             />
@@ -124,7 +124,7 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
             />
           </svg>
           <div className="absolute flex flex-col items-center">
-            <span className="text-[13px] font-bold tabular-nums text-slate-200">
+            <span className="text-[13px] font-bold tabular-nums text-[#0B1528]">
               {total}
             </span>
             <span className="mt-0.5 text-[9px] font-medium text-slate-600">
@@ -135,19 +135,19 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
         <div className="min-w-0 flex-1 space-y-1.5 text-[11px]">
           <div className="flex items-center justify-between">
             <span className="font-medium text-slate-500">Completed</span>
-            <span className="font-bold tabular-nums text-green-400">
+            <span className="font-bold tabular-nums text-green-700">
               {completed}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="font-medium text-slate-500">Pending</span>
-            <span className="font-bold tabular-nums text-amber-400">
+            <span className="font-bold tabular-nums text-amber-700">
               {pending}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="font-medium text-slate-500">Overdue</span>
-            <span className="font-bold tabular-nums text-red-400">
+            <span className="font-bold tabular-nums text-red-600">
               {overdue}
             </span>
           </div>
@@ -209,11 +209,11 @@ export const RecentBookingsWidget: React.FC<DashboardWidgetContextProps> = ({
             <div
               key={b.id}
               onClick={() => navigate(`/admin/bookings`)}
-              className="flex cursor-pointer items-start gap-2.5 border-b border-[#1E2D45]/50 px-4 py-2.5 last:border-0 transition-colors hover:bg-[#FF4D00]/[0.04]"
+              className="flex cursor-pointer items-start gap-2.5 border-b border-slate-100 px-4 py-2.5 last:border-0 transition-colors hover:bg-[#FF4D00]/[0.04]"
             >
               <div className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${bookingStatusColor(b.status)}`} />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold leading-tight text-slate-200 text-[11.5px]">
+                <p className="truncate font-semibold leading-tight text-[#0B1528] text-[11.5px]">
                   {b.userName || b.name || "Guest"}
                 </p>
                 <p className="truncate text-[10.5px] text-slate-500 mt-0.5 leading-tight">
@@ -221,7 +221,7 @@ export const RecentBookingsWidget: React.FC<DashboardWidgetContextProps> = ({
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-[11px] font-bold text-slate-200 tabular-nums">
+                <p className="text-[11px] font-bold text-[#0B1528] tabular-nums">
                   {displayAmount > 0 ? `₹${displayAmount.toLocaleString("en-IN")}` : "₹0"}
                 </p>
                 <p className="text-[10px] text-slate-500 mt-0.5">

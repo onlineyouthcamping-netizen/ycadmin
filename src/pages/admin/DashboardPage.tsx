@@ -168,28 +168,23 @@ export default function DashboardPage() {
 
       {/* Desktop view */}
       <div className="hidden md:block space-y-5">
-        {/* Premium header bar */}
-        <div className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border border-[#1E2D45] bg-gradient-to-r from-[#0D1B2E] to-[#0A1628] px-5 py-3 shadow-[0_2px_20px_0_rgba(0,0,0,0.4)]">
-          <div className="flex items-center gap-3">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-[#FF4D00] shadow-[0_0_8px_3px_rgba(255,77,0,0.5)]" />
-            <span className="text-[12px] font-semibold text-slate-300">
-              {currentDateString}
-            </span>
-          </div>
+        {/* Header bar */}
+        <div className="flex min-h-7 items-center justify-between gap-3">
+          <div className="text-[12px] font-medium text-slate-500">{currentDateString}</div>
 
           <div className="flex items-center gap-2">
-            <div className="flex h-7 items-center rounded-lg border border-[#FF4D00]/30 bg-[#FF4D00]/10 px-3">
+            <div className="flex h-7 items-center rounded-lg border border-slate-200 bg-white px-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF4D00]">
                 {userRole ? `${userRole} view` : "Operator"}
               </span>
             </div>
 
-            <div className="flex h-7 items-center gap-1.5 rounded-lg border border-[#1E2D45] bg-[#060E1A] px-2.5">
+            <div className="flex h-7 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5">
               <Calendar className="h-3.5 w-3.5 text-slate-500" strokeWidth={1.75} />
               <select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="cursor-pointer border-0 bg-transparent text-[11px] font-medium text-slate-300 outline-none"
+                className="cursor-pointer border-0 bg-transparent text-[11px] font-medium text-slate-700 outline-none"
               >
                 <option value="all">All time</option>
                 <option value="today">Today</option>
@@ -216,7 +211,7 @@ export default function DashboardPage() {
                     <span className="h-1.5 w-1.5 rounded-full bg-[#FF4D00] shadow-[0_0_4px_2px_rgba(255,77,0,0.4)]" />
                     {info.title}
                   </h2>
-                  <span className="h-px flex-1 bg-[#1E2D45]" />
+                  <span className="h-px flex-1 bg-slate-200" />
                   <span className="shrink-0 text-[10px] font-medium text-slate-600">
                     {info.subtitle}
                   </span>
