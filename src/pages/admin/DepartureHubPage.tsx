@@ -2460,9 +2460,36 @@ export default function DepartureHubPage() {
       if (allocRes?.data?.success) {
         const { rooms = [], vehicles = [] } = allocRes.data.data;
         if (rooms.length > 0 || vehicles.length > 0) {
-          // Build name→passenger map for dual-key write (by both id and name)
+          // Extract passengers directly from allBookings for immediate synchronous resolution
+          const currentPassengersList: any[] = [];
+          (bookingsRes.status === "fulfilled" && bookingsRes.value?.data?.data ? bookingsRes.value.data.data : []).forEach((b: any) => {
+            let rawPax: any[] = [];
+            try {
+              if (Array.isArray(b.passengers)) rawPax = b.passengers;
+              else if (typeof b.passengers === "string") rawPax = JSON.parse(b.passengers || "[]");
+            } catch {
+              rawPax = [];
+            }
+            if (rawPax.length > 0) {
+              rawPax.forEach((p: any, idx: number) => {
+                currentPassengersList.push({
+                  id: p.id || `${b.id}-${idx}`,
+                  name: p.name || p.travelerName || b.name || b.fullName,
+                  gender: p.gender || b.gender,
+                });
+              });
+            } else {
+              currentPassengersList.push({
+                id: b.id,
+                name: b.name || b.fullName || "Traveler",
+                gender: b.gender,
+              });
+            }
+          });
+
+          // Build name→passenger map
           const nameToPassenger: Record<string, any> = {};
-          (allPassengers as any[]).forEach((p: any) => {
+          currentPassengersList.forEach((p: any) => {
             if (p.name) nameToPassenger[p.name] = p;
           });
 
@@ -2489,19 +2516,18 @@ export default function DepartureHubPage() {
             });
           }
 
-          setPassengerAllocations((_prev: any) => {
-            const next: Record<string, any> = {};
+          setPassengerAllocations((prev: any) => {
+            const next: Record<string, any> = { ...prev };
 
             // Write room allocations by BOTH travelerName and passenger.id
             rooms.forEach((r: any) => {
               const nameKey = r.travelerName;
-              const pObj = nameToPassenger[nameKey] || (allPassengers as any[]).find((p: any) => p.name === nameKey);
+              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
               const entry = {
                 ...(next[nameKey] || { vehicle: "—", seat: "—" }),
                 room: r.roomNumber,
               };
               next[nameKey] = entry;
-              // Also key by passenger id so computedRoomAllocations can find it
               if (pObj?.id) {
                 next[pObj.id] = { ...entry };
               }
@@ -2509,7 +2535,7 @@ export default function DepartureHubPage() {
 
             vehicles.forEach((v: any) => {
               const nameKey = v.travelerName;
-              const pObj = nameToPassenger[nameKey] || (allPassengers as any[]).find((p: any) => p.name === nameKey);
+              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
               const vName = fleetNameMap[v.fleetId] || v.fleetId || "Tempo 1";
               const entry = {
                 ...(next[nameKey] || { room: "—" }),
