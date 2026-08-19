@@ -50,15 +50,13 @@ export default function DeparturePayments({
   tripDetails,
   tripVendors,
 }: DeparturePaymentsProps) {
-  // 6 Enterprise Sub Tabs
+  // Operational Sub Tabs (Vendor Payables, Activities, Misc, Reconciliation)
   const [subTab, setSubTab] = useState<
-    | "dashboard"
-    | "clients"
     | "vendors"
     | "activities"
     | "misc"
     | "reconciliation"
-  >("clients");
+  >("vendors");
 
   // Expanded Row IDs for detailed transaction ledger view
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(
@@ -1706,11 +1704,6 @@ export default function DeparturePayments({
           <div className="flex flex-nowrap items-center gap-0 w-max min-w-full">
             {[
               {
-                key: "clients",
-                label: "Client Receivables",
-                badge: `₹${(calculatedStats.clientAmountReceived / 1000).toFixed(1)}k`,
-              },
-              {
                 key: "vendors",
                 label: "Vendor Payables",
                 badge: `₹${(calculatedStats.vendorOutstandingBalance / 1000).toFixed(1)}k`,
@@ -1724,7 +1717,7 @@ export default function DeparturePayments({
               },
               {
                 key: "misc",
-                label: "Miscellaneous",
+                label: "Miscellaneous Expenses",
                 badge: calculatedStats.totalMiscExpenses > 0
                   ? `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`
                   : "0",

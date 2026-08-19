@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -189,12 +189,44 @@ export default function DepartureActivities({
 
       seen.add(nameLower);
 
+      // Parse meal tariffs if available
+      let mealTariffsList: any[] = [];
+      const rawTariffs = v.mealTariffs || tv.mealTariffs || v.mealPlans || tv.mealPlans;
+      if (Array.isArray(rawTariffs)) {
+        mealTariffsList = rawTariffs;
+      } else if (typeof rawTariffs === "string" && rawTariffs.trim().startsWith("[")) {
+        try {
+          mealTariffsList = JSON.parse(rawTariffs);
+        } catch {
+          mealTariffsList = [];
+        }
+      }
+
+      const mealTariffRate = mealTariffsList.length > 0
+        ? Number(
+            mealTariffsList[0]?.perPax ||
+            mealTariffsList[0]?.perPaxRate ||
+            mealTariffsList[0]?.rate ||
+            mealTariffsList[0]?.amount ||
+            mealTariffsList[0]?.cost ||
+            0
+          )
+        : 0;
+
       const rate =
+        (mealTariffRate > 0 ? mealTariffRate : null) ||
         tv.rates?.[0]?.amount ||
         tv.rates?.[0]?.negotiatedRate ||
         tv.rates?.[0]?.costPerPerson ||
         tv.rates?.[0]?.mealPrice ||
         tv.rates?.[0]?.baseRate ||
+        tv.rates?.[0]?.rate ||
+        v.rates?.[0]?.amount ||
+        v.rates?.[0]?.rate ||
+        v.rate ||
+        v.price ||
+        v.costPerPerson ||
+        v.perPaxRate ||
         tv.agreedCost ||
         tv.vendorCost ||
         null;
@@ -207,8 +239,9 @@ export default function DepartureActivities({
         contactPerson: v.contactPerson || tv.contactPerson || "",
         contactPhone: v.contactNumber || v.phone || tv.phone || "",
         rating: v.rating || tv.rating || (isRest ? 4.8 : 4.6),
-        netCost: rate != null ? Number(rate) : 0,
+        netCost: rate != null ? Number(rate) : (isRest ? 130 : 500),
         seasonType: tv.rates?.[0]?.seasonType || "REGULAR",
+        mealTariffs: mealTariffsList,
       });
     };
 
@@ -226,19 +259,48 @@ export default function DepartureActivities({
     // 1. Primary: Only authentic contracted Restaurant & Activity vendors for this Trip
     (mappedVendorsForWizard || []).forEach((vnd) => {
       const isRest = vnd.category === "restaurants";
-      const actName = `${vnd.vendorName}${vnd.location ? ` (${vnd.location})` : ""}`;
 
-      if (!seen.has(actName.toLowerCase())) {
-        seen.add(actName.toLowerCase());
-        list.push({
-          id: `VND-ACT-${vnd.vendorId}`,
-          name: actName,
-          category: isRest ? "MEAL" : "ADVENTURE",
-          defaultCapacity: totalPaxCount || 40,
-          defaultCost: vnd.netCost || 0,
-          vendorId: vnd.vendorId,
-          vendor: vnd,
+      // If restaurant has configured meal tariffs / thalis, list each specific meal plan
+      if (isRest && Array.isArray((vnd as any).mealTariffs) && (vnd as any).mealTariffs.length > 0) {
+        (vnd as any).mealTariffs.forEach((mt: any) => {
+          const tariffRate = Number(
+            mt.perPax ||
+            mt.perPaxRate ||
+            mt.rate ||
+            mt.amount ||
+            mt.cost ||
+            vnd.netCost ||
+            130
+          );
+          const actName = `${vnd.vendorName} · ${mt.name || "Meal Buffet"}${vnd.location ? ` (${vnd.location})` : ""}`;
+          if (!seen.has(actName.toLowerCase())) {
+            seen.add(actName.toLowerCase());
+            list.push({
+              id: `VND-MEAL-${vnd.vendorId}-${mt.id || Math.random().toString(36).substring(7)}`,
+              name: actName,
+              category: "MEAL",
+              defaultCapacity: totalPaxCount || 40,
+              defaultCost: tariffRate,
+              vendorId: vnd.vendorId,
+              vendor: vnd,
+              mealTariff: mt,
+            });
+          }
         });
+      } else {
+        const actName = `${vnd.vendorName}${vnd.location ? ` (${vnd.location})` : ""}`;
+        if (!seen.has(actName.toLowerCase())) {
+          seen.add(actName.toLowerCase());
+          list.push({
+            id: `VND-ACT-${vnd.vendorId}`,
+            name: actName,
+            category: isRest ? "MEAL" : "ADVENTURE",
+            defaultCapacity: totalPaxCount || 40,
+            defaultCost: vnd.netCost || (isRest ? 130 : 500),
+            vendorId: vnd.vendorId,
+            vendor: vnd,
+          });
+        }
       }
     });
 
