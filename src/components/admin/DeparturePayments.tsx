@@ -723,8 +723,11 @@ export default function DeparturePayments({
           const vName = act.vendorName;
           const existingIdx = mergedVendors.findIndex((v) => v.vendorName?.toLowerCase().trim() === vName.toLowerCase().trim());
           if (existingIdx >= 0) {
-            mergedVendors[existingIdx].agreedAmount = (mergedVendors[existingIdx].agreedAmount || 0) + act.totalCost;
-            mergedVendors[existingIdx].advancePaid = (mergedVendors[existingIdx].advancePaid || 0) + act.amountPaid;
+            // Use Math.max to avoid double-counting: OpsVendorPayment record already stores the
+            // correct agreedAmount (= costPerPerson * pax). Adding act.totalCost on top would
+            // double the invoice total when both sources reference the same activity.
+            mergedVendors[existingIdx].agreedAmount = Math.max(mergedVendors[existingIdx].agreedAmount || 0, act.totalCost);
+            mergedVendors[existingIdx].advancePaid = Math.max(mergedVendors[existingIdx].advancePaid || 0, act.amountPaid);
             mergedVendors[existingIdx].balanceAmount = Math.max(0, mergedVendors[existingIdx].agreedAmount - mergedVendors[existingIdx].advancePaid);
             const statusLabel = mergedVendors[existingIdx].advancePaid >= mergedVendors[existingIdx].agreedAmount ? "Paid" : mergedVendors[existingIdx].advancePaid > 0 ? "Advance Paid" : "Pending";
             mergedVendors[existingIdx].status = statusLabel;
