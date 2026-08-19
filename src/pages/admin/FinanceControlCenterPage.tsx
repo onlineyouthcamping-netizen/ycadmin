@@ -525,6 +525,43 @@ export default function FinanceControlCenterPage({
     setQueueActionNotes("");
   };
 
+  const handleAddExpenseSubmit = async () => {
+    if (!addExpenseForm.tripId.trim()) {
+      toast.error("Trip ID is required");
+      return;
+    }
+    if (!addExpenseForm.departureDate) {
+      toast.error("Departure date is required");
+      return;
+    }
+    const amt = addExpenseForm.type === "ACTIVITY" ? addExpenseForm.totalAmount : addExpenseForm.amount;
+    if (!amt || amt <= 0) {
+      toast.error("Amount must be greater than zero");
+      return;
+    }
+    const label = addExpenseForm.type === "ACTIVITY" ? addExpenseForm.activity : addExpenseForm.description;
+    if (!label?.trim()) {
+      toast.error(addExpenseForm.type === "ACTIVITY" ? "Activity name is required" : "Description is required");
+      return;
+    }
+    setIsSubmittingExpense(true);
+    try {
+      await financeControllerService.createExpense({
+        ...addExpenseForm,
+        amount: addExpenseForm.type === "MISCELLANEOUS" ? addExpenseForm.amount : undefined,
+        totalAmount: addExpenseForm.type === "ACTIVITY" ? addExpenseForm.totalAmount : undefined,
+        amountPaid: addExpenseForm.type === "ACTIVITY" ? addExpenseForm.amountPaid : undefined,
+      });
+      toast.success("Expense recorded — awaiting approval");
+      setShowAddExpenseModal(false);
+      fetchAllData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to create expense");
+    } finally {
+      setIsSubmittingExpense(false);
+    }
+  };
+
   const handleQueueActionConfirm = async () => {
     if (!selectedQueueItem) return;
     if (queueReviewAction === "REJECT" && !queueActionNotes.trim()) {
@@ -3138,20 +3175,37 @@ export default function FinanceControlCenterPage({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border">
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">Category</div>
-                    <div className="font-semibold text-slate-800">{(selectedQueueItem.item as MiscellaneousExpenseItem).category}</div>
+                <>
+                  <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg border">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Category</div>
+                      <div className="font-semibold text-slate-800">{(selectedQueueItem.item as MiscellaneousExpenseItem).category}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Mode</div>
+                      <div className="text-slate-600">{(selectedQueueItem.item as MiscellaneousExpenseItem).paymentMode}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Amount</div>
+                      <MoneyAmount value={selectedQueueItem.item.amount} tone="debit" />
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">Mode</div>
-                    <div className="text-slate-600">{(selectedQueueItem.item as MiscellaneousExpenseItem).paymentMode}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">Amount</div>
-                    <MoneyAmount value={selectedQueueItem.item.amount} tone="debit" />
-                  </div>
-                </div>
+                  {(selectedQueueItem.item as MiscellaneousExpenseItem).receiptUrl && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg">
+                      <Upload className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                      <span className="text-[11px] text-blue-700 font-semibold">Payment Proof:</span>
+                      <a
+                        href={(selectedQueueItem.item as MiscellaneousExpenseItem).receiptUrl!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-600 text-[11px] hover:underline font-mono truncate"
+                      >
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                        View Receipt / Document
+                      </a>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Submitted by */}
@@ -3196,6 +3250,223 @@ export default function FinanceControlCenterPage({
               className={cn("h-8 text-xs font-bold text-white", queueReviewAction === "REJECT" ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700")}
             >
               {isSubmittingAction ? "Saving…" : queueReviewAction === "APPROVE" ? "Confirm Approval" : "Confirm Rejection"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Add Expense / Payment Modal ── */}
+      <Dialog open={showAddExpenseModal} onOpenChange={(open) => !open && setShowAddExpenseModal(false)}>
+        <DialogContent className="max-w-lg bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-[#0B1528]">
+              Add {addExpenseForm.type === "ACTIVITY" ? "Activity Payment" : "Miscellaneous Expense"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Record an outgoing payment for controller approval. A receipt/proof URL is required for audit.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-1 text-xs">
+            {/* Type toggle */}
+            <div>
+              <label className="text-[10px] font-bold uppercase text-slate-500">Payment Type</label>
+              <div className="flex gap-2 mt-1">
+                {(["MISCELLANEOUS", "ACTIVITY"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setAddExpenseForm((f) => ({ ...f, type: t }))}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors",
+                      addExpenseForm.type === t
+                        ? "bg-[#FF4D00] text-white border-[#FF4D00]"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                    )}
+                  >
+                    {t === "MISCELLANEOUS" ? "Miscellaneous" : "Activity Payment"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Trip ID & departure date */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Trip ID <span className="text-rose-500">*</span></label>
+                <Input
+                  className="h-8 text-xs mt-1"
+                  placeholder="e.g. cldxxxx…"
+                  value={addExpenseForm.tripId}
+                  onChange={(e) => setAddExpenseForm((f) => ({ ...f, tripId: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-500">Departure Date <span className="text-rose-500">*</span></label>
+                <Input
+                  type="date"
+                  className="h-8 text-xs mt-1"
+                  value={addExpenseForm.departureDate}
+                  onChange={(e) => setAddExpenseForm((f) => ({ ...f, departureDate: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {addExpenseForm.type === "MISCELLANEOUS" ? (
+              <>
+                {/* Category & description */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Category</label>
+                    <Select
+                      value={addExpenseForm.category}
+                      onValueChange={(v) => setAddExpenseForm((f) => ({ ...f, category: v }))}
+                    >
+                      <SelectTrigger className="h-8 text-xs mt-1 bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MISCELLANEOUS">Miscellaneous</SelectItem>
+                        <SelectItem value="OFFICE">Office</SelectItem>
+                        <SelectItem value="TRAVEL">Travel</SelectItem>
+                        <SelectItem value="FOOD">Food & Catering</SelectItem>
+                        <SelectItem value="COMMUNICATION">Communication</SelectItem>
+                        <SelectItem value="PRINTING">Printing</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Amount (₹) <span className="text-rose-500">*</span></label>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="h-8 text-xs mt-1"
+                      placeholder="0"
+                      value={addExpenseForm.amount || ""}
+                      onChange={(e) => setAddExpenseForm((f) => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Description <span className="text-rose-500">*</span></label>
+                  <Input
+                    className="h-8 text-xs mt-1"
+                    placeholder="Brief description of the expense"
+                    value={addExpenseForm.description}
+                    onChange={(e) => setAddExpenseForm((f) => ({ ...f, description: e.target.value }))}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Activity fields */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Activity Name <span className="text-rose-500">*</span></label>
+                  <Input
+                    className="h-8 text-xs mt-1"
+                    placeholder="e.g. River Rafting, Camping Equipment"
+                    value={addExpenseForm.activity}
+                    onChange={(e) => setAddExpenseForm((f) => ({ ...f, activity: e.target.value }))}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Total Amount (₹) <span className="text-rose-500">*</span></label>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="h-8 text-xs mt-1"
+                      placeholder="0"
+                      value={addExpenseForm.totalAmount || ""}
+                      onChange={(e) => setAddExpenseForm((f) => ({ ...f, totalAmount: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Amount Paid (₹)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="h-8 text-xs mt-1"
+                      placeholder="0"
+                      value={addExpenseForm.amountPaid || ""}
+                      onChange={(e) => setAddExpenseForm((f) => ({ ...f, amountPaid: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Payment Date</label>
+                    <Input
+                      type="date"
+                      className="h-8 text-xs mt-1"
+                      value={addExpenseForm.paymentDate}
+                      onChange={(e) => setAddExpenseForm((f) => ({ ...f, paymentDate: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Remarks</label>
+                  <Input
+                    className="h-8 text-xs mt-1"
+                    placeholder="Optional remarks"
+                    value={addExpenseForm.remarks}
+                    onChange={(e) => setAddExpenseForm((f) => ({ ...f, remarks: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Payment mode */}
+            <div>
+              <label className="text-[10px] font-bold uppercase text-slate-500">Payment Mode</label>
+              <Select
+                value={addExpenseForm.paymentMode}
+                onValueChange={(v) => setAddExpenseForm((f) => ({ ...f, paymentMode: v }))}
+              >
+                <SelectTrigger className="h-8 text-xs mt-1 bg-white"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem value="CASH">Cash</SelectItem>
+                  <SelectItem value="UPI">UPI</SelectItem>
+                  <SelectItem value="CHEQUE">Cheque</SelectItem>
+                  <SelectItem value="CARD">Card</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Upload Proof / Receipt URL */}
+            <div>
+              <label className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1">
+                <Upload className="h-3 w-3" />
+                Upload Proof / Receipt URL
+              </label>
+              <Input
+                className="h-8 text-xs mt-1"
+                placeholder="Paste Google Drive, S3, or any public URL of the receipt"
+                value={addExpenseForm.receiptUrl}
+                onChange={(e) => setAddExpenseForm((f) => ({ ...f, receiptUrl: e.target.value }))}
+              />
+              {addExpenseForm.receiptUrl && (
+                <a
+                  href={addExpenseForm.receiptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 text-[10px] mt-1 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Preview link
+                </a>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowAddExpenseModal(false)} className="h-8 text-xs">
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleAddExpenseSubmit}
+              disabled={isSubmittingExpense}
+              className={cn("h-8 text-xs font-bold text-white", financePrimaryBtn)}
+            >
+              {isSubmittingExpense ? "Saving…" : "Add Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>
