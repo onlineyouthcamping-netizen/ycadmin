@@ -2112,7 +2112,7 @@ export default function DepartureHubPage() {
         api.get(`/ops/transport/${tripId}?departureDate=${departureDateStr}`, { signal }),
         api.get(`/ops/guides/${tripId}?departureDate=${departureDateStr}`, { signal }),
         api.get(`/ops/activities/${tripId}?departureDate=${departureDateStr}`, { signal }),
-        api.get(`/ops/payments/vendor-payments?tripId=${encodeURIComponent(tripId)}&departureDate=${encodeURIComponent(departureDateStr)}`, { signal }),
+        api.get(`/ops/payments/vendor/${encodeURIComponent(tripId)}?departureDate=${encodeURIComponent(departureDateStr)}`, { signal }),
       ]);
 
       // Stale response check — ignore if user switched departure while fetching
@@ -3572,6 +3572,8 @@ useEffect(() => {
           let count = 0;
           if (b.numberOfTravelers && Number(b.numberOfTravelers) > 0) {
             count = Number(b.numberOfTravelers);
+          } else if (b.numberOfPersons && Number(b.numberOfPersons) > 0) {
+            count = Number(b.numberOfPersons);
           } else if (Array.isArray(b.passengers) && b.passengers.length > 0) {
             count = b.passengers.length;
           } else if (typeof b.passengers === "string") {
@@ -3585,7 +3587,7 @@ useEffect(() => {
             count = 1;
           }
           return sum + count;
-        }, 0) || (allPassengers && allPassengers.length > 0 ? allPassengers.length : 1);
+        }, 0) || (confirmedBookings.length > 0 ? confirmedBookings.length : 0);
       const outstandingParticipantsCount = confirmedBookings.filter(
         (b: any) => (b.remainingAmount || 0) > 0,
       ).length;
