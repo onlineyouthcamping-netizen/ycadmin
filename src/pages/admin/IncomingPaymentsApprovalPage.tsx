@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn, safeFormatDate } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
+import { financeApprovalsService } from "@/services/financeApprovals.service";
 import { useAuthStore } from "@/store/auth.store";
 import { useStaffUsers } from "@/hooks/useStaffUsers";
 import { toast } from "sonner";
@@ -68,6 +69,7 @@ export default function IncomingPaymentsApprovalPage({
 
   const [incomingPayments, setIncomingPayments] = useState<IncomingPaymentItem[]>([]);
   const [cashSubmissions, setCashSubmissions] = useState<CashSubmissionItem[]>([]);
+  const [opsClientPayments, setOpsClientPayments] = useState<any[]>([]);
   const [stationCashData, setStationCashData] = useState<{
     summary: any;
     dateGroups: any[];
@@ -93,7 +95,7 @@ export default function IncomingPaymentsApprovalPage({
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [incRes, cashRes, stationRes] = await Promise.all([
+      const [incRes, cashRes, stationRes, pendingRes] = await Promise.all([
         financeControllerService.getIncomingQueue({
           status: statusFilter === "ALL" ? undefined : statusFilter,
           search: search.trim() || undefined,
@@ -108,10 +110,12 @@ export default function IncomingPaymentsApprovalPage({
           status: statusFilter === "ALL" ? undefined : statusFilter,
           search: search.trim() || undefined,
         }).catch(() => ({ summary: {}, dateGroups: [], allCollections: [] })),
+        financeApprovalsService.getPendingApprovals().catch(() => null),
       ]);
       setIncomingPayments(incRes?.data || []);
       setCashSubmissions(cashRes?.data || []);
       setStationCashData(stationRes || { summary: {}, dateGroups: [], allCollections: [] });
+      setOpsClientPayments(pendingRes?.pendingApprovals?.items?.customerPayments || []);
     } catch (err: any) {
       toast.error(err?.message || "Failed to load incoming payments");
     } finally {
@@ -201,6 +205,23 @@ export default function IncomingPaymentsApprovalPage({
 
   // Merge items for normal table
   const allItems = [
+    ...opsClientPayments.map((cp) => ({
+      id: cp.id,
+      type: "OPS_CLIENT_PAYMENT",
+      bookingId: cp.booking?.bookingId || cp.bookingId || "—",
+      customerName: cp.booking?.fullName || cp.booking?.name || cp.clientName || "Customer",
+      amount: cp.amount,
+      paymentMode: cp.paymentMode || cp.method || "PAYMENT_LINK",
+      reference: cp.reference || cp.transactionRef || cp.gatewayReference || "—",
+      date: cp.receivedAt || cp.createdAt,
+      status: cp.approvalStatus || cp.status || "PENDING",
+      collectedBy: cp.receivedBy || "Client Collection",
+      assigneeId: cp.actionedById || null,
+      assigneeName: cp.actionedBy?.name || null,
+      notes: cp.notes || cp.remarks,
+      proofUrl: cp.proofFileUrl || cp.paymentProof,
+      raw: cp,
+    })),
     ...incomingPayments.map((p) => ({
       id: p.id,
       type: "ONLINE_OR_BANK",
@@ -215,6 +236,7 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: (p as any).actionedById || (p.raw as any)?.actionedById || null,
       assigneeName: (p as any).actionedBy || (p.raw as any)?.actionedBy?.name || null,
       notes: p.notes,
+      proofUrl: (p as any).receiptUrl || null,
       raw: p,
     })),
     ...cashSubmissions.map((c) => ({
@@ -231,12 +253,21 @@ export default function IncomingPaymentsApprovalPage({
       assigneeId: (c as any).actionedById || (c.raw as any)?.actionedById || null,
       assigneeName: (c as any).actionedBy?.name || (c.raw as any)?.actionedBy?.name || null,
       notes: c.notes,
+      proofUrl: (c as any).receiptUrl || null,
       raw: c,
     })),
   ].filter((item) => {
-    if (paymentType === "online" && item.type !== "ONLINE_OR_BANK") return false;
-    if (paymentType === "cash" && item.type !== "CASH_HANDOVER") return false;
-    if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
+    if (paymentType === "online" && item.type === "CASH_HANDOVER") return false;
+    if (paymentType === "cash" && item.type !== "CASH_HANDOVER" && !item.paymentMode?.toUpperCase().includes("CASH")) return false;
+    if (statusFilter !== "ALL") {
+      if (statusFilter === "PENDING_VERIFICATION") {
+        if (item.status !== "PENDING" && item.status !== "PENDING_VERIFICATION" && item.status !== "REVIEWED_FINANCE_CONTROLLER" && item.status !== "PENDING_HANDOVER") {
+          return false;
+        }
+      } else if (item.status !== statusFilter) {
+        return false;
+      }
+    }
     if (assigneeFilter === "ME" && item.assigneeId !== currentUser?.id) return false;
     if (assigneeFilter === "UNASSIGNED" && item.assigneeId) return false;
     return true;
@@ -249,38 +280,55 @@ export default function IncomingPaymentsApprovalPage({
   const stationPendingCash = stationCashData?.summary?.totalCashPending || 0;
   const stationVerifiedCash = stationCashData?.summary?.totalCashVerified || 0;
 
+  const isPendingStatus = (s: string) =>
+    s === "PENDING" || s === "PENDING_VERIFICATION" || s === "PENDING_HANDOVER" || s === "REVIEWED_FINANCE_CONTROLLER";
+
+  const isVerifiedStatus = (s: string) =>
+    s === "VERIFIED" || s === "APPROVED" || s === "COMPLETED" || s === "APPROVED_FOUNDER";
+
   const pendingCount = paymentType === "station_cash"
     ? stationPendingCount
-    : allItems.filter((i) => i.status === "PENDING_VERIFICATION" || i.status === "PENDING_HANDOVER" || i.status === "PENDING").length;
+    : allItems.filter((i) => isPendingStatus(i.status)).length;
 
   const verifiedCount = paymentType === "station_cash"
     ? stationVerifiedCount
-    : allItems.filter((i) => i.status === "VERIFIED" || i.status === "APPROVED" || i.status === "COMPLETED").length;
+    : allItems.filter((i) => isVerifiedStatus(i.status)).length;
 
   const totalVerifiedSum = paymentType === "station_cash"
     ? stationVerifiedCash
-    : allItems.filter((i) => i.status === "VERIFIED" || i.status === "APPROVED").reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    : allItems.filter((i) => isVerifiedStatus(i.status)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
   const totalPendingSum = paymentType === "station_cash"
     ? stationPendingCash
-    : allItems.filter((i) => i.status === "PENDING_VERIFICATION" || i.status === "PENDING_HANDOVER" || i.status === "PENDING").reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    : allItems.filter((i) => isPendingStatus(i.status)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
   const handleVerify = async () => {
     if (!selectedPayment) return;
     setActionLoading(true);
     try {
-      if (selectedPayment.type === "CASH_HANDOVER") {
+      if (selectedPayment.type === "OPS_CLIENT_PAYMENT") {
+        if (isSuperuserFounder) {
+          await financeApprovalsService.approveCollectionFounder(selectedPayment.id, {
+            reason: actionNotes.trim() || undefined,
+          });
+          toast.success("Founder approved and cleared customer payment successfully");
+        } else {
+          await financeApprovalsService.reviewCollectionFC(selectedPayment.id, actionNotes.trim() || undefined);
+          toast.success("Finance Controller verified payment");
+        }
+      } else if (selectedPayment.type === "CASH_HANDOVER") {
         await financeControllerService.performCashAction(selectedPayment.id, {
           action: "APPROVE",
           notes: actionNotes.trim() || undefined,
         });
+        toast.success("Cash approved and cleared");
       } else {
         await financeControllerService.performIncomingAction(selectedPayment.id, {
           action: "VERIFY",
           notes: actionNotes.trim() || undefined,
         });
+        toast.success("Payment verified and approved successfully");
       }
-      toast.success("Payment verified and approved successfully");
       setActionModalType(null);
       setSelectedPayment(null);
       setActionNotes("");
@@ -300,7 +348,9 @@ export default function IncomingPaymentsApprovalPage({
     }
     setActionLoading(true);
     try {
-      if (selectedPayment.type === "CASH_HANDOVER") {
+      if (selectedPayment.type === "OPS_CLIENT_PAYMENT") {
+        await financeApprovalsService.rejectCollection(selectedPayment.id, actionNotes.trim());
+      } else if (selectedPayment.type === "CASH_HANDOVER") {
         await financeControllerService.performCashAction(selectedPayment.id, {
           action: "REJECT",
           reason: actionNotes.trim(),
@@ -897,20 +947,22 @@ export default function IncomingPaymentsApprovalPage({
                               variant="outline"
                               className={cn(
                                 "text-[9px] font-bold uppercase",
-                                item.status === "VERIFIED" || item.status === "APPROVED" || item.status === "COMPLETED"
-                                  ? "bg-green-50 text-green-700 border-green-200"
+                                item.status === "REVIEWED_FINANCE_CONTROLLER"
+                                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                                  : item.status === "VERIFIED" || item.status === "APPROVED" || item.status === "APPROVED_FOUNDER" || item.status === "COMPLETED"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : item.status === "REJECTED"
-                                  ? "bg-red-50 text-red-700 border-red-200"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200"
                                   : "bg-amber-50 text-amber-700 border-amber-200"
                               )}
                             >
-                              {item.status}
+                              {item.status === "REVIEWED_FINANCE_CONTROLLER"
+                                ? "FC Reviewed (Awaiting Founder)"
+                                : item.status}
                             </Badge>
                           </td>
                           <td className="px-4 py-2 text-right pr-4">
-                            {item.status === "PENDING_VERIFICATION" ||
-                            item.status === "PENDING_HANDOVER" ||
-                            item.status === "PENDING" ? (
+                            {isPendingStatus(item.status) ? (
                               <div className="flex items-center justify-end gap-1.5">
                                 {isCash && !isSuperuserFounder ? (
                                   <Button
@@ -929,9 +981,18 @@ export default function IncomingPaymentsApprovalPage({
                                         setSelectedPayment(item);
                                         setActionModalType("verify");
                                       }}
-                                      className="h-6.5 text-[9.5px] font-bold bg-green-600 hover:bg-green-700 text-white"
+                                      className={cn(
+                                        "h-6.5 text-[9.5px] font-bold text-white shadow-none",
+                                        isSuperuserFounder
+                                          ? "bg-emerald-600 hover:bg-emerald-700"
+                                          : "bg-blue-600 hover:bg-blue-700"
+                                      )}
                                     >
-                                      {isCash ? "Approve Cash" : "Verify Online"}
+                                      {isSuperuserFounder
+                                        ? isCash
+                                          ? "👑 Approve Cash"
+                                          : "👑 Founder Approve"
+                                        : "FC Review & Verify"}
                                     </Button>
                                     <Button
                                       size="sm"
@@ -949,7 +1010,7 @@ export default function IncomingPaymentsApprovalPage({
                               </div>
                             ) : (
                               <span className="text-[10px] text-slate-400 italic font-medium">
-                                Verified
+                                {item.status === "APPROVED_FOUNDER" ? "Founder Cleared" : "Verified"}
                               </span>
                             )}
                           </td>
@@ -1166,12 +1227,14 @@ export default function IncomingPaymentsApprovalPage({
       <Dialog open={actionModalType === "verify"} onOpenChange={() => setActionModalType(null)}>
         <DialogContent className="max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-green-700 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Verify & Approve Payment
+            <DialogTitle className="text-base font-bold text-emerald-800 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              {isSuperuserFounder ? "👑 Founder Payment Approval & Clearance" : "Verify & Approve Payment"}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Confirm that this payment has been deposited into the company bank account.
+              {isSuperuserFounder
+                ? "Final Founder sign-off. This will mark the customer collection as fully approved and reconciled into company accounts."
+                : "Confirm that this payment has been deposited into the company bank account."}
             </DialogDescription>
           </DialogHeader>
 
@@ -1200,10 +1263,10 @@ export default function IncomingPaymentsApprovalPage({
 
               <div>
                 <label className="text-[10px] font-bold uppercase text-slate-500">
-                  Verification Notes (Optional)
+                  {isSuperuserFounder ? "Founder Clearance Notes (Optional)" : "Verification Notes (Optional)"}
                 </label>
                 <Input
-                  placeholder="e.g. Bank credit confirmed on statement"
+                  placeholder={isSuperuserFounder ? "e.g. Cleared by Hemal Patel" : "e.g. Bank credit confirmed on statement"}
                   value={actionNotes}
                   onChange={(e) => setActionNotes(e.target.value)}
                   className="h-8 text-xs mt-1"
@@ -1227,7 +1290,7 @@ export default function IncomingPaymentsApprovalPage({
               onClick={handleVerify}
               className="h-8 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
             >
-              Confirm Verified
+              {isSuperuserFounder ? "Confirm Founder Approved" : "Confirm Verified"}
             </Button>
           </DialogFooter>
         </DialogContent>
