@@ -43,7 +43,11 @@ function StepHeading({ n, children }: { n: number; children: React.ReactNode }) 
 export interface DepartureTransportProps {
   nameInputRef?: React.Ref<HTMLInputElement>;
   isSavingAllocations: boolean;
+  isSavingRooms?: boolean;
+  isSavingVehicles?: boolean;
   onSave: () => void;
+  onSaveRooms?: () => void;
+  onSaveVehicles?: () => void;
   onAutoAllocate: () => void;
   onAddVehicle: (e: React.FormEvent) => void;
   onDeleteVehicle: (id: string) => void;
@@ -89,7 +93,11 @@ export interface DepartureTransportProps {
 export default function DepartureTransport({
   nameInputRef,
   isSavingAllocations,
+  isSavingRooms = false,
+  isSavingVehicles = false,
   onSave,
+  onSaveRooms,
+  onSaveVehicles,
   onAutoAllocate,
   onAddVehicle,
   onDeleteVehicle,
@@ -449,14 +457,29 @@ export default function DepartureTransport({
             <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
               Hotel group assignments
             </h3>
-            <button
-              type="button"
-              onClick={() => setAddRoomModalOpen(true)}
-              className={cn(outlineBtn, "h-7 px-2.5")}
-            >
-              <Plus className="w-3.5 h-3.5 shrink-0 text-slate-400" strokeWidth={1.75} />
-              Add room
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAddRoomModalOpen(true)}
+                className={cn(outlineBtn, "h-7 px-2.5 text-[11px]")}
+              >
+                <Plus className="w-3.5 h-3.5 shrink-0 text-slate-400" strokeWidth={1.75} />
+                Add room
+              </button>
+              <button
+                type="button"
+                onClick={onSaveRooms || onSave}
+                disabled={isSavingRooms || isSavingAllocations}
+                className={cn(outlineBtn, "h-7 px-2.5 text-[11px] bg-[#0B1528] text-white hover:bg-[#16253d] border-[#0B1528]")}
+              >
+                {isSavingRooms ? (
+                  <RefreshCw className="w-3 h-3 animate-spin shrink-0" strokeWidth={1.75} />
+                ) : (
+                  <Save className="w-3 h-3 shrink-0" strokeWidth={1.75} />
+                )}
+                {isSavingRooms ? "Saving…" : "Save Room List"}
+              </button>
+            </div>
           </div>
           {computedRoomAllocations.length === 0 ? (
             <p className="text-[12px] text-slate-400 py-6 text-center">
@@ -609,9 +632,24 @@ export default function DepartureTransport({
         </div>
 
         <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 sm:p-4 shadow-none space-y-3 min-w-0">
-          <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
-            Transport assignments
-          </h3>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[#E8EEF4] pb-2.5 min-w-0">
+            <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
+              Transport assignments
+            </h3>
+            <button
+              type="button"
+              onClick={onSaveVehicles || onSave}
+              disabled={isSavingVehicles || isSavingAllocations}
+              className={cn(orangeBtn, "h-7 px-2.5 text-[11px] bg-[#FF4D00] hover:bg-[#E04500]")}
+            >
+              {isSavingVehicles ? (
+                <RefreshCw className="w-3 h-3 animate-spin shrink-0" strokeWidth={1.75} />
+              ) : (
+                <Save className="w-3 h-3 shrink-0" strokeWidth={1.75} />
+              )}
+              {isSavingVehicles ? "Saving…" : "Save Tempo List"}
+            </button>
+          </div>
           {computedVehicleAllocations.length === 0 ? (
             <p className="text-[12px] text-slate-400 py-6 text-center">
               No seat assignments yet. Add a vehicle, then auto-allocate.

@@ -1571,20 +1571,22 @@ export default function DepartureHubPage() {
   const [allocFleet, setAllocFleet] = useState<any[]>([]);
   const [fleetVehicles, setFleetVehicles] = useState<any[]>([]);
   const [vendorDirectoryFleet, setVendorDirectoryFleet] = useState<any[]>([]);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
-  const [selectedVendorId, setSelectedVendorId] = useState<string>('');
-  const [newVehicleType, setNewVehicleType] = useState("17 Seater Tempo");
-  const [newVehicleCapacity, setNewVehicleCapacity] = useState("17");
-  const [newVehicleName, setNewVehicleName] = useState("");
-  const [newVehicleCost, setNewVehicleCost] = useState("");
   const [newVehicleVendor, setNewVehicleVendor] = useState("");
   const [manualRooms, setManualRooms] = useState<string[]>([]);
   const [isSavingAllocations, setIsSavingAllocations] = useState(false);
+  const [isSavingRooms, setIsSavingRooms] = useState(false);
+  const [isSavingVehicles, setIsSavingVehicles] = useState(false);
   const [showClearAllocationsDialog, setShowClearAllocationsDialog] =
     useState(false);
 
-  const handleSaveAllocationsToDb = async (clearExisting = false) => {
-    setIsSavingAllocations(true);
+  const handleSaveAllocationsToDb = async (
+    clearExisting = false,
+    target: "all" | "rooms" | "vehicles" = "all",
+  ) => {
+    if (target === "rooms") setIsSavingRooms(true);
+    else if (target === "vehicles") setIsSavingVehicles(true);
+    else setIsSavingAllocations(true);
+
     try {
       const roomAllocations: Array<{
         roomNumber: string;
@@ -1605,9 +1607,19 @@ export default function DepartureHubPage() {
       allPassengers.forEach((p: any) => {
         const alloc = passengerAllocations[p.id] || passengerAllocations[p.name];
         if (!alloc) return;
-        const bookingId = p.bookingId || p.rawBooking?.bookingId || p.bookingRef || p.rawBooking?.id || `BK-${(p.name || "PAX").replace(/\s+/g, "").toUpperCase()}`;
+        const bookingId =
+          p.bookingId ||
+          p.rawBooking?.bookingId ||
+          p.bookingRef ||
+          p.rawBooking?.id ||
+          `BK-${(p.name || "PAX").replace(/\s+/g, "").toUpperCase()}`;
 
-        if (alloc.room && alloc.room !== "—" && alloc.room !== "Unassigned") {
+        if (
+          (target === "all" || target === "rooms") &&
+          alloc.room &&
+          alloc.room !== "—" &&
+          alloc.room !== "Unassigned"
+        ) {
           roomAllocations.push({
             roomNumber: alloc.room,
             roomType: p.roomType || "STANDARD",
@@ -1617,7 +1629,12 @@ export default function DepartureHubPage() {
             sharingType: p.roomType || "STANDARD",
           });
         }
-        if (alloc.vehicle && alloc.vehicle !== "—" && alloc.vehicle !== "Unassigned") {
+        if (
+          (target === "all" || target === "vehicles") &&
+          alloc.vehicle &&
+          alloc.vehicle !== "—" &&
+          alloc.vehicle !== "Unassigned"
+        ) {
           const fleet = allocFleet.find(
             (f) =>
               f.name === alloc.vehicle ||
@@ -1625,7 +1642,11 @@ export default function DepartureHubPage() {
               f.vehicleType === alloc.vehicle,
           );
           vehicleAllocations.push({
-            fleetId: fleet?.id || (alloc.vehicle.toLowerCase().includes("tempo") ? "tempo-1" : alloc.vehicle),
+            fleetId:
+              fleet?.id ||
+              (alloc.vehicle.toLowerCase().includes("tempo")
+                ? "tempo-1"
+                : alloc.vehicle),
             bookingId: bookingId,
             travelerName: p.name,
             seatNumber:
@@ -1657,9 +1678,19 @@ export default function DepartureHubPage() {
         { roomAllocations, vehicleAllocations, clearExisting },
       );
       if (result?.success) {
-        toast.success(
-          `Saved: ${result.data?.rooms?.length || 0} room + ${result.data?.vehicles?.length || 0} vehicle allocations`,
-        );
+        if (target === "rooms") {
+          toast.success(
+            `Room list saved successfully (${roomAllocations.length} allocations)`,
+          );
+        } else if (target === "vehicles") {
+          toast.success(
+            `Tempo list saved successfully (${vehicleAllocations.length} allocations)`,
+          );
+        } else {
+          toast.success(
+            `Saved: ${result.data?.rooms?.length || 0} room + ${result.data?.vehicles?.length || 0} vehicle allocations`,
+          );
+        }
         fetchPageData();
       } else {
         toast.error(result?.message || "Failed to save allocations");
@@ -5361,19 +5392,33 @@ useEffect(() => {
     }
 
     // ── VEHICLE & TEMPO AUTO-ALLOCATION PASS ──
-    // Initialize available fleet status
     const fallbackCapacity = parseInt(newVehicleCapacity) || 17;
     const fallbackName = newVehicleName || newVehicleType || "Tempo 1";
-    const fleetStatus =
+
+    interface FleetEntry {
+      id: string;
+      name: string;
+      capacity: number;
+      vehicleType: string;
+      assignedPassengers: Array<{ p: any; seat: string }>;
+    }
+
+    const fleetStatus: FleetEntry[] =
       allocFleet.length > 0
-        ? allocFleet.map((f) => ({ ...f, remainingSeats: f.capacity }))
+        ? allocFleet.map((f, idx) => ({
+            id: f.id || `tempo-${idx + 1}`,
+            name: f.name || `Tempo ${idx + 1}`,
+            capacity: Number(f.capacity) || 17,
+            vehicleType: f.vehicleType || "Tempo Traveller",
+            assignedPassengers: [],
+          }))
         : [
             {
               id: "tempo-1",
               name: fallbackName,
               capacity: fallbackCapacity,
-              remainingSeats: fallbackCapacity,
               vehicleType: newVehicleType || "Tempo Traveller",
+              assignedPassengers: [],
             },
           ];
 
@@ -5390,64 +5435,113 @@ useEffect(() => {
       ]);
     }
 
-    // ── PRESERVE ALREADY ASSIGNED VEHICLES & SEATS ──
+    // ── STEP 1: PRESERVE ALREADY ASSIGNED VEHICLES & SEATS ──
     activeTravelers.forEach((p) => {
-      const existing = passengerAllocations[p.id] || passengerAllocations[p.name];
-      if (existing?.vehicle && existing.vehicle !== "—" && existing.vehicle !== "Unassigned") {
+      const existing =
+        passengerAllocations[p.id] || passengerAllocations[p.name];
+      if (
+        existing?.vehicle &&
+        existing.vehicle !== "—" &&
+        existing.vehicle !== "Unassigned"
+      ) {
         const v = fleetStatus.find(
-          (f) => f.name === existing.vehicle || f.id === existing.vehicle || f.vehicleType === existing.vehicle,
+          (f) =>
+            f.name.toLowerCase() === existing.vehicle.toLowerCase() ||
+            f.id === existing.vehicle ||
+            (f.vehicleType &&
+              f.vehicleType.toLowerCase() === existing.vehicle.toLowerCase()),
         );
-        if (v && v.remainingSeats > 0) {
-          v.remainingSeats -= 1;
+        if (v) {
+          const seatNum =
+            existing.seat && existing.seat !== "—"
+              ? existing.seat
+              : String(v.assignedPassengers.length + 1);
+          v.assignedPassengers.push({ p, seat: seatNum });
         }
       }
     });
 
-    // Sort booking groups: groups containing female participants first to ensure they travel together
-    const sortedGroups = Object.entries(bookingGroups).sort(
-      ([, aList], [, bList]) => {
-        const aHasFemale = aList.some((p) => p.gender === "Female") ? 1 : 0;
-        const bHasFemale = bList.some((p) => p.gender === "Female") ? 1 : 0;
-        return bHasFemale - aHasFemale; // Descending: female-containing groups first
-      },
+    // ── STEP 2: ALLOCATE BOOKING GROUPS (KEEP SAME BOOKING TOGETHER) ──
+    // Sort booking groups by size (larger groups first) so they get full vehicle chunks together
+    const sortedGroupEntries = Object.entries(bookingGroups).sort(
+      ([, aList], [, bList]) => bList.length - aList.length,
     );
 
-    sortedGroups.forEach(([bId, groupMembers]) => {
+    sortedGroupEntries.forEach(([groupKey, groupMembers]) => {
+      // Find unassigned members in this group
       const unassignedInGroup = groupMembers.filter((p) => {
-        const existing = passengerAllocations[p.id] || passengerAllocations[p.name];
-        return !existing?.vehicle || existing.vehicle === "—" || existing.vehicle === "Unassigned";
+        const existing =
+          passengerAllocations[p.id] || passengerAllocations[p.name];
+        return (
+          !existing?.vehicle ||
+          existing.vehicle === "—" ||
+          existing.vehicle === "Unassigned"
+        );
       });
 
       if (unassignedInGroup.length === 0) return;
 
-      const gSize = unassignedInGroup.length;
-      // Try to find a vehicle that can fit the unassigned group members
-      let vehicle = fleetStatus.find((f) => f.remainingSeats >= gSize);
-      if (!vehicle) {
-        // Fallback: assign to the vehicle with the most remaining space
-        vehicle = fleetStatus.reduce(
-          (max, f) => (f.remainingSeats > max.remainingSeats ? f : max),
-          fleetStatus[0],
+      // Rule A: If ANY co-traveler from this same booking is ALREADY in a vehicle, try to put all unassigned members of this booking into that SAME vehicle!
+      const alreadyAssignedSibling = groupMembers.find((p) => {
+        const existing =
+          passengerAllocations[p.id] || passengerAllocations[p.name];
+        return (
+          existing?.vehicle &&
+          existing.vehicle !== "—" &&
+          existing.vehicle !== "Unassigned"
+        );
+      });
+
+      let targetVehicle: FleetEntry | undefined;
+      if (alreadyAssignedSibling) {
+        const sibAlloc =
+          passengerAllocations[alreadyAssignedSibling.id] ||
+          passengerAllocations[alreadyAssignedSibling.name];
+        targetVehicle = fleetStatus.find(
+          (f) =>
+            f.name.toLowerCase() === sibAlloc.vehicle.toLowerCase() ||
+            f.id === sibAlloc.vehicle ||
+            (f.vehicleType &&
+              f.vehicleType.toLowerCase() === sibAlloc.vehicle.toLowerCase()),
         );
       }
 
-      if (vehicle) {
+      // Rule B: If no sibling assigned yet, find a vehicle that has enough available seats for the ENTIRE group
+      if (!targetVehicle) {
+        targetVehicle = fleetStatus.find(
+          (f) =>
+            f.capacity - f.assignedPassengers.length >= unassignedInGroup.length,
+        );
+      }
+
+      // Rule C: If no vehicle has enough remaining room for the entire group, pick the vehicle with the MOST remaining seats
+      if (!targetVehicle) {
+        targetVehicle = fleetStatus.reduce((best, f) => {
+          const availBest = best.capacity - best.assignedPassengers.length;
+          const availCur = f.capacity - f.assignedPassengers.length;
+          return availCur > availBest ? f : best;
+        }, fleetStatus[0]);
+      }
+
+      // Assign all unassigned group members to targetVehicle together!
+      if (targetVehicle) {
         unassignedInGroup.forEach((p) => {
-          const seatIndex = vehicle.capacity - vehicle.remainingSeats + 1;
+          const seatNum = String(targetVehicle!.assignedPassengers.length + 1);
+          targetVehicle!.assignedPassengers.push({ p, seat: seatNum });
+
           const entry = {
             ...(newAllocs[p.id] || newAllocs[p.name] || {}),
-            vehicle: vehicle.name,
-            seat: String(seatIndex),
+            vehicle: targetVehicle!.name,
+            seat: seatNum,
           };
           newAllocs[p.id] = entry;
           if (p.name) newAllocs[p.name] = entry;
-          vehicle.remainingSeats -= 1;
         });
       }
     });
 
     setPassengerAllocations(newAllocs);
-    toast.success("Auto-allocation completed (preserved saved assignments)");
+    toast.success("Auto-allocation completed (groups kept together in vehicle)");
   };
 
   const computedParticipants = useMemo(() => {
@@ -8426,7 +8520,11 @@ useEffect(() => {
             <DepartureTransport
               nameInputRef={vehicleFleetNameRef}
               isSavingAllocations={isSavingAllocations}
-              onSave={() => handleSaveAllocationsToDb(false)}
+              isSavingRooms={isSavingRooms}
+              isSavingVehicles={isSavingVehicles}
+              onSave={() => handleSaveAllocationsToDb(false, "all")}
+              onSaveRooms={() => handleSaveAllocationsToDb(false, "rooms")}
+              onSaveVehicles={() => handleSaveAllocationsToDb(false, "vehicles")}
               onAutoAllocate={handleTriggerAutoAllocate}
               onAddVehicle={handleAddVehicle}
               onDeleteVehicle={handleDeleteVehicle}
