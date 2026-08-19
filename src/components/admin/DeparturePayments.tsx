@@ -1727,13 +1727,6 @@ export default function DeparturePayments({
                   ? `₹${calculatedStats.totalMiscExpenses.toLocaleString()}`
                   : "0",
               },
-              {
-                key: "reconciliation",
-                label: "Reconciliation",
-                badge: adjustments.filter((a) => a.status === "PENDING").length > 0
-                  ? `${adjustments.filter((a) => a.status === "PENDING").length} pending`
-                  : `${adjustments.length}`,
-              },
             ].map((tab) => (
               <button
                 key={tab.key}
