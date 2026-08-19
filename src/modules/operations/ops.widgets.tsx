@@ -16,71 +16,10 @@ import {
   dashRowLabel,
 } from "@/modules/dashboard.chrome";
 
-const ATTENTION_FALLBACK = [
-  {
-    label: "Payments waiting verification",
-    count: 8,
-    color: "bg-[#E23D4D]",
-    urgent: true,
-    path: "/admin/approvals-hub",
-  },
-  {
-    label: "Aadhaar pending",
-    count: 16,
-    color: "bg-[#D97706]",
-    path: "/admin/approvals-hub",
-  },
-  {
-    label: "Hotels pending confirmation",
-    count: 5,
-    color: "bg-[#D97706]",
-    path: "/admin/departure-workspace",
-  },
-  {
-    label: "Vendors with payments due today",
-    count: 3,
-    color: "bg-[#E23D4D]",
-    urgent: true,
-    path: "/admin/accounting-workspace",
-  },
-  {
-    label: "Rooming pending",
-    count: 12,
-    color: "bg-[#D97706]",
-    path: "/admin/departure-workspace",
-  },
-  {
-    label: "Customer complaints",
-    count: 2,
-    color: "bg-[#E23D4D]",
-    urgent: true,
-    path: "/admin/departure-workspace",
-  },
-  {
-    label: "Tasks pending > 24 hours",
-    count: 14,
-    color: "bg-[#E23D4D]",
-    urgent: true,
-    path: "/admin/departure-workspace",
-  },
-  {
-    label: "Missing train tickets",
-    count: 6,
-    color: "bg-[#E23D4D]",
-    urgent: true,
-    path: "/admin/approvals-hub",
-  },
-  {
-    label: "Missing tempo confirmation",
-    count: 4,
-    color: "bg-[#D97706]",
-    path: "/admin/departure-workspace",
-  },
-];
-
 // Needs Your Attention Widget
 export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
   stats,
+  loading,
   navigate,
 }) => (
   <DashCard>
@@ -97,31 +36,37 @@ export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
       }
     />
     <DashBody>
-      <DashList>
-        {(stats?.attentionItems || ATTENTION_FALLBACK).map(
-          (item: any, idx: number) => (
-            <DashRow
-              key={idx}
-              onClick={() => navigate(item.path)}
-              className="py-1.5"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <span
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.color}`}
-                />
-                <span className={dashRowLabel}>{item.label}</span>
-              </span>
-              <span
-                className={`shrink-0 text-[11px] font-semibold tabular-nums ${
-                  item.urgent ? "text-[#E23D4D]" : "text-slate-400"
-                }`}
+      {loading ? (
+        <p className={dashEmpty}>Loading…</p>
+      ) : !stats?.attentionItems || stats.attentionItems.length === 0 ? (
+        <p className={dashEmpty}>All clear — nothing needs attention.</p>
+      ) : (
+        <DashList>
+          {stats.attentionItems.map(
+            (item: any, idx: number) => (
+              <DashRow
+                key={idx}
+                onClick={() => navigate(item.path)}
+                className="py-1.5"
               >
-                {item.count}
-              </span>
-            </DashRow>
-          ),
-        )}
-      </DashList>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.color}`}
+                  />
+                  <span className={dashRowLabel}>{item.label}</span>
+                </span>
+                <span
+                  className={`shrink-0 text-[11px] font-semibold tabular-nums ${
+                    item.urgent && item.count > 0 ? "text-[#E23D4D]" : "text-slate-400"
+                  }`}
+                >
+                  {item.count}
+                </span>
+              </DashRow>
+            ),
+          )}
+        </DashList>
+      )}
     </DashBody>
   </DashCard>
 );

@@ -127,7 +127,7 @@ export const PendingVendorsCard: React.FC<DashboardWidgetContextProps> = ({
     loading={loading}
     value={`₹ ${(stats?.pendingVendorsCost || 0).toLocaleString("en-IN")}`}
     caption={`${loading ? "…" : stats?.pendingVendorsCount || 0} vendors`}
-    onClick={() => navigate("/admin/accounting?tab=vendor_payments")}
+    onClick={() => navigate("/admin/accounting?tab=vendor-payments")}
   />
 );
 
@@ -142,7 +142,7 @@ export const TripsRunningCard: React.FC<DashboardWidgetContextProps> = ({
     loading={loading}
     value={loading ? "…" : String(stats?.totalTrips || 0)}
     caption="Active itineraries"
-    onClick={() => navigate("/admin/live-operations")}
+    onClick={() => navigate("/admin/operations")}
   />
 );
 
