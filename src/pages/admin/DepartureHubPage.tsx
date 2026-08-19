@@ -6529,7 +6529,7 @@ useEffect(() => {
 
                 const isTransportConfirmed = allocFleet.length > 0 || tripVendors.some((v: any) => v.vendorType === "transport");
                 const transportAssignedCount = allocFleet.length > 0 ? allocFleet.length : (isTransportConfirmed ? 1 : 0);
-                const transportRequiredCount = Math.max(1, Math.ceil((stats?.totalPax || passengerStats?.total || totalPaxCount || 1) / 17));
+                const transportRequiredCount = Math.max(1, Math.ceil((activeDeparturePassengers.length || 1) / 17));
 
                 const guideRoles = new Set([
                   "PRIMARY_GUIDE",
