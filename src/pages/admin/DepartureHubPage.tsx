@@ -856,6 +856,29 @@ export default function DepartureHubPage() {
         });
       }
 
+      // Update local state immediately with vehicle allocations
+      if (vehicleAllocations.length > 0) {
+        setPassengerAllocations((prev: any) => {
+          const next = { ...prev };
+          vehicleAllocations.forEach((v) => {
+            const fleet = allocFleet.find((f: any) => f.id === v.fleetId) || allocFleet[0];
+            const vName = fleet?.name || "Tempo 1";
+            const pObj = allPassengers.find((p: any) => p.name === v.travelerName || p.id === v.travelerName);
+            const nameKey = v.travelerName;
+            const existing = (nameKey && next[nameKey]) || (pObj?.id && next[pObj.id]) || { room: "—" };
+            const entry = {
+              ...existing,
+              vehicle: vName,
+              seat: v.seatNumber ? String(v.seatNumber) : "—",
+            };
+            if (nameKey) next[nameKey] = entry;
+            if (pObj?.name) next[pObj.name] = entry;
+            if (pObj?.id) next[pObj.id] = { ...entry };
+          });
+          return next;
+        });
+      }
+
       if (
         clearExisting &&
         roomAllocations.length === 0 &&
