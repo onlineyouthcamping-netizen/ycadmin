@@ -67,6 +67,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { cn, formatINR, safeFormatDate } from "@/lib/utils";
 import { financeControllerService } from "@/services/financeController.service";
+import { api } from "@/services/api";
 import {
   FinanceStatusBadge,
   MoneyAmount,
@@ -234,6 +235,9 @@ export default function FinanceControlCenterPage({
     receiptUrl: "",
   });
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
+  const [expenseProofFile, setExpenseProofFile] = useState<File | null>(null);
+  const [expenseProofPreview, setExpenseProofPreview] = useState<string | null>(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
 
   // ── Refunds & Credit Notes Modals ──
   const [refundSubTab, setRefundSubTab] = useState<"ALL" | "PENDING_APPROVAL" | "COMPLETED" | "REJECTED">("ALL");
@@ -546,16 +550,31 @@ export default function FinanceControlCenterPage({
     }
     setIsSubmittingExpense(true);
     try {
+      let receiptUrl = addExpenseForm.receiptUrl;
+      if (expenseProofFile && !receiptUrl) {
+        setIsUploadingProof(true);
+        const fd = new FormData();
+        fd.append("image", expenseProofFile);
+        const uploadRes = await api.post("/upload/single", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        receiptUrl = uploadRes.data?.url || "";
+        setIsUploadingProof(false);
+      }
       await financeControllerService.createExpense({
         ...addExpenseForm,
+        receiptUrl,
         amount: addExpenseForm.type === "MISCELLANEOUS" ? addExpenseForm.amount : undefined,
         totalAmount: addExpenseForm.type === "ACTIVITY" ? addExpenseForm.totalAmount : undefined,
         amountPaid: addExpenseForm.type === "ACTIVITY" ? addExpenseForm.amountPaid : undefined,
       });
       toast.success("Expense recorded — awaiting approval");
       setShowAddExpenseModal(false);
+      setExpenseProofFile(null);
+      setExpenseProofPreview(null);
       fetchAllData();
     } catch (err: any) {
+      setIsUploadingProof(false);
       toast.error(err.response?.data?.message || "Failed to create expense");
     } finally {
       setIsSubmittingExpense(false);
@@ -3256,7 +3275,7 @@ export default function FinanceControlCenterPage({
       </Dialog>
 
       {/* ── Add Expense / Payment Modal ── */}
-      <Dialog open={showAddExpenseModal} onOpenChange={(open) => !open && setShowAddExpenseModal(false)}>
+      <Dialog open={showAddExpenseModal} onOpenChange={(open) => { if (!open) { setShowAddExpenseModal(false); setExpenseProofFile(null); setExpenseProofPreview(null); } }}>
         <DialogContent className="max-w-lg bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-[#0B1528]">
@@ -3430,30 +3449,108 @@ export default function FinanceControlCenterPage({
               </Select>
             </div>
 
-            {/* Upload Proof / Receipt URL */}
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1">
-                <Upload className="h-3 w-3" />
-                Upload Proof / Receipt URL
-              </label>
-              <Input
-                className="h-8 text-xs mt-1"
-                placeholder="Paste Google Drive, S3, or any public URL of the receipt"
-                value={addExpenseForm.receiptUrl}
-                onChange={(e) => setAddExpenseForm((f) => ({ ...f, receiptUrl: e.target.value }))}
-              />
-              {addExpenseForm.receiptUrl && (
-                <a
-                  href={addExpenseForm.receiptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-blue-600 text-[10px] mt-1 hover:underline"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Preview link
-                </a>
-              )}
-            </div>
+            {/* Conditional Proof Upload */}
+            {(() => {
+              const mode = addExpenseForm.paymentMode;
+              const label =
+                mode === "UPI" ? "Upload UPI Payment Screenshot" :
+                mode === "CASH" ? "Upload Cash Payment Receipt" :
+                mode === "BANK_TRANSFER" ? "Upload Bank Transfer Proof" :
+                "Upload Payment Proof";
+              const accept = "image/jpeg,image/png,application/pdf";
+              const isPdf = expenseProofFile?.type === "application/pdf";
+              return (
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-500 flex items-center gap-1">
+                    <Upload className="h-3 w-3" />
+                    {label}
+                  </label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <label
+                      className={cn(
+                        "flex-1 flex items-center gap-2 h-8 px-3 border rounded-md cursor-pointer text-xs text-slate-500 hover:border-slate-400 transition-colors bg-white",
+                        expenseProofFile ? "border-emerald-400 text-emerald-700" : "border-slate-200"
+                      )}
+                    >
+                      <Upload className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        {expenseProofFile ? expenseProofFile.name : "Choose file (JPG, PNG, PDF)"}
+                      </span>
+                      <input
+                        type="file"
+                        accept={accept}
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          setExpenseProofFile(file);
+                          setAddExpenseForm((f) => ({ ...f, receiptUrl: "" }));
+                          if (file && file.type.startsWith("image/")) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setExpenseProofPreview(ev.target?.result as string);
+                            reader.readAsDataURL(file);
+                          } else {
+                            setExpenseProofPreview(null);
+                          }
+                        }}
+                      />
+                    </label>
+                    {expenseProofFile && (
+                      <button
+                        type="button"
+                        onClick={() => { setExpenseProofFile(null); setExpenseProofPreview(null); }}
+                        className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:border-rose-300 hover:text-rose-500 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  {/* Image preview */}
+                  {expenseProofPreview && (
+                    <img
+                      src={expenseProofPreview}
+                      alt="Receipt preview"
+                      className="mt-2 h-20 w-auto rounded-md border border-slate-200 object-contain"
+                    />
+                  )}
+                  {/* PDF filename link */}
+                  {expenseProofFile && isPdf && (
+                    <p className="mt-1 text-[10px] text-slate-500 flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      {expenseProofFile.name}
+                    </p>
+                  )}
+                  {/* Fallback: paste URL if no file selected */}
+                  {!expenseProofFile && (
+                    <>
+                      <p className="text-[10px] text-slate-400 mt-1">or paste a URL directly:</p>
+                      <Input
+                        className="h-8 text-xs mt-1"
+                        placeholder="https://…"
+                        value={addExpenseForm.receiptUrl}
+                        onChange={(e) => setAddExpenseForm((f) => ({ ...f, receiptUrl: e.target.value }))}
+                      />
+                      {addExpenseForm.receiptUrl && (
+                        <a
+                          href={addExpenseForm.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 text-[10px] mt-1 hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Preview link
+                        </a>
+                      )}
+                    </>
+                  )}
+                  {isUploadingProof && (
+                    <p className="text-[10px] text-blue-600 mt-1 flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      Uploading proof…
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <DialogFooter className="gap-2">
@@ -3463,10 +3560,10 @@ export default function FinanceControlCenterPage({
             <Button
               size="sm"
               onClick={handleAddExpenseSubmit}
-              disabled={isSubmittingExpense}
+              disabled={isSubmittingExpense || isUploadingProof}
               className={cn("h-8 text-xs font-bold text-white", financePrimaryBtn)}
             >
-              {isSubmittingExpense ? "Saving…" : "Add Payment"}
+              {isUploadingProof ? "Uploading…" : isSubmittingExpense ? "Saving…" : "Add Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>
