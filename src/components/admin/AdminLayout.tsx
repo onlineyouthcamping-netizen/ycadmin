@@ -289,17 +289,13 @@ function AdminSidebar() {
         >
           {!collapsed ? (
             <div className="flex w-full min-w-0 items-center gap-2.5">
-              <BrandMark />
-              <span className="truncate text-[13px] leading-none tracking-[-0.01em] text-white">
-                <span className="font-semibold">Youth</span>
-                <span className="font-normal">Camping</span>
+              <span className="truncate text-[14px] leading-none tracking-[-0.01em] text-white">
+                <span className="font-bold">Youth</span>
+                <span className="font-normal opacity-80">Camping</span>
               </span>
             </div>
           ) : (
-            <>
-              <BrandMark />
-              <span className="sr-only">YouthCamping</span>
-            </>
+            <span className="text-[11px] font-bold text-white">YC</span>
           )}
         </div>
 
