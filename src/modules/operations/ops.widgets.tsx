@@ -49,12 +49,12 @@ export const NeedsAttentionWidget: React.FC<DashboardWidgetContextProps> = ({
                 onClick={() => navigate(item.path)}
                 className="py-1.5"
               >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.color}`}
-                  />
-                  <span className={dashRowLabel}>{item.label}</span>
-                </span>
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.urgent ? "bg-red-400" : "bg-amber-500"}`}
+                />
+                <span className="truncate text-[12px] font-medium text-slate-300">{item.label}</span>
+              </span>
               <span
                 className={`shrink-0 text-[11px] font-bold tabular-nums ${
                   item.urgent && item.count > 0 ? "text-red-400" : "text-slate-600"
@@ -101,19 +101,19 @@ export const TripsRunningNowWidget: React.FC<DashboardWidgetContextProps> = ({
               className="py-2"
             >
               <span className="min-w-0">
-                <span className="block truncate text-[12px] font-semibold leading-tight text-[#0B1528]">
+                <span className="block truncate text-[12px] font-semibold leading-tight text-slate-200">
                   {trip.code}
                 </span>
-                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-400">
+                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-500">
                   {trip.name}
                 </span>
               </span>
               <span className="shrink-0 text-right">
-                <span className="flex items-center justify-end gap-1 text-[11px] font-semibold leading-tight text-[#0B1528]">
-                  <User className="h-3 w-3 text-slate-400" strokeWidth={1.75} />
+                <span className="flex items-center justify-end gap-1 text-[11px] font-semibold leading-tight text-slate-300">
+                  <User className="h-3 w-3 text-slate-500" strokeWidth={1.75} />
                   {trip.size}
                 </span>
-                <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium leading-none text-green-600">
+                <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] font-medium leading-none text-green-400">
                   <MapPin className="h-3 w-3" strokeWidth={1.75} />
                   {trip.stay}
                 </span>
@@ -157,18 +157,18 @@ export const TripsNext7DaysWidget: React.FC<DashboardWidgetContextProps> = ({
               className="py-2"
             >
               <span className="min-w-0">
-                <span className="block truncate text-[12px] font-semibold leading-tight text-[#0B1528]">
+                <span className="block truncate text-[12px] font-semibold leading-tight text-slate-200">
                   {trip.name}
                 </span>
-                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-400">
+                <span className="mt-0.5 block truncate text-[10px] font-medium leading-none text-slate-500">
                   {trip.date}
                 </span>
               </span>
               <span
-                className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                className={`shrink-0 rounded-lg border px-2 py-0.5 text-[10px] font-bold tabular-nums ${
                   trip.status === "full"
-                    ? "border-green-200 bg-[#ECFDF3] text-[#16A34A]"
-                    : "border-blue-200 bg-[#EFF6FF] text-[#2563EB]"
+                    ? "border-green-800/50 bg-green-950/60 text-green-400"
+                    : "border-blue-800/50 bg-blue-950/60 text-blue-400"
                 }`}
               >
                 {trip.count} booked
@@ -210,13 +210,11 @@ export const TodaysScheduleWidget: React.FC<DashboardWidgetContextProps> = ({
               onClick={() => navigate("/admin/departure-workspace")}
               className="justify-start gap-2 py-1.5"
             >
-              <span className="w-[52px] shrink-0 text-[10px] font-medium tabular-nums text-slate-400">
+              <span className="w-[52px] shrink-0 text-[10px] font-medium tabular-nums text-slate-600">
                 {sched.time}
               </span>
-              <span
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${sched.color}`}
-              />
-              <span className={`${dashRowLabel} min-w-0`}>{sched.label}</span>
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF4D00]" />
+              <span className="min-w-0 truncate text-[12px] font-medium text-slate-300">{sched.label}</span>
             </DashRow>
           ))}
         </DashList>

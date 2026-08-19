@@ -26,19 +26,19 @@ export const ApprovalQueueWidget: React.FC<DashboardWidgetContextProps> = ({
     {
       label: "Payment approvals",
       count: q?.paymentApprovals ?? 0,
-      color: "text-[#D97706] bg-[#FFF7E6] border-[#FFD580]",
+      color: "text-amber-400 bg-amber-950/50 border-amber-800/50",
       path: "/admin/approvals-hub?tab=payment-approvals",
     },
     {
       label: "Vendor bills",
       count: q?.vendorBills ?? 0,
-      color: "text-[#E23D4D] bg-[#FFF1F3] border-[#FFCCD3]",
+      color: "text-red-400 bg-red-950/50 border-red-800/50",
       path: "/admin/approvals-hub?tab=vendor-bills",
     },
     {
       label: "Train tickets",
       count: q?.missingTickets ?? 0,
-      color: "text-[#2563EB] bg-[#EFF6FF] border-[#B8D4FF]",
+      color: "text-blue-400 bg-blue-950/50 border-blue-800/50",
       path: "/admin/approvals-hub?tab=ticket-approvals",
     },
   ];
@@ -68,7 +68,7 @@ export const ApprovalQueueWidget: React.FC<DashboardWidgetContextProps> = ({
                 onClick={() => navigate(appr.path)}
                 className="py-1.5"
               >
-                <span className={`${dashRowLabel} min-w-0`}>{appr.label}</span>
+                <span className="min-w-0 truncate text-[12px] font-medium text-slate-300">{appr.label}</span>
                 <span
                   className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${appr.color}`}
                 >
