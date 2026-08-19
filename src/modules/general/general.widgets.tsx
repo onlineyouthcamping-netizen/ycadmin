@@ -157,6 +157,29 @@ export const TodaysTasksWidget: React.FC<DashboardWidgetContextProps> = ({
   );
 };
 
+function bookingStatusColor(status: string) {
+  const s = (status || "").toLowerCase();
+  if (s === "confirmed") return "bg-emerald-500";
+  if (s === "pending" || s === "pending / manual verification") return "bg-amber-400";
+  if (s === "cancelled" || s === "canceled") return "bg-red-400";
+  return "bg-blue-400";
+}
+
+function bookingStatusLabel(status: string) {
+  const s = (status || "").toLowerCase();
+  if (s === "pending / manual verification") return "Manual verify";
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 // Recent Bookings Widget
 export const RecentBookingsWidget: React.FC<DashboardWidgetContextProps> = ({
   stats,
@@ -172,30 +195,42 @@ export const RecentBookingsWidget: React.FC<DashboardWidgetContextProps> = ({
         </button>
       }
     />
-    <DashBody className="no-scrollbar max-h-[180px] space-y-2 overflow-y-auto text-[12px]">
+    <DashBody className="no-scrollbar max-h-[180px] space-y-0 overflow-y-auto text-[12px] !p-0">
       {loading ? (
         <p className={dashEmpty}>Loading…</p>
       ) : !stats?.recentBookings || stats.recentBookings.length === 0 ? (
         <p className={dashEmpty}>No recent bookings yet.</p>
       ) : (
-        stats.recentBookings.map((b: any) => (
-          <div
-            key={b.id}
-            onClick={() => navigate("/admin/bookings")}
-            className="-mx-1.5 flex cursor-pointer items-start gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-[#F4F7FB]"
-          >
-            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
-            <div className="min-w-0">
-              <p className="truncate font-medium leading-tight text-[#0B1528]">
-                {b.userName} – {b.tripTitle}
-              </p>
-              <p className="mt-1 text-[10px] font-medium leading-none text-slate-400">
-                ₹{Number(b.amount || 0).toLocaleString("en-IN")} ·{" "}
-                <span className="capitalize">{String(b.status || "").toLowerCase()}</span>
-              </p>
+        stats.recentBookings.map((b: any) => {
+          const paid = Number(b.paidAmount || b.advancePaid || 0);
+          const total = Number(b.amount || 0);
+          const displayAmount = paid > 0 ? paid : total;
+          return (
+            <div
+              key={b.id}
+              onClick={() => navigate(`/admin/bookings`)}
+              className="flex cursor-pointer items-start gap-2.5 border-b border-[#F0F4F8] px-4 py-2.5 last:border-0 transition-colors hover:bg-[#F8FAFC]"
+            >
+              <div className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${bookingStatusColor(b.status)}`} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold leading-tight text-[#0B1528] text-[11.5px]">
+                  {b.userName || b.name || "Guest"}
+                </p>
+                <p className="truncate text-[10.5px] text-slate-400 mt-0.5 leading-tight">
+                  {b.tripTitle || b.tripName || "–"}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-[11px] font-semibold text-[#0B1528] tabular-nums">
+                  {displayAmount > 0 ? `₹${displayAmount.toLocaleString("en-IN")}` : "₹0"}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {bookingStatusLabel(b.status)}
+                </p>
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </DashBody>
   </DashCard>
