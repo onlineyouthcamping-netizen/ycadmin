@@ -6836,59 +6836,6 @@ useEffect(() => {
                 <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0">
                   <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2">
                     <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
-                      Team
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("guides")}
-                      className={dashLink}
-                    >
-                      Contacts
-                    </button>
-                  </div>
-                  <div className="space-y-2.5">
-                    {computedTeamContacts.length > 0 ? (
-                      computedTeamContacts.map((c, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between gap-2 text-[12px] min-w-0"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Avatar
-                              initials={c.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                              className="bg-[#0B1528] w-6 h-6 text-[8px]"
-                            />
-                            <div className="min-w-0">
-                              <p className="font-medium text-[#0B1528] truncate">
-                                {c.name}
-                              </p>
-                              <p className="text-[11px] text-slate-400">
-                                {c.role}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="font-mono text-slate-500 text-[11px] hidden sm:inline">
-                              {c.phone}
-                            </span>
-                            <PhoneCall className="w-3.5 h-3.5 text-slate-400 hover:text-[#0B1528] cursor-pointer" strokeWidth={1.75} />
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-[12px] text-slate-400 py-1">
-                        No team members assigned yet.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0">
-                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2">
-                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
                       Pending tasks
                     </h3>
                     <button
