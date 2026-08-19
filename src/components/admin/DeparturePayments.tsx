@@ -3091,9 +3091,17 @@ export default function DeparturePayments({
                                       v.history.map((h: any, idx: number) => {
                                         const isApproved =
                                           h.approvalStatus === "APPROVED" ||
-                                          (h.status === "Verified" && h.approvedBy);
+                                          h.approvalStatus === "APPROVED_FOUNDER" ||
+                                          v.approvalStatus === "APPROVED_FOUNDER" ||
+                                          (v.status === "Paid" &&
+                                            (h.approvedBy ||
+                                              v.approvedByFounderId ||
+                                              v.approvalStatus ===
+                                                "APPROVED_FOUNDER" ||
+                                              !v.requiresFounderApproval));
                                         const isRejected =
-                                          h.approvalStatus === "REJECTED";
+                                          h.approvalStatus === "REJECTED" ||
+                                          v.approvalStatus === "REJECTED";
                                         const isPending = !isApproved && !isRejected;
 
                                         return (
