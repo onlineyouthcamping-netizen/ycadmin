@@ -1646,14 +1646,11 @@ export default function DepartureHubPage() {
             (f) =>
               f.name === alloc.vehicle ||
               f.id === alloc.vehicle ||
-              f.vehicleType === alloc.vehicle,
-          );
+              f.vehicleType === alloc.vehicle ||
+              (f.name && alloc.vehicle && f.name.toLowerCase().includes(alloc.vehicle.toLowerCase())),
+          ) || allocFleet[0];
           vehicleAllocations.push({
-            fleetId:
-              fleet?.id ||
-              (alloc.vehicle.toLowerCase().includes("tempo")
-                ? "tempo-1"
-                : alloc.vehicle),
+            fleetId: fleet?.id || "tempo-1",
             bookingId: bookingId,
             travelerName: p.name,
             seatNumber:
@@ -1712,6 +1709,8 @@ export default function DepartureHubPage() {
       console.error("saveManualAllocations error:", err);
     } finally {
       setIsSavingAllocations(false);
+      setIsSavingRooms(false);
+      setIsSavingVehicles(false);
     }
   };
 
@@ -5248,8 +5247,6 @@ useEffect(() => {
 
   const computedVehicleAllocations = useMemo(() => {
     const list: any[] = [];
-    // Iterate allPassengers as canonical source (one per person) to avoid duplicates
-    // from dual id+name keys in passengerAllocations
     allPassengers.forEach((pObj: any) => {
       const alloc = passengerAllocations[pObj.id] || passengerAllocations[pObj.name];
       if (
@@ -5257,15 +5254,23 @@ useEffect(() => {
         alloc.vehicle !== "Unassigned" &&
         alloc.vehicle !== "—"
       ) {
-        const fleetItem = allocFleet.find(
-          (f) => f.name === alloc.vehicle || f.id === alloc.vehicle || f.vehicleType === alloc.vehicle,
-        );
+        const fleetItem =
+          allocFleet.find(
+            (f) =>
+              f.name === alloc.vehicle ||
+              f.id === alloc.vehicle ||
+              f.vehicleType === alloc.vehicle ||
+              (f.name && alloc.vehicle && f.name.toLowerCase().includes(alloc.vehicle.toLowerCase())),
+          ) || allocFleet[0];
         const isFemale = normalizeGenderCode(pObj.gender, pObj.name) === "F";
         list.push({
           fleetId: fleetItem?.id || alloc.vehicle || "tempo-1",
+          vehicleName: fleetItem?.name || alloc.vehicle,
+          vehicle: fleetItem?.name || alloc.vehicle,
           vehicleType: fleetItem?.vehicleType || alloc.vehicle || "Tempo Traveller",
           seatNumber: alloc.seat,
           travelerName: pObj.name,
+          passengerId: pObj.id,
           rawGender: isFemale ? "Female" : "Male",
         });
       }
