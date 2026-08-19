@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   CreditCard,
   Clock,
@@ -939,7 +939,6 @@ export default function IncomingPaymentsApprovalPage({
                       <th className="px-4 py-2.5">Booking ID</th>
                       <th className="px-4 py-2.5">Customer / Group</th>
                       <th className="px-4 py-2.5">Payment Mode / Type</th>
-                      <th className="px-4 py-2.5">UTR / Reference</th>
                       <th className="px-4 py-2.5 text-right">Amount</th>
                       <th className="px-4 py-2.5">Proof / Slip</th>
                       <th className="px-4 py-2.5">Collected By</th>
@@ -988,9 +987,6 @@ export default function IncomingPaymentsApprovalPage({
                                 {item.paymentMode?.replace(/_/g, " ")} (Online)
                               </Badge>
                             )}
-                          </td>
-                          <td className="px-4 py-2 font-mono text-slate-700 text-[10.5px]">
-                            {item.reference || "—"}
                           </td>
                           <td className={cn(
                             "px-4 py-2 text-right font-mono font-bold text-[12px]",
