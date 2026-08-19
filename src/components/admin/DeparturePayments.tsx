@@ -529,19 +529,39 @@ export default function DeparturePayments({
 
       const apiVendors =
         vendorRes && vendorRes.length > 0
-          ? vendorRes.map((v: any) => ({
-              ...v,
-              history: [
-                {
-                  date: v.paymentDate ? v.paymentDate.substring(0, 10) : "N/A",
-                  amount: v.advancePaid || 0,
-                  method: v.paymentMode || "Bank Transfer",
-                  txnId: v.transactionId || "N/A",
-                  type: "ADVANCE",
-                  status: v.status,
-                },
-              ],
-            }))
+          ? vendorRes.map((v: any) => {
+              const proof =
+                v.invoiceProof ||
+                v.proofUrl ||
+                v.invoiceFileUrl ||
+                v.advanceProofUrl ||
+                "";
+              return {
+                ...v,
+                invoiceProof: proof,
+                proofUrl: proof,
+                history: [
+                  {
+                    id: `vtxn-${v.id || Date.now()}`,
+                    date: v.paymentDate ? v.paymentDate.substring(0, 10) : "N/A",
+                    amount: v.advancePaid || 0,
+                    method: v.paymentMode || "Bank Transfer",
+                    txnId: v.transactionId || "N/A",
+                    type: "ADVANCE",
+                    status: v.status,
+                    invoiceProof: proof,
+                    proofUrl: proof,
+                    collectionAccount: v.collectionAccount,
+                    accountName:
+                      v.collectionAccount?.accountName || v.paidBy || "",
+                    uploadedBy: v.paidBy || "Operations",
+                    approvalStatus:
+                      v.approvalStatus ||
+                      (v.status === "Paid" ? "APPROVED" : "PENDING_APPROVAL"),
+                  },
+                ],
+              };
+            })
           : [];
 
       // Merge auto-assigned vendors from the trip (Hotels, Guides, Transport)
@@ -569,6 +589,14 @@ export default function DeparturePayments({
               : "Pending";
           if (tv.rawAssignment) {
             mergedVendors[existingIdx].rawAssignment = tv.rawAssignment;
+          }
+          // Ensure proof is synced to history item
+          if (mergedVendors[existingIdx].invoiceProof || mergedVendors[existingIdx].proofUrl) {
+            const existingProof = mergedVendors[existingIdx].invoiceProof || mergedVendors[existingIdx].proofUrl;
+            if (Array.isArray(mergedVendors[existingIdx].history) && mergedVendors[existingIdx].history.length > 0) {
+              mergedVendors[existingIdx].history[0].invoiceProof = existingProof;
+              mergedVendors[existingIdx].history[0].proofUrl = existingProof;
+            }
           }
         } else {
           const statusLabel =
@@ -1318,39 +1346,52 @@ export default function DeparturePayments({
     const { vendorId, historyIndex, proofUrl } = quickProofTarget;
     const uploader = admin?.name || admin?.email || "Operations Staff";
 
-    setVendorPayments((prev) =>
-      prev.map((v) => {
-        if (v.id !== vendorId) return v;
-        const updatedHist = (v.history || []).map((h: any, idx: number) => {
-          if (idx !== historyIndex) return h;
-          return {
-            ...h,
-            invoiceProof: proofUrl,
-            proofUrl: proofUrl,
-            uploadedBy: uploader,
-            approvalStatus: h.approvalStatus || "PENDING_APPROVAL",
-          };
-        });
+    const targetVendor = vendorPayments.find((v) => v.id === vendorId);
+    if (!targetVendor) return;
 
-        opsService
-          .updateVendorPayment(tripId, v.id, {
-            ...v,
-            invoiceProof: proofUrl,
-            history: updatedHist,
-          })
-          .catch(() => {});
+    const updatedHist = (targetVendor.history || []).map((h: any, idx: number) => {
+      if (idx !== historyIndex) return h;
+      return {
+        ...h,
+        invoiceProof: proofUrl,
+        proofUrl: proofUrl,
+        uploadedBy: uploader,
+        approvalStatus: h.approvalStatus || "PENDING_APPROVAL",
+      };
+    });
 
-        return {
-          ...v,
-          invoiceProof: proofUrl,
-          history: updatedHist,
-        };
-      }),
-    );
+    try {
+      await opsService.updateVendorPayment(tripId, targetVendor.id, {
+        ...targetVendor,
+        departureDate: departureDateStr,
+        vendorName: targetVendor.vendorName,
+        invoiceProof: proofUrl,
+        advanceProofUrl: proofUrl,
+        invoiceFileUrl: proofUrl,
+        history: updatedHist,
+      });
 
-    toast.success("Payment proof screenshot attached successfully!");
-    setQuickProofModalOpen(false);
-    setQuickProofTarget(null);
+      setVendorPayments((prev) =>
+        prev.map((v) =>
+          v.id === vendorId
+            ? {
+                ...v,
+                invoiceProof: proofUrl,
+                proofUrl: proofUrl,
+                history: updatedHist,
+              }
+            : v,
+        ),
+      );
+
+      toast.success("Payment proof screenshot attached and saved successfully!");
+      setQuickProofModalOpen(false);
+      setQuickProofTarget(null);
+      await fetchData();
+    } catch (err: any) {
+      console.error("Failed to save payment proof:", err);
+      toast.error(err?.response?.data?.message || "Failed to save payment proof on server");
+    }
   };
 
   const handleActivityPaymentSubmit = async (e: React.FormEvent) => {
@@ -3108,7 +3149,10 @@ export default function DeparturePayments({
 
                                             <div className="flex flex-wrap items-center gap-2">
                                               {/* Payment Proof View or Upload Action */}
-                                              {h.invoiceProof || h.proofUrl ? (
+                                              {h.invoiceProof ||
+                                              h.proofUrl ||
+                                              v.invoiceProof ||
+                                              v.proofUrl ? (
                                                 <button
                                                   type="button"
                                                   onClick={() =>
@@ -3118,7 +3162,9 @@ export default function DeparturePayments({
                                                       subtitle: `Trip Expense · ${v.category || "Vendor"} · ${departureDateStr}`,
                                                       imageUrl:
                                                         h.invoiceProof ||
-                                                        h.proofUrl,
+                                                        h.proofUrl ||
+                                                        v.invoiceProof ||
+                                                        v.proofUrl,
                                                       amount: h.amount,
                                                       method: h.method,
                                                       date: h.date,
