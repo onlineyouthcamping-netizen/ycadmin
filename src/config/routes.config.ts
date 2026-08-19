@@ -160,28 +160,28 @@ export const ADMIN_ROUTES: AdminRouteMetadata[] = [
     breadcrumbLabel: "Operations / Documents",
   },
 
-  // Approval Center Module
+  // Finance — approvals (money in/out/refunds)
   {
     id: "approvals-hub",
-    label: "Booking Verification",
+    label: "Approvals",
     path: "/admin/approvals-hub",
-    permission: "bookings.view",
+    permission: "accounting.view",
     navigation: {
-      visible: true,
-      group: "Approval Center",
+      visible: false,
+      group: "Finance",
       iconName: "ClipboardCheck",
     },
-    breadcrumbLabel: "Approval Center / Booking Verification",
+    breadcrumbLabel: "Finance / Approvals",
   },
 
-  // Finance Module
+  // Finance — ledger & treasury
   {
     id: "accounting",
     label: "Finance Overview",
-    path: "/admin/accounting",
+    path: "/admin/finance",
     permission: "accounting.view",
-    navigation: { visible: true, group: "Finance", iconName: "Banknote" },
-    breadcrumbLabel: "Finance / Accounting",
+    navigation: { visible: false, group: "Finance", iconName: "Banknote" },
+    breadcrumbLabel: "Finance / Ledger",
   },
 
   // Travel Desk
