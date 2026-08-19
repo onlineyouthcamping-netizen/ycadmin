@@ -1506,13 +1506,23 @@ export default function DeparturePayments({
       payeeName: miscPaymentForm.payeeName || "Vendor / Staff",
       approvedBy: "Finance Admin",
       status: miscPaymentForm.status || "PENDING",
-      paymentDate: miscPaymentForm.paymentDate,
+      paymentDate: miscPaymentForm.paymentDate || new Date().toISOString().substring(0, 10),
       paymentMethod: miscPaymentForm.paymentMethod,
     };
 
     try {
-      await opsService.upsertTripExpense(tripId, newMisc as any);
-    } catch {}
+      await opsService.upsertTripExpense(tripId, {
+        departureDate: departureDateStr,
+        activity: newMisc.description,
+        totalAmount: amountNum,
+        amountPaid: newMisc.status === "APPROVED" || newMisc.status === "PAID" ? amountNum : 0,
+        remarks: `${newMisc.payeeName} | Category: MISCELLANEOUS | Status: ${newMisc.status}`,
+        paymentDate: newMisc.paymentDate,
+      });
+      await fetchData();
+    } catch (err) {
+      console.warn("upsertTripExpense warning:", err);
+    }
 
     setMiscPayments((prev) => [newMisc, ...prev]);
     toast.success(`Logged miscellaneous expense: ${newMisc.description}`);
@@ -1538,8 +1548,17 @@ export default function DeparturePayments({
     };
 
     try {
-      await opsService.upsertTripExpense(tripId, newAdj as any);
-    } catch {}
+      await opsService.upsertTripExpense(tripId, {
+        departureDate: departureDateStr,
+        activity: `Adjustment: ${newAdj.type} - ${newAdj.originalPaymentRef}`,
+        totalAmount: amountNum,
+        amountPaid: newAdj.status === "APPROVED" || newAdj.status === "COMPLETED" ? amountNum : 0,
+        remarks: `Reconciliation | Reason: ${newAdj.reason} | Status: ${newAdj.status}`,
+      });
+      await fetchData();
+    } catch (err) {
+      console.warn("upsertTripExpense warning:", err);
+    }
 
     setAdjustments((prev) => [newAdj, ...prev]);
     toast.success(
@@ -3604,34 +3623,52 @@ export default function DeparturePayments({
                           <div className="flex gap-1.5 justify-center">
                             <Button
                               size="sm"
-                              onClick={() => {
+                              onClick={async () => {
+                                const updated = { ...m, status: "APPROVED" };
                                 setMiscPayments((prev) =>
                                   prev.map((item) =>
-                                    item.id === m.id
-                                      ? { ...item, status: "APPROVED" }
-                                      : item,
+                                    item.id === m.id ? updated : item,
                                   ),
                                 );
-                                toast.success("Expense approved!");
+                                try {
+                                  await opsService.upsertTripExpense(tripId, {
+                                    id: m.id.startsWith("MISC-") ? undefined : m.id,
+                                    departureDate: departureDateStr,
+                                    activity: m.description,
+                                    totalAmount: m.amount,
+                                    amountPaid: m.amount,
+                                    remarks: `${m.payeeName || ""} | Status: APPROVED`,
+                                  });
+                                } catch {}
+                                toast.success("Expense approved & saved!");
                               }}
-                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5"
+                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
                             >
                               Approve
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
+                              onClick={async () => {
+                                const updated = { ...m, status: "REJECTED" };
                                 setMiscPayments((prev) =>
                                   prev.map((item) =>
-                                    item.id === m.id
-                                      ? { ...item, status: "REJECTED" }
-                                      : item,
+                                    item.id === m.id ? updated : item,
                                   ),
                                 );
+                                try {
+                                  await opsService.upsertTripExpense(tripId, {
+                                    id: m.id.startsWith("MISC-") ? undefined : m.id,
+                                    departureDate: departureDateStr,
+                                    activity: m.description,
+                                    totalAmount: m.amount,
+                                    amountPaid: 0,
+                                    remarks: `${m.payeeName || ""} | Status: REJECTED`,
+                                  });
+                                } catch {}
                                 toast.success("Expense rejected");
                               }}
-                              className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50"
+                              className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50 cursor-pointer"
                             >
                               Reject
                             </Button>
@@ -3743,34 +3780,52 @@ export default function DeparturePayments({
                           <div className="flex gap-1.5 justify-center">
                             <Button
                               size="sm"
-                              onClick={() => {
+                              onClick={async () => {
+                                const updated = { ...a, status: "APPROVED" };
                                 setAdjustments((prev) =>
                                   prev.map((item) =>
-                                    item.id === a.id
-                                      ? { ...item, status: "APPROVED" }
-                                      : item,
+                                    item.id === a.id ? updated : item,
                                   ),
                                 );
-                                toast.success("Adjustment approved!");
+                                try {
+                                  await opsService.upsertTripExpense(tripId, {
+                                    id: a.id.startsWith("ADJ-") ? undefined : a.id,
+                                    departureDate: departureDateStr,
+                                    activity: `Adjustment: ${a.type} - ${a.originalPaymentRef}`,
+                                    totalAmount: a.amount,
+                                    amountPaid: a.amount,
+                                    remarks: `Reconciliation | Reason: ${a.reason} | Status: APPROVED`,
+                                  });
+                                } catch {}
+                                toast.success("Adjustment approved & saved!");
                               }}
-                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5"
+                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 cursor-pointer"
                             >
                               Approve
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
+                              onClick={async () => {
+                                const updated = { ...a, status: "REJECTED" };
                                 setAdjustments((prev) =>
                                   prev.map((item) =>
-                                    item.id === a.id
-                                      ? { ...item, status: "REJECTED" }
-                                      : item,
+                                    item.id === a.id ? updated : item,
                                   ),
                                 );
+                                try {
+                                  await opsService.upsertTripExpense(tripId, {
+                                    id: a.id.startsWith("ADJ-") ? undefined : a.id,
+                                    departureDate: departureDateStr,
+                                    activity: `Adjustment: ${a.type} - ${a.originalPaymentRef}`,
+                                    totalAmount: a.amount,
+                                    amountPaid: 0,
+                                    remarks: `Reconciliation | Reason: ${a.reason} | Status: REJECTED`,
+                                  });
+                                } catch {}
                                 toast.success("Adjustment rejected");
                               }}
-                              className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50"
+                              className="h-7 text-[10px] font-bold text-red-600 hover:bg-red-50 cursor-pointer"
                             >
                               Reject
                             </Button>

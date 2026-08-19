@@ -356,11 +356,11 @@ export default function StationPaymentCollection({
     try {
       await stationPaymentService.verifyUpi(id, action);
       toast.success(
-        action === "VERIFY" ? "UPI payment verified!" : "UPI payment rejected",
+        action === "VERIFY" ? "UPI payment verified & collected!" : "UPI payment rejected",
       );
       load();
-    } catch {
-      toast.error("Action failed");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Action failed");
     }
   };
 
