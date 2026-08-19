@@ -660,30 +660,41 @@ export default function DepartureTransport({
               </button>
             </div>
           </div>
-          {computedVehicleAllocations.length === 0 ? (
+
+          {allocFleet.length === 0 ? (
             <p className="text-[12px] text-slate-400 py-6 text-center">
-              No seat assignments yet. Add a vehicle, then auto-allocate.
+              No vehicles in fleet. Add a vehicle above, then auto-allocate.
             </p>
           ) : (
             <div className="space-y-3">
-              {Object.entries(
-                computedVehicleAllocations.reduce((acc: Record<string, any>, v) => {
-                  if (!acc[v.fleetId]) acc[v.fleetId] = [];
-                  acc[v.fleetId].push(v);
-                  return acc;
-                }, {}),
-              ).map(([fleetId, travelers]: any) => {
-                const fleetItem = allocFleet.find((f) => f.id === fleetId);
+              {allocFleet.map((fleetItem: any, fleetIdx: number) => {
+                const fleetId = fleetItem.id || `tempo-${fleetIdx + 1}`;
+                const fleetName = fleetItem.name || `Tempo ${fleetIdx + 1}`;
+                const travelers = computedVehicleAllocations.filter((v) => {
+                  return (
+                    v.fleetId === fleetId ||
+                    (v.vehicleName &&
+                      v.vehicleName.toLowerCase().trim() ===
+                        fleetName.toLowerCase().trim()) ||
+                    (v.vehicle &&
+                      (v.vehicle === fleetName || v.vehicle === fleetId))
+                  );
+                });
+                const capacity = Number(fleetItem.capacity) || 14;
+                const isOverCapacity = travelers.length > capacity;
+
                 return (
                   <div
                     key={fleetId}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }}
                     onDrop={(e) => {
                       e.preventDefault();
                       const travelerName = e.dataTransfer.getData("travelerName");
                       const passengerId = e.dataTransfer.getData("passengerId");
                       if (!travelerName && !passengerId) return;
-                      const fleetName = fleetItem?.name || "Tempo Traveller";
                       setPassengerAllocations((prev) => {
                         const pObj = allPassengers.find(
                           (p: any) =>
@@ -700,7 +711,12 @@ export default function DepartureTransport({
                             vehicle: "—",
                             seat: "—",
                           };
-                        const entry = { ...current, vehicle: fleetName };
+                        const nextSeat = String(travelers.length + 1);
+                        const entry = {
+                          ...current,
+                          vehicle: fleetName,
+                          seat: nextSeat,
+                        };
                         const updated = { ...prev, [travelerName]: entry };
                         if (pObj) {
                           if (pObj.id) updated[pObj.id] = { ...entry };
@@ -710,101 +726,108 @@ export default function DepartureTransport({
                       });
                       toast.success(`Moved ${travelerName} to ${fleetName}`);
                     }}
-                    className="border border-[#E8EEF4] rounded-lg p-3 bg-white min-w-0"
+                    className={cn(
+                      "border rounded-lg p-3 bg-white min-w-0 transition-colors",
+                      isOverCapacity ? "border-amber-300 bg-amber-50/20" : "border-[#E8EEF4]",
+                    )}
                   >
                     <p className="text-[11px] font-medium text-[#0B1528] flex items-center justify-between gap-2 min-w-0">
-                      <span className="truncate min-w-0">
-                        {fleetItem?.name ||
-                          travelers[0]?.vehicleType ||
-                          "Tempo Traveller"}{" "}
-                        (
-                        {fleetItem?.vehicleType ||
-                          travelers[0]?.vehicleType ||
-                          "Tempo"}
-                        )
+                      <span className="truncate min-w-0 font-semibold">
+                        {fleetName}{" "}
+                        <span className="font-normal text-slate-500">
+                          ({fleetItem.vehicleType || "Tempo"})
+                        </span>
                       </span>
-                      <span className="text-[11px] font-medium text-slate-400 tabular-nums shrink-0">
-                        {travelers.length} /{" "}
-                        {fleetItem?.capacity ||
-                          parseInt(
-                            travelers[0]?.vehicleType?.match(/\d+/)?.[0],
-                          ) ||
-                          17}{" "}
-                        seats
+                      <span
+                        className={cn(
+                          "text-[11px] font-medium tabular-nums shrink-0 px-2 py-0.5 rounded-full border",
+                          isOverCapacity
+                            ? "bg-amber-100 border-amber-300 text-amber-800"
+                            : "bg-[#F8FAFC] border-[#E8EEF4] text-slate-600",
+                        )}
+                      >
+                        {travelers.length} / {capacity} seats
                       </span>
                     </p>
-                    <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 min-h-[40px]">
-                      {travelers
-                        .slice()
-                        .sort((a: any, b: any) => {
-                          const sA =
-                            parseInt(
-                              String(a.seatNumber || "").replace(/\D/g, ""),
-                            ) || 0;
-                          const sB =
-                            parseInt(
-                              String(b.seatNumber || "").replace(/\D/g, ""),
-                            ) || 0;
-                          if (sA !== sB) return sA - sB;
-                          return (a.travelerName || "").localeCompare(
-                            b.travelerName || "",
-                          );
-                        })
-                        .map((t: any, i: number) => {
-                          const isFemale =
-                            normalizeGenderCode(t.rawGender, t.travelerName) === "F";
-                          const theme = isFemale
-                            ? "text-pink-600 bg-pink-50 border-pink-100"
-                            : "text-blue-600 bg-blue-50 border-blue-100";
-                          const seatDisplay =
-                            t.seatNumber && t.seatNumber !== "—"
-                              ? t.seatNumber
-                              : i + 1;
-                          return (
-                            <div
-                              key={i}
-                              draggable
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData(
-                                  "travelerName",
-                                  t.travelerName,
-                                );
-                                if (t.passengerId) {
+
+                    {travelers.length === 0 ? (
+                      <div className="mt-2.5 py-6 border border-dashed border-slate-200 rounded-md text-center text-[11px] text-slate-400">
+                        0 passengers assigned · Drag and drop passengers here to move to this tempo
+                      </div>
+                    ) : (
+                      <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 min-h-[40px]">
+                        {travelers
+                          .slice()
+                          .sort((a: any, b: any) => {
+                            const sA =
+                              parseInt(
+                                String(a.seatNumber || "").replace(/\D/g, ""),
+                              ) || 0;
+                            const sB =
+                              parseInt(
+                                String(b.seatNumber || "").replace(/\D/g, ""),
+                              ) || 0;
+                            if (sA !== sB) return sA - sB;
+                            return (a.travelerName || "").localeCompare(
+                              b.travelerName || "",
+                            );
+                          })
+                          .map((t: any, i: number) => {
+                            const isFemale =
+                              normalizeGenderCode(t.rawGender, t.travelerName) === "F";
+                            const theme = isFemale
+                              ? "text-pink-600 bg-pink-50 border-pink-100"
+                              : "text-blue-600 bg-blue-50 border-blue-100";
+                            const seatDisplay =
+                              t.seatNumber && t.seatNumber !== "—"
+                                ? t.seatNumber
+                                : i + 1;
+                            return (
+                              <div
+                                key={i}
+                                draggable
+                                onDragStart={(e) => {
                                   e.dataTransfer.setData(
-                                    "passengerId",
-                                    t.passengerId,
+                                    "travelerName",
+                                    t.travelerName,
                                   );
-                                } else {
-                                  const pObj = allPassengers.find(
-                                    (p: any) => p.name === t.travelerName,
-                                  );
-                                  if (pObj?.id)
+                                  if (t.passengerId) {
                                     e.dataTransfer.setData(
                                       "passengerId",
-                                      pObj.id,
+                                      t.passengerId,
                                     );
+                                  } else {
+                                    const pObj = allPassengers.find(
+                                      (p: any) => p.name === t.travelerName,
+                                    );
+                                    if (pObj?.id)
+                                      e.dataTransfer.setData(
+                                        "passengerId",
+                                        pObj.id,
+                                      );
+                                  }
+                                }}
+                                className="text-[12px] font-medium text-[#0B1528] flex items-center gap-2 cursor-grab active:cursor-grabbing hover:text-[#FF4D00] hover:border-[#FF4D00]/40 transition-colors bg-white px-2.5 py-1.5 rounded-md border border-[#E8EEF4] select-none min-w-0 shadow-xs"
+                                onClick={() =>
+                                  onOpenShuffle({
+                                    name: t.travelerName,
+                                    id: t.passengerId,
+                                  })
                                 }
-                              }}
-                              className="text-[12px] font-medium text-[#0B1528] flex items-center gap-2 cursor-pointer hover:text-[#FF4D00] transition-colors bg-white px-2.5 py-1.5 rounded-md border border-[#E8EEF4] select-none min-w-0"
-                              onClick={() =>
-                                onOpenShuffle({
-                                  name: t.travelerName,
-                                  id: t.passengerId,
-                                })
-                              }
-                            >
-                              <span
-                                className={`text-[10px] font-semibold font-mono ${theme} border min-w-[28px] h-5 px-1 inline-flex items-center justify-center rounded-md shrink-0 tabular-nums text-center`}
                               >
-                                #{seatDisplay}
-                              </span>
-                              <span className="truncate min-w-0 flex-1">
-                                {t.travelerName}
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </div>
+                                <span
+                                  className={`text-[10px] font-semibold font-mono ${theme} border min-w-[28px] h-5 px-1 inline-flex items-center justify-center rounded-md shrink-0 tabular-nums text-center`}
+                                >
+                                  #{seatDisplay}
+                                </span>
+                                <span className="truncate min-w-0 flex-1">
+                                  {t.travelerName}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 );
               })}

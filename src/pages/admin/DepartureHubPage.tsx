@@ -1681,7 +1681,7 @@ export default function DepartureHubPage() {
       const result = await opsService.saveManualAllocations(
         tripId,
         departureDateStr,
-        { roomAllocations, vehicleAllocations, clearExisting },
+        { roomAllocations, vehicleAllocations, clearExisting, target },
       );
       if (result?.success) {
         if (target === "rooms") {
@@ -1697,7 +1697,6 @@ export default function DepartureHubPage() {
             `Saved: ${result.data?.rooms?.length || 0} room + ${result.data?.vehicles?.length || 0} vehicle allocations`,
           );
         }
-        fetchPageData();
       } else {
         toast.error(result?.message || "Failed to save allocations");
       }
@@ -5595,6 +5594,17 @@ useEffect(() => {
     });
 
     setPassengerAllocations(newAllocs);
+    const canonicalFleet = fleetStatus.map((f, idx) => {
+      const orig = allocFleet[idx] || {};
+      return {
+        ...orig,
+        id: f.id,
+        name: f.name,
+        capacity: f.capacity,
+        vehicleType: f.vehicleType,
+      };
+    });
+    setAllocFleet(canonicalFleet);
     toast.success("Tempo seat auto-allocation completed (groups kept together)");
   };
 
