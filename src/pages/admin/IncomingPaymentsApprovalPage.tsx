@@ -424,110 +424,136 @@ export default function IncomingPaymentsApprovalPage({
 
   return (
     <div className="space-y-3 font-sans antialiased text-[#162B45]">
-      {/* 1. COMPACT HEADER */}
+      {/* 1. HEADER */}
       {!hideHeader && (
-        <div className="flex items-center justify-between pb-2 border-b border-[#E3EAF2]">
-          <div className="space-y-0.5">
-            <h1 className="text-[22px] font-[600] text-[#162B45] tracking-tight leading-none font-montserrat flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-[#FF4D00]" />
-              Incoming Payments Verification
-            </h1>
-            <p className="text-[#74839A] text-[12px] font-[500] leading-none">
-              Review and approve customer collections, bank transfers, payment links, and cash submissions.
-            </p>
+        <div className="flex items-center justify-between bg-white border border-[#E8EEF4] rounded-xl px-5 py-4 border-l-4 border-l-[#FF4D00]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-[22px] font-bold text-[#0B1528] tracking-tight leading-none">
+                  Approvals
+                </h1>
+                {!loading && pendingCount > 0 && (
+                  <span className="bg-[#FF4D00]/10 text-[#FF4D00] border border-[#FF4D00]/30 rounded-full px-3 py-1 text-[12px] font-semibold">
+                    {pendingCount} open
+                  </span>
+                )}
+              </div>
+              <p className="text-[13px] text-slate-500 mt-1 leading-none">
+                Review and approve customer collections, bank transfers, payment links, and cash submissions.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#74839A]" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <Input
                 placeholder="Search Booking ID, UTR, customer..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-8.5 w-64 pl-8 text-[11px] rounded bg-white border-[#E3EAF2] placeholder-[#74839A]/60 focus:border-[#FF4D00] outline-none"
+                className="h-8 w-60 pl-8 text-[11px] rounded-lg bg-white border-[#E8EEF4] placeholder-slate-400 focus:border-[#FF4D00] outline-none"
               />
             </div>
             <Button
               onClick={loadData}
-              className="h-8.5 bg-white hover:bg-slate-50 border border-[#E3EAF2] rounded px-3 text-[#162B45] text-[11px] font-[600] flex items-center gap-1 shadow-sm transition-all"
+              className="h-8 bg-white hover:bg-[#F4F7FB] border border-[#E8EEF4] rounded-lg px-3 text-[#0B1528] text-[11px] font-semibold flex items-center gap-1.5 shadow-none transition-all"
             >
-              <RotateCw className="w-3.5 h-3.5 text-[#74839A]" /> Refresh
+              <RotateCw className="w-3.5 h-3.5 text-slate-400" /> Refresh
             </Button>
           </div>
         </div>
       )}
 
-      {/* 2. MONEY MANIFEST */}
-      <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#DCE5ED] bg-[#F8FAFC] lg:grid-cols-4">
+      {/* 2. KPI STAT CARDS */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {/* KPI 1: Pending Verification */}
-        <div className="relative min-h-[86px] border-b border-r border-[#DCE5ED] bg-white p-3.5 lg:border-b-0">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
-              Needs review
-            </p>
-            <h3 className="mt-2 text-[22px] font-bold leading-none text-[#C56A08] tabular-nums">
-              {loading ? "..." : pendingCount}
-            </h3>
-          </div>
-          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
-            Payment entries
-          </p>
-          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-[#C56A08]">
-            <Clock className="w-3.5 h-3.5" />
+        <div className="relative bg-white border border-[#E8EEF4] rounded-xl p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
+                Needs review
+              </p>
+              <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
+                {loading ? "—" : pendingCount}
+              </h3>
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                Payment entries
+              </p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4 text-amber-600" />
+            </div>
           </div>
         </div>
 
         {/* KPI 2: Pending Volume */}
-        <div className="relative min-h-[86px] border-b border-[#DCE5ED] bg-white p-3.5 lg:border-b-0 lg:border-r">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
-              Awaiting credit
-            </p>
-            <h3 className="mt-2 text-[20px] font-bold leading-none text-[#1769AA] tabular-nums">
-              {loading ? "..." : `₹${totalPendingSum.toLocaleString("en-IN")}`}
-            </h3>
-          </div>
-          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
-            Pending value
-          </p>
-          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-[#1769AA]">
-            <DollarSign className="w-3.5 h-3.5" />
+        <div className="relative bg-white border border-[#E8EEF4] rounded-xl p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
+                Awaiting credit
+              </p>
+              <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
+                {loading ? "—" : (
+                  <span>
+                    <span className="text-slate-400 text-[16px] mr-0.5">₹</span>
+                    {totalPendingSum.toLocaleString("en-IN")}
+                  </span>
+                )}
+              </h3>
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                Pending value
+              </p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-[#FF4D00]/10 flex items-center justify-center shrink-0">
+              <ArrowDownRight className="w-4 h-4 text-[#FF4D00]" />
+            </div>
           </div>
         </div>
 
-        {/* KPI 3: Verified Today */}
-        <div className="relative min-h-[86px] border-r border-[#DCE5ED] bg-white p-3.5">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
-              Reconciled
-            </p>
-            <h3 className="mt-2 text-[22px] font-bold leading-none text-[#138A68] tabular-nums">
-              {loading ? "..." : verifiedCount}
-            </h3>
-          </div>
-          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
-            Verified entries
-          </p>
-          <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg bg-green-50 text-[#138A68]">
-            <CheckCircle2 className="w-3.5 h-3.5" />
+        {/* KPI 3: Verified */}
+        <div className="relative bg-white border border-[#E8EEF4] rounded-xl p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
+                Reconciled
+              </p>
+              <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
+                {loading ? "—" : verifiedCount}
+              </h3>
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                Verified entries
+              </p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+            </div>
           </div>
         </div>
 
         {/* KPI 4: Verified Total Value */}
-        <div className="relative min-h-[86px] bg-white p-3.5">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#74839A]">
-              Cleared value
-            </p>
-            <h3 className="mt-2 text-[20px] font-bold leading-none text-[#13283F] tabular-nums">
-              {loading ? "..." : `₹${totalVerifiedSum.toLocaleString("en-IN")}`}
-            </h3>
-          </div>
-          <p className="mt-1.5 text-[10px] font-medium text-[#8293A3]">
-            Verified inflow
-          </p>
-          <div className="absolute right-3.5 top-3.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#FF4D00]/20 bg-[#FF4D00]/5 text-[#FF4D00]">
-            <ArrowDownRight className="w-3.5 h-3.5" />
+        <div className="relative bg-white border border-[#E8EEF4] rounded-xl p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
+                Cleared value
+              </p>
+              <h3 className="mt-2 text-[22px] font-bold leading-none text-[#0B1528] tabular-nums">
+                {loading ? "—" : (
+                  <span>
+                    <span className="text-slate-400 text-[16px] mr-0.5">₹</span>
+                    {totalVerifiedSum.toLocaleString("en-IN")}
+                  </span>
+                )}
+              </h3>
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                Verified inflow
+              </p>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+              <Banknote className="w-4 h-4 text-green-600" />
+            </div>
           </div>
         </div>
       </div>
@@ -559,63 +585,29 @@ export default function IncomingPaymentsApprovalPage({
 
           <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-2 overflow-x-auto no-scrollbar">
-            <div className="inline-flex shrink-0 rounded-lg border border-[#DCE5ED] bg-[#EDF3F7] p-0.5">
-              <button
-                onClick={() => setPaymentType("all")}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
-                  paymentType === "all"
-                    ? "bg-white text-[#E84712] shadow-sm"
-                    : "text-[#61778A] hover:text-[#13283F]"
-                )}
-              >
-                All <span className="ml-1 text-[9px] opacity-60">{allRawItems.length}</span>
-              </button>
-              <button
-                onClick={() => setPaymentType("booking_cash")}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
-                  paymentType === "booking_cash"
-                    ? "bg-white text-[#E84712] shadow-sm"
-                    : "text-[#61778A] hover:text-[#13283F]"
-                )}
-              >
-                Bookings cash <span className="ml-1 text-[9px] opacity-60">{bookingsCashCount}</span>
-              </button>
-              <button
-                onClick={() => setPaymentType("booking_online")}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
-                  paymentType === "booking_online"
-                    ? "bg-white text-[#E84712] shadow-sm"
-                    : "text-[#61778A] hover:text-[#13283F]"
-                )}
-              >
-                Booking online <span className="ml-1 text-[9px] opacity-60">{bookingsOnlineCount}</span>
-              </button>
-              <button
-                onClick={() => setPaymentType("station_collection")}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
-                  paymentType === "station_collection"
-                    ? "bg-white text-[#E84712] shadow-sm"
-                    : "text-[#61778A] hover:text-[#13283F]"
-                )}
-              >
-                Station collection <span className="ml-1 text-[9px] opacity-60">{stationCollectionsCount}</span>
-              </button>
-              <button
-                onClick={() => setPaymentType("station_datewise")}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all flex items-center gap-1",
-                  paymentType === "station_datewise"
-                    ? "bg-white text-[#E84712] shadow-sm"
-                    : "text-[#61778A] hover:text-[#13283F]"
-                )}
-              >
-                <MapPin className="w-3 h-3 text-[#E84712]" />
-                Station Cash (Date-wise) <span className="ml-1 text-[9px] opacity-60">{stationCollectionsCount}</span>
-              </button>
+            <div className="inline-flex shrink-0 gap-1">
+              {([
+                { key: "all", label: "All", count: allRawItems.length },
+                { key: "booking_cash", label: "Bookings cash", count: bookingsCashCount },
+                { key: "booking_online", label: "Booking online", count: bookingsOnlineCount },
+                { key: "station_collection", label: "Station collection", count: stationCollectionsCount },
+                { key: "station_datewise", label: "Station Cash (Date-wise)", count: stationCollectionsCount, icon: true },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setPaymentType(tab.key as any)}
+                  className={cn(
+                    "rounded-full px-3 h-7 text-[12px] font-medium transition-all flex items-center gap-1",
+                    paymentType === tab.key
+                      ? "bg-[#0B1528] text-white"
+                      : "bg-white border border-[#E8EEF4] text-slate-600 hover:bg-[#F4F7FB]"
+                  )}
+                >
+                  {tab.icon && <MapPin className="w-3 h-3" />}
+                  {tab.label}
+                  <span className={cn("ml-0.5 text-[10px]", paymentType === tab.key ? "opacity-70" : "opacity-50")}>{tab.count}</span>
+                </button>
+              ))}
             </div>
 
             {paymentType === "station_datewise" ? (
@@ -949,9 +941,9 @@ export default function IncomingPaymentsApprovalPage({
                             {item.type === "STATION_COLLECTION" ? (
                               <Badge
                                 variant="outline"
-                                className="text-[9px] font-bold bg-orange-50 text-orange-800 border-orange-200 flex items-center gap-1 w-fit"
+                                className="text-[9px] font-bold bg-[#FF4D00]/5 text-[#C2410C] border-[#FF4D00]/30 flex items-center gap-1 w-fit"
                               >
-                                <MapPin className="w-2.5 h-2.5 text-orange-600" />
+                                <MapPin className="w-2.5 h-2.5 text-[#FF4D00]" />
                                 Station Collection
                               </Badge>
                             ) : isCash ? (
@@ -1016,7 +1008,7 @@ export default function IncomingPaymentsApprovalPage({
                               className={cn(
                                 "text-[9px] font-bold uppercase",
                                 item.status === "REVIEWED_FINANCE_CONTROLLER"
-                                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                                  ? "bg-slate-50 text-slate-700 border-slate-200"
                                   : item.status === "VERIFIED" || item.status === "APPROVED" || item.status === "APPROVED_FOUNDER" || item.status === "COMPLETED"
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : item.status === "REJECTED"
