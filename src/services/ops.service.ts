@@ -813,6 +813,7 @@ export const opsService = {
         pickupPoint?: string;
       }>;
       clearExisting?: boolean;
+      target?: "all" | "rooms" | "vehicles";
     },
   ): Promise<any> {
     const res = await api.post(`/ops/auto-allocate/manual-save`, {
