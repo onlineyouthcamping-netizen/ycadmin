@@ -1,4 +1,4 @@
-﻿import {
+import {
   normalizePassenger,
   normalizeGenderFull,
   normalizeGenderCode,
@@ -1188,7 +1188,7 @@ export default function DepartureHubPage() {
     if (["operations", "ops", "ticketing", "tasks", "checklist"].includes(t)) return "operations";
     if (["finance", "money", "payments", "accounting"].includes(t)) return "finance";
     if (["station", "stationpayments", "station_payments"].includes(t)) return "stationpayments";
-    if (["documents", "docs"].includes(t)) return "documents";
+    if (["documents", "docs"].includes(t)) return "overview";
     if (["reports", "report"].includes(t)) return "reports";
     if (["guides", "guide"].includes(t)) return "guides";
     if (["activities", "activity"].includes(t)) return "activities";
@@ -6199,7 +6199,6 @@ useEffect(() => {
     { id: "operations",  label: "Operations", badge: computedTasks.filter((t) => t.status !== "COMPLETED").length || 0 },
     { id: "finance",     label: "Finance",    badge: computedPayments.filter((p) => p.pending > 0).length || 0 },
     { id: "stationpayments", label: "Station Payments" },
-    { id: "documents",   label: "Documents" },
   ];
 
   // CTA label by tab
@@ -6212,7 +6211,6 @@ useEffect(() => {
     activities:  "Add Activity",
     operations:  opsSubTab === "tasks" ? "Add Task" : "Add Template",
     finance:     "Add Payment",
-    documents:   "Upload Document",
   };
 
   const rawTripCode = (
@@ -6424,18 +6422,6 @@ useEffect(() => {
                       setAddPassengerOpen(true);
                     } else if (activeTab === "operations" && opsSubTab === "tasks") {
                       setAddTaskModalOpen(true);
-                    } else if (activeTab === "documents") {
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.onchange = (e: any) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          toast.success(
-                            `Document "${file.name}" uploaded successfully!`,
-                          );
-                        }
-                      };
-                      input.click();
                     } else if (activeTab === "activities") {
                       setActivityModalOpen(true);
                     } else if (activeTab === "hotels") {
@@ -6803,11 +6789,6 @@ useEffect(() => {
                       setOpsSubTab("tasks");
                       setActiveTab("operations");
                     },
-                  },
-                  {
-                    label: "Upload document",
-                    icon: Folder,
-                    action: () => setActiveTab("documents"),
                   },
                   {
                     label: "Download report",
@@ -9458,14 +9439,6 @@ useEffect(() => {
                 tripVendors={tripVendors}
               />
             </div>
-          )}
-
-          {/* ──────────────────────── DOCUMENTS ──────────────────────── */}
-          {activeTab === "documents" && (
-            <DepartureDocuments
-              tripId={tripId}
-              departureDateStr={departureDateStr}
-            />
           )}
 
           {/* ──────────────────────── REPORTS ──────────────────────── */}
