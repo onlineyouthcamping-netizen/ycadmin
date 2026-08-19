@@ -79,7 +79,7 @@ export default function IncomingPaymentsApprovalPage({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [paymentType, setPaymentType] = useState<"all" | "online" | "cash" | "station_cash">("all");
+  const [paymentType, setPaymentType] = useState<"all" | "booking_cash" | "booking_online" | "station_collection" | "station_datewise">("all");
   const [assigneeFilter, setAssigneeFilter] = useState<string>("ALL");
   const [selectedStationDate, setSelectedStationDate] = useState<string>("ALL");
   const [expandedStationKeys, setExpandedStationKeys] = useState<Record<string, boolean>>({});
@@ -204,7 +204,7 @@ export default function IncomingPaymentsApprovalPage({
   };
 
   // Merge items for normal table
-  const allItems = [
+  const allRawItems = [
     ...opsClientPayments.map((cp) => ({
       id: cp.id,
       type: "OPS_CLIENT_PAYMENT",
@@ -256,9 +256,46 @@ export default function IncomingPaymentsApprovalPage({
       proofUrl: (c as any).receiptUrl || null,
       raw: c,
     })),
-  ].filter((item) => {
-    if (paymentType === "online" && item.type === "CASH_HANDOVER") return false;
-    if (paymentType === "cash" && item.type !== "CASH_HANDOVER" && !item.paymentMode?.toUpperCase().includes("CASH")) return false;
+    ...((stationCashData?.allCollections || []).map((sc: any) => ({
+      id: sc.id,
+      type: "STATION_COLLECTION",
+      bookingId: sc.bookingId || "—",
+      customerName: sc.collectedFrom || sc.booking?.fullName || sc.booking?.name || "Station Passenger",
+      amount: sc.amount,
+      paymentMode: "STATION_CASH",
+      reference: sc.receiptNumber || sc.id?.slice(-8),
+      date: sc.collectedAt || sc.departureDate,
+      status: sc.status,
+      collectedBy: `${sc.collectorName || "Station Lead"} (${sc.station})`,
+      assigneeId: sc.verifiedByAdminId || null,
+      assigneeName: sc.verifiedBy?.name || null,
+      notes: `Station: ${sc.station} · Trip: ${sc.tripName || sc.tripId}`,
+      proofUrl: null,
+      raw: sc,
+    }))),
+  ];
+
+  const bookingsCashCount = allRawItems.filter(
+    (i) => (i.type === "CASH_HANDOVER" || i.paymentMode?.toUpperCase().includes("CASH")) && i.type !== "STATION_COLLECTION"
+  ).length;
+
+  const bookingsOnlineCount = allRawItems.filter(
+    (i) => i.type !== "CASH_HANDOVER" && i.type !== "STATION_COLLECTION" && !i.paymentMode?.toUpperCase().includes("CASH")
+  ).length;
+
+  const stationCollectionsCount = (stationCashData?.allCollections?.length) || allRawItems.filter((i) => i.type === "STATION_COLLECTION").length;
+
+  const allItems = allRawItems.filter((item) => {
+    if (paymentType === "booking_cash") {
+      if (item.type === "STATION_COLLECTION") return false;
+      if (item.type !== "CASH_HANDOVER" && !item.paymentMode?.toUpperCase().includes("CASH")) return false;
+    }
+    if (paymentType === "booking_online") {
+      if (item.type === "CASH_HANDOVER" || item.type === "STATION_COLLECTION" || item.paymentMode?.toUpperCase().includes("CASH")) return false;
+    }
+    if (paymentType === "station_collection") {
+      if (item.type !== "STATION_COLLECTION") return false;
+    }
     if (statusFilter !== "ALL") {
       if (statusFilter === "PENDING_VERIFICATION") {
         if (item.status !== "PENDING" && item.status !== "PENDING_VERIFICATION" && item.status !== "REVIEWED_FINANCE_CONTROLLER" && item.status !== "PENDING_HANDOVER") {
@@ -273,7 +310,6 @@ export default function IncomingPaymentsApprovalPage({
     return true;
   });
 
-  const stationCollectionsCount = stationCashData?.allCollections?.length || 0;
   const stationPendingCount = stationCashData?.summary?.pendingCount || 0;
   const stationVerifiedCount = stationCashData?.summary?.verifiedCount || 0;
   const stationTotalCash = stationCashData?.summary?.totalCashCollected || 0;
@@ -286,19 +322,19 @@ export default function IncomingPaymentsApprovalPage({
   const isVerifiedStatus = (s: string) =>
     s === "VERIFIED" || s === "APPROVED" || s === "COMPLETED" || s === "APPROVED_FOUNDER";
 
-  const pendingCount = paymentType === "station_cash"
+  const pendingCount = paymentType === "station_datewise"
     ? stationPendingCount
     : allItems.filter((i) => isPendingStatus(i.status)).length;
 
-  const verifiedCount = paymentType === "station_cash"
+  const verifiedCount = paymentType === "station_datewise"
     ? stationVerifiedCount
     : allItems.filter((i) => isVerifiedStatus(i.status)).length;
 
-  const totalVerifiedSum = paymentType === "station_cash"
+  const totalVerifiedSum = paymentType === "station_datewise"
     ? stationVerifiedCash
     : allItems.filter((i) => isVerifiedStatus(i.status)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
-  const totalPendingSum = paymentType === "station_cash"
+  const totalPendingSum = paymentType === "station_datewise"
     ? stationPendingCash
     : allItems.filter((i) => isPendingStatus(i.status)).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
@@ -306,7 +342,14 @@ export default function IncomingPaymentsApprovalPage({
     if (!selectedPayment) return;
     setActionLoading(true);
     try {
-      if (selectedPayment.type === "OPS_CLIENT_PAYMENT") {
+      if (selectedPayment.type === "STATION_COLLECTION") {
+        await financeControllerService.batchVerifyStationCash({
+          collectionIds: [selectedPayment.id],
+          action: "APPROVE",
+          notes: actionNotes.trim() || "Single verified by Founder",
+        });
+        toast.success("Station collection verified and approved");
+      } else if (selectedPayment.type === "OPS_CLIENT_PAYMENT") {
         if (isSuperuserFounder) {
           await financeApprovalsService.approveCollectionFounder(selectedPayment.id, {
             reason: actionNotes.trim() || undefined,
@@ -348,7 +391,13 @@ export default function IncomingPaymentsApprovalPage({
     }
     setActionLoading(true);
     try {
-      if (selectedPayment.type === "OPS_CLIENT_PAYMENT") {
+      if (selectedPayment.type === "STATION_COLLECTION") {
+        await financeControllerService.batchVerifyStationCash({
+          collectionIds: [selectedPayment.id],
+          action: "REJECT",
+          notes: actionNotes.trim(),
+        });
+      } else if (selectedPayment.type === "OPS_CLIENT_PAYMENT") {
         await financeApprovalsService.rejectCollection(selectedPayment.id, actionNotes.trim());
       } else if (selectedPayment.type === "CASH_HANDOVER") {
         await financeControllerService.performCashAction(selectedPayment.id, {
@@ -520,35 +569,46 @@ export default function IncomingPaymentsApprovalPage({
                     : "text-[#61778A] hover:text-[#13283F]"
                 )}
               >
-                All <span className="ml-1 text-[9px] opacity-60">{allItems.length}</span>
+                All <span className="ml-1 text-[9px] opacity-60">{allRawItems.length}</span>
               </button>
               <button
-                onClick={() => setPaymentType("online")}
+                onClick={() => setPaymentType("booking_cash")}
                 className={cn(
                   "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
-                  paymentType === "online"
+                  paymentType === "booking_cash"
                     ? "bg-white text-[#E84712] shadow-sm"
                     : "text-[#61778A] hover:text-[#13283F]"
                 )}
               >
-                Bank & online <span className="ml-1 text-[9px] opacity-60">{incomingPayments.length}</span>
+                Bookings cash <span className="ml-1 text-[9px] opacity-60">{bookingsCashCount}</span>
               </button>
               <button
-                onClick={() => setPaymentType("cash")}
+                onClick={() => setPaymentType("booking_online")}
                 className={cn(
                   "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
-                  paymentType === "cash"
+                  paymentType === "booking_online"
                     ? "bg-white text-[#E84712] shadow-sm"
                     : "text-[#61778A] hover:text-[#13283F]"
                 )}
               >
-                Sales Cash <span className="ml-1 text-[9px] opacity-60">{cashSubmissions.length}</span>
+                Booking online <span className="ml-1 text-[9px] opacity-60">{bookingsOnlineCount}</span>
               </button>
               <button
-                onClick={() => setPaymentType("station_cash")}
+                onClick={() => setPaymentType("station_collection")}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all",
+                  paymentType === "station_collection"
+                    ? "bg-white text-[#E84712] shadow-sm"
+                    : "text-[#61778A] hover:text-[#13283F]"
+                )}
+              >
+                Station collection <span className="ml-1 text-[9px] opacity-60">{stationCollectionsCount}</span>
+              </button>
+              <button
+                onClick={() => setPaymentType("station_datewise")}
                 className={cn(
                   "rounded-md px-2.5 py-1.5 text-[10px] font-bold transition-all flex items-center gap-1",
-                  paymentType === "station_cash"
+                  paymentType === "station_datewise"
                     ? "bg-white text-[#E84712] shadow-sm"
                     : "text-[#61778A] hover:text-[#13283F]"
                 )}
@@ -558,7 +618,7 @@ export default function IncomingPaymentsApprovalPage({
               </button>
             </div>
 
-            {paymentType === "station_cash" ? (
+            {paymentType === "station_datewise" ? (
               <Select value={selectedStationDate} onValueChange={setSelectedStationDate}>
                 <SelectTrigger className="h-8 w-44 shrink-0 rounded-lg border-[#DCE5ED] bg-white text-[10px] font-semibold">
                   <Calendar className="w-3 h-3 text-[#FF5A1F] mr-1.5" />
@@ -613,7 +673,7 @@ export default function IncomingPaymentsApprovalPage({
             <div className="relative min-w-0 flex-1 lg:w-52 lg:flex-none">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8293A3]" />
               <Input
-                placeholder={paymentType === "station_cash" ? "Station, Trip, Passenger..." : "Booking, customer or UTR"}
+                placeholder={paymentType === "station_datewise" ? "Station, Trip, Passenger..." : "Booking, customer or UTR"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 w-full rounded-lg border-[#DCE5ED] bg-white pl-8 text-[10px] outline-none focus:border-[#FF5A1F]"
@@ -624,7 +684,7 @@ export default function IncomingPaymentsApprovalPage({
         </div>
 
         {/* ── CONDITIONAL VIEW: STATION CASH (DATE-WISE GROUPED) VS ONLINE/CASH TABLE ── */}
-        {paymentType === "station_cash" ? (
+        {paymentType === "station_datewise" ? (
           <div className="p-3 space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-12">
@@ -886,20 +946,28 @@ export default function IncomingPaymentsApprovalPage({
                             {item.customerName}
                           </td>
                           <td className="px-4 py-2">
-                            {isCash ? (
+                            {item.type === "STATION_COLLECTION" ? (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] font-bold bg-orange-50 text-orange-800 border-orange-200 flex items-center gap-1 w-fit"
+                              >
+                                <MapPin className="w-2.5 h-2.5 text-orange-600" />
+                                Station Collection
+                              </Badge>
+                            ) : isCash ? (
                               <Badge
                                 variant="outline"
                                 className="text-[9px] font-bold bg-amber-50 text-amber-800 border-amber-300 flex items-center gap-1 w-fit"
                               >
                                 <ShieldCheck className="w-2.5 h-2.5 text-amber-600" />
-                                Cash (Superuser / Founder)
+                                Booking Cash
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
                                 className="text-[9px] font-bold bg-blue-50 text-blue-800 border-blue-200 w-fit"
                               >
-                                {item.paymentMode?.replace(/_/g, " ")} (Finance Hub)
+                                {item.paymentMode?.replace(/_/g, " ")} (Online)
                               </Badge>
                             )}
                           </td>
