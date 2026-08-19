@@ -2562,30 +2562,30 @@ export default function DepartureHubPage() {
             // Write room allocations by BOTH travelerName and passenger.id
             rooms.forEach((r: any) => {
               const nameKey = r.travelerName;
-              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase()) || (allPassengers as any[]).find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
+              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || (p.name && nameKey && p.name.toLowerCase().trim() === nameKey.toLowerCase().trim()));
+              const existing = (nameKey && next[nameKey]) || (pObj?.id && next[pObj.id]) || (pObj?.name && next[pObj.name]) || { vehicle: "—", seat: "—" };
               const entry = {
-                ...(next[nameKey] || { vehicle: "—", seat: "—" }),
+                ...existing,
                 room: r.roomNumber,
               };
-              next[nameKey] = entry;
-              if (pObj?.id) {
-                next[pObj.id] = { ...entry };
-              }
+              if (nameKey) next[nameKey] = entry;
+              if (pObj?.name) next[pObj.name] = entry;
+              if (pObj?.id) next[pObj.id] = { ...entry };
             });
 
             vehicles.forEach((v: any) => {
               const nameKey = v.travelerName;
-              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase()) || (allPassengers as any[]).find((p: any) => p.name === nameKey || p.name?.toLowerCase() === nameKey?.toLowerCase());
+              const pObj = nameToPassenger[nameKey] || currentPassengersList.find((p: any) => p.name === nameKey || (p.name && nameKey && p.name.toLowerCase().trim() === nameKey.toLowerCase().trim()));
               const vName = fleetNameMap[v.fleetId] || initialFleet.find((f: any) => f.id === v.fleetId)?.name || (initialFleet.length === 1 ? initialFleet[0].name : (v.fleetId || "Tempo 1"));
+              const existing = (nameKey && next[nameKey]) || (pObj?.id && next[pObj.id]) || (pObj?.name && next[pObj.name]) || { room: "—" };
               const entry = {
-                ...(next[nameKey] || { room: "—" }),
+                ...existing,
                 vehicle: vName,
                 seat: v.seatNumber ? String(v.seatNumber) : "—",
               };
-              next[nameKey] = entry;
-              if (pObj?.id) {
-                next[pObj.id] = { ...entry };
-              }
+              if (nameKey) next[nameKey] = entry;
+              if (pObj?.name) next[pObj.name] = entry;
+              if (pObj?.id) next[pObj.id] = { ...entry };
             });
 
             return next;
