@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Search,
@@ -2568,29 +2568,65 @@ export default function DeparturePayments({
       {/* ──────────────────────── TAB 2: CLIENT RECEIVABLES (Detailed Ledger) ──────────────────────── */}
       {subTab === "clients" && (
         <div className="space-y-4">
-          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col lg:flex-row lg:items-center gap-2">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full lg:flex-1">
-              <select
-                value={clientStatusFilter}
-                onChange={(e) => setClientStatusFilter(e.target.value)}
-                className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
-              >
-                <option value="All Status">All Payment Statuses</option>
-                <option value="Unpaid">Unpaid</option>
-                <option value="Partially Paid">Partially Paid</option>
-                <option value="Paid">Fully Paid</option>
-              </select>
-              <div className="relative min-w-0 w-full">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search passenger name, phone, or booking..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full min-w-0 pl-8 text-xs rounded-lg border border-[#E8EEF4] bg-white text-[#0B1528] placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00]"
-                />
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col gap-3">
+            {/* Quick Filter Client Status Pills */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F0F4F8] pb-2.5">
+              <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#74839A] mr-1">Quick Filters:</span>
+                {[
+                  { key: "All Status", label: "All Bookings", count: bookings.length },
+                  { key: "Unpaid", label: "🔴 Unpaid", count: bookings.filter((b) => (b.advancePaid || 0) === 0).length },
+                  { key: "Partially Paid", label: "🟡 Partially Paid", count: bookings.filter((b) => (b.advancePaid || 0) > 0 && (b.advancePaid || 0) < b.totalAmount).length },
+                  { key: "Paid", label: "🟢 Fully Paid", count: bookings.filter((b) => (b.advancePaid || 0) >= b.totalAmount).length },
+                ].map((pill) => (
+                  <button
+                    key={pill.key}
+                    type="button"
+                    onClick={() => setClientStatusFilter(pill.key)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all flex items-center gap-1 border shadow-2xs",
+                      clientStatusFilter === pill.key
+                        ? "bg-[#0B1528] text-white border-[#0B1528] shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                    )}
+                  >
+                    <span>{pill.label}</span>
+                    <span
+                      className={cn(
+                        "text-[9px] px-1 rounded-full",
+                        clientStatusFilter === pill.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
+                      )}
+                    >
+                      {pill.count}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
+
+            <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full lg:flex-1">
+                <select
+                  value={clientStatusFilter}
+                  onChange={(e) => setClientStatusFilter(e.target.value)}
+                  className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
+                >
+                  <option value="All Status">All Payment Statuses</option>
+                  <option value="Unpaid">Unpaid</option>
+                  <option value="Partially Paid">Partially Paid</option>
+                  <option value="Paid">Fully Paid</option>
+                </select>
+                <div className="relative min-w-0 w-full">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search passenger name, phone, or booking..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 w-full min-w-0 pl-8 text-xs rounded-lg border border-[#E8EEF4] bg-white text-[#0B1528] placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+              </div>
 
             <div className="grid grid-cols-2 gap-2 w-full lg:w-auto lg:flex lg:shrink-0">
               <Button
@@ -2612,6 +2648,7 @@ export default function DeparturePayments({
               </Button>
             </div>
           </div>
+        </div>
 
           {/* Table with Clickable Expandable Ledger Rows */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
@@ -2970,54 +3007,117 @@ export default function DeparturePayments({
       {/* ──────────────────────── TAB 3: VENDOR PAYABLES (Detailed Ledger) ──────────────────────── */}
       {subTab === "vendors" && (
         <div className="space-y-4">
-          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col lg:flex-row lg:items-center gap-2">
-            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0 w-full lg:flex-1">
-              <select
-                value={vendorCategoryFilter}
-                onChange={(e) => setVendorCategoryFilter(e.target.value)}
-                className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
-              >
-                <option value="All Categories">All Vendor Categories</option>
+          <div className="bg-white border border-[#E8EEF4] rounded-xl p-3 min-w-0 w-full flex flex-col gap-3">
+            {/* Quick Filter Category Pills & Status Switcher */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[#F0F4F8] pb-2.5">
+              <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#74839A] mr-1">Quick Filters:</span>
                 {[
-                  "Hotels",
-                  "Transport",
-                  "Activities",
-                  "Guides",
-                  "Meals",
-                  "Other",
-                ].map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
+                  { key: "All Categories", label: "All Categories", count: vendorPayments.length },
+                  { key: "Hotels", label: "🏨 Hotels", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("hotel")).length },
+                  { key: "Transport", label: "🚐 Transport", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("trans")).length },
+                  { key: "Activities", label: "🎯 Activities", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("act")).length },
+                  { key: "Guides", label: "🧭 Guides", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("guide")).length },
+                  { key: "Meals", label: "🍽️ Meals", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("meal")).length },
+                  { key: "Other", label: "📦 Other", count: vendorPayments.filter((v) => (v.category || "").toLowerCase().includes("other")).length },
+                ].map((pill) => (
+                  <button
+                    key={pill.key}
+                    type="button"
+                    onClick={() => setVendorCategoryFilter(pill.key)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all flex items-center gap-1 border shadow-2xs",
+                      vendorCategoryFilter === pill.key
+                        ? "bg-[#FF4D00] text-white border-[#FF4D00] shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                    )}
+                  >
+                    <span>{pill.label}</span>
+                    <span
+                      className={cn(
+                        "text-[9px] px-1 rounded-full",
+                        vendorCategoryFilter === pill.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
+                      )}
+                    >
+                      {pill.count}
+                    </span>
+                  </button>
                 ))}
-              </select>
+              </div>
 
-              <select
-                value={vendorStatusFilter}
-                onChange={(e) => setVendorStatusFilter(e.target.value)}
-                className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
-              >
-                <option value="All Status">All Payment Statuses</option>
-                {["Not Paid", "Advance Paid", "Partially Paid", "Paid"].map(
-                  (s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ),
-                )}
-              </select>
-
-              <div className="relative min-w-0 w-full sm:flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search vendor name or invoice #..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 w-full min-w-0 pl-8 text-xs rounded-lg border border-[#E8EEF4] bg-white text-[#0B1528] placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00]"
-                />
+              {/* Status Quick Pills */}
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/70 shrink-0">
+                {[
+                  { key: "All Status", label: "ALL" },
+                  { key: "Not Paid", label: "⏳ UNPAID / DUE" },
+                  { key: "Advance Paid", label: "🟡 ADVANCE" },
+                  { key: "Paid", label: "🟢 PAID" },
+                ].map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => setVendorStatusFilter(s.key)}
+                    className={cn(
+                      "px-2.5 py-1 rounded text-[9.5px] font-extrabold uppercase tracking-wider transition-all",
+                      vendorStatusFilter === s.key
+                        ? "bg-white text-[#162B45] shadow-xs"
+                        : "text-[#74839A] hover:text-[#162B45]"
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
               </div>
             </div>
+
+            <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0 w-full lg:flex-1">
+                <select
+                  value={vendorCategoryFilter}
+                  onChange={(e) => setVendorCategoryFilter(e.target.value)}
+                  className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
+                >
+                  <option value="All Categories">All Vendor Categories</option>
+                  {[
+                    "Hotels",
+                    "Transport",
+                    "Activities",
+                    "Guides",
+                    "Meals",
+                    "Other",
+                  ].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={vendorStatusFilter}
+                  onChange={(e) => setVendorStatusFilter(e.target.value)}
+                  className="h-8 w-full min-w-0 sm:w-auto sm:shrink-0 text-xs font-medium border border-[#E8EEF4] rounded-lg px-3 bg-white text-[#0B1528] outline-none cursor-pointer"
+                >
+                  <option value="All Status">All Payment Statuses</option>
+                  {["Not Paid", "Advance Paid", "Partially Paid", "Paid"].map(
+                    (s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ),
+                  )}
+                </select>
+
+                <div className="relative min-w-0 w-full sm:flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search vendor name or invoice #..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 w-full min-w-0 pl-8 text-xs rounded-lg border border-[#E8EEF4] bg-white text-[#0B1528] placeholder:text-slate-400 focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+              </div>
 
             <div className="grid grid-cols-2 gap-2 w-full lg:w-auto lg:flex lg:shrink-0">
               <Button
@@ -3045,6 +3145,7 @@ export default function DeparturePayments({
               </Button>
             </div>
           </div>
+        </div>
 
           {/* Table with Clickable Expandable Vendor Invoice Rows */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
