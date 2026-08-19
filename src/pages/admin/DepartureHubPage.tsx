@@ -3993,38 +3993,69 @@ useEffect(() => {
         })
       : departureDateStr || "TBD";
 
+    const now = new Date();
+    const isDeparted = depDate <= now && !isNaN(depDate.getTime());
+    const balanceComplete = stats.totalVendorPayables === 0;
+
+    // Determine which step is "current" (first incomplete one)
+    const step1Done = sortedBookings.length > 0;
+    const step2Done = sortedBookings.length > 0;
+    const step3Done = filledPercentage >= 50;
+    const step4Done = allHotelsConfirmed;
+    const step5Done = balanceComplete;
+    const step6Done = isDeparted;
+
+    const currentStep = !step1Done ? 0 : !step2Done ? 1 : !step3Done ? 2 : !step4Done ? 3 : !step5Done ? 4 : !step6Done ? 5 : 6;
+
     return [
       {
         title: "Booking Started",
         date: bookingStartedStr,
         user: "System",
-        active: sortedBookings.length > 0,
+        active: step1Done,
+        current: currentStep === 0,
+        pending: !step1Done,
       },
       {
         title: "First Booking Received",
         date: firstBookingDate,
         user: sortedBookings[0]?.name || "System",
-        active: sortedBookings.length > 0,
+        active: step2Done,
+        current: currentStep === 1,
+        pending: !step2Done,
       },
       {
         title: "50% Seats Filled",
-        date: seats50PercentStr,
+        date: step3Done ? seats50PercentStr : `${Math.round(filledPercentage)}% filled`,
         user: "Sales Desk",
-        active: filledPercentage >= 50,
+        active: step3Done,
+        current: currentStep === 2,
+        pending: !step3Done,
       },
       {
         title: "All Hotels Confirmed",
         date: hotelsConfirmStr,
         user: "Ops Desk",
-        active: allHotelsConfirmed,
+        active: step4Done,
+        current: currentStep === 3,
+        pending: !step4Done,
       },
       {
-        title: "Balance Collection In Progress",
-        date: stats.totalVendorPayables > 0 ? "In Progress" : "Completed",
+        title: "Balance Collection",
+        date: step5Done ? "Completed" : "In Progress",
         user: "Accounts Desk",
-        current: true,
+        active: step5Done,
+        current: currentStep === 4,
+        pending: !step4Done,
       },
-      { title: "Departure Day", date: departureDayStr, pending: true },
+      {
+        title: "Departure Day",
+        date: departureDayStr,
+        user: isDeparted ? "Departed" : undefined,
+        active: step6Done,
+        current: currentStep === 5,
+        pending: !isDeparted,
+      },
     ];
   }, [bookings, tripVendors, tripDetails, departureDateStr, stats]);
 
@@ -6706,7 +6737,7 @@ useEffect(() => {
                     </h3>
                     <button
                       type="button"
-                      onClick={() => toast.info("Full timeline")}
+                      onClick={() => setActiveTab("reports")}
                       className={dashLink}
                     >
                       Full timeline
