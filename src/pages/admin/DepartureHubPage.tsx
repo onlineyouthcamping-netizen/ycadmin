@@ -6832,56 +6832,6 @@ useEffect(() => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-w-0">
-                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0">
-                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2">
-                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
-                      Pending tasks
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOpsSubTab("tasks");
-                        setActiveTab("operations");
-                      }}
-                      className={dashLink}
-                    >
-                      All tasks
-                    </button>
-                  </div>
-                  <div className="space-y-2.5">
-                    {computedTopTasks.map((task: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between gap-3 text-[12px] min-w-0"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Circle className="w-3.5 h-3.5 text-slate-300 shrink-0" strokeWidth={1.75} />
-                          <p className="truncate font-medium text-[#0B1528] min-w-0 text-left">
-                            {task.title}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span
-                            className={cn(
-                              "text-[10px] font-medium px-1.5 py-0.5 rounded-md border",
-                              task.priority === "High"
-                                ? "border-[#FF4D00] text-[#FF4D00] bg-white"
-                                : "border-[#E8EEF4] text-slate-500 bg-white",
-                            )}
-                          >
-                            {task.priority}
-                          </span>
-                          <span className="text-[11px] text-slate-400 hidden sm:inline">
-                            {task.date}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
             </div>
           )}
 
