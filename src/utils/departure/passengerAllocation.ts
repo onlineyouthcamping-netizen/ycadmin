@@ -28,12 +28,15 @@ export function getBookingGroupKey(passenger: any): string {
   const linkedId =
     passenger.linkedBooking ||
     passenger.linkedBookingId ||
-    passenger.groupBookingId ||
-    (passenger.name?.toLowerCase().includes("riddhi") ? "BK-SPITI-08SEP-PRINCE" : undefined);
-  if (linkedId && String(linkedId).trim() !== "") {
+    passenger.groupBookingId;
+  if (linkedId && String(linkedId).trim() !== "" && String(linkedId) !== "undefined") {
     return `booking:${String(linkedId).trim()}`;
   }
-  const bId = passenger.bookingId || passenger.bookingRef;
+  const bId =
+    passenger.bookingId ||
+    passenger.rawBooking?.bookingId ||
+    passenger.rawBooking?.id ||
+    passenger.bookingRef;
   if (bId && String(bId).trim() !== "" && String(bId) !== "undefined" && String(bId) !== "null") {
     return `booking:${String(bId).trim()}`;
   }
@@ -41,7 +44,7 @@ export function getBookingGroupKey(passenger: any): string {
   if (pId && String(pId).trim() !== "" && String(pId) !== "undefined" && String(pId) !== "null") {
     return `passenger:${String(pId).trim()}`;
   }
-  return `passenger:${Math.random().toString(36).substring(2, 9)}`;
+  return `passenger:${passenger.name || Math.random().toString(36).substring(2, 9)}`;
 }
 
 /**
