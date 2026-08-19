@@ -1217,17 +1217,10 @@ export default function DepartureTripControl({
             </button>
             <button
               type="button"
-              onClick={() => setStatusFilter("CHECKIN_PENDING")}
-              className={filterChipClass(statusFilter === "CHECKIN_PENDING")}
+              onClick={() => setStatusFilter("TEMPO_PENDING")}
+              className={filterChipClass(statusFilter === "TEMPO_PENDING")}
             >
-              Pending check-in ({summaryStats.pendingCheckIn})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter("CHECKED_IN")}
-              className={filterChipClass(statusFilter === "CHECKED_IN")}
-            >
-              Checked in ({summaryStats.checkedIn})
+              Pending tempo ({summaryStats.pendingTempo})
             </button>
           </div>
         </div>
@@ -1246,7 +1239,6 @@ export default function DepartureTripControl({
                 <th className="py-2.5 px-3.5 w-40">Tempo / fleet</th>
                 <th className="py-2.5 px-3.5 w-28 text-center">Tempo status</th>
                 <th className="py-2.5 px-3.5 w-40">Guide / driver</th>
-                <th className="py-2.5 px-3.5 w-32 text-center">Check-in</th>
                 <th className="py-2.5 px-3.5">Remark</th>
               </tr>
             </thead>
@@ -1411,41 +1403,6 @@ export default function DepartureTripControl({
                       )}
                     </td>
 
-                    <td className="py-2.5 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer hover:shadow-xs",
-                              statusTone(row.checkInStatus),
-                              row.checkInStatus === "CHECKED-IN"
-                                ? "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
-                                : row.checkInStatus === "NOT REQUIRED"
-                                  ? "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
-                                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                            )}
-                          >
-                            <span>{formatOpsLabel(row.checkInStatus)}</span>
-                            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center" className="w-36 text-xs bg-white shadow-lg border border-slate-200 rounded-lg p-1 z-50">
-                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">Check-in Status</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleToggleCheckIn(row, "CHECKED-IN")} className="text-purple-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-purple-50 text-xs">
-                            🟣 Checked in
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleCheckIn(row, "PENDING")} className="text-amber-700 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-amber-50 text-xs">
-                            🟡 Pending
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleCheckIn(row, "NOT REQUIRED")} className="text-slate-600 font-semibold cursor-pointer px-2 py-1.5 rounded hover:bg-slate-100 text-xs">
-                            ⚪ Not required
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-
                     <td className="py-2.5 px-3.5">
                       <span className="text-slate-500 text-[12px] truncate max-w-[160px] block">
                         {row.remark || <span className="text-slate-300">No remarks</span>}
@@ -1455,7 +1412,7 @@ export default function DepartureTripControl({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center bg-[#F8FAFC]">
+                  <td colSpan={9} className="py-12 text-center bg-[#F8FAFC]">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <AlertCircle className="w-6 h-6 text-slate-300" />
                       <p className="font-medium text-[#0B1528] text-sm">No days match this filter</p>

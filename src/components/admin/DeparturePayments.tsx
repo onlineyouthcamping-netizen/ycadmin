@@ -594,9 +594,18 @@ export default function DeparturePayments({
         const paid = Number(tv.paidAmount || tv.advancePaid || 0);
 
         if (existingIdx >= 0) {
-          // Ensure agreed amount and advance paid are authoritative without doubling
-          mergedVendors[existingIdx].agreedAmount = Math.max(mergedVendors[existingIdx].agreedAmount || 0, agreed);
-          mergedVendors[existingIdx].advancePaid = Math.max(mergedVendors[existingIdx].advancePaid || 0, paid);
+          const isSameRecord =
+            (tv.id && mergedVendors[existingIdx].id === tv.id) ||
+            (tv.rawAssignment?.id && mergedVendors[existingIdx].rawAssignment?.id === tv.rawAssignment.id);
+
+          if (isSameRecord) {
+            mergedVendors[existingIdx].agreedAmount = Math.max(mergedVendors[existingIdx].agreedAmount || 0, agreed);
+            mergedVendors[existingIdx].advancePaid = Math.max(mergedVendors[existingIdx].advancePaid || 0, paid);
+          } else {
+            // Multi-day stay for the same hotel/vendor (e.g. 2 days stay in Kaza at Korlam Homestay Kaza)
+            mergedVendors[existingIdx].agreedAmount = (mergedVendors[existingIdx].agreedAmount || 0) + agreed;
+            mergedVendors[existingIdx].advancePaid = (mergedVendors[existingIdx].advancePaid || 0) + paid;
+          }
           mergedVendors[existingIdx].balanceAmount = Math.max(0, mergedVendors[existingIdx].agreedAmount - mergedVendors[existingIdx].advancePaid);
           const totalAgreed = mergedVendors[existingIdx].agreedAmount;
           const totalPaid = mergedVendors[existingIdx].advancePaid;
