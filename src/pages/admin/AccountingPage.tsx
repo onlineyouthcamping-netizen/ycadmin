@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Banknote,
@@ -56,6 +56,7 @@ import {
 } from "@/services/collectionAccounts.service";
 import { tripsService } from "@/services/trips.service";
 import { bookingsService } from "@/services/bookings.service";
+import { paymentsService } from "@/services/payments.service";
 import {
   financeApprovalsService,
   type FinanceAuditLogEntry,
@@ -863,10 +864,76 @@ export default function AccountingPage() {
     }
   };
 
+  const [syncingTreasury, setSyncingTreasury] = useState(false);
+
+  const handleSyncTreasury = async () => {
+    setSyncingTreasury(true);
+    try {
+      const res = await paymentsService.syncTreasuryMappings();
+      toast.success(res.message || "Treasury synchronization complete!");
+      await loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to sync treasury mappings");
+    } finally {
+      setSyncingTreasury(false);
+    }
+  };
+
+  const handleReassignPaymentAccount = async (paymentId: string, accountId: string) => {
+    if (!paymentId || paymentId.startsWith("adv-")) {
+      toast.info("This is an advance balance record. Click 'Sync Treasury' to generate its verified receipt first.");
+      return;
+    }
+    try {
+      await paymentsService.updatePaymentAccount(paymentId, accountId);
+      toast.success("Receiving account updated successfully");
+      await loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update account");
+    }
+  };
+
   // Compute all client receipts across bookings
   const allClientReceipts = useMemo(() => {
     const list: any[] = [];
     const pendingClientPayments = verificationQueue?.pendingClientPayments || [];
+
+    const resolveAccount = (collectionAccountId?: string, collectionAccount?: any, paymentMode?: string) => {
+      if (collectionAccount?.accountName) return { id: collectionAccount.id, name: collectionAccount.accountName };
+      if (collectionAccountId && collectionAccounts.length > 0) {
+        const found = collectionAccounts.find((a) => a.id === collectionAccountId);
+        if (found) return { id: found.id, name: found.accountName };
+      }
+      if (!collectionAccounts || collectionAccounts.length === 0) {
+        return {
+          id: "",
+          name: paymentMode === "CASH" ? "Cash Collection Account" : "YouthCamping Company Account",
+        };
+      }
+      const normMode = (paymentMode || "UPI").toUpperCase();
+      if (normMode.includes("CASH")) {
+        const cashAcc = collectionAccounts.find(
+          (a) => a.accountType === "CASH" || a.accountName.toLowerCase().includes("cash"),
+        );
+        if (cashAcc) return { id: cashAcc.id, name: cashAcc.accountName };
+      } else if (normMode.includes("BANK")) {
+        const bankAcc = collectionAccounts.find(
+          (a) => a.accountType === "COMPANY" || a.accountType === "BANK" || Boolean(a.accountNumber),
+        );
+        if (bankAcc) return { id: bankAcc.id, name: bankAcc.accountName };
+      } else {
+        const upiAcc =
+          collectionAccounts.find(
+            (a) =>
+              a.accountName.toLowerCase().includes("nikul") ||
+              (a.upiId && a.upiId.toLowerCase().includes("nikul")) ||
+              a.accountType === "INDIVIDUAL" ||
+              a.accountType === "UPI",
+          ) || collectionAccounts.find((a) => a.accountType === "COMPANY");
+        if (upiAcc) return { id: upiAcc.id, name: upiAcc.accountName };
+      }
+      return { id: collectionAccounts[0]?.id || "", name: collectionAccounts[0]?.accountName || "YouthCamping Company Account" };
+    };
 
     bookings.forEach((b) => {
       let payments = b.opsClientPayments || b.clientPayments || b.paymentHistory || [];
@@ -886,6 +953,7 @@ export default function AccountingPage() {
 
       if (Array.isArray(payments) && payments.length > 0) {
         payments.forEach((p: any) => {
+          const acc = resolveAccount(p.collectionAccountId, p.collectionAccount, p.paymentMode);
           list.push({
             id: p.id || `${b.id}-${p.amount}-${p.createdAt}`,
             bookingId: b.bookingId || b.id,
@@ -895,9 +963,8 @@ export default function AccountingPage() {
             departureDate: b.departureDate,
             amount: Number(p.amount) || 0,
             paymentMode: p.paymentMode || "UPI",
-            accountName:
-              p.collectionAccount?.accountName ||
-              (p.paymentMode === "CASH" ? "Office Cash Desk" : "Primary Company Bank"),
+            collectionAccountId: p.collectionAccountId || acc.id,
+            accountName: acc.name,
             transactionId: p.transactionId || p.utrNumber || "—",
             status: p.status || "Pending Verification",
             approvalStatus: p.approvalStatus || "PENDING",
@@ -907,6 +974,7 @@ export default function AccountingPage() {
           });
         });
       } else if (Number(b.advancePaid) > 0) {
+        const acc = resolveAccount(b.collectionAccountId, undefined, b.paymentMode);
         list.push({
           id: `adv-${b.id}`,
           bookingId: b.bookingId || b.id,
@@ -916,7 +984,8 @@ export default function AccountingPage() {
           departureDate: b.departureDate,
           amount: Number(b.advancePaid) || 0,
           paymentMode: b.paymentMode || "UPI",
-          accountName: b.paymentMode === "CASH" ? "Office Cash Desk" : "Primary Company Bank",
+          collectionAccountId: acc.id,
+          accountName: acc.name,
           transactionId: b.transactionId || "—",
           status: "Pending Verification",
           approvalStatus: "PENDING",
@@ -930,7 +999,7 @@ export default function AccountingPage() {
     return list.sort(
       (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
     );
-  }, [bookings, verificationQueue]);
+  }, [bookings, verificationQueue, collectionAccounts]);
 
   // Aggregate Treasury Metrics
   const treasurySummary = useMemo(() => {
@@ -2126,6 +2195,17 @@ export default function AccountingPage() {
                     <option value="pending verification">Pending verification</option>
                     <option value="rejected">Rejected</option>
                   </select>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSyncTreasury}
+                    disabled={syncingTreasury}
+                    className="h-8 gap-1.5 rounded-md border-[#E8EEF4] bg-white px-2.5 text-[11px] font-semibold text-[#0B1528] hover:bg-[#F4F7FB] cursor-pointer"
+                  >
+                    <RefreshCw className={cn("w-3.5 h-3.5", syncingTreasury && "animate-spin")} />
+                    {syncingTreasury ? "Syncing..." : "Sync Treasury"}
+                  </Button>
                 </div>
 
                 <span className="text-[11px] font-medium text-slate-400 lg:ml-auto">
@@ -2176,7 +2256,26 @@ export default function AccountingPage() {
                             {formatINR(r.amount)}
                           </td>
                           <td className="py-2.5 px-4 text-slate-600">
-                            {r.accountName}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Badge variant="outline" className="text-[11px] font-normal bg-slate-50 border-slate-200">
+                                🏛️ {r.accountName}
+                              </Badge>
+                              {collectionAccounts.length > 0 && !r.id.startsWith("adv-") && (
+                                <select
+                                  value={r.collectionAccountId || ""}
+                                  onChange={(e) => handleReassignPaymentAccount(r.id, e.target.value)}
+                                  className="h-6 text-[10px] bg-white border border-slate-200 rounded px-1 text-slate-500 hover:text-slate-800 cursor-pointer focus:outline-none"
+                                  title="Reassign Treasury Account"
+                                >
+                                  <option value="" disabled>Change</option>
+                                  {collectionAccounts.map((acc) => (
+                                    <option key={acc.id} value={acc.id}>
+                                      {acc.accountName}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
                           </td>
                           <td className="py-2.5 px-4">
                             <span className="font-medium text-slate-600">{r.paymentMode}</span>

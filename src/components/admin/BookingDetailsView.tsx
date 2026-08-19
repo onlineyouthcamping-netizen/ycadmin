@@ -1,4 +1,4 @@
-﻿import DocumentManager from "@/components/admin/DocumentManager";
+import DocumentManager from "@/components/admin/DocumentManager";
 import { PassengerDrawer } from "./PassengerDrawer";
 import { PassengerTimeline } from "./PassengerTimeline";
 import api from "@/services/api";
@@ -297,6 +297,7 @@ export default function BookingDetailsView({
   const [confirmTotal, setConfirmTotal] = useState("");
   const [confirmAdvance, setConfirmAdvance] = useState("");
   const [confirmMode, setConfirmMode] = useState("UPI");
+  const [confirmCollectionAccountId, setConfirmCollectionAccountId] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [confirmTrainStatus, setConfirmTrainStatus] = useState("PENDING");
   const [confirmingLoading, setConfirmingLoading] = useState(false);
@@ -422,6 +423,62 @@ export default function BookingDetailsView({
     return collectionAccounts.filter((a) => a.accountType !== "CASH");
   }, [collectionAccounts, payMode]);
 
+  const getFilteredAccountsForMode = useCallback((mode: string) => {
+    if (!collectionAccounts || collectionAccounts.length === 0) return [];
+    const normMode = (mode || "UPI").toUpperCase();
+
+    if (normMode.includes("CASH")) {
+      const cashAccs = collectionAccounts.filter(
+        (acc) =>
+          acc.accountType === "CASH" ||
+          acc.paymentMethods?.includes("CASH") ||
+          acc.accountName.toLowerCase().includes("cash") ||
+          acc.accountHolderName?.toLowerCase().includes("cash"),
+      );
+      return cashAccs.length > 0 ? cashAccs : collectionAccounts;
+    }
+
+    if (normMode.includes("UPI")) {
+      const upiAccs = collectionAccounts.filter((acc) => {
+        if (acc.accountType === "CASH") return false;
+        const methods = acc.paymentMethods || [];
+        return (
+          Boolean(acc.upiId) ||
+          methods.includes("UPI") ||
+          acc.accountType === "UPI" ||
+          acc.accountType === "COMPANY" ||
+          acc.accountType === "INDIVIDUAL"
+        );
+      });
+      return upiAccs.length > 0 ? upiAccs : collectionAccounts.filter((a) => a.accountType !== "CASH");
+    }
+
+    if (normMode.includes("BANK")) {
+      const bankAccs = collectionAccounts.filter(
+        (acc) =>
+          acc.accountType !== "CASH" &&
+          (Boolean(acc.accountNumber) ||
+            Boolean(acc.bankName) ||
+            acc.paymentMethods?.includes("BANK_TRANSFER") ||
+            acc.accountType === "COMPANY" ||
+            acc.accountType === "BANK" ||
+            acc.accountType === "INDIVIDUAL" ||
+            acc.accountType === "OTHER"),
+      );
+      return bankAccs.length > 0 ? bankAccs : collectionAccounts.filter((a) => a.accountType !== "CASH");
+    }
+
+    return collectionAccounts.filter((a) => a.accountType !== "CASH");
+  }, [collectionAccounts]);
+
+  const handleConfirmModeChange = (newMode: string) => {
+    setConfirmMode(newMode);
+    const matched = getFilteredAccountsForMode(newMode);
+    if (matched.length > 0) {
+      setConfirmCollectionAccountId(matched[0].id);
+    }
+  };
+
   const handlePayModeChange = (newMode: string) => {
     setPayMode(newMode);
     const normMode = (newMode || "UPI").toUpperCase();
@@ -470,13 +527,19 @@ export default function BookingDetailsView({
         setCollectionAccounts(res.data);
         if (!payCollectionAccountId) {
           const defaultUpi = res.data.find(
-            (a) => a.accountType !== "CASH" && (Boolean(a.upiId) || a.paymentMethods?.includes("UPI"))
+            (a: any) => a.accountType !== "CASH" && (Boolean(a.upiId) || a.paymentMethods?.includes("UPI"))
           );
           setPayCollectionAccountId(defaultUpi ? defaultUpi.id : res.data[0].id);
         }
+        if (!confirmCollectionAccountId) {
+          const defaultUpi = res.data.find(
+            (a: any) => a.accountType !== "CASH" && (Boolean(a.upiId) || a.paymentMethods?.includes("UPI"))
+          );
+          setConfirmCollectionAccountId(defaultUpi ? defaultUpi.id : res.data[0].id);
+        }
       }
     } catch {}
-  }, [payCollectionAccountId]);
+  }, [payCollectionAccountId, confirmCollectionAccountId]);
 
   useEffect(() => {
     loadCollectionAccounts();
@@ -1736,6 +1799,7 @@ export default function BookingDetailsView({
         paymentStatus: adv >= tot ? "Paid" : adv > 0 ? "Partial" : "Pending",
         email: confirmEmail,
         trainTicketStatus: confirmTrainStatus,
+        collectionAccountId: confirmCollectionAccountId || undefined,
       });
 
       // Auto create or update train tickets for passengers in this booking with the selected status
@@ -1895,6 +1959,7 @@ export default function BookingDetailsView({
         bookingId: booking.id,
         amount: amt,
         paymentMode: newPaymentMode,
+        collectionAccountId: payCollectionAccountId || confirmCollectionAccountId || undefined,
         notes: "Recorded inline",
       });
 
@@ -2886,7 +2951,7 @@ export default function BookingDetailsView({
       {isConfirming && (
         <div className="p-4 bg-white border border-[#E8EEF4] rounded-xl text-xs space-y-3">
           <h3 className="font-semibold text-[#0B1528]">Confirm booking</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <div>
               <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Total Amount
@@ -2913,7 +2978,7 @@ export default function BookingDetailsView({
               <label className="text-[9px] font-semibold uppercase text-slate-400">
                 Mode
               </label>
-              <Select value={confirmMode} onValueChange={setConfirmMode}>
+              <Select value={confirmMode} onValueChange={handleConfirmModeChange}>
                 <SelectTrigger className="h-8 text-xs bg-white">
                   <SelectValue />
                 </SelectTrigger>
@@ -2921,6 +2986,28 @@ export default function BookingDetailsView({
                   <SelectItem value="UPI">UPI</SelectItem>
                   <SelectItem value="Cash">Cash</SelectItem>
                   <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[9px] font-semibold uppercase text-slate-400">
+                Treasury Account
+              </label>
+              <Select
+                value={confirmCollectionAccountId}
+                onValueChange={setConfirmCollectionAccountId}
+              >
+                <SelectTrigger className="h-8 text-xs bg-white border-[#E8EEF4]">
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getFilteredAccountsForMode(confirmMode).map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                      {acc.accountType === "CASH"
+                        ? `${acc.accountName} (Cash Desk)`
+                        : `${acc.accountName} ${acc.upiId ? `(${acc.upiId})` : `(${acc.accountType})`}`}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

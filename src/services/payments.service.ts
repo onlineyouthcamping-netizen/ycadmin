@@ -90,4 +90,19 @@ export const paymentsService = {
   async reverse(id: string, data: { reason: string }): Promise<void> {
     await api.post(`/payments/${id}/reverse`, data);
   },
+
+  async updatePaymentAccount(
+    paymentId: string,
+    collectionAccountId: string,
+  ): Promise<any> {
+    const res = await api.patch(`/payments/client/${paymentId}/account`, {
+      collectionAccountId,
+    });
+    return res.data;
+  },
+
+  async syncTreasuryMappings(): Promise<any> {
+    const res = await api.post("/payments/sync-treasury-mappings");
+    return res.data;
+  },
 };

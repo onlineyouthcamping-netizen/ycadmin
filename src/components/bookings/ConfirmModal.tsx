@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { bookingsService } from "@/services/bookings.service";
 import { trainTicketService } from "@/services/trainTicket.service";
+import { collectionAccountsService, type CollectionAccount } from "@/services/collectionAccounts.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Booking, BookingTrip } from "@/types";
@@ -41,6 +42,42 @@ export function ConfirmModal({
   const [sendTicket, setSendTicket] = useState(false);
   const [ticketFile, setTicketFile] = useState<string | null>(null);
   const [ticketFileName, setTicketFileName] = useState<string | null>(null);
+  const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
+  const [collectionAccountId, setCollectionAccountId] = useState("");
+
+  useEffect(() => {
+    collectionAccountsService.getAccounts({ activeOnly: true }).then((res) => {
+      if (res.data && res.data.length > 0) {
+        setCollectionAccounts(res.data);
+        const defaultAcc = res.data.find(
+          (a) => a.accountType !== "CASH" && (Boolean(a.upiId) || a.paymentMethods?.includes("UPI"))
+        ) || res.data[0];
+        setCollectionAccountId(defaultAcc.id);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleModeChange = (newMode: string) => {
+    setMode(newMode);
+    if (!collectionAccounts || collectionAccounts.length === 0) return;
+    const normMode = (newMode || "UPI").toUpperCase();
+    if (normMode.includes("CASH")) {
+      const cashAcc = collectionAccounts.find(
+        (a) => a.accountType === "CASH" || a.accountName.toLowerCase().includes("cash")
+      );
+      if (cashAcc) setCollectionAccountId(cashAcc.id);
+    } else if (normMode.includes("BANK")) {
+      const bankAcc = collectionAccounts.find(
+        (a) => a.accountType === "COMPANY" || a.accountType === "BANK" || Boolean(a.accountNumber)
+      );
+      if (bankAcc) setCollectionAccountId(bankAcc.id);
+    } else {
+      const upiAcc = collectionAccounts.find(
+        (a) => a.accountType !== "CASH" && (Boolean(a.upiId) || a.accountType === "INDIVIDUAL" || a.accountType === "UPI")
+      );
+      if (upiAcc) setCollectionAccountId(upiAcc.id);
+    }
+  };
 
   useEffect(() => {
     if (booking) {
@@ -75,6 +112,7 @@ export function ConfirmModal({
               : "Pending",
         email,
         trainTicketStatus: trainStatus,
+        collectionAccountId: collectionAccountId || undefined,
       });
 
       // Auto create or update train tickets for passengers in this booking with the selected status
@@ -206,7 +244,7 @@ export function ConfirmModal({
               <label className="text-[9px] font-bold uppercase text-slate-400">
                 Payment Mode
               </label>
-              <Select value={mode} onValueChange={setMode}>
+              <Select value={mode} onValueChange={handleModeChange}>
                 <SelectTrigger className="h-8 text-xs rounded bg-white">
                   <SelectValue />
                 </SelectTrigger>
@@ -223,6 +261,27 @@ export function ConfirmModal({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase text-slate-400">
+                Treasury Account
+              </label>
+              <Select value={collectionAccountId} onValueChange={setCollectionAccountId}>
+                <SelectTrigger className="h-8 text-xs rounded bg-white">
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {collectionAccounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                      {acc.accountType === "CASH"
+                        ? `${acc.accountName} (Cash)`
+                        : `${acc.accountName} ${acc.upiId ? `(${acc.upiId})` : `(${acc.accountType})`}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase text-slate-400">
                 Train Ticket Status

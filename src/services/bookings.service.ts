@@ -156,6 +156,9 @@ export const bookingsService = {
       paymentStatus: string;
       email?: string;
       trainTicketStatus?: string;
+      collectionAccountId?: string;
+      transactionId?: string;
+      notes?: string;
     },
   ): Promise<Booking> {
     const res = await api.put(`/bookings/${id}/confirm`, data);
