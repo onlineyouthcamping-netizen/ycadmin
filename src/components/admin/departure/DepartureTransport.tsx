@@ -4,7 +4,7 @@
  * Transport tab: fleet, allocation rules, WhatsApp lists, room/seat assignments.
  * Logic (save, auto-allocate, copy lists) stays in DepartureHubPage.
  */
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   AlertTriangle,
   Copy,
