@@ -6934,46 +6934,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                <div className="bg-white border border-[#E8EEF4] rounded-xl p-4 shadow-none min-w-0 flex flex-col">
-                  <div className="flex items-center justify-between border-b border-[#E8EEF4] pb-2.5 mb-3 gap-2">
-                    <h3 className="text-[11px] font-semibold text-[#0B1528] tracking-wide">
-                      Notes
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => toast.success("Add Note")}
-                      className={dashLink}
-                    >
-                      Add note
-                    </button>
-                  </div>
-                  <div className="space-y-2 text-[12px] flex-1">
-                    {[
-                      {
-                        text: "Some participants are arriving late in Manali. Monitor arrival timings.",
-                        user: "Neeki",
-                        date: "29 Jun 2027",
-                      },
-                      {
-                        text: "Hotel Mountain View – 6 rooms upgraded to super deluxe category.",
-                        user: "Suresh Bhai",
-                        date: "28 Jun 2027",
-                      },
-                    ].map((note, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded-md border border-[#E8EEF4] bg-[#F8FAFC]"
-                      >
-                        <p className="font-medium text-[#0B1528] text-left leading-relaxed">
-                          {note.text}
-                        </p>
-                        <p className="text-[11px] text-slate-400 mt-1.5 text-left">
-                          {note.user} · {note.date}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           )}
